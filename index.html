@@ -319,7 +319,7 @@
 const SAVE_KEY = "catmintCove.save.v5";
 const DAY_MS = 86400000;
 const today = () => Math.floor(Date.now() / DAY_MS);
-const DPR = Math.min(window.devicePixelRatio || 1, 2);
+let DPR = Math.min(window.devicePixelRatio || 1, 2);   // re-read on every resize (iPad zoom / display change)
 
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
@@ -2488,12 +2488,30 @@ function fmtTime(s) {
 
 /* ---------- boot ---------- */
 function resize() {
-  const r = document.getElementById("app").getBoundingClientRect();
-  // ignore transient 0-size layouts (orientation change, split-screen, backgrounded tab) —
-  // scrambling every position off a bogus measurement is worse than keeping the last good one
-  if (r.width >= 120 && r.height >= 120) { W = r.width; H = r.height; }
-  canvas.width = W * DPR; canvas.height = H * DPR;
+  // measure the canvas's own rendered box so the backing store always matches what's on screen
+  const r = canvas.getBoundingClientRect();
+  const w = r.width || window.innerWidth, h = r.height || window.innerHeight;
+  // ignore transient 0-size layouts (orientation flip, split-screen, backgrounded tab)
+  if (w >= 120 && h >= 120) { W = w; H = h; }
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const bw = Math.round(W * DPR), bh = Math.round(H * DPR);
+  if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+// wired to every way the viewport can change (iOS rotate, address bar, split view)
+let _lastW = 0, _lastH = 0, _relayoutT = 0;
+function onViewportChange() {
+  resize();                          // keep the canvas backing store matched to the box — immediately
+  clearTimeout(_relayoutT);
+  _relayoutT = setTimeout(() => {
+    // only re-lay-out the scene on a real size change (not on every address-bar nudge)
+    if (Math.abs(W - _lastW) > 32 || Math.abs(H - _lastH) > 32) {
+      _lastW = W; _lastH = H;
+      rebuildAttractors();
+      initClouds(); initFlecks();
+      for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, H - 58); }
+    }
+  }, 180);
 }
 window.__cove = {
   get G(){return G}, get cats(){return cats}, get tokens(){return fieldTokens},
@@ -2559,15 +2577,14 @@ window.__cove = {
   },
 };
 
-window.addEventListener("resize", () => {
-  resize();
-  rebuildAttractors();
-  for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, H - 58); }
-  initClouds(); initFlecks();
-});
+window.addEventListener("resize", onViewportChange);
+window.addEventListener("orientationchange", onViewportChange);
+if (window.visualViewport) window.visualViewport.addEventListener("resize", onViewportChange);
+try { new ResizeObserver(onViewportChange).observe(document.getElementById("app")); } catch (e) {}
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) save();
+  else onViewportChange();          // catch a rotation that happened while backgrounded
 });
 window.addEventListener("pagehide", save);
 const _saveInterval = setInterval(save, 5000);
@@ -2579,6 +2596,7 @@ window.__cove.hardReset = () => {
 };
 
 resize();
+_lastW = W; _lastH = H;
 load();
 restoreCats();
 rebuildAttractors();
