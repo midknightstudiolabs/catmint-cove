@@ -1,5 +1,8 @@
 # Catmint Cove — Phase 1 prototype
 
+**Play it:** https://ukiyazero.github.io/catmint-cove/
+(hosted on GitHub Pages from `index.html` on `main` — redeploys on push)
+
 A playable greybox of the cozy-idle cat game concept. One self-contained HTML file,
 no build step, no dependencies.
 

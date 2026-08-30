@@ -52,8 +52,13 @@
   .badge{background:var(--accent);color:#fff;border-radius:999px;font-size:.72rem;font-weight:700;
     padding:.06rem .4rem;font-variant-numeric:tabular-nums;}
   .badge.alert{background:var(--apricot);}
-  .title-pill{font-family:"Fraunces",Georgia,serif;font-weight:600;letter-spacing:-.01em;}
+  .title-pill{font-family:"Fraunces",Georgia,serif;font-weight:600;letter-spacing:-.01em;
+    cursor:pointer;max-width:52vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .title-pill b{color:var(--accent-bright);font-style:italic;font-weight:600;}
+  .name-in{font:inherit;font-weight:600;text-align:center;width:100%;
+    border:1px solid var(--panel-line);background:#eef1e3;color:var(--ink);
+    border-radius:999px;padding:.55rem 1rem;margin-bottom:.85rem;}
+  .name-in::placeholder{color:var(--ink-faint);}
 
   button.btn{
     font:inherit;font-weight:600;cursor:pointer;
@@ -217,7 +222,7 @@
       <div class="pill small opens">day <span id="opens">1</span></div>
     </div>
     <div class="hud-group">
-      <div class="pill title-pill">Catmint <b>Cove</b></div>
+      <button class="pill title-pill" id="titlePill" title="Rename your cove">Catmint <b>Cove</b></button>
       <button class="btn" id="muteBtn" title="Sound"><span class="ico">🔊</span></button>
     </div>
   </div>
@@ -240,6 +245,7 @@
       <button id="dev-pearls">+5 ✦</button>
       <button id="dev-cat">+ cat</button>
       <button id="dev-day">skip a day</button>
+      <button id="dev-name">name cove</button>
       <button id="dev-reset" class="danger">RESET GAME</button>
     </div>
   </div>
@@ -408,6 +414,7 @@ function newGame() {
     coax: 0,               // times coaxed (price scaling)
     bowls: 1, toys: 0, beds: 0,
     decor: { tree: 0, cottage: 0, flowers: 0 },
+    owner: null,           // the player names their cove on first run
     opens: 1,
     firstSeen: Date.now(),
     lastSeen: Date.now(),
@@ -1322,6 +1329,7 @@ function composePhoto() {
   pctx.save();
   pctx.translate(offX, offY);
   pctx.scale(s, s);
+  drawCoveSign(pctx, W, H);
   drawDecorLayer(pctx);
   for (const a of attractors) drawAttractor(pctx, a);
   const sorted = [...cats].sort((p,q)=>p.y-q.y);
@@ -1343,7 +1351,7 @@ function composePhoto() {
   pctx.fillStyle = "rgba(255,255,255,0.6)";
   pctx.font = "600 20px 'Hanken Grotesk', sans-serif";
   pctx.textAlign = "right";
-  pctx.fillText("Catmint Cove · " + cats.length + " cats", S - 84, S - 92);
+  pctx.fillText(coveName() + " · " + cats.length + " cats", S - 84, S - 92);
   pctx.textAlign = "left";
 }
 document.getElementById("photoCap").addEventListener("input", composePhoto);
@@ -1372,7 +1380,13 @@ function photoHintFail() {
 const elShells = document.getElementById("shells");
 const elCatCount = document.getElementById("catcount");
 const elCatCap = document.getElementById("catcap");
+function esc(s) { return String(s).replace(/[<>&"]/g, c => ({ "<":"&lt;", ">":"&gt;", "&":"&amp;", '"':"&quot;" }[c])); }
+function coveName() {
+  return G.owner ? `${G.owner}’s Cove` : "Catmint Cove";
+}
 function syncHud() {
+  const tp = document.getElementById("titlePill");
+  tp.innerHTML = G.owner ? `${esc(G.owner)}<b>’s Cove</b>` : "Catmint <b>Cove</b>";
   elShells.textContent = Math.floor(G.shells);
   document.getElementById("pearls").textContent = G.pearls || 0;
   elCatCount.textContent = cats.length;
@@ -1534,6 +1548,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "r" || e.key === "R") resetGame();
 });
 document.getElementById("dev-reset").addEventListener("click", resetGame);
+document.getElementById("dev-name").addEventListener("click", () => askOwnerName(false));
 document.getElementById("dev-shells").addEventListener("click", () => { G.shells += 500; syncHud(); });
 document.getElementById("dev-pearls").addEventListener("click", () => { G.pearls += 5; syncHud(); });
 document.getElementById("dev-cat").addEventListener("click", () => { spawnCat({ x: W * 0.5, y: H * 0.7 }); syncHud(); });
@@ -1589,7 +1604,7 @@ function checkOffline() {
   openModal(`
     <div class="big">◈ ${earned}</div>
     <h2>Your cats were busy</h2>
-    <p>${cats.length} cat${cats.length===1?"":"s"} gathered shells while the cove was closed${elapsed>3600?` (${fmtTime(elapsed)} away)`:""}.</p>
+    <p>${cats.length} cat${cats.length===1?"":"s"} kept ${coveName()} running while you were away${elapsed>3600?` (${fmtTime(elapsed)})`:""}.</p>
     <div class="row">
       <button class="btn primary" id="m-take">Collect</button>
       <button class="btn" id="m-2x"><span class="ico">▶</span> Collect 2× &nbsp;<small style="opacity:.7">[rewarded]</small></button>
@@ -1603,6 +1618,35 @@ function checkOffline() {
 const scrim = document.getElementById("scrim");
 function openModal(html) { document.getElementById("modal").innerHTML = html; scrim.classList.add("on"); }
 function closeModal() { scrim.classList.remove("on"); }
+
+/* ---------- ownership: name your cove ---------- */
+function askOwnerName(firstTime) {
+  openModal(`<div class="reveal">
+    <div class="kicker">${firstTime ? "Welcome" : "Rename"}</div>
+    <h2>${firstTime ? "Make it yours" : "Rename your cove"}</h2>
+    <p class="sub">${firstTime
+      ? "A few cats have wandered in and made themselves at home. Whose cove is this?"
+      : "What should this little place be called?"}</p>
+    <input class="name-in" id="own-in" maxlength="18" placeholder="your name" autocomplete="off" spellcheck="false">
+    <div class="row">
+      <button class="btn primary" id="own-ok">${firstTime ? "Open the cove" : "Save"}</button>
+      <button class="btn" id="own-skip">${firstTime ? "Later" : "Cancel"}</button>
+    </div>
+  </div>`);
+  const inp = document.getElementById("own-in");
+  inp.value = G.owner || "";
+  setTimeout(() => { inp.focus(); inp.select(); }, 30);
+  const finish = () => { G.ownerAsked = true; closeModal(); syncHud(); save(); if (firstTime) checkOffline(); };
+  const submit = () => {
+    const v = inp.value.trim().replace(/\s+/g, " ").slice(0, 18);
+    if (v) { G.owner = v; toast(`Welcome to ${coveName()}`, 4); }
+    finish();
+  };
+  document.getElementById("own-ok").onclick = submit;
+  document.getElementById("own-skip").onclick = () => { if (firstTime) finish(); else closeModal(); };
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+}
+document.getElementById("titlePill").addEventListener("click", () => askOwnerName(false));
 
 /* ---------- audio (procedural) ---------- */
 let actx = null;
@@ -1791,6 +1835,38 @@ function drawDecor(g, d) {
 }
 function drawDecorLayer(g) {
   for (const d of [...decor].sort((a, b) => a.y - b.y)) drawDecor(g, d);
+}
+
+// a little carved sign near the entrance — "<Owner>’s Cove"
+function drawCoveSign(g, W, H) {
+  const label = coveName().toUpperCase();
+  const x = clamp(W * 0.12, 70, W - 70), y = H * 0.42;
+  g.save();
+  g.translate(x, y);
+  g.font = "700 11px 'Fraunces', Georgia, serif";
+  let fs = 11, bw = g.measureText(label).width + 20;
+  if (bw > 150) { fs = 9; g.font = "700 9px 'Fraunces', Georgia, serif"; bw = g.measureText(label).width + 18; }
+  bw = Math.max(bw, 64);
+  // soft shadow
+  g.fillStyle = "rgba(36,31,23,0.10)";
+  g.beginPath(); g.ellipse(0, 24, bw * 0.5, 5, 0, 0, 7); g.fill();
+  // posts
+  g.fillStyle = "#8a6a4a";
+  g.fillRect(-bw / 2 + 4, -6, 4.5, 30);
+  g.fillRect(bw / 2 - 8.5, -6, 4.5, 30);
+  // board
+  g.fillStyle = "#c69a6c";
+  roundRect(g, -bw / 2, -22, bw, 22, 4); g.fill();
+  g.fillStyle = "rgba(255,255,255,0.12)"; roundRect(g, -bw / 2, -22, bw, 7, 4); g.fill();
+  g.fillStyle = "rgba(60,44,30,0.10)"; roundRect(g, -bw / 2, -8, bw, 8, 4); g.fill();
+  g.strokeStyle = "rgba(74,53,36,0.35)"; g.lineWidth = 1; roundRect(g, -bw / 2, -22, bw, 22, 4); g.stroke();
+  // engraved text
+  g.fillStyle = "#4a3524";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.font = `700 ${fs}px 'Fraunces', Georgia, serif`;
+  g.fillText(label, 0, -10.5);
+  g.textAlign = "left"; g.textBaseline = "alphabetic";
+  g.restore();
 }
 
 /* ---------- cat rendering: recognisable loaf-cats with real coat types ---------- */
@@ -2352,6 +2428,7 @@ function renderScene(dt) {
   ctx.clearRect(0, 0, W, H);
   if (shakeAmt > 0) ctx.translate(rand(-shakeAmt, shakeAmt), rand(-shakeAmt, shakeAmt));
   drawBackground(dt);
+  drawCoveSign(ctx, W, H);
   drawDecorLayer(ctx);
   for (const a of attractors) drawAttractor(ctx, a);
   const order = [...cats].sort((a, b) => a.y - b.y);
@@ -2510,13 +2587,20 @@ initFlecks();
 rollDailyGoals();
 checkDexMilestones();
 syncHud();
-checkOffline();
 requestAnimationFrame(frame);
+
+// first run: name the cove, then check what the cats got up to while away
+const needName = !G.owner && !G.ownerAsked;
+if (needName) {
+  setTimeout(() => askOwnerName(true), 500);
+} else {
+  checkOffline();
+}
 
 // gentle first-run guidance
 if (!G.tips.includes("welcome")) {
   G.tips.push("welcome");
-  setTimeout(() => toast("Tap a cat to pet it. Tap the glowing shells to collect.", 5), 900);
+  setTimeout(() => toast("Tap a cat to pet it. Tap the glowing shells to collect.", 5), needName ? 4000 : 900);
 }
 })();
 </script>
