@@ -1,0 +1,2624 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catmint Cove Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+
+<style>
+  :root{
+    --sky-top:#bfe0d6;
+    --sky-bot:#eef3e6;
+    --ground:#d8d2bd;
+    --ground-2:#cfc8b0;
+    --ink:#241f17;
+    --ink-soft:#5b5343;
+    --panel:#f7f5ec;
+    --panel-line:#ddd7c2;
+    --accent:#356b4c;
+    --accent-bright:#3f8159;
+    --apricot:#c47a35;
+    --shell:#e8b45a;
+    --heart:#d6688a;
+    --shadow:0 18px 40px -16px rgba(36,31,23,.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;background:var(--sky-bot);color:var(--ink);
+    font-family:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    overflow:hidden;-webkit-font-smoothing:antialiased;
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  }
+  #app{position:fixed;inset:0;display:flex;flex-direction:column;}
+
+  /* ---- top HUD ---- */
+  #hud{
+    position:absolute;top:0;left:0;right:0;z-index:20;
+    display:flex;align-items:center;gap:.7rem;justify-content:space-between;
+    padding:.7rem clamp(.7rem,2vw,1.2rem);
+    pointer-events:none;
+  }
+  .hud-group{display:flex;gap:.55rem;align-items:center;pointer-events:auto;}
+  .pill{
+    display:flex;align-items:center;gap:.45rem;
+    background:var(--panel);border:1px solid var(--panel-line);border-radius:999px;
+    padding:.4rem .8rem .4rem .5rem;box-shadow:var(--shadow);
+    font-weight:600;font-variant-numeric:tabular-nums;
+  }
+  .pill .dot{width:1.15rem;height:1.15rem;border-radius:50%;background:var(--shell);display:grid;place-items:center;font-size:.7rem;color:#5b4327;}
+  .pill .dotp{background:#8fb7d6;color:#274a63;}
+  .pill.small{font-size:.82rem;padding:.35rem .7rem;color:var(--ink-soft);font-weight:600;}
+  .badge{background:var(--accent);color:#fff;border-radius:999px;font-size:.72rem;font-weight:700;
+    padding:.06rem .4rem;font-variant-numeric:tabular-nums;}
+  .badge.alert{background:var(--apricot);}
+  .title-pill{font-family:"Fraunces",Georgia,serif;font-weight:600;letter-spacing:-.01em;
+    cursor:pointer;max-width:52vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .title-pill b{color:var(--accent-bright);font-style:italic;font-weight:600;}
+  .name-in{font:inherit;font-weight:600;text-align:center;width:100%;
+    border:1px solid var(--panel-line);background:#eef1e3;color:var(--ink);
+    border-radius:999px;padding:.55rem 1rem;margin-bottom:.85rem;}
+  .name-in::placeholder{color:var(--ink-faint);}
+
+  button.btn{
+    font:inherit;font-weight:600;cursor:pointer;
+    background:var(--panel);color:var(--ink);border:1px solid var(--panel-line);
+    border-radius:999px;padding:.5rem .95rem;box-shadow:var(--shadow);
+    display:flex;align-items:center;gap:.4rem;transition:transform .12s ease, background .12s ease;
+  }
+  button.btn:hover{background:#fff;}
+  button.btn:active{transform:translateY(1px) scale(.98);}
+  button.btn.primary{background:var(--accent);color:#fff;border-color:transparent;}
+  button.btn.primary:hover{background:var(--accent-bright);}
+  button.btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn .ico{font-size:1.05rem;line-height:1;}
+
+  /* ---- bottom action bar ---- */
+  #actions{
+    position:absolute;left:0;right:0;bottom:0;z-index:20;
+    display:flex;gap:.55rem;justify-content:center;flex-wrap:wrap;
+    padding:0 .7rem calc(.8rem + env(safe-area-inset-bottom));
+    pointer-events:none;
+  }
+  #actions button{pointer-events:auto;}
+
+  #c{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:manipulation;}
+  #dexGrid canvas,#modal canvas,#photoCanvas{position:static;}
+
+  /* ---- panels ---- */
+  .sheet{
+    position:absolute;z-index:40;background:var(--panel);
+    border:1px solid var(--panel-line);border-radius:20px;box-shadow:var(--shadow);
+    padding:1.1rem 1.15rem 1.2rem;
+  }
+  .sheet h2{font-family:"Fraunces",serif;font-size:1.15rem;margin:0 0 .2rem;}
+  .sheet .muted{color:var(--ink-soft);font-size:.85rem;margin:0 0 .9rem;}
+  .sheet .x{position:absolute;top:.6rem;right:.6rem;width:2rem;height:2rem;border-radius:50%;
+    border:1px solid var(--panel-line);background:#fff;cursor:pointer;font-size:1rem;color:var(--ink-soft);}
+
+  #shop{right:clamp(.6rem,2vw,1.2rem);bottom:4.2rem;width:min(92vw,360px);max-height:70vh;overflow-y:auto;}
+  .shop-item{
+    display:flex;gap:.8rem;align-items:center;justify-content:space-between;
+    padding:.75rem 0;border-top:1px solid var(--panel-line);
+  }
+  .shop-item:first-of-type{border-top:none;}
+  .shop-item .txt{flex:1;min-width:0;}
+  .shop-item .name{font-weight:600;}
+  .shop-item .desc{font-size:.8rem;color:var(--ink-soft);margin-top:.1rem;}
+  .shop-item button{flex:0 0 auto;white-space:nowrap;}
+  .shop-item .lv{font-size:.72rem;color:var(--accent-bright);font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+
+  /* ---- catdex ---- */
+  #dex{left:50%;transform:translateX(-50%);bottom:4.2rem;width:min(94vw,430px);max-height:74vh;overflow-y:auto;}
+  .dexbar{height:.5rem;border-radius:999px;background:#e4e0cf;overflow:hidden;margin:-.3rem 0 1rem;}
+  .dexbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-bright));transition:width .5s ease;}
+  #dexGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;}
+  @media(max-width:420px){#dexGrid{grid-template-columns:repeat(3,1fr);}}
+  .dexcell{background:#eef1e3;border:1px solid var(--panel-line);border-radius:12px;padding:.5rem .2rem .35rem;
+    text-align:center;position:relative;min-height:92px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:.1rem;}
+  .dexcell.found{background:var(--panel);}
+  .dexcell canvas{width:50px;height:46px;}
+  .dexcell .q{font-family:"Fraunces",serif;font-size:1.7rem;color:#b7b09a;margin:auto 0;}
+  .dexcell .nm{font-size:.58rem;line-height:1.05;color:var(--ink-soft);font-weight:600;
+    max-width:100%;overflow-wrap:break-word;hyphens:auto;}
+  .dexcell .st{position:absolute;top:.2rem;left:0;right:0;font-size:.62rem;font-weight:800;letter-spacing:-1px;}
+
+  /* ---- today ---- */
+  #today{left:50%;transform:translateX(-50%);bottom:4.2rem;width:min(94vw,380px);}
+  .streak{display:flex;align-items:center;gap:.4rem;margin:-.2rem 0 .9rem;font-size:.82rem;}
+  .streak .flame{font-size:1.1rem;}
+  .streak b{font-family:"Fraunces",serif;font-size:1.25rem;color:var(--apricot);margin-right:.15rem;}
+  .goal{padding:.7rem 0;border-top:1px solid var(--panel-line);}
+  .goal:first-child{border-top:none;}
+  .goal .grow{display:flex;justify-content:space-between;align-items:center;gap:.6rem;margin-bottom:.4rem;}
+  .goal .gt{font-weight:600;font-size:.92rem;}
+  .goal .gp{font-size:.76rem;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+  .goal .gbar{height:.42rem;border-radius:999px;background:#e4e0cf;overflow:hidden;}
+  .goal .gbar i{display:block;height:100%;background:var(--accent-bright);transition:width .4s ease;}
+  .goal button{margin-top:.5rem;width:100%;justify-content:center;}
+  .goal.claimed{opacity:.5;}
+
+  /* ---- reveal celebration ---- */
+  .reveal{text-align:center;}
+  .reveal .kicker{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--apricot);}
+  .reveal canvas{width:150px;height:140px;margin:.3rem auto .1rem;display:block;}
+  .reveal h2{font-family:"Fraunces",serif;font-size:1.5rem;margin:.2rem 0 .1rem;}
+  .reveal .stars{font-size:1.1rem;letter-spacing:2px;margin-bottom:.5rem;}
+  .reveal .sub{color:var(--ink-soft);font-size:.9rem;margin-bottom:1rem;}
+
+  .cc-stars{font-size:.85rem;letter-spacing:1px;margin-bottom:.5rem;}
+
+  /* ---- cat card ---- */
+  #catcard{width:min(84vw,270px);padding:.9rem 1rem 1rem;transition:opacity .15s ease;}
+  #catcard h2{font-size:1.05rem;margin-bottom:.1rem;}
+  .cc-coat{font-size:.76rem;color:var(--ink-faint);text-transform:capitalize;margin-bottom:.5rem;}
+  .traitrow{display:flex;gap:.35rem;flex-wrap:wrap;margin:.15rem 0 .6rem;}
+  .trait{background:#eef1e3;border:1px solid var(--panel-line);border-radius:999px;
+    padding:.15rem .55rem;font-size:.74rem;font-weight:600;color:var(--accent);}
+  .statebadge{font-size:.8rem;color:var(--ink-soft);margin-bottom:.5rem;}
+  .statebadge b{color:var(--ink);text-transform:capitalize;}
+  .moodbar{height:.55rem;border-radius:999px;background:#e4e0cf;overflow:hidden;}
+  .moodbar i{display:block;height:100%;background:linear-gradient(90deg,var(--apricot),var(--accent-bright));transition:width .4s ease;}
+  .moodlabel{display:flex;justify-content:space-between;font-size:.72rem;color:var(--ink-soft);margin-top:.3rem;}
+  .cat-trait-desc{font-size:.78rem;color:var(--ink-soft);margin-top:.55rem;line-height:1.45;}
+  .rehome{margin-top:.7rem;width:100%;background:none;border:1px solid var(--panel-line);border-radius:999px;
+    padding:.4rem .7rem;font:inherit;font-size:.78rem;font-weight:600;color:var(--ink-soft);cursor:pointer;}
+  .rehome:hover{background:#fff;color:var(--ink);}
+
+  /* ---- modal ---- */
+  #scrim{position:absolute;inset:0;z-index:50;background:rgba(30,26,18,.42);
+    display:none;align-items:center;justify-content:center;padding:1.2rem;backdrop-filter:blur(2px);}
+  #scrim.on{display:flex;}
+  .modal{background:var(--panel);border-radius:22px;box-shadow:var(--shadow);
+    padding:1.5rem 1.4rem 1.4rem;width:min(92vw,380px);text-align:center;border:1px solid var(--panel-line);}
+  .modal h2{font-family:"Fraunces",serif;font-size:1.35rem;margin:.2rem 0 .4rem;}
+  .modal p{color:var(--ink-soft);margin:0 0 1rem;font-size:.92rem;}
+  .modal .big{font-family:"Fraunces",serif;font-size:2.2rem;color:var(--accent-bright);font-variant-numeric:tabular-nums;}
+  .modal .row{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-top:.4rem;}
+
+  /* ---- photo mode ---- */
+  #photo{position:absolute;inset:0;z-index:60;background:rgba(24,21,15,.78);display:none;
+    flex-direction:column;align-items:center;justify-content:center;gap:.9rem;padding:1.1rem;backdrop-filter:blur(3px);}
+  #photo.on{display:flex;}
+  #photo canvas{position:static;width:min(90vw,420px);height:auto;border-radius:14px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.6);border:none;}
+  #photo .cap-in{font:inherit;font-weight:600;text-align:center;border:1px solid rgba(255,255,255,.3);
+    background:rgba(255,255,255,.1);color:#fff;border-radius:999px;padding:.5rem 1rem;width:min(90vw,420px);}
+  #photo .cap-in::placeholder{color:rgba(255,255,255,.55);}
+  #photo .hint{color:rgba(255,255,255,.7);font-size:.8rem;margin:0;}
+
+  /* ---- toast ---- */
+  #toast{position:absolute;left:50%;bottom:4.4rem;transform:translateX(-50%) translateY(1rem);
+    z-index:30;background:var(--ink);color:#fff;padding:.6rem 1rem;border-radius:999px;
+    font-size:.86rem;font-weight:600;opacity:0;transition:opacity .3s ease,transform .3s ease;pointer-events:none;
+    max-width:88vw;text-align:center;}
+  #toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ---- dev overlay ---- */
+  #dev{position:absolute;left:.6rem;bottom:3.6rem;z-index:35;display:none;
+    background:rgba(24,21,15,.86);color:#e8e2d2;font-family:"Hanken Grotesk",sans-serif;
+    font-size:.72rem;line-height:1.5;padding:.7rem .8rem;border-radius:12px;max-width:15rem;}
+  #dev.on{display:block;}
+  #dev pre{margin:0 0 .5rem;font-family:inherit;white-space:pre;font-size:.7rem;}
+  #dev .dev-btns{display:flex;flex-wrap:wrap;gap:.3rem;}
+  #dev .dev-btns button{font:inherit;font-size:.68rem;font-weight:600;cursor:pointer;
+    background:rgba(255,255,255,.12);color:#f2ede0;border:1px solid rgba(255,255,255,.18);
+    border-radius:7px;padding:.28rem .5rem;}
+  #dev .dev-btns button:hover{background:rgba(255,255,255,.22);}
+  #dev .dev-btns button.danger{background:rgba(214,90,80,.3);border-color:rgba(214,90,80,.5);}
+
+  @media (max-width:560px){
+    .title-pill{display:none;}
+    .pill.small.opens{display:none;}
+  }
+</style>
+
+<div id="app">
+  <div id="hud">
+    <div class="hud-group">
+      <div class="pill"><span class="dot">◈</span><span id="shells">0</span></div>
+      <div class="pill pearl"><span class="dot dotp">✦</span><span id="pearls">0</span></div>
+      <div class="pill small"><span id="catcount">0</span>/<span id="catcap">0</span> cats</div>
+      <div class="pill small opens">day <span id="opens">1</span></div>
+    </div>
+    <div class="hud-group">
+      <button class="pill title-pill" id="titlePill" title="Rename your cove">Catmint <b>Cove</b></button>
+      <button class="btn" id="muteBtn" title="Sound"><span class="ico">🔊</span></button>
+    </div>
+  </div>
+
+  <canvas id="c"></canvas>
+
+  <div id="actions">
+    <button class="btn primary" id="coaxBtn"><span class="ico">🐾</span> Coax a cat (<span id="coaxCost">10</span>)</button>
+    <button class="btn" id="dexBtn"><span class="ico">📖</span> Catdex <span class="badge" id="dexBadge">0/11</span></button>
+    <button class="btn" id="todayBtn"><span class="ico">✦</span> Today <span class="badge alert" id="todayBadge" hidden>!</span></button>
+    <button class="btn" id="shopBtn"><span class="ico">🧺</span> Shop</button>
+    <button class="btn" id="photoBtn"><span class="ico">📷</span> Photo</button>
+  </div>
+
+  <div id="toast"></div>
+  <div id="dev">
+    <pre id="devStats"></pre>
+    <div class="dev-btns">
+      <button id="dev-shells">+500 ◈</button>
+      <button id="dev-pearls">+5 ✦</button>
+      <button id="dev-cat">+ cat</button>
+      <button id="dev-day">skip a day</button>
+      <button id="dev-name">name cove</button>
+      <button id="dev-reset" class="danger">RESET GAME</button>
+    </div>
+  </div>
+
+  <!-- shop -->
+  <div class="sheet" id="shop" hidden>
+    <button class="x" data-close="shop">✕</button>
+    <h2>Grow the cove</h2>
+    <p class="muted">More comforts attract more cats — and the right comfort keeps each personality happy.</p>
+    <div id="shopList"></div>
+  </div>
+
+  <!-- catdex -->
+  <div class="sheet" id="dex" hidden>
+    <button class="x" data-close="dex">✕</button>
+    <h2>Catdex</h2>
+    <p class="muted"><span id="dexProg">0</span> / <span id="dexTotal">11</span> coats discovered · keep coaxing to find them all</p>
+    <div class="dexbar"><i id="dexBarFill"></i></div>
+    <div id="dexGrid"></div>
+  </div>
+
+  <!-- today: daily goals + streak -->
+  <div class="sheet" id="today" hidden>
+    <button class="x" data-close="today">✕</button>
+    <h2>Today</h2>
+    <div class="streak"><span class="flame">🔥</span><b id="streakN">0</b><span class="muted" style="margin:0">day streak — finish all 3 goals to keep it</span></div>
+    <div id="goalList"></div>
+  </div>
+
+  <!-- cat card -->
+  <div class="sheet" id="catcard" hidden>
+    <h2 id="cc-name">—</h2>
+    <div class="cc-coat" id="cc-coat"></div>
+    <div class="cc-stars" id="cc-stars"></div>
+    <div class="traitrow" id="cc-traits"></div>
+    <div class="statebadge">Right now: <b id="cc-state">—</b></div>
+    <div class="moodbar"><i id="cc-mood" style="width:60%"></i></div>
+    <div class="moodlabel"><span>mood</span><span id="cc-moodpct">60%</span></div>
+    <div class="cat-trait-desc" id="cc-desc"></div>
+    <button class="rehome" id="cc-rehome" hidden>Find them a new home →</button>
+  </div>
+
+  <!-- offline / reward modal -->
+  <div id="scrim">
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <!-- photo mode -->
+  <div id="photo">
+    <canvas id="photoCanvas" width="900" height="900"></canvas>
+    <input class="cap-in" id="photoCap" maxlength="42" placeholder="write a caption…">
+    <p class="hint" id="photoHint">Screenshot this to share it — in the shipped game this is a one-tap export with an install link.</p>
+    <div class="row" style="display:flex;gap:.5rem;">
+      <button class="btn primary" id="photoSave"><span class="ico">💾</span> Try download</button>
+      <button class="btn" id="photoClose">Back to the cove</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+
+/* ============================================================
+   Catmint Cove — Phase 1 greybox prototype
+   Core loop: Attract → Tend → Collect → Invest → Capture
+   Plus: a trait-driven personality state machine per cat.
+   Single file, no dependencies. Vanilla canvas.
+   ============================================================ */
+
+const SAVE_KEY = "catmintCove.save.v5";
+const DAY_MS = 86400000;
+const today = () => Math.floor(Date.now() / DAY_MS);
+let DPR = Math.min(window.devicePixelRatio || 1, 2);   // re-read on every resize (iPad zoom / display change)
+
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+let W = Math.max(320, window.innerWidth || 390), H = Math.max(480, window.innerHeight || 780);
+
+/* ---------- trait model ---------- */
+// likes: which attractor the cat gravitates to. 'cats' = other cats, 'roam' = wander.
+const TRAITS = {
+  glutton: { label:"Glutton", likes:"food", rate:1.28, pet:0.9, speed:1.0, knock:0.0,
+    desc:"Lives for the food bowl. Pays you back in fish." },
+  playful: { label:"Playful", likes:"toy", rate:1.16, pet:1.35, speed:1.15, knock:0.05,
+    desc:"Will not leave the toy alone. Loves being played with." },
+  shy:     { label:"Shy", likes:"bed", rate:1.0, pet:0.5, speed:0.8, knock:0.0,
+    desc:"Keeps to the edges and startles easily. Go gently." },
+  cuddly:  { label:"Cuddly", likes:"cats", rate:1.02, pet:1.7, speed:1.0, knock:0.0,
+    desc:"Seeks company and lifts the mood of cats nearby." },
+  climber: { label:"Climber", likes:"bed", rate:1.12, pet:0.95, speed:1.1, knock:0.4,
+    desc:"Knocks things off the shelf. On purpose. Finds shells doing it." },
+  chatty:  { label:"Chatty", likes:"cats", rate:1.06, pet:1.0, speed:1.0, knock:0.02,
+    desc:"Happiest in a pile of other cats." },
+  lazy:    { label:"Lazy", likes:"bed", rate:0.92, pet:0.85, speed:0.65, knock:0.0,
+    desc:"Steady output, forever. Sleeps like it's a career." },
+  curious: { label:"Curious", likes:"roam", rate:1.12, pet:0.95, speed:1.2, knock:0.08,
+    desc:"Wanders off constantly — and wanders back with things." },
+  grumpy:  { label:"Grumpy", likes:"bed", rate:1.24, pet:0.35, speed:0.9, knock:0.05,
+    desc:"Excellent worker. Do NOT overdo the petting." },
+  bold:    { label:"Bold", likes:"food", rate:1.15, pet:1.1, speed:1.35, knock:0.05,
+    desc:"Fears nothing, marches right in, settles instantly." },
+};
+const TRAIT_KEYS = Object.keys(TRAITS);
+// rarity weights for rolling traits (lower = rarer)
+const TRAIT_WEIGHT = { glutton:10, playful:10, shy:8, cuddly:5, climber:7, chatty:8, lazy:9, curious:7, grumpy:6, bold:6 };
+
+/* ---------- coats: recognisable real-cat colourways ----------
+   base    = main fur      belly = lighter underside
+   pattern = solid | mackerel (tabby stripes) | points (siamese) | tortie | calico
+   white   = list of white markings: bib, belly, muzzle, blaze, paws
+   stripe  = tabby stripe colour   point = siamese point colour
+   eye, nose, inner (ear) colours                                       */
+const COATS = [
+  { key:"tuxedo",   name:"tuxedo cat",        w:13, base:"#2c2824", belly:"#3a352f", pattern:"solid",
+    white:["bib","belly","muzzle","paws","blaze"], eye:"#c7a24c", nose:"#413a35", inner:"#b98d8d" },
+  { key:"ginger",   name:"ginger tabby",      w:14, base:"#e08b3d", belly:"#f2c78f", pattern:"mackerel",
+    stripe:"#b2611e", white:["muzzle","bib","paws"], eye:"#b7c24e", nose:"#cd7a6c", inner:"#e5a79e" },
+  { key:"greytab",  name:"grey tabby",        w:12, base:"#9a9c9d", belly:"#c4c5c4", pattern:"mackerel",
+    stripe:"#5c5f61", eye:"#93ad55", nose:"#6a6264", inner:"#c99a9a" },
+  { key:"browntab", name:"brown tabby",       w:11, base:"#8b6b46", belly:"#b89a72", pattern:"mackerel",
+    stripe:"#4a3826", eye:"#cd923c", nose:"#5b4633", inner:"#bd9088" },
+  { key:"greywhite",name:"grey & white",      w:10, base:"#9a9c9d", belly:"#c4c5c4", pattern:"mackerel",
+    stripe:"#5c5f61", white:["bib","belly","muzzle","paws","blaze"], eye:"#93ad55", nose:"#c98f8f", inner:"#d7a9a9" },
+  { key:"black",    name:"black cat",         w:11, base:"#282521", belly:"#332f2a", pattern:"solid",
+    eye:"#d6ab44", nose:"#2a2622", inner:"#7c5c5c" },
+  { key:"calico",   name:"calico cat",        w:10, base:"#f3eee4", belly:"#fbf7ef", pattern:"calico",
+    p1:"#dd8f45", p2:"#33302c", white:["bib","belly","muzzle","paws"], eye:"#c99a3a", nose:"#e0a0a0", inner:"#eab8b8" },
+  { key:"tortie",   name:"tortoiseshell",     w:8,  base:"#33302c", belly:"#413b34", pattern:"tortie",
+    p1:"#c9793a", eye:"#caa03a", nose:"#3a332e", inner:"#8a6a5c" },
+  { key:"white",    name:"white cat",         w:7,  base:"#f6f2ea", belly:"#ffffff", pattern:"solid",
+    eye:"#6f9fc0", nose:"#e6a6a6", inner:"#ecbcbc" },
+  { key:"russian",  name:"russian blue",      w:8,  base:"#8b959b", belly:"#a9b2b6", pattern:"solid",
+    eye:"#7fae5c", nose:"#6a6b6d", inner:"#b79a9a" },
+  { key:"siamese",  name:"siamese cat",       w:6,  base:"#e9ddc6", belly:"#f3ecda", pattern:"points",
+    point:"#4a3a30", eye:"#5c93c9", nose:"#4a3a30", inner:"#5a463c" },
+];
+const COAT_BY_KEY = Object.fromEntries(COATS.map(c => [c.key, c]));
+function weightedCoat() {
+  let total = 0; for (const c of COATS) total += c.w;
+  let r = Math.random() * total;
+  for (const c of COATS) { r -= c.w; if (r <= 0) return c.key; }
+  return COATS[0].key;
+}
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const NAMES = ["Biscuit","Miso","Pixel","Tofu","Clover","Waffle","Sardine","Pebble","Dandelion","Bramble",
+  "Marlow","Juniper","Olive","Cricket","Nimbus","Turnip","Salt","Pepper","Mochi","Dumpling","Fennel","Cinder",
+  "Barnaby","Willow","P734","Comma","Loaf","Umbra","Sprocket","Kelp"];
+
+/* ---------- game state ---------- */
+let G = null;
+
+function newGame() {
+  return {
+    v: 5,
+    shells: 25,
+    pearls: 0,             // premium currency (earned via Catdex / daily goals)
+    comfort: 0,            // 0..5 global production tiers
+    coax: 0,               // times coaxed (price scaling)
+    bowls: 1, toys: 0, beds: 0,
+    decor: { tree: 0, cottage: 0, flowers: 0 },
+    owner: null,           // the player names their cove on first run
+    opens: 1,
+    firstSeen: Date.now(),
+    lastSeen: Date.now(),
+    ratePerSec: 0,
+    allTimeSec: 0,
+    tips: [],
+    metrics: { pets:0, tokens:0, photos:0, catsAllTime:0, coaxed:0 },
+    dex: {},               // coatKey -> { star: bestStar, count: timesSeen }
+    dexRewards: [],         // claimed Catdex milestone thresholds
+    goals: null, goalDay: 0,
+    streak: 0, streakDay: 0,
+    cats: [],
+  };
+}
+
+function load() {
+  // sets up G only — cats are created afterwards by restoreCats()
+  let raw = null;
+  try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {}
+  if (!raw) { G = newGame(); return; }
+  try {
+    const s = JSON.parse(raw);
+    if (!s || s.v !== 5) { G = newGame(); return; }
+    G = s;
+    if (!G.decor) G.decor = { tree: 0, cottage: 0, flowers: 0 };
+    G.opens = (G.opens || 1) + 1;
+  } catch (e) { G = newGame(); }
+}
+let _dead = false;
+function save() {
+  if (_dead || !G) return;
+  try {
+    G.lastSeen = Date.now();
+    G.ratePerSec = aggregateRate();
+    G.allTimeSec = (G.allTimeSec || 0) + (performance.now() - lastSaveClock) / 1000;
+    lastSaveClock = performance.now();
+    G.cats = cats.map(c => ({
+      name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
+      bornAt:c.bornAt, mood:Math.round(c.mood)
+    }));
+    localStorage.setItem(SAVE_KEY, JSON.stringify(G));
+  } catch (e) {}
+}
+let lastSaveClock = performance.now();
+
+/* ---------- attractors (things cats walk to and use) + decor (scenery) ---------- */
+let attractors = [];
+let decor = [];        // trees / cottages / flower patches — scenery, trees & cottages are also usable
+function seededPos(seed, backness) {
+  const r = mulberry32(seed);
+  return { x: clamp(W * (0.1 + 0.8 * r()) , 44, W - 44),
+           y: clamp(H * (backness + r() * 0.06), H * 0.44, H - 60) };
+}
+function rebuildDecor() {
+  decor = [];
+  for (let i = 0; i < G.decor.tree; i++)
+    decor.push({ type: "tree", seed: 9001 + i, ...seededPos(9001 + i, 0.46) });
+  for (let i = 0; i < G.decor.cottage; i++)
+    decor.push({ type: "cottage", seed: 7001 + i, ...seededPos(7001 + i, 0.5) });
+  for (let i = 0; i < G.decor.flowers; i++)
+    decor.push({ type: "flowers", seed: 5001 + i, ...seededPos(5001 + i, 0.6) });
+}
+function rebuildAttractors() {
+  rebuildDecor();                       // decor first so usable pieces have stable positions
+  attractors = [];
+  const add = (type, n) => { for (let i = 0; i < n; i++) attractors.push(makeAttractor(type, attractors.length)); };
+  add("food", G.bowls); add("toy", G.toys); add("bed", G.beds);
+  for (const d of decor) {
+    if (d.type === "tree")    attractors.push({ type: "tree",    x: d.x + 14, y: d.y + 20 });
+    if (d.type === "cottage") attractors.push({ type: "cottage", x: d.x,      y: d.y + 14 });
+  }
+}
+function makeAttractor(type, idx) {
+  const cols = 4;
+  const col = idx % cols, row = Math.floor(idx / cols);
+  const x = W * (0.15 + 0.7 * (col / (cols - 1 || 1))) + rand(-16, 16);
+  const y = H * (0.58 + 0.13 * row) + rand(-12, 12);
+  return { type, x: clamp(x, 40, W - 40), y: clamp(y, H * 0.54, H - 66) };
+}
+
+function capacity() { return 3 + (G.bowls - 1) * 2 + G.toys + G.beds + G.decor.cottage * 2; }
+function comfortMult() { return 1 + G.comfort * 0.22; }
+function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // ambient mood lift
+
+/* ---------- cat entity ---------- */
+const KITTEN_MS = 20 * 3600 * 1000;   // a cat is a kitten for its first ~20h, then an adult forever
+let cats = [];
+class Cat {
+  constructor(o = {}) {
+    this.name = o.name || uniqueName();
+    this.traits = o.traits || rollTraits();
+    this.coatKey = o.coatKey || (COAT_BY_KEY[o.coat] ? o.coat : weightedCoat());
+    this.markSeed = o.markSeed ?? (Math.random() * 1e9 | 0);
+    this.star = o.star ?? rollStar();      // 1..4 rarity — drives production + sparkle + the coax reveal
+    // age: newcomers often arrive as kittens and grow up over ~20h of real time
+    this.bornAt = o.bornAt ?? (Math.random() < 0.45 ? Date.now() : Date.now() - KITTEN_MS * (1.2 + Math.random()));
+    this._wasKitten = undefined;
+    this.sparkT = Math.random() * 3;
+    this.walk = 0;
+    const edge = Math.random() < 0.5;
+    this.x = o.x ?? (edge ? -40 : W + 40);
+    this.y = o.y ?? rand(H * 0.55, H * 0.8);
+    this.tx = rand(W * 0.2, W * 0.8);
+    this.ty = rand(H * 0.55, H * 0.82);
+    this.vx = 0; this.vy = 0;              // velocity — movement is integrated, never teleported
+    this.mood = o.mood ?? 60;
+    this.state = "arriving";
+    this.stateT = 0;
+    this.stateDur = 3;
+    this.face = this.tx > this.x ? 1 : -1;
+    this.trotting = false;
+    this.acc = 0;
+    this.dropTimer = rand(0, 20);          // stagger so a fresh cove doesn't dump every token at once
+    this.dropInterval = rand(25, 45);      // a quicker first payout, then settles to ~2 min
+    this.petCount = 0;
+    this.petBuff = 0;      // seconds of x1.5
+    this.bob = Math.random() * 6;
+    this.blink = rand(2, 6);
+    this.tail = Math.random() * 6;
+    this.squash = 0;
+    this.partner = null;
+  }
+  get t1() { return TRAITS[this.traits[0]]; }
+  get t2() { return TRAITS[this.traits[1]]; }
+  get coat() { return COAT_BY_KEY[this.coatKey] || COATS[0]; }
+  get growth() { return clamp((Date.now() - this.bornAt) / KITTEN_MS, 0, 1); }   // 0 = newborn, 1 = grown
+  get isKitten() { return this.growth < 1; }
+  get ageScale() { return 0.56 + this.growth * 0.44; }                            // little kitten → full size
+  speedMul() { return (this.t1.speed + this.t2.speed) / 2; }
+  moodMul() { return 0.6 + (this.mood / 100) * 0.8; }        // 0.6 .. 1.4
+  traitRate() { return (this.t1.rate + this.t2.rate) / 2; }
+  petAffinity() { return (this.t1.pet + this.t2.pet) / 2; }
+  wants() {
+    // priority order of attractor likes
+    const w = [this.t1.likes, this.t2.likes];
+    return w;
+  }
+  starMul() { return 1 + (this.star - 1) * 0.3; }             // ★1 x1  →  ★4 x1.9
+  ratePerSec() {
+    let s = 0.55 * this.traitRate() * comfortMult() * this.moodMul() * this.starMul();
+    s *= 0.5 + this.growth * 0.5;                 // kittens are still learning — half output, ramping up
+    if (this.state === "eating" || this.state === "playing") s *= 1.3;
+    if (this.state === "sleeping") s *= 0.8;      // napping in a bed: less output, but mood recovers
+    if (this.state === "sulking") s *= 0.45;
+    if (this.state === "socializing") s *= 1.1;
+    if (this.petBuff > 0) s *= 1.5;
+    return s;
+  }
+}
+
+function uniqueName() {
+  const taken = new Set(cats.map(c => c.name));
+  const free = NAMES.filter(n => !taken.has(n));
+  if (free.length) return pick(free);
+  // pool exhausted — add a numeral
+  let base = pick(NAMES), n = 2;
+  while (taken.has(`${base} ${roman(n)}`)) n++;
+  return `${base} ${roman(n)}`;
+}
+function roman(n) { return ["","I","II","III","IV","V","VI","VII","VIII","IX","X"][n] || ("#" + n); }
+
+function rollTraits() {
+  const a = weightedTrait();
+  let b = weightedTrait();
+  let guard = 0;
+  while (b === a && guard++ < 20) b = weightedTrait();
+  return [a, b];
+}
+// rarity: most cats are ordinary, a few are special — the reason to keep coaxing
+function rollStar(luck = 0) {
+  const r = Math.random() - luck;
+  if (r > 0.955) return 4;
+  if (r > 0.85) return 3;
+  if (r > 0.58) return 2;
+  return 1;
+}
+const STAR_NAME = { 1: "Common", 2: "Uncommon", 3: "Rare", 4: "Legendary" };
+const STAR_COL = { 1: "#9a927e", 2: "#5aa06e", 3: "#4a86c9", 4: "#c98a2e" };
+function weightedTrait() {
+  let total = 0;
+  for (const k of TRAIT_KEYS) total += TRAIT_WEIGHT[k];
+  let r = Math.random() * total;
+  for (const k of TRAIT_KEYS) { r -= TRAIT_WEIGHT[k]; if (r <= 0) return k; }
+  return TRAIT_KEYS[0];
+}
+
+function seedStarters() {
+  rebuildAttractors();
+  // two different friendly coats for a welcoming first impression
+  const first = pick(["ginger", "tuxedo", "greytab", "browntab", "calico"]);
+  let second = pick(["greywhite", "black", "russian", "white", "tortie"]);
+  const grown = Date.now() - KITTEN_MS * 3;   // your first two cats are already grown
+  spawnCat({ coatKey: first,  star: 1, bornAt: grown, x: W * 0.4, y: H * 0.62, mood: 66 });
+  spawnCat({ coatKey: second, star: rollStar(0.02), bornAt: grown, x: W * 0.6, y: H * 0.56, mood: 63 });
+}
+function spawnCat(o) {
+  if (cats.length >= capacity() && !o) return null;
+  const c = new Cat(o || {});
+  cats.push(c);
+  G.metrics.catsAllTime++;
+  registerInDex(c, o ? !!o._celeb : true);   // silent for starters, celebratory for coaxed/visitors
+  return c;
+}
+function restoreCats() {
+  cats = [];
+  if (G.cats && G.cats.length) {
+    for (const s of G.cats) {
+      cats.push(new Cat({
+        name:s.name, traits:s.traits, coatKey:s.coatKey, markSeed:s.markSeed, star:s.star,
+        bornAt: s.bornAt ?? (Date.now() - KITTEN_MS * 3), mood:s.mood,
+        x: rand(W*0.15,W*0.85), y: rand(H*0.42,H*0.82)
+      }));
+    }
+  } else {
+    seedStarters();
+  }
+  // make sure every cat already in the cove counts as discovered
+  for (const c of cats) if (!G.dex[c.coatKey]) G.dex[c.coatKey] = { star: c.star, count: 1 };
+}
+
+/* ---------- Catdex: the collection spine ---------- */
+const DEX_MILESTONES = [
+  { at: 3, pearls: 3 }, { at: 6, pearls: 5 }, { at: 9, pearls: 8 }, { at: COATS.length, pearls: 20 },
+];
+function dexCount() { return Object.keys(G.dex).length; }
+function registerInDex(c, celebrate) {
+  const prev = G.dex[c.coatKey];
+  if (!prev) {
+    G.dex[c.coatKey] = { star: c.star, count: 1 };
+    if (celebrate) queueReveal(c, "new");
+    checkDexMilestones();
+    bumpGoal("discover", 1);
+  } else {
+    prev.count++;
+    if (c.star > prev.star) {
+      prev.star = c.star;
+      if (celebrate && c.star >= 3) queueReveal(c, "upgrade");
+    } else if (celebrate && c.star >= 4) {
+      queueReveal(c, "legendary");
+    }
+  }
+}
+function checkDexMilestones() {
+  const n = dexCount();
+  for (const m of DEX_MILESTONES) {
+    if (n >= m.at && !G.dexRewards.includes(m.at)) {
+      G.dexRewards.push(m.at);
+      G.pearls += m.pearls;
+      toast(`Catdex ${m.at}/${COATS.length} — +${m.pearls} pearls`, 4);
+    }
+  }
+}
+
+/* ---------- daily goals + streak ---------- */
+const GOAL_POOL = [
+  { id:"pet",     text:n=>`Pet cats ${n} times`,       gen:()=>rpick([5,8,10]),  reward:{shells:18} },
+  { id:"shells",  text:n=>`Gather ${n} shells`,        gen:()=>rpick([40,60,90]),reward:{shells:15} },
+  { id:"coax",    text:()=>`Coax a new cat`,           gen:()=>1,               reward:{shells:20} },
+  { id:"collect", text:n=>`Collect ${n} drops`,        gen:()=>rpick([12,18,25]),reward:{shells:14} },
+  { id:"photo",   text:()=>`Take a photo of the cove`, gen:()=>1,               reward:{pearls:1} },
+  { id:"discover",text:()=>`Discover a new coat`,      gen:()=>1,               reward:{pearls:2} },
+];
+function rpick(a){ return a[(Math.random()*a.length)|0]; }
+function rollDailyGoals() {
+  const d = today();
+  if (G.goalDay === d && G.goals) return;
+  // streak bookkeeping: continued only if yesterday was completed
+  if (G.streakDay !== d - 1 && G.streakDay !== d) G.streak = 0;
+  G.goalDay = d;
+  const pool = [...GOAL_POOL].sort(() => Math.random() - 0.5).slice(0, 3);
+  G.goals = pool.map(g => ({ id:g.id, target:g.gen(), prog:0, done:false, claimed:false, reward:g.reward }));
+}
+function bumpGoal(id, amount) {
+  if (!G.goals) return;
+  let changed = false;
+  for (const g of G.goals) {
+    if (g.id !== id || g.done) continue;
+    g.prog = Math.min(g.target, g.prog + amount);
+    if (g.prog >= g.target) { g.done = true; toast("Daily goal complete — claim it in Today", 3.2); }
+    changed = true;
+  }
+  if (changed && typeof renderGoals === "function") renderGoals();
+}
+function goalDef(id) { return GOAL_POOL.find(g => g.id === id); }
+
+/* ---------- personality state machine ---------- */
+const STATE_LABEL = {
+  arriving:"finding a spot", loafing:"loafing", sleeping:"fast asleep", eating:"at the food bowl",
+  playing:"playing", socializing:"socializing", exploring:"exploring", knocking:"knocking things over",
+  sulking:"sulking", being_pet:"being petted", seeking:"heading somewhere", grooming:"washing up",
+};
+
+function nearestAttractor(c, type) {
+  let best = null, bd = 1e9;
+  for (const a of attractors) {
+    if (type && a.type !== type) continue;
+    const d = dist2(c.x, c.y, a.x, a.y);
+    if (d < bd) { bd = d; best = a; }
+  }
+  return best;
+}
+function nearestCat(c) {
+  let best = null, bd = 1e9;
+  for (const o of cats) {
+    if (o === c) continue;
+    const d = dist2(c.x, c.y, o.x, o.y);
+    if (d < bd) { bd = d; best = o; }
+  }
+  return best ? { cat: best, d: Math.sqrt(bd) } : null;
+}
+
+function decide(c) {
+  c.stateT = 0;
+  c.partner = null;
+
+  // low mood → sleep it off (never punished, just recovers)
+  if (c.mood < 32 && Math.random() < 0.75) {
+    return go(c, "sleeping", rand(24, 42), napSpot(c));
+  }
+
+  const likes = c.wants();
+  const lazyish = c.traits.includes("lazy") || c.traits.includes("shy") || c.traits.includes("grumpy");
+  const kitten = c.isKitten;
+  const opts = [];
+  const add = (w, fn) => { if (w > 0) opts.push([w, fn]); };
+
+  // --- SLEEPING is the dominant pastime — this is a game about cats napping ---
+  const bedish = nearestAttractor(c, "bed") || nearestAttractor(c, "cottage") || nearestAttractor(c, "tree");
+  add((lazyish ? 4 : 2.6) + (c.mood < 55 ? 1.5 : 0) + (bedish ? 1.2 : 0), () => {
+    return go(c, "sleeping", rand(bedish ? 22 : 16, bedish ? 38 : 28), napSpot(c));
+  });
+
+  // --- grooming: a cat washing itself. short, common, adorable ---
+  add(kitten ? 5 : 4, () => go(c, "grooming", rand(5, 10), null));
+
+  // kittens: extra playing and short clumsy wanders
+  add(kitten ? 4 : 0, () => {
+    const a = nearestAttractor(c, "toy");
+    if (a) { c._arriveState = "playing"; c._arriveDur = rand(6, 12);
+      return go(c, "seeking", 14, { x: a.x + rand(-12, 12), y: a.y + rand(-8, 8) }); }
+    return go(c, "playing", rand(4, 8), null);
+  });
+
+  // company — strong pull for social traits, small chance for anyone
+  const n = nearestCat(c);
+  add(likes.includes("cats") ? 3.0 : 0.4, () => {
+    if (n) { c.partner = n.cat; const side = Math.random() < 0.5 ? -1 : 1;
+      return go(c, "socializing", rand(12, 22), { x: n.cat.x + side * rand(30,44), y: n.cat.y + rand(-8,8) }); }
+    return go(c, "loafing", rand(10, 20), null);
+  });
+
+  // use everything you've bought — every cat is drawn to it, trait-matched cats much more
+  for (const cf of [
+    { type:"food",    state:"eating",   dur:() => rand(12, 20), want:"food" },
+    { type:"toy",     state:"playing",  dur:() => rand(10, 18), want:"toy"  },
+    { type:"bed",     state:"sleeping", dur:() => rand(22, 40), want:"bed"  },
+    { type:"cottage", state:"sleeping", dur:() => rand(28, 48), want:"bed"  },
+    { type:"tree",    state:Math.random() < 0.5 ? "sleeping" : "loafing", dur:() => rand(16, 30), want:"roam" },
+  ]) {
+    const a = nearestAttractor(c, cf.type);
+    if (!a) continue;
+    const wanted = likes.includes(cf.want);
+    add(wanted ? 4.5 : cf.type === "food" || cf.type === "toy" ? 2.4 : 1.7, () => {
+      c._arriveState = cf.state;
+      c._arriveDur = cf.dur();
+      return go(c, "seeking", 16, { x: a.x + rand(-14, 14), y: a.y + rand(-8, 8) });
+    });
+  }
+
+  // explore — cut right down; wandering is where all the "too much walking" came from
+  add(likes.includes("roam") ? 1.3 : 0.3, () =>
+    go(c, "exploring", rand(5, 10), { x: rand(W*0.14, W*0.86), y: rand(H*0.56, H*0.85) }));
+
+  // mischief — climbers/curious knock things over (rare, brief)
+  const knock = c.t1.knock + c.t2.knock;
+  add(knock > 0 && (G.beds + G.toys) > 0 ? knock * 3 : 0, () => {
+    const a = nearestAttractor(c, Math.random() < 0.5 ? "bed" : "toy") || pick(attractors);
+    return a ? go(c, "knocking", rand(3, 5), { x: a.x, y: a.y }) : go(c, "loafing", 8, null);
+  });
+
+  // just loaf
+  add(2.2, () => go(c, "loafing", rand(12, 22), null));
+
+  let total = 0; for (const o of opts) total += o[0];
+  let r = Math.random() * total;
+  for (const [w, fn] of opts) { r -= w; if (r <= 0) return fn(); }
+  return go(c, "loafing", 8, null);
+}
+function napSpot(c) {
+  const a = nearestAttractor(c, "cottage") || nearestAttractor(c, "bed") || nearestAttractor(c, "tree");
+  return a ? { x: a.x + rand(-14, 14), y: a.y + rand(-4, 6) } : null;
+}
+function go(c, state, dur, target) {
+  c.state = state;
+  c.stateDur = dur;
+  c.stateT = 0;
+  if (target) {
+    c.tx = clamp(target.x, 24, W - 24);
+    c.ty = clamp(target.y, H * 0.52, H - 60);
+  } else {
+    c.tx = c.x; c.ty = c.y;           // stay put — and shed momentum so the stop is clean
+    if (c.vx !== undefined) { c.vx *= 0.3; c.vy *= 0.3; }
+  }
+  return c;
+}
+
+function updateCat(c, dt) {
+  c.stateT += dt;
+  c.blink -= dt;
+  if (c.blink < -0.12) c.blink = rand(2.4, 6.5);
+  // growing up
+  if (c._wasKitten === undefined) c._wasKitten = c.isKitten;
+  if (c._wasKitten && !c.isKitten) {
+    c._wasKitten = false;
+    toast(`${c.name} grew up! 🐈`, 4);
+    spawnParticles(c.x, c.y - 22, "heart", 7);
+    spawnParticles(c.x, c.y - 18, "spark", 6);
+  }
+  const kittenBounce = c.isKitten ? 1.9 : 1;      // kittens are extra jiggly
+  c.tail += dt * (c.state === "playing" ? 9 : c.state === "sulking" ? 1 : 3.5) * kittenBounce;
+  c.bob += dt * (c.state === "playing" ? 12 : 3) * kittenBounce;
+  if (c.squash > 0) c.squash = Math.max(0, c.squash - dt * 4);
+  if (c.petCount > 0) c.petCount -= dt * 0.15;
+  if (c.stateDur >= 1e6) return;          // audit freeze: hold pose, keep idle anim
+  if (c.petBuff > 0) c.petBuff -= dt;
+
+  /* -------- steering: velocity-based, damped, no teleporting -------- */
+  const travelling = ["arriving", "seeking", "exploring", "socializing", "knocking"].includes(c.state);
+  const held = c.state === "being_pet" || c.state === "sleeping";
+  let ax = 0, ay = 0;
+
+  if (travelling) {
+    const dx = c.tx - c.x, dy = c.ty - c.y;
+    const dd = Math.hypot(dx, dy);
+    if (dd > 1.5) {
+      const top = 46 * c.speedMul() * (c.state === "exploring" ? 0.8 : 1);
+      const slowR = 60;                                  // ease in over the last ~60px
+      const want = dd < slowR ? Math.max(top * 0.18, top * (dd / slowR)) : top;
+      ax += ((dx / dd) * want - c.vx) * 6.5;             // steer toward the desired velocity
+      ay += ((dy / dd) * want - c.vy) * 6.5;
+    }
+  }
+
+  // gentle separation — a soft steering nudge only when genuinely overlapping
+  if (!held) {
+    let sx = 0, sy = 0, hits = 0;
+    for (const o of cats) {
+      if (o === c) continue;
+      const ox = c.x - o.x, oy = c.y - o.y;
+      const od = Math.hypot(ox, oy);
+      if (od > 0.001 && od < 24) { const f = (24 - od) / 24; sx += (ox / od) * f; sy += (oy / od) * f; hits++; }
+    }
+    if (hits) { const k = travelling ? 22 : 14; ax += sx * k; ay += sy * k; }
+  }
+
+  // integrate + damp
+  c.vx += ax * dt; c.vy += ay * dt;
+  const damp = held ? 16 : travelling ? 2.4 : 9;
+  const dk = Math.min(1, damp * dt);
+  c.vx -= c.vx * dk; c.vy -= c.vy * dk;
+
+  // cap speed, and kill sub-pixel drift so idle cats are perfectly still
+  let spd = Math.hypot(c.vx, c.vy);
+  if (spd > 62) { const s = 62 / spd; c.vx *= s; c.vy *= s; spd = 62; }
+  if (!travelling && spd < 2.5) { c.vx = 0; c.vy = 0; spd = 0; }
+
+  c.x += c.vx * dt; c.y += c.vy * dt;
+
+  // stay in bounds without vibrating against the wall (let newcomers walk in from off-screen)
+  if (c.state !== "arriving") {
+    const minX = 18, maxX = W - 18, minY = H * 0.5, maxY = H - 56;
+    if (c.x < minX) { c.x = minX; if (c.vx < 0) c.vx = 0; }
+    else if (c.x > maxX) { c.x = maxX; if (c.vx > 0) c.vx = 0; }
+    if (c.y < minY) { c.y = minY; if (c.vy < 0) c.vy = 0; }
+    else if (c.y > maxY) { c.y = maxY; if (c.vy > 0) c.vy = 0; }
+  }
+
+  // gait + facing driven by smoothed velocity (hysteresis stops flip-flicker)
+  c.trotting = spd > 6 && !held;
+  if (c.trotting) {
+    c.walk += spd * dt * 0.34;            // ~1.7 strides/sec at a normal amble
+    if (Math.abs(c.vx) > 9) c.face = c.vx > 0 ? 1 : -1;
+  }
+  c.walkAmt = c.walkAmt === undefined ? 0 : c.walkAmt + ((c.trotting ? 1 : 0) - c.walkAmt) * Math.min(1, dt * 9);
+
+  // mood dynamics — drifts toward a floor, recovers while resting/social
+  let target = 40 + flowerMood();          // trees & flowers raise the whole cove's baseline
+  if (c.state === "sleeping") target = 94;
+  else if (c.state === "socializing") target = 88;
+  else if (c.state === "grooming") target = 80;
+  else if (c.state === "eating") target = 82;
+  else if (c.state === "playing") target = 86;
+  else if (c.state === "loafing") target = 64 + flowerMood() * 0.5;
+  else if (c.state === "sulking") target = 30;
+  const moodSpeed = (target > c.mood ? 3.2 : 1.4) * dt;
+  c.mood += (target - c.mood) * Math.min(1, moodSpeed);
+  c.mood = clamp(c.mood, 8, 100);
+
+  // cuddly aura: lift nearby cats
+  if ((c.traits.includes("cuddly")) && (c.state === "socializing" || c.state === "loafing")) {
+    for (const o of cats) {
+      if (o === c) continue;
+      if (dist2(c.x,c.y,o.x,o.y) < 90*90) o.mood = clamp(o.mood + 4*dt, 8, 100);
+    }
+  }
+
+  // production — cats build up earnings slowly and drop ONE chunky token every ~minute
+  // (calmer scene, fewer taps, each worth a lot; offline earnings cover time away)
+  c.acc += c.ratePerSec() * dt;
+  c.dropTimer += dt;
+  if (c.dropInterval === undefined) c.dropInterval = rand(90, 150);
+  if (c.acc >= 3 && c.dropTimer > c.dropInterval) {
+    const v = Math.max(1, Math.round(c.acc));
+    c.acc -= v;
+    c.dropTimer = 0;
+    c.dropInterval = rand(90, 150);
+    dropToken(c.x + rand(-10, 10), c.y - 6, v, tokenFlair(c));
+  }
+
+  // distance to current target, for state transitions
+  const atTarget = Math.hypot(c.tx - c.x, c.ty - c.y) < 7;
+
+  // state transitions
+  if (c.state === "arriving") {
+    if (atTarget || c.stateT > 14) decide(c);
+    return;
+  }
+  if (c.state === "seeking") {
+    if (atTarget) { go(c, c._arriveState || "loafing", c._arriveDur || 8, null); }
+    else if (c.stateT > 12) decide(c);
+    return;
+  }
+  if (c.state === "knocking") {
+    if (atTarget) {
+      spawnParticles(c.x, c.y - 4, "dust", 7);
+      // tidying reward: a shell token appears
+      dropToken(c.x + rand(-8,8), c.y, rand(1,3) | 0 || 1, "shell");
+      shake(3);
+      decide(c);
+    } else if (c.stateT > 5) decide(c);
+    return;
+  }
+  if (c.state === "being_pet") {
+    if (c.stateT > 0.7) decide(c);
+    return;
+  }
+  if (c.stateT >= c.stateDur) {
+    // over-petting → sulk for prickly cats
+    if (c.petCount > 2.4 && c.petAffinity() < 0.8 && c.state !== "sulking" && Math.random() < 0.7) {
+      go(c, "sulking", rand(7, 12), null);
+      c.face *= -1;
+      toast(`${c.name} has had enough petting for now.`);
+    } else if (c.state === "eating" && Math.random() < 0.6) {
+      go(c, "grooming", rand(4, 8), null);          // a wash after every meal
+    } else if ((c.state === "grooming" || c.state === "loafing") && Math.random() < 0.32) {
+      go(c, "sleeping", rand(20, 36), null);        // drift off right where they are
+    } else {
+      decide(c);
+    }
+  }
+}
+
+function tokenFlair(c) {
+  // flavor of the collectible, driven by the dominant trait
+  const map = { food:"fish", toy:"yarn", bed:"shell", cats:"shell", roam:"yarn" };
+  return map[c.t1.likes] || "shell";
+}
+
+/* ---------- collectibles ---------- */
+let fieldTokens = [];
+function dropToken(x, y, value, flair) {
+  // keep the field readable — retire the oldest un-popped token when crowded
+  if (fieldTokens.length >= 15) {
+    const idx = fieldTokens.findIndex(t => t.pop === 0);
+    fieldTokens.splice(idx < 0 ? 0 : idx, 1);
+  }
+  fieldTokens.push({
+    x: clamp(x, 16, W - 16), y, baseY: y, value, flair,
+    vy: -60, life: 0, ttl: 75, pop: 0,
+  });
+}
+function updateTokens(dt) {
+  for (let i = fieldTokens.length - 1; i >= 0; i--) {
+    const t = fieldTokens[i];
+    t.life += dt;
+    if (t.vy < 0 || t.y < t.baseY) {
+      t.vy += 240 * dt;
+      t.y += t.vy * dt;
+      if (t.y >= t.baseY) { t.y = t.baseY; t.vy = 0; }
+    }
+    if (t.pop > 0) { t.pop += dt * 5; if (t.pop > 1) { fieldTokens.splice(i,1); continue; } }
+    else if (t.life > t.ttl) { collectToken(t, true); }   // never lost — auto-banks if you don't tap it
+  }
+}
+function collectToken(t, auto) {
+  if (t.pop > 0) return;
+  t.pop = 0.01;
+  G.shells += t.value;
+  G.metrics.tokens += 1;
+  bumpGoal("shells", t.value);
+  bumpGoal("collect", 1);
+  syncHud();
+  spawnParticles(t.x, t.y, "spark", auto ? 4 : 8);
+  floatText(t.x, t.y - 10, "+" + t.value, "#e8b45a");
+  if (!auto) { sfx("collect"); fireTip("first_collect"); }
+}
+
+/* ---------- particles & floaters ---------- */
+let particles = [], floaters = [];
+function spawnParticles(x, y, kind, n) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const sp = kind === "heart" ? rand(20, 55) : rand(40, 130);
+    particles.push({
+      x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - (kind==="heart"?40:0),
+      life: 0, ttl: kind === "heart" ? 1.1 : 0.7, kind,
+      size: kind === "heart" ? rand(7,12) : rand(2,4),
+    });
+  }
+}
+function floatText(x, y, text, color) { floaters.push({ x, y, text, color, life: 0, ttl: 1.1 }); }
+function updateFX(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i]; p.life += dt;
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.vy += (p.kind === "dust" ? 40 : p.kind === "heart" ? -30 : p.kind === "twinkle" ? -4 : 260) * dt;
+    p.vx *= 0.94;
+    if (p.life > p.ttl) particles.splice(i, 1);
+  }
+  for (let i = floaters.length - 1; i >= 0; i--) {
+    const f = floaters[i]; f.life += dt; f.y -= 26 * dt;
+    if (f.life > f.ttl) floaters.splice(i, 1);
+  }
+}
+
+/* ---------- screen shake ---------- */
+let shakeAmt = 0;
+function shake(a) { shakeAmt = Math.min(shakeAmt + a, 12); }
+
+/* ---------- input ---------- */
+canvas.addEventListener("pointerdown", (e) => {
+  ensureAudio();
+  const r = canvas.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  handleTap(x, y);
+});
+function handleTap(x, y) {
+  // tokens first (closest within radius)
+  let bt = null, bd = 26 * 26;
+  for (const t of fieldTokens) {
+    const d = dist2(x, y, t.x, t.y);
+    if (d < bd) { bd = d; bt = t; }
+  }
+  if (bt) { collectToken(bt); return; }
+
+  // cats
+  let bc = null, bcd = 40 * 40;
+  for (const c of cats) {
+    const d = dist2(x, y, c.x, c.y - 18);
+    if (d < bcd) { bcd = d; bc = c; }
+  }
+  if (bc) { petCat(bc); showCatCard(bc); return; }
+
+  hideCatCard();
+}
+function petCat(c) {
+  if (c.state === "sulking") { toast(`${c.name} is sulking. Give it a minute.`); showCatCard(c); return; }
+  c.petCount += 1;
+  c.squash = 1;
+  c.state = "being_pet";
+  c.stateT = 0;
+  c.vx = 0; c.vy = 0;          // stop in place to enjoy the pets
+  c.tx = c.x; c.ty = c.y;
+  const gain = 10 + 14 * c.petAffinity();
+  c.mood = clamp(c.mood + gain, 8, 100);
+  c.petBuff = Math.max(c.petBuff, 18);
+  G.metrics.pets += 1;
+  bumpGoal("pet", 1);
+  spawnParticles(c.x, c.y - 30, "heart", c.petAffinity() > 1.2 ? 9 : 5);
+  spawnParticles(c.x, c.y - 24, "spark", 6);
+  floatText(c.x, c.y - 40, "+mood", "#d6688a");
+  shake(3);
+  sfx("pet");
+  fireTip("first_pet");
+}
+
+/* ---------- cat card ---------- */
+const cc = {
+  el: document.getElementById("catcard"),
+  name: document.getElementById("cc-name"),
+  traits: document.getElementById("cc-traits"),
+  state: document.getElementById("cc-state"),
+  mood: document.getElementById("cc-mood"),
+  moodpct: document.getElementById("cc-moodpct"),
+  desc: document.getElementById("cc-desc"),
+  coatEl: document.getElementById("cc-coat"),
+  starsEl: document.getElementById("cc-stars"),
+  rehomeBtn: document.getElementById("cc-rehome"),
+};
+function rehomeReward(c) {
+  return { shells: 15 + c.star * 18, pearls: c.star >= 3 ? c.star - 2 : 0 };
+}
+cc.rehomeBtn.addEventListener("click", () => {
+  const c = cardCat;
+  if (!c || cats.length <= 3) return;
+  cardTimer = 999;                    // hold the card while the confirm dialog is up
+  const rw = rehomeReward(c);
+  openModal(`<div class="reveal">
+    <div class="kicker">A new family</div>
+    <canvas width="200" height="185"></canvas>
+    <h2>${c.name}</h2>
+    <p class="sub">Send them off to a loving home? They'll always stay in your Catdex.
+      You'll receive <b>◈ ${rw.shells}</b>${rw.pearls ? ` and <b>✦ ${rw.pearls}</b>` : ""}.</p>
+    <div class="row">
+      <button class="btn primary" id="rh-yes">Wave goodbye</button>
+      <button class="btn" id="rh-no">Keep them</button>
+    </div></div>`);
+  miniCat(document.querySelector("#modal canvas"), c.coatKey, c.star);
+  document.getElementById("rh-no").onclick = () => { cardTimer = 4; closeModal(); };
+  document.getElementById("rh-yes").onclick = () => {
+    const i = cats.indexOf(c);
+    if (i >= 0) cats.splice(i, 1);
+    G.shells += rw.shells; G.pearls += rw.pearls;
+    spawnParticles(c.x, c.y - 20, "heart", 6);
+    sfx("coax"); syncHud(); hideCatCard(); closeModal();
+    toast(`${c.name} found a wonderful home. +◈ ${rw.shells}`);
+  };
+});
+function starGlyphs(n) {
+  return `<span style="color:${STAR_COL[n]}">${"★".repeat(n)}</span>` +
+         `<span style="color:#cfc8b0">${"★".repeat(4 - n)}</span>` +
+         ` <span style="color:${STAR_COL[n]};font-weight:700;font-size:.78rem">${STAR_NAME[n]}</span>`;
+}
+let cardCat = null, cardTimer = 0;
+function showCatCard(c) {
+  cardCat = c; cardTimer = 6;
+  cc.name.textContent = c.name;
+  cc.coatEl.textContent = c.coat.name + (c.isKitten
+    ? `  ·  kitten (${Math.max(1, Math.round(c.growth * 20))}h old)`
+    : "  ·  adult");
+  cc.starsEl.innerHTML = starGlyphs(c.star);
+  cc.traits.innerHTML = c.traits.map(k => `<span class="trait">${TRAITS[k].label}</span>`).join("");
+  cc.desc.textContent = c.t1.desc + " " + c.t2.desc;
+  const rw = rehomeReward(c);
+  cc.rehomeBtn.hidden = cats.length <= 3;      // only once the cove is comfortably full
+  cc.rehomeBtn.textContent = `Find them a new home  ·  ◈ ${rw.shells}${rw.pearls ? ` ✦ ${rw.pearls}` : ""}`;
+  cc.el.hidden = false;
+  positionCard(c);
+  updateCatCard();
+}
+function positionCard(c) {
+  const r = canvas.getBoundingClientRect();
+  const cardW = cc.el.offsetWidth || 260, cardH = cc.el.offsetHeight || 180;
+  let left = c.x - cardW / 2;
+  let top = c.y - 30 - cardH;
+  left = clamp(left, 8, r.width - cardW - 8);
+  if (top < 60) top = c.y + 40;
+  top = clamp(top, 60, r.height - cardH - 70);
+  cc.el.style.left = left + "px";
+  cc.el.style.top = top + "px";
+}
+function updateCatCard() {
+  if (!cardCat || cc.el.hidden) return;
+  cc.state.textContent = STATE_LABEL[cardCat.state] || cardCat.state;
+  const m = Math.round(cardCat.mood);
+  cc.mood.style.width = m + "%";
+  cc.moodpct.textContent = m + "%";
+}
+function hideCatCard() { cc.el.hidden = true; cardCat = null; }
+
+/* ---------- shop ---------- */
+const SHOP = [
+  { key:"bowls", type:"food", name:"Food bowl", desc:"Cats come here to eat, then wash up. +2 cat capacity.",
+    base:12, mul:1.6, get:()=>G.bowls, buy:()=>{ G.bowls++; rebuildAttractors(); } },
+  { key:"toys", type:"toy", name:"Toy", desc:"Cats come here to play — playing boosts their output. +1 capacity.",
+    base:16, mul:1.6, get:()=>G.toys, buy:()=>{ G.toys++; rebuildAttractors(); } },
+  { key:"beds", type:"bed", name:"Cozy bed", desc:"A favourite napping spot — sleeping restores mood. +1 capacity.",
+    base:22, mul:1.6, get:()=>G.beds, buy:()=>{ G.beds++; rebuildAttractors(); } },
+  { key:"tree", type:"tree", name:"Shade tree", desc:"Cats doze in the shade. Lifts the whole cove's mood.",
+    base:30, mul:1.7, get:()=>G.decor.tree, buy:()=>{ G.decor.tree++; rebuildAttractors(); } },
+  { key:"cottage", type:"cottage", name:"Cat cottage", desc:"A little house cats curl up inside to sleep. +2 capacity.",
+    base:55, mul:1.8, get:()=>G.decor.cottage, buy:()=>{ G.decor.cottage++; rebuildAttractors(); } },
+  { key:"flowers", type:"flowers", name:"Flower patch", desc:"Just pretty. Raises everyone's baseline mood a little.",
+    base:14, mul:1.5, get:()=>G.decor.flowers, buy:()=>{ G.decor.flowers++; rebuildAttractors(); } },
+  { key:"comfort", name:"Comfort upgrade", desc:"+22% output from every cat. Max level 5.",
+    base:45, mul:2.2, get:()=>G.comfort, max:5, buy:()=>{ G.comfort++; } },
+];
+const COMFORT_STATE = { food:"eating", toy:"playing", bed:"sleeping", cottage:"sleeping", tree:"sleeping" };
+// send a couple of free cats straight over to a freshly placed comfort
+function welcomeToComfort(type) {
+  const spots = attractors.filter(a => a.type === type);
+  if (!spots.length) return;
+  const a = spots[spots.length - 1];
+  const free = cats
+    .filter(c => !["arriving", "being_pet", "sulking"].includes(c.state))
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 2);
+  for (const c of free) {
+    c._arriveState = COMFORT_STATE[type];
+    c._arriveDur = COMFORT_STATE[type] === "sleeping" ? rand(22, 40) : rand(12, 20);
+    go(c, "seeking", 18, { x: a.x + rand(-14, 14), y: a.y + rand(-8, 8) });
+  }
+}
+function priceOf(item) { return Math.round(item.base * Math.pow(item.mul, item.get())); }
+function renderShop() {
+  const list = document.getElementById("shopList");
+  list.innerHTML = "";
+  for (const item of SHOP) {
+    const maxed = item.max != null && item.get() >= item.max;
+    const price = priceOf(item);
+    const row = document.createElement("div");
+    row.className = "shop-item";
+    row.innerHTML = `
+      <div class="txt">
+        <div class="name">${item.name} ${item.get() ? `<span class="lv">·&nbsp;${item.max?("lv "+item.get()):("×"+item.get())}</span>`:""}</div>
+        <div class="desc">${item.desc}</div>
+      </div>
+      <button class="btn primary" ${maxed || G.shells < price ? "disabled":""}>
+        ${maxed ? "maxed" : `◈ ${price}`}
+      </button>`;
+    const btn = row.querySelector("button");
+    if (!maxed) btn.addEventListener("click", () => {
+      const p = priceOf(item);
+      if (G.shells < p) return;
+      G.shells -= p;
+      item.buy();
+      sfx("buy");
+      spawnParticles(W/2, H*0.5, "spark", 10);
+      syncHud(); renderShop();
+      fireTip("first_buy");
+      if (item.type === "flowers") {
+        toast(`Flowers planted — the whole cove feels a bit brighter`);
+      } else if (item.type) {
+        welcomeToComfort(item.type);
+        const verb = item.type === "food" ? "eat"
+          : item.type === "toy" ? "play"
+          : item.type === "tree" ? "doze in the shade" : "nap";
+        toast(`New ${item.name.toLowerCase()} — cats are heading over to ${verb}`);
+      }
+    });
+    list.appendChild(row);
+  }
+}
+
+/* ---------- coax ---------- */
+function coaxPrice() { return Math.round(10 * Math.pow(1.45, G.coax)); }
+document.getElementById("coaxBtn").addEventListener("click", () => {
+  ensureAudio();
+  const p = coaxPrice();
+  if (G.shells < p) { toast("Not enough shells yet — collect a few more."); return; }
+  if (cats.length >= capacity()) { toast("The cove is full. Add comforts in the Shop for more room."); return; }
+  G.shells -= p;
+  G.coax++;
+  G.metrics.coaxed++;
+  const c = spawnCat();          // registerInDex() queues a reveal for news
+  bumpGoal("coax", 1);
+  sfx("coax");
+  syncHud();
+  fireTip("first_coax");
+  // if nothing special queued, at least name the newcomer
+  if (!revealQueue.length) toast(`${c.name} (${c.coat.name}) wandered in`, 3);
+});
+
+/* ---------- photo mode ---------- */
+const photoEl = document.getElementById("photo");
+const pc = document.getElementById("photoCanvas");
+const pctx = pc.getContext("2d");
+document.getElementById("photoBtn").addEventListener("click", openPhoto);
+document.getElementById("photoClose").addEventListener("click", () => photoEl.classList.remove("on"));
+document.getElementById("photoSave").addEventListener("click", savePhoto);
+
+function openPhoto() {
+  ensureAudio();
+  composePhoto();
+  photoEl.classList.add("on");
+  sfx("photo");
+}
+function composePhoto() {
+  const S = 900, M = 26;              // canvas size, frame margin
+  pctx.clearRect(0, 0, S, S);
+  pctx.save();
+  // clip everything to the inner frame
+  roundRect(pctx, M, M, S - M*2, S - M*2, 10); pctx.clip();
+
+  // frame the cats: bounding box of where the cats are, generously padded
+  let bx0 = W*0.2, bx1 = W*0.8, by0 = H*0.35, by1 = H*0.8;
+  if (cats.length) {
+    bx0 = Math.min(...cats.map(c => c.x)); bx1 = Math.max(...cats.map(c => c.x));
+    by0 = Math.min(...cats.map(c => c.y)); by1 = Math.max(...cats.map(c => c.y));
+  }
+  const padX = 70, padT = 90, padB = 60;
+  bx0 -= padX; bx1 += padX; by0 -= padT; by1 += padB;
+  const bw = Math.max(bx1 - bx0, 120), bh = Math.max(by1 - by0, 120);
+  const inner = S - M*2;
+  const s = Math.min(inner / bw, inner / bh) * 1.0;
+  const offX = M + (inner - bw*s) / 2 - bx0*s;
+  const offY = M + (inner - bh*s) / 2 - by0*s;
+  const horizonY = offY + (H * 0.42) * s;
+
+  // sky
+  const g = pctx.createLinearGradient(0, 0, 0, S);
+  g.addColorStop(0, "#bfe0d6"); g.addColorStop(1, "#eef3e6");
+  pctx.fillStyle = g; pctx.fillRect(0, 0, S, S);
+  drawSun(pctx, S);
+  // ground follows the scaled horizon
+  pctx.fillStyle = "#d8d2bd";
+  pctx.beginPath();
+  pctx.moveTo(0, horizonY);
+  pctx.bezierCurveTo(S*0.3, horizonY - 18, S*0.7, horizonY + 14, S, horizonY - 6);
+  pctx.lineTo(S, S); pctx.lineTo(0, S); pctx.fill();
+
+  pctx.save();
+  pctx.translate(offX, offY);
+  pctx.scale(s, s);
+  drawCoveSign(pctx, W, H);
+  drawDecorLayer(pctx);
+  for (const a of attractors) drawAttractor(pctx, a);
+  const sorted = [...cats].sort((p,q)=>p.y-q.y);
+  for (const c of sorted) drawCat(pctx, c, true);
+  pctx.restore();
+
+  pctx.restore(); // unclip
+
+  // frame + caption plate
+  pctx.strokeStyle = "#f7f5ec"; pctx.lineWidth = M;
+  pctx.strokeRect(M/2, M/2, S - M, S - M);
+  pctx.fillStyle = "rgba(36,31,23,0.72)";
+  roundRect(pctx, 60, S - 120, S - 120, 74, 18); pctx.fill();
+  pctx.fillStyle = "#fff";
+  pctx.font = "600 30px 'Hanken Grotesk', sans-serif";
+  pctx.textBaseline = "middle";
+  const cap = (document.getElementById("photoCap").value || "a quiet day at the cove").slice(0, 42);
+  pctx.fillText(cap, 84, S - 92);
+  pctx.fillStyle = "rgba(255,255,255,0.6)";
+  pctx.font = "600 20px 'Hanken Grotesk', sans-serif";
+  pctx.textAlign = "right";
+  pctx.fillText(coveName() + " · " + cats.length + " cats", S - 84, S - 92);
+  pctx.textAlign = "left";
+}
+document.getElementById("photoCap").addEventListener("input", composePhoto);
+function savePhoto() {
+  composePhoto();
+  G.metrics.photos += 1;
+  bumpGoal("photo", 1);
+  try {
+    pc.toBlob((blob) => {
+      if (!blob) { photoHintFail(); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "catmint-cove.png";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      document.getElementById("photoHint").textContent = "Saved. (If nothing downloaded, screenshot the frame instead.)";
+    }, "image/png");
+  } catch (e) { photoHintFail(); }
+  sfx("collect");
+}
+function photoHintFail() {
+  document.getElementById("photoHint").textContent = "Download blocked here — screenshot the frame to share it.";
+}
+
+/* ---------- HUD ---------- */
+const elShells = document.getElementById("shells");
+const elCatCount = document.getElementById("catcount");
+const elCatCap = document.getElementById("catcap");
+function esc(s) { return String(s).replace(/[<>&"]/g, c => ({ "<":"&lt;", ">":"&gt;", "&":"&amp;", '"':"&quot;" }[c])); }
+function coveName() {
+  return G.owner ? `${G.owner}’s Cove` : "Catmint Cove";
+}
+function syncHud() {
+  const tp = document.getElementById("titlePill");
+  tp.innerHTML = G.owner ? `${esc(G.owner)}<b>’s Cove</b>` : "Catmint <b>Cove</b>";
+  elShells.textContent = Math.floor(G.shells);
+  document.getElementById("pearls").textContent = G.pearls || 0;
+  elCatCount.textContent = cats.length;
+  elCatCap.textContent = capacity();
+  document.getElementById("opens").textContent = G.opens;
+  document.getElementById("coaxCost").textContent = coaxPrice();
+  const cb = document.getElementById("coaxBtn");
+  cb.disabled = G.shells < coaxPrice() || cats.length >= capacity();
+  document.getElementById("dexBadge").textContent = dexCount() + "/" + COATS.length;
+  const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
+  document.getElementById("todayBadge").hidden = !gReady;
+}
+
+/* ---------- panels: shop / catdex / today ---------- */
+const panels = {
+  shop: document.getElementById("shop"),
+  dex: document.getElementById("dex"),
+  today: document.getElementById("today"),
+};
+function togglePanel(name) {
+  ensureAudio();
+  const wasOpen = !panels[name].hidden;
+  for (const k in panels) panels[k].hidden = true;
+  if (!wasOpen) {
+    panels[name].hidden = false;
+    if (name === "shop") renderShop();
+    if (name === "dex") renderDex();
+    if (name === "today") renderGoals();
+  }
+}
+document.getElementById("shopBtn").addEventListener("click", () => togglePanel("shop"));
+document.getElementById("dexBtn").addEventListener("click", () => togglePanel("dex"));
+document.getElementById("todayBtn").addEventListener("click", () => togglePanel("today"));
+document.querySelectorAll("[data-close]").forEach(b =>
+  b.addEventListener("click", () => { const k = b.getAttribute("data-close"); if (panels[k]) panels[k].hidden = true; }));
+const shopEl = panels.shop;
+
+/* ---------- Catdex render ---------- */
+function miniCat(canvasEl, coatKey, star) {
+  const g = canvasEl.getContext("2d");
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvasEl.width, canvasEl.height);
+  const fake = new Cat({ coatKey, star: star || 1, bornAt: 0, x: 0, y: 0 });
+  fake.state = "loafing"; fake.blink = 3; fake.bob = 0.6; fake.tail = 0.3; fake.trotting = false;
+  g.save();
+  g.translate(canvasEl.width / 2, canvasEl.height - 6);
+  g.scale(1.15, 1.15);
+  drawCat(g, fake, true);
+  g.restore();
+}
+function renderDex() {
+  const n = dexCount();
+  document.getElementById("dexProg").textContent = n;
+  document.getElementById("dexTotal").textContent = COATS.length;
+  document.getElementById("dexBarFill").style.width = (n / COATS.length * 100) + "%";
+  const grid = document.getElementById("dexGrid");
+  grid.innerHTML = "";
+  for (const coat of COATS) {
+    const rec = G.dex[coat.key];
+    const cell = document.createElement("div");
+    cell.className = "dexcell" + (rec ? " found" : "");
+    if (rec) {
+      cell.innerHTML = `<span class="st" style="color:${STAR_COL[rec.star]}">${"★".repeat(rec.star)}</span>
+        <canvas width="72" height="66"></canvas><span class="nm">${coat.name}</span>`;
+      miniCat(cell.querySelector("canvas"), coat.key, rec.star);
+    } else {
+      cell.innerHTML = `<span class="q">?</span><span class="nm">???</span>`;
+    }
+    grid.appendChild(cell);
+  }
+}
+
+/* ---------- daily goals render ---------- */
+function renderGoals() {
+  document.getElementById("streakN").textContent = G.streak || 0;
+  const list = document.getElementById("goalList");
+  list.innerHTML = "";
+  if (!G.goals) return;
+  for (const g of G.goals) {
+    const def = goalDef(g.id);
+    const rw = g.reward.pearls ? `+${g.reward.pearls} ✦` : `+${g.reward.shells} ◈`;
+    const row = document.createElement("div");
+    row.className = "goal" + (g.claimed ? " claimed" : "");
+    row.innerHTML = `
+      <div class="grow"><span class="gt">${def.text(g.target)}</span><span class="gp">${Math.min(g.prog,g.target)}/${g.target}</span></div>
+      <div class="gbar"><i style="width:${Math.min(100, g.prog / g.target * 100)}%"></i></div>
+      <button class="btn ${g.done && !g.claimed ? "primary" : ""}" ${g.claimed || !g.done ? "disabled" : ""}>
+        ${g.claimed ? "Claimed" : g.done ? `Claim ${rw}` : `Reward: ${rw}`}
+      </button>`;
+    if (g.done && !g.claimed) row.querySelector("button").addEventListener("click", () => claimGoal(g));
+    list.appendChild(row);
+  }
+}
+function claimGoal(g) {
+  if (g.claimed || !g.done) return;
+  g.claimed = true;
+  if (g.reward.pearls) G.pearls += g.reward.pearls;
+  if (g.reward.shells) G.shells += g.reward.shells;
+  sfx("buy");
+  const allDone = G.goals.every(x => x.claimed);
+  if (allDone && G.streakDay !== today()) {
+    G.streakDay = today();
+    G.streak = (G.streak || 0) + 1;
+    G.pearls += 2;
+    openModal(`<div class="reveal"><div class="kicker">Daily streak</div>
+      <h2>🔥 ${G.streak} ${G.streak === 1 ? "day" : "days"}</h2>
+      <p class="sub">All three goals done. +2 bonus pearls. Come back tomorrow to keep the streak.</p>
+      <button class="btn primary" id="rv-ok">Nice</button></div>`);
+    document.getElementById("rv-ok").onclick = closeModal;
+  }
+  renderGoals(); syncHud();
+}
+
+/* ---------- reveal celebrations (new coat / rare pull / legendary) ---------- */
+let revealQueue = [];
+function queueReveal(cat, kind) {
+  revealQueue.push({ coatKey: cat.coatKey, name: cat.name, star: cat.star, coatName: cat.coat.name, kind });
+  if (!scrim.classList.contains("on")) flushReveal();
+}
+function flushReveal() {
+  if (!revealQueue.length) return;
+  const rv = revealQueue.shift();
+  const kicker = rv.kind === "new" ? "New coat discovered!"
+    : rv.kind === "legendary" ? "A legendary cat!" : "A rare one!";
+  openModal(`<div class="reveal">
+    <div class="kicker">${kicker}</div>
+    <canvas width="220" height="205"></canvas>
+    <h2>${rv.name}</h2>
+    <div class="stars" style="color:${STAR_COL[rv.star]}">${"★".repeat(rv.star)}${'<span style="color:#d8d2bd">'+"★".repeat(4-rv.star)+"</span>"}</div>
+    <p class="sub">${rv.coatName} · ${STAR_NAME[rv.star]}${rv.star>=2?` — produces ${Math.round((1+(rv.star-1)*0.3)*100)}% shells`:""}</p>
+    <button class="btn primary" id="rv-ok">${revealQueue.length ? "Next" : "Welcome them in"}</button>
+  </div>`);
+  miniCat(document.querySelector("#modal canvas"), rv.coatKey, rv.star);
+  sfx(rv.star >= 3 ? "buy" : "coax");
+  shake(rv.star >= 3 ? 5 : 2);
+  document.getElementById("rv-ok").onclick = () => { closeModal(); setTimeout(flushReveal, 120); };
+}
+
+/* mute */
+let muted = false;
+document.getElementById("muteBtn").addEventListener("click", (e) => {
+  muted = !muted;
+  e.currentTarget.querySelector(".ico").textContent = muted ? "🔇" : "🔊";
+});
+
+/* ---------- dev panel (toggle with D) ---------- */
+const devEl = document.getElementById("dev");
+const devStats = document.getElementById("devStats");
+function resetGame() {
+  if (!confirm("Wipe all progress and start a fresh cove?")) return;
+  _dead = true;                                   // stop the autosave re-persisting old state
+  try { clearInterval(_saveInterval); } catch (e) {}
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+  location.reload();
+}
+window.addEventListener("keydown", (e) => {
+  if (e.target && /input|textarea/i.test(e.target.tagName)) return;
+  if (e.key === "d" || e.key === "D") devEl.classList.toggle("on");
+  if (e.key === "r" || e.key === "R") resetGame();
+});
+document.getElementById("dev-reset").addEventListener("click", resetGame);
+document.getElementById("dev-name").addEventListener("click", () => askOwnerName(false));
+document.getElementById("dev-shells").addEventListener("click", () => { G.shells += 500; syncHud(); });
+document.getElementById("dev-pearls").addEventListener("click", () => { G.pearls += 5; syncHud(); });
+document.getElementById("dev-cat").addEventListener("click", () => { spawnCat({ x: W * 0.5, y: H * 0.7 }); syncHud(); });
+document.getElementById("dev-day").addEventListener("click", () => {
+  G.opens++; G.streakDay = today() - 1; G.goalDay = 0; rollDailyGoals();
+  for (const c of cats) { c.acc += aggregateRate() * 120; c.bornAt -= DAY_MS; }   // age the kittens too
+  toast("Skipped ahead a day"); syncHud();
+});
+function updateDev() {
+  if (!devEl.classList.contains("on")) return;
+  const sessSec = (performance.now() - sessionStart) / 1000;
+  const avgMood = cats.length ? Math.round(cats.reduce((s,c)=>s+c.mood,0)/cats.length) : 0;
+  devStats.textContent =
+`SESSION ${fmtTime(sessSec)}   ·  D hides · R resets
+day ${G.opens}   cats ${cats.length}/${capacity()}   mood ${avgMood}
+shells ${Math.floor(G.shells)}   pearls ${G.pearls}   dex ${dexCount()}/${COATS.length}
+pets ${G.metrics.pets}  tokens ${G.metrics.tokens}  coaxed ${G.metrics.coaxed}  photos ${G.metrics.photos}
+streak ${G.streak}   rate ${aggregateRate().toFixed(2)}/s   played ${fmtTime(G.allTimeSec || 0)}`;
+}
+
+/* ---------- toasts / tips ---------- */
+let toastTimer = 0;
+const toastEl = document.getElementById("toast");
+function toast(msg, secs = 3.4) {
+  toastEl.textContent = msg;
+  toastEl.classList.add("on");
+  toastTimer = secs;
+}
+const TIPS = {
+  first_pet: "Petting lifts mood — and a happy cat produces more.",
+  first_collect: "Those are your shells. Tap them before they fade.",
+  first_buy: "Comforts raise your cat capacity. Watch who shows up.",
+  first_coax: "Every cat rolls two personality traits. Tap one to read it.",
+  first_dev: "",
+};
+function fireTip(key) {
+  if (G.tips.includes(key)) return;
+  G.tips.push(key);
+  if (TIPS[key]) toast(TIPS[key], 4.2);
+}
+
+/* ---------- offline earnings ---------- */
+function aggregateRate() {
+  if (!cats.length) return G.ratePerSec || 0;
+  return cats.reduce((s, c) => s + c.ratePerSec(), 0);
+}
+function checkOffline() {
+  const elapsed = (Date.now() - (G.lastSeen || Date.now())) / 1000;
+  if (elapsed < 45 || !(G.ratePerSec > 0)) return;
+  const capped = Math.min(elapsed, 8 * 3600);
+  const earned = Math.floor(G.ratePerSec * capped * 0.5);
+  if (earned <= 0) return;
+  openModal(`
+    <div class="big">◈ ${earned}</div>
+    <h2>Your cats were busy</h2>
+    <p>${cats.length} cat${cats.length===1?"":"s"} kept ${coveName()} running while you were away${elapsed>3600?` (${fmtTime(elapsed)})`:""}.</p>
+    <div class="row">
+      <button class="btn primary" id="m-take">Collect</button>
+      <button class="btn" id="m-2x"><span class="ico">▶</span> Collect 2× &nbsp;<small style="opacity:.7">[rewarded]</small></button>
+    </div>`);
+  document.getElementById("m-take").onclick = () => { G.shells += earned; sfx("collect"); syncHud(); closeModal(); };
+  document.getElementById("m-2x").onclick = () => {
+    G.shells += earned * 2; sfx("buy"); syncHud(); closeModal();
+    toast("Rewarded ad placement — simulated here. This is the loop's main ad surface.");
+  };
+}
+const scrim = document.getElementById("scrim");
+function openModal(html) { document.getElementById("modal").innerHTML = html; scrim.classList.add("on"); }
+function closeModal() { scrim.classList.remove("on"); }
+
+/* ---------- ownership: name your cove ---------- */
+function askOwnerName(firstTime) {
+  openModal(`<div class="reveal">
+    <div class="kicker">${firstTime ? "Welcome" : "Rename"}</div>
+    <h2>${firstTime ? "Make it yours" : "Rename your cove"}</h2>
+    <p class="sub">${firstTime
+      ? "A few cats have wandered in and made themselves at home. Whose cove is this?"
+      : "What should this little place be called?"}</p>
+    <input class="name-in" id="own-in" maxlength="18" placeholder="your name" autocomplete="off" spellcheck="false">
+    <div class="row">
+      <button class="btn primary" id="own-ok">${firstTime ? "Open the cove" : "Save"}</button>
+      <button class="btn" id="own-skip">${firstTime ? "Later" : "Cancel"}</button>
+    </div>
+  </div>`);
+  const inp = document.getElementById("own-in");
+  inp.value = G.owner || "";
+  setTimeout(() => { inp.focus(); inp.select(); }, 30);
+  const finish = () => { G.ownerAsked = true; closeModal(); syncHud(); save(); if (firstTime) checkOffline(); };
+  const submit = () => {
+    const v = inp.value.trim().replace(/\s+/g, " ").slice(0, 18);
+    if (v) { G.owner = v; toast(`Welcome to ${coveName()}`, 4); }
+    finish();
+  };
+  document.getElementById("own-ok").onclick = submit;
+  document.getElementById("own-skip").onclick = () => { if (firstTime) finish(); else closeModal(); };
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+}
+document.getElementById("titlePill").addEventListener("click", () => askOwnerName(false));
+
+/* ---------- audio (procedural) ---------- */
+let actx = null;
+function ensureAudio() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } }
+  if (actx && actx.state === "suspended") actx.resume();
+}
+function tone(freq, dur, type = "sine", vol = 0.16, when = 0) {
+  if (muted || !actx) return;
+  const t = actx.currentTime + when;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  o.connect(g); g.connect(actx.destination);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+function sfx(kind) {
+  if (kind === "pet") { tone(520, 0.09, "sine", 0.14); tone(690, 0.11, "sine", 0.12, 0.06); }
+  else if (kind === "collect") { tone(880, 0.08, "triangle", 0.13); tone(1170, 0.09, "triangle", 0.10, 0.04); }
+  else if (kind === "buy") { tone(440,0.1,"sine",0.14); tone(554,0.1,"sine",0.13,0.05); tone(660,0.14,"sine",0.12,0.1); }
+  else if (kind === "coax") { tone(400, 0.12, "sine", 0.13); tone(600, 0.14, "sine", 0.11, 0.08); }
+  else if (kind === "photo") { tone(1200, 0.04, "square", 0.08); tone(300, 0.06, "square", 0.06, 0.03); }
+}
+
+/* ---------- rendering ---------- */
+let clouds = [];
+function initClouds() {
+  clouds = [];
+  for (let i = 0; i < 4; i++) clouds.push({ x: Math.random()*W, y: rand(H*0.06, H*0.24), s: rand(0.7,1.4), v: rand(3,8) });
+}
+function drawSun(g, size) {
+  g.save();
+  g.fillStyle = "rgba(255,246,214,0.9)";
+  g.beginPath(); g.arc(size*0.8, size*0.16, size*0.07, 0, 7); g.fill();
+  g.fillStyle = "rgba(255,246,214,0.35)";
+  g.beginPath(); g.arc(size*0.8, size*0.16, size*0.12, 0, 7); g.fill();
+  g.restore();
+}
+function drawBackground(dt) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#b6ddd2"); g.addColorStop(0.5, "#d3e6d8"); g.addColorStop(1, "#eef3e6");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  drawSun(ctx, Math.max(W, H));
+  // clouds
+  ctx.fillStyle = "rgba(255,255,255,0.72)";
+  for (const cl of clouds) {
+    cl.x += cl.v * dt;
+    if (cl.x - 90 > W) cl.x = -90;
+    puff(cl.x, cl.y, cl.s);
+  }
+  const hz = H * 0.40;
+  // distant treeline for depth
+  ctx.fillStyle = "rgba(126,158,132,0.45)";
+  ctx.beginPath();
+  ctx.moveTo(0, hz + 6);
+  ctx.bezierCurveTo(W*0.2, hz - 14, W*0.32, hz + 2, W*0.5, hz - 6);
+  ctx.bezierCurveTo(W*0.7, hz - 16, W*0.85, hz + 4, W, hz - 4);
+  ctx.lineTo(W, hz + 20); ctx.lineTo(0, hz + 20); ctx.fill();
+  // ground
+  ctx.fillStyle = "#d8d2bd";
+  ctx.beginPath();
+  ctx.moveTo(0, hz);
+  ctx.bezierCurveTo(W*0.28, hz - 4, W*0.7, hz + 4, W, hz - 2);
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.fill();
+  // sunlit strip just past the horizon
+  ctx.fillStyle = "rgba(255,250,232,0.35)";
+  ctx.beginPath();
+  ctx.moveTo(0, hz);
+  ctx.bezierCurveTo(W*0.28, hz - 4, W*0.7, hz + 4, W, hz - 2);
+  ctx.lineTo(W, hz + 30); ctx.bezierCurveTo(W*0.7, hz + 34, W*0.28, hz + 26, 0, hz + 32);
+  ctx.fill();
+  // ground texture flecks
+  ctx.fillStyle = "rgba(120,108,86,0.10)";
+  for (let i = 0; i < groundFlecks.length; i++) {
+    const f = groundFlecks[i];
+    ctx.beginPath(); ctx.ellipse(f.x * W, hz + 14 + f.y * (H - hz - 30), f.r, f.r * 0.5, 0, 0, 7); ctx.fill();
+  }
+  // soft vignette
+  const vg = ctx.createRadialGradient(W/2, H*0.55, Math.min(W,H)*0.3, W/2, H*0.55, Math.max(W,H)*0.7);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(40,34,24,0.10)");
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+let groundFlecks = [];
+function initFlecks() {
+  groundFlecks = [];
+  for (let i = 0; i < 46; i++) groundFlecks.push({ x: Math.random(), y: Math.random(), r: rand(1.5, 5) });
+}
+function puff(x, y, s) {
+  ctx.beginPath();
+  ctx.ellipse(x, y, 34*s, 16*s, 0, 0, 7);
+  ctx.ellipse(x+26*s, y+4*s, 24*s, 13*s, 0, 0, 7);
+  ctx.ellipse(x-24*s, y+5*s, 20*s, 11*s, 0, 0, 7);
+  ctx.fill();
+}
+function drawAttractor(g, a) {
+  if (a.type !== "food" && a.type !== "toy" && a.type !== "bed") return;   // tree/cottage drawn as decor
+  g.save();
+  g.translate(a.x, a.y);
+  g.fillStyle = "rgba(36,31,23,0.12)";
+  g.beginPath(); g.ellipse(0, 13, 24, 7, 0, 0, 7); g.fill();
+  if (a.type === "food") {
+    g.fillStyle = "#c8beA0"; g.beginPath(); g.ellipse(0, 6, 20, 9, 0, 0, 7); g.fill();
+    g.fillStyle = "#ab9f7c"; g.beginPath(); g.ellipse(0, 4, 16, 7, 0, 0, 7); g.fill();
+    g.fillStyle = "#cf9b46"; g.beginPath(); g.ellipse(-4, 3, 5, 3.6, 0, 0, 7);
+    g.ellipse(4, 4, 5, 3.6, 0, 0, 7); g.ellipse(1, 1, 5, 3.6, 0, 0, 7); g.fill();
+  } else if (a.type === "toy") {
+    g.strokeStyle = "#b98a52"; g.lineWidth = 2; g.lineCap = "round";
+    g.beginPath(); g.moveTo(0, 8); g.quadraticCurveTo(-10, 2, -6, -8); g.stroke();
+    g.fillStyle = "#d98b3f"; g.beginPath(); g.arc(0, 6, 8, 0, 7); g.fill();
+    g.strokeStyle = "rgba(0,0,0,0.14)"; g.lineWidth = 1.4;
+    g.beginPath(); g.moveTo(-8, 6); g.quadraticCurveTo(0, -1, 8, 6);
+    g.moveTo(-6, 10); g.quadraticCurveTo(2, 3, 8, 3); g.stroke();
+  } else {                               // cozy bed
+    g.fillStyle = "#8f9c92"; roundRect(g, -22, -6, 44, 18, 9); g.fill();
+    g.fillStyle = "#e7e2d2"; roundRect(g, -17, -8, 34, 12, 7); g.fill();
+    g.fillStyle = "rgba(0,0,0,0.05)"; roundRect(g, -14, -4, 28, 7, 5); g.fill();
+  }
+  g.restore();
+}
+
+/* ---------- scenery: trees, cottages, flower patches ---------- */
+function drawDecor(g, d) {
+  g.save();
+  g.translate(d.x, d.y);
+  if (d.type === "tree") {
+    // shadow + trunk
+    g.fillStyle = "rgba(36,31,23,0.13)";
+    g.beginPath(); g.ellipse(0, 6, 26, 8, 0, 0, 7); g.fill();
+    g.fillStyle = "#8a6b4a";
+    g.beginPath();
+    g.moveTo(-6, 6); g.quadraticCurveTo(-4, -22, -3, -40);
+    g.lineTo(3, -40); g.quadraticCurveTo(4, -22, 6, 6); g.closePath(); g.fill();
+    g.strokeStyle = "rgba(60,44,30,0.35)"; g.lineWidth = 1.4;
+    g.beginPath(); g.moveTo(-1, -6); g.lineTo(-1, -34); g.stroke();
+    // canopy — three soft green mounds
+    const r = mulberry32(d.seed >>> 0);
+    for (const [cx, cy, rr, col] of [
+      [-16, -52, 22, "#6f9e6a"], [15, -50, 20, "#79a874"], [0, -66, 24, "#84b57e"],
+      [-4, -50, 26, "#6f9e6a"],
+    ]) {
+      g.fillStyle = col;
+      g.beginPath();
+      for (let i = 0; i <= 10; i++) { const a = i / 10 * Math.PI * 2;
+        const q = rr * (0.85 + r() * 0.3);
+        (i ? g.lineTo : g.moveTo).call(g, cx + Math.cos(a) * q, cy + Math.sin(a) * q * 0.9); }
+      g.closePath(); g.fill();
+    }
+    g.fillStyle = "rgba(255,255,255,0.10)";
+    g.beginPath(); g.ellipse(-8, -66, 14, 10, -0.3, 0, 7); g.fill();
+  } else if (d.type === "cottage") {
+    g.fillStyle = "rgba(36,31,23,0.14)";
+    g.beginPath(); g.ellipse(0, 8, 34, 9, 0, 0, 7); g.fill();
+    // body
+    g.fillStyle = "#e6dcc6"; roundRect(g, -26, -30, 52, 38, 5); g.fill();
+    g.fillStyle = "rgba(0,0,0,0.05)"; roundRect(g, -26, -4, 52, 12, 5); g.fill();
+    // roof
+    g.fillStyle = "#b56b4b";
+    g.beginPath(); g.moveTo(-32, -28); g.lineTo(0, -50); g.lineTo(32, -28); g.closePath(); g.fill();
+    g.fillStyle = "rgba(255,255,255,0.08)";
+    g.beginPath(); g.moveTo(-32, -28); g.lineTo(0, -50); g.lineTo(-6, -28); g.closePath(); g.fill();
+    // arched door + window
+    g.fillStyle = "#5b4634";
+    g.beginPath(); g.moveTo(-9, 8); g.lineTo(-9, -10); g.quadraticCurveTo(0, -20, 9, -10); g.lineTo(9, 8); g.closePath(); g.fill();
+    g.fillStyle = "#c9a24a";
+    g.beginPath(); g.arc(16, -14, 5, 0, 7); g.fill();
+    g.strokeStyle = "rgba(0,0,0,0.2)"; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(16, -19); g.lineTo(16, -9); g.moveTo(11, -14); g.lineTo(21, -14); g.stroke();
+  } else {                                 // flower patch
+    const r = mulberry32(d.seed >>> 0);
+    g.fillStyle = "rgba(36,31,23,0.08)";
+    g.beginPath(); g.ellipse(0, 3, 20, 6, 0, 0, 7); g.fill();
+    const cols = ["#e78fae", "#e9c85a", "#8fb0e0", "#f0f0ec", "#d98b7a"];
+    for (let i = 0; i < 9; i++) {
+      const fx = (r() - 0.5) * 34, fy = -r() * 12;
+      g.strokeStyle = "#6f9e6a"; g.lineWidth = 1.4; g.lineCap = "round";
+      g.beginPath(); g.moveTo(fx, 2); g.lineTo(fx, fy); g.stroke();
+      g.fillStyle = cols[(r() * cols.length) | 0];
+      for (let p = 0; p < 5; p++) { const a = p / 5 * Math.PI * 2;
+        g.beginPath(); g.ellipse(fx + Math.cos(a) * 2.4, fy + Math.sin(a) * 2.4, 1.9, 1.9, 0, 0, 7); g.fill(); }
+      g.fillStyle = "#e9c85a";
+      g.beginPath(); g.arc(fx, fy, 1.5, 0, 7); g.fill();
+    }
+  }
+  g.restore();
+}
+function drawDecorLayer(g) {
+  for (const d of [...decor].sort((a, b) => a.y - b.y)) drawDecor(g, d);
+}
+
+// a little carved sign near the entrance — "<Owner>’s Cove"
+function drawCoveSign(g, W, H) {
+  const label = coveName().toUpperCase();
+  const x = clamp(W * 0.12, 70, W - 70), y = H * 0.42;
+  g.save();
+  g.translate(x, y);
+  g.font = "700 11px 'Fraunces', Georgia, serif";
+  let fs = 11, bw = g.measureText(label).width + 20;
+  if (bw > 150) { fs = 9; g.font = "700 9px 'Fraunces', Georgia, serif"; bw = g.measureText(label).width + 18; }
+  bw = Math.max(bw, 64);
+  // soft shadow
+  g.fillStyle = "rgba(36,31,23,0.10)";
+  g.beginPath(); g.ellipse(0, 24, bw * 0.5, 5, 0, 0, 7); g.fill();
+  // posts
+  g.fillStyle = "#8a6a4a";
+  g.fillRect(-bw / 2 + 4, -6, 4.5, 30);
+  g.fillRect(bw / 2 - 8.5, -6, 4.5, 30);
+  // board
+  g.fillStyle = "#c69a6c";
+  roundRect(g, -bw / 2, -22, bw, 22, 4); g.fill();
+  g.fillStyle = "rgba(255,255,255,0.12)"; roundRect(g, -bw / 2, -22, bw, 7, 4); g.fill();
+  g.fillStyle = "rgba(60,44,30,0.10)"; roundRect(g, -bw / 2, -8, bw, 8, 4); g.fill();
+  g.strokeStyle = "rgba(74,53,36,0.35)"; g.lineWidth = 1; roundRect(g, -bw / 2, -22, bw, 22, 4); g.stroke();
+  // engraved text
+  g.fillStyle = "#4a3524";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.font = `700 ${fs}px 'Fraunces', Georgia, serif`;
+  g.fillText(label, 0, -10.5);
+  g.textAlign = "left"; g.textBaseline = "alphabetic";
+  g.restore();
+}
+
+/* ---------- cat rendering: recognisable loaf-cats with real coat types ---------- */
+function poseParams(pose) {
+  const P = { bw: 22, top: -30, hx: 4, hy: -38, hr: 15 };      // default: loaf / rest
+  if (pose === "sit")   { P.bw = 17; P.top = -42; P.hx = 5;  P.hy = -50; P.hr = 14.5; }
+  else if (pose === "play")  { P.bw = 20; P.top = -24; P.hx = 13; P.hy = -31; P.hr = 14; }
+  else if (pose === "trot")  { P.bw = 21; P.top = -27; P.hx = 9;  P.hy = -35; P.hr = 14; }
+  else if (pose === "sleep") { P.bw = 24; P.top = -20; P.hx = 7;  P.hy = -21; P.hr = 12.5; }
+  return P;
+}
+function catSil(g, P) {
+  g.moveTo(P.bw, 0);
+  g.bezierCurveTo(P.bw + 3, P.top * 0.55, P.bw * 0.58, P.top, 2, P.top);
+  g.bezierCurveTo(-P.bw * 0.62, P.top, -P.bw - 3, P.top * 0.55, -P.bw, 0);
+  g.closePath();
+  g.moveTo(P.hx + P.hr, P.hy);
+  g.arc(P.hx, P.hy, P.hr, 0, Math.PI * 2, true);
+}
+function blob(g, x, y, r, rnd) {
+  g.beginPath();
+  const n = 8;
+  for (let i = 0; i <= n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const rr = r * (0.78 + rnd() * 0.44);
+    const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr * 0.88;
+    i ? g.lineTo(px, py) : g.moveTo(px, py);
+  }
+  g.closePath(); g.fill();
+}
+function drawEar(g, side, P, coat, back, flop = 0, kit = false) {
+  const sx = P.hx + side * P.hr * 0.64, sy = P.hy - P.hr * 0.52;
+  g.save();
+  if (flop) { g.translate(sx, sy); g.rotate(side * flop); g.translate(-sx, -sy); }
+  // softly-rounded triangle — shorter & rounder for a Cats & Soup feel; kittens get a bigger softer ear
+  const hgt = back ? 4 : (kit ? 12 : 11);
+  const lean = back ? side * 8 : side * (kit ? 4 : 3);
+  const tipX = sx + lean, tipY = sy - hgt;
+  g.fillStyle = coat.pattern === "points" ? coat.point : coat.base;
+  g.beginPath();
+  g.moveTo(sx - side * (kit ? 5.5 : 5), sy + 3);
+  g.quadraticCurveTo(sx - side * 1.5, sy - hgt * 0.75, tipX - side * 2, tipY + 1.5);
+  g.quadraticCurveTo(tipX + side * 1.5, tipY - 1.5, tipX + side * 3.5, tipY + 3);   // rounded tip
+  g.quadraticCurveTo(sx + side * (kit ? 6.5 : 6), sy - 1, sx + side * (kit ? 6 : 5.5), sy + 4);
+  g.closePath(); g.fill();
+  // soft inner ear
+  g.fillStyle = coat.inner || "#e2b4b4";
+  g.beginPath();
+  g.moveTo(sx - side * 0.5, sy + 2);
+  g.quadraticCurveTo(sx + side * 1.5, sy - hgt * 0.4, tipX - side * 1, tipY + 4.5);
+  g.quadraticCurveTo(sx + side * 3, sy, sx + side * 3.4, sy + 2.5);
+  g.closePath(); g.fill();
+  g.restore();
+}
+function drawEye(g, ex, ey, mode, iris, wide, kit) {
+  if (mode === "closed" || mode === "happy") {
+    g.strokeStyle = "rgba(38,32,26,0.8)"; g.lineWidth = kit ? 2 : 1.7; g.lineCap = "round";
+    g.beginPath();
+    const w = kit ? 3.8 : 3.4;
+    if (mode === "happy") { g.moveTo(ex - w, ey + 1.2); g.quadraticCurveTo(ex, ey - 3.4, ex + w, ey + 1.2); }
+    else { g.moveTo(ex - w, ey - 0.3); g.quadraticCurveTo(ex, ey + 2.8, ex + w, ey - 0.3); }
+    g.stroke(); return;
+  }
+  // Cats & Soup style: a big round eye, round pupil (not a slit), one bright highlight, no lid line
+  let r = kit ? 3.7 : 3.0;
+  if (wide) r *= 1.12;
+  const squishY = mode === "half" ? 0.45 : mode === "blink" ? 0.14 : 1;
+  g.save();
+  g.beginPath(); g.ellipse(ex, ey, r, r * 1.12 * squishY, 0, 0, 7); g.clip();
+  g.fillStyle = iris;                                   // full iris fill
+  g.fillRect(ex - r - 1, ey - r * 1.4, (r + 1) * 2, r * 2.8);
+  g.fillStyle = "#2b2420";                              // round pupil
+  g.beginPath(); g.arc(ex, ey + r * 0.12, r * (wide ? 0.72 : 0.6), 0, 7); g.fill();
+  g.restore();
+  // soft outline so light coats read
+  g.strokeStyle = "rgba(40,34,28,0.28)"; g.lineWidth = 1;
+  g.beginPath(); g.ellipse(ex, ey, r, r * 1.12 * squishY, 0, 0, 7); g.stroke();
+  // one big cozy highlight + a tiny sparkle
+  if (squishY > 0.3) {
+    g.fillStyle = "rgba(255,255,255,0.95)";
+    g.beginPath(); g.ellipse(ex - r * 0.32, ey - r * 0.42, r * 0.44, r * 0.4, 0, 0, 7); g.fill();
+    g.beginPath(); g.arc(ex + r * 0.4, ey + r * 0.35, r * 0.16, 0, 7); g.fill();
+  }
+}
+function drawTail(g, P, coat, mode, wag) {
+  const pts = coat.pattern === "points";
+  g.fillStyle = pts ? coat.point : coat.base;
+  g.beginPath();
+  if (mode === "stream") {
+    const s = wag * 3;
+    g.moveTo(-P.bw * 0.55, -5);
+    g.bezierCurveTo(-P.bw - 8, -7 + s, -P.bw - 15, -21 + s, -P.bw - 13, -32 + s);
+    g.bezierCurveTo(-P.bw - 6, -23 + s, -P.bw - 1, -7, -P.bw * 0.45, -1);
+  } else if (mode === "lash") {
+    const s = wag * 9;
+    g.moveTo(-P.bw * 0.5, -7);
+    g.bezierCurveTo(-P.bw - 5, -13, -P.bw - 1 + s, -30, -P.bw * 0.3 + s, -41);
+    g.bezierCurveTo(-P.bw * 0.1 + s, -30, -P.bw * 0.15, -11, -P.bw * 0.3, -3);
+  } else { // wrap around the front of the loaf
+    g.moveTo(-P.bw * 0.72, -7);
+    g.bezierCurveTo(-P.bw - 6, 5, P.bw * 0.15, 11, P.bw * 0.86, 1);
+    g.bezierCurveTo(P.bw + 6, -4, P.bw + 3, -14, P.bw * 0.7, -13);
+    g.bezierCurveTo(P.bw * 0.9, -5, P.bw * 0.05, 3, -P.bw * 0.66, 1);
+  }
+  g.closePath(); g.fill();
+  if (mode === "wrap" && pts) {                 // siamese dark tail tip already dark; add cream root
+    g.fillStyle = coat.base;
+    g.beginPath(); g.ellipse(-P.bw * 0.66, -4, 5, 5, 0, 0, 7); g.fill();
+  }
+  if (coat.pattern === "mackerel" && mode === "wrap") {
+    g.save();
+    g.beginPath();                                   // clip to the tail shape itself
+    g.moveTo(-P.bw * 0.72, -7);
+    g.bezierCurveTo(-P.bw - 6, 5, P.bw * 0.15, 11, P.bw * 0.86, 1);
+    g.bezierCurveTo(P.bw + 6, -4, P.bw + 3, -14, P.bw * 0.7, -13);
+    g.bezierCurveTo(P.bw * 0.9, -5, P.bw * 0.05, 3, -P.bw * 0.66, 1);
+    g.closePath(); g.clip();
+    g.strokeStyle = coat.stripe; g.globalAlpha = 0.45; g.lineWidth = 3; g.lineCap = "round";
+    for (let i = 0; i < 4; i++) {
+      const x = P.bw * (0.05 + i * 0.24);
+      g.beginPath(); g.moveTo(x - 3, 10); g.quadraticCurveTo(x, 0, x - 3, -12); g.stroke();
+    }
+    g.restore();
+    g.globalAlpha = 1;
+  }
+}
+
+/* ---- walk cycle: two legs per side, diagonal 2-beat gait ---- */
+function drawLeg(g, hipX, hipY, theta, stride, lift, w, legCol, pawCol, plant) {
+  const footX = hipX + stride * Math.cos(theta);
+  // swing-lift + `plant`: the body bounces but the paw stays on the ground → the leg springs
+  const footY = (theta > Math.PI ? -lift * Math.sin(theta - Math.PI) : 0) + plant;
+  const midX = (hipX + footX) / 2 + 0.8;
+  const midY = (hipY + footY) / 2 + 1.4;                                   // slight knee bow
+  g.strokeStyle = legCol; g.lineWidth = w; g.lineCap = "round"; g.lineJoin = "round";
+  g.beginPath();
+  g.moveTo(hipX, hipY);
+  g.quadraticCurveTo(midX, midY, footX, footY);
+  g.stroke();
+  g.fillStyle = pawCol || legCol;
+  g.beginPath(); g.ellipse(footX, footY - 0.3, w * 0.78, w * 0.62, 0, 0, 7); g.fill();
+}
+function drawWalkLegs(g, c, P, coat, ph, wk, far, bodyLift = 0, plant = 0) {
+  const stride = 5 * wk, lift = 5 * wk;
+  const fx = P.bw * 0.5, bx = -P.bw * 0.42, hy = -4 - bodyLift;
+  const base = coat.pattern === "points" ? coat.point : coat.base;
+  const paw = coat.white && coat.white.includes("paws") ? "#f8f5ee" : null;
+  g.save();
+  if (far) {
+    // opposite phase of the near side → true diagonal gait; muted + offset for depth
+    drawLeg(g, fx - 3, hy, ph + Math.PI, stride, lift, 3.1, "rgba(26,22,16,0.32)", null, plant);
+    drawLeg(g, bx - 3, hy, ph, stride, lift, 3.1, "rgba(26,22,16,0.32)", null, plant);
+  } else {
+    drawLeg(g, bx, hy, ph + Math.PI, stride, lift, 4, base, paw, plant);
+    drawLeg(g, fx, hy, ph, stride, lift, 4, base, paw, plant);
+  }
+  g.restore();
+}
+
+function tabbyMarks(g, c, P, coat) {
+  // soft, gentle striping — Cats & Soup keeps markings subtle, more a hint than a graphic
+  const rnd = mulberry32((c.markSeed ^ 0x9e3779b9) >>> 0);
+  g.strokeStyle = coat.stripe; g.lineCap = "round"; g.lineJoin = "round";
+  g.globalAlpha = 0.34;
+  g.lineWidth = 3.2;
+  g.beginPath();                                        // soft dorsal band
+  g.moveTo(-P.bw * 0.5, P.top + 9);
+  g.quadraticCurveTo(2, P.top + 1, P.bw * 0.6, P.top + 9);
+  g.stroke();
+  g.lineWidth = 2.4;
+  const n = 4;
+  for (let i = 0; i < n; i++) {
+    const f = i / (n - 1);
+    const sx = -P.bw * 0.4 + f * P.bw * 0.9 + (rnd() - 0.5) * 3;
+    const topY = P.top + 9 + (rnd() - 0.5) * 3;
+    const len = 11 + rnd() * 6;
+    const dir = sx < 2 ? -1 : 1;
+    g.beginPath();
+    g.moveTo(sx, topY);
+    g.quadraticCurveTo(sx + dir * 6, topY + len * 0.55, sx + dir * 2, topY + len);
+    g.stroke();
+  }
+  // a faint forehead "M"
+  g.lineWidth = 1.5; g.globalAlpha = 0.22;
+  g.beginPath();
+  g.moveTo(P.hx - 5.5, P.hy - 6); g.lineTo(P.hx - 3.6, P.hy - 10.5); g.lineTo(P.hx - 1.2, P.hy - 6.5);
+  g.lineTo(P.hx + 1.4, P.hy - 10.5); g.lineTo(P.hx + 3.8, P.hy - 6);
+  g.stroke();
+  g.globalAlpha = 1;
+}
+
+function drawCat(g, c, isPhoto) {
+  const t = performance.now() / 1000;
+  const coat = c.coat;
+  const asleep = c.state === "sleeping";
+  const sulk = c.state === "sulking";
+  const pet = c.state === "being_pet";
+  const playing = c.state === "playing" || c.state === "knocking";
+  const grooming = c.state === "grooming";
+
+  // walking uses the normal loaf body — the lean, stretch, bob and legs carry the motion,
+  // so the shape never pops between a "trot" pose and a "rest" pose as the gait eases in/out
+  const pose = asleep ? "sleep" : playing ? "play"
+             : (c.state === "socializing" || grooming) ? "sit" : "rest";
+  const P = poseParams(pose);
+  const lick = grooming ? Math.sin(c.stateT * 7) : 0;   // washing rhythm
+
+  // --- age: kittens are small, round, big-headed, big-eyed ---
+  const kit = c.isKitten;
+  const ag = c.ageScale;                                // 0.56 newborn → 1.0 grown
+  if (kit) { P.hr *= 1.2; P.hy *= 1.05; P.bw *= 0.92; P.top *= 0.9; }
+
+  const wk = c.walkAmt || 0;                       // 0..1 eased "is walking"
+  const gp = c.walk || 0;                          // stride phase
+  const stridePh = gp;
+
+  /* ---- the walk is a DESIGNED bouncy trot, not a naturalistic one ----
+     cozy cat games live here: a springy prance, squash & stretch on the beat,
+     a swishy high tail and a little hip waddle. Turn CHARM down toward 0 for a
+     more grounded amble; up toward 1 for maximum bounce. */
+  const CHARM = 0.85;
+  const hop = wk * CHARM * (1 - Math.cos(gp * 2)) * 0.5;   // 0..1, two springs per stride, smooth
+  const air = -Math.cos(gp * 2);                            // +1 at the top of a spring, -1 on the plant
+  const waddle = wk * CHARM * Math.sin(gp) * 1.7;           // hips sway once per stride
+
+  const gaitBob = -hop * 3.4;
+  const bobY = asleep ? 0 : Math.sin(c.bob) * (playing ? 4 : 1.3) + gaitBob;
+  const sq = c.squash;
+  const breathe = 1 + Math.sin(c.bob) * 0.015;
+  const gs = wk * CHARM * air * 0.07;                       // squash on the plant, stretch in the air
+  const scaleX = ag * (1 + sq * 0.18) * (1 + wk * 0.05 - gs * 0.7);
+  const scaleY = ag * (1 - sq * 0.14) * breathe * (1 + gs);
+  const lean = wk * 0.06 + wk * CHARM * Math.sin(gp * 2) * 0.02;   // forward lean + a jaunty rock
+  const walkLift = wk * (3.5 + CHARM * 1.5);                // raise the body so the legs prance
+  const earFlop = wk * CHARM * Math.sin(gp * 2 + 0.6) * 0.11;
+
+  // whisker/eye blink bookkeeping
+  const blinking = c.blink < 0.12;
+
+  g.save();
+  g.translate(c.x, c.y + bobY);
+
+  // ground shadow — anchored at the ground, unaffected by the body bob; stretches a touch when moving
+  g.fillStyle = "rgba(40,34,24,0.11)";
+  g.beginPath();
+  g.ellipse(0, 3 - bobY, ag * (P.bw + 1) * (1 + wk * 0.1 - hop * 0.22), ag * 4.3 * (1 - hop * 0.2), 0, 0, 7);
+  g.fill();
+
+  g.save();
+  g.scale(c.face, 1);
+  if (lean) g.rotate(lean);          // tip forward while walking (feet-anchored)
+  g.save();
+  g.scale(scaleX, scaleY);           // squash anchored at the feet (y = 0)
+
+  const wag = Math.sin(c.tail) + wk * CHARM * Math.sin(gp * 0.5) * 1.4;   // swishy tail on the walk
+  const tailMode = wk > 0.35 ? "stream" : playing ? "lash" : "wrap";
+
+  // --- far-side legs (behind the body), drawn on the ground ---
+  if (wk > 0.02) drawWalkLegs(g, c, P, coat, stridePh, wk, true, walkLift, hop * 3.4);
+
+  g.save();
+  g.translate(waddle, -walkLift);            // lift the torso + hip waddle; legs stay planted
+
+  if (tailMode !== "wrap") drawTail(g, P, coat, tailMode, wag);   // tails behind body when out
+
+  // ears (behind head) — a little flop on the bounce
+  drawEar(g, -1, P, coat, sulk, earFlop, kit);
+  drawEar(g, 1, P, coat, sulk, earFlop, kit);
+
+  // --- body + head as one silhouette ---
+  g.beginPath(); catSil(g, P); g.fillStyle = coat.base; g.fill();
+
+  g.save();
+  g.beginPath(); catSil(g, P); g.clip();
+
+  // belly / underside shading
+  g.fillStyle = coat.belly;
+  g.globalAlpha = 0.85;
+  g.beginPath(); g.ellipse(P.bw * 0.15, -5, P.bw * 0.74, 13, 0, 0, 7); g.fill();
+  g.globalAlpha = 1;
+
+  // soft sticker shading — gentle glow up top, cool shade at the base
+  const shTop = g.createLinearGradient(0, P.top, 0, 4);
+  shTop.addColorStop(0, "rgba(255,255,255,0.16)");
+  shTop.addColorStop(0.4, "rgba(255,255,255,0)");
+  shTop.addColorStop(0.82, "rgba(30,26,20,0)");
+  shTop.addColorStop(1, "rgba(30,26,20,0.14)");
+  g.fillStyle = shTop;
+  g.beginPath(); g.rect(-P.bw - 4, P.top - 4, P.bw * 2 + 8, -P.top + 10); g.fill();
+
+  // pattern
+  if (coat.pattern === "mackerel") {
+    tabbyMarks(g, c, P, coat);
+  } else if (coat.pattern === "points") {
+    g.fillStyle = coat.point; g.globalAlpha = 0.88;
+    g.beginPath(); g.ellipse(P.hx + 2, P.hy + 3, P.hr * 0.74, P.hr * 0.62, 0, 0, 7); g.fill();
+    g.globalAlpha = 0.5;
+    g.beginPath(); g.ellipse(P.bw, 0, 8, 12, 0, 0, 7); g.fill();     // hip toward tail
+    g.globalAlpha = 1;
+  } else if (coat.pattern === "calico" || coat.pattern === "tortie") {
+    const rnd = mulberry32(c.markSeed);
+    const calico = coat.pattern === "calico";
+    const cols = calico ? [coat.p1, coat.p2] : [coat.p1, "#26231f", coat.p1];
+    const nB = calico ? 7 : 11;
+    g.globalAlpha = calico ? 0.95 : 0.9;
+    for (let i = 0; i < nB; i++) {
+      g.fillStyle = cols[i % cols.length];
+      const bx = -P.bw * 0.8 + (i / (nB - 1)) * P.bw * 1.6 + (rnd() - 0.5) * 8;
+      const by = -2 - rnd() * (Math.abs(P.top) - 2);
+      blob(g, bx, by, (calico ? 4 : 3) + rnd() * (calico ? 6 : 5), rnd);
+    }
+    // head patch(es)
+    g.fillStyle = cols[0];
+    blob(g, P.hx + (rnd() < 0.5 ? -1 : 1) * P.hr * 0.55, P.hy - P.hr * 0.3, P.hr * 0.46, rnd);
+    if (!calico) { g.fillStyle = cols[1]; blob(g, P.hx + P.hr * 0.4, P.hy + P.hr * 0.1, P.hr * 0.36, rnd); }
+    g.globalAlpha = 1;
+  }
+
+  // white markings
+  if (coat.white) {
+    g.fillStyle = "#f8f5ee";
+    if (coat.white.includes("belly")) { g.beginPath(); g.ellipse(P.bw * 0.2, -4, P.bw * 0.6, 11, 0, 0, 7); g.fill(); }
+    if (coat.white.includes("bib"))   { g.beginPath(); g.ellipse(P.hx, P.hy + P.hr * 0.8, 7, 11, 0, 0, 7); g.fill(); }
+    if (coat.white.includes("paws"))  {
+      g.beginPath(); g.ellipse(P.bw * 0.28, -2.5, 4.2, 4, 0, 0, 7); g.fill();
+      g.beginPath(); g.ellipse(P.bw * 0.62, -2.5, 4.2, 4, 0, 0, 7); g.fill();
+    }
+    if (coat.white.includes("muzzle")) { g.beginPath(); g.ellipse(P.hx + 1.5, P.hy + P.hr * 0.42, 6.5, 5.5, 0, 0, 7); g.fill(); }
+    if (coat.white.includes("blaze"))  {
+      g.beginPath();
+      g.moveTo(P.hx - 1.5, P.hy - P.hr * 0.74);
+      g.lineTo(P.hx + 1.5, P.hy - P.hr * 0.74);
+      g.quadraticCurveTo(P.hx + 2.4, P.hy - 3, P.hx + 1.6, P.hy + P.hr * 0.5);
+      g.quadraticCurveTo(P.hx, P.hy + P.hr * 0.62, P.hx - 1.6, P.hy + P.hr * 0.5);
+      g.quadraticCurveTo(P.hx - 2.4, P.hy - 3, P.hx - 1.5, P.hy - P.hr * 0.74);
+      g.fill();
+    }
+  }
+  g.restore(); // unclip
+
+  if (tailMode === "wrap") drawTail(g, P, coat, "wrap", wag);   // wrap tail sits in front
+
+  // --- face ---
+  g.save();
+  const tilt = pet ? -0.16 : sulk ? 0.13 : grooming ? 0.34 + lick * 0.06 : 0;
+  g.translate(P.hx, P.hy); g.rotate(c.face < 0 ? -tilt : tilt); g.translate(-P.hx, -P.hy);
+
+  const eyeMode = asleep || grooming ? "closed" : pet ? "happy"
+    : blinking ? "blink" : (c.mood > 80 && !playing) ? "half"
+    : playing ? "wide" : "open";
+  const eyeY = P.hy - (kit ? 0 : 1.5);
+  const eDx = (kit ? 5.2 : 5.4);
+  drawEye(g, P.hx - eDx, eyeY, eyeMode, coat.eye, playing, kit);
+  drawEye(g, P.hx + eDx, eyeY, eyeMode, coat.eye, playing, kit);
+
+  // tiny nose + a soft simple mouth (Cats & Soup keeps this minimal)
+  const nx = P.hx + 0.5, ny = P.hy + P.hr * 0.38;
+  g.fillStyle = coat.nose;
+  g.beginPath();
+  g.moveTo(nx - 1.9, ny - 1); g.quadraticCurveTo(nx, ny - 1.6, nx + 1.9, ny - 1);
+  g.quadraticCurveTo(nx, ny + 2.1, nx - 1.9, ny - 1); g.fill();
+  const happy = pet || c.mood > 74 || playing;
+  g.strokeStyle = "rgba(44,36,28,0.42)"; g.lineWidth = 1.1; g.lineCap = "round";
+  g.beginPath();
+  g.moveTo(nx, ny + 1.6); g.lineTo(nx, ny + 2.9);
+  if (happy) {
+    g.moveTo(nx - 2.6, ny + 2.6); g.quadraticCurveTo(nx, ny + 5, nx + 2.6, ny + 2.6);
+  } else {
+    g.moveTo(nx, ny + 2.9); g.quadraticCurveTo(nx - 2.3, ny + 4, nx - 3.2, ny + 2.7);
+    g.moveTo(nx, ny + 2.9); g.quadraticCurveTo(nx + 2.3, ny + 4, nx + 3.2, ny + 2.7);
+  }
+  g.stroke();
+
+  // whiskers — just a couple, very soft (kittens: even shorter)
+  const wl = kit ? 9 : 14;
+  g.strokeStyle = "rgba(255,255,255,0.4)"; g.lineWidth = 0.9;
+  for (const dy of [-0.6, 1.8]) {
+    g.beginPath(); g.moveTo(nx - 2, ny + dy * 0.5); g.quadraticCurveTo(nx - wl * 0.6, ny + dy - 1.5, nx - wl, ny + dy); g.stroke();
+    g.beginPath(); g.moveTo(nx + 2, ny + dy * 0.5); g.quadraticCurveTo(nx + wl * 0.6, ny + dy - 1.5, nx + wl, ny + dy); g.stroke();
+  }
+
+  // rosy cheeks — a soft default, warmer when happy or a kitten
+  const blush = (pet || c.mood > 84) ? 0.28 : (kit ? 0.2 : 0.12);
+  g.fillStyle = `rgba(230,132,142,${blush})`;
+  g.beginPath(); g.ellipse(P.hx - P.hr * 0.66, ny - 0.5, kit ? 3.4 : 3.2, kit ? 2.6 : 2, 0, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(P.hx + P.hr * 0.66, ny - 0.5, kit ? 3.4 : 3.2, kit ? 2.6 : 2, 0, 0, 7); g.fill();
+
+  g.restore(); // face tilt
+
+  // grooming: a front paw raised to the muzzle, bobbing with the lick
+  if (grooming) {
+    const px = P.hx + 3, py = P.hy + P.hr * 0.55 + 2 + lick * 2.2;
+    g.strokeStyle = coat.pattern === "points" ? coat.point : coat.base;
+    g.lineWidth = 4; g.lineCap = "round";
+    g.beginPath();
+    g.moveTo(P.bw * 0.34, -2);
+    g.quadraticCurveTo(P.bw * 0.5, py + 6, px, py);
+    g.stroke();
+    g.fillStyle = coat.white && coat.white.includes("paws") ? "#f8f5ee" : coat.base;
+    g.beginPath(); g.ellipse(px, py, 3.4, 2.8, 0, 0, 7); g.fill();
+    // tiny tongue tip
+    g.fillStyle = "#e58fa0";
+    g.beginPath(); g.ellipse(P.hx + 2, P.hy + P.hr * 0.42, 1.7, 1.2, 0, 0, 7); g.fill();
+  }
+
+  g.restore(); // end walkLift — back to the ground frame
+
+  // near-side legs / paws (planted on the ground, drawn in front of the torso)
+  if (wk > 0.02) {
+    drawWalkLegs(g, c, P, coat, stridePh, wk, false, walkLift, hop * 3.4);
+  }
+  if (wk < 0.98 && !playing) {
+    g.globalAlpha = 1 - wk;
+    g.fillStyle = coat.white && coat.white.includes("paws") ? "#f8f5ee" : coat.base;
+    g.beginPath(); g.ellipse(P.bw * 0.30, -1.5, 4.6, 3.4, 0, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(P.bw * 0.30 + 8, -1.5, 4.6, 3.4, 0, 0, 7); g.fill();
+    g.strokeStyle = "rgba(30,26,20,0.18)"; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(P.bw * 0.30, -3.4); g.lineTo(P.bw * 0.30, -0.2);
+    g.moveTo(P.bw * 0.30 + 8, -3.4); g.lineTo(P.bw * 0.30 + 8, -0.2); g.stroke();
+    g.globalAlpha = 1;
+  }
+
+  g.restore(); // squash
+  g.restore(); // face flip
+
+  // --- status glyphs (screen-upright) ---
+  if (asleep) {
+    g.fillStyle = "rgba(53,107,76,0.85)";
+    g.font = "italic 13px 'Fraunces', serif";
+    const zt = (t * 0.7) % 2;
+    g.globalAlpha = 1 - zt / 2;
+    g.fillText("z", 14 + zt * 6, -30 - zt * 10);
+    g.globalAlpha = 1;
+  }
+  if (c.state === "socializing") {
+    g.fillStyle = "rgba(53,107,76,0.7)"; g.font = "12px sans-serif";
+    g.fillText("♪", 12, -34);
+  }
+  if (sulk) {
+    g.fillStyle = "rgba(110,110,110,0.45)";
+    g.beginPath(); g.ellipse(0, -P.hr - 30, 13, 5, 0, 0, 7);
+    g.ellipse(-7, -P.hr - 28, 7, 4, 0, 0, 7); g.ellipse(8, -P.hr - 28, 6, 4, 0, 0, 7); g.fill();
+  }
+  if (c.petBuff > 0 && !asleep) {
+    g.fillStyle = "rgba(214,104,138,0.92)";
+    const hx = 17, hy = -P.hr - 24, s = 3.4;
+    g.beginPath();
+    g.moveTo(hx, hy + s * 0.3);
+    g.bezierCurveTo(hx - s, hy - s * 0.7, hx - s * 1.1, hy + s * 0.4, hx, hy + s);
+    g.bezierCurveTo(hx + s * 1.1, hy + s * 0.4, hx + s, hy - s * 0.7, hx, hy + s * 0.3);
+    g.fill();
+  }
+  g.restore();
+}
+
+function drawToken(g, tk) {
+  const bob = Math.sin(performance.now()/300 + tk.x) * 2;
+  const scale = tk.pop > 0 ? (1 + tk.pop * 0.8) : 1;
+  const alpha = tk.pop > 0 ? (1 - tk.pop) : (tk.life > tk.ttl - 4 ? (tk.ttl - tk.life) / 4 : 1);
+  g.save();
+  g.globalAlpha = Math.max(0, alpha);
+  g.translate(tk.x, tk.y + bob);
+  g.scale(scale, scale);
+  // glow
+  g.fillStyle = "rgba(232,180,90,0.28)";
+  g.beginPath(); g.arc(0, 0, 13, 0, 7); g.fill();
+  const col = tk.flair === "yarn" ? "#c47a35" : tk.flair === "fish" ? "#8fb0c4" : "#e8b45a";
+  g.fillStyle = col;
+  if (tk.flair === "yarn") { g.beginPath(); g.arc(0,0,7,0,7); g.fill();
+    g.strokeStyle="rgba(0,0,0,0.15)"; g.lineWidth=1.4; g.beginPath(); g.moveTo(-7,0); g.quadraticCurveTo(0,-6,7,0); g.stroke(); }
+  else if (tk.flair === "fish") { g.beginPath(); g.ellipse(0,0,8,5,0,0,7); g.fill();
+    g.beginPath(); g.moveTo(7,0); g.lineTo(12,-4); g.lineTo(12,4); g.fill(); }
+  else { g.beginPath(); g.arc(0,0,7,0,7); g.fill();
+    g.fillStyle="rgba(255,255,255,0.5)"; g.beginPath(); g.arc(-2,-2,2.5,0,7); g.fill(); }
+  g.restore();
+}
+
+function drawStarAura(g, c, dt) {
+  const col = STAR_COL[c.star];
+  c.sparkT = (c.sparkT || 0) + dt;
+  // occasional twinkles orbiting the cat
+  if (c.sparkT > (c.star >= 4 ? 0.5 : 0.95)) {
+    c.sparkT = 0;
+    const a = Math.random() * Math.PI * 2, rr = 20 + Math.random() * 14;
+    particles.push({ x: c.x + Math.cos(a) * rr, y: c.y - 18 + Math.sin(a) * rr * 0.7,
+      vx: 0, vy: -6, life: 0, ttl: 0.9, kind: "twinkle", size: rand(1.6, 3), col });
+  }
+  if (c.star >= 4) {                 // legendary: soft ground glow
+    const t = performance.now() / 500;
+    g.save();
+    g.globalAlpha = 0.14 + 0.06 * Math.sin(t);
+    g.fillStyle = col;
+    g.beginPath(); g.ellipse(c.x, c.y + 1, 26, 8, 0, 0, 7); g.fill();
+    g.restore();
+  }
+}
+function drawFX(g) {
+  for (const p of particles) {
+    const k = 1 - p.life / p.ttl;
+    g.globalAlpha = Math.max(0, k);
+    if (p.kind === "heart") {
+      g.fillStyle = "#d6688a";
+      g.beginPath();
+      const s = p.size;
+      g.moveTo(p.x, p.y + s*0.3);
+      g.bezierCurveTo(p.x - s, p.y - s*0.6, p.x - s*1.1, p.y + s*0.4, p.x, p.y + s);
+      g.bezierCurveTo(p.x + s*1.1, p.y + s*0.4, p.x + s, p.y - s*0.6, p.x, p.y + s*0.3);
+      g.fill();
+    } else if (p.kind === "dust") {
+      g.fillStyle = "rgba(120,110,90,0.7)";
+      g.beginPath(); g.arc(p.x, p.y, p.size, 0, 7); g.fill();
+    } else if (p.kind === "twinkle") {
+      g.fillStyle = p.col || "#e8b45a";
+      const s = p.size * (0.6 + k * 0.8);
+      g.save(); g.translate(p.x, p.y); g.rotate(p.life * 6);
+      g.beginPath();
+      for (let i = 0; i < 4; i++) { const a = i / 4 * Math.PI * 2;
+        g.lineTo(Math.cos(a) * s, Math.sin(a) * s);
+        g.lineTo(Math.cos(a + 0.785) * s * 0.34, Math.sin(a + 0.785) * s * 0.34); }
+      g.closePath(); g.fill(); g.restore();
+    } else {
+      g.fillStyle = "#e8b45a";
+      g.beginPath(); g.arc(p.x, p.y, p.size, 0, 7); g.fill();
+    }
+  }
+  g.globalAlpha = 1;
+  for (const f of floaters) {
+    const k = 1 - f.life / f.ttl;
+    g.globalAlpha = Math.max(0, k);
+    g.fillStyle = f.color;
+    g.font = "700 15px 'Hanken Grotesk', sans-serif";
+    g.textAlign = "center";
+    g.fillText(f.text, f.x, f.y);
+  }
+  g.globalAlpha = 1;
+  g.textAlign = "left";
+}
+
+/* ---------- main loop ---------- */
+let last = performance.now(), sessionStart = performance.now();
+let visitorTimer = rand(35, 55);
+
+function simulate(dt) {
+  visitorTimer -= dt;
+  if (visitorTimer <= 0) {
+    visitorTimer = rand(40, 70);
+    if (cats.length < capacity()) { spawnCat(); toast("A cat wandered into the cove."); }
+  }
+  for (const c of cats) updateCat(c, dt);
+  updateTokens(dt);
+  updateFX(dt);
+  if (toastTimer > 0) { toastTimer -= dt; if (toastTimer <= 0) toastEl.classList.remove("on"); }
+  if (cardTimer > 0) { cardTimer -= dt; if (cardTimer <= 0) hideCatCard(); }
+  if (shakeAmt > 0) shakeAmt = Math.max(0, shakeAmt - dt * 26);
+}
+
+function renderScene(dt) {
+  ctx.save();
+  ctx.clearRect(0, 0, W, H);
+  if (shakeAmt > 0) ctx.translate(rand(-shakeAmt, shakeAmt), rand(-shakeAmt, shakeAmt));
+  drawBackground(dt);
+  drawCoveSign(ctx, W, H);
+  drawDecorLayer(ctx);
+  for (const a of attractors) drawAttractor(ctx, a);
+  const order = [...cats].sort((a, b) => a.y - b.y);
+  for (const c of order) {
+    drawCat(ctx, c, false);
+    if (c.star >= 3) drawStarAura(ctx, c, dt);
+  }
+  for (const tk of fieldTokens) drawToken(ctx, tk);
+  drawFX(ctx);
+  ctx.restore();
+
+  // hud bits that change each frame
+  updateCatCard();
+  if (cardCat) positionCard(cardCat);
+  updateDev();
+  syncHud();
+}
+
+let _paused = false;
+const SIM_DT = 1 / 60;            // physics runs at a fixed step so motion is framerate-independent
+let simAccum = 0;
+function frame(now) {
+  let frameDt = (now - last) / 1000;
+  last = now;
+  if (frameDt > 0.25) frameDt = 0.25;      // tab was backgrounded — don't fast-forward
+  if (!_paused) {
+    simAccum += frameDt;
+    let steps = 0;
+    while (simAccum >= SIM_DT && steps < 6) { simulate(SIM_DT); simAccum -= SIM_DT; steps++; }
+    if (steps === 6) simAccum = 0;          // fell behind; drop the backlog rather than spiral
+    renderScene(frameDt);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- helpers ---------- */
+function rand(a, b) { return a + Math.random() * (b - a); }
+function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+function dist2(x1, y1, x2, y2) { const dx = x1 - x2, dy = y1 - y2; return dx*dx + dy*dy; }
+function roundRect(g, x, y, w, h, r) {
+  g.beginPath();
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+function fmtTime(s) {
+  s = Math.floor(s);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  if (h) return `${h}h ${m}m`;
+  if (m) return `${m}m ${ss}s`;
+  return `${ss}s`;
+}
+
+/* ---------- boot ---------- */
+function resize() {
+  // measure the canvas's own rendered box so the backing store always matches what's on screen
+  const r = canvas.getBoundingClientRect();
+  const w = r.width || window.innerWidth, h = r.height || window.innerHeight;
+  // ignore transient 0-size layouts (orientation flip, split-screen, backgrounded tab)
+  if (w >= 120 && h >= 120) { W = w; H = h; }
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const bw = Math.round(W * DPR), bh = Math.round(H * DPR);
+  if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+// wired to every way the viewport can change (iOS rotate, address bar, split view)
+let _lastW = 0, _lastH = 0, _relayoutT = 0;
+function onViewportChange() {
+  resize();                          // keep the canvas backing store matched to the box — immediately
+  clearTimeout(_relayoutT);
+  _relayoutT = setTimeout(() => {
+    // only re-lay-out the scene on a real size change (not on every address-bar nudge)
+    if (Math.abs(W - _lastW) > 32 || Math.abs(H - _lastH) > 32) {
+      _lastW = W; _lastH = H;
+      rebuildAttractors();
+      initClouds(); initFlecks();
+      for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, H - 58); }
+    }
+  }, 180);
+}
+window.__cove = {
+  get G(){return G}, get cats(){return cats}, get tokens(){return fieldTokens},
+  get attractors(){return attractors}, get rate(){return aggregateRate()},
+  get dex(){return G.dex}, get goals(){return G.goals}, get revealQ(){return revealQueue},
+  giveCat(coatKey, star, celeb){ if (celeb) delete G.dex[coatKey];
+    const c = spawnCat({ coatKey, star, _celeb: !!celeb, x: rand(W*0.3,W*0.7), y: rand(H*0.6,H*0.8) }); syncHud(); return c && c.name; },
+  step(sec){
+    for (let acc = 0; acc < sec; acc += SIM_DT) simulate(SIM_DT);
+    renderScene(0.016);
+    return { shells: Math.round(G.shells), tokens: fieldTokens.length, cats: cats.length };
+  },
+  render(){ renderScene(0.016); },
+  Cat,
+  spawn(coatKey, state){
+    const c = new Cat({ coatKey, x: rand(W*0.2, W*0.8), y: rand(H*0.55, H*0.8) });
+    if (state) { c.state = state; c.stateT = 0; c.stateDur = 999; }
+    cats.push(c); return c;
+  },
+  // visual audit: one cat of every coat in a spaced grid (rendered by the live loop)
+  audit(state = "loafing"){
+    _paused = false;
+    cats.length = 0; fieldTokens.length = 0; particles.length = 0;
+    attractors.length = 0;
+    const cols = 4, rows = Math.ceil(COATS.length / cols);
+    const cw = W / cols, top = H * 0.47 + 20, rh = (H - 76 - top) / Math.max(1, rows - 1);
+    COATS.forEach((coat, i) => {
+      const cx = cw * (0.5 + (i % cols));
+      const cy = top + rh * Math.floor(i / cols);
+      const c = new Cat({ coatKey: coat.key, x: cx, y: cy });
+      c.tx = cx; c.ty = cy;
+      c.state = state; c.stateT = 0; c.stateDur = 1e6;
+      c.mood = state === "being_pet" ? 92 : state === "sulking" ? 20 : 66;
+      c.trotting = false; c.petBuff = state === "being_pet" ? 12 : 0;
+      cats.push(c);
+    });
+    return cats.map(c => c.coat.name);
+  },
+  pause(v = true){ _paused = v; },
+  // big labelled sheet drawn straight to the canvas for close inspection
+  sheet(scale = 2.7, state = "loafing"){
+    _paused = true;
+    const errs = [];
+    ctx.save();
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.fillStyle = "#efece2"; ctx.fillRect(0, 0, W, H);
+    const cols = 3, gx = W / cols, gy = (H - 60) / Math.ceil(COATS.length / cols);
+    COATS.forEach((coat, i) => {
+      const cx = gx * (0.5 + (i % cols)), cy = 80 + gy * (0.62 + Math.floor(i / cols));
+      try {
+        const c = new Cat({ coatKey: coat.key, x: 0, y: 0 });
+        c.state = state; c.mood = state === "being_pet" ? 92 : 64;
+        c.blink = 3; c.trotting = state === "arriving"; c.bob = 0.6; c.tail = 0.4;
+        ctx.save(); ctx.translate(cx, cy); ctx.scale(scale, scale);
+        drawCat(ctx, c, true);
+        ctx.restore();
+        ctx.fillStyle = "#4c4536"; ctx.font = "600 12px 'Hanken Grotesk', sans-serif";
+        ctx.textAlign = "center"; ctx.fillText(coat.name, cx, cy + 40);
+      } catch (e) { errs.push(coat.key + ": " + e.message); }
+    });
+    ctx.textAlign = "left"; ctx.restore();
+    return { drawn: state, W, H, errs };
+  },
+};
+
+window.addEventListener("resize", onViewportChange);
+window.addEventListener("orientationchange", onViewportChange);
+if (window.visualViewport) window.visualViewport.addEventListener("resize", onViewportChange);
+try { new ResizeObserver(onViewportChange).observe(document.getElementById("app")); } catch (e) {}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) save();
+  else onViewportChange();          // catch a rotation that happened while backgrounded
+});
+window.addEventListener("pagehide", save);
+const _saveInterval = setInterval(save, 5000);
+window.__cove.hardReset = () => {
+  _dead = true;
+  clearInterval(_saveInterval);
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+  location.reload();
+};
+
+resize();
+_lastW = W; _lastH = H;
+load();
+restoreCats();
+rebuildAttractors();
+initClouds();
+initFlecks();
+rollDailyGoals();
+checkDexMilestones();
+syncHud();
+requestAnimationFrame(frame);
+
+// first run: name the cove, then check what the cats got up to while away
+const needName = !G.owner && !G.ownerAsked;
+if (needName) {
+  setTimeout(() => askOwnerName(true), 500);
+} else {
+  checkOffline();
+}
+
+// gentle first-run guidance
+if (!G.tips.includes("welcome")) {
+  G.tips.push("welcome");
+  setTimeout(() => toast("Tap a cat to pet it. Tap the glowing shells to collect.", 5), needName ? 4000 : 900);
+}
+})();
+</script>

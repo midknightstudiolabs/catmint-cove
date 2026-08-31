@@ -1,5 +1,6 @@
 # Catmint Cove — Phase 1 prototype
 
+**Version:** V1 (tag `v1`, 2026-08-31) · a frozen snapshot lives in [`releases/v1/`](releases/v1/)
 **Play it:** https://ukiyazero.github.io/catmint-cove/
 (hosted on GitHub Pages from `index.html` on `main` — redeploys on push)
 
