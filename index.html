@@ -1,6 +1,12 @@
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Catmint Cove Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#bfe0d6">
+<meta name="color-scheme" content="light">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Catmint Cove">
+<title>Catmint Cove</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
@@ -36,9 +42,11 @@
   #hud{
     position:absolute;top:0;left:0;right:0;z-index:20;
     display:flex;align-items:center;gap:.7rem;justify-content:space-between;
-    padding:.7rem clamp(.7rem,2vw,1.2rem);
+    padding:calc(.6rem + env(safe-area-inset-top)) calc(clamp(.7rem,2vw,1.2rem) + env(safe-area-inset-right))
+            .6rem calc(clamp(.7rem,2vw,1.2rem) + env(safe-area-inset-left));
     pointer-events:none;
   }
+  .hud-group{flex-wrap:wrap;}
   .hud-group{display:flex;gap:.55rem;align-items:center;pointer-events:auto;}
   .pill{
     display:flex;align-items:center;gap:.45rem;
@@ -52,6 +60,7 @@
   .badge{background:var(--accent);color:#fff;border-radius:999px;font-size:.72rem;font-weight:700;
     padding:.06rem .4rem;font-variant-numeric:tabular-nums;}
   .badge.alert{background:var(--apricot);}
+  .btn.primary .badge.cost{background:rgba(255,255,255,.22);color:#fff;display:inline-flex;align-items:center;gap:.12rem;}
   .title-pill{font-family:"Fraunces",Georgia,serif;font-weight:600;letter-spacing:-.01em;
     cursor:pointer;max-width:52vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .title-pill b{color:var(--accent-bright);font-style:italic;font-weight:600;}
@@ -76,11 +85,26 @@
   /* ---- bottom action bar ---- */
   #actions{
     position:absolute;left:0;right:0;bottom:0;z-index:20;
-    display:flex;gap:.55rem;justify-content:center;flex-wrap:wrap;
-    padding:0 .7rem calc(.8rem + env(safe-area-inset-bottom));
+    display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;
+    padding:0 calc(.6rem + env(safe-area-inset-left)) calc(.7rem + env(safe-area-inset-bottom)) calc(.6rem + env(safe-area-inset-right));
     pointer-events:none;
   }
-  #actions button{pointer-events:auto;}
+  #actions button{pointer-events:auto;min-height:44px;}
+  /* phones: one horizontal scroll row, icon-forward */
+  @media (max-width:520px){
+    #actions{
+      flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;scrollbar-width:none;
+      scroll-snap-type:x proximity;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+    }
+    #actions::-webkit-scrollbar{display:none;}
+    #actions button{flex:0 0 auto;scroll-snap-align:center;padding:.55rem .8rem;}
+    #actions .badge{margin-left:.15rem;}
+  }
+  @media (max-width:400px){
+    #actions button .lbl{display:none;}
+    #actions button{padding:.6rem .7rem;}
+  }
 
   #c{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:manipulation;}
   #dexGrid canvas,#modal canvas,#photoCanvas{position:static;}
@@ -176,6 +200,23 @@
   .modal .big{font-family:"Fraunces",serif;font-size:2.2rem;color:var(--accent-bright);font-variant-numeric:tabular-nums;}
   .modal .row{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-top:.4rem;}
 
+  /* ---- tutorial ---- */
+  #tut{position:absolute;inset:0;z-index:70;background:rgba(28,24,16,.55);
+    display:none;align-items:center;justify-content:center;padding:1.2rem;backdrop-filter:blur(2px);}
+  #tut.on{display:flex;}
+  #tut .card{background:var(--panel);border:1px solid var(--panel-line);border-radius:22px;box-shadow:var(--shadow);
+    width:min(92vw,380px);padding:1.4rem 1.3rem 1.15rem;text-align:center;}
+  #tut .art{width:120px;height:110px;margin:0 auto .5rem;display:block;}
+  #tut .step{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--apricot);}
+  #tut h2{font-family:"Fraunces",serif;font-size:1.3rem;margin:.25rem 0 .4rem;}
+  #tut p{color:var(--ink-soft);font-size:.94rem;margin:0 0 1rem;line-height:1.5;}
+  #tut .dots{display:flex;gap:.35rem;justify-content:center;margin:0 0 1rem;}
+  #tut .dots i{width:.42rem;height:.42rem;border-radius:50%;background:#d8d2bd;transition:background .2s,transform .2s;}
+  #tut .dots i.on{background:var(--accent-bright);transform:scale(1.25);}
+  #tut .row{display:flex;gap:.5rem;justify-content:center;}
+  #tut .skip{background:none;border:none;color:var(--ink-soft);font:inherit;font-weight:600;font-size:.82rem;
+    cursor:pointer;margin-top:.7rem;text-decoration:underline;}
+
   /* ---- photo mode ---- */
   #photo{position:absolute;inset:0;z-index:60;background:rgba(24,21,15,.78);display:none;
     flex-direction:column;align-items:center;justify-content:center;gap:.9rem;padding:1.1rem;backdrop-filter:blur(3px);}
@@ -223,6 +264,7 @@
     </div>
     <div class="hud-group">
       <button class="pill title-pill" id="titlePill" title="Rename your cove">Catmint <b>Cove</b></button>
+      <button class="btn" id="helpBtn" title="How to play"><span class="ico">?</span></button>
       <button class="btn" id="muteBtn" title="Sound"><span class="ico">🔊</span></button>
     </div>
   </div>
@@ -230,11 +272,11 @@
   <canvas id="c"></canvas>
 
   <div id="actions">
-    <button class="btn primary" id="coaxBtn"><span class="ico">🐾</span> Coax a cat (<span id="coaxCost">10</span>)</button>
-    <button class="btn" id="dexBtn"><span class="ico">📖</span> Catdex <span class="badge" id="dexBadge">0/11</span></button>
-    <button class="btn" id="todayBtn"><span class="ico">✦</span> Today <span class="badge alert" id="todayBadge" hidden>!</span></button>
-    <button class="btn" id="shopBtn"><span class="ico">🧺</span> Shop</button>
-    <button class="btn" id="photoBtn"><span class="ico">📷</span> Photo</button>
+    <button class="btn primary" id="coaxBtn"><span class="ico">🐾</span> <span class="lbl">Coax a cat</span> <span class="badge cost">◈<span id="coaxCost">10</span></span></button>
+    <button class="btn" id="dexBtn"><span class="ico">📖</span> <span class="lbl">Catdex</span> <span class="badge" id="dexBadge">0/11</span></button>
+    <button class="btn" id="todayBtn"><span class="ico">✦</span> <span class="lbl">Today</span> <span class="badge alert" id="todayBadge" hidden>!</span></button>
+    <button class="btn" id="shopBtn"><span class="ico">🧺</span> <span class="lbl">Shop</span></button>
+    <button class="btn" id="photoBtn"><span class="ico">📷</span> <span class="lbl">Photo</span></button>
   </div>
 
   <div id="toast"></div>
@@ -293,6 +335,21 @@
     <div class="modal" id="modal"></div>
   </div>
 
+  <!-- tutorial -->
+  <div id="tut">
+    <div class="card">
+      <canvas class="art" id="tutArt" width="240" height="220"></canvas>
+      <div class="step" id="tutStep">Step 1 / 5</div>
+      <h2 id="tutTitle">—</h2>
+      <p id="tutBody">—</p>
+      <div class="dots" id="tutDots"></div>
+      <div class="row">
+        <button class="btn primary" id="tutNext">Next</button>
+      </div>
+      <button class="skip" id="tutSkip">Skip — I've got this</button>
+    </div>
+  </div>
+
   <!-- photo mode -->
   <div id="photo">
     <canvas id="photoCanvas" width="900" height="900"></canvas>
@@ -316,7 +373,8 @@
    Single file, no dependencies. Vanilla canvas.
    ============================================================ */
 
-const SAVE_KEY = "catmintCove.save.v5";
+const SAVE_KEY = "catmintCove.save.v6";
+const OLD_SAVE_KEYS = ["catmintCove.save.v5"];
 const DAY_MS = 86400000;
 const today = () => Math.floor(Date.now() / DAY_MS);
 let DPR = Math.min(window.devicePixelRatio || 1, 2);   // re-read on every resize (iPad zoom / display change)
@@ -360,30 +418,33 @@ const TRAIT_WEIGHT = { glutton:10, playful:10, shy:8, cuddly:5, climber:7, chatt
    stripe  = tabby stripe colour   point = siamese point colour
    eye, nose, inner (ear) colours                                       */
 const COATS = [
-  { key:"tuxedo",   name:"tuxedo cat",        w:13, base:"#2c2824", belly:"#3a352f", pattern:"solid",
-    white:["bib","belly","muzzle","paws","blaze"], eye:"#c7a24c", nose:"#413a35", inner:"#b98d8d" },
-  { key:"ginger",   name:"ginger tabby",      w:14, base:"#e08b3d", belly:"#f2c78f", pattern:"mackerel",
-    stripe:"#b2611e", white:["muzzle","bib","paws"], eye:"#b7c24e", nose:"#cd7a6c", inner:"#e5a79e" },
-  { key:"greytab",  name:"grey tabby",        w:12, base:"#9a9c9d", belly:"#c4c5c4", pattern:"mackerel",
-    stripe:"#5c5f61", eye:"#93ad55", nose:"#6a6264", inner:"#c99a9a" },
-  { key:"browntab", name:"brown tabby",       w:11, base:"#8b6b46", belly:"#b89a72", pattern:"mackerel",
-    stripe:"#4a3826", eye:"#cd923c", nose:"#5b4633", inner:"#bd9088" },
-  { key:"greywhite",name:"grey & white",      w:10, base:"#9a9c9d", belly:"#c4c5c4", pattern:"mackerel",
-    stripe:"#5c5f61", white:["bib","belly","muzzle","paws","blaze"], eye:"#93ad55", nose:"#c98f8f", inner:"#d7a9a9" },
-  { key:"black",    name:"black cat",         w:11, base:"#282521", belly:"#332f2a", pattern:"solid",
-    eye:"#d6ab44", nose:"#2a2622", inner:"#7c5c5c" },
-  { key:"calico",   name:"calico cat",        w:10, base:"#f3eee4", belly:"#fbf7ef", pattern:"calico",
-    p1:"#dd8f45", p2:"#33302c", white:["bib","belly","muzzle","paws"], eye:"#c99a3a", nose:"#e0a0a0", inner:"#eab8b8" },
-  { key:"tortie",   name:"tortoiseshell",     w:8,  base:"#33302c", belly:"#413b34", pattern:"tortie",
-    p1:"#c9793a", eye:"#caa03a", nose:"#3a332e", inner:"#8a6a5c" },
+  { key:"tuxedo",   name:"tuxedo cat",        w:13, base:"#26232b", belly:"#34303a", pattern:"solid",
+    white:["bib","belly","muzzle","paws","blaze"], eye:"#e0b24b", nose:"#2c2530", inner:"#e2b4b4" },
+  { key:"ginger",   name:"ginger tabby",      w:14, base:"#d5813c", belly:"#f1dcbe", pattern:"mackerel",
+    stripe:"#b0672a", white:["muzzle","bib","paws"], eye:"#e6ad3e", nose:"#cd7a6c", inner:"#e5a79e" },
+  { key:"greytab",  name:"grey tabby",        w:12, base:"#8a949e", belly:"#c7cac9", pattern:"mackerel",
+    stripe:"#67717b", eye:"#c6cf5a", nose:"#6a6264", inner:"#c99a9a" },
+  { key:"browntab", name:"brown tabby",       w:11, base:"#997c53", belly:"#c0a67e", pattern:"mackerel",
+    stripe:"#6b5636", eye:"#cd923c", nose:"#5b4633", inner:"#bd9088" },
+  { key:"greywhite",name:"grey & white",      w:10, base:"#98a2aa", belly:"#c7cac9", pattern:"mackerel",
+    stripe:"#67717b", white:["bib","belly","muzzle","paws","blaze"], eye:"#e0b24b", nose:"#c98f8f", inner:"#d7a9a9" },
+  { key:"black",    name:"black cat",         w:11, base:"#26232b", belly:"#33303a", pattern:"solid",
+    eye:"#f0c23b", nose:"#2a2622", inner:"#7c5c5c" },
+  { key:"calico",   name:"calico cat",        w:10, base:"#f4f1e8", belly:"#fbf8ef", pattern:"calico",
+    p1:"#dd8a3e", p2:"#312c34", white:["bib","belly","muzzle","paws"], eye:"#c98b4b", nose:"#e0a0a0", inner:"#eab8b8" },
+  { key:"tortie",   name:"tortoiseshell",     w:8,  base:"#312c34", belly:"#413b44", pattern:"tortie",
+    p1:"#cf7d33", eye:"#c98b4b", nose:"#3a332e", inner:"#8a6a5c" },
   { key:"white",    name:"white cat",         w:7,  base:"#f6f2ea", belly:"#ffffff", pattern:"solid",
-    eye:"#6f9fc0", nose:"#e6a6a6", inner:"#ecbcbc" },
-  { key:"russian",  name:"russian blue",      w:8,  base:"#8b959b", belly:"#a9b2b6", pattern:"solid",
-    eye:"#7fae5c", nose:"#6a6b6d", inner:"#b79a9a" },
-  { key:"siamese",  name:"siamese cat",       w:6,  base:"#e9ddc6", belly:"#f3ecda", pattern:"points",
-    point:"#4a3a30", eye:"#5c93c9", nose:"#4a3a30", inner:"#5a463c" },
+    eye:"#7fb7d8", nose:"#e6a6a6", inner:"#ecbcbc" },
+  { key:"russian",  name:"russian blue",      w:8,  base:"#7c8790", belly:"#98a1a9", pattern:"solid",
+    eye:"#8fc46b", nose:"#6a6b6d", inner:"#b79a9a" },
+  { key:"siamese",  name:"siamese cat",       w:6,  base:"#efe4cf", belly:"#f7efdc", pattern:"points",
+    point:"#5a4636", eye:"#6fb0d8", nose:"#4a3a30", inner:"#5a463c" },
 ];
-const COAT_BY_KEY = Object.fromEntries(COATS.map(c => [c.key, c]));
+// the mascot — a fixed character, never rolled, not part of the 11-coat Catdex
+const MIDKNIGHT_COAT = { key:"midknight", name:"Midknight", base:"#26232b", belly:"#34303b", pattern:"solid",
+  white:["bib","belly","muzzle","paws"], eye:"#e0b24b", nose:"#2c2530", inner:"#e2b4b4", mascot:true };
+const COAT_BY_KEY = Object.fromEntries([...COATS, MIDKNIGHT_COAT].map(c => [c.key, c]));
 function weightedCoat() {
   let total = 0; for (const c of COATS) total += c.w;
   let r = Math.random() * total;
@@ -407,7 +468,9 @@ let G = null;
 
 function newGame() {
   return {
-    v: 5,
+    v: 6,
+    tutorialDone: false,
+    midknightSeeded: false,
     shells: 25,
     pearls: 0,             // premium currency (earned via Catdex / daily goals)
     comfort: 0,            // 0..5 global production tiers
@@ -433,13 +496,19 @@ function newGame() {
 function load() {
   // sets up G only — cats are created afterwards by restoreCats()
   let raw = null;
-  try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {}
+  try {
+    raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) for (const k of OLD_SAVE_KEYS) { raw = localStorage.getItem(k); if (raw) break; }
+  } catch (e) {}
   if (!raw) { G = newGame(); return; }
   try {
     const s = JSON.parse(raw);
-    if (!s || s.v !== 5) { G = newGame(); return; }
+    if (!s || (s.v !== 5 && s.v !== 6)) { G = newGame(); return; }
     G = s;
+    G.v = 6;                                                  // migrate v5 → v6 in place
     if (!G.decor) G.decor = { tree: 0, cottage: 0, flowers: 0 };
+    if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
+    if (G.midknightSeeded === undefined) G.midknightSeeded = false;
     G.opens = (G.opens || 1) + 1;
   } catch (e) { G = newGame(); }
 }
@@ -453,7 +522,7 @@ function save() {
     lastSaveClock = performance.now();
     G.cats = cats.map(c => ({
       name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
-      bornAt:c.bornAt, mood:Math.round(c.mood)
+      mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood)
     }));
     localStorage.setItem(SAVE_KEY, JSON.stringify(G));
   } catch (e) {}
@@ -507,7 +576,8 @@ class Cat {
     this.name = o.name || uniqueName();
     this.traits = o.traits || rollTraits();
     this.coatKey = o.coatKey || (COAT_BY_KEY[o.coat] ? o.coat : weightedCoat());
-    this.markSeed = o.markSeed ?? (Math.random() * 1e9 | 0);
+    this.mascot = o.mascot || !!(COAT_BY_KEY[this.coatKey] && COAT_BY_KEY[this.coatKey].mascot);
+    this.markSeed = o.markSeed ?? (this.mascot ? 424242 : (Math.random() * 1e9 | 0));
     this.star = o.star ?? rollStar();      // 1..4 rarity — drives production + sparkle + the coax reveal
     // age: newcomers often arrive as kittens and grow up over ~20h of real time
     this.bornAt = o.bornAt ?? (Math.random() < 0.45 ? Date.now() : Date.now() - KITTEN_MS * (1.2 + Math.random()));
@@ -603,12 +673,14 @@ function weightedTrait() {
 
 function seedStarters() {
   rebuildAttractors();
-  // two different friendly coats for a welcoming first impression
-  const first = pick(["ginger", "tuxedo", "greytab", "browntab", "calico"]);
-  let second = pick(["greywhite", "black", "russian", "white", "tortie"]);
-  const grown = Date.now() - KITTEN_MS * 3;   // your first two cats are already grown
-  spawnCat({ coatKey: first,  star: 1, bornAt: grown, x: W * 0.4, y: H * 0.62, mood: 66 });
+  const grown = Date.now() - KITTEN_MS * 3;   // your first cats are already grown
+  // Midknight — the mascot, always your first cat, and he never leaves
+  spawnCat({ coatKey:"midknight", name:"Midknight", mascot:true, star:2, traits:["grumpy","cuddly"],
+    bornAt:grown, x: W * 0.42, y: H * 0.62, mood: 70 });
+  // one more, random, for company
+  const second = pick(["ginger", "greytab", "browntab", "calico", "greywhite", "russian"]);
   spawnCat({ coatKey: second, star: rollStar(0.02), bornAt: grown, x: W * 0.6, y: H * 0.56, mood: 63 });
+  G.midknightSeeded = true;
 }
 function spawnCat(o) {
   if (cats.length >= capacity() && !o) return null;
@@ -624,6 +696,7 @@ function restoreCats() {
     for (const s of G.cats) {
       cats.push(new Cat({
         name:s.name, traits:s.traits, coatKey:s.coatKey, markSeed:s.markSeed, star:s.star,
+        mascot: s.mascot || s.coatKey === "midknight" || s.name === "Midknight",
         bornAt: s.bornAt ?? (Date.now() - KITTEN_MS * 3), mood:s.mood,
         x: rand(W*0.15,W*0.85), y: rand(H*0.42,H*0.82)
       }));
@@ -631,8 +704,16 @@ function restoreCats() {
   } else {
     seedStarters();
   }
-  // make sure every cat already in the cove counts as discovered
-  for (const c of cats) if (!G.dex[c.coatKey]) G.dex[c.coatKey] = { star: c.star, count: 1 };
+  // Midknight joins any cove that predates him
+  if (!cats.some(c => c.mascot)) {
+    rebuildAttractors();
+    const mk = new Cat({ coatKey:"midknight", name:"Midknight", mascot:true, star:2, traits:["grumpy","cuddly"],
+      bornAt: Date.now() - KITTEN_MS * 3, mood:70, x: W * 0.42, y: H * 0.6 });
+    cats.unshift(mk);
+    G.midknightSeeded = true;
+  }
+  // make sure every non-mascot cat already in the cove counts as discovered
+  for (const c of cats) if (!c.mascot && !G.dex[c.coatKey]) G.dex[c.coatKey] = { star: c.star, count: 1 };
 }
 
 /* ---------- Catdex: the collection spine ---------- */
@@ -641,6 +722,7 @@ const DEX_MILESTONES = [
 ];
 function dexCount() { return Object.keys(G.dex).length; }
 function registerInDex(c, celebrate) {
+  if (c.mascot) return;                       // Midknight is a character, not a Catdex coat
   const prev = G.dex[c.coatKey];
   if (!prev) {
     G.dex[c.coatKey] = { star: c.star, count: 1 };
@@ -1119,7 +1201,7 @@ function rehomeReward(c) {
 }
 cc.rehomeBtn.addEventListener("click", () => {
   const c = cardCat;
-  if (!c || cats.length <= 3) return;
+  if (!c || c.mascot || cats.length <= 3) return;
   cardTimer = 999;                    // hold the card while the confirm dialog is up
   const rw = rehomeReward(c);
   openModal(`<div class="reveal">
@@ -1152,14 +1234,18 @@ let cardCat = null, cardTimer = 0;
 function showCatCard(c) {
   cardCat = c; cardTimer = 6;
   cc.name.textContent = c.name;
-  cc.coatEl.textContent = c.coat.name + (c.isKitten
-    ? `  ·  kitten (${Math.max(1, Math.round(c.growth * 20))}h old)`
-    : "  ·  adult");
-  cc.starsEl.innerHTML = starGlyphs(c.star);
+  cc.coatEl.textContent = c.mascot
+    ? "the cove's founder  ·  never leaves"
+    : c.coat.name + (c.isKitten
+      ? `  ·  kitten (${Math.max(1, Math.round(c.growth * 20))}h old)`
+      : "  ·  adult");
+  cc.starsEl.innerHTML = c.mascot ? `<span style="color:${STAR_COL[2]};font-weight:700">★ Mascot</span>` : starGlyphs(c.star);
   cc.traits.innerHTML = c.traits.map(k => `<span class="trait">${TRAITS[k].label}</span>`).join("");
-  cc.desc.textContent = c.t1.desc + " " + c.t2.desc;
+  cc.desc.textContent = c.mascot
+    ? "Looks like he's drafting a complaint. Actually just wants to loaf near you. " + c.t1.desc
+    : c.t1.desc + " " + c.t2.desc;
   const rw = rehomeReward(c);
-  cc.rehomeBtn.hidden = cats.length <= 3;      // only once the cove is comfortably full
+  cc.rehomeBtn.hidden = c.mascot || cats.length <= 3;   // only once the cove is comfortably full
   cc.rehomeBtn.textContent = `Find them a new home  ·  ◈ ${rw.shells}${rw.pearls ? ` ✦ ${rw.pearls}` : ""}`;
   cc.el.hidden = false;
   positionCard(c);
@@ -1520,7 +1606,7 @@ function flushReveal() {
     <button class="btn primary" id="rv-ok">${revealQueue.length ? "Next" : "Welcome them in"}</button>
   </div>`);
   miniCat(document.querySelector("#modal canvas"), rv.coatKey, rv.star);
-  sfx(rv.star >= 3 ? "buy" : "coax");
+  sfx(rv.star >= 3 ? "reveal" : "coax");
   shake(rv.star >= 3 ? 5 : 2);
   document.getElementById("rv-ok").onclick = () => { closeModal(); setTimeout(flushReveal, 120); };
 }
@@ -1532,6 +1618,49 @@ document.getElementById("muteBtn").addEventListener("click", (e) => {
   e.currentTarget.querySelector(".ico").textContent = muted ? "🔇" : "🔊";
 });
 
+/* ---------- tutorial (skippable, reopen with the ? button) ---------- */
+const TUT_STEPS = [
+  { coat:"midknight", star:2, title:"Meet Midknight",
+    body:"Your first cat and the face of the cove. He looks grumpy. He isn't — much. He never leaves." },
+  { coat:"ginger", star:2, title:"Pet your cats",
+    body:"Tap any cat to pet it. Their mood goes up and they produce more for a while. Prickly cats sulk if you overdo it." },
+  { coat:"calico", star:3, title:"Collect the drops",
+    body:"Cats leave a chunky token every so often. Tap it to bank shells — or leave it, it auto-collects after a bit." },
+  { coat:"russian", star:2, title:"Spend your shells",
+    body:"Coax a new cat, or open the Shop for bowls, beds and toys. The right comfort keeps each personality happy." },
+  { coat:"tortie", star:4, title:"Keep your streak",
+    body:"Finish the 3 goals in Today each day to build a streak. There's no way to lose — just a calm cove to tend." },
+];
+let tutIdx = 0;
+const tutEl = document.getElementById("tut");
+const tutArt = document.getElementById("tutArt");
+function renderTutStep() {
+  const s = TUT_STEPS[tutIdx];
+  document.getElementById("tutStep").textContent = `Step ${tutIdx + 1} / ${TUT_STEPS.length}`;
+  document.getElementById("tutTitle").textContent = s.title;
+  document.getElementById("tutBody").textContent = s.body;
+  document.getElementById("tutNext").textContent = tutIdx === TUT_STEPS.length - 1 ? "Start playing" : "Next";
+  document.getElementById("tutDots").innerHTML =
+    TUT_STEPS.map((_, i) => `<i class="${i === tutIdx ? "on" : ""}"></i>`).join("");
+  try { miniCat(tutArt, s.coat, s.star); } catch (e) {}
+}
+function openTutorial() {
+  tutIdx = 0;
+  renderTutStep();
+  tutEl.classList.add("on");
+  ensureAudio();
+}
+function endTutorial() {
+  tutEl.classList.remove("on");
+  if (!G.tutorialDone) { G.tutorialDone = true; save(); checkOffline(); }
+}
+document.getElementById("tutNext").addEventListener("click", () => {
+  if (tutIdx < TUT_STEPS.length - 1) { tutIdx++; renderTutStep(); sfx("pet"); }
+  else endTutorial();
+});
+document.getElementById("tutSkip").addEventListener("click", endTutorial);
+document.getElementById("helpBtn").addEventListener("click", () => { ensureAudio(); openTutorial(); });
+
 /* ---------- dev panel (toggle with D) ---------- */
 const devEl = document.getElementById("dev");
 const devStats = document.getElementById("devStats");
@@ -1539,7 +1668,7 @@ function resetGame() {
   if (!confirm("Wipe all progress and start a fresh cove?")) return;
   _dead = true;                                   // stop the autosave re-persisting old state
   try { clearInterval(_saveInterval); } catch (e) {}
-  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+  try { localStorage.removeItem(SAVE_KEY); for (const k of OLD_SAVE_KEYS) localStorage.removeItem(k); } catch (e) {}
   location.reload();
 }
 window.addEventListener("keydown", (e) => {
@@ -1636,7 +1765,10 @@ function askOwnerName(firstTime) {
   const inp = document.getElementById("own-in");
   inp.value = G.owner || "";
   setTimeout(() => { inp.focus(); inp.select(); }, 30);
-  const finish = () => { G.ownerAsked = true; closeModal(); syncHud(); save(); if (firstTime) checkOffline(); };
+  const finish = () => {
+    G.ownerAsked = true; closeModal(); syncHud(); save();
+    if (firstTime) { if (!G.tutorialDone) setTimeout(openTutorial, 250); else checkOffline(); }
+  };
   const submit = () => {
     const v = inp.value.trim().replace(/\s+/g, " ").slice(0, 18);
     if (v) { G.owner = v; toast(`Welcome to ${coveName()}`, 4); }
@@ -1664,11 +1796,40 @@ function tone(freq, dur, type = "sine", vol = 0.16, when = 0) {
   g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
   o.start(t); o.stop(t + dur + 0.02);
 }
+// a synthesized cat meow: two detuned voices through a bandpass "formant" that sweeps ee→ow, with vibrato
+function meow(happy) {
+  if (muted || !actx) return;
+  const t0 = actx.currentTime, dur = happy ? 0.4 : 0.46;
+  const o1 = actx.createOscillator(), o2 = actx.createOscillator();
+  const bp = actx.createBiquadFilter(), g = actx.createGain();
+  o1.type = "sawtooth"; o2.type = "triangle"; o2.detune.value = 9;
+  bp.type = "bandpass"; bp.Q.value = 6.5;
+  const f0 = happy ? 640 : 500, f1 = happy ? 920 : 720, f2 = happy ? 800 : 430;
+  for (const o of [o1, o2]) {
+    o.frequency.setValueAtTime(f0, t0);
+    o.frequency.linearRampToValueAtTime(f1, t0 + dur * 0.34);
+    o.frequency.linearRampToValueAtTime(f2, t0 + dur);
+  }
+  bp.frequency.setValueAtTime(900, t0);
+  bp.frequency.linearRampToValueAtTime(1550, t0 + dur * 0.34);
+  bp.frequency.linearRampToValueAtTime(780, t0 + dur);
+  const lfo = actx.createOscillator(), lg = actx.createGain();
+  lfo.frequency.value = 25; lg.gain.value = 11;
+  lfo.connect(lg); lg.connect(o1.frequency); lg.connect(o2.frequency);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(0.15, t0 + 0.04);
+  g.gain.setValueAtTime(0.15, t0 + dur * 0.5);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + dur + 0.05);
+  o1.connect(bp); o2.connect(bp); bp.connect(g); g.connect(actx.destination);
+  o1.start(t0); o2.start(t0); lfo.start(t0);
+  o1.stop(t0 + dur + 0.1); o2.stop(t0 + dur + 0.1); lfo.stop(t0 + dur + 0.1);
+}
 function sfx(kind) {
-  if (kind === "pet") { tone(520, 0.09, "sine", 0.14); tone(690, 0.11, "sine", 0.12, 0.06); }
+  if (kind === "pet") { meow(true); tone(690, 0.11, "sine", 0.08, 0.14); }
   else if (kind === "collect") { tone(880, 0.08, "triangle", 0.13); tone(1170, 0.09, "triangle", 0.10, 0.04); }
-  else if (kind === "buy") { tone(440,0.1,"sine",0.14); tone(554,0.1,"sine",0.13,0.05); tone(660,0.14,"sine",0.12,0.1); }
-  else if (kind === "coax") { tone(400, 0.12, "sine", 0.13); tone(600, 0.14, "sine", 0.11, 0.08); }
+  else if (kind === "buy") { tone(523.25,0.1,"sine",0.12); tone(659.25,0.1,"sine",0.11,0.05); tone(783.99,0.15,"sine",0.10,0.1); meow(true); }
+  else if (kind === "coax") { tone(400, 0.12, "sine", 0.11); meow(true); }
+  else if (kind === "reveal") { [880,1174,1567,2093].forEach((f,i)=>tone(f,0.22,"triangle",0.08,i*0.045)); meow(true); }
   else if (kind === "photo") { tone(1200, 0.04, "square", 0.08); tone(300, 0.06, "square", 0.06, 0.03); }
 }
 
@@ -1871,20 +2032,32 @@ function drawCoveSign(g, W, H) {
 
 /* ---------- cat rendering: recognisable loaf-cats with real coat types ---------- */
 function poseParams(pose) {
-  const P = { bw: 22, top: -30, hx: 4, hy: -38, hr: 15 };      // default: loaf / rest
-  if (pose === "sit")   { P.bw = 17; P.top = -42; P.hx = 5;  P.hy = -50; P.hr = 14.5; }
-  else if (pose === "play")  { P.bw = 20; P.top = -24; P.hx = 13; P.hy = -31; P.hr = 14; }
-  else if (pose === "trot")  { P.bw = 21; P.top = -27; P.hx = 9;  P.hy = -35; P.hr = 14; }
-  else if (pose === "sleep") { P.bw = 24; P.top = -20; P.hx = 7;  P.hy = -21; P.hr = 12.5; }
+  // V2 look: a chunky loaf — wide body, big head sunk into the mass, ruff-forward
+  const P = { bw: 27, top: -33, hx: 3, hy: -33, hr: 17 };      // default: loaf / rest
+  if (pose === "sit")   { P.bw = 22, P.top = -45, P.hx = 4,  P.hy = -44, P.hr = 16; }
+  else if (pose === "play")  { P.bw = 23, P.top = -27, P.hx = 11, P.hy = -29, P.hr = 15.5; }
+  else if (pose === "trot")  { P.bw = 24, P.top = -29, P.hx = 8,  P.hy = -33, P.hr = 15.5; }
+  else if (pose === "sleep") { P.bw = 29, P.top = -22, P.hx = 6,  P.hy = -19, P.hr = 13.5; }
   return P;
 }
 function catSil(g, P) {
+  // body: a wide pear that flares at the shoulders
   g.moveTo(P.bw, 0);
-  g.bezierCurveTo(P.bw + 3, P.top * 0.55, P.bw * 0.58, P.top, 2, P.top);
-  g.bezierCurveTo(-P.bw * 0.62, P.top, -P.bw - 3, P.top * 0.55, -P.bw, 0);
+  g.bezierCurveTo(P.bw + 4, P.top * 0.5, P.bw * 0.7, P.top - 2, 2, P.top - 2);
+  g.bezierCurveTo(-P.bw * 0.72, P.top - 2, -P.bw - 4, P.top * 0.5, -P.bw, 0);
   g.closePath();
+  // ruff / cheek mass — the widest part of the loaf, sinks the head into the body
+  g.moveTo(P.hx + P.hr * 1.16, P.hy + P.hr * 0.55);
+  g.ellipse(P.hx, P.hy + P.hr * 0.5, P.hr * 1.16, P.hr * 0.95, 0, 0, Math.PI * 2);
+  // head
   g.moveTo(P.hx + P.hr, P.hy);
   g.arc(P.hx, P.hy, P.hr, 0, Math.PI * 2, true);
+}
+function coatLum(hex) {
+  if (!hex || hex[0] !== "#") return 0.3;
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16 & 255) / 255, gg = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+  return 0.2126 * r + 0.7152 * gg + 0.0722 * b;
 }
 function blob(g, x, y, r, rnd) {
   g.beginPath();
@@ -1919,6 +2092,14 @@ function drawEar(g, side, P, coat, back, flop = 0, kit = false) {
   g.quadraticCurveTo(sx + side * 1.5, sy - hgt * 0.4, tipX - side * 1, tipY + 4.5);
   g.quadraticCurveTo(sx + side * 3, sy, sx + side * 3.4, sy + 2.5);
   g.closePath(); g.fill();
+  // longhair furnishings: a pale wisp inside + a couple of hairs past the tip (lynx look)
+  if (!back) {
+    g.strokeStyle = "rgba(246,240,228,0.6)"; g.lineWidth = 1; g.lineCap = "round";
+    g.beginPath(); g.moveTo(sx + side * 1, sy - 1); g.lineTo(tipX - side * 0.5, tipY + 3); g.stroke();
+    g.strokeStyle = coat.pattern === "points" ? coat.point : coat.base; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(tipX + side * 1.5, tipY + 2); g.lineTo(tipX + side * 3.5, tipY - 3); g.stroke();
+    g.beginPath(); g.moveTo(tipX + side * 0.5, tipY + 1); g.lineTo(tipX + side * 1.5, tipY - 4); g.stroke();
+  }
   g.restore();
 }
 function drawEye(g, ex, ey, mode, iris, wide, kit) {
@@ -1930,25 +2111,41 @@ function drawEye(g, ex, ey, mode, iris, wide, kit) {
     else { g.moveTo(ex - w, ey - 0.3); g.quadraticCurveTo(ex, ey + 2.8, ex + w, ey - 0.3); }
     g.stroke(); return;
   }
-  // Cats & Soup style: a big round eye, round pupil (not a slit), one bright highlight, no lid line
-  let r = kit ? 3.7 : 3.0;
-  if (wide) r *= 1.12;
-  const squishY = mode === "half" ? 0.45 : mode === "blink" ? 0.14 : 1;
+  // V2: a round gold eye, carried half-lidded (deadpan) — unless wide (playing) or a kitten
+  let r = kit ? 3.9 : 3.0;
+  if (wide) r *= 1.1;
+  const deadpan = !wide && !kit;
+  const openAmt = deadpan
+    ? (mode === "half" ? 0.4 : mode === "blink" ? 0.12 : 0.66)
+    : (mode === "half" ? 0.5 : mode === "blink" ? 0.14 : 1);
+  if (deadpan) ey += 1;                                 // sit a touch lower
+  const eh = r * 1.14 * openAmt;
   g.save();
-  g.beginPath(); g.ellipse(ex, ey, r, r * 1.12 * squishY, 0, 0, 7); g.clip();
+  g.beginPath(); g.ellipse(ex, ey, r, eh, 0, 0, 7); g.clip();
   g.fillStyle = iris;                                   // full iris fill
-  g.fillRect(ex - r - 1, ey - r * 1.4, (r + 1) * 2, r * 2.8);
-  g.fillStyle = "#2b2420";                              // round pupil
-  g.beginPath(); g.arc(ex, ey + r * 0.12, r * (wide ? 0.72 : 0.6), 0, 7); g.fill();
+  g.fillRect(ex - r - 1, ey - r * 1.6, (r + 1) * 2, r * 3.2);
+  g.fillStyle = "#1b1620";                              // big round pupil
+  g.beginPath(); g.ellipse(ex, ey + r * 0.08, r * (wide ? 0.6 : 0.48), r * (wide ? 0.68 : 0.6), 0, 0, 7); g.fill();
+  g.fillStyle = "rgba(255,240,205,0.22)";               // warm lower-lid bounce
+  g.beginPath(); g.ellipse(ex, ey + r * 0.8, r * 0.9, r * 0.28, 0, 0, 7); g.fill();
   g.restore();
-  // soft outline so light coats read
-  g.strokeStyle = "rgba(40,34,28,0.28)"; g.lineWidth = 1;
-  g.beginPath(); g.ellipse(ex, ey, r, r * 1.12 * squishY, 0, 0, 7); g.stroke();
+  // soft outline
+  g.strokeStyle = "rgba(46,38,30,0.36)"; g.lineWidth = 1;
+  g.beginPath(); g.ellipse(ex, ey, r, eh, 0, 0, 7); g.stroke();
   // one big cozy highlight + a tiny sparkle
-  if (squishY > 0.3) {
+  if (openAmt > 0.28) {
     g.fillStyle = "rgba(255,255,255,0.95)";
-    g.beginPath(); g.ellipse(ex - r * 0.32, ey - r * 0.42, r * 0.44, r * 0.4, 0, 0, 7); g.fill();
-    g.beginPath(); g.arc(ex + r * 0.4, ey + r * 0.35, r * 0.16, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(ex - r * 0.3, ey - r * 0.36, r * 0.4, r * 0.38, 0, 0, 7); g.fill();
+    g.beginPath(); g.arc(ex + r * 0.36, ey + r * 0.34, r * 0.15, 0, 7); g.fill();
+  }
+  // upper lash line — the deadpan tell
+  if (deadpan && openAmt > 0.2 && openAmt < 0.9) {
+    g.strokeStyle = "rgba(28,22,26,0.75)"; g.lineWidth = 1.6; g.lineCap = "round";
+    const lw = r * 0.95;
+    g.beginPath();
+    g.moveTo(ex - lw, ey - eh + 0.4);
+    g.quadraticCurveTo(ex, ey - eh - 1, ex + lw, ey - eh + 0.4);
+    g.stroke();
   }
 }
 function drawTail(g, P, coat, mode, wag) {
@@ -2109,10 +2306,15 @@ function drawCat(g, c, isPhoto) {
   g.save();
   g.translate(c.x, c.y + bobY);
 
-  // ground shadow — anchored at the ground, unaffected by the body bob; stretches a touch when moving
-  g.fillStyle = "rgba(40,34,24,0.11)";
+  // warm contact shadow — anchored at the ground, unaffected by the body bob; a dense core + a soft halo
+  const shW = ag * (P.bw + 3) * (1 + wk * 0.1 - hop * 0.22);
+  const sg = g.createRadialGradient(0, 3 - bobY, 2, 0, 3 - bobY, shW);
+  sg.addColorStop(0, "rgba(52,44,40,0.20)");
+  sg.addColorStop(0.6, "rgba(52,44,40,0.09)");
+  sg.addColorStop(1, "rgba(52,44,40,0)");
+  g.fillStyle = sg;
   g.beginPath();
-  g.ellipse(0, 3 - bobY, ag * (P.bw + 1) * (1 + wk * 0.1 - hop * 0.22), ag * 4.3 * (1 - hop * 0.2), 0, 0, 7);
+  g.ellipse(0, 3 - bobY, shW, ag * 5 * (1 - hop * 0.2), 0, 0, 7);
   g.fill();
 
   g.save();
@@ -2188,13 +2390,24 @@ function drawCat(g, c, isPhoto) {
   // white markings
   if (coat.white) {
     g.fillStyle = "#f8f5ee";
-    if (coat.white.includes("belly")) { g.beginPath(); g.ellipse(P.bw * 0.2, -4, P.bw * 0.6, 11, 0, 0, 7); g.fill(); }
-    if (coat.white.includes("bib"))   { g.beginPath(); g.ellipse(P.hx, P.hy + P.hr * 0.8, 7, 11, 0, 0, 7); g.fill(); }
+    const cx = (P.hx + 0) * 0.5;                       // splits the difference between head and body centre
+    if (coat.white.includes("bib") || coat.white.includes("belly")) {
+      // one continuous white shirtfront: chin → chest → belly (no "cone collar" seams)
+      const chinY = P.hy + P.hr * 0.34;
+      const chestW = P.bw * (coat.white.includes("belly") ? 0.52 : 0.44);
+      const bellyY = coat.white.includes("belly") ? -1 : -6;
+      g.beginPath();
+      g.moveTo(cx, chinY - 1);
+      g.bezierCurveTo(cx - chestW * 0.7, chinY + 2, cx - chestW, -14, cx - chestW * 0.9, bellyY);
+      g.bezierCurveTo(cx - chestW * 0.5, bellyY + 4, cx + chestW * 0.5, bellyY + 4, cx + chestW * 0.9, bellyY);
+      g.bezierCurveTo(cx + chestW, -14, cx + chestW * 0.7, chinY + 2, cx, chinY - 1);
+      g.closePath(); g.fill();
+    }
     if (coat.white.includes("paws"))  {
       g.beginPath(); g.ellipse(P.bw * 0.28, -2.5, 4.2, 4, 0, 0, 7); g.fill();
       g.beginPath(); g.ellipse(P.bw * 0.62, -2.5, 4.2, 4, 0, 0, 7); g.fill();
     }
-    if (coat.white.includes("muzzle")) { g.beginPath(); g.ellipse(P.hx + 1.5, P.hy + P.hr * 0.42, 6.5, 5.5, 0, 0, 7); g.fill(); }
+    if (coat.white.includes("muzzle")) { g.beginPath(); g.ellipse(P.hx + 1, P.hy + P.hr * 0.44, 5.4, 4.4, 0, 0, 7); g.fill(); }
     if (coat.white.includes("blaze"))  {
       g.beginPath();
       g.moveTo(P.hx - 1.5, P.hy - P.hr * 0.74);
@@ -2205,6 +2418,18 @@ function drawCat(g, c, isPhoto) {
       g.fill();
     }
   }
+  // warm rim light on the top-left edge (clipped to the silhouette so it reads as an inner rim)
+  g.save();
+  g.beginPath(); catSil(g, P); g.clip();
+  g.strokeStyle = "rgba(255,249,232,0.55)"; g.lineWidth = 2; g.lineCap = "round";
+  g.beginPath();
+  g.arc(P.hx, P.hy, P.hr - 0.6, Math.PI * 0.82, Math.PI * 1.62);
+  g.stroke();
+  g.beginPath();
+  g.moveTo(-P.bw + 1.5, -3);
+  g.bezierCurveTo(-P.bw - 1, P.top * 0.5, -P.bw * 0.7, P.top - 1, 0, P.top - 1);
+  g.stroke();
+  g.restore();
   g.restore(); // unclip
 
   if (tailMode === "wrap") drawTail(g, P, coat, "wrap", wag);   // wrap tail sits in front
@@ -2240,19 +2465,23 @@ function drawCat(g, c, isPhoto) {
   }
   g.stroke();
 
-  // whiskers — just a couple, very soft (kittens: even shorter)
-  const wl = kit ? 9 : 14;
-  g.strokeStyle = "rgba(255,255,255,0.4)"; g.lineWidth = 0.9;
-  for (const dy of [-0.6, 1.8]) {
-    g.beginPath(); g.moveTo(nx - 2, ny + dy * 0.5); g.quadraticCurveTo(nx - wl * 0.6, ny + dy - 1.5, nx - wl, ny + dy); g.stroke();
-    g.beginPath(); g.moveTo(nx + 2, ny + dy * 0.5); g.quadraticCurveTo(nx + wl * 0.6, ny + dy - 1.5, nx + wl, ny + dy); g.stroke();
+  // whiskers — a soft drooping fan, kept close to the muzzle so they don't streak into the sky
+  const wl = kit ? 7 : 11;
+  const lum = coatLum(coat.base);
+  g.strokeStyle = lum > 0.6 ? "rgba(120,110,98,0.42)" : "rgba(255,255,255,0.4)";
+  g.lineWidth = kit ? 0.8 : 1; g.lineCap = "round";
+  for (const dy of [-1, 0.6, 2.2]) {
+    g.beginPath(); g.moveTo(nx - 2, ny + dy * 0.4); g.quadraticCurveTo(nx - wl * 0.6, ny + dy * 0.3, nx - wl, ny + dy + 1.2); g.stroke();
+    g.beginPath(); g.moveTo(nx + 2, ny + dy * 0.4); g.quadraticCurveTo(nx + wl * 0.6, ny + dy * 0.3, nx + wl, ny + dy + 1.2); g.stroke();
   }
 
-  // rosy cheeks — a soft default, warmer when happy or a kitten
-  const blush = (pet || c.mood > 84) ? 0.28 : (kit ? 0.2 : 0.12);
-  g.fillStyle = `rgba(230,132,142,${blush})`;
-  g.beginPath(); g.ellipse(P.hx - P.hr * 0.66, ny - 0.5, kit ? 3.4 : 3.2, kit ? 2.6 : 2, 0, 0, 7); g.fill();
-  g.beginPath(); g.ellipse(P.hx + P.hr * 0.66, ny - 0.5, kit ? 3.4 : 3.2, kit ? 2.6 : 2, 0, 0, 7); g.fill();
+  // rosy cheeks — very faint on the V2 look; warmer when petted or a kitten
+  const blush = pet ? 0.2 : (kit ? 0.15 : 0.06);
+  if (blush > 0.01) {
+    g.fillStyle = `rgba(230,132,142,${blush})`;
+    g.beginPath(); g.ellipse(P.hx - P.hr * 0.7, ny - 0.5, kit ? 3.4 : 3, kit ? 2.6 : 2, 0, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(P.hx + P.hr * 0.7, ny - 0.5, kit ? 3.4 : 3, kit ? 2.6 : 2, 0, 0, 7); g.fill();
+  }
 
   g.restore(); // face tilt
 
@@ -2607,18 +2836,20 @@ checkDexMilestones();
 syncHud();
 requestAnimationFrame(frame);
 
-// first run: name the cove, then check what the cats got up to while away
+// first run: name the cove → tutorial → then check what the cats got up to while away
 const needName = !G.owner && !G.ownerAsked;
 if (needName) {
   setTimeout(() => askOwnerName(true), 500);
+} else if (!G.tutorialDone) {
+  setTimeout(openTutorial, 400);
 } else {
   checkOffline();
 }
 
-// gentle first-run guidance
-if (!G.tips.includes("welcome")) {
+// gentle guidance only once the tutorial is behind you
+if (G.tutorialDone && !G.tips.includes("welcome")) {
   G.tips.push("welcome");
-  setTimeout(() => toast("Tap a cat to pet it. Tap the glowing shells to collect.", 5), needName ? 4000 : 900);
+  setTimeout(() => toast("Tap a cat to pet it. Tap the glowing shells to collect.", 5), 900);
 }
 })();
 </script>

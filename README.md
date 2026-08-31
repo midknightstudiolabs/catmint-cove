@@ -1,6 +1,10 @@
 # Catmint Cove — Phase 1 prototype
 
-**Version:** V1 (tag `v1`, 2026-08-31) · a frozen snapshot lives in [`releases/v1/`](releases/v1/)
+**Version:** V2 (2026-09-01) — mascot **Midknight**, chunky-loaf cat art, deadpan
+gold eyes, procedural happy-meow SFX, a skippable 5-step tutorial (re-openable from
+the **?** button), and mobile-first layout (safe-area insets, 44px touch targets,
+icon-only action bar on small screens). V1 is tag `v1` (2026-08-31), frozen in
+[`releases/v1/`](releases/v1/).
 **Play it:** https://ukiyazero.github.io/catmint-cove/
 (hosted on GitHub Pages from `index.html` on `main` — redeploys on push)
 
