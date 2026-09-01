@@ -33,7 +33,12 @@ no build step, no dependencies.
 - [x] Canvas accessories — collar / bandana / bow / flower crown
 - [x] Photo → short animated clip capture (MediaRecorder webm)
 - [x] Tall-screen scene layout pass (foreground meadow)
-- [x] Calmer ASMR meow synth
+- [x] Calmer ASMR meow synth (now the fallback)
+- [x] Real recorded cat voices — `sfx/` MP3s (meow ×5, kitten ×2, grumpy ×2, a
+      wake yawn, a purr). Random pick with no immediate repeat + per-play pitch/
+      level jitter; ~1 in 3 pets stays quiet, kittens use the kitten pool,
+      cuddly cats sometimes purr, prickly cats grumble when over-petted, and a
+      cat yawns when it grows up. Sources kept in `../meow-src/`.
 - [x] Fishing mini-loop — cast / wait / bite / reel / cook / eat
 - [x] Rest mode — the rainy-day cabin companion (**🌙** in the HUD): cats come
       inside, rain on the window, a fire, a real rain-audio loop, idle-dim,
