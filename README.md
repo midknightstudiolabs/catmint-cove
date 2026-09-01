@@ -39,6 +39,22 @@ no build step, no dependencies.
       inside, rain on the window, a fire, a real rain-audio loop, idle-dim,
       auto-stop timer, wake-lock. Rain audio polished from a field recording
       (`rain-loop.opus`; long-form versions in `../rain-v2/`).
+- [x] Ads + IAP scaffold — a simulated `Ads` layer (rewarded / interstitial)
+      behind the interface the real Google AdMob SDK will use in the native
+      build. Rewarded: double offline earnings, coax a cat for free. One *light*
+      interstitial on the session boundary (48h new-player grace · ≤3/day · none
+      in Rest mode · none for supporters). One-time neutral age gate sets the ad
+      treatment. **Cozy Supporter Pack $4.99** (simulated purchase): removes ads,
+      permanent 2× offline, ✦50, a ribbon for Midknight.
+
+### Monetization notes
+
+Real AdMob integration waits until Catmint Cove has a **published store listing** —
+[AdMob won't approve ad serving](https://support.google.com/admob/answer/10564477)
+until the app is live in a store with matching IDs and a verified payments
+account. Until then the game ships the simulated `Ads` module (same method
+signatures, so the swap is mechanical). Still to wire before the real SDK: the
+UMP consent SDK, iOS ATT, and families / child-directed tagging.
 
 ## What this is testing
 

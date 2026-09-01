@@ -136,6 +136,29 @@
   .shop-item .desc{font-size:.8rem;color:var(--ink-soft);margin-top:.1rem;}
   .shop-item button{flex:0 0 auto;white-space:nowrap;}
   .shop-item .lv{font-size:.72rem;color:var(--accent-bright);font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+  .shop-item.pack{background:linear-gradient(180deg,#fff8ec,#fdeeceff);border-radius:14px;padding:.75rem;margin:.35rem 0;border-top:none;}
+  .shop-item.pack .name{color:var(--apricot);}
+  .shop-item.pack .owned{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-bright);}
+
+  /* ---- ads (simulated here; Google AdMob in the native build) ---- */
+  #adv{position:absolute;inset:0;z-index:90;display:none;align-items:center;justify-content:center;
+    background:rgba(18,15,10,.86);padding:1.2rem;}
+  #adv.on{display:flex;}
+  #adv .adbox{background:#1d1b16;color:#efe9dc;border:1px solid #35312a;border-radius:18px;
+    width:min(92vw,360px);padding:1.3rem 1.2rem 1.1rem;text-align:center;box-shadow:var(--shadow);}
+  #adv .adtag{font-family:"IBM Plex Mono",monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#8f877a;}
+  #adv .adname{font-family:"Fraunces",serif;font-size:1.15rem;margin:.35rem 0 .9rem;}
+  #adv .adfill{height:.5rem;border-radius:999px;background:#33302a;overflow:hidden;margin:.3rem 0 .8rem;}
+  #adv .adfill i{display:block;height:100%;width:0;background:var(--shell);}
+  #adv .adnote{font-size:.72rem;color:#8f877a;margin-bottom:1rem;}
+  #adv .adx{font:inherit;font-weight:700;font-size:.86rem;padding:.55rem 1rem;border-radius:999px;
+    border:1px solid #4a453c;background:#2a2721;color:#efe9dc;cursor:pointer;min-width:9.5rem;}
+  #adv .adx:disabled{opacity:.55;cursor:default;}
+  .modal .packperks{list-style:none;padding:0;margin:.1rem 0 1rem;font-size:.9rem;color:var(--ink-soft);text-align:left;}
+  .modal .packperks li{padding:.16rem 0 .16rem 1.3rem;position:relative;}
+  .modal .packperks li::before{content:"✓";position:absolute;left:0;color:var(--accent-bright);font-weight:700;}
+  .btn.rewarded{background:#f3ede0;border-color:var(--panel-line);}
+  button.btn.primary.wantcoax{opacity:.72;}
 
   /* ---- catdex ---- */
   #dex{left:50%;transform:translateX(-50%);bottom:4.2rem;width:min(94vw,430px);max-height:74vh;overflow-y:auto;}
@@ -346,6 +369,9 @@
       <button id="dev-cat">+ cat</button>
       <button id="dev-day">skip a day</button>
       <button id="dev-name">name cove</button>
+      <button id="dev-ad">show ad</button>
+      <button id="dev-super">toggle supporter</button>
+      <button id="dev-adreset">reset ads</button>
       <button id="dev-reset" class="danger">RESET GAME</button>
     </div>
   </div>
@@ -392,6 +418,9 @@
   <div id="scrim">
     <div class="modal" id="modal"></div>
   </div>
+
+  <!-- ad surface (simulated; real build swaps in Google AdMob behind the Ads module) -->
+  <div id="adv"></div>
 
   <!-- tutorial -->
   <div id="tut">
@@ -544,6 +573,22 @@ const NAMES = ["Biscuit","Miso","Pixel","Tofu","Clover","Waffle","Sardine","Pebb
 /* ---------- game state ---------- */
 let G = null;
 
+function newAdsState() {
+  return {
+    supporter: false,      // bought the Cozy Supporter Pack — no more interstitials
+    perm2x: false,         // Supporter perk: offline earnings always doubled
+    born: null,            // birth year from the one-time age gate
+    npa: true,             // non-personalized ads (default until we know an adult is playing)
+    asked: false,          // age gate shown yet?
+    seen: 0,               // interstitials shown all-time (drives the one-time pack nudge)
+    last: 0,               // ts of the last interstitial
+    day: "",               // yyyy-m-d bucket for the per-day interstitial cap
+    dayCount: 0,           // interstitials shown in the current day bucket
+    rewardAt: {},          // placement key -> ts of last rewarded grant (per-placement cooldowns)
+    pending: false,        // a session-transition interstitial is queued for next foreground
+    prompted: false,       // the "buy the pack" nudge has been shown once
+  };
+}
 function newGame() {
   return {
     v: 6,
@@ -558,6 +603,7 @@ function newGame() {
     stations: { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 },   // activity stations cats "work"
     trinkets: 0,           // accessories handed out from the Shop
     rest: null,            // active rainy-day session { on, startedAt, endsAt, opts }
+    ads: newAdsState(),    // monetization: supporter status, age treatment, frequency caps
     owner: null,           // the player names their cove on first run
     opens: 1,
     firstSeen: Date.now(),
@@ -590,6 +636,7 @@ function load() {
     if (!G.decor) G.decor = { tree: 0, cottage: 0, flowers: 0 };
     if (!G.stations) G.stations = { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 };
     if (G.trinkets === undefined) G.trinkets = 0;
+    G.ads = Object.assign(newAdsState(), G.ads || {});
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
     if (G.midknightSeeded === undefined) G.midknightSeeded = false;
     G.opens = (G.opens || 1) + 1;
@@ -1524,6 +1571,21 @@ function priceOf(item) { return Math.round(item.base * Math.pow(item.mul, item.g
 function renderShop() {
   const list = document.getElementById("shopList");
   list.innerHTML = "";
+
+  // Cozy Supporter Pack — the one paid item (simulated purchase in this build)
+  const pack = document.createElement("div");
+  pack.className = "shop-item pack";
+  pack.innerHTML = Ads.owned()
+    ? `<div class="txt"><div class="name">Cozy Supporter Pack</div>
+         <div class="desc">Ads off · offline earnings permanently 2× · thank you 🧡</div></div>
+       <span class="owned">Owned</span>`
+    : `<div class="txt"><div class="name">Cozy Supporter Pack</div>
+         <div class="desc">No ads ever · permanent 2× offline earnings · ✦50 · a ribbon for Midknight</div></div>
+       <button class="btn primary">${SUPPORTER_PRICE}</button>`;
+  const pb = pack.querySelector("button");
+  if (pb) pb.addEventListener("click", () => showPackOffer(false));
+  list.appendChild(pack);
+
   for (const item of SHOP) {
     const maxed = item.max != null && item.get() >= item.max;
     const price = priceOf(item);
@@ -1567,12 +1629,8 @@ function renderShop() {
 
 /* ---------- coax ---------- */
 function coaxPrice() { return Math.round(10 * Math.pow(1.45, G.coax)); }
-document.getElementById("coaxBtn").addEventListener("click", () => {
-  ensureAudio();
-  const p = coaxPrice();
-  if (G.shells < p) { toast("Not enough shells yet — collect a few more."); return; }
-  if (cats.length >= capacity()) { toast("The cove is full. Add comforts in the Shop for more room."); return; }
-  G.shells -= p;
+function doCoax(free) {
+  if (!free) { G.shells -= coaxPrice(); }
   G.coax++;
   G.metrics.coaxed++;
   const c = spawnCat();          // registerInDex() queues a reveal for news
@@ -1580,8 +1638,33 @@ document.getElementById("coaxBtn").addEventListener("click", () => {
   sfx("coax");
   syncHud();
   fireTip("first_coax");
-  // if nothing special queued, at least name the newcomer
   if (!revealQueue.length) toast(`${c.name} (${c.coat.name}) wandered in`, 3);
+}
+document.getElementById("coaxBtn").addEventListener("click", () => {
+  ensureAudio();
+  const p = coaxPrice();
+  if (cats.length >= capacity()) { toast("The cove is full. Add comforts in the Shop for more room."); return; }
+  if (G.shells < p) {
+    if (Ads.rewardReady("freeCoax")) {
+      openModal(`<div class="reveal">
+        <div class="kicker">Not enough shells</div>
+        <h2>Coax one for free?</h2>
+        <p class="sub">Watch a short video and a cat will wander in — no shells needed. Comes back around in about an hour and a half.</p>
+        <div class="row">
+          <button class="btn primary rewarded" id="cx-ad"><span class="ico">▶</span> Watch &amp; coax</button>
+          <button class="btn" id="cx-no">Not now</button>
+        </div></div>`);
+      document.getElementById("cx-no").onclick = closeModal;
+      document.getElementById("cx-ad").onclick = async () => {
+        closeModal();
+        if (await Ads.rewarded("freeCoax")) doCoax(true);
+      };
+    } else {
+      toast("Not enough shells yet — collect a few more.");
+    }
+    return;
+  }
+  doCoax(false);
 });
 
 /* ---------- photo mode ---------- */
@@ -1751,7 +1834,12 @@ function syncHud() {
   document.getElementById("opens").textContent = G.opens;
   document.getElementById("coaxCost").textContent = coaxPrice();
   const cb = document.getElementById("coaxBtn");
-  cb.disabled = G.shells < coaxPrice() || cats.length >= capacity();
+  // only hard-disable when the cove is physically full; when short on shells the
+  // button still clicks → either the watch-an-ad "coax for free" offer or a hint
+  const full = cats.length >= capacity();
+  const broke = G.shells < coaxPrice();
+  cb.disabled = full;
+  cb.classList.toggle("wantcoax", broke && !full);
   document.getElementById("dexBadge").textContent = dexCount() + "/" + COATS.length;
   const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
   document.getElementById("todayBadge").hidden = !gReady;
@@ -2002,6 +2090,18 @@ document.getElementById("dev-day").addEventListener("click", () => {
   for (const c of cats) { c.acc += aggregateRate() * 120; c.bornAt -= DAY_MS; }   // age the kittens too
   toast("Skipped ahead a day"); syncHud();
 });
+document.getElementById("dev-ad").addEventListener("click", () => {
+  G.ads.last = 0; G.ads.dayCount = 0;
+  G.firstSeen = Math.min(G.firstSeen || Date.now(), Date.now() - 3 * 24 * 3600e3);  // push past grace
+  Ads.interstitial("dev");
+});
+document.getElementById("dev-super").addEventListener("click", () => {
+  if (Ads.owned()) { G.ads.supporter = false; G.ads.perm2x = false; save(); toast("Supporter OFF"); }
+  else grantSupporter();
+});
+document.getElementById("dev-adreset").addEventListener("click", () => {
+  G.ads = newAdsState(); save(); toast("Ad state reset (age gate, caps, cooldowns, supporter)");
+});
 function updateDev() {
   if (!devEl.classList.contains("on")) return;
   const sessSec = (performance.now() - sessionStart) / 1000;
@@ -2011,7 +2111,8 @@ function updateDev() {
 day ${G.opens}   cats ${cats.length}/${capacity()}   mood ${avgMood}
 shells ${Math.floor(G.shells)}   pearls ${G.pearls}   dex ${dexCount()}/${COATS.length}
 pets ${G.metrics.pets}  tokens ${G.metrics.tokens}  coaxed ${G.metrics.coaxed}  photos ${G.metrics.photos}
-streak ${G.streak}   rate ${aggregateRate().toFixed(2)}/s   played ${fmtTime(G.allTimeSec || 0)}`;
+streak ${G.streak}   rate ${aggregateRate().toFixed(2)}/s   played ${fmtTime(G.allTimeSec || 0)}
+ads: ${Ads.owned() ? "SUPPORTER (off)" : (Date.now()-(G.firstSeen||0) < 48*3600e3 ? "grace" : "on")}  seen ${G.ads.seen}  today ${G.ads.dayCount}  born ${G.ads.born||"—"}  npa ${G.ads.npa?1:0}`;
 }
 
 /* ---------- toasts / tips ---------- */
@@ -2035,6 +2136,191 @@ function fireTip(key) {
   if (TIPS[key]) toast(TIPS[key], 4.2);
 }
 
+/* ================================ ads ================================ *
+ * One interface the game calls. Backed by a *simulated* player here; in the
+ * native build the two async methods become real Google AdMob calls
+ * (RewardedAd / InterstitialAd) behind the exact same signatures — nothing
+ * else in the game changes.
+ *
+ *   await Ads.rewarded(placement)   -> boolean   (true = watched → grant it)
+ *   Ads.interstitial(trigger)       -> Promise   (self-throttling, safe anywhere)
+ *   Ads.owned()                     -> boolean   (Supporter Pack purchased)
+ *   Ads.rewardReady(placement)      -> boolean   (per-placement cooldown elapsed)
+ *
+ * Guardrails baked in: 48h new-player grace, ≤3 interstitials/day, ≥4min gap,
+ * none for supporters, never in Rest mode, never over the tutorial or a modal.
+ */
+const Ads = (() => {
+  const GRACE_MS  = 48 * 3600e3;
+  const MIN_GAP_MS = 4 * 60e3;
+  const DAY_CAP   = 3;
+  const SESSION_MIN_MS = 8 * 60e3;         // only queue a session-end ad after a real sit-down
+  const REWARD_CD = {                      // per-placement cooldowns for opt-in offers (ms)
+    offline2x: 0,
+    freeCoax: 90 * 60e3,
+  };
+  const A = () => (G.ads || (G.ads = newAdsState()));
+  const dayKey = (d = new Date()) => d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  const owned = () => !!A().supporter;
+  const inGrace = () => { const t = G.firstSeen || 0; return t > 0 && Date.now() - t < GRACE_MS; };
+  const busy = () => (scrim && scrim.classList.contains("on"))
+    || (tutEl && tutEl.classList.contains("on")) || restMode;
+
+  function rewardReady(p) {
+    const cd = REWARD_CD[p] || 0;
+    return Date.now() - ((A().rewardAt && A().rewardAt[p]) || 0) >= cd;
+  }
+  function markReward(p) { (A().rewardAt = A().rewardAt || {})[p] = Date.now(); save(); }
+
+  // ---- the simulated player: a small overlay with a forced-view countdown ----
+  function playSim(rewarded) {
+    return new Promise(resolve => {
+      const host = document.getElementById("adv");
+      const secs = rewarded ? 5 : 4;
+      host.innerHTML = `
+        <div class="adbox">
+          <div class="adtag">ad · simulated</div>
+          <div class="adname">${rewarded ? "Rewarded video" : "Sponsored"}</div>
+          <div class="adfill"><i></i></div>
+          <div class="adnote">real build: Google AdMob ${rewarded ? "rewarded video" : "interstitial"}</div>
+          <button class="adx" disabled>${rewarded ? "Reward in " : "Skip in "}<b>${secs}</b></button>
+        </div>`;
+      host.classList.add("on");
+      const btn = host.querySelector(".adx"), num = btn.querySelector("b");
+      const fill = host.querySelector(".adfill i");
+      fill.style.transition = `width ${secs}s linear`;
+      requestAnimationFrame(() => { fill.style.width = "100%"; });
+      let left = secs;
+      const iv = setInterval(() => {
+        left--;
+        if (num && left > 0) num.textContent = left;
+        if (left <= 0) {
+          clearInterval(iv);
+          btn.disabled = false;
+          btn.textContent = rewarded ? "Claim reward" : "Continue";
+        }
+      }, 1000);
+      const done = () => { if (btn.disabled) return; clearInterval(iv); host.classList.remove("on"); resolve(true); };
+      btn.onclick = done;
+    });
+  }
+
+  function offerPackOnce() {
+    if (A().prompted || owned()) return;
+    A().prompted = true; save();
+    setTimeout(() => { if (!busy()) showPackOffer(true); }, 900);
+  }
+
+  return {
+    owned, rewardReady,
+
+    // opt-in — resolves true only if the player watched it through
+    async rewarded(placement) {
+      if (busy()) return false;
+      const ok = await playSim(true);
+      if (ok) markReward(placement);
+      return ok;
+    },
+
+    // forced — self-throttling; a no-op whenever a guardrail says so
+    async interstitial(trigger) {
+      const a = A();
+      if (owned() || inGrace() || busy()) return;
+      const now = Date.now();
+      if (now - (a.last || 0) < MIN_GAP_MS) return;
+      const k = dayKey();
+      if (a.day !== k) { a.day = k; a.dayCount = 0; }
+      if (a.dayCount >= DAY_CAP) return;
+      a.last = now; a.dayCount++; a.seen++; save();
+      await playSim(false);
+      if (a.seen >= 3) offerPackOnce();
+    },
+
+    // session boundary: leaving after a real session queues one ad for the return
+    onHide() {
+      const a = A();
+      if (owned() || inGrace()) return;
+      if (performance.now() - sessionStart >= SESSION_MIN_MS) { a.pending = true; save(); }
+    },
+    onShow() {
+      const a = A();
+      if (a.pending) { a.pending = false; save(); setTimeout(() => Ads.interstitial("resume"), 400); }
+    },
+  };
+})();
+
+/* one-time neutral age gate — sets the ad treatment (personalized vs contextual) */
+function askAgeGate(then) {
+  const yearNow = new Date().getFullYear();
+  openModal(`<div class="reveal">
+    <div class="kicker">One quick thing</div>
+    <h2>What year were you born?</h2>
+    <p class="sub">This just sets what kind of ads the cove can show. We don't store your birthday.</p>
+    <input class="name-in" id="age-in" inputmode="numeric" maxlength="4" placeholder="${yearNow - 20}" autocomplete="off">
+    <div class="row">
+      <button class="btn primary" id="age-ok">Continue</button>
+    </div>
+  </div>`);
+  const inp = document.getElementById("age-in");
+  setTimeout(() => inp.focus(), 30);
+  const submit = () => {
+    const y = parseInt(inp.value, 10);
+    const age = (y >= 1900 && y <= yearNow) ? yearNow - y : null;
+    G.ads.born = Number.isFinite(y) ? y : null;
+    G.ads.npa = !(age !== null && age >= 18);   // personalized ads only for known adults
+    G.ads.asked = true;
+    save(); closeModal();
+    if (then) then();
+  };
+  document.getElementById("age-ok").onclick = submit;
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
+}
+
+/* ---------- Cozy Supporter Pack ($4.99 — simulated purchase) ---------- */
+const SUPPORTER_PRICE = "$4.99";
+function grantSupporter() {
+  G.ads.supporter = true;
+  G.ads.perm2x = true;
+  G.ads.pending = false;
+  G.pearls += 50;
+  const mid = cats.find(c => c.mascot);
+  if (mid) mid.accessory = "bow";        // a little supporter ribbon for Midknight
+  save(); syncHud();
+  spawnParticles(W / 2, H * 0.5, "twinkle", 16);
+  toast("Thank you for supporting the cove 🧡  Ads off · ✦50 · permanent 2× offline");
+}
+function showPackOffer(soft) {
+  if (Ads.owned()) {
+    openModal(`<div class="reveal"><div class="kicker">Cozy Supporter</div>
+      <h2>You're a supporter 🧡</h2>
+      <p class="sub">Ads are off, offline earnings are permanently doubled, and Midknight's wearing his ribbon. Thank you.</p>
+      <div class="row"><button class="btn primary" id="pk-close">Back to the cove</button></div></div>`);
+    document.getElementById("pk-close").onclick = closeModal;
+    return;
+  }
+  openModal(`<div class="reveal">
+    <div class="kicker">${soft ? "Enjoying the cove?" : "Cozy Supporter Pack"}</div>
+    <h2>Cozy Supporter Pack</h2>
+    <ul class="packperks">
+      <li>No more ads — ever (rewarded videos stay optional)</li>
+      <li>Offline earnings permanently doubled</li>
+      <li>✦ 50 pearls</li>
+      <li>A ribbon for Midknight + a supporter mark on your cove</li>
+    </ul>
+    <div class="row">
+      <button class="btn primary" id="pk-buy">Get it — ${SUPPORTER_PRICE}</button>
+      <button class="btn" id="pk-no">Maybe later</button>
+    </div>
+    <p class="sub" style="margin:.7rem 0 0;font-size:.76rem;">Simulated purchase in this build — real build uses Google Play / App Store billing.</p>
+  </div>`);
+  document.getElementById("pk-buy").onclick = () => {
+    closeModal();
+    if (!confirm(`Confirm purchase — Cozy Supporter Pack, ${SUPPORTER_PRICE}?\n(simulated: no charge)`)) return;
+    grantSupporter();
+  };
+  document.getElementById("pk-no").onclick = closeModal;
+}
+
 /* ---------- offline earnings ---------- */
 function aggregateRate() {
   if (!cats.length) return G.ratePerSec || 0;
@@ -2054,20 +2340,27 @@ function checkOffline() {
 
   if (elapsed < 45 || !(G.ratePerSec > 0)) return;
   const capped = Math.min(elapsed, 8 * 3600);
-  const earned = Math.floor(G.ratePerSec * capped * 0.5);
-  if (earned <= 0) return;
+  const base = Math.floor(G.ratePerSec * capped * 0.5);
+  if (base <= 0) return;
+  const perm2x = !!(G.ads && G.ads.perm2x);          // Supporter Pack perk
+  const earned = perm2x ? base * 2 : base;
+  const canWatch = !perm2x && Ads.rewardReady("offline2x");
   openModal(`
     <div class="big">◈ ${earned}</div>
     <h2>Your cats were busy</h2>
-    <p>${cats.length} cat${cats.length===1?"":"s"} kept ${coveName()} running while you were away${elapsed>3600?` (${fmtTime(elapsed)})`:""}.</p>
+    <p>${cats.length} cat${cats.length===1?"":"s"} kept ${coveName()} running while you were away${elapsed>3600?` (${fmtTime(elapsed)})`:""}.${perm2x?" <b>Supporter 2× applied.</b>":""}</p>
     <div class="row">
       <button class="btn primary" id="m-take">Collect</button>
-      <button class="btn" id="m-2x"><span class="ico">▶</span> Collect 2× &nbsp;<small style="opacity:.7">[rewarded]</small></button>
+      ${canWatch ? `<button class="btn rewarded" id="m-2x"><span class="ico">▶</span> Double it &nbsp;<small style="opacity:.6">ad</small></button>` : ""}
     </div>`);
   document.getElementById("m-take").onclick = () => { G.shells += earned; sfx("collect"); syncHud(); closeModal(); };
-  document.getElementById("m-2x").onclick = () => {
-    G.shells += earned * 2; sfx("buy"); syncHud(); closeModal();
-    toast("Rewarded ad placement — simulated here. This is the loop's main ad surface.");
+  const dbl = document.getElementById("m-2x");
+  if (dbl) dbl.onclick = async () => {
+    closeModal();
+    const watched = await Ads.rewarded("offline2x");
+    G.shells += watched ? earned * 2 : earned;
+    sfx(watched ? "buy" : "collect"); syncHud();
+    if (watched) toast(`Doubled — ◈ ${earned * 2} banked.`);
   };
 }
 const scrim = document.getElementById("scrim");
@@ -2093,7 +2386,10 @@ function askOwnerName(firstTime) {
   setTimeout(() => { inp.focus(); inp.select(); }, 30);
   const finish = () => {
     G.ownerAsked = true; closeModal(); syncHud(); save();
-    if (firstTime) { if (!G.tutorialDone) setTimeout(openTutorial, 250); else checkOffline(); }
+    if (firstTime) {
+      const next = () => { if (!G.tutorialDone) setTimeout(openTutorial, 250); else checkOffline(); };
+      if (G.ads && !G.ads.asked) setTimeout(() => askAgeGate(next), 250); else next();
+    }
   };
   const submit = () => {
     const v = inp.value.trim().replace(/\s+/g, " ").slice(0, 18);
@@ -4065,6 +4361,15 @@ window.__cove = {
   station(key = "fishing", n = 1){ G.stations[key] = (G.stations[key] || 0) + n; rebuildAttractors(); return G.stations; },
   rest(cmd){ if (cmd === "open") { syncRestPanelUI(); openRestPanel(); } else if (cmd === "begin") beginRest(false); else if (cmd === "end") endRest(true); else if (cmd === "render") renderRest(0.05); return { on: restMode, idle: restIdleT | 0, dim: +restDim.toFixed(2), drops: glassDrops.length }; },
   offline(hoursAway = 6){ const before = cats.length; G.lastSeen = Date.now() - hoursAway * 3600e3; checkOffline(); return { hoursAway, capacity: capacity(), before, after: cats.length, arrived: cats.length - before }; },
+  ads(cmd){
+    if (cmd === "interstitial") { G.ads.last = 0; G.ads.dayCount = 0; G.firstSeen = Math.min(G.firstSeen || Date.now(), Date.now() - 3 * 24 * 3600e3); return Ads.interstitial("dev"); }
+    if (cmd === "rewarded") return Ads.rewarded("dev");
+    if (cmd === "pack") return showPackOffer(false);
+    if (cmd === "gate") { G.ads.asked = false; return askAgeGate(); }
+    if (cmd === "supporter") return Ads.owned() ? "already owned" : (grantSupporter(), "granted");
+    if (cmd === "reset") { G.ads = newAdsState(); save(); return "reset"; }
+    return { ...G.ads, inGrace: (G.firstSeen||0) > 0 && Date.now() - G.firstSeen < 48*3600e3, owned: Ads.owned() };
+  },
   // big labelled sheet drawn straight to the canvas for close inspection
   sheet(scale = 2.7, state = "loafing"){
     _paused = true;
@@ -4097,8 +4402,8 @@ if (window.visualViewport) window.visualViewport.addEventListener("resize", onVi
 try { new ResizeObserver(onViewportChange).observe(document.getElementById("app")); } catch (e) {}
 
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) save();
-  else onViewportChange();          // catch a rotation that happened while backgrounded
+  if (document.hidden) { save(); Ads.onHide(); }
+  else { onViewportChange(); Ads.onShow(); }   // onShow: maybe a session-transition interstitial
 });
 window.addEventListener("pagehide", save);
 const _saveInterval = setInterval(save, 5000);
@@ -4129,16 +4434,17 @@ if (G.rest && G.rest.on && (!G.rest.endsAt || Date.now() < G.rest.endsAt)) {
   setTimeout(() => resumeRest(G.rest), 250);
 } else if (G.rest) { G.rest = null; }
 
-// first run: name the cove → tutorial → then check what the cats got up to while away
+// first run: name the cove → age gate → tutorial → then check offline earnings
 const needName = !G.owner && !G.ownerAsked;
+function maybeAgeGate(then) { if (G.ads && G.ads.asked) return then && then(); askAgeGate(then); }
 if (G.rest && G.rest.on) {
   /* resuming rest — skip the usual boot flow */
 } else if (needName) {
-  setTimeout(() => askOwnerName(true), 500);
+  setTimeout(() => askOwnerName(true), 500);      // chains → maybeAgeGate → tutorial (see askOwnerName)
 } else if (!G.tutorialDone) {
-  setTimeout(openTutorial, 400);
+  setTimeout(() => maybeAgeGate(openTutorial), 400);
 } else {
-  checkOffline();
+  maybeAgeGate(checkOffline);
 }
 
 // gentle guidance only once the tutorial is behind you
