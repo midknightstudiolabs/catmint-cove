@@ -25,7 +25,7 @@ no build step, no dependencies.
 - [x] V1 + V2 both permanently hosted
 - [x] Ambient procedural sound bed (rain / stream / birds / night crickets)
 - [x] Day/night lighting cycle the audio follows
-- [ ] Activity stations — fishing dock, bakery, sunbeam mat, catmint garden
+- [x] Activity stations — fishing dock, bakery, sunbeam mat, catmint garden
 - [ ] Canvas accessories — collar / bandana / bow / flower crown
 - [ ] Photo → short animated clip capture
 - [ ] Tall-screen scene layout pass

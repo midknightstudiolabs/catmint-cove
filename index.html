@@ -482,6 +482,7 @@ function newGame() {
     coax: 0,               // times coaxed (price scaling)
     bowls: 1, toys: 0, beds: 0,
     decor: { tree: 0, cottage: 0, flowers: 0 },
+    stations: { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 },   // activity stations cats "work"
     owner: null,           // the player names their cove on first run
     opens: 1,
     firstSeen: Date.now(),
@@ -512,6 +513,7 @@ function load() {
     G = s;
     G.v = 6;                                                  // migrate v5 → v6 in place
     if (!G.decor) G.decor = { tree: 0, cottage: 0, flowers: 0 };
+    if (!G.stations) G.stations = { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 };
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
     if (G.midknightSeeded === undefined) G.midknightSeeded = false;
     G.opens = (G.opens || 1) + 1;
@@ -542,6 +544,10 @@ function seededPos(seed, backness) {
   return { x: clamp(W * (0.1 + 0.8 * r()) , 44, W - 44),
            y: clamp(H * (backness + r() * 0.06), H * 0.44, H - 60) };
 }
+const STATION_HOME = {   // each station has a canonical corner of the cove
+  fishing: { x: 0.13, y: 0.60 }, bakery: { x: 0.85, y: 0.50 },
+  sunbeam: { x: 0.32, y: 0.80 }, garden: { x: 0.70, y: 0.76 },
+};
 function rebuildDecor() {
   decor = [];
   for (let i = 0; i < G.decor.tree; i++)
@@ -550,6 +556,14 @@ function rebuildDecor() {
     decor.push({ type: "cottage", seed: 7001 + i, ...seededPos(7001 + i, 0.5) });
   for (let i = 0; i < G.decor.flowers; i++)
     decor.push({ type: "flowers", seed: 5001 + i, ...seededPos(5001 + i, 0.6) });
+  for (const [type, home] of Object.entries(STATION_HOME)) {
+    for (let i = 0; i < (G.stations[type] || 0); i++) {
+      const jx = i === 0 ? 0 : (mulberry32(3300 + i * 17)() - 0.5) * 0.12;
+      const jy = i === 0 ? 0 : (mulberry32(4400 + i * 17)() - 0.5) * 0.06;
+      decor.push({ type: "station", station: type, seed: 3300 + type.length * 100 + i,
+        x: clamp(W * (home.x + jx), 46, W - 46), y: clamp(H * (home.y + jy), H * 0.46, H - 64) });
+    }
+  }
 }
 function rebuildAttractors() {
   rebuildDecor();                       // decor first so usable pieces have stable positions
@@ -559,8 +573,15 @@ function rebuildAttractors() {
   for (const d of decor) {
     if (d.type === "tree")    attractors.push({ type: "tree",    x: d.x + 14, y: d.y + 20 });
     if (d.type === "cottage") attractors.push({ type: "cottage", x: d.x,      y: d.y + 14 });
+    if (d.type === "station") attractors.push({ type: d.station, station: true, x: d.x, y: d.y + 16 });
   }
 }
+const STATION = {
+  fishing: { arrive: "fishing",    dur: () => rand(16, 30), label: "fishing off the dock",  rate: 1.85, mood: 78, cap: 1 },
+  bakery:  { arrive: "baking",     dur: () => rand(14, 26), label: "helping at the bakery",  rate: 1.6,  mood: 88, cap: 2 },
+  sunbeam: { arrive: "sunbathing", dur: () => rand(20, 38), label: "warming in the sunbeam", rate: 0.95, mood: 98, cap: 1 },
+  garden:  { arrive: "rolling",    dur: () => rand(6, 11),  label: "rolling in the catmint",  rate: 1.3,  mood: 84, cap: 1 },
+};
 function makeAttractor(type, idx) {
   const cols = 4;
   const col = idx % cols, row = Math.floor(idx / cols);
@@ -569,7 +590,8 @@ function makeAttractor(type, idx) {
   return { type, x: clamp(x, 40, W - 40), y: clamp(y, H * 0.54, H - 66) };
 }
 
-function capacity() { return 3 + (G.bowls - 1) * 2 + G.toys + G.beds + G.decor.cottage * 2; }
+function stationCount() { const s = G.stations || {}; return (s.fishing||0) + (s.bakery||0) + (s.sunbeam||0) + (s.garden||0); }
+function capacity() { return 3 + (G.bowls - 1) * 2 + G.toys + G.beds + G.decor.cottage * 2 + stationCount() * 2; }
 function comfortMult() { return 1 + G.comfort * 0.22; }
 function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // ambient mood lift
 
@@ -635,6 +657,8 @@ class Cat {
     if (this.state === "sleeping") s *= 0.8;      // napping in a bed: less output, but mood recovers
     if (this.state === "sulking") s *= 0.45;
     if (this.state === "socializing") s *= 1.1;
+    if (this._station && STATION[this._station]) s *= STATION[this._station].rate;   // working a station
+    if (this.zoomies > 0) s *= 1.45;              // fresh from the catmint garden
     if (this.petBuff > 0) s *= 1.5;
     return s;
   }
@@ -792,6 +816,7 @@ const STATE_LABEL = {
   arriving:"finding a spot", loafing:"loafing", sleeping:"fast asleep", eating:"at the food bowl",
   playing:"playing", socializing:"socializing", exploring:"exploring", knocking:"knocking things over",
   sulking:"sulking", being_pet:"being petted", seeking:"heading somewhere", grooming:"washing up",
+  fishing:"fishing off the dock", baking:"helping at the bakery", sunbathing:"in the sunbeam", rolling:"rolling in the catmint",
 };
 
 function nearestAttractor(c, type) {
@@ -816,6 +841,7 @@ function nearestCat(c) {
 function decide(c) {
   c.stateT = 0;
   c.partner = null;
+  c._station = null;
 
   // low mood → sleep it off (never punished, just recovers)
   if (c.mood < 32 && Math.random() < 0.75) {
@@ -871,6 +897,25 @@ function decide(c) {
     });
   }
 
+  // activity stations — a strong draw; cats queue up to work them
+  for (const [key, st] of Object.entries(STATION)) {
+    const a = nearestAttractor(c, key);
+    if (!a) continue;
+    const busy = cats.filter(o => o !== c && o._station === key).length;
+    if (busy >= st.cap) continue;
+    let w = 3.6;
+    if (key === "sunbeam" && (lazyish || c.mood < 60)) w += 2.5;
+    if (key === "garden" && (c.traits.includes("playful") || c.traits.includes("curious"))) w += 2.2;
+    if (key === "fishing" && (c.traits.includes("glutton") || c.traits.includes("bold"))) w += 2;
+    if (key === "bakery" && (c.traits.includes("chatty") || c.traits.includes("cuddly"))) w += 1.8;
+    add(w, () => {
+      c._arriveState = st.arrive;
+      c._arriveDur = st.dur();
+      c._pendStation = key;
+      return go(c, "seeking", 18, { x: a.x + rand(-12, 12), y: a.y + rand(-6, 8) });
+    });
+  }
+
   // explore — cut right down; wandering is where all the "too much walking" came from
   add(likes.includes("roam") ? 1.3 : 0.3, () =>
     go(c, "exploring", rand(5, 10), { x: rand(W*0.14, W*0.86), y: rand(H*0.56, H*0.85) }));
@@ -898,6 +943,8 @@ function go(c, state, dur, target) {
   c.state = state;
   c.stateDur = dur;
   c.stateT = 0;
+  c._station = null;
+  c._fishT = 0;
   if (target) {
     c.tx = clamp(target.x, 24, W - 24);
     c.ty = clamp(target.y, H * 0.52, H - 60);
@@ -996,6 +1043,7 @@ function updateCat(c, dt) {
   else if (c.state === "playing") target = 86;
   else if (c.state === "loafing") target = 64 + flowerMood() * 0.5;
   else if (c.state === "sulking") target = 30;
+  else if (c._station && STATION[c._station]) target = STATION[c._station].mood;
   const moodSpeed = (target > c.mood ? 3.2 : 1.4) * dt;
   c.mood += (target - c.mood) * Math.min(1, moodSpeed);
   c.mood = clamp(c.mood, 8, 100);
@@ -1021,6 +1069,18 @@ function updateCat(c, dt) {
     dropToken(c.x + rand(-10, 10), c.y - 6, v, tokenFlair(c));
   }
 
+  // catmint zoomies fade
+  if (c.zoomies > 0) c.zoomies = Math.max(0, c.zoomies - dt);
+
+  // working a station: fishing lands the odd bonus catch
+  if (c._station === "fishing") {
+    c._fishT = (c._fishT || 0) + dt;
+    if (c._fishT > 6.5) {
+      c._fishT = 0;
+      if (Math.random() < 0.5) { dropToken(c.x + rand(-6, 10), c.y - 4, rand(3, 7) | 0 || 3, "fish"); spawnParticles(c.x, c.y - 8, "twinkle", 3); }
+    }
+  }
+
   // distance to current target, for state transitions
   const atTarget = Math.hypot(c.tx - c.x, c.ty - c.y) < 7;
 
@@ -1030,8 +1090,13 @@ function updateCat(c, dt) {
     return;
   }
   if (c.state === "seeking") {
-    if (atTarget) { go(c, c._arriveState || "loafing", c._arriveDur || 8, null); }
-    else if (c.stateT > 12) decide(c);
+    if (atTarget) {
+      go(c, c._arriveState || "loafing", c._arriveDur || 8, null);
+      c._station = c._pendStation || null;
+      c._pendStation = null;
+      if (c._station === "garden") spawnParticles(c.x, c.y - 10, "leaf", 5);
+    }
+    else if (c.stateT > 14) { c._pendStation = null; decide(c); }
     return;
   }
   if (c.state === "knocking") {
@@ -1049,6 +1114,13 @@ function updateCat(c, dt) {
     return;
   }
   if (c.stateT >= c.stateDur) {
+    // fresh from the catmint garden → a burst of zoomies (temporary output boost)
+    if (c.state === "rolling") {
+      c.zoomies = rand(45, 70);
+      spawnParticles(c.x, c.y - 14, "leaf", 6);
+      spawnParticles(c.x, c.y - 16, "spark", 4);
+      if (!c.mascot && Math.random() < 0.5) floatText(c.x, c.y - 30, "zoomies!", "#7aa86a");
+    }
     // over-petting → sulk for prickly cats
     if (c.petCount > 2.4 && c.petAffinity() < 0.8 && c.state !== "sulking" && Math.random() < 0.7) {
       go(c, "sulking", rand(7, 12), null);
@@ -1114,11 +1186,12 @@ let particles = [], floaters = [];
 function spawnParticles(x, y, kind, n) {
   for (let i = 0; i < n; i++) {
     const a = Math.random() * Math.PI * 2;
-    const sp = kind === "heart" ? rand(20, 55) : rand(40, 130);
+    const sp = kind === "heart" ? rand(20, 55) : kind === "leaf" ? rand(18, 48) : rand(40, 130);
     particles.push({
-      x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - (kind==="heart"?40:0),
-      life: 0, ttl: kind === "heart" ? 1.1 : 0.7, kind,
-      size: kind === "heart" ? rand(7,12) : rand(2,4),
+      x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - (kind==="heart"||kind==="leaf"?36:0),
+      life: 0, ttl: kind === "heart" ? 1.1 : kind === "leaf" ? 1.3 : 0.7, kind,
+      size: kind === "heart" ? rand(7,12) : kind === "leaf" ? rand(3,5) : rand(2,4),
+      spin: rand(-6, 6),
     });
   }
 }
@@ -1127,7 +1200,7 @@ function updateFX(dt) {
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]; p.life += dt;
     p.x += p.vx * dt; p.y += p.vy * dt;
-    p.vy += (p.kind === "dust" ? 40 : p.kind === "heart" ? -30 : p.kind === "twinkle" ? -4 : 260) * dt;
+    p.vy += (p.kind === "dust" ? 40 : p.kind === "heart" ? -30 : p.kind === "leaf" ? 26 : p.kind === "twinkle" ? -4 : 260) * dt;
     p.vx *= 0.94;
     if (p.life > p.ttl) particles.splice(i, 1);
   }
@@ -1290,10 +1363,19 @@ const SHOP = [
     base:55, mul:1.8, get:()=>G.decor.cottage, buy:()=>{ G.decor.cottage++; rebuildAttractors(); } },
   { key:"flowers", type:"flowers", name:"Flower patch", desc:"Just pretty. Raises everyone's baseline mood a little.",
     base:14, mul:1.5, get:()=>G.decor.flowers, buy:()=>{ G.decor.flowers++; rebuildAttractors(); } },
+  { key:"fishing", type:"fishing", name:"Fishing dock", desc:"Cats fish off the end — big output while they work, plus the odd bonus catch. +2 capacity.",
+    base:70, mul:1.9, get:()=>G.stations.fishing, buy:()=>{ G.stations.fishing++; rebuildAttractors(); } },
+  { key:"bakery", type:"bakery", name:"Little bakery", desc:"Two cats can help at once — steady output and a strong mood lift. +2 capacity.",
+    base:85, mul:1.9, get:()=>G.stations.bakery, buy:()=>{ G.stations.bakery++; rebuildAttractors(); } },
+  { key:"sunbeam", type:"sunbeam", name:"Sunbeam mat", desc:"The comfiest spot in the cove — mood rockets, output ticks over gently. +2 capacity.",
+    base:50, mul:1.8, get:()=>G.stations.sunbeam, buy:()=>{ G.stations.sunbeam++; rebuildAttractors(); } },
+  { key:"garden", type:"garden", name:"Catmint garden", desc:"Cats roll in it and leave with the zoomies — a lasting output burst. +2 capacity.",
+    base:65, mul:1.9, get:()=>G.stations.garden, buy:()=>{ G.stations.garden++; rebuildAttractors(); } },
   { key:"comfort", name:"Comfort upgrade", desc:"+22% output from every cat. Max level 5.",
     base:45, mul:2.2, get:()=>G.comfort, max:5, buy:()=>{ G.comfort++; } },
 ];
-const COMFORT_STATE = { food:"eating", toy:"playing", bed:"sleeping", cottage:"sleeping", tree:"sleeping" };
+const COMFORT_STATE = { food:"eating", toy:"playing", bed:"sleeping", cottage:"sleeping", tree:"sleeping",
+  fishing:"fishing", bakery:"baking", sunbeam:"sunbathing", garden:"rolling" };
 // send a couple of free cats straight over to a freshly placed comfort
 function welcomeToComfort(type) {
   const spots = attractors.filter(a => a.type === type);
@@ -1303,9 +1385,11 @@ function welcomeToComfort(type) {
     .filter(c => !["arriving", "being_pet", "sulking"].includes(c.state))
     .sort(() => Math.random() - 0.5)
     .slice(0, 2);
-  for (const c of free) {
+  const isStation = !!STATION[type];
+  for (const c of free.slice(0, isStation ? (STATION[type].cap || 1) : 2)) {
     c._arriveState = COMFORT_STATE[type];
-    c._arriveDur = COMFORT_STATE[type] === "sleeping" ? rand(22, 40) : rand(12, 20);
+    c._arriveDur = isStation ? STATION[type].dur() : (COMFORT_STATE[type] === "sleeping" ? rand(22, 40) : rand(12, 20));
+    c._pendStation = isStation ? type : null;
     go(c, "seeking", 18, { x: a.x + rand(-14, 14), y: a.y + rand(-8, 8) });
   }
 }
@@ -1342,7 +1426,11 @@ function renderShop() {
         welcomeToComfort(item.type);
         const verb = item.type === "food" ? "eat"
           : item.type === "toy" ? "play"
-          : item.type === "tree" ? "doze in the shade" : "nap";
+          : item.type === "tree" ? "doze in the shade"
+          : item.type === "fishing" ? "fish"
+          : item.type === "bakery" ? "help out"
+          : item.type === "sunbeam" ? "sunbathe"
+          : item.type === "garden" ? "roll in the catmint" : "nap";
         toast(`New ${item.name.toLowerCase()} — cats are heading over to ${verb}`);
       }
     });
@@ -2178,7 +2266,7 @@ function drawDecor(g, d) {
     g.beginPath(); g.arc(16, -14, 5, 0, 7); g.fill();
     g.strokeStyle = "rgba(0,0,0,0.2)"; g.lineWidth = 1;
     g.beginPath(); g.moveTo(16, -19); g.lineTo(16, -9); g.moveTo(11, -14); g.lineTo(21, -14); g.stroke();
-  } else {                                 // flower patch
+  } else if (d.type === "flowers") {         // flower patch
     const r = mulberry32(d.seed >>> 0);
     g.fillStyle = "rgba(36,31,23,0.08)";
     g.beginPath(); g.ellipse(0, 3, 20, 6, 0, 0, 7); g.fill();
@@ -2193,8 +2281,73 @@ function drawDecor(g, d) {
       g.fillStyle = "#e9c85a";
       g.beginPath(); g.arc(fx, fy, 1.5, 0, 7); g.fill();
     }
+  } else if (d.type === "station") {
+    drawStation(g, d.station, d.seed >>> 0);
   }
   g.restore();
+}
+function drawStation(g, kind, seed) {
+  const r = mulberry32(seed || 1);
+  g.fillStyle = "rgba(36,31,23,0.12)";
+  g.beginPath(); g.ellipse(0, 8, 30, 8, 0, 0, 7); g.fill();
+  if (kind === "fishing") {
+    // a little pool + a plank dock reaching over it, a leaning rod
+    g.fillStyle = "rgba(120,168,190,0.5)";
+    g.beginPath(); g.ellipse(6, 10, 30, 12, 0, 0, 7); g.fill();
+    g.fillStyle = "rgba(150,190,208,0.4)";
+    g.beginPath(); g.ellipse(10, 8, 18, 6, 0, 0, 7); g.fill();
+    g.fillStyle = "#9c7a4e";
+    roundRect(g, -30, -2, 34, 9, 2); g.fill();
+    g.fillStyle = "rgba(0,0,0,0.12)";
+    for (let i = -28; i < 2; i += 8) { g.fillRect(i, -2, 2, 9); }
+    g.fillStyle = "#7d6039";
+    g.fillRect(-28, 5, 3, 8); g.fillRect(-6, 5, 3, 8);
+    g.strokeStyle = "#5b4634"; g.lineWidth = 1.4; g.lineCap = "round";
+    g.beginPath(); g.moveTo(0, 2); g.lineTo(20, -20); g.stroke();
+    g.strokeStyle = "rgba(70,60,45,0.6)"; g.lineWidth = 0.8;
+    g.beginPath(); g.moveTo(20, -20); g.lineTo(22, -4); g.stroke();
+  } else if (kind === "bakery") {
+    // a tiny market stall with a striped awning
+    g.fillStyle = "#e7dcc4"; roundRect(g, -24, -20, 48, 28, 3); g.fill();
+    g.fillStyle = "rgba(0,0,0,0.06)"; roundRect(g, -24, 0, 48, 8, 3); g.fill();
+    g.fillStyle = "#8a6b4a"; g.fillRect(-24, -20, 3, 28); g.fillRect(21, -20, 3, 28);
+    for (let i = 0; i < 6; i++) {
+      g.fillStyle = i % 2 ? "#d98b7a" : "#f3ece0";
+      g.beginPath(); g.moveTo(-27 + i*9, -20); g.lineTo(-27 + i*9 + 9, -20);
+      g.lineTo(-27 + i*9 + 5, -12); g.closePath(); g.fill();
+    }
+    g.fillStyle = "#c98b4b";
+    g.beginPath(); g.ellipse(-8, -2, 5, 3.4, 0, 0, 7); g.ellipse(3, -1, 5, 3.4, 0, 0, 7); g.ellipse(12, -3, 4, 3, 0, 0, 7); g.fill();
+    g.fillStyle = "rgba(255,238,200,0.5)";
+    g.beginPath(); g.ellipse(0, -6, 20, 12, 0, 0, 7); g.fill();
+  } else if (kind === "sunbeam") {
+    // a bright woven mat catching a soft shaft of warm light from above
+    g.save();
+    const shaft = g.createLinearGradient(0, -70, 0, 10);
+    shaft.addColorStop(0, "rgba(255,236,180,0)");
+    shaft.addColorStop(1, "rgba(255,232,168,0.45)");
+    g.fillStyle = shaft;
+    g.beginPath(); g.moveTo(-10, -70); g.lineTo(10, -70); g.lineTo(30, 8); g.lineTo(-30, 8); g.closePath(); g.fill();
+    const glow = g.createRadialGradient(0, 2, 3, 0, 2, 34);
+    glow.addColorStop(0, "rgba(255,236,180,0.55)"); glow.addColorStop(1, "rgba(255,236,180,0)");
+    g.fillStyle = glow; g.beginPath(); g.ellipse(0, 2, 34, 20, 0, 0, 7); g.fill();
+    g.restore();
+    g.fillStyle = "#e9d6a2"; g.beginPath(); g.ellipse(0, 4, 26, 11, 0, 0, 7); g.fill();
+    g.fillStyle = "#dcc389"; g.beginPath(); g.ellipse(0, 4, 22, 8.5, 0, 0, 7); g.fill();
+    g.strokeStyle = "rgba(150,120,70,0.35)"; g.lineWidth = 1.1;
+    for (let i = -16; i <= 16; i += 5) { g.beginPath(); g.moveTo(i, -3.5); g.lineTo(i, 11.5); g.stroke(); }
+    g.beginPath(); g.moveTo(-20, 0); g.lineTo(20, 0); g.moveTo(-22, 5); g.lineTo(22, 5); g.stroke();
+  } else {                                     // catmint garden — a raised bed of silver-green tufts
+    g.fillStyle = "#7d6039"; roundRect(g, -26, -2, 52, 12, 2); g.fill();
+    g.fillStyle = "#5b4634"; g.fillRect(-26, 6, 52, 3);
+    g.fillStyle = "#6f5a3f"; roundRect(g, -23, -4, 46, 6, 2); g.fill();
+    for (let i = 0; i < 12; i++) {
+      const bx = -22 + (i / 11) * 44 + (r() - 0.5) * 4, bh = 10 + r() * 10;
+      g.strokeStyle = i % 3 ? "#9ab88a" : "#86a877"; g.lineWidth = 2; g.lineCap = "round";
+      g.beginPath(); g.moveTo(bx, -2); g.quadraticCurveTo(bx + (r()-0.5)*6, -bh*0.6, bx + (r()-0.5)*8, -bh); g.stroke();
+      if (r() < 0.5) { g.fillStyle = "#b6a3d8"; g.beginPath(); g.arc(bx + (r()-0.5)*8, -bh, 1.8, 0, 7); g.fill(); }
+    }
+  }
 }
 function drawDecorLayer(g) {
   for (const d of [...decor].sort((a, b) => a.y - b.y)) drawDecor(g, d);
@@ -2817,6 +2970,11 @@ function drawFX(g) {
     } else if (p.kind === "dust") {
       g.fillStyle = "rgba(120,110,90,0.7)";
       g.beginPath(); g.arc(p.x, p.y, p.size, 0, 7); g.fill();
+    } else if (p.kind === "leaf") {
+      g.save(); g.translate(p.x, p.y); g.rotate(p.life * (p.spin || 3));
+      g.fillStyle = "#7aa86a";
+      g.beginPath(); g.ellipse(0, 0, p.size, p.size * 0.5, 0.5, 0, 7); g.fill();
+      g.restore();
     } else if (p.kind === "twinkle") {
       g.fillStyle = p.col || "#e8b45a";
       const s = p.size * (0.6 + k * 0.8);
@@ -3008,6 +3166,7 @@ window.__cove = {
     layers: ambience ? { water: ambience.waterGain.gain.value, wind: ambience.windGain.gain.value,
       crick: ambience.crickGain.gain.value, bird: ambience.birdGain.gain.value, master: ambience.master.gain.value } : null }; },
   setHour(h){ setDayNight(h); applyAmbienceDayNight(timeOfDay().df, 1.5); return timeOfDay(); },
+  station(key = "fishing", n = 1){ G.stations[key] = (G.stations[key] || 0) + n; rebuildAttractors(); return G.stations; },
   // big labelled sheet drawn straight to the canvas for close inspection
   sheet(scale = 2.7, state = "loafing"){
     _paused = true;
