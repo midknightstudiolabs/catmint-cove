@@ -221,6 +221,32 @@
   #tut .skip{background:none;border:none;color:var(--ink-soft);font:inherit;font-weight:600;font-size:.82rem;
     cursor:pointer;margin-top:.7rem;text-decoration:underline;}
 
+  /* ---- rest / rainy-day mode ---- */
+  #rest{position:absolute;inset:0;z-index:65;display:none;pointer-events:none;}
+  #rest.on{display:block;pointer-events:auto;}
+  #rest .rest-panel{pointer-events:auto;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    background:var(--panel);border:1px solid var(--panel-line);border-radius:22px;box-shadow:var(--shadow);
+    width:min(92vw,360px);padding:1.4rem 1.3rem 1.1rem;text-align:center;}
+  #rest .rest-art{font-size:2.4rem;margin:-.2rem 0 .3rem;}
+  #rest h2{font-family:"Fraunces",serif;font-size:1.35rem;margin:0 0 .4rem;}
+  #rest p{color:var(--ink-soft);font-size:.9rem;margin:0 0 1rem;line-height:1.5;}
+  #rest label{display:flex;align-items:center;gap:.5rem;justify-content:center;font-size:.92rem;margin:.45rem 0;cursor:pointer;color:var(--ink-soft);}
+  #rest label input{width:1rem;height:1rem;accent-color:var(--accent);}
+  #rest .rest-timer{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin:1rem 0 1.1rem;}
+  #rest .rest-timer button{font:inherit;font-weight:600;font-size:.8rem;padding:.4rem .7rem;border-radius:999px;
+    border:1px solid var(--panel-line);background:#eef1e3;color:var(--ink-soft);cursor:pointer;}
+  #rest .rest-timer button.on{background:var(--accent);color:#fff;border-color:transparent;}
+  #rest .rest-cancel{background:none;border:none;color:var(--ink-soft);font:inherit;font-weight:600;font-size:.82rem;
+    cursor:pointer;margin-top:.7rem;text-decoration:underline;}
+  #rest .rest-bar[hidden]{display:none;}
+  #rest .rest-bar{pointer-events:auto;position:absolute;left:50%;bottom:calc(1.4rem + env(safe-area-inset-bottom));
+    transform:translateX(-50%);display:flex;align-items:center;gap:.7rem;white-space:nowrap;
+    background:rgba(18,18,26,.5);color:#fff;padding:.5rem .5rem .5rem .95rem;border-radius:999px;font-size:.85rem;
+    font-variant-numeric:tabular-nums;backdrop-filter:blur(4px);transition:opacity .6s;}
+  #rest .rest-bar.dim{opacity:0;}
+  #rest .rest-bar button{background:rgba(255,255,255,.16);border:none;color:#fff;font:inherit;font-weight:600;
+    padding:.35rem .8rem;border-radius:999px;cursor:pointer;}
+
   /* ---- photo mode ---- */
   #photo{position:absolute;inset:0;z-index:60;background:rgba(24,21,15,.78);display:none;
     flex-direction:column;align-items:center;justify-content:center;gap:.9rem;padding:1.1rem;backdrop-filter:blur(3px);}
@@ -270,11 +296,36 @@
       <button class="pill title-pill" id="titlePill" title="Rename your cove">Catmint <b>Cove</b></button>
       <a class="verbadge" href="v1/" title="Play the original V1 prototype">v2</a>
       <button class="btn" id="helpBtn" title="How to play"><span class="ico">?</span></button>
+      <button class="btn" id="restBtn" title="Rainy day — everyone rests inside"><span class="ico">🌙</span></button>
       <button class="btn" id="muteBtn" title="Sound"><span class="ico">🔊</span></button>
     </div>
   </div>
 
   <canvas id="c"></canvas>
+
+  <div id="rest">
+    <div class="rest-panel" id="restPanel">
+      <div class="rest-art" id="restArt">🌧️</div>
+      <h2>Rainy day</h2>
+      <p>Everyone pads inside for a nap. Rain on the window, a warm fire — leave it running while you work.</p>
+      <label><input type="checkbox" id="restRain" checked> Rain sound</label>
+      <label><input type="checkbox" id="restFire" checked> Fireplace crackle</label>
+      <label><input type="checkbox" id="restThunder"> Distant thunder</label>
+      <div class="rest-timer" id="restTimer">
+        <button data-h="1">1 hour</button>
+        <button data-h="3">3 hours</button>
+        <button data-h="8">8 hours</button>
+        <button data-h="0" class="on">Until I stop</button>
+      </div>
+      <button class="btn primary" id="restBegin">Begin</button>
+      <button class="rest-cancel" id="restCancel">Back to the cove</button>
+    </div>
+    <div class="rest-bar" id="restBar" hidden>
+      <span id="restTime">resting</span>
+      <button id="restFs" title="Fullscreen">⤢</button>
+      <button id="restWake">Wake the cove</button>
+    </div>
+  </div>
 
   <div id="actions">
     <button class="btn primary" id="coaxBtn"><span class="ico">🐾</span> <span class="lbl">Coax a cat</span> <span class="badge cost">◈<span id="coaxCost">10</span></span></button>
@@ -485,6 +536,7 @@ function newGame() {
     decor: { tree: 0, cottage: 0, flowers: 0 },
     stations: { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 },   // activity stations cats "work"
     trinkets: 0,           // accessories handed out from the Shop
+    rest: null,            // active rainy-day session { on, startedAt, endsAt, opts }
     owner: null,           // the player names their cove on first run
     opens: 1,
     firstSeen: Date.now(),
@@ -1859,6 +1911,28 @@ document.getElementById("tutNext").addEventListener("click", () => {
 document.getElementById("tutSkip").addEventListener("click", endTutorial);
 document.getElementById("helpBtn").addEventListener("click", () => { ensureAudio(); openTutorial(); });
 
+/* rest / rainy-day mode wiring */
+document.getElementById("restBtn").addEventListener("click", () => { if (!restMode) { syncRestPanelUI(); openRestPanel(); } });
+document.getElementById("restRain").addEventListener("change", e => {
+  restOpts.rain = e.target.checked;
+  if (restBus && actx) restBus.gain.linearRampToValueAtTime(muted || !restOpts.rain ? 0.0001 : 0.9, actx.currentTime + 0.6);
+});
+document.getElementById("restFire").addEventListener("change", e => { restOpts.fire = e.target.checked; });
+document.getElementById("restThunder").addEventListener("change", e => { restOpts.thunder = e.target.checked; });
+document.querySelectorAll("#restTimer button").forEach(b => b.addEventListener("click", () => {
+  restOpts.hours = +b.dataset.h;
+  document.querySelectorAll("#restTimer button").forEach(x => x.classList.toggle("on", x === b));
+}));
+document.getElementById("restBegin").addEventListener("click", () => beginRest(false));
+document.getElementById("restCancel").addEventListener("click", closeRestPanel);
+document.getElementById("restWake").addEventListener("click", endRest);
+document.getElementById("restFs").addEventListener("click", () => {
+  try { if (document.fullscreenElement) document.exitFullscreen(); else document.getElementById("app").requestFullscreen(); } catch (e) {}
+});
+// any touch while running resets the idle-dim timer
+document.getElementById("rest").addEventListener("pointerdown", () => { restIdleT = 0; });
+document.addEventListener("visibilitychange", () => { if (restMode && !document.hidden) requestRestWakeLock(); });
+
 /* ---------- dev panel (toggle with D) ---------- */
 const devEl = document.getElementById("dev");
 const devStats = document.getElementById("devStats");
@@ -2218,6 +2292,377 @@ function scheduleChime() {
     }
     scheduleChime();
   }, (14 + Math.random() * 26) * 1000);
+}
+
+/* ---------- rest / rainy-day mode — the "second monitor" companion ---------- */
+let restMode = false;
+let restOpts = { rain: true, fire: true, thunder: false, hours: 0 };
+let restStartedAt = 0, restEndsAt = 0;
+let restIdleT = 0, restDim = 0, restDrift = 0, _restFlash = 0, _restRainScroll = 0, _restTimerIv = 0;
+let rainBuffer = null, rainSrc = null, restBus = null, _wakeLock = null;
+let glassDrops = [];
+
+function initGlassDrops() {
+  glassDrops = [];
+  for (let i = 0; i < 52; i++) glassDrops.push({
+    x: Math.random(), y: Math.random(), r: rand(1.1, 3.6), v: 0, hold: rand(0, 3), trail: 0,
+  });
+}
+function updateGlassDrops(dt) {
+  for (const d of glassDrops) {
+    d.hold -= dt;
+    if (d.hold <= 0 && d.r > 1.9) {                 // bigger drops overcome surface tension and run
+      d.v += dt * (5 + d.r * 3);
+      d.y += d.v * dt * 0.06;
+      d.trail = Math.min(1, d.trail + dt * 2);
+    } else {
+      d.v *= 0.9; d.trail = Math.max(0, d.trail - dt);
+    }
+    if (Math.random() < dt * 0.4 && d.r <= 1.9) { d.r += rand(0.3, 1.1); d.hold = rand(0.2, 1.5); }  // slow accretion
+    if (d.y > 1.06) { d.x = Math.random(); d.y = -0.04; d.r = rand(1.1, 3.6); d.v = 0; d.hold = rand(0, 2); d.trail = 0; }
+  }
+}
+
+async function loadRainLoop() {
+  if (rainBuffer || !actx) return;
+  try {
+    const res = await fetch("rain-loop.opus");
+    if (!res.ok) throw 0;
+    rainBuffer = await actx.decodeAudioData(await res.arrayBuffer());
+  } catch (e) { rainBuffer = null; }
+}
+async function startRestAudio() {
+  if (!actx) return;
+  await loadRainLoop();
+  restBus = actx.createGain();
+  restBus.gain.value = 0.0001;
+  restBus.connect(actx.destination);
+  restBus.gain.linearRampToValueAtTime(muted || !restOpts.rain ? 0.0001 : 0.9, actx.currentTime + 2.5);
+  rainSrc = actx.createBufferSource();
+  if (rainBuffer) {
+    rainSrc.buffer = rainBuffer; rainSrc.loop = true;
+    rainSrc.connect(restBus);
+  } else {
+    rainSrc.buffer = makeNoiseBuffer(4, "pink"); rainSrc.loop = true;
+    const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2600;
+    const rg = actx.createGain(); rg.gain.value = 0.55;
+    rainSrc.connect(lp); lp.connect(rg); rg.connect(restBus);
+  }
+  rainSrc.start();
+  if (ambience) ambience.master.gain.linearRampToValueAtTime(0.1, actx.currentTime + 2);
+  scheduleCrackle();
+  scheduleRestThunder();
+}
+function stopRestAudio() {
+  if (!actx) return;
+  const t = actx.currentTime;
+  if (restBus) restBus.gain.linearRampToValueAtTime(0.0001, t + 1.4);
+  if (rainSrc) { try { rainSrc.stop(t + 1.6); } catch (e) {} }
+  const bus = restBus, src = rainSrc;
+  setTimeout(() => { try { src && src.disconnect(); } catch (e) {} try { bus && bus.disconnect(); } catch (e) {} }, 2200);
+  restBus = null; rainSrc = null;
+  if (ambience) ambience.master.gain.linearRampToValueAtTime(muted ? 0 : AMB_MASTER, t + 2);
+}
+function scheduleCrackle() {
+  if (!restMode) return;
+  setTimeout(() => {
+    if (restMode && restOpts.fire && !muted && actx && restBus) {
+      const t = actx.currentTime, L = Math.floor(actx.sampleRate * 0.05);
+      const b = actx.createBuffer(1, L, actx.sampleRate), d = b.getChannelData(0);
+      for (let i = 0; i < L; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / L, 3);
+      const s = actx.createBufferSource(); s.buffer = b;
+      const bp = actx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 900 + Math.random() * 1400; bp.Q.value = 2;
+      const g = actx.createGain(); g.gain.value = 0.05 + Math.random() * 0.06;
+      s.connect(bp); bp.connect(g); g.connect(restBus); s.start(t); s.stop(t + 0.06);
+    }
+    scheduleCrackle();
+  }, (0.5 + Math.random() * 3.5) * 1000);
+}
+function scheduleRestThunder() {
+  if (!restMode) return;
+  setTimeout(() => {
+    if (restMode && restOpts.thunder && !muted && actx && restBus) {
+      _restFlash = 1;
+      const delay = 1.4 + Math.random() * 4;         // sound follows the flash
+      setTimeout(() => {
+        if (!actx || !restBus) return;
+        const t = actx.currentTime, L = Math.floor(actx.sampleRate * 2.2);
+        const b = actx.createBuffer(1, L, actx.sampleRate), d = b.getChannelData(0);
+        let last = 0;
+        for (let i = 0; i < L; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.2 * Math.pow(1 - i / L, 1.4); }
+        const s = actx.createBufferSource(); s.buffer = b;
+        const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(320, t); lp.frequency.exponentialRampToValueAtTime(90, t + 2);
+        const g = actx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.5, t + 0.15); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+        s.connect(lp); lp.connect(g); g.connect(restBus); s.start(t); s.stop(t + 2.3);
+      }, delay * 1000);
+    }
+    scheduleRestThunder();
+  }, (28 + Math.random() * 60) * 1000);
+}
+
+async function requestRestWakeLock() {
+  try { if (navigator.wakeLock && !_wakeLock) _wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {}
+}
+function releaseRestWakeLock() { try { _wakeLock && _wakeLock.release(); } catch (e) {} _wakeLock = null; }
+
+function restLayout() {
+  const wx = W * 0.31, wy = H * 0.08, ww = W * 0.38, wh = H * 0.34;
+  const hbase = H * 0.88;
+  const hw = clamp(W * 0.24, 110, 210), hh2 = clamp(H * 0.34, 130, 230);
+  const htop = hbase - hh2, hx = W * 0.15;
+  return {
+    wx, wy, ww, wh,
+    hx, hw, hh2, htop, hbase,
+    sillX: wx + ww * 0.5, sillY: wy + wh + 5,
+    fireX: hx + hw * 0.5 + 22, fireY: hbase - 4,
+    napX: W * 0.64, napY: H * 0.70,
+  };
+}
+function restSeatCats() {
+  const L = restLayout();
+  const list = [...cats];
+  const seat = (c, o) => Object.assign(c, { vx: 0, vy: 0, walkAmt: 0, walk: 0, blink: 3, stateDur: 1e6, stateT: Math.random() * 3, _station: null, _fx: null, ...o });
+  const fireC = list.find(c => c.mascot) || list[0];
+  if (fireC) seat(fireC, { x: L.fireX, y: L.fireY, face: -1, state: "loafing" });
+  const rest = list.filter(c => c !== fireC);
+  if (rest[0]) seat(rest[0], { x: L.sillX, y: L.sillY, face: -1, state: "loafing" });
+  rest.slice(1).forEach((c, i) => seat(c, {
+    x: L.napX + ((i % 3) - 1) * W * 0.075 + (Math.floor(i / 3) % 2) * W * 0.035,
+    y: L.napY + Math.floor(i / 3) * H * 0.05,
+    face: i % 2 ? 1 : -1, state: "sleeping",
+  }));
+}
+
+function openRestPanel() {
+  ensureAudio(); loadRainLoop(); initGlassDrops();
+  document.getElementById("restPanel").hidden = false;
+  document.getElementById("restBar").hidden = true;
+  document.getElementById("rest").classList.add("on");
+  restMode = true; restIdleT = 0; restDim = 0;
+  restSeatCats();
+}
+function closeRestPanel() {
+  restMode = false;
+  document.getElementById("rest").classList.remove("on");
+  for (const c of cats) { c.stateDur = 0; decide(c); }
+}
+function beginRest(resumed) {
+  document.getElementById("restPanel").hidden = true;
+  document.getElementById("restBar").hidden = false;
+  if (!resumed) { restStartedAt = Date.now(); restEndsAt = restOpts.hours > 0 ? restStartedAt + restOpts.hours * 3600e3 : 0; }
+  restIdleT = 0; restDim = 0;
+  restMode = true;
+  document.getElementById("rest").classList.add("on");
+  initGlassDrops(); restSeatCats();
+  startRestAudio();
+  requestRestWakeLock();
+  G.rest = { on: true, startedAt: restStartedAt, endsAt: restEndsAt, opts: { ...restOpts } };
+  save();
+  clearInterval(_restTimerIv);
+  _restTimerIv = setInterval(restTick, 1000);
+  restTick();
+}
+function restTick() {
+  const el = document.getElementById("restTime");
+  if (restEndsAt) {
+    const left = restEndsAt - Date.now();
+    if (left <= 0) { endRest(true); return; }
+    const m = Math.ceil(left / 60000);
+    el.textContent = m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m left` : `${m}m left`;
+  } else {
+    const m = Math.floor((Date.now() - restStartedAt) / 60000);
+    el.textContent = m >= 60 ? `resting · ${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m` : `resting · ${m}m`;
+  }
+}
+function endRest(auto) {
+  clearInterval(_restTimerIv); _restTimerIv = 0;
+  stopRestAudio(); releaseRestWakeLock();
+  const elapsedS = Math.max(0, (Date.now() - restStartedAt) / 1000);
+  const mins = Math.floor(elapsedS / 60);
+  const earned = Math.round(aggregateRate() * elapsedS * 0.6);
+  if (earned > 0) { G.shells += earned; bumpGoal("shells", earned); }
+  for (const c of cats) { c.mood = clamp(c.mood + 20, 8, 100); c.stateDur = 0; }
+  restMode = false; restEndsAt = 0; restStartedAt = 0;
+  document.getElementById("rest").classList.remove("on");
+  document.getElementById("restPanel").hidden = false;
+  document.getElementById("restBar").hidden = true;
+  G.rest = null; save();
+  try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+  rebuildAttractors();
+  for (const c of cats) decide(c);
+  syncHud();
+  if (mins >= 1 || auto) {
+    const h = Math.floor(mins / 60), m = mins % 60;
+    toast(`Rested for ${h ? h + "h " : ""}${m}m — the whole cove is cozy${earned > 0 ? `.  +◈${earned}` : ""}.`, 5);
+  }
+}
+function resumeRest(saved) {
+  restOpts = { ...restOpts, ...(saved.opts || {}) };
+  restStartedAt = saved.startedAt || Date.now();
+  restEndsAt = saved.endsAt || 0;
+  syncRestPanelUI();
+  ensureAudio();
+  beginRest(true);
+}
+function syncRestPanelUI() {
+  document.getElementById("restRain").checked = restOpts.rain;
+  document.getElementById("restFire").checked = restOpts.fire;
+  document.getElementById("restThunder").checked = restOpts.thunder;
+  document.querySelectorAll("#restTimer button").forEach(b => b.classList.toggle("on", +b.dataset.h === restOpts.hours));
+}
+
+/* -- the cabin scene -- */
+function renderRest(dt) {
+  restIdleT += dt;
+  restDrift += dt * 0.18;
+  _restRainScroll += dt;
+  if (_restFlash > 0) _restFlash = Math.max(0, _restFlash - dt * 2.2);
+  updateGlassDrops(dt);
+  const targetDim = restIdleT > 26 ? 0.6 : 0;
+  restDim += (targetDim - restDim) * Math.min(1, dt * 0.9);
+  document.getElementById("restBar").classList.toggle("dim", restDim > 0.35);
+
+  const g = ctx;
+  g.save();
+  g.clearRect(-8, -8, W + 16, H + 16);
+  g.translate(Math.sin(restDrift) * 3, Math.cos(restDrift * 0.7) * 2);   // slow burn-in drift
+
+  const L = restLayout();
+  const pn = performance.now();
+
+  // --- room: warm wall + wood floor
+  const wallY = H * 0.58;
+  let wg = g.createLinearGradient(0, 0, 0, wallY);
+  wg.addColorStop(0, "#2f2621"); wg.addColorStop(1, "#493a30");
+  g.fillStyle = wg; g.fillRect(-8, -8, W + 16, wallY + 8);
+  let fg = g.createLinearGradient(0, wallY, 0, H);
+  fg.addColorStop(0, "#5c4636"); fg.addColorStop(1, "#3e3026");
+  g.fillStyle = fg; g.fillRect(-8, wallY, W + 16, H - wallY + 16);
+  g.strokeStyle = "rgba(0,0,0,0.16)"; g.lineWidth = 1;
+  for (let x = -20; x < W + 20; x += 52) { g.beginPath(); g.moveTo(x, wallY); g.lineTo(x - 40, H + 12); g.stroke(); }
+  g.strokeStyle = "rgba(60,40,28,0.6)"; g.lineWidth = 3; g.beginPath(); g.moveTo(-8, wallY); g.lineTo(W + 8, wallY); g.stroke();
+
+  // --- window
+  const { wx, wy, ww, wh } = L;
+  g.fillStyle = "#241b16"; roundRect(g, wx - 9, wy - 9, ww + 18, wh + 18, 6); g.fill();
+  g.save();
+  roundRect(g, wx, wy, ww, wh, 3); g.clip();
+  const sg = g.createLinearGradient(0, wy, 0, wy + wh);
+  sg.addColorStop(0, "#16203a"); sg.addColorStop(1, "#2f3f5c");
+  g.fillStyle = sg; g.fillRect(wx, wy, ww, wh);
+  g.fillStyle = "rgba(8,12,20,0.6)";
+  g.beginPath(); g.moveTo(wx + ww * 0.6, wy + wh);
+  g.bezierCurveTo(wx + ww * 0.52, wy + wh * 0.55, wx + ww * 0.95, wy + wh * 0.5, wx + ww * 0.82, wy + wh * 0.05);
+  g.lineTo(wx + ww, wy + wh); g.closePath(); g.fill();
+  if (_restFlash > 0.02) { g.fillStyle = `rgba(190,210,255,${_restFlash * 0.7})`; g.fillRect(wx, wy, ww, wh); }
+  g.strokeStyle = "rgba(200,214,236,0.34)"; g.lineWidth = 1.1;
+  for (let i = 0; i < 70; i++) {
+    const rxp = (i * 89.7) % ww;
+    const ph = ((_restRainScroll * 300 + i * 61) % (wh + 44)) - 22;
+    g.beginPath(); g.moveTo(wx + rxp, wy + ph); g.lineTo(wx + rxp - 5, wy + ph + 16); g.stroke();
+  }
+  for (const d of glassDrops) {
+    const px = wx + d.x * ww, py = wy + d.y * wh;
+    if (d.trail > 0.05) {
+      g.strokeStyle = `rgba(214,228,244,${0.18 * d.trail})`; g.lineWidth = d.r * 0.8;
+      g.beginPath(); g.moveTo(px, py); g.lineTo(px, py - d.r * 7 - d.v * 4); g.stroke();
+    }
+    g.fillStyle = "rgba(228,240,252,0.62)";
+    g.beginPath(); g.ellipse(px, py, d.r * 0.82, d.r * 1.15, 0, 0, 7); g.fill();
+    g.fillStyle = "rgba(255,255,255,0.6)";
+    g.beginPath(); g.arc(px - d.r * 0.3, py - d.r * 0.35, d.r * 0.32, 0, 7); g.fill();
+  }
+  g.fillStyle = "rgba(255,255,255,0.06)"; g.fillRect(wx, wy, ww, wh * 0.14);
+  g.restore();
+  g.strokeStyle = "#241b16"; g.lineWidth = 5;
+  g.beginPath(); g.moveTo(wx + ww / 2, wy); g.lineTo(wx + ww / 2, wy + wh);
+  g.moveTo(wx, wy + wh / 2); g.lineTo(wx + ww, wy + wh / 2); g.stroke();
+  // sill
+  g.fillStyle = "#5a4636"; g.fillRect(wx - 12, wy + wh + 2, ww + 24, 7);
+
+  // --- wall clock (real local time)
+  const clkX = W * 0.85, clkY = H * 0.19, cr = clamp(Math.min(W, H) * 0.05, 16, 34);
+  g.fillStyle = "#e9e0cc"; g.beginPath(); g.arc(clkX, clkY, cr, 0, 7); g.fill();
+  g.strokeStyle = "#5b4634"; g.lineWidth = 2.5; g.stroke();
+  const nowd = new Date(), hAng = ((nowd.getHours() % 12) + nowd.getMinutes() / 60) / 12 * 7;
+  g.strokeStyle = "#3a2e28"; g.lineCap = "round";
+  g.lineWidth = 2.6; g.beginPath(); g.moveTo(clkX, clkY); g.lineTo(clkX + Math.sin(hAng) * cr * 0.48, clkY - Math.cos(hAng) * cr * 0.48); g.stroke();
+  g.lineWidth = 1.8; const mAng = nowd.getMinutes() / 60 * 7;
+  g.beginPath(); g.moveTo(clkX, clkY); g.lineTo(clkX + Math.sin(mAng) * cr * 0.76, clkY - Math.cos(mAng) * cr * 0.76); g.stroke();
+  g.strokeStyle = "rgba(180,90,70,0.9)"; g.lineWidth = 1;
+  const sAng = (nowd.getSeconds() + (pn % 1000) / 1000) / 60 * 7;
+  g.beginPath(); g.moveTo(clkX, clkY); g.lineTo(clkX + Math.sin(sAng) * cr * 0.82, clkY - Math.cos(sAng) * cr * 0.82); g.stroke();
+
+  // --- fireplace (bottom-left) — stone surround, a short wide firebox opening, tall flames
+  const { hx, hw, htop, hbase } = L;
+  const surH = hbase - htop;
+  g.fillStyle = "#78706a"; roundRect(g, hx - hw / 2, htop, hw, surH, 5); g.fill();
+  g.fillStyle = "#8b827b"; g.fillRect(hx - hw / 2 - 7, htop - 9, hw + 14, 13);   // mantle
+  g.strokeStyle = "rgba(0,0,0,0.14)"; g.lineWidth = 1;
+  for (let sy = htop + 14; sy < hbase - 8; sy += 16) { g.beginPath(); g.moveTo(hx - hw / 2, sy); g.lineTo(hx + hw / 2, sy); g.stroke(); }
+  const ow = hw * 0.6, oh = surH * 0.52, ox = hx, oy = hbase - oh - 8;
+  g.fillStyle = "#15100d";
+  g.beginPath();
+  g.moveTo(ox - ow / 2, hbase - 8);
+  g.lineTo(ox - ow / 2, oy + oh * 0.42);
+  g.quadraticCurveTo(ox - ow / 2, oy, ox, oy);
+  g.quadraticCurveTo(ox + ow / 2, oy, ox + ow / 2, oy + oh * 0.42);
+  g.lineTo(ox + ow / 2, hbase - 8);
+  g.closePath(); g.fill();
+  if (restOpts.fire) {
+    const flick = 0.55 + 0.45 * Math.sin(pn / 80) + 0.18 * Math.sin(pn / 33);
+    const fgl = g.createRadialGradient(ox, hbase - 18, 6, ox, hbase - 18, hw * 2.2);
+    fgl.addColorStop(0, `rgba(255,165,75,${0.26 * flick})`); fgl.addColorStop(1, "rgba(255,165,75,0)");
+    g.fillStyle = fgl; g.fillRect(-8, htop - 60, W * 0.7, H - htop + 90);
+    g.fillStyle = "#4a3120"; g.save(); g.translate(ox, hbase - 12); g.rotate(-0.12);
+    roundRect(g, -ow * 0.34, -4, ow * 0.68, 7, 3); g.fill(); g.restore();
+    g.save(); g.translate(ox, hbase - 16); g.rotate(0.15);
+    roundRect(g, -ow * 0.3, -4, ow * 0.6, 7, 3); g.fill(); g.restore();
+    const by = hbase - 13;
+    // a hot base ember bed
+    g.fillStyle = `rgba(240,140,50,${0.5 + 0.3 * flick})`;
+    g.beginPath(); g.ellipse(ox, by, ow * 0.42, 5, 0, 0, 7); g.fill();
+    // 3 overlapping organic flames + an inner core
+    const layers = [
+      { col: "#e07a26", w: ow * 0.4, h: oh * 0.9, sp: 55 },
+      { col: "#f4b13e", w: ow * 0.28, h: oh * 1.05, sp: 42 },
+      { col: "#fbe08a", w: ow * 0.16, h: oh * 0.8, sp: 33 },
+    ];
+    for (const ly of layers) {
+      const s1 = Math.sin(pn / ly.sp), s2 = Math.sin(pn / (ly.sp * 1.7) + 1);
+      const tipX = ox + s1 * ly.w * 0.35, tipY = by - ly.h * (0.85 + s2 * 0.15);
+      g.fillStyle = ly.col;
+      g.beginPath();
+      g.moveTo(ox - ly.w, by);
+      g.bezierCurveTo(ox - ly.w * 0.9, by - ly.h * 0.45, ox - ly.w * 0.3 + s2 * 6, tipY + ly.h * 0.35, tipX, tipY);
+      g.bezierCurveTo(ox + ly.w * 0.3 - s1 * 6, tipY + ly.h * 0.35, ox + ly.w * 0.9, by - ly.h * 0.45, ox + ly.w, by);
+      g.quadraticCurveTo(ox, by + 3, ox - ly.w, by);
+      g.closePath(); g.fill();
+    }
+  }
+
+  // --- a rug, and a low table with a steaming mug
+  g.fillStyle = "rgba(150,88,78,0.28)"; g.beginPath(); g.ellipse(L.napX, L.napY + H * 0.06, W * 0.24, H * 0.08, 0, 0, 7); g.fill();
+  g.strokeStyle = "rgba(120,68,60,0.35)"; g.lineWidth = 2; g.beginPath(); g.ellipse(L.napX, L.napY + H * 0.06, W * 0.2, H * 0.065, 0, 0, 7); g.stroke();
+  const tbx = W * 0.9, tby = H * 0.66;
+  g.fillStyle = "#6b4f3a"; roundRect(g, tbx - 20, tby, 40, 7, 2); g.fill();
+  g.fillStyle = "#5a3f2e"; g.fillRect(tbx - 16, tby + 7, 4, 15); g.fillRect(tbx + 12, tby + 7, 4, 15);
+  g.fillStyle = "#e2dac9"; roundRect(g, tbx - 6, tby - 9, 13, 10, 2); g.fill();
+  g.strokeStyle = "#e2dac9"; g.lineWidth = 2; g.beginPath(); g.arc(tbx + 8, tby - 4, 3.5, -1, 1.6); g.stroke();
+  g.strokeStyle = "rgba(255,255,255,0.22)"; g.lineWidth = 1.3;
+  for (let i = 0; i < 2; i++) { const s = (pn / 650 + i * 3) % 6; g.beginPath();
+    g.moveTo(tbx - 2 + i * 4, tby - 11); g.quadraticCurveTo(tbx - 6 + i * 4 + Math.sin(s) * 4, tby - 19 - s * 2, tbx - 2 + i * 4, tby - 28 - s * 3); g.stroke(); }
+
+  // --- the cats, back-to-front (windowsill / fireside / nap pile)
+  for (const c of [...cats].sort((a, b) => a.y - b.y)) drawCat(g, c, false);
+  drawFX(g);
+
+  // --- vignette + idle dim
+  const vg = g.createRadialGradient(W / 2, H * 0.55, Math.min(W, H) * 0.25, W / 2, H * 0.55, Math.max(W, H) * 0.75);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(8,6,10,0.45)");
+  g.fillStyle = vg; g.fillRect(-6, -6, W + 12, H + 12);
+  if (restDim > 0.01) { g.fillStyle = `rgba(6,8,16,${restDim * 0.62})`; g.fillRect(-6, -6, W + 12, H + 12); }
+  g.restore();
 }
 
 /* ---------- rendering ---------- */
@@ -3462,6 +3907,11 @@ function frame(now) {
   let frameDt = (now - last) / 1000;
   last = now;
   if (frameDt > 0.25) frameDt = 0.25;      // tab was backgrounded — don't fast-forward
+  if (restMode) {
+    renderRest(frameDt);
+    requestAnimationFrame(frame);
+    return;
+  }
   if (!_paused) {
     simAccum += frameDt;
     let steps = 0;
@@ -3565,6 +4015,7 @@ window.__cove = {
       crick: ambience.crickGain.gain.value, bird: ambience.birdGain.gain.value, master: ambience.master.gain.value } : null }; },
   setHour(h){ setDayNight(h); applyAmbienceDayNight(timeOfDay().df, 1.5); return timeOfDay(); },
   station(key = "fishing", n = 1){ G.stations[key] = (G.stations[key] || 0) + n; rebuildAttractors(); return G.stations; },
+  rest(cmd){ if (cmd === "open") { syncRestPanelUI(); openRestPanel(); } else if (cmd === "begin") beginRest(false); else if (cmd === "end") endRest(true); else if (cmd === "render") renderRest(0.05); return { on: restMode, idle: restIdleT | 0, dim: +restDim.toFixed(2), drops: glassDrops.length }; },
   // big labelled sheet drawn straight to the canvas for close inspection
   sheet(scale = 2.7, state = "loafing"){
     _paused = true;
@@ -3623,9 +4074,16 @@ checkDexMilestones();
 syncHud();
 requestAnimationFrame(frame);
 
+// resume a rainy-day session that was running when the tab closed
+if (G.rest && G.rest.on && (!G.rest.endsAt || Date.now() < G.rest.endsAt)) {
+  setTimeout(() => resumeRest(G.rest), 250);
+} else if (G.rest) { G.rest = null; }
+
 // first run: name the cove → tutorial → then check what the cats got up to while away
 const needName = !G.owner && !G.ownerAsked;
-if (needName) {
+if (G.rest && G.rest.on) {
+  /* resuming rest — skip the usual boot flow */
+} else if (needName) {
   setTimeout(() => askOwnerName(true), 500);
 } else if (!G.tutorialDone) {
   setTimeout(openTutorial, 400);
