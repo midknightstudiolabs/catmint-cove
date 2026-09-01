@@ -1621,6 +1621,8 @@ let muted = false;
 document.getElementById("muteBtn").addEventListener("click", (e) => {
   muted = !muted;
   e.currentTarget.querySelector(".ico").textContent = muted ? "🔇" : "🔊";
+  ensureAudio();
+  if (ambience && actx) ambience.master.gain.linearRampToValueAtTime(muted ? 0 : AMB_MASTER, actx.currentTime + 0.4);
 });
 
 /* ---------- tutorial (skippable, reopen with the ? button) ---------- */
@@ -1790,6 +1792,7 @@ let actx = null;
 function ensureAudio() {
   if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } }
   if (actx && actx.state === "suspended") actx.resume();
+  if (actx) startAmbience();
 }
 function tone(freq, dur, type = "sine", vol = 0.16, when = 0) {
   if (muted || !actx) return;
@@ -1838,48 +1841,242 @@ function sfx(kind) {
   else if (kind === "photo") { tone(1200, 0.04, "square", 0.08); tone(300, 0.06, "square", 0.06, 0.03); }
 }
 
+/* ---------- ambient sound bed — layered procedural loop, no audio files ---------- */
+let ambience = null;
+const AMB_MASTER = 0.85;
+let dayFactor = 1;                     // 0 = deep night, 1 = midday; set by the day/night cycle
+
+function makeNoiseBuffer(seconds, kind) {
+  const len = Math.floor(actx.sampleRate * seconds);
+  const buf = actx.createBuffer(1, len, actx.sampleRate);
+  const d = buf.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < len; i++) {
+    const w = Math.random() * 2 - 1;
+    if (kind === "brown") { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.4; }
+    else if (kind === "pink") { last = 0.96 * last + 0.04 * w; d[i] = (w + last * 5) * 0.2; }
+    else d[i] = w;
+  }
+  return buf;
+}
+function loopNoise(kind, secs) {
+  const s = actx.createBufferSource();
+  s.buffer = makeNoiseBuffer(secs, kind); s.loop = true; s.start();
+  return s;
+}
+function ambClamp() { return ambience && actx && !muted; }
+
+function startAmbience() {
+  if (ambience || !actx) return;
+  const now = actx.currentTime;
+  const master = actx.createGain();
+  master.gain.value = 0;
+  master.connect(actx.destination);
+  master.gain.linearRampToValueAtTime(muted ? 0 : AMB_MASTER, now + 3);
+
+  // brook / soft rain — pink noise, low-passed, with a slow babbling wobble
+  const water = loopNoise("pink", 4);
+  const waterHP = actx.createBiquadFilter(); waterHP.type = "highpass"; waterHP.frequency.value = 180;
+  const waterLP = actx.createBiquadFilter(); waterLP.type = "lowpass"; waterLP.frequency.value = 640; waterLP.Q.value = 0.5;
+  const waterGain = actx.createGain(); waterGain.gain.value = 0.13;
+  const babble = actx.createOscillator(); babble.frequency.value = 0.15;
+  const babbleAmt = actx.createGain(); babbleAmt.gain.value = 210;
+  babble.connect(babbleAmt); babbleAmt.connect(waterLP.frequency); babble.start();
+  water.connect(waterHP); waterHP.connect(waterLP); waterLP.connect(waterGain); waterGain.connect(master);
+
+  // wind — brown noise, deep low-pass, breathing amplitude
+  const wind = loopNoise("brown", 6);
+  const windLP = actx.createBiquadFilter(); windLP.type = "lowpass"; windLP.frequency.value = 175;
+  const windGain = actx.createGain(); windGain.gain.value = 0.05;
+  const breath = actx.createOscillator(); breath.frequency.value = 0.06;
+  const breathAmt = actx.createGain(); breathAmt.gain.value = 0.032;
+  breath.connect(breathAmt); breathAmt.connect(windGain.gain); breath.start();
+  wind.connect(windLP); windLP.connect(windGain); windGain.connect(master);
+
+  // crickets (night only) — narrow band noise with a fast tremolo
+  const crick = loopNoise("white", 2);
+  const crickBP = actx.createBiquadFilter(); crickBP.type = "bandpass"; crickBP.frequency.value = 4600; crickBP.Q.value = 20;
+  const crickTrem = actx.createGain(); crickTrem.gain.value = 0.5;
+  const tremOsc = actx.createOscillator(); tremOsc.type = "square"; tremOsc.frequency.value = 13;
+  const tremDepth = actx.createGain(); tremDepth.gain.value = 0.5;
+  tremOsc.connect(tremDepth); tremDepth.connect(crickTrem.gain); tremOsc.start();
+  const crickGain = actx.createGain(); crickGain.gain.value = 0;
+  crick.connect(crickBP); crickBP.connect(crickTrem); crickTrem.connect(crickGain); crickGain.connect(master);
+
+  // birds (day only) — transient chirps route through here
+  const birdGain = actx.createGain(); birdGain.gain.value = 0;
+  birdGain.connect(master);
+
+  ambience = { master, waterGain, windGain, crickGain, birdGain };
+  applyAmbienceDayNight(dayFactor, 0.5);
+  scheduleBird();
+  scheduleChime();
+}
+
+function applyAmbienceDayNight(f, ramp = 4) {
+  dayFactor = clamp(f, 0, 1);
+  if (!ambience || !actx) return;
+  const t = actx.currentTime;
+  ambience.birdGain.gain.linearRampToValueAtTime(0.9 * dayFactor, t + ramp);
+  ambience.crickGain.gain.linearRampToValueAtTime(0.055 * (1 - dayFactor), t + ramp);
+  ambience.waterGain.gain.linearRampToValueAtTime(0.11 + 0.03 * dayFactor, t + ramp);
+}
+
+function chirp(when) {
+  const t = actx.currentTime + when;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = "sine";
+  const base = 1800 + Math.random() * 1500;
+  o.frequency.setValueAtTime(base, t);
+  o.frequency.linearRampToValueAtTime(base * (1.12 + Math.random() * 0.5), t + 0.05);
+  o.frequency.linearRampToValueAtTime(base * 0.88, t + 0.12);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.13, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+  o.connect(g); g.connect(ambience.birdGain);
+  o.start(t); o.stop(t + 0.16);
+}
+function scheduleBird() {
+  if (!ambience) return;
+  setTimeout(() => {
+    if (ambClamp() && dayFactor > 0.15) {
+      const n = 1 + (Math.random() < 0.55 ? 1 : 0) + (Math.random() < 0.22 ? 1 : 0);
+      for (let i = 0; i < n; i++) chirp(i * (0.13 + Math.random() * 0.1));
+    }
+    scheduleBird();
+  }, (2.2 + Math.random() * 6) * 1000);
+}
+function scheduleChime() {
+  if (!ambience) return;
+  setTimeout(() => {
+    if (ambClamp()) {
+      const scale = [523.25, 587.33, 698.46, 783.99, 880];
+      const start = Math.floor(Math.random() * 3);
+      for (let i = 0; i < 3; i++) {
+        const f = scale[(start + i) % scale.length] * (Math.random() < 0.3 ? 2 : 1);
+        const t = actx.currentTime + i * (0.16 + Math.random() * 0.12);
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = "sine"; o.frequency.value = f;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.055, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0008, t + 1.7);
+        o.connect(g); g.connect(ambience.master);
+        o.start(t); o.stop(t + 1.8);
+      }
+    }
+    scheduleChime();
+  }, (14 + Math.random() * 26) * 1000);
+}
+
 /* ---------- rendering ---------- */
 let clouds = [];
 function initClouds() {
   clouds = [];
   for (let i = 0; i < 4; i++) clouds.push({ x: Math.random()*W, y: rand(H*0.06, H*0.24), s: rand(0.7,1.4), v: rand(3,8) });
 }
-function drawSun(g, size) {
+/* ---- day / night: the sky, sun/moon and ambient audio all follow the local clock ---- */
+const SKIES = [
+  { h: 0,  top:"#1b2540", mid:"#283152", bot:"#3a3a52", ground:"#585462", light:"#2a3d66", df:0    },
+  { h: 5,  top:"#3a3a63", mid:"#6a5679", bot:"#bd8b76", ground:"#8d8177", light:"#c99f7d", df:0.14 },
+  { h: 7,  top:"#8fc4d8", mid:"#cfe0d6", bot:"#f2e6cf", ground:"#d8d2bd", light:"#fff3d6", df:0.7  },
+  { h: 12, top:"#7ec0dc", mid:"#cfe6df", bot:"#eef3e6", ground:"#ded7c0", light:"#fffbe8", df:1    },
+  { h: 17, top:"#9ec6cf", mid:"#e5d9c4", bot:"#f0dcc0", ground:"#dcccae", light:"#ffe9c9", df:0.82 },
+  { h: 19, top:"#48486f", mid:"#b46c5c", bot:"#e1a25a", ground:"#9b8a72", light:"#ffb877", df:0.3  },
+  { h: 21, top:"#1f2540", mid:"#2e3350", bot:"#40404f", ground:"#5f5a66", light:"#32406a", df:0.05 },
+  { h: 24, top:"#1b2540", mid:"#283152", bot:"#3a3a52", ground:"#585462", light:"#2a3d66", df:0    },
+];
+let _clockOverride = null;            // debug: pin the hour (0..24), null = real local time
+function hx2rgb(h){ const n = parseInt(h.slice(1), 16); return [n>>16 & 255, n>>8 & 255, n & 255]; }
+function mixHex(a, b, t){
+  const A = hx2rgb(a), B = hx2rgb(b);
+  return `rgb(${Math.round(A[0]+(B[0]-A[0])*t)},${Math.round(A[1]+(B[1]-A[1])*t)},${Math.round(A[2]+(B[2]-A[2])*t)})`;
+}
+function nowHours(){
+  if (_clockOverride != null) return _clockOverride;
+  const n = new Date();
+  return n.getHours() + n.getMinutes()/60 + n.getSeconds()/3600;
+}
+function timeOfDay(){
+  const h = nowHours();
+  let a = SKIES[0], b = SKIES[SKIES.length-1];
+  for (let i = 0; i < SKIES.length-1; i++) if (h >= SKIES[i].h && h <= SKIES[i+1].h) { a = SKIES[i]; b = SKIES[i+1]; break; }
+  const f = (h - a.h) / ((b.h - a.h) || 1);
+  return {
+    h,
+    top: mixHex(a.top, b.top, f), mid: mixHex(a.mid, b.mid, f), bot: mixHex(a.bot, b.bot, f),
+    ground: mixHex(a.ground, b.ground, f), light: mixHex(a.light, b.light, f),
+    df: a.df + (b.df - a.df) * f,
+  };
+}
+function setDayNight(h){ _clockOverride = (h == null ? null : clamp(h, 0, 24)); }
+let _dnAudioTimer = 0;
+function updateDayNight(dt){
+  _dnAudioTimer -= dt;
+  if (_dnAudioTimer <= 0) { _dnAudioTimer = 2; if (Math.abs(timeOfDay().df - dayFactor) > 0.015) applyAmbienceDayNight(timeOfDay().df, 4); }
+}
+function drawCelestial(g, sky){
+  const h = sky.h, hz = H * 0.40;
+  const isSun = sky.df > 0.34;
+  // sun arcs 6→19; moon arcs the opposite window 18→6 (wrapping past midnight)
+  let p;
+  if (isSun) p = clamp((h - 6) / 13, 0, 1);
+  else p = clamp((((h < 12 ? h + 24 : h)) - 18) / 12, 0, 1);
+  const cx = W * (0.12 + p * 0.78);
+  const cy = hz * (1.05 - Math.sin(Math.PI * p) * 0.92) - 6;
   g.save();
-  g.fillStyle = "rgba(255,246,214,0.9)";
-  g.beginPath(); g.arc(size*0.8, size*0.16, size*0.07, 0, 7); g.fill();
-  g.fillStyle = "rgba(255,246,214,0.35)";
-  g.beginPath(); g.arc(size*0.8, size*0.16, size*0.12, 0, 7); g.fill();
+  const glow = g.createRadialGradient(cx, cy, 2, cx, cy, isSun ? 150 : 90);
+  glow.addColorStop(0, sky.light.replace("rgb", "rgba").replace(")", `,${isSun ? 0.5 : 0.35})`));
+  glow.addColorStop(1, sky.light.replace("rgb", "rgba").replace(")", ",0)"));
+  g.fillStyle = glow; g.beginPath(); g.arc(cx, cy, isSun ? 150 : 90, 0, 7); g.fill();
+  if (isSun) {
+    g.fillStyle = "rgba(255,248,225,0.95)";
+    g.beginPath(); g.arc(cx, cy, 22, 0, 7); g.fill();
+  } else {
+    g.fillStyle = "rgba(238,240,228,0.95)";
+    g.beginPath(); g.arc(cx, cy, 15, 0, 7); g.fill();
+    g.globalCompositeOperation = "destination-out";        // crescent bite
+    g.beginPath(); g.arc(cx + 6, cy - 3, 13, 0, 7); g.fill();
+    g.globalCompositeOperation = "source-over";
+    // a few stars
+    g.fillStyle = "rgba(255,255,255,0.7)";
+    for (const s of stars) { g.globalAlpha = 0.4 + 0.5 * Math.abs(Math.sin(s.tw + performance.now()/900)); g.beginPath(); g.arc(s.x*W, s.y*hz, s.r, 0, 7); g.fill(); }
+    g.globalAlpha = 1;
+  }
   g.restore();
 }
+let stars = [];
+function initStars(){ stars = []; for (let i = 0; i < 40; i++) stars.push({ x: Math.random(), y: Math.random()*0.9, r: rand(0.5,1.6), tw: Math.random()*6 }); }
 function drawBackground(dt) {
+  const sky = timeOfDay();
+  window._sky = sky;
   const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, "#b6ddd2"); g.addColorStop(0.5, "#d3e6d8"); g.addColorStop(1, "#eef3e6");
+  g.addColorStop(0, sky.top); g.addColorStop(0.5, sky.mid); g.addColorStop(1, sky.bot);
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  drawSun(ctx, Math.max(W, H));
-  // clouds
-  ctx.fillStyle = "rgba(255,255,255,0.72)";
+  drawCelestial(ctx, sky);
+  // clouds — bright by day, dim grey-blue at night
+  ctx.fillStyle = `rgba(${255-(1-sky.df)*160},${255-(1-sky.df)*150},${255-(1-sky.df)*130},${0.34 + sky.df*0.38})`;
   for (const cl of clouds) {
     cl.x += cl.v * dt;
     if (cl.x - 90 > W) cl.x = -90;
     puff(cl.x, cl.y, cl.s);
   }
   const hz = H * 0.40;
-  // distant treeline for depth
-  ctx.fillStyle = "rgba(126,158,132,0.45)";
+  const night = 1 - sky.df;
+  // distant treeline for depth (darkens at night)
+  ctx.fillStyle = `rgba(${126-night*70},${158-night*100},${132-night*80},0.45)`;
   ctx.beginPath();
   ctx.moveTo(0, hz + 6);
   ctx.bezierCurveTo(W*0.2, hz - 14, W*0.32, hz + 2, W*0.5, hz - 6);
   ctx.bezierCurveTo(W*0.7, hz - 16, W*0.85, hz + 4, W, hz - 4);
   ctx.lineTo(W, hz + 20); ctx.lineTo(0, hz + 20); ctx.fill();
   // ground
-  ctx.fillStyle = "#d8d2bd";
+  ctx.fillStyle = sky.ground;
   ctx.beginPath();
   ctx.moveTo(0, hz);
   ctx.bezierCurveTo(W*0.28, hz - 4, W*0.7, hz + 4, W, hz - 2);
   ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.fill();
   // sunlit strip just past the horizon
-  ctx.fillStyle = "rgba(255,250,232,0.35)";
+  ctx.fillStyle = sky.light.replace("rgb", "rgba").replace(")", `,${0.12 + sky.df * 0.28})`);
   ctx.beginPath();
   ctx.moveTo(0, hz);
   ctx.bezierCurveTo(W*0.28, hz - 4, W*0.7, hz + 4, W, hz - 2);
@@ -2680,6 +2877,19 @@ function renderScene(dt) {
   }
   for (const tk of fieldTokens) drawToken(ctx, tk);
   drawFX(ctx);
+
+  // dusk / night mood wash — cools and settles the whole scene as the light fades
+  const sky = window._sky;
+  if (sky && sky.df < 0.9) {
+    const n = 1 - sky.df;
+    ctx.fillStyle = `rgba(30,36,64,${n * 0.26})`;
+    ctx.fillRect(0, 0, W, H);
+    // a soft pool of warmth around the cove sign / centre so it never goes fully bleak
+    const warm = ctx.createRadialGradient(W*0.5, H*0.62, 20, W*0.5, H*0.62, Math.max(W,H)*0.55);
+    warm.addColorStop(0, `rgba(255,214,150,${n * 0.10})`);
+    warm.addColorStop(1, "rgba(255,214,150,0)");
+    ctx.fillStyle = warm; ctx.fillRect(0, 0, W, H);
+  }
   ctx.restore();
 
   // hud bits that change each frame
@@ -2701,6 +2911,7 @@ function frame(now) {
     let steps = 0;
     while (simAccum >= SIM_DT && steps < 6) { simulate(SIM_DT); simAccum -= SIM_DT; steps++; }
     if (steps === 6) simAccum = 0;          // fell behind; drop the backlog rather than spiral
+    updateDayNight(frameDt);
     renderScene(frameDt);
   }
   requestAnimationFrame(frame);
@@ -2750,7 +2961,7 @@ function onViewportChange() {
     if (Math.abs(W - _lastW) > 32 || Math.abs(H - _lastH) > 32) {
       _lastW = W; _lastH = H;
       rebuildAttractors();
-      initClouds(); initFlecks();
+      initClouds(); initFlecks(); initStars();
       for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, H - 58); }
     }
   }, 180);
@@ -2793,6 +3004,10 @@ window.__cove = {
     return cats.map(c => c.coat.name);
   },
   pause(v = true){ _paused = v; },
+  audio(){ return { ctx: actx && actx.state, ambience: !!ambience, dayFactor,
+    layers: ambience ? { water: ambience.waterGain.gain.value, wind: ambience.windGain.gain.value,
+      crick: ambience.crickGain.gain.value, bird: ambience.birdGain.gain.value, master: ambience.master.gain.value } : null }; },
+  setHour(h){ setDayNight(h); applyAmbienceDayNight(timeOfDay().df, 1.5); return timeOfDay(); },
   // big labelled sheet drawn straight to the canvas for close inspection
   sheet(scale = 2.7, state = "loafing"){
     _paused = true;
@@ -2844,6 +3059,7 @@ restoreCats();
 rebuildAttractors();
 initClouds();
 initFlecks();
+initStars();
 rollDailyGoals();
 checkDexMilestones();
 syncHud();

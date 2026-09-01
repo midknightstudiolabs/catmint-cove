@@ -23,8 +23,8 @@ no build step, no dependencies.
 - [x] Skippable tutorial, re-openable from **?**
 - [x] Mobile-first layout (safe-area, 44px targets, scroll/icon action bar)
 - [x] V1 + V2 both permanently hosted
-- [ ] Ambient procedural sound bed (rain / stream / birds / night crickets)
-- [ ] Day/night lighting cycle the audio follows
+- [x] Ambient procedural sound bed (rain / stream / birds / night crickets)
+- [x] Day/night lighting cycle the audio follows
 - [ ] Activity stations — fishing dock, bakery, sunbeam mat, catmint garden
 - [ ] Canvas accessories — collar / bandana / bow / flower crown
 - [ ] Photo → short animated clip capture
