@@ -434,6 +434,9 @@
 
 const SAVE_KEY = "catmintCove.save.v6";
 const OLD_SAVE_KEYS = ["catmintCove.save.v5"];
+// developer build: served at /dev/ or with ?dev — unlocks the dev panel + R-key
+// reset. The plain build (root URL) has none of that, safe to hand to testers.
+const DEV_BUILD = /(^|\/)dev\/?$/.test(location.pathname) || /(^|[?&])dev\b/.test(location.search);
 const DAY_MS = 86400000;
 const today = () => Math.floor(Date.now() / DAY_MS);
 let DPR = Math.min(window.devicePixelRatio || 1, 2);   // re-read on every resize (iPad zoom / display change)
@@ -651,7 +654,7 @@ function makeAttractor(type, idx) {
 }
 
 function stationCount() { const s = G.stations || {}; return (s.fishing||0) + (s.bakery||0) + (s.sunbeam||0) + (s.garden||0); }
-function capacity() { return 3 + (G.bowls - 1) * 2 + G.toys + G.beds + G.decor.cottage * 2 + stationCount() * 2; }
+function capacity() { return 4 + (G.bowls - 1) * 2 + G.toys + G.beds + G.decor.cottage * 2 + stationCount() * 2; }
 function comfortMult() { return 1 + G.comfort * 0.22; }
 function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // ambient mood lift
 
@@ -1953,23 +1956,24 @@ function resetGame() {
   try { localStorage.removeItem(SAVE_KEY); for (const k of OLD_SAVE_KEYS) localStorage.removeItem(k); } catch (e) {}
   location.reload();
 }
-window.addEventListener("keydown", (e) => {
-  if (e.target && /input|textarea/i.test(e.target.tagName)) return;
-  if (e.key === "d" || e.key === "D") devEl.classList.toggle("on");
-  if (e.key === "r" || e.key === "R") resetGame();
-});
-// mobile / no-keyboard dev access: tap the cat-count pill 5× quickly
-let _devTaps = 0, _devTapT = 0;
-document.getElementById("catPill").addEventListener("click", () => {
-  const now = Date.now();
-  _devTaps = now - _devTapT < 600 ? _devTaps + 1 : 1;
-  _devTapT = now;
-  if (_devTaps >= 5) {
-    _devTaps = 0;
-    devEl.classList.toggle("on");
-    if (devEl.classList.contains("on")) toast("Dev panel open — tap the cats count 5× to hide", 3);
-  }
-});
+if (DEV_BUILD) {
+  document.getElementById("app").classList.add("dev-build");
+  const vb = document.querySelector(".verbadge"); if (vb) { vb.textContent = "v2 · dev"; vb.removeAttribute("href"); vb.style.pointerEvents = "none"; }
+  window.addEventListener("keydown", (e) => {
+    if (e.target && /input|textarea/i.test(e.target.tagName)) return;
+    if (e.key === "d" || e.key === "D") devEl.classList.toggle("on");
+    if (e.key === "r" || e.key === "R") resetGame();
+  });
+  // no-keyboard access: tap the cat-count pill 5× quickly
+  let _devTaps = 0, _devTapT = 0;
+  document.getElementById("catPill").addEventListener("click", () => {
+    const now = Date.now();
+    _devTaps = now - _devTapT < 600 ? _devTaps + 1 : 1;
+    _devTapT = now;
+    if (_devTaps >= 5) { _devTaps = 0; devEl.classList.toggle("on"); }
+  });
+  devEl.classList.add("on");   // dev build opens with the panel already showing
+}
 document.getElementById("dev-reset").addEventListener("click", resetGame);
 document.getElementById("dev-name").addEventListener("click", () => askOwnerName(false));
 document.getElementById("dev-shells").addEventListener("click", () => { G.shells += 500; syncHud(); });
@@ -2020,6 +2024,16 @@ function aggregateRate() {
 }
 function checkOffline() {
   const elapsed = (Date.now() - (G.lastSeen || Date.now())) / 1000;
+
+  // a cat or two may have wandered in while you were away (~1 per 3h, capped at 4)
+  const awayH = elapsed / 3600;
+  if (awayH >= 1.5 && cats.length < capacity()) {
+    const room = capacity() - cats.length;
+    const n = Math.max(0, Math.min(4, room, Math.round(awayH / 3)));
+    for (let i = 0; i < n; i++) spawnCat({ x: (Math.random() < 0.5 ? -40 : W + 40), y: rand(H * 0.55, H * 0.8) });
+    if (n > 0) setTimeout(() => toast(n === 1 ? "A cat wandered in while you were away." : `${n} cats wandered in while you were away.`, 5), 1100);
+  }
+
   if (elapsed < 45 || !(G.ratePerSec > 0)) return;
   const capped = Math.min(elapsed, 8 * 3600);
   const earned = Math.floor(G.ratePerSec * capped * 0.5);
@@ -3897,12 +3911,18 @@ function drawFX(g) {
 
 /* ---------- main loop ---------- */
 let last = performance.now(), sessionStart = performance.now();
-let visitorTimer = rand(35, 55);
+// free arrivals: fast while the cove is still filling out, then a gentle trickle
+// (a new cat should feel like a small event, not spam — see the pacing notes)
+function catsSeen() { return (G && G.metrics && G.metrics.catsAllTime) || 0; }
+function nextVisitorGap() {
+  return catsSeen() < 5 ? rand(180, 420) : rand(480, 900);   // ~3-7 min while filling out, ~8-15 min after
+}
+let visitorTimer = rand(60, 150);   // first arrival soon; set() below re-times it once G is loaded
 
 function simulate(dt) {
   visitorTimer -= dt;
   if (visitorTimer <= 0) {
-    visitorTimer = rand(40, 70);
+    visitorTimer = nextVisitorGap();
     if (cats.length < capacity()) { spawnCat(); toast("A cat wandered into the cove."); }
   }
   for (const c of cats) updateCat(c, dt);
@@ -4074,6 +4094,7 @@ window.__cove = {
   setHour(h){ setDayNight(h); applyAmbienceDayNight(timeOfDay().df, 1.5); return timeOfDay(); },
   station(key = "fishing", n = 1){ G.stations[key] = (G.stations[key] || 0) + n; rebuildAttractors(); return G.stations; },
   rest(cmd){ if (cmd === "open") { syncRestPanelUI(); openRestPanel(); } else if (cmd === "begin") beginRest(false); else if (cmd === "end") endRest(true); else if (cmd === "render") renderRest(0.05); return { on: restMode, idle: restIdleT | 0, dim: +restDim.toFixed(2), drops: glassDrops.length }; },
+  offline(hoursAway = 6){ const before = cats.length; G.lastSeen = Date.now() - hoursAway * 3600e3; checkOffline(); return { hoursAway, capacity: capacity(), before, after: cats.length, arrived: cats.length - before }; },
   // big labelled sheet drawn straight to the canvas for close inspection
   sheet(scale = 2.7, state = "loafing"){
     _paused = true;
@@ -4122,6 +4143,7 @@ resize();
 _lastW = W; _lastH = H;
 load();
 restoreCats();
+visitorTimer = nextVisitorGap();      // now that G is loaded, time the next free arrival properly
 rebuildAttractors();
 initClouds();
 initFlecks();

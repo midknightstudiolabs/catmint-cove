@@ -4,14 +4,18 @@
 
 | | | |
 |---|---|---|
-| **V2** (current) | https://ukiyazero.github.io/catmint-cove/ | mascot Midknight, chunky-loaf art, procedural audio, tutorial — see the V2 roadmap below |
+| **V2 — beta** (share this) | https://ukiyazero.github.io/catmint-cove/ | the clean build for testers — no dev tools |
+| **V2 — dev** (keep this) | https://ukiyazero.github.io/catmint-cove/dev/ | same game + the dev panel, `D`/`R` keys, `v2 · dev` badge |
 | **V1** (original prototype, frozen) | https://ukiyazero.github.io/catmint-cove/v1/ | the first greybox — tag `v1`, 2026-08-31 |
 
-Both are live and permanent — V2 ships from `index.html` at the repo root, V1 from
-[`v1/`](v1/) (a copy of the frozen [`releases/v1/`](releases/v1/) snapshot). Each
-has a small `v1` / `v2` badge in the top bar that jumps to the other. GitHub Pages
-redeploys ~1 min after a push to `main`. The two keep separate saves
-(`catmintCove.save.v5` vs `.v6`).
+All live and permanent. V2 ships from `index.html` at the repo root; `/dev/` is a
+one-line redirect to `/?dev` (single source of truth — the `DEV_BUILD` flag reads
+the URL). The **beta build has no dev access at all** — no dev panel, and the `R`
+key won't wipe a tester's save. In the **dev build** the panel opens on load with
+live stats + **RESET GAME**, or tap the cats-count pill 5× / press `D`.
+V1 is a copy of the frozen [`releases/v1/`](releases/v1/) snapshot. Each build has
+a small badge in the top bar. GitHub Pages redeploys ~1 min after a push to
+`main`. V1 / V2 keep separate saves (`catmintCove.save.v5` vs `.v6`).
 
 A playable greybox of the cozy-idle cat game concept. One self-contained HTML file,
 no build step, no dependencies.

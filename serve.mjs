@@ -8,7 +8,7 @@ const port = 8765;
 
 createServer(async (req, res) => {
   let p = decodeURIComponent(req.url.split("?")[0]);
-  if (p === "/") p = "/index.html";
+  if (p.endsWith("/")) p += "index.html";
   const file = normalize(join(root, p));
   try {
     const body = await readFile(file);
