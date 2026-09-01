@@ -28,7 +28,9 @@ no build step, no dependencies.
 - [x] Mobile-first layout (safe-area, 44px targets, scroll/icon action bar)
 - [x] V1 + V2 both permanently hosted
 - [x] Ambient procedural sound bed (rain / stream / birds / night crickets)
-- [x] Day/night lighting cycle the audio follows
+- [x] Day/night lighting cycle the audio follows — an accelerated cove clock:
+      one full sunrise→night loop every 30 real minutes, started from your real
+      local time (so a night-owl still sees dawn within a session). `DAY_CYCLE_MIN`
 - [x] Activity stations — fishing dock, bakery, sunbeam mat, catmint garden
 - [x] Canvas accessories — collar / bandana / bow / flower crown
 - [x] Photo → short animated clip capture (MediaRecorder webm)

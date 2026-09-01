@@ -3073,7 +3073,18 @@ const SKIES = [
   { h: 21, top:"#1f2540", mid:"#2e3350", bot:"#40404f", ground:"#5f5a66", light:"#32406a", df:0.05 },
   { h: 24, top:"#1b2540", mid:"#283152", bot:"#3a3a52", ground:"#585462", light:"#2a3d66", df:0    },
 ];
-let _clockOverride = null;            // debug: pin the hour (0..24), null = real local time
+let _clockOverride = null;            // debug: pin the hour (0..24), null = the running cove clock
+// The cove runs its own accelerated day: one full sunrise→night loop every
+// DAY_CYCLE_MIN real minutes, started from your real local time so it still
+// feels connected. A short session drifts gently through a phase; leave it open
+// and you'll see the whole day.
+const DAY_CYCLE_MIN = 30;
+let _dayAnchorMs = 0, _dayAnchorHour = 12;
+function initDayClock(){
+  const n = new Date();
+  _dayAnchorHour = n.getHours() + n.getMinutes()/60 + n.getSeconds()/3600;
+  _dayAnchorMs = performance.now();
+}
 function hx2rgb(h){ const n = parseInt(h.slice(1), 16); return [n>>16 & 255, n>>8 & 255, n & 255]; }
 function mixHex(a, b, t){
   const A = hx2rgb(a), B = hx2rgb(b);
@@ -3081,8 +3092,8 @@ function mixHex(a, b, t){
 }
 function nowHours(){
   if (_clockOverride != null) return _clockOverride;
-  const n = new Date();
-  return n.getHours() + n.getMinutes()/60 + n.getSeconds()/3600;
+  const elapsedMin = (performance.now() - _dayAnchorMs) / 60000;
+  return (((_dayAnchorHour + elapsedMin * (24 / DAY_CYCLE_MIN)) % 24) + 24) % 24;
 }
 let _todCache = null, _todAt = -1e9, _skyGrad = null, _skyGradFill = null, _skyGradH = 0;
 function timeOfDay(){
@@ -4489,6 +4500,7 @@ load();
 restoreCats();
 visitorTimer = nextVisitorGap();      // now that G is loaded, time the next free arrival properly
 rebuildAttractors();
+initDayClock();
 initClouds();
 initFlecks();
 initStars();
