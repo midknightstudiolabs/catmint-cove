@@ -2041,17 +2041,19 @@ function poseParams(pose) {
   return P;
 }
 function catSil(g, P) {
-  // body: a wide pear that flares at the shoulders
-  g.moveTo(P.bw, 0);
-  g.bezierCurveTo(P.bw + 4, P.top * 0.5, P.bw * 0.7, P.top - 2, 2, P.top - 2);
-  g.bezierCurveTo(-P.bw * 0.72, P.top - 2, -P.bw - 4, P.top * 0.5, -P.bw, 0);
+  // body + ruff + head as three subpaths that MUST all wind the same way,
+  // or the nonzero-fill / clip leaves a hole where they overlap (reads as a
+  // pale "collar ring" around the head). All three are wound clockwise here.
+  g.moveTo(-P.bw, 0);
+  g.bezierCurveTo(-P.bw - 4, P.top * 0.5, -P.bw * 0.72, P.top - 2, 2, P.top - 2);
+  g.bezierCurveTo(P.bw * 0.7, P.top - 2, P.bw + 4, P.top * 0.5, P.bw, 0);
   g.closePath();
   // ruff / cheek mass — the widest part of the loaf, sinks the head into the body
-  g.moveTo(P.hx + P.hr * 1.16, P.hy + P.hr * 0.55);
-  g.ellipse(P.hx, P.hy + P.hr * 0.5, P.hr * 1.16, P.hr * 0.95, 0, 0, Math.PI * 2);
+  g.moveTo(P.hx + P.hr * 1.16, P.hy + P.hr * 0.5);
+  g.ellipse(P.hx, P.hy + P.hr * 0.5, P.hr * 1.16, P.hr * 0.95, 0, 0, Math.PI * 2, false);
   // head
   g.moveTo(P.hx + P.hr, P.hy);
-  g.arc(P.hx, P.hy, P.hr, 0, Math.PI * 2, true);
+  g.arc(P.hx, P.hy, P.hr, 0, Math.PI * 2, false);
 }
 function coatLum(hex) {
   if (!hex || hex[0] !== "#") return 0.3;
@@ -2344,20 +2346,22 @@ function drawCat(g, c, isPhoto) {
   g.save();
   g.beginPath(); catSil(g, P); g.clip();
 
-  // belly / underside shading
+  // belly / underside shading — kept low in the body so it never bands across the head
   g.fillStyle = coat.belly;
-  g.globalAlpha = 0.85;
-  g.beginPath(); g.ellipse(P.bw * 0.15, -5, P.bw * 0.74, 13, 0, 0, 7); g.fill();
+  g.globalAlpha = 0.7;
+  g.beginPath(); g.ellipse(P.bw * 0.12, -1, P.bw * 0.62, 8.5, 0, 0, 7); g.fill();
   g.globalAlpha = 1;
 
-  // soft sticker shading — gentle glow up top, cool shade at the base
-  const shTop = g.createLinearGradient(0, P.top, 0, 4);
-  shTop.addColorStop(0, "rgba(255,255,255,0.16)");
-  shTop.addColorStop(0.4, "rgba(255,255,255,0)");
-  shTop.addColorStop(0.82, "rgba(30,26,20,0)");
-  shTop.addColorStop(1, "rgba(30,26,20,0.14)");
+  // soft sticker shading — one gradient spanning the whole silhouette:
+  // a light kiss on the crown, cool shade pooling at the base, nothing mid-body
+  const silTop = P.hy - P.hr;
+  const shTop = g.createLinearGradient(0, silTop, 0, 4);
+  shTop.addColorStop(0, "rgba(255,255,255,0.14)");
+  shTop.addColorStop(0.35, "rgba(255,255,255,0)");
+  shTop.addColorStop(0.8, "rgba(30,26,20,0)");
+  shTop.addColorStop(1, "rgba(30,26,20,0.12)");
   g.fillStyle = shTop;
-  g.beginPath(); g.rect(-P.bw - 4, P.top - 4, P.bw * 2 + 8, -P.top + 10); g.fill();
+  g.beginPath(); g.rect(-P.bw - 4, silTop - 4, P.bw * 2 + 8, -silTop + 10); g.fill();
 
   // pattern
   if (coat.pattern === "mackerel") {
@@ -2392,22 +2396,26 @@ function drawCat(g, c, isPhoto) {
     g.fillStyle = "#f8f5ee";
     const cx = (P.hx + 0) * 0.5;                       // splits the difference between head and body centre
     if (coat.white.includes("bib") || coat.white.includes("belly")) {
-      // one continuous white shirtfront: chin → chest → belly (no "cone collar" seams)
-      const chinY = P.hy + P.hr * 0.34;
-      const chestW = P.bw * (coat.white.includes("belly") ? 0.52 : 0.44);
-      const bellyY = coat.white.includes("belly") ? -1 : -6;
+      // a narrow-necked white shirtfront: a slim spout at the chin that only
+      // flares to full width well down the chest — never a collar around the face
+      const hasBelly = coat.white.includes("belly");
+      const chinY = P.hy + P.hr * 0.44;
+      const wMax  = P.bw * (hasBelly ? 0.46 : 0.36);
+      const botY  = hasBelly ? -1 : -7;
+      const flareY = -15;
       g.beginPath();
-      g.moveTo(cx, chinY - 1);
-      g.bezierCurveTo(cx - chestW * 0.7, chinY + 2, cx - chestW, -14, cx - chestW * 0.9, bellyY);
-      g.bezierCurveTo(cx - chestW * 0.5, bellyY + 4, cx + chestW * 0.5, bellyY + 4, cx + chestW * 0.9, bellyY);
-      g.bezierCurveTo(cx + chestW, -14, cx + chestW * 0.7, chinY + 2, cx, chinY - 1);
+      g.moveTo(cx, chinY);
+      g.bezierCurveTo(cx - wMax * 0.22, chinY + 1, cx - wMax, flareY + 7, cx - wMax, flareY);
+      g.bezierCurveTo(cx - wMax, botY - 3, cx - wMax * 0.5, botY, cx, botY);
+      g.bezierCurveTo(cx + wMax * 0.5, botY, cx + wMax, botY - 3, cx + wMax, flareY);
+      g.bezierCurveTo(cx + wMax, flareY + 7, cx + wMax * 0.22, chinY + 1, cx, chinY);
       g.closePath(); g.fill();
     }
     if (coat.white.includes("paws"))  {
       g.beginPath(); g.ellipse(P.bw * 0.28, -2.5, 4.2, 4, 0, 0, 7); g.fill();
       g.beginPath(); g.ellipse(P.bw * 0.62, -2.5, 4.2, 4, 0, 0, 7); g.fill();
     }
-    if (coat.white.includes("muzzle")) { g.beginPath(); g.ellipse(P.hx + 1, P.hy + P.hr * 0.44, 5.4, 4.4, 0, 0, 7); g.fill(); }
+    if (coat.white.includes("muzzle")) { g.beginPath(); g.ellipse(P.hx + 1, P.hy + P.hr * 0.5, 4.4, 3.4, 0, 0, 7); g.fill(); }
     if (coat.white.includes("blaze"))  {
       g.beginPath();
       g.moveTo(P.hx - 1.5, P.hy - P.hr * 0.74);
@@ -2421,9 +2429,9 @@ function drawCat(g, c, isPhoto) {
   // warm rim light on the top-left edge (clipped to the silhouette so it reads as an inner rim)
   g.save();
   g.beginPath(); catSil(g, P); g.clip();
-  g.strokeStyle = "rgba(255,249,232,0.55)"; g.lineWidth = 2; g.lineCap = "round";
+  g.strokeStyle = "rgba(255,249,232,0.34)"; g.lineWidth = 1.6; g.lineCap = "round";
   g.beginPath();
-  g.arc(P.hx, P.hy, P.hr - 0.6, Math.PI * 0.82, Math.PI * 1.62);
+  g.arc(P.hx, P.hy, P.hr - 0.6, Math.PI * 1.08, Math.PI * 1.58);
   g.stroke();
   g.beginPath();
   g.moveTo(-P.bw + 1.5, -3);
