@@ -57,6 +57,7 @@
   .pill .dot{width:1.15rem;height:1.15rem;border-radius:50%;background:var(--shell);display:grid;place-items:center;font-size:.7rem;color:#5b4327;}
   .pill .dotp{background:#8fb7d6;color:#274a63;}
   .pill.small{font-size:.82rem;padding:.35rem .7rem;color:var(--ink-soft);font-weight:600;}
+  #catPill{cursor:pointer;user-select:none;-webkit-user-select:none;}
   .badge{background:var(--accent);color:#fff;border-radius:999px;font-size:.72rem;font-weight:700;
     padding:.06rem .4rem;font-variant-numeric:tabular-nums;}
   .badge.alert{background:var(--apricot);}
@@ -290,7 +291,7 @@
     <div class="hud-group">
       <div class="pill"><span class="dot">◈</span><span id="shells">0</span></div>
       <div class="pill pearl"><span class="dot dotp">✦</span><span id="pearls">0</span></div>
-      <div class="pill small"><span id="catcount">0</span>/<span id="catcap">0</span> cats</div>
+      <div class="pill small" id="catPill" title=""><span id="catcount">0</span>/<span id="catcap">0</span> cats</div>
       <div class="pill small opens">day <span id="opens">1</span></div>
     </div>
     <div class="hud-group">
@@ -310,7 +311,7 @@
       <h2>Rainy day</h2>
       <p>Everyone pads inside for a nap. Rain on the window, a warm fire — leave it running while you work.</p>
       <label><input type="checkbox" id="restRain" checked> Rain sound</label>
-      <label><input type="checkbox" id="restFire" checked> Fireplace crackle</label>
+      <label><input type="checkbox" id="restFire" checked> Fireplace</label>
       <label><input type="checkbox" id="restThunder"> Distant thunder</label>
       <div class="rest-timer" id="restTimer">
         <button data-h="1">1 hour</button>
@@ -1862,11 +1863,19 @@ function flushReveal() {
 
 /* mute */
 let muted = false;
+function rampParam(p, target, secs = 0.4) {
+  if (!actx) return;
+  const t = actx.currentTime;
+  p.cancelScheduledValues(t);
+  p.setValueAtTime(p.value, t);
+  p.linearRampToValueAtTime(target, t + secs);
+}
 document.getElementById("muteBtn").addEventListener("click", (e) => {
   muted = !muted;
   e.currentTarget.querySelector(".ico").textContent = muted ? "🔇" : "🔊";
   ensureAudio();
-  if (ambience && actx) ambience.master.gain.linearRampToValueAtTime(muted ? 0 : AMB_MASTER, actx.currentTime + 0.4);
+  if (ambience && actx) rampParam(ambience.master.gain, muted ? 0 : (restMode ? 0.1 : AMB_MASTER));
+  if (restBus && actx) rampParam(restBus.gain, muted ? 0 : (restOpts.rain ? 0.9 : 0));
 });
 
 /* ---------- tutorial (skippable, reopen with the ? button) ---------- */
@@ -1948,6 +1957,18 @@ window.addEventListener("keydown", (e) => {
   if (e.target && /input|textarea/i.test(e.target.tagName)) return;
   if (e.key === "d" || e.key === "D") devEl.classList.toggle("on");
   if (e.key === "r" || e.key === "R") resetGame();
+});
+// mobile / no-keyboard dev access: tap the cat-count pill 5× quickly
+let _devTaps = 0, _devTapT = 0;
+document.getElementById("catPill").addEventListener("click", () => {
+  const now = Date.now();
+  _devTaps = now - _devTapT < 600 ? _devTaps + 1 : 1;
+  _devTapT = now;
+  if (_devTaps >= 5) {
+    _devTaps = 0;
+    devEl.classList.toggle("on");
+    if (devEl.classList.contains("on")) toast("Dev panel open — tap the cats count 5× to hide", 3);
+  }
 });
 document.getElementById("dev-reset").addEventListener("click", resetGame);
 document.getElementById("dev-name").addEventListener("click", () => askOwnerName(false));
@@ -2070,90 +2091,100 @@ function tone(freq, dur, type = "sine", vol = 0.16, when = 0) {
   g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
   o.start(t); o.stop(t + dur + 0.02);
 }
-/* a calm, ASMR-leaning synthesized meow:
-   warm triangle/sine voice, a soft "mrr-ow" pitch arc, TWO vowel formants
-   sweeping ee→ah→ow, a slow shallow vibrato, a breath of noise on the
-   mouth-open, a gentle low-pass and a soft slow envelope with a long tail.
-   vol scales the whole thing (pet ≈ 0.85, rewards ≈ 1). */
+/* synthesized meow, aiming for a real "me-OW":
+   a glottal source (sawtooth + sub sine) with a pronounced rise-then-fall
+   pitch arc and a creaky drop at the end, shaped by THREE moving vowel
+   formants (mouth opening ee→ah, then closing to ow), a gentle vibrato,
+   and a very soft breath on the attack. vol scales the whole thing. */
 function meow(happy, vol = 1) {
   if (muted || !actx) return;
   const t0 = actx.currentTime;
-  const dur = happy ? 0.66 : 0.78;
+  const dur = happy ? 0.72 : 0.82;
   const out = actx.createGain();
-  out.gain.value = vol;
+  out.gain.value = vol * 0.9;
   out.connect(actx.destination);
 
-  // --- voice: triangle body + sine sub + faint upper triangle
-  const o1 = actx.createOscillator(), o2 = actx.createOscillator(), o3 = actx.createOscillator();
-  o1.type = "triangle"; o2.type = "sine"; o3.type = "triangle";
-  o2.detune.value = -5; o3.detune.value = 5;
-  const f0 = happy ? 420 : 350, fPk = happy ? 495 : 405, fEnd = happy ? 300 : 250;
-  for (const o of [o1, o2]) {
+  // --- glottal source: a sawtooth (rich harmonics like a real voice) + a sine sub
+  const saw = actx.createOscillator(), sub = actx.createOscillator();
+  saw.type = "sawtooth"; sub.type = "sine"; sub.detune.value = -3;
+  // pitch: quick rise (the "mrr" up-inflection) → gentle fall → a creaky sag at the very end
+  const f0 = happy ? 340 : 300;
+  const fUp = happy ? 470 : 410;
+  const fDn = happy ? 280 : 235;
+  const fCreak = fDn * 0.8;
+  for (const o of [saw, sub]) {
     o.frequency.setValueAtTime(f0, t0);
-    o.frequency.exponentialRampToValueAtTime(fPk, t0 + dur * 0.26);
-    o.frequency.exponentialRampToValueAtTime(fEnd, t0 + dur);
+    o.frequency.exponentialRampToValueAtTime(fUp, t0 + dur * 0.16);
+    o.frequency.setValueAtTime(fUp, t0 + dur * 0.16);
+    o.frequency.exponentialRampToValueAtTime(fDn, t0 + dur * 0.86);
+    o.frequency.exponentialRampToValueAtTime(fCreak, t0 + dur);
   }
-  o3.frequency.setValueAtTime(f0 * 1.5, t0);
-  o3.frequency.exponentialRampToValueAtTime(fPk * 1.5, t0 + dur * 0.26);
-  o3.frequency.exponentialRampToValueAtTime(fEnd * 1.4, t0 + dur);
 
-  // --- slow, shallow vibrato (a relaxed cat, not a nervous one)
+  // --- vibrato: gentle, a touch faster and deeper near the peak
   const lfo = actx.createOscillator(), lg = actx.createGain();
-  lfo.type = "sine"; lfo.frequency.value = happy ? 6 : 5;
-  lg.gain.setValueAtTime(happy ? 4 : 3.2, t0);
-  lfo.connect(lg); lg.connect(o1.frequency); lg.connect(o2.frequency); lg.connect(o3.frequency);
+  lfo.type = "sine"; lfo.frequency.value = happy ? 6.5 : 5.5;
+  lg.gain.setValueAtTime(2, t0);
+  lg.gain.linearRampToValueAtTime(happy ? 7 : 5, t0 + dur * 0.3);
+  lg.gain.linearRampToValueAtTime(3, t0 + dur);
+  lfo.connect(lg); lg.connect(saw.frequency); lg.connect(sub.frequency);
 
-  // --- two vowel formants in parallel, ee → ah → ow
-  const bp1 = actx.createBiquadFilter(), bp2 = actx.createBiquadFilter();
-  bp1.type = "bandpass"; bp2.type = "bandpass";
-  bp1.Q.value = 4.5; bp2.Q.value = 6.5;
-  bp1.frequency.setValueAtTime(520, t0);
-  bp1.frequency.linearRampToValueAtTime(760, t0 + dur * 0.3);
-  bp1.frequency.linearRampToValueAtTime(460, t0 + dur);
-  bp2.frequency.setValueAtTime(2050, t0);
-  bp2.frequency.linearRampToValueAtTime(1400, t0 + dur * 0.42);
-  bp2.frequency.linearRampToValueAtTime(860, t0 + dur);
+  // --- three vowel formants: F1 opens then settles, F2 falls, F3 gives it air
+  const mk = (Q) => { const b = actx.createBiquadFilter(); b.type = "bandpass"; b.Q.value = Q; return b; };
+  const F1 = mk(7), F2 = mk(9), F3 = mk(8);
+  F1.frequency.setValueAtTime(300, t0);
+  F1.frequency.linearRampToValueAtTime(760, t0 + dur * 0.3);
+  F1.frequency.linearRampToValueAtTime(470, t0 + dur);
+  F2.frequency.setValueAtTime(2200, t0);
+  F2.frequency.linearRampToValueAtTime(1350, t0 + dur * 0.45);
+  F2.frequency.linearRampToValueAtTime(800, t0 + dur);
+  F3.frequency.setValueAtTime(3100, t0);
+  F3.frequency.linearRampToValueAtTime(2650, t0 + dur);
+  const F1g = actx.createGain(); F1g.gain.value = 1.0;
+  const F2g = actx.createGain(); F2g.gain.value = 0.6;
+  const F3g = actx.createGain(); F3g.gain.value = 0.22;
 
   const lp = actx.createBiquadFilter();
-  lp.type = "lowpass"; lp.frequency.value = 3000; lp.Q.value = 0.4;
+  lp.type = "lowpass"; lp.frequency.value = 3600; lp.Q.value = 0.3;
 
-  // --- amplitude: soft onset, held middle, long gentle tail
+  // --- amplitude: soft rise, a fuller middle on the "ow", a long soft tail
   const g = actx.createGain();
-  const pk = happy ? 0.09 : 0.08;
+  const pk = happy ? 0.085 : 0.075;
   g.gain.setValueAtTime(0.0001, t0);
-  g.gain.linearRampToValueAtTime(pk, t0 + 0.07);
-  g.gain.setValueAtTime(pk, t0 + dur * 0.5);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.24);
+  g.gain.linearRampToValueAtTime(pk * 0.7, t0 + 0.05);
+  g.gain.linearRampToValueAtTime(pk, t0 + dur * 0.4);
+  g.gain.setValueAtTime(pk * 0.92, t0 + dur * 0.7);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.26);
 
-  // --- a quiet breath at the mouth-open
+  // --- a whisper of breath on the mouth-open (kept very low so it never clicks)
   const nb = actx.createBufferSource();
-  const nlen = Math.floor(actx.sampleRate * 0.11);
+  const nlen = Math.floor(actx.sampleRate * 0.09);
   const nbuf = actx.createBuffer(1, nlen, actx.sampleRate);
   const nd = nbuf.getChannelData(0);
-  for (let i = 0; i < nlen; i++) nd[i] = (Math.random() * 2 - 1) * (1 - i / nlen);
+  for (let i = 0; i < nlen; i++) nd[i] = (Math.random() * 2 - 1) * Math.min(1, i / (nlen * 0.3)) * (1 - i / nlen);
   nb.buffer = nbuf;
-  const nf = actx.createBiquadFilter();
-  nf.type = "bandpass"; nf.frequency.value = 1500; nf.Q.value = 0.7;
+  const nf = actx.createBiquadFilter(); nf.type = "bandpass"; nf.frequency.value = 1700; nf.Q.value = 0.6;
   const ng = actx.createGain();
-  ng.gain.setValueAtTime(0.012, t0);
-  ng.gain.exponentialRampToValueAtTime(0.0004, t0 + 0.11);
+  ng.gain.setValueAtTime(0.006, t0);
+  ng.gain.exponentialRampToValueAtTime(0.0003, t0 + 0.1);
   nb.connect(nf); nf.connect(ng); ng.connect(lp);
 
-  o1.connect(bp1); o1.connect(bp2); o2.connect(bp1); o3.connect(bp2);
-  bp1.connect(lp); bp2.connect(lp);
+  saw.connect(F1); saw.connect(F2); saw.connect(F3);
+  sub.connect(F1);
+  F1.connect(F1g); F2.connect(F2g); F3.connect(F3g);
+  F1g.connect(lp); F2g.connect(lp); F3g.connect(lp);
   lp.connect(g); g.connect(out);
 
-  const stop = t0 + dur + 0.4;
-  o1.start(t0); o2.start(t0); o3.start(t0); lfo.start(t0); nb.start(t0);
-  o1.stop(stop); o2.stop(stop); o3.stop(stop); lfo.stop(stop); nb.stop(t0 + 0.12);
+  const stop = t0 + dur + 0.45;
+  saw.start(t0); sub.start(t0); lfo.start(t0); nb.start(t0);
+  saw.stop(stop); sub.stop(stop); lfo.stop(stop); nb.stop(t0 + 0.1);
 }
 function sfx(kind) {
-  if (kind === "pet") { meow(true, 0.8); tone(660, 0.14, "sine", 0.04, 0.18); }
+  if (kind === "pet") { meow(true, 0.85); }
   else if (kind === "collect") { tone(880, 0.08, "triangle", 0.11); tone(1170, 0.09, "triangle", 0.08, 0.04); }
-  else if (kind === "buy") { tone(523.25,0.11,"sine",0.10); tone(659.25,0.11,"sine",0.09,0.06); tone(783.99,0.16,"sine",0.08,0.12); meow(true, 0.95); }
-  else if (kind === "coax") { tone(392, 0.14, "sine", 0.09); meow(true, 1); }
-  else if (kind === "reveal") { [784,1046,1318,1568].forEach((f,i)=>tone(f,0.24,"triangle",0.06,i*0.05)); meow(true, 1); }
-  else if (kind === "photo") { tone(1200, 0.04, "square", 0.07); tone(300, 0.06, "square", 0.05, 0.03); }
+  else if (kind === "buy") { tone(523.25,0.1,"sine",0.08); tone(783.99,0.14,"sine",0.06,0.09); meow(true, 0.95); }
+  else if (kind === "coax") { meow(true, 1); }
+  else if (kind === "reveal") { [784,1046,1318].forEach((f,i)=>tone(f,0.22,"triangle",0.05,i*0.06)); meow(true, 1); }
+  else if (kind === "photo") { tone(1600, 0.03, "sine", 0.06); }
   else if (kind === "eat") { meow(false, 0.7); }
   else if (kind === "splash") {
     const t0 = actx ? actx.currentTime : 0; if (!actx || muted) return;
@@ -2211,21 +2242,24 @@ function startAmbience() {
   babble.connect(babbleAmt); babbleAmt.connect(waterLP.frequency); babble.start();
   water.connect(waterHP); waterHP.connect(waterLP); waterLP.connect(waterGain); waterGain.connect(master);
 
-  // wind — brown noise, deep low-pass, breathing amplitude
+  // wind — brown noise, deep low-pass, a barely-there breathing swell (kept subtle
+  // so it never turns into a rushing/whooshing "air" sound)
   const wind = loopNoise("brown", 6);
-  const windLP = actx.createBiquadFilter(); windLP.type = "lowpass"; windLP.frequency.value = 175;
-  const windGain = actx.createGain(); windGain.gain.value = 0.05;
-  const breath = actx.createOscillator(); breath.frequency.value = 0.06;
-  const breathAmt = actx.createGain(); breathAmt.gain.value = 0.032;
+  const windLP = actx.createBiquadFilter(); windLP.type = "lowpass"; windLP.frequency.value = 150;
+  const windGain = actx.createGain(); windGain.gain.value = 0.02;
+  const breath = actx.createOscillator(); breath.frequency.value = 0.04;
+  const breathAmt = actx.createGain(); breathAmt.gain.value = 0.008;
   breath.connect(breathAmt); breathAmt.connect(windGain.gain); breath.start();
   wind.connect(windLP); windLP.connect(windGain); windGain.connect(master);
 
-  // crickets (night only) — narrow band noise with a fast tremolo
+  // crickets (night only) — a soft continuous "chirr", gently pulsed with a
+  // SINE (a square wave here reads as a helicopter chop), shallow depth so it
+  // never fully gates
   const crick = loopNoise("white", 2);
-  const crickBP = actx.createBiquadFilter(); crickBP.type = "bandpass"; crickBP.frequency.value = 4600; crickBP.Q.value = 20;
-  const crickTrem = actx.createGain(); crickTrem.gain.value = 0.5;
-  const tremOsc = actx.createOscillator(); tremOsc.type = "square"; tremOsc.frequency.value = 13;
-  const tremDepth = actx.createGain(); tremDepth.gain.value = 0.5;
+  const crickBP = actx.createBiquadFilter(); crickBP.type = "bandpass"; crickBP.frequency.value = 4200; crickBP.Q.value = 11;
+  const crickTrem = actx.createGain(); crickTrem.gain.value = 0.75;
+  const tremOsc = actx.createOscillator(); tremOsc.type = "sine"; tremOsc.frequency.value = 7;
+  const tremDepth = actx.createGain(); tremDepth.gain.value = 0.22;
   tremOsc.connect(tremDepth); tremDepth.connect(crickTrem.gain); tremOsc.start();
   const crickGain = actx.createGain(); crickGain.gain.value = 0;
   crick.connect(crickBP); crickBP.connect(crickTrem); crickTrem.connect(crickGain); crickGain.connect(master);
@@ -2244,9 +2278,9 @@ function applyAmbienceDayNight(f, ramp = 4) {
   dayFactor = clamp(f, 0, 1);
   if (!ambience || !actx) return;
   const t = actx.currentTime;
-  ambience.birdGain.gain.linearRampToValueAtTime(0.9 * dayFactor, t + ramp);
-  ambience.crickGain.gain.linearRampToValueAtTime(0.055 * (1 - dayFactor), t + ramp);
-  ambience.waterGain.gain.linearRampToValueAtTime(0.11 + 0.03 * dayFactor, t + ramp);
+  rampParam(ambience.birdGain.gain, 0.85 * dayFactor, ramp);
+  rampParam(ambience.crickGain.gain, 0.038 * (1 - dayFactor), ramp);
+  rampParam(ambience.waterGain.gain, 0.11 + 0.03 * dayFactor, ramp);
 }
 
 function chirp(when) {
@@ -2369,7 +2403,6 @@ async function startRestAudio() {
   }
   rainSrc.start();
   if (ambience) ambience.master.gain.linearRampToValueAtTime(0.1, actx.currentTime + 2);
-  scheduleCrackle();
   scheduleRestThunder();
 }
 function stopRestAudio() {
@@ -2381,21 +2414,6 @@ function stopRestAudio() {
   setTimeout(() => { try { src && src.disconnect(); } catch (e) {} try { bus && bus.disconnect(); } catch (e) {} }, 2200);
   restBus = null; rainSrc = null;
   if (ambience) ambience.master.gain.linearRampToValueAtTime(muted ? 0 : AMB_MASTER, t + 2);
-}
-function scheduleCrackle() {
-  if (!restMode) return;
-  setTimeout(() => {
-    if (restMode && restOpts.fire && !muted && actx && restBus) {
-      const t = actx.currentTime, L = Math.floor(actx.sampleRate * 0.05);
-      const b = actx.createBuffer(1, L, actx.sampleRate), d = b.getChannelData(0);
-      for (let i = 0; i < L; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / L, 3);
-      const s = actx.createBufferSource(); s.buffer = b;
-      const bp = actx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 900 + Math.random() * 1400; bp.Q.value = 2;
-      const g = actx.createGain(); g.gain.value = 0.05 + Math.random() * 0.06;
-      s.connect(bp); bp.connect(g); g.connect(restBus); s.start(t); s.stop(t + 0.06);
-    }
-    scheduleCrackle();
-  }, (0.5 + Math.random() * 3.5) * 1000);
 }
 function scheduleRestThunder() {
   if (!restMode) return;
