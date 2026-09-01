@@ -508,9 +508,25 @@ const MIDKNIGHT_COAT = { key:"midknight", name:"Midknight", base:"#26232b", bell
   white:["bib","belly","muzzle","paws"], eye:"#e0b24b", nose:"#2c2530", inner:"#e2b4b4", mascot:true };
 const COAT_BY_KEY = Object.fromEntries([...COATS, MIDKNIGHT_COAT].map(c => [c.key, c]));
 function weightedCoat() {
-  let total = 0; for (const c of COATS) total += c.w;
+  const undiscovered = COATS.filter(c => !G.dex[c.key]);
+  // soft pity — a long dry spell without a new coat guarantees the next one
+  // (shorter fuse when only a coat or two remain, so the last ones aren't a slog)
+  const pityAt = 8 + undiscovered.length * 2;
+  if (undiscovered.length && (G.metrics.dryStreak || 0) >= pityAt) {
+    let t = 0; for (const c of undiscovered) t += c.w;
+    let r = Math.random() * t;
+    for (const c of undiscovered) { r -= c.w; if (r <= 0) return c.key; }
+    return undiscovered[0].key;
+  }
+  // otherwise: as the Catdex fills, undiscovered coats get progressively rarer so
+  // "a new coat!" stays a real event instead of every other cat (paces completion
+  // to ~1-2 weeks rather than a day)
+  const fill = Object.keys(G.dex).length / COATS.length;   // 0 → ~1
+  const rareMul = 1 - fill * 0.8;                           // down to ~20% of base weight
+  let total = 0;
+  const w = COATS.map(c => { const x = G.dex[c.key] ? c.w : c.w * rareMul; total += x; return x; });
   let r = Math.random() * total;
-  for (const c of COATS) { r -= c.w; if (r <= 0) return c.key; }
+  for (let i = 0; i < COATS.length; i++) { r -= w[i]; if (r <= 0) return COATS[i].key; }
   return COATS[0].key;
 }
 function mulberry32(a) {
@@ -549,7 +565,7 @@ function newGame() {
     ratePerSec: 0,
     allTimeSec: 0,
     tips: [],
-    metrics: { pets:0, tokens:0, photos:0, catsAllTime:0, coaxed:0 },
+    metrics: { pets:0, tokens:0, photos:0, catsAllTime:0, coaxed:0, dryStreak:0 },
     dex: {},               // coatKey -> { star: bestStar, count: timesSeen }
     dexRewards: [],         // claimed Catdex milestone thresholds
     goals: null, goalDay: 0,
@@ -825,11 +841,13 @@ function registerInDex(c, celebrate) {
   const prev = G.dex[c.coatKey];
   if (!prev) {
     G.dex[c.coatKey] = { star: c.star, count: 1 };
+    G.metrics.dryStreak = 0;
     if (celebrate) queueReveal(c, "new");
     checkDexMilestones();
     bumpGoal("discover", 1);
   } else {
     prev.count++;
+    G.metrics.dryStreak = (G.metrics.dryStreak || 0) + 1;
     if (c.star > prev.star) {
       prev.star = c.star;
       if (celebrate && c.star >= 3) queueReveal(c, "upgrade");
