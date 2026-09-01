@@ -1,15 +1,34 @@
 # Catmint Cove — Phase 1 prototype
 
-**Version:** V2 (2026-09-01) — mascot **Midknight**, chunky-loaf cat art, deadpan
-gold eyes, procedural happy-meow SFX, a skippable 5-step tutorial (re-openable from
-the **?** button), and mobile-first layout (safe-area insets, 44px touch targets,
-icon-only action bar on small screens). V1 is tag `v1` (2026-08-31), frozen in
-[`releases/v1/`](releases/v1/).
-**Play it:** https://ukiyazero.github.io/catmint-cove/
-(hosted on GitHub Pages from `index.html` on `main` — redeploys on push)
+## Play
+
+| | | |
+|---|---|---|
+| **V2** (current) | https://ukiyazero.github.io/catmint-cove/ | mascot Midknight, chunky-loaf art, procedural audio, tutorial — see the V2 roadmap below |
+| **V1** (original prototype, frozen) | https://ukiyazero.github.io/catmint-cove/v1/ | the first greybox — tag `v1`, 2026-08-31 |
+
+Both are live and permanent — V2 ships from `index.html` at the repo root, V1 from
+[`v1/`](v1/) (a copy of the frozen [`releases/v1/`](releases/v1/) snapshot). Each
+has a small `v1` / `v2` badge in the top bar that jumps to the other. GitHub Pages
+redeploys ~1 min after a push to `main`. The two keep separate saves
+(`catmintCove.save.v5` vs `.v6`).
 
 A playable greybox of the cozy-idle cat game concept. One self-contained HTML file,
 no build step, no dependencies.
+
+## V2 roadmap
+
+- [x] Midknight mascot + chunky-loaf cat art, deadpan gold eyes
+- [x] Procedural happy-meow SFX (pet / coax / buy / reveal)
+- [x] Skippable tutorial, re-openable from **?**
+- [x] Mobile-first layout (safe-area, 44px targets, scroll/icon action bar)
+- [x] V1 + V2 both permanently hosted
+- [ ] Ambient procedural sound bed (rain / stream / birds / night crickets)
+- [ ] Day/night lighting cycle the audio follows
+- [ ] Activity stations — fishing dock, bakery, sunbeam mat, catmint garden
+- [ ] Canvas accessories — collar / bandana / bow / flower crown
+- [ ] Photo → short animated clip capture
+- [ ] Tall-screen scene layout pass
 
 ## What this is testing
 

@@ -1,0 +1,939 @@
+<title>Midknight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+
+<style>
+  :root {
+    --ground:#EFEDE4; --ground-2:#F8F6EE; --card:#FCFBF4;
+    --ink:#262A26; --ink-soft:#59614F; --ink-dim:#8B917C; --line:#DBD8C7;
+    --accent:#6E5FA0; --accent-2:#DFA24C; --heart:#E1808C; --shadow:rgba(38,42,38,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#191C18; --ground-2:#20241E; --card:#252A22;
+      --ink:#ECEADC; --ink-soft:#B0B6A1; --ink-dim:#7E856F; --line:#373E31;
+      --accent:#A99BD6; --accent-2:#E6B667; --heart:#EC8B96; --shadow:rgba(0,0,0,.30);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#191C18; --ground-2:#20241E; --card:#252A22;
+    --ink:#ECEADC; --ink-soft:#B0B6A1; --ink-dim:#7E856F; --line:#373E31;
+    --accent:#A99BD6; --accent-2:#E6B667; --heart:#EC8B96; --shadow:rgba(0,0,0,.30);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:"Hanken Grotesk",system-ui,sans-serif; line-height:1.62; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1080px; margin:0 auto; padding:clamp(26px,5vw,56px) clamp(18px,4vw,40px) 120px; }
+
+  .eyebrow { font-size:12px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin:0 0 14px; }
+  h1 { font-family:"Fraunces",Georgia,serif; font-weight:500; font-size:clamp(40px,9vw,92px); line-height:.98; letter-spacing:-.02em; margin:0 0 10px; }
+  .sub { font-size:clamp(15px,2vw,19px); color:var(--ink-soft); max-width:54ch; margin:0; }
+  .sub em { color:var(--ink); font-style:normal; font-weight:600; }
+  code { font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:.88em; background:color-mix(in srgb,var(--ink) 8%,transparent); padding:1px 5px; border-radius:5px; }
+
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:22px 0 0; }
+  .toggle { appearance:none; border:1px solid var(--line); background:var(--card); color:var(--ink); font:inherit; font-weight:600; font-size:13px; padding:8px 15px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
+  .toggle:hover { border-color:var(--accent); }
+  .toggle .dot { width:9px; height:9px; border-radius:50%; background:var(--accent-2); }
+  .toolbar .hint { font-size:12px; color:var(--ink-dim); }
+
+  section { margin-top:clamp(52px,9vw,96px); }
+  .sec-head { display:flex; align-items:baseline; gap:14px; margin-bottom:10px; flex-wrap:wrap; }
+  .sec-head h2 { font-family:"Fraunces",Georgia,serif; font-weight:500; font-size:clamp(22px,3.2vw,31px); letter-spacing:-.01em; margin:0; }
+  .sec-head .n { font-size:12px; font-weight:700; letter-spacing:.14em; color:var(--ink-dim); font-variant-numeric:tabular-nums; }
+  .sec-sub { color:var(--ink-soft); max-width:64ch; margin:0 0 26px; font-size:15px; }
+
+  .hero { position:relative; margin-top:30px; border-radius:26px; overflow:hidden; border:1px solid var(--line);
+    background:radial-gradient(120% 90% at 32% 20%, color-mix(in srgb,var(--accent-2) 12%,var(--card)), var(--card) 62%); }
+  .hero canvas { display:block; width:100%; height:auto; }
+  .hero .cap { position:absolute; left:clamp(16px,3vw,30px); bottom:clamp(14px,3vw,26px); font-family:"Fraunces",serif; font-size:clamp(12px,1.5vw,14px); color:var(--ink-soft); }
+  .hero .cap b { color:var(--ink); font-weight:600; }
+
+  .who { display:grid; grid-template-columns:1.1fr .9fr; gap:clamp(20px,4vw,46px); align-items:start; }
+  @media (max-width:760px){ .who{ grid-template-columns:1fr; } }
+  .who p { margin:0 0 14px; font-size:15.5px; }
+  .who .pull { font-family:"Fraunces",serif; font-size:clamp(19px,2.6vw,26px); line-height:1.32; color:var(--ink); margin:0 0 18px; letter-spacing:-.01em; }
+  .facts { border:1px solid var(--line); border-radius:16px; background:var(--card); padding:6px 18px; }
+  .facts div { display:flex; justify-content:space-between; gap:16px; padding:11px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
+  .facts div:last-child { border-bottom:0; }
+  .facts span { color:var(--ink-dim); }
+  .facts b { font-weight:600; text-align:right; }
+
+  .map { position:relative; border:1px solid var(--line); border-radius:20px; overflow:hidden; background:var(--card); }
+  .map canvas { display:block; width:100%; height:auto; }
+  .pin { position:absolute; width:24px; height:24px; border-radius:50%; background:var(--accent); color:#fff; font-size:12px; font-weight:700; display:grid; place-items:center; transform:translate(-50%,-50%); box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 20%,transparent); font-variant-numeric:tabular-nums; }
+  ol.keys { margin:22px 0 0; padding:0; list-style:none; counter-reset:k; display:grid; grid-template-columns:1fr 1fr; gap:0 30px; }
+  @media (max-width:640px){ ol.keys{ grid-template-columns:1fr; } }
+  ol.keys li { position:relative; padding:11px 0 11px 38px; border-top:1px solid var(--line); font-size:13.7px; color:var(--ink-soft); }
+  ol.keys li::before { counter-increment:k; content:counter(k); position:absolute; left:0; top:10px; width:24px; height:24px; border-radius:50%; background:color-mix(in srgb,var(--accent) 13%,transparent); color:var(--accent); font-weight:700; font-size:12px; display:grid; place-items:center; }
+  ol.keys li b { color:var(--ink); font-weight:600; }
+  .locked { margin-top:20px; padding:14px 18px; border-radius:12px; background:color-mix(in srgb,var(--accent-2) 12%,transparent); font-size:13.5px; color:var(--ink-soft); }
+  .locked b { color:var(--ink); }
+
+  .strip { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); }
+  .tile { border:1px solid var(--line); border-radius:16px; background:var(--card); overflow:hidden; }
+  .tile canvas { display:block; width:100%; height:auto; }
+  .tile .l { padding:9px 13px 12px; border-top:1px solid var(--line); }
+  .tile .l b { font-size:13px; display:block; }
+  .tile .l span { font-size:12px; color:var(--ink-dim); }
+
+  .two { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(18px,3.5vw,40px); align-items:center; }
+  @media (max-width:720px){ .two{ grid-template-columns:1fr; } }
+  .panel { border:1px solid var(--line); border-radius:18px; background:var(--card); overflow:hidden; }
+  .panel canvas { display:block; width:100%; height:auto; }
+
+  ul.spec { margin:0; padding:0; list-style:none; }
+  ul.spec li { padding:10px 0; border-top:1px solid var(--line); font-size:14px; color:var(--ink-soft); display:flex; gap:12px; }
+  ul.spec li:first-child { border-top:0; }
+  ul.spec li b { color:var(--ink); font-weight:600; min-width:104px; flex:none; }
+
+  .rig ol { margin:0; padding-left:0; list-style:none; counter-reset:rg; }
+  .rig ol li { position:relative; padding:12px 0 12px 40px; border-top:1px solid var(--line); font-size:14px; color:var(--ink-soft); }
+  .rig ol li::before { counter-increment:rg; content:counter(rg,decimal-leading-zero); position:absolute; left:0; top:12px; font-family:"Fraunces",serif; font-weight:600; color:var(--accent); font-size:14px; }
+  .rig ol li b { color:var(--ink); font-weight:600; }
+
+  .swatches { display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+  .sw { border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--card); }
+  .sw .chip { height:52px; }
+  .sw .txt { padding:8px 11px 10px; }
+  .sw .txt b { font-size:12.5px; display:block; }
+  .sw .txt span { font-size:11px; color:var(--ink-dim); font-family:ui-monospace,monospace; }
+
+  .dd { display:grid; grid-template-columns:1fr 1fr; gap:clamp(16px,3vw,32px); }
+  @media (max-width:620px){ .dd{ grid-template-columns:1fr; } }
+  .dd h3 { font-family:"Fraunces",serif; font-weight:600; font-size:15px; margin:0 0 8px; }
+  .dd .do h3 { color:#4f8a5b; } .dd .dont h3 { color:#c26a63; }
+  .dd ul { margin:0; padding:0; list-style:none; }
+  .dd li { padding:9px 0; border-top:1px solid var(--line); font-size:13.7px; color:var(--ink-soft); }
+  .dd li::before { margin-right:8px; font-weight:700; }
+  .dd .do li::before { content:"✓"; color:#4f8a5b; }
+  .dd .dont li::before { content:"✕"; color:#c26a63; }
+
+  .pov { display:grid; gap:14px; grid-template-columns:repeat(3,1fr); }
+  @media (max-width:640px){ .pov{ grid-template-columns:1fr; } }
+  .pov .c { border:1px solid var(--line); border-radius:14px; background:var(--card); padding:15px 16px; }
+  .pov .c b { font-size:13.5px; display:block; margin-bottom:3px; }
+  .pov .c span { font-size:12.5px; color:var(--ink-dim); }
+  .pov .c .amt { display:block; margin-top:8px; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--accent); }
+
+  .endnote { margin-top:clamp(50px,8vw,88px); padding:22px 24px; border-radius:16px; border:1px dashed var(--line); background:var(--ground-2); color:var(--ink-soft); font-size:14.5px; }
+  .endnote b { color:var(--ink); font-weight:600; }
+  footer { margin-top:38px; font-size:12.5px; color:var(--ink-dim); }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Catmint Cove · Mascot Bible</p>
+  <h1>Midknight</h1>
+  <p class="sub">The first cat in the cove and the face of the game — drawn from a real tuxedo. Looks like he's <em>drafting a complaint</em>. Actually just wants to loaf near you.</p>
+
+  <div class="toolbar">
+    <button class="toggle" id="lamp" aria-pressed="false"><span class="dot"></span><span id="lampLabel">Daylight</span></button>
+    <span class="hint">Portrait light vs. lamplight — the two grades he has to hold up in.</span>
+  </div>
+
+  <div class="hero"><canvas id="hero"></canvas>
+    <div class="cap"><b>Midknight</b>, signature loaf · flat concept — the shape language and marking placement for the illustrator</div>
+  </div>
+
+  <section id="who">
+    <div class="sec-head"><span class="n">01</span><h2>Who he is</h2></div>
+    <div class="who">
+      <div>
+        <p class="pull">A grumpy-looking softie. The eyebrows say no. The belly-up sleeping says otherwise.</p>
+        <p>Midknight is the player's first cat and never leaves — the anchor of the cove and the character on the icon. His whole comedy is the gap between the <b>deadpan face</b> and the <b>total mush underneath</b>: he sighs when you pet him, then leans in; he judges the new cat, then falls asleep on it.</p>
+        <p>In the sleepy / huggable register he's the low-energy end: he loafs, he slow-blinks, he makes biscuits, he flops belly-up in a sunbeam. Big reactions are rare and therefore worth a lot — a wide-eyed Midknight is a screenshot.</p>
+        <p>He's built to merchandise: the silhouette works as a sticker, a plush, an app icon at 48&nbsp;px. The white ruff and gold eyes carry him even when the black goes to pure shadow.</p>
+      </div>
+      <div class="facts">
+        <div><span>Name</span><b>Midknight</b></div>
+        <div><span>Coat</span><b>Longhair tuxedo</b></div>
+        <div><span>Build</span><b>Chunky, floof-heavy</b></div>
+        <div><span>Eyes</span><b>Amber / lamplight gold</b></div>
+        <div><span>Default face</span><b>Unimpressed</b></div>
+        <div><span>Energy</span><b>Low — loaf-forward</b></div>
+        <div><span>Role</span><b>Starter cat · mascot · icon</b></div>
+        <div><span>Tell</span><b>Forehead freckle + chin dot</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="map">
+    <div class="sec-head"><span class="n">02</span><h2>Marking map</h2></div>
+    <p class="sec-sub">Eight things make him <em>Midknight</em> and not a generic tuxedo. Render it however the illustration calls for — these eight stay, and stay asymmetric.</p>
+    <div class="map" id="mapWrap">
+      <canvas id="mapCat"></canvas>
+      <span class="pin" style="left:48%; top:20%">1</span>
+      <span class="pin" style="left:37%; top:17%">2</span>
+      <span class="pin" style="left:55%; top:34%">3</span>
+      <span class="pin" style="left:50%; top:44%">4</span>
+      <span class="pin" style="left:50%; top:62%">5</span>
+      <span class="pin" style="left:41%; top:47%">6</span>
+      <span class="pin" style="left:50%; top:85%">7</span>
+      <span class="pin" style="left:70%; top:80%">8</span>
+    </div>
+    <ol class="keys">
+      <li><b>Black cap &amp; mask.</b> Solid black over crown, ears and back. Comes to a soft point between the brows — that point is what makes him look concerned.</li>
+      <li><b>Lynx-tipped ears.</b> Longhair furnishings: pale wisps inside, a couple of dark hairs past the tip. Tall, set fairly wide.</li>
+      <li><b>Forehead freckle.</b> A small scatter of white hairs on the black forehead, off-centre to his left. The single most identifying mark — never centre it, never drop it.</li>
+      <li><b>Nose-bridge wedge.</b> Black runs down the bridge from the mask point to a dark nose, splitting the white muzzle into two lobes.</li>
+      <li><b>Chin dot (the "goatee").</b> A small round black patch on the white chin, just under the mouth. Rare on tuxedos — keep it.</li>
+      <li><b>Gold eyes, low lids.</b> Round amber eyes carried at ~60% open by default. The half-lid <em>is</em> the deadpan.</li>
+      <li><b>Mitten paws.</b> Front paws fully white, blunt and round, planted forward past the floof in the loaf.</li>
+      <li><b>One back-leg spot.</b> A single stray black smudge on a white hind leg. Small, easily missed, load-bearing for "hand-made, not generated."</li>
+    </ol>
+    <div class="locked"><b>Also fixed:</b> the enormous white ruff (his widest point), the plume tail, prominent white whiskers and brow-whiskers, warm-black fur (never <code>#000</code>), cool-neutral shadow on the white.</div>
+  </section>
+
+  <section id="prop">
+    <div class="sec-head"><span class="n">03</span><h2>Proportions</h2></div>
+    <p class="sec-sub">The loaf is the hero pose and the construction everything else derives from — a rounded triangle, base ≈ 1.5× the height, head merged into the mass rather than stacked on top.</p>
+    <div class="two">
+      <div class="panel"><canvas id="constr"></canvas></div>
+      <ul class="spec">
+        <li><b>Silhouette</b> Rounded isosceles triangle. Flat-ish base, fluff pooled. Widest at the ruff, ~40% up.</li>
+        <li><b>Head : body</b> Head width ≈ 0.62 of base width. No neck in the loaf — cheek floof meets ruff.</li>
+        <li><b>Eyeline</b> Low — ~46% up the head, not centred. Big cats read younger with low eyes.</li>
+        <li><b>Eye size</b> ~0.19 of head width each, ~1.1 eye-widths apart.</li>
+        <li><b>Ears</b> Height ≈ 0.55 of head height, set wide with a shallow dip between.</li>
+        <li><b>Paws</b> Two rounded blocks, together ~0.4 of base width, poking just past the front edge.</li>
+        <li><b>Line weight</b> No outline. A warm rim on the top-left edge; forms read by value, not stroke.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="expr">
+    <div class="sec-head"><span class="n">04</span><h2>Expression range</h2></div>
+    <p class="sec-sub">All eyes, lids and mouth — the skull never changes. His range sits low: seven reads, five of them barely moving. Deadpan is home.</p>
+    <div class="strip" id="exprStrip"></div>
+  </section>
+
+  <section id="pose">
+    <div class="sec-head"><span class="n">05</span><h2>Pose library</h2></div>
+    <p class="sec-sub">The loaf is canon. Everything else is him being talked into moving.</p>
+    <div class="strip" id="poseStrip"></div>
+  </section>
+
+  <section id="turn">
+    <div class="sec-head"><span class="n">06</span><h2>Turnaround</h2></div>
+    <p class="sec-sub">Silhouette read from four sides — for the rigger, and for whoever models the plush.</p>
+    <div class="strip" id="turnStrip"></div>
+  </section>
+
+  <section id="rig" class="rig">
+    <div class="sec-head"><span class="n">07</span><h2>Rig sheet</h2></div>
+    <p class="sec-sub">Built for a 2D skeletal rig (Spine / DragonBones) or Live2D — a breathing idle that never fully stops, layered so the deadpan can crack for a beat and settle back.</p>
+    <div class="two">
+      <div class="panel"><canvas id="rigCat"></canvas></div>
+      <ol>
+        <li><b>Layer order (back → front):</b> tail plume · far ear · back mass · haunches · ruff-back · head-black · face-white · muzzle + nose · eyes (sclera / iris / pupil / catchlight) · brow-whiskers · ruff-front · front legs + mittens · near ear · whiskers · rim-light overlay.</li>
+        <li><b>Breathing idle:</b> body mass scaleY ±1.5%, 0.9&nbsp;s ease-in-out, ruff lags 2 frames. Always on.</li>
+        <li><b>Blink:</b> full close over 5 frames, hold 1, open over 4. Fire every 4–7&nbsp;s, random. Slow-blink = 3× duration, used as the affection beat.</li>
+        <li><b>Ears:</b> independent bones, ±6° idle sway + occasional single-ear flick. Flatten to "annoyed" as one pose.</li>
+        <li><b>Tail:</b> 4-bone chain, base to tip, sine offset. Tip-only twitch on the deadpan; full slow curl on content.</li>
+        <li><b>Whiskers:</b> 3 bones each side, heavy droop, drift with head and breath. They sell the weight.</li>
+        <li><b>Deform zones (panel):</b> <span style="color:#6E5FA0">purple</span> = squash/stretch on breath · <span style="color:#DFA24C">gold</span> = free-form face deform · <span style="color:#4f8a5b">green</span> = bone chains.</li>
+        <li><b>Reaction budget:</b> 90% of the time he's in idle+blink. Big reactions resolve back to deadpan within 1.5&nbsp;s — the snap-back is the joke.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="colour">
+    <div class="sec-head"><span class="n">08</span><h2>Colour</h2></div>
+    <p class="sec-sub">One rule holds it together: <em>the black is warm, the white's shadow is cool-neutral, there's one gold and one pink.</em> Values below are the daylight grade; lamplight pushes everything warmer and drops the whites ~8%.</p>
+    <div class="swatches" id="swatches"></div>
+  </section>
+
+  <section id="dd">
+    <div class="sec-head"><span class="n">09</span><h2>Do &amp; don't</h2></div>
+    <div class="dd">
+      <div class="do"><h3>Do</h3><ul>
+        <li>Keep the half-lidded eyes — the deadpan is the brand.</li>
+        <li>Let the black go to warm shadow; never flatten to a silhouette.</li>
+        <li>Keep the freckle and chin dot asymmetric and slightly messy.</li>
+        <li>Make the ruff the widest, softest thing about him.</li>
+        <li>Give big reactions a fast snap-back to deadpan.</li>
+        <li>Draw whiskers heavy — they carry his weight and age.</li>
+      </ul></div>
+      <div class="dont"><h3>Don't</h3><ul>
+        <li>Don't give him big round anime eyes — he squints.</li>
+        <li>Don't centre the forehead freckle or tidy it into a heart.</li>
+        <li>Don't use pure <code>#000</code> — he dies at icon size.</li>
+        <li>Don't slim him down; the chonk is the hug.</li>
+        <li>Don't make him bouncy or hyper — that's a different cat.</li>
+        <li>Don't lose the chin dot in the black nose. They're separate.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section id="pov">
+    <div class="sec-head"><span class="n">10</span><h2>Reference point of view</h2></div>
+    <p class="sec-sub">Three coordinates. Not a mood board of every cozy game — this specific mix.</p>
+    <div class="pov">
+      <div class="c"><b>Cats &amp; Soup</b><span>Soft edges, no hard outline, sticker-warm light, painterly fur.</span><span class="amt">Take the surface</span></div>
+      <div class="c"><b>Neko Atsume — Tubbs</b><span>Deadpan face, comedic stillness, a body that's mostly one shape.</span><span class="amt">Take the attitude</span></div>
+      <div class="c"><b>Chonky longhair</b><span>Maine-coon ruff and ear tufts, real weight, a plush you'd actually hold.</span><span class="amt">Take the build</span></div>
+    </div>
+  </section>
+
+  <div class="endnote">
+    <b>This is concept, not final art.</b> It's the brief for the illustrator and rigger: locked markings, locked proportions, the expression and pose range, the rig plan, the palette. The flat build here fixes the shapes and where every marking sits — the hand-painted version adds the fur, the light and the warmth on top.
+  </div>
+
+  <footer>Catmint Cove — Midknight mascot bible · flat concept drawn live on canvas, no image assets · 2026-08-31</footer>
+</div>
+
+<script>
+(() => {
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let lamp = false;
+  const lerp=(a,b,t)=>a+(b-a)*t, clamp=(v,a,b)=>v<a?a:v>b?b:v;
+  const rnd = (s)=>{ let a=s>>>0; return ()=>{ a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; };
+
+  function PAL(){
+    const L = lamp;
+    return {
+      bg1:  L?'#2b2620':'#f5f2e7',  bg2: L?'#1d1913':'#eae7d7',  floor: L?'#241f17':'#e8e3d0',
+      kCore:L?'#211d24':'#26232b',  kLit: L?'#312b36':'#3a3542',  kEdge:L?'#4a3f42':'#514954',
+      wCore:L?'#e6e2d6':'#f7f5ef',  wShad:L?'#c6c2bd':'#e6e2d5',  wDeep:L?'#aeaaa6':'#d3cec0',  wHi:L?'#f4efe0':'#fefdf8',
+      gRim: L?'#916318':'#b8862a',  gMid: L?'#d99e33':'#e6ad3e',  gHi: L?'#f2c65a':'#f6cf62',  pupil:'#1b1620',
+      nose: L?'#281f27':'#322b34',  noseHi:L?'#6a4f56':'#7a5f66',
+      pink: L?'#d98d92':'#e7a9ac',  blush:L?'rgba(224,138,146,.32)':'rgba(231,150,158,.34)',
+      rim:  L?'rgba(240,205,150,.75)':'rgba(255,249,234,.92)',
+      grnd: L?'rgba(0,0,0,.44)':'rgba(64,58,66,.24)',
+      zzz:  L?'#cfd6c2':'#9aa08a',
+    };
+  }
+
+  // ============ MIDKNIGHT — flat build ============
+  // local origin: ground-contact centre. up = negative y.
+  function drawMidknight(ctx, cx, cy, s, o){
+    o = o || {};
+    const P = PAL();
+    const t = o.t||0, flat = o.flat||null, pose = o.pose||'loaf';
+    const F = o.face||{};
+    const seed = o.seed||7;
+    const breath = reduced?0:Math.sin(t*1.9)*0.013;
+
+    ctx.save(); ctx.translate(cx,cy); ctx.scale(s,s);
+
+    // ground shadow
+    if (!flat){
+      const gw = pose==='flop'?170:pose==='curl'?150:120;
+      const g = ctx.createRadialGradient(8,-2,4,8,-2,gw);
+      g.addColorStop(0,P.grnd); g.addColorStop(.6,P.grnd.replace(/[\d.]+\)$/,'.10)')); g.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(8,-2,gw,22,0,0,7); ctx.fill();
+    }
+
+    if (pose==='curl'){ curl(ctx,P,t,flat); ctx.restore(); return; }
+    if (pose==='flop'){ flop(ctx,P,t,flat); ctx.restore(); return; }
+
+    ctx.save(); ctx.transform(1,0,0,1-breath,0,breath*24);
+
+    const sit = pose==='sit';
+    const BW = 112;                       // ruff half-width (widest point)
+    const BH = sit ? 232 : 196;           // base -> crown
+    const HW = 68;                        // head half-width
+    const hy = -BH + 78;                  // head centre y
+    const ruffY = hy + 96;                // ruff centre
+
+    // ---------- loaf silhouette ----------
+    function loaf(){
+      ctx.beginPath();
+      ctx.moveTo(-BW*0.94, -3);
+      ctx.bezierCurveTo(-BW*1.04,-BH*0.24, -BW*1.02,-BH*0.42, -BW*0.9,-BH*0.54);
+      ctx.bezierCurveTo(-BW*0.8,-BH*0.64, -HW*1.14,-BH*0.6, -HW*1.06,-BH*0.72);   // cheek floof bump
+      ctx.bezierCurveTo(-HW*1.0,-BH*0.82, -HW*0.92,-BH*0.86, -HW*0.8,-BH*0.9);
+      ctx.lineTo(-HW*0.82,-BH*1.02);                                              // left ear outer
+      ctx.quadraticCurveTo(-HW*0.7,-BH*1.1, -HW*0.5,-BH*1.0);
+      ctx.lineTo(-HW*0.16,-BH*0.93);                                              // ear inner
+      ctx.quadraticCurveTo(0,-BH*0.97, HW*0.16,-BH*0.93);
+      ctx.lineTo(HW*0.5,-BH*1.0);
+      ctx.quadraticCurveTo(HW*0.7,-BH*1.1, HW*0.82,-BH*1.02);
+      ctx.lineTo(HW*0.8,-BH*0.9);
+      ctx.bezierCurveTo(HW*0.92,-BH*0.86, HW*1.0,-BH*0.82, HW*1.06,-BH*0.72);
+      ctx.bezierCurveTo(HW*1.14,-BH*0.6, BW*0.8,-BH*0.64, BW*0.9,-BH*0.54);
+      ctx.bezierCurveTo(BW*1.02,-BH*0.42, BW*1.04,-BH*0.24, BW*0.94,-3);
+      ctx.quadraticCurveTo(BW*0.55,7, BW*0.3,3);
+      ctx.quadraticCurveTo(0,10, -BW*0.3,3);
+      ctx.quadraticCurveTo(-BW*0.55,7, -BW*0.94,-3);
+      ctx.closePath();
+    }
+
+    // ---------- tail (behind) ----------
+    if (!flat){
+      const sway = reduced?0:Math.sin(t*0.75)*4;
+      ctx.save();
+      ctx.fillStyle = P.kLit;
+      ctx.beginPath();
+      ctx.moveTo(BW*0.5,-BH*0.1);
+      ctx.bezierCurveTo(BW*1.5+sway,-BH*0.02, BW*1.62+sway,-BH*0.5, BW*0.86+sway,-BH*0.66);
+      ctx.bezierCurveTo(BW*1.24,-BH*0.46, BW*1.2,-BH*0.08, BW*0.5,-BH*0.0);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = P.kCore;
+      ctx.beginPath();
+      ctx.moveTo(BW*0.54,-BH*0.09);
+      ctx.bezierCurveTo(BW*1.34+sway,-BH*0.04, BW*1.44+sway,-BH*0.44, BW*0.9+sway,-BH*0.58);
+      ctx.bezierCurveTo(BW*1.1,-BH*0.4, BW*1.06,-BH*0.1, BW*0.54,-BH*0.02);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
+    if (flat==='silhouette'){ loaf(); ctx.fillStyle='#000'; ctx.fill(); ctx.restore(); ctx.restore(); return; }
+
+    // ---------- colour block ----------
+    loaf();
+    ctx.save(); ctx.clip();
+    ctx.fillStyle = P.wCore; ctx.fillRect(-BW*1.4,-BH*1.3,BW*2.8,BH*1.5);
+    // black cap — wavy lower border, dips to a soft point at the chest
+    ctx.fillStyle = P.kCore;
+    ctx.beginPath();
+    ctx.moveTo(-BW*1.4,-BH*1.3); ctx.lineTo(BW*1.4,-BH*1.3);
+    ctx.lineTo(BW*1.4,-BH*0.42);
+    ctx.bezierCurveTo(BW*0.62,-BH*0.34, BW*0.34,-BH*0.3, BW*0.06,-BH*0.44);
+    ctx.bezierCurveTo(-BW*0.02,-BH*0.48, -BW*0.02,-BH*0.48, -BW*0.1,-BH*0.44);
+    ctx.bezierCurveTo(-BW*0.36,-BH*0.3, -BW*0.64,-BH*0.34, -BW*1.4,-BH*0.42);
+    ctx.closePath(); ctx.fill();
+    // back-leg spot (8)
+    ctx.fillStyle = P.kLit;
+    ctx.beginPath(); ctx.ellipse(BW*0.7,-BH*0.13, 9,13, .35, 0,7); ctx.fill();
+    // soft form shadow (multiply, lower-right)
+    ctx.globalCompositeOperation='multiply';
+    let fs = ctx.createLinearGradient(-BW*0.2,-BH*0.9, BW*0.9,0);
+    fs.addColorStop(0,'rgba(255,255,255,0)'); fs.addColorStop(1, lamp?'rgba(22,15,28,.42)':'rgba(74,64,84,.20)');
+    ctx.fillStyle=fs; ctx.fillRect(-BW*1.4,-BH*1.3,BW*2.8,BH*1.5);
+    // AO where head meets ruff
+    let ao = ctx.createRadialGradient(0,ruffY-46,6,0,ruffY-46,BW*0.86);
+    ao.addColorStop(0, lamp?'rgba(14,9,18,.5)':'rgba(52,45,62,.26)'); ao.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=ao; ctx.fillRect(-BW,ruffY-100,BW*2,120);
+    // warm crown light (screen)
+    ctx.globalCompositeOperation='screen';
+    let cl = ctx.createRadialGradient(-BW*0.34,hy-HW*0.7,6,-BW*0.34,hy-HW*0.7,BW*1.1);
+    cl.addColorStop(0, lamp?'rgba(150,110,58,.32)':'rgba(255,244,218,.4)'); cl.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=cl; ctx.fillRect(-BW*1.4,-BH*1.3,BW*2.8,BH*1.5);
+    ctx.globalCompositeOperation='source-over';
+    ctx.restore(); // unclip
+
+    // ---------- ruff scallop shadows (soft, on the white) ----------
+    (function ruffShade(){
+      ctx.save(); loaf(); ctx.clip();
+      ctx.fillStyle = lamp?'rgba(150,144,150,.16)':'rgba(190,184,168,.28)';
+      for (let i=-2;i<=2;i++){
+        const x = i*BW*0.36;
+        ctx.beginPath();
+        ctx.ellipse(x, -BH*0.08 + Math.abs(i)*6, BW*0.2, BH*0.12, 0, Math.PI*0.05, Math.PI*0.95);
+        ctx.fill();
+      }
+      ctx.restore();
+    })();
+
+    // ---------- ears: inner pink + furnishings (part of shape, short) ----------
+    function earInner(dir){
+      ctx.save();
+      ctx.fillStyle = P.pink; ctx.globalAlpha = .9;
+      ctx.beginPath();
+      ctx.moveTo(dir*HW*0.34,-BH*0.9);
+      ctx.quadraticCurveTo(dir*HW*0.6,-BH*1.0, dir*HW*0.62,-BH*0.95);
+      ctx.quadraticCurveTo(dir*HW*0.52,-BH*0.88, dir*HW*0.34,-BH*0.9);
+      ctx.closePath(); ctx.fill(); ctx.globalAlpha=1;
+      // pale furnishings — a soft wisp inside the ear
+      ctx.strokeStyle = P.wShad; ctx.lineWidth = 2.4; ctx.lineCap='round'; ctx.globalAlpha=.7;
+      ctx.beginPath();
+      ctx.moveTo(dir*HW*0.4, -BH*0.88);
+      ctx.quadraticCurveTo(dir*HW*0.5, -BH*0.96, dir*HW*0.56, -BH*0.99);
+      ctx.stroke();
+      ctx.globalAlpha=1;
+      // lynx tip — one short hair
+      ctx.strokeStyle = P.kEdge; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(dir*HW*0.64,-BH*1.0); ctx.lineTo(dir*HW*0.7,-BH*1.06); ctx.stroke();
+      ctx.restore();
+    }
+    earInner(-1); earInner(1);
+
+    // ---------- rim light (top-left silhouette) ----------
+    (function rim(){
+      ctx.save();
+      ctx.strokeStyle = P.rim; ctx.lineWidth = 2.6; ctx.lineCap='round';
+      ctx.shadowColor = P.rim; ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.moveTo(-BW*0.9,-BH*0.5);
+      ctx.bezierCurveTo(-BW*1.0,-BH*0.42, -BW*0.98,-BH*0.28, -BW*0.9,-BH*0.5);
+      ctx.moveTo(-BW*0.9,-BH*0.54);
+      ctx.bezierCurveTo(-BW*0.8,-BH*0.64, -HW*1.14,-BH*0.6, -HW*1.06,-BH*0.72);
+      ctx.bezierCurveTo(-HW*1.0,-BH*0.82, -HW*0.92,-BH*0.86, -HW*0.8,-BH*0.9);
+      ctx.lineTo(-HW*0.82,-BH*1.02);
+      ctx.stroke();
+      ctx.restore();
+    })();
+
+    // ======================= FACE =======================
+    // Midknight's face is mostly BLACK. White = big floofy jowls + two muzzle
+    // lobes + chin, leaving a bold black wedge down the nose. Gold eyes sit in
+    // the black; the "grumpy" is the mask shape, not droopy lids.
+    ctx.save(); ctx.translate(0, hy);
+
+    const mouth = F.mouth||'flat';
+    const eoBase = F.eyeOpen ?? 0.86;
+    const brow = F.brow ?? 0.5;
+    const pupS = F.pupil ?? 1;
+    let blink = 1;
+    if (!reduced){
+      const cyc = o.blinkCyc || 5.5;
+      const dur = o.slowBlink ? 1.15 : 0.34;
+      const ph = (t + seed*0.6) % cyc;
+      if (ph < dur) blink = Math.abs(Math.cos(ph/dur*Math.PI));
+    }
+    const eo = clamp(eoBase*blink, 0, 1);
+
+    // --- white jowl floof: big puffy lower-outer cheeks ---
+    ctx.fillStyle = P.wCore;
+    for (let d=-1; d<=1; d+=2){
+      ctx.beginPath();
+      ctx.moveTo(d*HW*0.12, -HW*0.02);
+      ctx.bezierCurveTo(d*HW*0.5, -HW*0.16, d*HW*1.18, HW*0.08, d*HW*1.12, HW*0.58);
+      ctx.bezierCurveTo(d*HW*1.05, HW*1.0, d*HW*0.42, HW*1.02, d*HW*0.08, HW*0.66);
+      ctx.closePath(); ctx.fill();
+    }
+    // --- white muzzle: two lobes either side of centre, joined at the chin ---
+    ctx.fillStyle = P.wCore;
+    for (let d=-1; d<=1; d+=2){
+      ctx.beginPath();
+      ctx.moveTo(d*HW*0.15, -HW*0.02);
+      ctx.bezierCurveTo(d*HW*0.4, -HW*0.12, d*HW*0.56, HW*0.16, d*HW*0.5, HW*0.5);
+      ctx.bezierCurveTo(d*HW*0.45, HW*0.82, d*HW*0.18, HW*0.96, 0, HW*0.92);
+      ctx.bezierCurveTo(d*HW*0.03, HW*0.5, d*HW*0.06, HW*0.2, d*HW*0.15, -HW*0.02);
+      ctx.closePath(); ctx.fill();
+    }
+    // soft shade tucking the muzzle under the black mask (contained radial — no hard edges)
+    ctx.save();
+    let js = ctx.createRadialGradient(0,-HW*0.05,2, 0,-HW*0.05,HW*0.7);
+    js.addColorStop(0, lamp?'rgba(18,12,24,.34)':'rgba(66,60,80,.18)');
+    js.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = js;
+    ctx.beginPath(); ctx.ellipse(0,-HW*0.02, HW*0.62, HW*0.34, 0, 0, 7); ctx.fill();
+    ctx.restore();
+
+    // --- small white spot between the eyes (marking 3) — off to his left ---
+    ctx.fillStyle = P.wCore;
+    ctx.beginPath(); ctx.ellipse(HW*0.07, -HW*0.52, HW*0.1, HW*0.08, 0.3, 0, 7); ctx.fill();
+    ctx.fillStyle = P.wShad;
+    ctx.beginPath(); ctx.ellipse(HW*0.15, -HW*0.46, HW*0.045, HW*0.04, 0, 0, 7); ctx.fill();
+
+    // --- nose leather (bottom of the black wedge) ---
+    ctx.fillStyle = P.nose;
+    ctx.beginPath();
+    ctx.moveTo(-HW*0.15, -HW*0.02); ctx.lineTo(HW*0.15, -HW*0.02);
+    ctx.quadraticCurveTo(HW*0.13, HW*0.16, 0, HW*0.24);
+    ctx.quadraticCurveTo(-HW*0.13, HW*0.16, -HW*0.15, -HW*0.02);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.13)';
+    ctx.beginPath(); ctx.ellipse(-HW*0.04, HW*0.0, HW*0.06, HW*0.03, 0, 0, 7); ctx.fill();
+
+    // --- mouth + chin dot (5) ---
+    ctx.strokeStyle = P.noseHi; ctx.lineWidth = 2; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(0, HW*0.24); ctx.lineTo(0, HW*0.34);
+    if (mouth==='blep'){
+      ctx.moveTo(-HW*0.13,HW*0.34); ctx.quadraticCurveTo(0,HW*0.4,HW*0.13,HW*0.34); ctx.stroke();
+      ctx.fillStyle=P.pink; ctx.beginPath(); ctx.moveTo(-HW*0.08,HW*0.34); ctx.quadraticCurveTo(0,HW*0.6,HW*0.08,HW*0.34); ctx.closePath(); ctx.fill();
+    } else if (mouth==='o'){
+      ctx.stroke();
+      ctx.fillStyle=P.nose; ctx.beginPath(); ctx.ellipse(0,HW*0.44,HW*0.08,HW*0.11,0,0,7); ctx.fill();
+      ctx.fillStyle=P.pink; ctx.beginPath(); ctx.ellipse(0,HW*0.47,HW*0.045,HW*0.055,0,0,7); ctx.fill();
+    } else {
+      const up = mouth==='smile'?HW*0.05: mouth==='frown'?-HW*0.05:0;
+      ctx.moveTo(0,HW*0.34); ctx.quadraticCurveTo(-HW*0.1,HW*0.37-up*0.4,-HW*0.18,HW*0.31-up);
+      ctx.moveTo(0,HW*0.34); ctx.quadraticCurveTo(HW*0.1,HW*0.37-up*0.4,HW*0.18,HW*0.31-up);
+      ctx.stroke();
+    }
+    ctx.fillStyle = P.kCore;
+    ctx.beginPath(); ctx.ellipse(-HW*0.02, HW*0.6, HW*0.08, HW*0.065, 0, 0, 7); ctx.fill();
+
+    // --- eyes (6): big, round, gold, set in the black ---
+    const ex = HW*0.35, ey = -HW*0.18, er = HW*0.205;
+    function eye(dir){
+      const x = dir*ex;
+      // dark eye-socket bed (so the gold reads on the black)
+      ctx.fillStyle = lamp?'#120d12':'#1c1720';
+      ctx.beginPath(); ctx.ellipse(x, ey, er*1.14, er*1.16, 0, 0, 7); ctx.fill();
+      ctx.save();
+      ctx.beginPath(); ctx.ellipse(x, ey, er, er*1.02, 0, 0, 7); ctx.clip();
+      let ir = ctx.createRadialGradient(x-er*0.28,ey-er*0.3,1,x,ey,er*1.25);
+      ir.addColorStop(0,P.gHi); ir.addColorStop(.48,P.gMid); ir.addColorStop(1,P.gRim);
+      ctx.fillStyle=ir; ctx.fillRect(x-er*1.2,ey-er*1.2,er*2.4,er*2.4);
+      // big round pupil
+      ctx.fillStyle=P.pupil;
+      ctx.beginPath(); ctx.ellipse(x, ey+er*0.04, er*0.46*pupS, er*0.5*pupS, 0, 0, 7); ctx.fill();
+      // catchlights
+      ctx.fillStyle='rgba(255,255,255,.96)';
+      ctx.beginPath(); ctx.ellipse(x-er*0.3, ey-er*0.32, er*0.26, er*0.3, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+er*0.32, ey+er*0.28, er*0.1, 0, 7); ctx.fill();
+      // upper lid — light, a small natural squint (outer corner a touch lower)
+      const lid = ey - er + er*2*(1-eo) + brow*er*0.3;
+      ctx.fillStyle=P.kCore;
+      ctx.beginPath();
+      ctx.moveTo(x-er*1.4, ey-er*1.5); ctx.lineTo(x+er*1.4, ey-er*1.5);
+      ctx.lineTo(x+dir*er*1.4, lid + er*0.12);
+      ctx.quadraticCurveTo(x, lid - er*0.1, x-dir*er*1.4, lid - er*0.04);
+      ctx.closePath(); ctx.fill();
+      // lower lid catch
+      ctx.fillStyle='rgba(255,238,200,.22)';
+      ctx.beginPath(); ctx.ellipse(x, ey+er*0.82, er*0.85, er*0.26, 0, 0, 7); ctx.fill();
+      ctx.restore();
+      // thin warm rim
+      ctx.strokeStyle = lamp?'rgba(60,44,30,.7)':'rgba(70,52,32,.6)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.ellipse(x, ey, er, er*1.02, 0, 0, 7); ctx.stroke();
+      // brow whiskers — long, prominent, up & out
+      ctx.strokeStyle=P.wHi; ctx.lineWidth=1.6; ctx.lineCap='round';
+      for (let i=0;i<3;i++){
+        ctx.beginPath();
+        ctx.moveTo(x - dir*er*0.1 + dir*i*4, ey - er*1.3);
+        ctx.quadraticCurveTo(x - dir*er*1.7, ey - er*2.6 - i*4, x - dir*er*3.1 - i*5, ey - er*2.0 - i*6);
+        ctx.stroke();
+      }
+    }
+    eye(-1); eye(1);
+
+    // --- whiskers — many, long, from the whisker pads ---
+    ctx.strokeStyle = P.wHi; ctx.lineWidth = 1.8; ctx.lineCap='round';
+    const wob = reduced?0:Math.sin(t*1.3)*2;
+    for (let d=-1;d<=1;d+=2){
+      for (let i=0;i<5;i++){
+        const y0 = HW*0.06 + i*HW*0.1;
+        ctx.beginPath();
+        ctx.moveTo(d*HW*0.34, y0);
+        ctx.quadraticCurveTo(d*HW*1.25, y0 - HW*0.04 + i*8 + wob, d*HW*2.3, y0 + i*HW*0.16 + wob*1.6);
+        ctx.stroke();
+      }
+    }
+    ctx.restore(); // face
+
+    // ---------- lower-ruff fur separations (soft, few) ----------
+    (function ruffFront(){
+      ctx.save(); loaf(); ctx.clip();
+      ctx.strokeStyle = P.wShad; ctx.lineWidth = 3; ctx.lineCap='round'; ctx.globalAlpha = .6;
+      for (let i=-2;i<=2;i++){
+        const x=i*BW*0.3;
+        ctx.beginPath();
+        ctx.moveTo(x, ruffY+BH*0.0);
+        ctx.quadraticCurveTo(x+i*4, ruffY+BH*0.16, x+i*8, ruffY+BH*0.28);
+        ctx.stroke();
+      }
+      ctx.restore();
+    })();
+
+    // ---------- mitten paws — two round paws together, front of the ruff ----------
+    if (!flat || flat==='construct' || flat==='deform'){
+      const pw = sit?24:27, pg = sit?26:37, top = -46, bot = 2;
+      // contact shadow under the paws
+      if (!flat){
+        ctx.fillStyle = lamp?'rgba(0,0,0,.28)':'rgba(64,58,66,.14)';
+        ctx.beginPath(); ctx.ellipse(0, bot+2, pg+pw*0.95, 7, 0, 0, 7); ctx.fill();
+      }
+      for (let d=-1;d<=1;d+=2){
+        ctx.save(); ctx.translate(d*pg, 0);
+        function pawPath(){
+          ctx.beginPath();
+          ctx.moveTo(-pw, bot-4);
+          ctx.bezierCurveTo(-pw, top, pw, top, pw, bot-4);
+          ctx.quadraticCurveTo(pw, bot, 0, bot);
+          ctx.quadraticCurveTo(-pw, bot, -pw, bot-4);
+          ctx.closePath();
+        }
+        pawPath(); ctx.fillStyle=P.wCore; ctx.fill();
+        ctx.strokeStyle=P.wShad; ctx.lineWidth=2; ctx.lineCap='round';
+        ctx.beginPath();
+        ctx.moveTo(-pw*0.32, top+14); ctx.lineTo(-pw*0.3, bot-2);
+        ctx.moveTo(pw*0.32, top+14); ctx.lineTo(pw*0.3, bot-2);
+        ctx.stroke();
+        let ps=ctx.createLinearGradient(pw*0.3,top,pw,bot); ps.addColorStop(0,'rgba(0,0,0,0)'); ps.addColorStop(1, lamp?'rgba(24,17,30,.3)':'rgba(74,66,84,.15)');
+        ctx.fillStyle=ps; pawPath(); ctx.fill();
+        ctx.fillStyle = lamp?'rgba(240,225,200,.28)':'rgba(255,255,255,.38)';
+        ctx.beginPath(); ctx.ellipse(-pw*0.18, top+10, pw*0.5, 7, -0.3, 0, 7); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // ---------- flat-mode overlays ----------
+    if (flat==='construct'){
+      ctx.strokeStyle='rgba(110,95,160,.95)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(-BW,3); ctx.lineTo(0,-BH*0.98); ctx.lineTo(BW,3); ctx.closePath(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0,hy,HW*1.08,0,7); ctx.stroke();
+      ctx.setLineDash([5,5]);
+      ctx.beginPath(); ctx.moveTo(-BW,hy-HW*0.18); ctx.lineTo(BW,hy-HW*0.18); ctx.stroke();  // eyeline
+      ctx.beginPath(); ctx.moveTo(-BW,ruffY-BH*0.06); ctx.lineTo(BW,ruffY-BH*0.06); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='rgba(110,95,160,.95)';
+      [-HW*0.35,HW*0.35].forEach(x=>{ ctx.beginPath(); ctx.arc(x,hy-HW*0.18,2.6,0,7); ctx.fill(); });
+    }
+    if (flat==='deform'){
+      ctx.globalAlpha=.26;
+      ctx.fillStyle='#6E5FA0'; loaf(); ctx.fill();
+      ctx.fillStyle='#DFA24C'; ctx.beginPath(); ctx.ellipse(0,hy,HW*0.94,HW*0.86,0,0,7); ctx.fill();
+      ctx.fillStyle='#4f8a5b';
+      ctx.beginPath(); ctx.ellipse(BW*1.05,-BH*0.32,26,44,.5,0,7); ctx.fill();
+      for (let d=-1;d<=1;d+=2){ ctx.beginPath(); ctx.ellipse(d*HW*0.5,-BH*0.98,20,26,d*0.16,0,7); ctx.fill(); }
+      ctx.globalAlpha=1;
+    }
+
+    ctx.restore(); // breathe
+    ctx.restore(); // translate/scale
+  }
+
+  // ---------- curled ----------
+  function curl(ctx,P,t,flat){
+    const b = reduced?0:Math.sin(t*1.3)*0.02;
+    ctx.save(); ctx.scale(1+b,1-b);
+    ctx.beginPath(); ctx.ellipse(0,-46,104,66,0,0,7);
+    if (flat==='silhouette'){ ctx.fillStyle='#000'; ctx.fill(); ctx.restore(); return; }
+    ctx.fillStyle=P.kCore; ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.ellipse(0,-46,104,66,0,0,7); ctx.clip();
+    ctx.fillStyle=P.wCore; ctx.beginPath(); ctx.ellipse(14,-18,80,44,.16,0,7); ctx.fill();
+    ctx.globalCompositeOperation='multiply';
+    let s=ctx.createRadialGradient(-24,-80,4,-24,-80,150); s.addColorStop(0,'rgba(0,0,0,0)'); s.addColorStop(1, lamp?'rgba(22,15,28,.4)':'rgba(60,52,70,.26)');
+    ctx.fillStyle=s; ctx.fillRect(-120,-130,240,150);
+    ctx.restore();
+    ctx.save(); ctx.strokeStyle=P.kLit; ctx.lineWidth=30; ctx.lineCap='round';
+    ctx.beginPath(); ctx.arc(0,-46,86,-0.28,2.7); ctx.stroke(); ctx.restore();
+    // head
+    ctx.save(); ctx.translate(-64,-34);
+    ctx.beginPath(); ctx.ellipse(0,0,38,34,0,0,7); ctx.fillStyle=P.kCore; ctx.fill();
+    for (let d=-1;d<=1;d+=2){ ctx.beginPath(); ctx.moveTo(d*10,-24); ctx.quadraticCurveTo(d*26,-46,d*30,-18); ctx.quadraticCurveTo(d*18,-14,d*10,-24); ctx.closePath(); ctx.fillStyle=P.kCore; ctx.fill(); }
+    ctx.beginPath(); ctx.ellipse(-4,12,24,18,0,0,7); ctx.fillStyle=P.wCore; ctx.fill();
+    ctx.fillStyle=P.kCore; ctx.beginPath(); ctx.moveTo(-3,-4); ctx.lineTo(4,-4); ctx.lineTo(2,12); ctx.lineTo(-3,12); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=P.nose; ctx.beginPath(); ctx.ellipse(0,10,4.5,3.4,0,0,7); ctx.fill();
+    ctx.strokeStyle=P.noseHi; ctx.lineWidth=2; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-17,0); ctx.quadraticCurveTo(-11,4,-5,0); ctx.stroke();
+    ctx.fillStyle=P.kCore; ctx.beginPath(); ctx.arc(-1,20,3.2,0,7); ctx.fill();
+    ctx.strokeStyle=P.wHi; ctx.lineWidth=1.4;
+    for (let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(6,8+i*4); ctx.quadraticCurveTo(40,4+i*7,64,12+i*10); ctx.stroke(); }
+    ctx.restore();
+    ctx.strokeStyle=P.rim; ctx.lineWidth=2.6; ctx.shadowColor=P.rim; ctx.shadowBlur=4;
+    ctx.beginPath(); ctx.ellipse(0,-46,104,66,0,Math.PI*0.92,Math.PI*1.7); ctx.stroke(); ctx.shadowBlur=0;
+    if (!reduced){ ctx.fillStyle=P.zzz; ctx.textAlign='center'; const f=Math.sin(t*1.4)*3;
+      ctx.font='700 15px "Hanken Grotesk"'; ctx.fillText('z',44,-98+f);
+      ctx.font='700 11px "Hanken Grotesk"'; ctx.fillText('z',54,-112+f); }
+    ctx.restore();
+  }
+
+  // ---------- belly flop ----------
+  function flop(ctx,P,t,flat){
+    const rise = reduced?0:Math.sin(t*1.7)*0.02;
+    ctx.save(); ctx.transform(1,0,0,1+rise,0,0);
+    ctx.beginPath(); ctx.ellipse(24,-46,120,54,-0.08,0,7);
+    if (flat==='silhouette'){ ctx.fillStyle='#000'; ctx.fill(); ctx.restore(); return; }
+    ctx.fillStyle=P.kCore; ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-4,-54,90,62,.04,0,7); ctx.fillStyle=P.wCore; ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.ellipse(-4,-54,90,62,.04,0,7); ctx.clip();
+    ctx.strokeStyle=P.wShad; ctx.lineWidth=2.4;
+    for (let i=0;i<6;i++){ ctx.beginPath(); ctx.moveTo(-78,-92+i*15); ctx.quadraticCurveTo(-4,-86+i*15,74,-94+i*15); ctx.stroke(); }
+    ctx.globalCompositeOperation='multiply';
+    let s=ctx.createRadialGradient(-4,-104,4,-4,-104,150); s.addColorStop(0,'rgba(0,0,0,0)'); s.addColorStop(1, lamp?'rgba(22,15,28,.36)':'rgba(74,66,84,.2)');
+    ctx.fillStyle=s; ctx.fillRect(-110,-140,220,120);
+    ctx.restore();
+    for (let i=0;i<2;i++){ ctx.save(); ctx.translate(-34+i*40,-112); ctx.rotate(i?0.34:-0.34);
+      ctx.beginPath(); ctx.ellipse(0,0,17,24,0,0,7); ctx.fillStyle=P.wCore; ctx.fill();
+      ctx.fillStyle=P.pink; for (let k=-1;k<=1;k++){ ctx.beginPath(); ctx.arc(k*6,-7,3,0,7); ctx.fill(); } ctx.beginPath(); ctx.ellipse(0,4,7,6,0,0,7); ctx.fill();
+      ctx.restore(); }
+    for (let i=0;i<2;i++){ ctx.save(); ctx.translate(66,-28-i*26); ctx.beginPath(); ctx.ellipse(0,0,32,19,.3,0,7); ctx.fillStyle=i?P.wCore:P.kLit; ctx.fill(); ctx.restore(); }
+    // head back
+    ctx.save(); ctx.translate(-92,-40); ctx.rotate(-0.5);
+    ctx.beginPath(); ctx.ellipse(0,0,42,38,0,0,7); ctx.fillStyle=P.kCore; ctx.fill();
+    for (let d=-1;d<=1;d+=2){ ctx.beginPath(); ctx.moveTo(d*14,-27); ctx.quadraticCurveTo(d*32,-48,d*36,-18); ctx.quadraticCurveTo(d*22,-14,d*14,-27); ctx.closePath(); ctx.fillStyle=P.kCore; ctx.fill(); }
+    ctx.beginPath(); ctx.ellipse(2,15,27,21,0,0,7); ctx.fillStyle=P.wCore; ctx.fill();
+    ctx.fillStyle=P.kCore; ctx.beginPath(); ctx.moveTo(-3,3); ctx.lineTo(5,3); ctx.lineTo(3,17); ctx.lineTo(-3,17); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=P.nose; ctx.beginPath(); ctx.ellipse(1,17,5.5,4.2,0,0,7); ctx.fill();
+    ctx.strokeStyle=P.noseHi; ctx.lineWidth=2.4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-22,-2); ctx.quadraticCurveTo(-14,-8,-6,-2); ctx.moveTo(9,-2); ctx.quadraticCurveTo(17,-8,25,-2); ctx.stroke();
+    ctx.fillStyle=P.kCore; ctx.beginPath(); ctx.arc(1,26,3.6,0,7); ctx.fill();
+    ctx.strokeStyle=P.wHi; ctx.lineWidth=1.5;
+    for (let d=-1;d<=1;d+=2) for (let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(d*19,11+i*4); ctx.quadraticCurveTo(d*52,5+i*8,d*78,15+i*11); ctx.stroke(); }
+    ctx.restore();
+    ctx.strokeStyle=P.rim; ctx.lineWidth=2.6; ctx.shadowColor=P.rim; ctx.shadowBlur=4;
+    ctx.beginPath(); ctx.ellipse(-4,-54,90,62,.04,Math.PI*0.95,Math.PI*1.68); ctx.stroke(); ctx.shadowBlur=0;
+    ctx.restore();
+  }
+
+  // ============ registry / loop ============
+  // Only the hero animates. Every other canvas is painted once when it first
+  // scrolls near view, then never again (keeps a page of ~15 cats light).
+  let t0=performance.now();
+  const staticItems = [];
+  let heroItem = null;
+
+  function paint(it){
+    const {ctx,w,h}=it;
+    ctx.save(); ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,w,h);
+    it.draw(ctx,w,h,(performance.now()-t0)/1000);
+    ctx.restore();
+  }
+  function mk(canvas,w,h,draw,seed,animate){
+    canvas.width=w*DPR; canvas.height=h*DPR; canvas.style.aspectRatio=w+' / '+h;
+    const it={ctx:canvas.getContext('2d'),w,h,draw,seed:seed||7,painted:false};
+    if (animate){ heroItem = it; return it; }
+    staticItems.push(it);
+    if ('IntersectionObserver' in window){
+      const io = new IntersectionObserver(es=>{
+        if (es[0].isIntersecting && !it.painted){ it.painted=true; paint(it); io.disconnect(); }
+      },{rootMargin:'400px'});
+      io.observe(canvas);
+      it._io = io;
+    }
+    return it;
+  }
+  function repaintStatic(){ for (const it of staticItems){ it.painted=true; if (it._io) it._io.disconnect(); paint(it); } }
+  // staggered safety sweep — guarantees every static canvas paints even if an observer misses
+  function sweepStatic(){
+    let i=0;
+    (function step(){
+      const end=Math.min(i+2, staticItems.length);
+      for (; i<end; i++){ const it=staticItems[i]; if (!it.painted){ it.painted=true; if (it._io) it._io.disconnect(); paint(it); } }
+      if (i<staticItems.length) requestAnimationFrame(step);
+    })();
+  }
+
+  function bg(ctx,w,h){
+    const P=PAL();
+    const g=ctx.createRadialGradient(w*0.34,h*0.26,10,w*0.5,h*0.52,w*0.92);
+    g.addColorStop(0,P.bg1); g.addColorStop(1,P.bg2);
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle=P.floor;
+    ctx.beginPath(); ctx.moveTo(0,h*0.84); ctx.quadraticCurveTo(w*0.5,h*0.8,w,h*0.84); ctx.lineTo(w,h); ctx.lineTo(0,h); ctx.fill();
+  }
+
+  let last=0, heroVis=true;
+  function frame(now){
+    if (heroItem && heroVis && now-last>34){ last=now; paint(heroItem); }
+    requestAnimationFrame(frame);
+  }
+
+  // hero (the only animated canvas)
+  const heroCanvas = document.getElementById('hero');
+  mk(heroCanvas, 940, 460, (ctx,w,h,t)=>{
+    bg(ctx,w,h);
+    drawMidknight(ctx, w*0.5, h*0.9, 1.58, { t, pose:'loaf', seed:11, face:{eyeOpen:0.76,brow:0.62,mouth:'flat'}, blinkCyc:6 });
+  }, 11, true);
+  paint(heroItem);
+  if ('IntersectionObserver' in window) new IntersectionObserver(es=>{ heroVis = es[0].isIntersecting; if (heroVis) paint(heroItem); },{rootMargin:'200px'}).observe(heroCanvas);
+  document.addEventListener('visibilitychange', ()=>{ if (!document.hidden){ if (heroVis) paint(heroItem); } });
+
+  // marking map
+  mk(document.getElementById('mapCat'), 720, 500, (ctx,w,h,t)=>{
+    bg(ctx,w,h);
+    drawMidknight(ctx, w*0.5, h*0.9, 1.7, { t, pose:'loaf', seed:11, face:{eyeOpen:0.78,brow:0.6,mouth:'flat'}, blinkCyc:999 });
+  }, 11);
+
+  // construction
+  mk(document.getElementById('constr'), 520, 440, (ctx,w,h)=>{
+    const P=PAL(); ctx.fillStyle=P.bg2; ctx.fillRect(0,0,w,h);
+    ctx.save(); ctx.globalAlpha=.22; drawMidknight(ctx,w*0.5,h*0.9,1.5,{t:0,pose:'loaf',seed:11,flat:'silhouette'}); ctx.restore();
+    drawMidknight(ctx,w*0.5,h*0.9,1.5,{t:0,pose:'loaf',seed:11,flat:'construct'});
+  }, 11);
+
+  // expression strip
+  const EX=[
+    {k:'Deadpan',s:'default',f:{eyeOpen:0.84,brow:0.55,mouth:'flat'},c:7},
+    {k:'Slow-blink',s:'affection',f:{eyeOpen:0.8,brow:0.35,mouth:'flat'},slow:true,c:5},
+    {k:'Content squint',s:'being pet',f:{eyeOpen:0.42,brow:0.15,mouth:'smile'},c:999},
+    {k:'Blep',s:'forgot the tongue',f:{eyeOpen:0.88,brow:0.35,mouth:'blep'},c:999},
+    {k:'Startled',s:'rare',f:{eyeOpen:1,brow:0,mouth:'o',pupil:1.4},c:999},
+    {k:'Grump',s:'a new cat arrived',f:{eyeOpen:0.66,brow:1,mouth:'frown'},c:999},
+    {k:'Smug',s:'knocked it off the table',f:{eyeOpen:0.5,brow:0.75,mouth:'smile'},c:999},
+  ];
+  const es=document.getElementById('exprStrip');
+  EX.forEach((e,i)=>{
+    const tile=document.createElement('div'); tile.className='tile';
+    const cv=document.createElement('canvas'); tile.appendChild(cv);
+    const l=document.createElement('div'); l.className='l'; l.innerHTML=`<b>${e.k}</b><span>${e.s}</span>`;
+    tile.appendChild(l); es.appendChild(tile);
+    mk(cv,220,232,(ctx,w,h,tt)=>{ bg(ctx,w,h); drawMidknight(ctx,w*0.5,h*0.9,0.82,{t:tt,pose:'loaf',seed:11,face:e.f,slowBlink:e.slow,blinkCyc:e.c}); },20+i);
+  });
+
+  // pose strip
+  const POSES=[
+    {k:'Loaf',s:'canon',p:'loaf',f:{eyeOpen:0.76,brow:0.62,mouth:'flat'},sc:0.82,y:0.9},
+    {k:'Sit',s:'roused',p:'sit',f:{eyeOpen:0.95,brow:0.3,mouth:'flat'},sc:0.68,y:0.9},
+    {k:'Curl',s:'asleep',p:'curl',sc:1.0,y:0.72},
+    {k:'Belly flop',s:'sunbeam / store shot',p:'flop',sc:0.94,y:0.66},
+  ];
+  const ps=document.getElementById('poseStrip');
+  POSES.forEach((e,i)=>{
+    const tile=document.createElement('div'); tile.className='tile';
+    const cv=document.createElement('canvas'); tile.appendChild(cv);
+    const l=document.createElement('div'); l.className='l'; l.innerHTML=`<b>${e.k}</b><span>${e.s}</span>`;
+    tile.appendChild(l); ps.appendChild(tile);
+    mk(cv,240,236,(ctx,w,h,tt)=>{ bg(ctx,w,h); drawMidknight(ctx,w*0.5,h*e.y,e.sc,{t:tt,pose:e.p,seed:11,face:e.f||{},blinkCyc:5.5}); },40+i);
+  });
+
+  // turnaround
+  const TURN=['Front','3⁄4','Side','Back'];
+  const tsw=document.getElementById('turnStrip');
+  TURN.forEach((k,i)=>{
+    const tile=document.createElement('div'); tile.className='tile';
+    const cv=document.createElement('canvas'); tile.appendChild(cv);
+    const l=document.createElement('div'); l.className='l'; l.innerHTML=`<b>${k}</b>`;
+    tile.appendChild(l); tsw.appendChild(tile);
+    mk(cv,220,214,(ctx,w,h)=>{
+      const P=PAL(); ctx.fillStyle=P.bg2; ctx.fillRect(0,0,w,h);
+      ctx.save(); ctx.translate(w*0.5,h*0.93); ctx.scale(1.02,1.02);
+      ctx.fillStyle=P.kCore;
+      if (i===0){
+        ctx.beginPath(); ctx.moveTo(-74,2); ctx.bezierCurveTo(-84,-72,-42,-128,0,-130); ctx.bezierCurveTo(42,-128,84,-72,74,2); ctx.quadraticCurveTo(0,12,-74,2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-44,-112); ctx.lineTo(-58,-150); ctx.lineTo(-20,-122); ctx.closePath(); ctx.moveTo(44,-112); ctx.lineTo(58,-150); ctx.lineTo(20,-122); ctx.closePath(); ctx.fill();
+        ctx.fillStyle=P.wCore; ctx.beginPath(); ctx.ellipse(0,-34,56,44,0,0,7); ctx.fill(); ctx.beginPath(); ctx.ellipse(0,-86,28,24,0,0,7); ctx.fill();
+        ctx.fillStyle=P.kCore; ctx.beginPath(); ctx.moveTo(-6,-104); ctx.lineTo(6,-104); ctx.lineTo(3,-72); ctx.lineTo(-3,-72); ctx.closePath(); ctx.fill();
+        ctx.fillStyle=P.gMid; [-22,22].forEach(x=>{ ctx.beginPath(); ctx.ellipse(x,-88,7,8,0,0,7); ctx.fill(); });
+      } else if (i===1){
+        ctx.beginPath(); ctx.moveTo(-66,2); ctx.bezierCurveTo(-78,-68,-36,-126,8,-128); ctx.bezierCurveTo(54,-126,86,-64,66,2); ctx.quadraticCurveTo(0,12,-66,2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-30,-110); ctx.lineTo(-46,-146); ctx.lineTo(-10,-120); ctx.closePath(); ctx.moveTo(46,-106); ctx.lineTo(62,-142); ctx.lineTo(26,-118); ctx.closePath(); ctx.fill();
+        ctx.fillStyle=P.wCore; ctx.beginPath(); ctx.ellipse(-8,-32,50,40,0,0,7); ctx.fill();
+        ctx.fillStyle=P.gMid; ctx.beginPath(); ctx.ellipse(-24,-84,6,7,0,0,7); ctx.fill(); ctx.beginPath(); ctx.ellipse(6,-82,6,7,0,0,7); ctx.fill();
+      } else if (i===2){
+        ctx.beginPath(); ctx.ellipse(8,-50,84,54,0,0,7); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-72,-74); ctx.lineTo(-88,-112); ctx.lineTo(-50,-88); ctx.closePath(); ctx.fill();
+        ctx.save(); ctx.strokeStyle=P.kLit; ctx.lineWidth=22; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(82,-42); ctx.quadraticCurveTo(126,-74,108,-122); ctx.stroke(); ctx.restore();
+        ctx.fillStyle=P.wCore; ctx.beginPath(); ctx.ellipse(-54,-24,32,32,0,0,7); ctx.fill(); ctx.beginPath(); ctx.ellipse(-66,-62,17,17,0,0,7); ctx.fill();
+        ctx.fillStyle=P.gMid; ctx.beginPath(); ctx.ellipse(-70,-52,6,7,0,0,7); ctx.fill();
+      } else {
+        ctx.beginPath(); ctx.moveTo(-70,2); ctx.bezierCurveTo(-80,-66,-40,-126,0,-128); ctx.bezierCurveTo(40,-126,80,-66,70,2); ctx.quadraticCurveTo(0,12,-70,2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-40,-110); ctx.lineTo(-56,-146); ctx.lineTo(-20,-122); ctx.closePath(); ctx.moveTo(40,-110); ctx.lineTo(56,-146); ctx.lineTo(20,-122); ctx.closePath(); ctx.fill();
+        ctx.save(); ctx.strokeStyle=P.kLit; ctx.lineWidth=24; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(44,-6); ctx.quadraticCurveTo(92,-32,78,-98); ctx.stroke(); ctx.restore();
+        ctx.fillStyle=P.wCore; ctx.beginPath(); ctx.moveTo(-42,6); ctx.quadraticCurveTo(0,-26,42,6); ctx.quadraticCurveTo(0,16,-42,6); ctx.fill();
+        ctx.fillStyle=P.wShad; ctx.beginPath(); ctx.arc(18,-30,5,0,7); ctx.fill();
+      }
+      ctx.restore();
+    },60+i);
+  });
+
+  // rig deform panel
+  mk(document.getElementById('rigCat'), 520, 440, (ctx,w,h,t)=>{
+    const P=PAL(); ctx.fillStyle=P.bg2; ctx.fillRect(0,0,w,h);
+    drawMidknight(ctx,w*0.5,h*0.9,1.5,{t,pose:'loaf',seed:11,face:{eyeOpen:0.86,brow:0.5,mouth:'flat'},blinkCyc:5});
+    drawMidknight(ctx,w*0.5,h*0.9,1.5,{t:0,pose:'loaf',seed:11,flat:'deform'});
+  }, 11);
+
+  // swatches
+  const SW=[
+    ['Black · core','#26232b'],['Black · lit','#3a3542'],['Black · warm edge','#514954'],
+    ['White · core','#f7f5ef'],['White · shadow','#e6e2d5'],['White · deep','#d3cec0'],
+    ['Eye · gold','#e6ad3e'],['Eye · centre','#f6cf62'],['Eye · rim','#b8862a'],
+    ['Nose leather','#322b34'],['Pink · ear / bean','#e7a9ac'],['Blush','#e7969e'],
+  ];
+  document.getElementById('swatches').innerHTML = SW.map(([n,c])=>
+    `<div class="sw"><div class="chip" style="background:${c}"></div><div class="txt"><b>${n}</b><span>${c}</span></div></div>`).join('');
+
+  // lamp toggle
+  const lampBtn=document.getElementById('lamp');
+  lampBtn.addEventListener('click',()=>{
+    lamp=!lamp; lampBtn.setAttribute('aria-pressed',String(lamp));
+    document.getElementById('lampLabel').textContent = lamp?'Lamplight':'Daylight';
+    lampBtn.querySelector('.dot').style.background = lamp?'#8a6ad0':'var(--accent-2)';
+    repaintStatic();
+    if (heroItem) paint(heroItem);
+  });
+
+  if (reduced){ repaintStatic(); if (heroItem) paint(heroItem); }
+  else { requestAnimationFrame(frame); setTimeout(sweepStatic, 900); }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(()=>setTimeout(repaintStatic, 60));
+})();
+</script>

@@ -1,0 +1,507 @@
+<title>V1 vs V2 Cat Sprite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+
+<style>
+  :root {
+    --ground:#EFEDE4; --ground-2:#F8F6EE; --card:#FCFBF4;
+    --ink:#262A26; --ink-soft:#59614F; --ink-dim:#8B917C; --line:#DBD8C7;
+    --accent:#6E5FA0; --accent-2:#DFA24C; --heart:#E1808C;
+    --v1:#4f8a5b; --v2:#6E5FA0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#191C18; --ground-2:#20241E; --card:#252A22;
+      --ink:#ECEADC; --ink-soft:#B0B6A1; --ink-dim:#7E856F; --line:#373E31;
+      --accent:#A99BD6; --accent-2:#E6B667; --heart:#EC8B96;
+      --v1:#77b585; --v2:#A99BD6;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#191C18; --ground-2:#20241E; --card:#252A22;
+    --ink:#ECEADC; --ink-soft:#B0B6A1; --ink-dim:#7E856F; --line:#373E31;
+    --accent:#A99BD6; --accent-2:#E6B667; --heart:#EC8B96; --v1:#77b585; --v2:#A99BD6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:"Hanken Grotesk",system-ui,sans-serif; line-height:1.62; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1000px; margin:0 auto; padding:clamp(26px,5vw,56px) clamp(18px,4vw,40px) 110px; }
+
+  .eyebrow { font-size:12px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin:0 0 14px; }
+  h1 { font-family:"Fraunces",Georgia,serif; font-weight:500; font-size:clamp(30px,5.4vw,46px); line-height:1.05; letter-spacing:-.015em; margin:0 0 16px; }
+  .lede { font-size:clamp(15px,1.9vw,18px); color:var(--ink-soft); max-width:60ch; margin:0; }
+  code { font-family:ui-monospace,Menlo,monospace; font-size:.88em; background:color-mix(in srgb,var(--ink) 8%,transparent); padding:1px 5px; border-radius:5px; }
+
+  .toolbar { display:flex; gap:10px; align-items:center; margin:24px 0 0; flex-wrap:wrap; }
+  .toggle { appearance:none; border:1px solid var(--line); background:var(--card); color:var(--ink); font:inherit; font-weight:600; font-size:13px; padding:8px 15px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
+  .toggle:hover { border-color:var(--accent); }
+  .toggle .dot { width:9px; height:9px; border-radius:50%; background:var(--accent-2); }
+  .toolbar .hint { font-size:12px; color:var(--ink-dim); }
+
+  .stage { margin-top:28px; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:640px){ .stage { grid-template-columns:1fr; } }
+  .panel { border:1px solid var(--line); border-radius:20px; overflow:hidden; background:
+    radial-gradient(120% 90% at 32% 22%, color-mix(in srgb,var(--accent-2) 9%,var(--card)), var(--card) 62%); }
+  .panel canvas { display:block; width:100%; height:auto; }
+  .panel .cap { padding:12px 16px 15px; border-top:1px solid var(--line); }
+  .panel .cap b { font-size:14px; }
+  .panel.v1 .cap b { color:var(--v1); }
+  .panel.v2 .cap b { color:var(--v2); }
+  .panel .cap span { display:block; font-size:12.5px; color:var(--ink-dim); margin-top:2px; }
+
+  section { margin-top:clamp(46px,8vw,80px); }
+  .sec-head { display:flex; align-items:baseline; gap:14px; margin-bottom:8px; }
+  .sec-head h2 { font-family:"Fraunces",serif; font-weight:500; font-size:clamp(20px,3vw,27px); margin:0; letter-spacing:-.01em; }
+  .sec-head .n { font-size:12px; font-weight:700; letter-spacing:.14em; color:var(--ink-dim); }
+  .sec-sub { color:var(--ink-soft); max-width:64ch; margin:0 0 24px; font-size:15px; }
+
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  thead th { text-align:left; padding:10px 12px; border-bottom:2px solid var(--line); font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-dim); }
+  thead th.v1 { color:var(--v1); } thead th.v2 { color:var(--v2); }
+  tbody td { padding:11px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tbody td:first-child { font-weight:600; color:var(--ink); width:22%; }
+  tbody td:nth-child(2), tbody td:nth-child(3) { color:var(--ink-soft); }
+  .tag { display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:2px 6px; border-radius:5px; margin-left:6px; }
+  .tag.gap { background:color-mix(in srgb,var(--heart) 18%,transparent); color:var(--heart); }
+  .tag.keep { background:color-mix(in srgb,var(--v1) 20%,transparent); color:var(--v1); }
+  .scroll { overflow-x:auto; border:1px solid var(--line); border-radius:14px; }
+
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:clamp(16px,3vw,30px); margin-top:4px; }
+  @media (max-width:620px){ .cols { grid-template-columns:1fr; } }
+  .cols h3 { font-family:"Fraunces",serif; font-weight:600; font-size:15px; margin:0 0 8px; }
+  .cols.a h3 { color:var(--v1); } .cols .b h3 { color:var(--v2); }
+  .cols ul { margin:0; padding:0; list-style:none; }
+  .cols li { padding:8px 0; border-top:1px solid var(--line); font-size:13.5px; color:var(--ink-soft); }
+  .cols li::before { content:"→"; margin-right:8px; color:var(--ink-dim); }
+
+  .rec { margin-top:clamp(46px,8vw,80px); padding:22px 24px; border-radius:16px; border:1px dashed var(--line); background:var(--ground-2); }
+  .rec h3 { font-family:"Fraunces",serif; font-weight:600; font-size:16px; margin:0 0 10px; }
+  .rec ol { margin:0; padding-left:20px; font-size:14px; color:var(--ink-soft); }
+  .rec ol li { margin:6px 0; }
+  .rec b { color:var(--ink); }
+
+  footer { margin-top:40px; font-size:12.5px; color:var(--ink-dim); }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; } }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Catmint Cove · Sprite comparison</p>
+  <h1>V1 vs V2 — the cat, side by side</h1>
+  <p class="lede">Same cat (a tuxedo), both renderers, same size. <b style="color:var(--v1)">V1</b> is the shipped art in the live prototype. <b style="color:var(--v2)">V2</b> is the Midknight-bible direction. Drawn live on <code>&lt;canvas&gt;</code>.</p>
+
+  <div class="toolbar">
+    <button class="toggle" id="ageBtn" aria-pressed="false"><span class="dot"></span><span id="ageLabel">Adult</span></button>
+    <span class="hint">V1 scales down to a kitten (bigger head, bigger eyes). V2 has no kitten stage yet.</span>
+  </div>
+
+  <div class="stage">
+    <div class="panel v1"><canvas id="c1"></canvas><div class="cap"><b>V1 · shipped</b><span>Ball-head loaf-cat · Neko Atsume / Cats &amp; Soup proportions · wide sparkly eyes · rosy blush · bouncy prance walk</span></div></div>
+    <div class="panel v2"><canvas id="c2"></canvas><div class="cap"><b>V2 · proposed</b><span>Merged chunky loaf · Maine-coon ruff &amp; lynx tufts · half-lidded gold eyes · deadpan register · calm breathing idle</span></div></div>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="n">01</span><h2>Where they differ</h2></div>
+    <p class="sec-sub">The systems (11 coats, seeded markings, rarity, Catdex) are unchanged. What moves is the <em>shape language</em> and the <em>register</em>.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Trait</th><th class="v1">V1 · shipped</th><th class="v2">V2 · proposed</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="n">02</span><h2>What each one does better</h2></div>
+    <div class="cols">
+      <div class="a">
+        <h3>V1 keeps</h3>
+        <ul>
+          <li>Instantly friendly — reads as "cute" at 32&nbsp;px with no thought</li>
+          <li>The big readable head sells expression from across the screen</li>
+          <li>A real walk cycle with comic timing — the cove feels alive in motion</li>
+          <li>Kitten→adult growth is built and tuned (45% arrive small, grow over ~20&nbsp;h)</li>
+          <li>All-ages, zero edge — safe for the widest audience</li>
+        </ul>
+      </div>
+      <div class="b">
+        <h3>V2 wins</h3>
+        <ul>
+          <li>A specific point of view — not "generic cute cat"</li>
+          <li>Merchandisable silhouette; works as a sticker, plush, app icon</li>
+          <li>The deadpan gap (grumpy face / soft behaviour) is a comedy engine</li>
+          <li>Warm painterly shading — rim light, form shadow, colour rule</li>
+          <li>Purpose-built for a hand-illustrated + rigged pipeline</li>
+          <li>Anchored by Midknight, a named mascot with real markings</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="rec">
+    <h3>Recommendation</h3>
+    <ol>
+      <li>Ship the <b>V2 shape language and palette</b> — it's the one with a brand.</li>
+      <li><b>Port V1's kitten→adult system</b> into the V2 renderer (smaller scale, head ×1.2, bigger eyes, bouncier idle). It's a live retention feature and V2 currently drops it. <span class="tag gap">gap</span></li>
+      <li>Keep V2's deadpan for <b>Midknight only</b>. Give the eleven collectibles a slightly softer lid and a faint blush so the whole roster isn't grumpy — variety reads as personality. <span class="tag keep">from V1</span></li>
+      <li>Bring back a <b>proper walk cycle</b> before launch — V1's comic prance is a genuine charm asset; V2 has only a resting idle so far.</li>
+      <li>Borrow V1's <b>bigger, rounder eyes</b> for kittens specifically — the current V2 kitten (once added) should not be deadpan.</li>
+    </ol>
+  </div>
+
+  <footer>Catmint Cove — V1 vs V2 sprite comparison · both renderers drawn live on canvas · 2026-08-31</footer>
+</div>
+
+<script>
+(() => {
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let kitten = false;
+  const EYE = '#8bc46a';   // tuxedo eye (green) in both
+
+  function bg(ctx,w,h){
+    const g = ctx.createRadialGradient(w*0.34,h*0.26,8,w*0.5,h*0.55,w*0.9);
+    g.addColorStop(0,'#f5f2e7'); g.addColorStop(1,'#e9e6d6');
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#e8e3d0';
+    ctx.beginPath(); ctx.moveTo(0,h*0.86); ctx.quadraticCurveTo(w*0.5,h*0.82,w,h*0.86); ctx.lineTo(w,h); ctx.lineTo(0,h); ctx.fill();
+  }
+  function blink(t, seed, dur){
+    if (reduced) return 1;
+    const cyc = 4.6 + (seed%5);
+    const ph = (t+seed) % cyc;
+    return ph < (dur||0.32) ? Math.abs(Math.cos(ph/(dur||0.32)*Math.PI)) : 1;
+  }
+
+  // ===================== V1 — ball-head loaf-cat =====================
+  function drawV1(ctx, cx, cy, s, t){
+    const kit = kitten;
+    let bw=17, top=-42, hx=5, hy=-50, hr=14.5;
+    if (kit){ hr*=1.2; hy*=1.05; bw*=0.92; top*=0.9; }
+    const ag = kit ? 0.7 : 1;                       // V1 ageScale-ish
+    s *= ag;
+    const bob = reduced?0:Math.sin(t*2.1)*0.5*(kit?1.7:1);
+    const black='#2f2c33', white='#f7f4ec';
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(s,s); ctx.translate(0,bob);
+    // contact shadow
+    ctx.fillStyle='rgba(70,64,74,0.16)'; ctx.beginPath(); ctx.ellipse(0,3,bw*1.6,6,0,0,7); ctx.fill();
+    // tail (swishy, behind)
+    const wag = reduced?0:Math.sin(t*1.7)*6;
+    ctx.strokeStyle=black; ctx.lineWidth=5.5; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(bw*0.7,-5); ctx.quadraticCurveTo(bw*1.9,-12+wag,bw*1.5,-32+wag); ctx.stroke();
+    // little front paws
+    ctx.fillStyle=white;
+    for (const dx of [-1,1]){ ctx.beginPath(); ctx.ellipse(dx*bw*0.5,-2,4.6,5.6,0,0,7); ctx.fill(); }
+    // body (pear)
+    function bodyPath(){ ctx.beginPath(); ctx.moveTo(bw,0);
+      ctx.bezierCurveTo(bw+3,top*0.55,bw*0.58,top,2,top);
+      ctx.bezierCurveTo(-bw*0.62,top,-bw-3,top*0.55,-bw,0);
+      ctx.quadraticCurveTo(0,6,bw,0); ctx.closePath(); }
+    bodyPath(); ctx.fillStyle=black; ctx.fill();
+    ctx.save(); bodyPath(); ctx.clip();
+    ctx.fillStyle=white; ctx.beginPath(); ctx.ellipse(2,top*0.24,8,13,0,0,7); ctx.fill();
+    let tl=ctx.createLinearGradient(-bw,top,bw*0.5,2); tl.addColorStop(0,'rgba(255,255,255,.13)'); tl.addColorStop(.5,'rgba(255,255,255,0)');
+    ctx.fillStyle=tl; ctx.fillRect(-bw-3,top-3,bw*2+6,-top+6);
+    let bs=ctx.createLinearGradient(0,2,0,top*0.4); bs.addColorStop(0,'rgba(40,32,44,.14)'); bs.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=bs; ctx.fillRect(-bw-3,top*0.4,bw*2+6,4);
+    ctx.restore();
+    // ears
+    for (const side of [-1,1]){
+      const sx=hx+side*hr*0.64, sy=hy-hr*0.52, hgt=kit?12:11;
+      ctx.fillStyle=black;
+      ctx.beginPath();
+      ctx.moveTo(sx-side*(kit?5.5:5), sy+3);
+      ctx.quadraticCurveTo(sx-side*1.5, sy-hgt*0.75, sx+side*1, sy-hgt+1.5);
+      ctx.quadraticCurveTo(sx+side*4.5, sy-hgt-1.5, sx+side*6.5, sy-hgt+3);
+      ctx.quadraticCurveTo(sx+side*(kit?6.5:6), sy-1, sx+side*(kit?6:5.5), sy+4);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#e2b4b4';
+      ctx.beginPath(); ctx.moveTo(sx-side*0.5,sy+2); ctx.quadraticCurveTo(sx+side*1.5,sy-hgt*0.4,sx+side*2.5,sy-hgt*0.5); ctx.quadraticCurveTo(sx+side*3,sy,sx+side*3.4,sy+2.5); ctx.closePath(); ctx.fill();
+    }
+    // head (ball)
+    ctx.fillStyle=black; ctx.beginPath(); ctx.arc(hx,hy,hr,0,7); ctx.fill();
+    // white muzzle
+    ctx.fillStyle=white; ctx.beginPath(); ctx.ellipse(hx+1.5,hy+hr*0.42,6.5,5.5,0,0,7); ctx.fill();
+    // top-light on head
+    let ht=ctx.createRadialGradient(hx-5,hy-6,1,hx-5,hy-6,hr*1.35); ht.addColorStop(0,'rgba(255,255,255,.15)'); ht.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=ht; ctx.beginPath(); ctx.arc(hx,hy,hr,0,7); ctx.fill();
+    // eyes — big round, full iris, one big highlight, NO lid line
+    const bl = blink(t, 3, 0.16);
+    const eyeY=hy-(kit?0:1.5), eDx=kit?5.2:5.4, r=(kit?3.7:3.0);
+    for (const dx of [-eDx,eDx]){
+      const ex=hx+dx;
+      ctx.save();
+      ctx.beginPath(); ctx.ellipse(ex,eyeY,r,r*1.12*bl,0,0,7); ctx.clip();
+      ctx.fillStyle=EYE; ctx.fillRect(ex-r-1,eyeY-r*1.4,(r+1)*2,r*2.8);
+      ctx.fillStyle='#1c1720'; ctx.beginPath(); ctx.arc(ex,eyeY+0.4,r*0.52,0,7); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.96)'; ctx.beginPath(); ctx.ellipse(ex-r*0.42,eyeY-r*0.5,r*0.5,r*0.6,0,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(ex+r*0.42,eyeY+r*0.55,r*0.2,0,7); ctx.fill();
+      ctx.restore();
+    }
+    // nose + soft happy mouth
+    const nx=hx+0.5, ny=hy+hr*0.38;
+    ctx.fillStyle='#d98f9a'; ctx.beginPath(); ctx.moveTo(nx-1.9,ny-1); ctx.quadraticCurveTo(nx,ny-1.6,nx+1.9,ny-1); ctx.quadraticCurveTo(nx,ny+2.1,nx-1.9,ny-1); ctx.fill();
+    ctx.strokeStyle='rgba(44,36,28,.42)'; ctx.lineWidth=1.1; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(nx,ny+1.6); ctx.lineTo(nx,ny+2.9);
+    ctx.moveTo(nx,ny+2.9); ctx.quadraticCurveTo(nx-2.3,ny+4,nx-3.2,ny+2.7);
+    ctx.moveTo(nx,ny+2.9); ctx.quadraticCurveTo(nx+2.3,ny+4,nx+3.2,ny+2.7); ctx.stroke();
+    // rosy cheeks — always on
+    ctx.fillStyle='rgba(230,132,142,'+(kit?0.2:0.13)+')';
+    ctx.beginPath(); ctx.ellipse(hx-hr*0.66,ny-0.5,kit?3.4:3.2,kit?2.6:2,0,0,7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(hx+hr*0.66,ny-0.5,kit?3.4:3.2,kit?2.6:2,0,0,7); ctx.fill();
+    // whiskers — a couple, soft
+    ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=0.9;
+    const wl = kit?9:14;
+    for (const dy of [-0.6,1.8]){
+      ctx.beginPath(); ctx.moveTo(nx-2,ny+dy*0.5); ctx.quadraticCurveTo(nx-wl*0.6,ny+dy-1.5,nx-wl,ny+dy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(nx+2,ny+dy*0.5); ctx.quadraticCurveTo(nx+wl*0.6,ny+dy-1.5,nx+wl,ny+dy); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // ===================== V2 — chunky loaf (bible) =====================
+  function drawV2(ctx, cx, cy, s, t){
+    const P = {
+      kCore:'#26232b', kLit:'#3a3542', kEdge:'#514954',
+      wCore:'#f7f5ef', wShad:'#e6e2d5', wHi:'#fefdf8',
+      gRim:'#7fa350', gMid:'#8bc46a', gHi:'#b7de92', pupil:'#1b1620',
+      nose:'#322b34', noseHi:'#7a5f66', pink:'#e7a9ac',
+      rim:'rgba(255,249,234,.9)',
+    };
+    const breath = reduced?0:Math.sin(t*1.9)*0.013;
+    ctx.save(); ctx.translate(cx,cy); ctx.scale(s,s);
+    // ground shadow
+    const gsh=ctx.createRadialGradient(6,-2,3,6,-2,110);
+    gsh.addColorStop(0,'rgba(64,58,66,.24)'); gsh.addColorStop(.6,'rgba(64,58,66,.08)'); gsh.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=gsh; ctx.beginPath(); ctx.ellipse(6,-2,110,20,0,0,7); ctx.fill();
+    ctx.save(); ctx.transform(1,0,0,1-breath,0,breath*24);
+    const BW=112,BH=196,HW=68,hy=-BH+78,ruffY=hy+96;
+    function loaf(){
+      ctx.beginPath();
+      ctx.moveTo(-BW*0.94,-3);
+      ctx.bezierCurveTo(-BW*1.04,-BH*0.24,-BW*1.02,-BH*0.42,-BW*0.9,-BH*0.54);
+      ctx.bezierCurveTo(-BW*0.8,-BH*0.64,-HW*1.14,-BH*0.6,-HW*1.06,-BH*0.72);
+      ctx.bezierCurveTo(-HW*1.0,-BH*0.82,-HW*0.92,-BH*0.86,-HW*0.8,-BH*0.9);
+      ctx.lineTo(-HW*0.82,-BH*1.02);
+      ctx.quadraticCurveTo(-HW*0.7,-BH*1.1,-HW*0.5,-BH*1.0);
+      ctx.lineTo(-HW*0.16,-BH*0.93);
+      ctx.quadraticCurveTo(0,-BH*0.97,HW*0.16,-BH*0.93);
+      ctx.lineTo(HW*0.5,-BH*1.0);
+      ctx.quadraticCurveTo(HW*0.7,-BH*1.1,HW*0.82,-BH*1.02);
+      ctx.lineTo(HW*0.8,-BH*0.9);
+      ctx.bezierCurveTo(HW*0.92,-BH*0.86,HW*1.0,-BH*0.82,HW*1.06,-BH*0.72);
+      ctx.bezierCurveTo(HW*1.14,-BH*0.6,BW*0.8,-BH*0.64,BW*0.9,-BH*0.54);
+      ctx.bezierCurveTo(BW*1.02,-BH*0.42,BW*1.04,-BH*0.24,BW*0.94,-3);
+      ctx.quadraticCurveTo(BW*0.55,7,BW*0.3,3);
+      ctx.quadraticCurveTo(0,10,-BW*0.3,3);
+      ctx.quadraticCurveTo(-BW*0.55,7,-BW*0.94,-3);
+      ctx.closePath();
+    }
+    // tail
+    const sway = reduced?0:Math.sin(t*0.75)*4;
+    ctx.fillStyle=P.kLit;
+    ctx.beginPath(); ctx.moveTo(BW*0.5,-BH*0.1);
+    ctx.bezierCurveTo(BW*1.5+sway,-BH*0.02,BW*1.62+sway,-BH*0.5,BW*0.86+sway,-BH*0.66);
+    ctx.bezierCurveTo(BW*1.24,-BH*0.46,BW*1.2,-BH*0.08,BW*0.5,0); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=P.kCore;
+    ctx.beginPath(); ctx.moveTo(BW*0.54,-BH*0.09);
+    ctx.bezierCurveTo(BW*1.34+sway,-BH*0.04,BW*1.44+sway,-BH*0.44,BW*0.9+sway,-BH*0.58);
+    ctx.bezierCurveTo(BW*1.1,-BH*0.4,BW*1.06,-BH*0.1,BW*0.54,-BH*0.02); ctx.closePath(); ctx.fill();
+    // colour block
+    loaf(); ctx.save(); ctx.clip();
+    ctx.fillStyle=P.wCore; ctx.fillRect(-BW*1.4,-BH*1.3,BW*2.8,BH*1.5);
+    ctx.fillStyle=P.kCore;
+    ctx.beginPath();
+    ctx.moveTo(-BW*1.4,-BH*1.3); ctx.lineTo(BW*1.4,-BH*1.3); ctx.lineTo(BW*1.4,-BH*0.42);
+    ctx.bezierCurveTo(BW*0.62,-BH*0.34,BW*0.34,-BH*0.3,BW*0.06,-BH*0.44);
+    ctx.bezierCurveTo(-BW*0.02,-BH*0.48,-BW*0.02,-BH*0.48,-BW*0.1,-BH*0.44);
+    ctx.bezierCurveTo(-BW*0.36,-BH*0.3,-BW*0.64,-BH*0.34,-BW*1.4,-BH*0.42);
+    ctx.closePath(); ctx.fill();
+    ctx.globalCompositeOperation='multiply';
+    let fs=ctx.createLinearGradient(-BW*0.2,-BH*0.9,BW*0.9,0);
+    fs.addColorStop(0,'rgba(255,255,255,0)'); fs.addColorStop(1,'rgba(74,64,84,.2)');
+    ctx.fillStyle=fs; ctx.fillRect(-BW*1.4,-BH*1.3,BW*2.8,BH*1.5);
+    let ao=ctx.createRadialGradient(0,ruffY-46,6,0,ruffY-46,BW*0.86);
+    ao.addColorStop(0,'rgba(52,45,62,.26)'); ao.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=ao; ctx.fillRect(-BW,ruffY-100,BW*2,120);
+    ctx.globalCompositeOperation='screen';
+    let clg=ctx.createRadialGradient(-BW*0.34,hy-HW*0.7,6,-BW*0.34,hy-HW*0.7,BW*1.1);
+    clg.addColorStop(0,'rgba(255,244,218,.4)'); clg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=clg; ctx.fillRect(-BW*1.4,-BH*1.3,BW*2.8,BH*1.5);
+    ctx.globalCompositeOperation='source-over';
+    ctx.restore();
+    // ruff scallop shade
+    ctx.save(); loaf(); ctx.clip();
+    ctx.fillStyle='rgba(190,184,168,.28)';
+    for (let i=-2;i<=2;i++){ ctx.beginPath(); ctx.ellipse(i*BW*0.36,-BH*0.08+Math.abs(i)*6,BW*0.2,BH*0.12,0,Math.PI*0.05,Math.PI*0.95); ctx.fill(); }
+    ctx.restore();
+    // ears inner + tufts
+    for (let dir=-1;dir<=1;dir+=2){
+      ctx.save();
+      ctx.fillStyle=P.pink; ctx.globalAlpha=.9;
+      ctx.beginPath(); ctx.moveTo(dir*HW*0.34,-BH*0.9);
+      ctx.quadraticCurveTo(dir*HW*0.6,-BH*1.0,dir*HW*0.62,-BH*0.95);
+      ctx.quadraticCurveTo(dir*HW*0.52,-BH*0.88,dir*HW*0.34,-BH*0.9); ctx.closePath(); ctx.fill(); ctx.globalAlpha=1;
+      ctx.strokeStyle=P.wShad; ctx.lineWidth=2.4; ctx.lineCap='round'; ctx.globalAlpha=.7;
+      ctx.beginPath(); ctx.moveTo(dir*HW*0.4,-BH*0.88); ctx.quadraticCurveTo(dir*HW*0.5,-BH*0.96,dir*HW*0.56,-BH*0.99); ctx.stroke(); ctx.globalAlpha=1;
+      ctx.strokeStyle=P.kEdge; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(dir*HW*0.64,-BH*1.0); ctx.lineTo(dir*HW*0.7,-BH*1.06); ctx.stroke();
+      ctx.restore();
+    }
+    // rim light
+    ctx.save();
+    ctx.strokeStyle=P.rim; ctx.lineWidth=2.6; ctx.lineCap='round'; ctx.shadowColor=P.rim; ctx.shadowBlur=4;
+    ctx.beginPath();
+    ctx.moveTo(-BW*0.9,-BH*0.54);
+    ctx.bezierCurveTo(-BW*0.8,-BH*0.64,-HW*1.14,-BH*0.6,-HW*1.06,-BH*0.72);
+    ctx.bezierCurveTo(-HW*1.0,-BH*0.82,-HW*0.92,-BH*0.86,-HW*0.8,-BH*0.9);
+    ctx.lineTo(-HW*0.82,-BH*1.02); ctx.stroke();
+    ctx.restore();
+    // face
+    ctx.save(); ctx.translate(0,hy);
+    const bl = blink(t, 2, 0.34);
+    const eo = Math.max(0, Math.min(1, 0.78*bl));
+    const brow = 0.6;
+    // jowls + muzzle lobes
+    ctx.fillStyle=P.wCore;
+    for (let d=-1;d<=1;d+=2){
+      ctx.beginPath();
+      ctx.moveTo(d*HW*0.12,-HW*0.02);
+      ctx.bezierCurveTo(d*HW*0.5,-HW*0.16,d*HW*1.18,HW*0.08,d*HW*1.12,HW*0.58);
+      ctx.bezierCurveTo(d*HW*1.05,HW*1.0,d*HW*0.42,HW*1.02,d*HW*0.08,HW*0.66); ctx.closePath(); ctx.fill();
+    }
+    for (let d=-1;d<=1;d+=2){
+      ctx.beginPath();
+      ctx.moveTo(d*HW*0.08,-HW*0.02);
+      ctx.bezierCurveTo(d*HW*0.4,-HW*0.12,d*HW*0.56,HW*0.16,d*HW*0.5,HW*0.5);
+      ctx.bezierCurveTo(d*HW*0.45,HW*0.82,d*HW*0.18,HW*0.96,0,HW*0.92);
+      ctx.bezierCurveTo(d*HW*0.03,HW*0.5,d*HW*0.06,HW*0.2,d*HW*0.08,-HW*0.02); ctx.closePath(); ctx.fill();
+    }
+    let js=ctx.createRadialGradient(0,-HW*0.05,2,0,-HW*0.05,HW*0.7);
+    js.addColorStop(0,'rgba(66,60,80,.18)'); js.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=js; ctx.beginPath(); ctx.ellipse(0,-HW*0.02,HW*0.62,HW*0.34,0,0,7); ctx.fill();
+    // nose
+    ctx.fillStyle=P.nose;
+    ctx.beginPath();
+    ctx.moveTo(-HW*0.15,-HW*0.02); ctx.lineTo(HW*0.15,-HW*0.02);
+    ctx.quadraticCurveTo(HW*0.13,HW*0.16,0,HW*0.24);
+    ctx.quadraticCurveTo(-HW*0.13,HW*0.16,-HW*0.15,-HW*0.02); ctx.closePath(); ctx.fill();
+    // mouth
+    ctx.strokeStyle=P.noseHi; ctx.lineWidth=2; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(0,HW*0.24); ctx.lineTo(0,HW*0.34);
+    ctx.moveTo(0,HW*0.34); ctx.quadraticCurveTo(-HW*0.1,HW*0.37,-HW*0.18,HW*0.31);
+    ctx.moveTo(0,HW*0.34); ctx.quadraticCurveTo(HW*0.1,HW*0.37,HW*0.18,HW*0.31); ctx.stroke();
+    // eyes — half-lidded gold, set in the black
+    const ex=HW*0.35, ey=-HW*0.18, er=HW*0.205;
+    for (let dir=-1;dir<=1;dir+=2){
+      const x=dir*ex;
+      ctx.fillStyle='#1c1720'; ctx.beginPath(); ctx.ellipse(x,ey,er*1.14,er*1.16,0,0,7); ctx.fill();
+      ctx.save();
+      ctx.beginPath(); ctx.ellipse(x,ey,er,er*1.02,0,0,7); ctx.clip();
+      let ir=ctx.createRadialGradient(x-er*0.28,ey-er*0.3,1,x,ey,er*1.25);
+      ir.addColorStop(0,P.gHi); ir.addColorStop(.48,P.gMid); ir.addColorStop(1,P.gRim);
+      ctx.fillStyle=ir; ctx.fillRect(x-er*1.2,ey-er*1.2,er*2.4,er*2.4);
+      ctx.fillStyle=P.pupil; ctx.beginPath(); ctx.ellipse(x,ey+er*0.04,er*0.46,er*0.5,0,0,7); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.96)';
+      ctx.beginPath(); ctx.ellipse(x-er*0.3,ey-er*0.32,er*0.26,er*0.3,0,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+er*0.32,ey+er*0.28,er*0.1,0,7); ctx.fill();
+      const lid=ey-er+er*2*(1-eo)+brow*er*0.3;
+      ctx.fillStyle=P.kCore;
+      ctx.beginPath();
+      ctx.moveTo(x-er*1.4,ey-er*1.5); ctx.lineTo(x+er*1.4,ey-er*1.5);
+      ctx.lineTo(x+dir*er*1.4,lid+er*0.12);
+      ctx.quadraticCurveTo(x,lid-er*0.1,x-dir*er*1.4,lid-er*0.04); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle='rgba(70,52,32,.6)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.ellipse(x,ey,er,er*1.02,0,0,7); ctx.stroke();
+      ctx.strokeStyle=P.wHi; ctx.lineWidth=1.6; ctx.lineCap='round';
+      for (let i=0;i<3;i++){
+        ctx.beginPath();
+        ctx.moveTo(x-dir*er*0.1+dir*i*4,ey-er*1.3);
+        ctx.quadraticCurveTo(x-dir*er*1.7,ey-er*2.6-i*4,x-dir*er*3.1-i*5,ey-er*2.0-i*6);
+        ctx.stroke();
+      }
+    }
+    // whiskers — heavy, drooping
+    ctx.strokeStyle=P.wHi; ctx.lineWidth=1.8; ctx.lineCap='round';
+    const wob=reduced?0:Math.sin(t*1.3)*2;
+    for (let d=-1;d<=1;d+=2) for (let i=0;i<5;i++){
+      const y0=HW*0.06+i*HW*0.1;
+      ctx.beginPath(); ctx.moveTo(d*HW*0.34,y0);
+      ctx.quadraticCurveTo(d*HW*1.25,y0-HW*0.04+i*8+wob,d*HW*2.3,y0+i*HW*0.16+wob*1.6);
+      ctx.stroke();
+    }
+    ctx.restore(); // face
+    // mitten paws
+    const pw=27, pg=37, top=-46, bot=2;
+    ctx.fillStyle='rgba(64,58,66,.14)'; ctx.beginPath(); ctx.ellipse(0,bot+2,pg+pw*0.95,7,0,0,7); ctx.fill();
+    for (let d=-1;d<=1;d+=2){
+      ctx.save(); ctx.translate(d*pg,0);
+      function paw(){ ctx.beginPath(); ctx.moveTo(-pw,bot-4); ctx.bezierCurveTo(-pw,top,pw,top,pw,bot-4); ctx.quadraticCurveTo(pw,bot,0,bot); ctx.quadraticCurveTo(-pw,bot,-pw,bot-4); ctx.closePath(); }
+      paw(); ctx.fillStyle=P.wCore; ctx.fill();
+      ctx.strokeStyle=P.wShad; ctx.lineWidth=2; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-pw*0.32,top+14); ctx.lineTo(-pw*0.3,bot-2); ctx.moveTo(pw*0.32,top+14); ctx.lineTo(pw*0.3,bot-2); ctx.stroke();
+      let ps=ctx.createLinearGradient(pw*0.3,top,pw,bot); ps.addColorStop(0,'rgba(0,0,0,0)'); ps.addColorStop(1,'rgba(74,66,84,.15)');
+      ctx.fillStyle=ps; paw(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore(); ctx.restore();
+  }
+
+  // ---------- comparison table ----------
+  const ROWS = [
+    ['Silhouette', 'Round ball head sitting on a pear body — a readable, separable head. Neko Atsume / Cats & Soup.', 'One merged rounded-triangle mass. Head sinks into the body; the ruff is the widest point. Chunky longhair.'],
+    ['Head : body width', '≈ 0.85 — deliberately big-headed', '≈ 0.6 — more proportionate, less baby-like'],
+    ['Eyes', 'Big round, full iris, one bright highlight, no lid line — wide and friendly', 'Amber/coat-coloured, carried ~75% open with a heavy lid — deadpan'],
+    ['First-second read', '"Aww, cute" — universal, all-ages', '"Grumpy little guy" — a specific character (Midknight)'],
+    ['Blush', 'Always on; warmer when happy or a kitten', 'None — the bible dropped it'],
+    ['Whiskers', 'Two per side, thin, soft', 'Five per side, heavy, drooping + brow whiskers'],
+    ['Ears', 'Short rounded triangles, pink inner', 'Tall, lynx-tipped, longhair furnishings'],
+    ['Idle motion', 'Gentle bob + blink at rest', 'Breathing bob + slow blink + ear/tail micro-sway'],
+    ['Walk cycle', 'Full comic prance — hop, hip waddle, squash/stretch, ear flop (CHARM = 0.85)', 'Not built yet — only a resting idle'],
+    ['Poses', 'sit · play · trot · sleep', 'loaf (canon) · sit · curl · flop'],
+    ['Shading', 'Flat fills + sticker top-light / base-shade', 'Warm-black palette, rim light, form + contact shadow, colour rule'],
+    ['Kitten → adult', 'Built: ~45% arrive as kittens, head ×1.2, bigger eyes, ×0.56→1.0 scale, grow over ~20 h, "grew up!" moment', 'Missing — every cat renders as an adult'],
+    ['Mascot', 'None — all eleven coats are equal', 'Midknight: a fixed, named tuxedo with locked markings, outside the gacha'],
+    ['Pipeline', 'Canvas primitives — this IS the shipped art', 'Concept for a hand-illustrated + rigged (Spine / Live2D) shipping pipeline'],
+  ];
+  document.getElementById('tbody').innerHTML = ROWS.map(([a,b,c])=>{
+    const gap = c.startsWith('Missing') || c.startsWith('Not built');
+    return `<tr><td>${a}</td><td>${b}</td><td>${c}${gap?'<span class="tag gap">gap</span>':''}</td></tr>`;
+  }).join('');
+
+  // ---------- render loop ----------
+  const items = [];
+  function mk(id, w, h, draw){
+    const c = document.getElementById(id);
+    c.width = w*DPR; c.height = h*DPR; c.style.aspectRatio = w+' / '+h;
+    const ctx = c.getContext('2d');
+    const it = { ctx, w, h, draw, vis:true };
+    if ('IntersectionObserver' in window) new IntersectionObserver(e=>it.vis=e[0].isIntersecting,{rootMargin:'200px'}).observe(c);
+    items.push(it); return it;
+  }
+  mk('c1', 380, 330, (ctx,w,h,t)=>{ bg(ctx,w,h); drawV1(ctx, w*0.5, h*0.93, 3.9, t); });
+  mk('c2', 380, 330, (ctx,w,h,t)=>{ bg(ctx,w,h); drawV2(ctx, w*0.5, h*0.93, 1.28, t); });
+
+  let last=0;
+  function frame(now){
+    if (now-last > 33){
+      last = now;
+      const t = now/1000;
+      for (const it of items){ if (!it.vis && !reduced) continue;
+        it.ctx.save(); it.ctx.scale(DPR,DPR); it.ctx.clearRect(0,0,it.w,it.h); it.draw(it.ctx,it.w,it.h,t); it.ctx.restore();
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  const ageBtn = document.getElementById('ageBtn');
+  ageBtn.addEventListener('click', ()=>{
+    kitten = !kitten;
+    ageBtn.setAttribute('aria-pressed', String(kitten));
+    document.getElementById('ageLabel').textContent = kitten ? 'Kitten' : 'Adult';
+    ageBtn.querySelector('.dot').style.background = kitten ? 'var(--heart)' : 'var(--accent-2)';
+  });
+
+  requestAnimationFrame(frame);
+})();
+</script>
