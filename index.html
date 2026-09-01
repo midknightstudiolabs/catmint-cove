@@ -360,8 +360,9 @@
     <canvas id="photoCanvas" width="900" height="900"></canvas>
     <input class="cap-in" id="photoCap" maxlength="42" placeholder="write a caption…">
     <p class="hint" id="photoHint">Screenshot this to share it — in the shipped game this is a one-tap export with an install link.</p>
-    <div class="row" style="display:flex;gap:.5rem;">
-      <button class="btn primary" id="photoSave"><span class="ico">💾</span> Try download</button>
+    <div class="row" style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;">
+      <button class="btn primary" id="photoSave"><span class="ico">💾</span> Save photo</button>
+      <button class="btn" id="photoClip"><span class="ico">🎬</span> Record 4s clip</button>
       <button class="btn" id="photoClose">Back to the cove</button>
     </div>
   </div>
@@ -1533,6 +1534,7 @@ function composePhoto() {
   for (const a of attractors) drawAttractor(pctx, a);
   const sorted = [...cats].sort((p,q)=>p.y-q.y);
   for (const c of sorted) drawCat(pctx, c, true);
+  drawForeground(pctx, performance.now() / 1000, window._sky);
   pctx.restore();
 
   pctx.restore(); // unclip
@@ -1574,6 +1576,56 @@ function savePhoto() {
 function photoHintFail() {
   document.getElementById("photoHint").textContent = "Download blocked here — screenshot the frame to share it.";
 }
+
+/* ---- record a short animated clip of the framed scene (MediaRecorder → webm) ---- */
+let clipRec = null;
+function recordClip() {
+  const hintEl = document.getElementById("photoHint");
+  const btn = document.getElementById("photoClip");
+  if (clipRec) return;
+  if (typeof MediaRecorder === "undefined" || !pc.captureStream) {
+    hintEl.textContent = "Clip recording isn't supported in this browser — the still photo still works."; return;
+  }
+  let mime = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm", "video/mp4"]
+    .find(m => { try { return MediaRecorder.isTypeSupported(m); } catch (e) { return false; } }) || "";
+  let rec, stream;
+  try {
+    stream = pc.captureStream(30);
+    rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+  } catch (e) { hintEl.textContent = "Clip recording couldn't start — the still photo still works."; return; }
+  const chunks = [];
+  rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  rec.onstop = () => {
+    clipRec = null;
+    btn.textContent = "🎬 Record 4s clip";
+    stream.getTracks().forEach(t => t.stop());
+    const blob = new Blob(chunks, { type: mime || "video/webm" });
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "catmint-cove-clip.webm";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 6000);
+      hintEl.textContent = "Clip saved. (If nothing downloaded, screen-record the frame instead.)";
+    } catch (e) { hintEl.textContent = "Clip made, but the download was blocked here — screen-record instead."; }
+    G.metrics.photos += 1; bumpGoal("photo", 1); save();
+  };
+  clipRec = rec;
+  rec.start();
+  sfx("photo");
+  const t0 = performance.now();
+  (function pump() {
+    composePhoto();
+    const elapsed = performance.now() - t0;
+    if (clipRec && elapsed < 4000) {
+      btn.textContent = "● recording " + Math.ceil((4000 - elapsed) / 1000) + "s";
+      requestAnimationFrame(pump);
+    } else if (clipRec) {
+      try { clipRec.stop(); } catch (e) { clipRec = null; }
+    }
+  })();
+}
+document.getElementById("photoClip").addEventListener("click", recordClip);
 
 /* ---------- HUD ---------- */
 const elShells = document.getElementById("shells");
@@ -2205,6 +2257,53 @@ let groundFlecks = [];
 function initFlecks() {
   groundFlecks = [];
   for (let i = 0; i < 46; i++) groundFlecks.push({ x: Math.random(), y: Math.random(), r: rand(1.5, 5) });
+}
+
+/* foreground meadow — grass tufts & the odd flower along the lower band, so tall
+   screens read as "sitting in a meadow" instead of an empty strip of sand */
+let foreground = [];
+function initForeground() {
+  foreground = [];
+  const hz = H * 0.40, floor = H - 6;
+  const n = Math.round(clamp(W / 16, 26, 70));
+  for (let i = 0; i < n; i++) {
+    // bias toward the very bottom, some scattered up into the mid-ground
+    const t = Math.pow(Math.random(), 0.6);
+    const y = clamp(hz + 40 + t * (floor - hz - 40), hz + 30, floor);
+    foreground.push({
+      x: Math.random() * W, y,
+      s: rand(0.6, 1.5) * (0.7 + (y - hz) / (floor - hz) * 0.7),   // closer = bigger
+      blades: 3 + (Math.random() * 3 | 0),
+      flower: Math.random() < 0.16 ? pick(["#e78fae", "#e9c85a", "#8fb0e0", "#f0f0ec"]) : null,
+      sway: Math.random() * 6,
+    });
+  }
+  foreground.sort((a, b) => a.y - b.y);
+}
+function drawForeground(g, t, sky) {
+  const night = sky ? 1 - sky.df : 0;
+  for (const f of foreground) {
+    const base = `rgba(${112 - night*58},${150 - night*84},${112 - night*66},`;
+    g.strokeStyle = base + "0.9)";
+    g.lineWidth = 1.6 * f.s; g.lineCap = "round";
+    const w = Math.sin(t * 1.3 + f.sway) * 1.6 * f.s;
+    for (let b = 0; b < f.blades; b++) {
+      const bx = f.x + (b - f.blades / 2) * 3 * f.s;
+      const h = (10 + (b % 2) * 6) * f.s;
+      g.beginPath();
+      g.moveTo(bx, f.y);
+      g.quadraticCurveTo(bx + w * 0.5, f.y - h * 0.6, bx + w, f.y - h);
+      g.stroke();
+    }
+    if (f.flower) {
+      const fx = f.x + w, fy = f.y - 13 * f.s;
+      g.fillStyle = night > 0.4 ? "rgba(180,170,190,0.8)" : f.flower;
+      for (let p = 0; p < 5; p++) { const a = p / 5 * Math.PI * 2;
+        g.beginPath(); g.ellipse(fx + Math.cos(a) * 2.2 * f.s, fy + Math.sin(a) * 2.2 * f.s, 1.7 * f.s, 1.7 * f.s, 0, 0, 7); g.fill(); }
+      g.fillStyle = night > 0.4 ? "rgba(210,200,150,0.8)" : "#e9c85a";
+      g.beginPath(); g.arc(fx, fy, 1.3 * f.s, 0, 7); g.fill();
+    }
+  }
 }
 function puff(x, y, s) {
   ctx.beginPath();
@@ -3114,6 +3213,7 @@ function renderScene(dt) {
   }
   for (const tk of fieldTokens) drawToken(ctx, tk);
   drawFX(ctx);
+  drawForeground(ctx, performance.now() / 1000, window._sky);
 
   // dusk / night mood wash — cools and settles the whole scene as the light fades
   const sky = window._sky;
@@ -3198,7 +3298,7 @@ function onViewportChange() {
     if (Math.abs(W - _lastW) > 32 || Math.abs(H - _lastH) > 32) {
       _lastW = W; _lastH = H;
       rebuildAttractors();
-      initClouds(); initFlecks(); initStars();
+      initClouds(); initFlecks(); initStars(); initForeground();
       for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, H - 58); }
     }
   }, 180);
@@ -3298,6 +3398,7 @@ rebuildAttractors();
 initClouds();
 initFlecks();
 initStars();
+initForeground();
 rollDailyGoals();
 checkDexMilestones();
 syncHud();

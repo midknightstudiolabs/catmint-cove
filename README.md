@@ -27,8 +27,8 @@ no build step, no dependencies.
 - [x] Day/night lighting cycle the audio follows
 - [x] Activity stations — fishing dock, bakery, sunbeam mat, catmint garden
 - [x] Canvas accessories — collar / bandana / bow / flower crown
-- [ ] Photo → short animated clip capture
-- [ ] Tall-screen scene layout pass
+- [x] Photo → short animated clip capture (MediaRecorder webm)
+- [x] Tall-screen scene layout pass (foreground meadow)
 
 ## What this is testing
 
