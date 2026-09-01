@@ -29,6 +29,12 @@ no build step, no dependencies.
 - [x] Canvas accessories — collar / bandana / bow / flower crown
 - [x] Photo → short animated clip capture (MediaRecorder webm)
 - [x] Tall-screen scene layout pass (foreground meadow)
+- [x] Calmer ASMR meow synth
+- [x] Fishing mini-loop — cast / wait / bite / reel / cook / eat
+- [x] Rest mode — the rainy-day cabin companion (**🌙** in the HUD): cats come
+      inside, rain on the window, a fire, a real rain-audio loop, idle-dim,
+      auto-stop timer, wake-lock. Rain audio polished from a field recording
+      (`rain-loop.opus`; long-form versions in `../rain-v2/`).
 
 ## What this is testing
 
