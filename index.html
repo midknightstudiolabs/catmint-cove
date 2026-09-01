@@ -239,7 +239,8 @@
   #rest .rest-cancel{background:none;border:none;color:var(--ink-soft);font:inherit;font-weight:600;font-size:.82rem;
     cursor:pointer;margin-top:.7rem;text-decoration:underline;}
   #rest .rest-bar[hidden]{display:none;}
-  #rest .rest-bar{pointer-events:auto;position:absolute;left:50%;bottom:calc(1.4rem + env(safe-area-inset-bottom));
+  #app.resting #hud,#app.resting #actions{opacity:0;pointer-events:none;transition:opacity .5s;}
+  #rest .rest-bar{pointer-events:auto;position:absolute;left:50%;bottom:calc(2.6rem + env(safe-area-inset-bottom));
     transform:translateX(-50%);display:flex;align-items:center;gap:.7rem;white-space:nowrap;
     background:rgba(18,18,26,.5);color:#fff;padding:.5rem .5rem .5rem .95rem;border-radius:999px;font-size:.85rem;
     font-variant-numeric:tabular-nums;backdrop-filter:blur(4px);transition:opacity .6s;}
@@ -2298,15 +2299,33 @@ function scheduleChime() {
 let restMode = false;
 let restOpts = { rain: true, fire: true, thunder: false, hours: 0 };
 let restStartedAt = 0, restEndsAt = 0;
-let restIdleT = 0, restDim = 0, restDrift = 0, _restFlash = 0, _restRainScroll = 0, _restTimerIv = 0;
+let restIdleT = 0, restDim = 0, restDrift = 0, _restFlash = 0, _restRainScroll = 0, _restTimerIv = 0, _restAcc = 0, _restG = null;
 let rainBuffer = null, rainSrc = null, restBus = null, _wakeLock = null;
 let glassDrops = [];
 
 function initGlassDrops() {
   glassDrops = [];
-  for (let i = 0; i < 52; i++) glassDrops.push({
+  for (let i = 0; i < 34; i++) glassDrops.push({
     x: Math.random(), y: Math.random(), r: rand(1.1, 3.6), v: 0, hold: rand(0, 3), trail: 0,
   });
+}
+// full-screen gradients cost an allocation each — build them once per size
+function restGrads() {
+  const key = W + "x" + H;
+  if (_restG && _restG.key === key) return _restG;
+  const g = ctx, L = restLayout();
+  const wall = g.createLinearGradient(0, 0, 0, H * 0.58);
+  wall.addColorStop(0, "#2f2621"); wall.addColorStop(1, "#493a30");
+  const floor = g.createLinearGradient(0, H * 0.58, 0, H);
+  floor.addColorStop(0, "#5c4636"); floor.addColorStop(1, "#3e3026");
+  const sky = g.createLinearGradient(0, L.wy, 0, L.wy + L.wh);
+  sky.addColorStop(0, "#16203a"); sky.addColorStop(1, "#2f3f5c");
+  const glow = g.createRadialGradient(L.hx, L.hbase - 18, 6, L.hx, L.hbase - 18, L.hw * 2.2);
+  glow.addColorStop(0, "rgba(255,165,75,0.32)"); glow.addColorStop(1, "rgba(255,165,75,0)");
+  const vig = g.createRadialGradient(W / 2, H * 0.55, Math.min(W, H) * 0.25, W / 2, H * 0.55, Math.max(W, H) * 0.75);
+  vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(8,6,10,0.45)");
+  _restG = { key, wall, floor, sky, glow, vig, L };
+  return _restG;
 }
 function updateGlassDrops(dt) {
   for (const d of glassDrops) {
@@ -2438,21 +2457,24 @@ function openRestPanel() {
   document.getElementById("restPanel").hidden = false;
   document.getElementById("restBar").hidden = true;
   document.getElementById("rest").classList.add("on");
-  restMode = true; restIdleT = 0; restDim = 0;
+  document.getElementById("app").classList.add("resting");
+  restMode = true; restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
   restSeatCats();
 }
 function closeRestPanel() {
   restMode = false;
   document.getElementById("rest").classList.remove("on");
+  document.getElementById("app").classList.remove("resting");
   for (const c of cats) { c.stateDur = 0; decide(c); }
 }
 function beginRest(resumed) {
   document.getElementById("restPanel").hidden = true;
   document.getElementById("restBar").hidden = false;
   if (!resumed) { restStartedAt = Date.now(); restEndsAt = restOpts.hours > 0 ? restStartedAt + restOpts.hours * 3600e3 : 0; }
-  restIdleT = 0; restDim = 0;
+  restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
   restMode = true;
   document.getElementById("rest").classList.add("on");
+  document.getElementById("app").classList.add("resting");
   initGlassDrops(); restSeatCats();
   startRestAudio();
   requestRestWakeLock();
@@ -2484,6 +2506,7 @@ function endRest(auto) {
   for (const c of cats) { c.mood = clamp(c.mood + 20, 8, 100); c.stateDur = 0; }
   restMode = false; restEndsAt = 0; restStartedAt = 0;
   document.getElementById("rest").classList.remove("on");
+  document.getElementById("app").classList.remove("resting");
   document.getElementById("restPanel").hidden = false;
   document.getElementById("restBar").hidden = true;
   G.rest = null; save();
@@ -2527,19 +2550,19 @@ function renderRest(dt) {
   g.clearRect(-8, -8, W + 16, H + 16);
   g.translate(Math.sin(restDrift) * 3, Math.cos(restDrift * 0.7) * 2);   // slow burn-in drift
 
-  const L = restLayout();
+  const R = restGrads();
+  const L = R.L;
   const pn = performance.now();
+  const dim = restDim > 0.5;                 // idle → draw the cheap version
 
-  // --- room: warm wall + wood floor
+  // --- room: warm wall + wood floor (cached gradients)
   const wallY = H * 0.58;
-  let wg = g.createLinearGradient(0, 0, 0, wallY);
-  wg.addColorStop(0, "#2f2621"); wg.addColorStop(1, "#493a30");
-  g.fillStyle = wg; g.fillRect(-8, -8, W + 16, wallY + 8);
-  let fg = g.createLinearGradient(0, wallY, 0, H);
-  fg.addColorStop(0, "#5c4636"); fg.addColorStop(1, "#3e3026");
-  g.fillStyle = fg; g.fillRect(-8, wallY, W + 16, H - wallY + 16);
-  g.strokeStyle = "rgba(0,0,0,0.16)"; g.lineWidth = 1;
-  for (let x = -20; x < W + 20; x += 52) { g.beginPath(); g.moveTo(x, wallY); g.lineTo(x - 40, H + 12); g.stroke(); }
+  g.fillStyle = R.wall; g.fillRect(-8, -8, W + 16, wallY + 8);
+  g.fillStyle = R.floor; g.fillRect(-8, wallY, W + 16, H - wallY + 16);
+  if (!dim) {
+    g.strokeStyle = "rgba(0,0,0,0.16)"; g.lineWidth = 1;
+    for (let x = -20; x < W + 20; x += 60) { g.beginPath(); g.moveTo(x, wallY); g.lineTo(x - 40, H + 12); g.stroke(); }
+  }
   g.strokeStyle = "rgba(60,40,28,0.6)"; g.lineWidth = 3; g.beginPath(); g.moveTo(-8, wallY); g.lineTo(W + 8, wallY); g.stroke();
 
   // --- window
@@ -2547,38 +2570,37 @@ function renderRest(dt) {
   g.fillStyle = "#241b16"; roundRect(g, wx - 9, wy - 9, ww + 18, wh + 18, 6); g.fill();
   g.save();
   roundRect(g, wx, wy, ww, wh, 3); g.clip();
-  const sg = g.createLinearGradient(0, wy, 0, wy + wh);
-  sg.addColorStop(0, "#16203a"); sg.addColorStop(1, "#2f3f5c");
-  g.fillStyle = sg; g.fillRect(wx, wy, ww, wh);
+  g.fillStyle = R.sky; g.fillRect(wx, wy, ww, wh);
   g.fillStyle = "rgba(8,12,20,0.6)";
   g.beginPath(); g.moveTo(wx + ww * 0.6, wy + wh);
   g.bezierCurveTo(wx + ww * 0.52, wy + wh * 0.55, wx + ww * 0.95, wy + wh * 0.5, wx + ww * 0.82, wy + wh * 0.05);
   g.lineTo(wx + ww, wy + wh); g.closePath(); g.fill();
   if (_restFlash > 0.02) { g.fillStyle = `rgba(190,210,255,${_restFlash * 0.7})`; g.fillRect(wx, wy, ww, wh); }
-  g.strokeStyle = "rgba(200,214,236,0.34)"; g.lineWidth = 1.1;
-  for (let i = 0; i < 70; i++) {
-    const rxp = (i * 89.7) % ww;
-    const ph = ((_restRainScroll * 300 + i * 61) % (wh + 44)) - 22;
-    g.beginPath(); g.moveTo(wx + rxp, wy + ph); g.lineTo(wx + rxp - 5, wy + ph + 16); g.stroke();
+  if (!dim) {
+    g.strokeStyle = "rgba(200,214,236,0.34)"; g.lineWidth = 1.1;
+    g.beginPath();
+    for (let i = 0; i < 40; i++) {
+      const rxp = (i * 89.7) % ww;
+      const ph = ((_restRainScroll * 300 + i * 61) % (wh + 44)) - 22;
+      g.moveTo(wx + rxp, wy + ph); g.lineTo(wx + rxp - 5, wy + ph + 16);
+    }
+    g.stroke();
   }
   for (const d of glassDrops) {
     const px = wx + d.x * ww, py = wy + d.y * wh;
-    if (d.trail > 0.05) {
+    if (!dim && d.trail > 0.05) {
       g.strokeStyle = `rgba(214,228,244,${0.18 * d.trail})`; g.lineWidth = d.r * 0.8;
       g.beginPath(); g.moveTo(px, py); g.lineTo(px, py - d.r * 7 - d.v * 4); g.stroke();
     }
     g.fillStyle = "rgba(228,240,252,0.62)";
     g.beginPath(); g.ellipse(px, py, d.r * 0.82, d.r * 1.15, 0, 0, 7); g.fill();
-    g.fillStyle = "rgba(255,255,255,0.6)";
-    g.beginPath(); g.arc(px - d.r * 0.3, py - d.r * 0.35, d.r * 0.32, 0, 7); g.fill();
   }
   g.fillStyle = "rgba(255,255,255,0.06)"; g.fillRect(wx, wy, ww, wh * 0.14);
   g.restore();
   g.strokeStyle = "#241b16"; g.lineWidth = 5;
   g.beginPath(); g.moveTo(wx + ww / 2, wy); g.lineTo(wx + ww / 2, wy + wh);
   g.moveTo(wx, wy + wh / 2); g.lineTo(wx + ww, wy + wh / 2); g.stroke();
-  // sill
-  g.fillStyle = "#5a4636"; g.fillRect(wx - 12, wy + wh + 2, ww + 24, 7);
+  g.fillStyle = "#5a4636"; g.fillRect(wx - 12, wy + wh + 2, ww + 24, 7);   // sill
 
   // --- wall clock (real local time)
   const clkX = W * 0.85, clkY = H * 0.19, cr = clamp(Math.min(W, H) * 0.05, 16, 34);
@@ -2598,8 +2620,11 @@ function renderRest(dt) {
   const surH = hbase - htop;
   g.fillStyle = "#78706a"; roundRect(g, hx - hw / 2, htop, hw, surH, 5); g.fill();
   g.fillStyle = "#8b827b"; g.fillRect(hx - hw / 2 - 7, htop - 9, hw + 14, 13);   // mantle
-  g.strokeStyle = "rgba(0,0,0,0.14)"; g.lineWidth = 1;
-  for (let sy = htop + 14; sy < hbase - 8; sy += 16) { g.beginPath(); g.moveTo(hx - hw / 2, sy); g.lineTo(hx + hw / 2, sy); g.stroke(); }
+  if (!dim) {
+    g.strokeStyle = "rgba(0,0,0,0.14)"; g.lineWidth = 1; g.beginPath();
+    for (let sy = htop + 14; sy < hbase - 8; sy += 16) { g.moveTo(hx - hw / 2, sy); g.lineTo(hx + hw / 2, sy); }
+    g.stroke();
+  }
   const ow = hw * 0.6, oh = surH * 0.52, ox = hx, oy = hbase - oh - 8;
   g.fillStyle = "#15100d";
   g.beginPath();
@@ -2611,9 +2636,10 @@ function renderRest(dt) {
   g.closePath(); g.fill();
   if (restOpts.fire) {
     const flick = 0.55 + 0.45 * Math.sin(pn / 80) + 0.18 * Math.sin(pn / 33);
-    const fgl = g.createRadialGradient(ox, hbase - 18, 6, ox, hbase - 18, hw * 2.2);
-    fgl.addColorStop(0, `rgba(255,165,75,${0.26 * flick})`); fgl.addColorStop(1, "rgba(255,165,75,0)");
-    g.fillStyle = fgl; g.fillRect(-8, htop - 60, W * 0.7, H - htop + 90);
+    g.save();
+    g.globalAlpha = clamp(0.8 * flick, 0, 1);
+    g.fillStyle = R.glow; g.fillRect(-8, htop - 60, W * 0.7, H - htop + 90);
+    g.restore();
     g.fillStyle = "#4a3120"; g.save(); g.translate(ox, hbase - 12); g.rotate(-0.12);
     roundRect(g, -ow * 0.34, -4, ow * 0.68, 7, 3); g.fill(); g.restore();
     g.save(); g.translate(ox, hbase - 16); g.rotate(0.15);
@@ -2649,18 +2675,18 @@ function renderRest(dt) {
   g.fillStyle = "#5a3f2e"; g.fillRect(tbx - 16, tby + 7, 4, 15); g.fillRect(tbx + 12, tby + 7, 4, 15);
   g.fillStyle = "#e2dac9"; roundRect(g, tbx - 6, tby - 9, 13, 10, 2); g.fill();
   g.strokeStyle = "#e2dac9"; g.lineWidth = 2; g.beginPath(); g.arc(tbx + 8, tby - 4, 3.5, -1, 1.6); g.stroke();
-  g.strokeStyle = "rgba(255,255,255,0.22)"; g.lineWidth = 1.3;
-  for (let i = 0; i < 2; i++) { const s = (pn / 650 + i * 3) % 6; g.beginPath();
-    g.moveTo(tbx - 2 + i * 4, tby - 11); g.quadraticCurveTo(tbx - 6 + i * 4 + Math.sin(s) * 4, tby - 19 - s * 2, tbx - 2 + i * 4, tby - 28 - s * 3); g.stroke(); }
+  if (!dim) {
+    g.strokeStyle = "rgba(255,255,255,0.22)"; g.lineWidth = 1.3;
+    for (let i = 0; i < 2; i++) { const s = (pn / 650 + i * 3) % 6; g.beginPath();
+      g.moveTo(tbx - 2 + i * 4, tby - 11); g.quadraticCurveTo(tbx - 6 + i * 4 + Math.sin(s) * 4, tby - 19 - s * 2, tbx - 2 + i * 4, tby - 28 - s * 3); g.stroke(); }
+  }
 
   // --- the cats, back-to-front (windowsill / fireside / nap pile)
   for (const c of [...cats].sort((a, b) => a.y - b.y)) drawCat(g, c, false);
-  drawFX(g);
+  if (particles.length) drawFX(g);
 
-  // --- vignette + idle dim
-  const vg = g.createRadialGradient(W / 2, H * 0.55, Math.min(W, H) * 0.25, W / 2, H * 0.55, Math.max(W, H) * 0.75);
-  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(8,6,10,0.45)");
-  g.fillStyle = vg; g.fillRect(-6, -6, W + 12, H + 12);
+  // --- vignette + idle dim (cached vignette)
+  g.fillStyle = R.vig; g.fillRect(-6, -6, W + 12, H + 12);
   if (restDim > 0.01) { g.fillStyle = `rgba(6,8,16,${restDim * 0.62})`; g.fillRect(-6, -6, W + 12, H + 12); }
   g.restore();
 }
@@ -2693,23 +2719,28 @@ function nowHours(){
   const n = new Date();
   return n.getHours() + n.getMinutes()/60 + n.getSeconds()/3600;
 }
+let _todCache = null, _todAt = -1e9, _skyGrad = null, _skyGradFill = null, _skyGradH = 0;
 function timeOfDay(){
+  const now = performance.now();
+  if (_todCache && now - _todAt < 2000) return _todCache;   // the sky barely moves — recompute a couple of times a minute
+  _todAt = now;
   const h = nowHours();
   let a = SKIES[0], b = SKIES[SKIES.length-1];
   for (let i = 0; i < SKIES.length-1; i++) if (h >= SKIES[i].h && h <= SKIES[i+1].h) { a = SKIES[i]; b = SKIES[i+1]; break; }
   const f = (h - a.h) / ((b.h - a.h) || 1);
-  return {
+  _todCache = {
     h,
     top: mixHex(a.top, b.top, f), mid: mixHex(a.mid, b.mid, f), bot: mixHex(a.bot, b.bot, f),
     ground: mixHex(a.ground, b.ground, f), light: mixHex(a.light, b.light, f),
     df: a.df + (b.df - a.df) * f,
   };
+  return _todCache;
 }
-function setDayNight(h){ _clockOverride = (h == null ? null : clamp(h, 0, 24)); }
+function setDayNight(h){ _clockOverride = (h == null ? null : clamp(h, 0, 24)); _todCache = null; }
 let _dnAudioTimer = 0;
 function updateDayNight(dt){
   _dnAudioTimer -= dt;
-  if (_dnAudioTimer <= 0) { _dnAudioTimer = 2; if (Math.abs(timeOfDay().df - dayFactor) > 0.015) applyAmbienceDayNight(timeOfDay().df, 4); }
+  if (_dnAudioTimer <= 0) { _dnAudioTimer = 2; const df = timeOfDay().df; if (Math.abs(df - dayFactor) > 0.015) applyAmbienceDayNight(df, 4); }
 }
 function drawCelestial(g, sky){
   const h = sky.h, hz = H * 0.40;
@@ -2746,9 +2777,12 @@ function initStars(){ stars = []; for (let i = 0; i < 40; i++) stars.push({ x: M
 function drawBackground(dt) {
   const sky = timeOfDay();
   window._sky = sky;
-  const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, sky.top); g.addColorStop(0.5, sky.mid); g.addColorStop(1, sky.bot);
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  if (_skyGrad !== sky || _skyGradH !== H) {   // rebuild only when the palette or height changes
+    _skyGradFill = ctx.createLinearGradient(0, 0, 0, H);
+    _skyGradFill.addColorStop(0, sky.top); _skyGradFill.addColorStop(0.5, sky.mid); _skyGradFill.addColorStop(1, sky.bot);
+    _skyGrad = sky; _skyGradH = H;
+  }
+  ctx.fillStyle = _skyGradFill; ctx.fillRect(0, 0, W, H);
   drawCelestial(ctx, sky);
   // clouds — bright by day, dim grey-blue at night
   ctx.fillStyle = `rgba(${255-(1-sky.df)*160},${255-(1-sky.df)*150},${255-(1-sky.df)*130},${0.34 + sky.df*0.38})`;
@@ -3908,7 +3942,11 @@ function frame(now) {
   last = now;
   if (frameDt > 0.25) frameDt = 0.25;      // tab was backgrounded — don't fast-forward
   if (restMode) {
-    renderRest(frameDt);
+    // a screensaver doesn't need 60fps — 30 while active, 12 once it dims (that's
+    // most of an 8-hour session). Keeps the tab light on battery.
+    _restAcc += frameDt;
+    const step = restDim > 0.5 ? 1 / 12 : 1 / 30;
+    if (_restAcc >= step) { renderRest(_restAcc); _restAcc = 0; }
     requestAnimationFrame(frame);
     return;
   }
@@ -3968,7 +4006,9 @@ function onViewportChange() {
       _lastW = W; _lastH = H;
       rebuildAttractors();
       initClouds(); initFlecks(); initStars(); initForeground();
-      for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, H - 58); }
+      _restG = null;
+      if (restMode) { initGlassDrops(); restSeatCats(); }
+      else for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, H - 58); }
     }
   }, 180);
 }
