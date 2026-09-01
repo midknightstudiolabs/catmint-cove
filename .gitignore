@@ -1,3 +1,9 @@
 dist/
 catmint-cove-web.zip
 node_modules/
+
+# design studies — kept local, not shipped
+midknight-bible.html
+v1-v2-sprite.html
+v2-cat-designs.html
+catmint-cove-web.zip
