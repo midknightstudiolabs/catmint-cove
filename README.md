@@ -4,8 +4,8 @@
 
 | | | |
 |---|---|---|
-| **V2 — beta** (share this) | https://midknightstudiolabs.github.io/catmint-cove/ | the clean build for testers — no dev tools |
-| **V2 — dev** (keep this) | https://midknightstudiolabs.github.io/catmint-cove/dev/ | same game + the dev panel, `D`/`R` keys, `v2 · dev` badge |
+| **V3 — beta** (share this) | https://midknightstudiolabs.github.io/catmint-cove/ | the clean build for testers — no dev tools |
+| **V3 — dev** (keep this) | https://midknightstudiolabs.github.io/catmint-cove/dev/ | same game + the dev panel, `D`/`R` keys, `v3 · dev` badge |
 | **V1** (original prototype, frozen) | https://midknightstudiolabs.github.io/catmint-cove/v1/ | the first greybox — tag `v1`, 2026-08-31 |
 
 All live and permanent. V2 ships from `index.html` at the repo root; `/dev/` is a
@@ -15,7 +15,8 @@ key won't wipe a tester's save. In the **dev build** the panel opens on load wit
 live stats + **RESET GAME**, or tap the cats-count pill 5× / press `D`.
 V1 is a copy of the frozen [`releases/v1/`](releases/v1/) snapshot. Each build has
 a small badge in the top bar. GitHub Pages redeploys ~1 min after a push to
-`main`. V1 / V2 keep separate saves (`catmintCove.save.v5` vs `.v6`).
+`main`. V1 keeps a separate save (`catmintCove.save.v5`); the current build uses
+`catmintCove.save.v7` and migrates older `.v6` / `.v5` coves in place.
 
 A playable greybox of the cozy-idle cat game concept. One self-contained HTML file,
 no build step, no dependencies.
@@ -33,6 +34,40 @@ git tag ios-v2.0.1     && git push origin ios-v2.0.1        # → TestFlight
 
 `npm run build` assembles `www/` from `index.html`; `npm run sync` runs Capacitor.
 Native `android/` and `ios/` folders are generated fresh in CI, never committed.
+
+## V3 — the return-visit layer
+
+The engagement pass. See the design doc ("Something Happened While You Were Away").
+Ships MVP steps 1–3; Friendship/Memories, Butterfly Catch and Weekly Events are next.
+
+- [x] **Vignette engine** — one shared runner for short scripted moments (text +
+      emoji prop + choices + weighted outcome). WYWA beats and adventure results
+      both run through it. `runVignette()`, `__cove.wywa(id)`.
+- [x] **Moments** — a gentle log of the cove's little happenings, in the Today
+      sheet. `logMoment()`, `__cove.moments()`.
+- [x] **While You Were Away** — on return, a capped chance (scales with time away,
+      ~15h cooldown, anti-repeat) that a small story is waiting: a kitten in a box,
+      a gift on the step, a crab with opinions. 11 beats. Never a loss. Rolls after
+      the offline-earnings modal via `checkOffline(afterReturn)`.
+- [x] **Cat Adventures** — one trip a day: pick a destination (Fishing ~30m /
+      Forest ~2h / Island ~6h) and a cat. The cat leaves the cove; traits shape the
+      haul (curious→map fragments, glutton→recipes, lazy→slower, bold→no bad
+      encounter, grumpy→rare jackpot, …). Result vignette on return. Rare torn-map
+      fragments build toward the island (`G.mapPieces` / `MAP_TOTAL`, island stubbed).
+      `G.adventure`, `__cove.adventure(cmd)`.
+- [x] **Daily check-in** — a warm little welcome, one a day, 7-day loop
+      (`CHECKIN_REWARDS`). Never punishes a missed day — the cycle just continues.
+      Card at the top of the Today sheet; `__cove.checkin()`.
+- [x] **Token polish** — field drops now carry a breathing two-layer glow, a
+      ground shadow, a crisp rim + a "just landed" ring, a bigger bob, and a
+      wider tap target (34px). Drops clamp clear of the bottom action bar.
+- [x] **No more overlapping scenery** — `placeClear()` lays out cottages, trees,
+      flower patches and food/toy/bed spots with footprint-aware spacing so
+      nothing lands on top of a station or another object.
+- [x] Save `catmintCove.save.v7` — migrates `.v6` / `.v5` in place.
+- [ ] Friendship ❤️1–10 + Memories (the moat) — next
+- [ ] Butterfly Catch — one 40s optional mini-game — next
+- [ ] Weekly rotating events (template) — next
 
 ## V2 roadmap
 

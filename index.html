@@ -177,6 +177,10 @@
   .shop-item.pack .owned{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-bright);}
   .shop-item.prestige{background:linear-gradient(180deg,#f0f4ea,#e7efe0);border-radius:14px;padding:.75rem;margin:.35rem 0;border-top:none;}
   .shop-item.prestige .name{color:var(--accent);}
+  .shop-cat{font-family:"Fraunces",serif;font-size:.82rem;font-weight:600;color:var(--accent);
+    margin:1rem 0 -.1rem;padding-top:.7rem;border-top:1px solid var(--panel-line);letter-spacing:.01em;}
+  .shop-cat:first-of-type{border-top:none;padding-top:.2rem;margin-top:.3rem;}
+  .shop-cat + .shop-item{border-top:none;}
 
   /* ---- ads (simulated here; Google AdMob in the native build) ---- */
   #adv{position:absolute;inset:0;z-index:90;display:none;align-items:center;justify-content:center;
@@ -214,7 +218,44 @@
   .dexcell .st{position:absolute;top:.2rem;left:0;right:0;font-size:.62rem;font-weight:800;letter-spacing:-1px;}
 
   /* ---- today ---- */
-  #today{left:50%;transform:translateX(-50%);bottom:4.2rem;width:min(94vw,380px);}
+  #today{left:50%;transform:translateX(-50%);bottom:4.2rem;width:min(94vw,380px);max-height:78vh;overflow-y:auto;}
+
+  /* ---- v3: adventures, vignettes, moments ---- */
+  .vig-art{font-size:2.6rem;line-height:1;margin:.1rem 0 .5rem;}
+  .vignette .vig-body{color:var(--ink);font-size:.98rem;line-height:1.55;margin-bottom:1rem;}
+  .vignette .vig-reward{font-weight:700;color:var(--accent);font-size:.9rem;margin:-.35rem 0 1rem;}
+  .adv-card{background:var(--panel);border:1px solid var(--panel-line);border-radius:16px;padding:.85rem .9rem;margin-bottom:.9rem;}
+  .adv-card.ready{border-color:var(--accent-bright);background:linear-gradient(180deg,#eef6ec,var(--panel));}
+  .adv-card.done{opacity:.72;}
+  .adv-top{display:flex;gap:.6rem;align-items:center;margin-bottom:.6rem;}
+  .adv-emoji{font-size:1.5rem;flex:0 0 auto;}
+  .adv-title{font-weight:700;font-size:.92rem;}
+  .adv-sub{font-size:.78rem;color:var(--ink-soft);margin-top:.05rem;}
+  .adv-card>.btn{width:100%;justify-content:center;}
+  .adv-card>.btn.tiny{width:auto;padding:.32rem .7rem;font-size:.75rem;}
+  .adv-map{font-size:.74rem;color:var(--ink-faint);margin-top:.55rem;font-variant-numeric:tabular-nums;}
+  .ci-dots{display:flex;gap:.3rem;margin:.1rem 0 .7rem;flex-wrap:wrap;}
+  .ci-dot{flex:1 1 0;min-width:1.6rem;height:1.6rem;display:grid;place-items:center;border-radius:8px;
+    background:#eef1e3;border:1px solid var(--panel-line);font-size:.72rem;color:var(--ink-soft);font-weight:700;}
+  .ci-dot.done{background:var(--accent);border-color:transparent;color:#fff;}
+  .ci-dot.now{border-color:var(--accent-bright);box-shadow:0 0 0 2px rgba(63,129,89,.2);color:var(--accent);}
+  .pick-list{display:flex;flex-direction:column;gap:.5rem;margin:.5rem 0 .7rem;text-align:left;}
+  .pick-list.cats{max-height:44vh;overflow-y:auto;}
+  .pick-dest,.pick-cat{display:block;width:100%;background:#eef1e3;border:1px solid var(--panel-line);
+    border-radius:14px;padding:.7rem .8rem;cursor:pointer;font:inherit;color:var(--ink);overflow:hidden;}
+  .pick-dest:hover,.pick-cat:hover{border-color:var(--accent-bright);background:#fff;}
+  .pick-dest>span{font-size:1.3rem;float:left;margin-right:.55rem;}
+  .pick-dest b,.pick-cat b{display:block;font-size:.92rem;}
+  .pick-dest i,.pick-cat i{display:block;font-style:normal;font-size:.76rem;color:var(--ink-soft);margin-top:.1rem;}
+  .pick-dest em,.pick-cat em{display:block;font-style:normal;font-size:.72rem;color:var(--apricot);font-weight:600;margin-top:.18rem;}
+  .moments-wrap{margin-top:1rem;padding-top:.6rem;border-top:1px solid var(--panel-line);}
+  .moments-h{font-size:.66rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:.35rem;}
+  .moment-row{display:flex;gap:.55rem;align-items:baseline;padding:.42rem 0;border-top:1px solid var(--panel-line);font-size:.84rem;}
+  .moment-row:first-child{border-top:none;}
+  .moment-row .me{font-size:1rem;flex:0 0 auto;line-height:1;}
+  .moment-row .mt{flex:1;color:var(--ink);line-height:1.4;}
+  .moment-row .ma{flex:0 0 auto;font-size:.7rem;color:var(--ink-faint);font-variant-numeric:tabular-nums;}
+  .moments-empty{font-size:.82rem;color:var(--ink-faint);padding:.35rem 0;}
   .streak{display:flex;align-items:center;gap:.4rem;margin:-.2rem 0 .9rem;font-size:.82rem;}
   .streak .flame{font-size:1.1rem;}
   .streak b{font-family:"Fraunces",serif;font-size:1.25rem;color:var(--apricot);margin-right:.15rem;}
@@ -255,6 +296,14 @@
   .rehome{margin-top:.7rem;width:100%;background:none;border:1px solid var(--panel-line);border-radius:999px;
     padding:.4rem .7rem;font:inherit;font-size:.78rem;font-weight:600;color:var(--ink-soft);cursor:pointer;}
   .rehome:hover{background:#fff;color:var(--ink);}
+  .cc-dress{margin-top:.6rem;padding-top:.55rem;border-top:1px solid var(--panel-line);}
+  .cc-dress .dl{font-size:.66rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--ink-faint);margin-bottom:.4rem;}
+  .cc-dress .chips{display:flex;flex-wrap:wrap;gap:.3rem;}
+  .cc-dress button{font:inherit;font-size:.72rem;font-weight:600;line-height:1;cursor:pointer;
+    padding:.3rem .5rem;border-radius:999px;border:1px solid var(--panel-line);
+    background:#eef1e3;color:var(--ink-soft);}
+  .cc-dress button.on{background:var(--accent-bright);border-color:var(--accent-bright);color:#fff;}
 
   /* ---- modal ---- */
   #scrim{position:absolute;inset:0;z-index:50;background:rgba(30,26,18,.42);
@@ -371,7 +420,7 @@
     </div>
     <div class="hud-group">
       <button class="pill title-pill" id="titlePill" title="Rename your cove">Catmint <b>Cove</b></button>
-      <a class="verbadge" href="v1/" title="Play the original V1 prototype">v2</a>
+      <a class="verbadge" href="v1/" title="Play the original V1 prototype">v3</a>
       <button class="btn" id="helpBtn" title="How to play"><span class="ico">?</span></button>
       <button class="btn" id="restBtn" title="Rainy day — everyone rests inside"><span class="ico">🌙</span></button>
       <button class="btn" id="muteBtn" title="Sound"><span class="ico">🔊</span></button>
@@ -449,8 +498,14 @@
   <div class="sheet" id="today" hidden>
     <button class="x" data-close="today">✕</button>
     <h2>Today</h2>
+    <div id="checkinCard"></div>
+    <div id="advCard"></div>
     <div class="streak"><span class="flame">🔥</span><b id="streakN">0</b><span class="muted" style="margin:0">day streak — finish all 3 goals to keep it</span></div>
     <div id="goalList"></div>
+    <div class="moments-wrap">
+      <div class="moments-h">Moments</div>
+      <div id="momentsList"></div>
+    </div>
     <div class="backup-row">
       <span class="muted" style="margin:0">Your cove is saved on this device.</span>
       <button class="btn small" id="backupBtn">Back up / restore</button>
@@ -467,6 +522,7 @@
     <div class="moodbar"><i id="cc-mood" style="width:60%"></i></div>
     <div class="moodlabel"><span>mood</span><span id="cc-moodpct">60%</span></div>
     <div class="cat-trait-desc" id="cc-desc"></div>
+    <div class="cc-dress" id="cc-dress"></div>
     <button class="rehome" id="cc-rehome" hidden>Find them a new home →</button>
   </div>
 
@@ -517,8 +573,9 @@
    Single file, no dependencies. Vanilla canvas.
    ============================================================ */
 
-const SAVE_KEY = "catmintCove.save.v6";
-const OLD_SAVE_KEYS = ["catmintCove.save.v5"];
+const SAVE_KEY = "catmintCove.save.v7";
+const OLD_SAVE_KEYS = ["catmintCove.save.v6", "catmintCove.save.v5"];
+const SAVE_VERSIONS = [5, 6, 7];
 // developer build: served at /dev/ or with ?dev — unlocks the dev panel + R-key
 // reset. The plain build (root URL) has none of that, safe to hand to testers.
 const DEV_BUILD = /(^|\/)dev\/?$/.test(location.pathname) || /(^|[?&])dev\b/.test(location.search);
@@ -652,7 +709,7 @@ function newAdsState() {
 }
 function newGame() {
   return {
-    v: 6,
+    v: 7,
     tutorialDone: false,
     midknightSeeded: false,
     shells: 25,
@@ -662,7 +719,7 @@ function newGame() {
     bowls: 1, toys: 0, beds: 0,
     decor: { tree: 0, cottage: 0, flowers: 0 },
     stations: { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 },   // activity stations cats "work"
-    trinkets: 0,           // accessories handed out from the Shop
+    trinkets: 0,           // (legacy) kept for save back-compat — wardrobe is now free on the cat card
     coveCharter: false,    // late-game one-time unlock: raises the cat ceiling 16 → 24
     rest: null,            // active rainy-day session { on, startedAt, endsAt, opts }
     ads: newAdsState(),    // monetization: supporter status, age treatment, frequency caps
@@ -679,6 +736,14 @@ function newGame() {
     goals: null, goalDay: 0,
     streak: 0, streakDay: 0,
     cats: [],
+    // v3 — the return-visit layer
+    checkin: { day: 0, lastKey: "" },  // daily welcome — 7-day loop, never punishes a miss
+    moments: [],                 // gentle log of the cove's little happenings
+    wywa: { lastAt: 0, seen: [] },// "While You Were Away" cooldown + anti-repeat
+    adventure: null,             // one active { cat, dest, startedAt, endsAt, seed, catData }
+    advDay: "",                  // yyyy-m-d of the last claimed adventure (one a day)
+    mapPieces: 0,                // torn-map fragments toward the island
+    keepsakes: [],               // little things cats bring home
   };
 }
 
@@ -692,9 +757,9 @@ function load() {
   if (!raw) { G = newGame(); return; }
   try {
     const s = JSON.parse(raw);
-    if (!s || (s.v !== 5 && s.v !== 6)) { G = newGame(); return; }
+    if (!s || !SAVE_VERSIONS.includes(s.v)) { G = newGame(); return; }
     G = s;
-    G.v = 6;                                                  // migrate v5 → v6 in place
+    G.v = 7;                                                  // migrate v5/v6 → v7 in place
     if (!G.decor) G.decor = { tree: 0, cottage: 0, flowers: 0 };
     if (!G.stations) G.stations = { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 };
     if (G.trinkets === undefined) G.trinkets = 0;
@@ -702,6 +767,14 @@ function load() {
     G.ads = Object.assign(newAdsState(), G.ads || {});
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
     if (G.midknightSeeded === undefined) G.midknightSeeded = false;
+    if (!G.checkin || typeof G.checkin !== "object") G.checkin = { day: 0, lastKey: "" };
+    if (!Array.isArray(G.moments)) G.moments = [];
+    if (!G.wywa || typeof G.wywa !== "object") G.wywa = { lastAt: 0, seen: [] };
+    if (!Array.isArray(G.wywa.seen)) G.wywa.seen = [];
+    if (G.adventure === undefined) G.adventure = null;
+    if (typeof G.advDay !== "string") G.advDay = "";
+    if (typeof G.mapPieces !== "number") G.mapPieces = 0;
+    if (!Array.isArray(G.keepsakes)) G.keepsakes = [];
     G.opens = (G.opens || 1) + 1;
   } catch (e) { G = newGame(); }
 }
@@ -735,7 +808,7 @@ function applySaveCode(code) {
     const b64 = String(code).trim().replace(/^CMC1\./, "");
     const raw = decodeURIComponent(escape(atob(b64)));
     const obj = JSON.parse(raw);
-    if (!obj || typeof obj !== "object" || (obj.v !== 5 && obj.v !== 6)) return false;
+    if (!obj || typeof obj !== "object" || !SAVE_VERSIONS.includes(obj.v)) return false;
     localStorage.setItem(SAVE_KEY, raw);
     return true;
   } catch (e) { return false; }
@@ -756,28 +829,60 @@ const STATION_HOME = {   // each station has a canonical corner of the cove
 // lowest a cat anchor / usable attractor should sit — keeps cats and the
 // stations they work clear of the fixed action bar at the bottom of the screen
 const catFloor = () => H - (W < 600 ? 84 : 66);   // a bit more clearance on mobile — the tab bar is fixed & taller
+// Place a set of footprints so nothing lands on top of anything else.
+// Each item: { r (footprint radius), seed (stable), yBand:[lo,hi] }. Returns [{x,y}].
+// `avoid` is a list of pre-placed footprints { x, y, r } the new items must clear too.
+function placeClear(items, avoid) {
+  const placed = [];
+  const M = 42;
+  for (const it of items) {
+    const rng = mulberry32(it.seed);
+    let best = { x: W / 2, y: (it.yBand[0] + it.yBand[1]) / 2 }, bestScore = -1e9;
+    for (let k = 0; k < 16; k++) {
+      const x = M + rng() * (W - M * 2);
+      const y = it.yBand[0] + rng() * Math.max(1, it.yBand[1] - it.yBand[0]);
+      let score = Math.min(x - M, W - M - x) * 0.12;                 // stay off the edges
+      for (const p of placed) score = Math.min(score, Math.hypot(x - p.x, y - p.y) - (it.r + p.r));
+      for (const s of (avoid || [])) score = Math.min(score, Math.hypot(x - s.x, y - s.y) - (it.r + s.r));
+      if (score > bestScore) { bestScore = score; best = { x, y }; }
+    }
+    placed.push({ x: best.x, y: best.y, r: it.r });
+  }
+  return placed;
+}
 function rebuildDecor() {
   decor = [];
-  for (let i = 0; i < G.decor.tree; i++)
-    decor.push({ type: "tree", seed: 9001 + i, ...seededPos(9001 + i, 0.46) });
-  for (let i = 0; i < G.decor.cottage; i++)
-    decor.push({ type: "cottage", seed: 7001 + i, ...seededPos(7001 + i, 0.5) });
-  for (let i = 0; i < G.decor.flowers; i++)
-    decor.push({ type: "flowers", seed: 5001 + i, ...seededPos(5001 + i, 0.6) });
+  const foot = [];   // running footprint list — stations, then trees/cottages/flowers
+  // stations sit in their canonical corners (with a little spread for repeats)
   for (const [type, home] of Object.entries(STATION_HOME)) {
     for (let i = 0; i < (G.stations[type] || 0); i++) {
-      const jx = i === 0 ? 0 : (mulberry32(3300 + i * 17)() - 0.5) * 0.12;
-      const jy = i === 0 ? 0 : (mulberry32(4400 + i * 17)() - 0.5) * 0.06;
-      decor.push({ type: "station", station: type, seed: 3300 + type.length * 100 + i,
-        x: clamp(W * (home.x + jx), 46, W - 46), y: clamp(H * (home.y + jy), H * 0.46, catFloor() - 12) });
+      const jx = i === 0 ? 0 : (mulberry32(3300 + i * 17)() - 0.5) * 0.16;
+      const jy = i === 0 ? 0 : (mulberry32(4400 + i * 17)() - 0.5) * 0.05;
+      const x = clamp(W * (home.x + jx), 52, W - 52);
+      const y = clamp(H * (home.y + jy), H * 0.46, catFloor() - 14);
+      decor.push({ type: "station", station: type, seed: 3300 + type.length * 100 + i, x, y });
+      foot.push({ x, y, r: 46 });
     }
   }
+  const lo = H * 0.46, hi = catFloor();
+  const wants = [];
+  for (let i = 0; i < G.decor.cottage; i++) wants.push({ type: "cottage", r: 48, seed: 7001 + i * 13, yBand: [lo + 30, hi - 54] });
+  for (let i = 0; i < G.decor.tree; i++)    wants.push({ type: "tree",    r: 42, seed: 9001 + i * 13, yBand: [lo,      hi - 40] });
+  for (let i = 0; i < G.decor.flowers; i++) wants.push({ type: "flowers", r: 28, seed: 5001 + i * 13, yBand: [lo + 60, hi - 16] });
+  const pos = placeClear(wants, foot);
+  wants.forEach((w, i) => decor.push({ type: w.type, seed: w.seed, x: pos[i].x, y: pos[i].y }));
 }
 function rebuildAttractors() {
   rebuildDecor();                       // decor first so usable pieces have stable positions
   attractors = [];
-  const add = (type, n) => { for (let i = 0; i < n; i++) attractors.push(makeAttractor(type, attractors.length)); };
-  add("food", G.bowls); add("toy", G.toys); add("bed", G.beds);
+  // food / toy / bed — placed clear of decor, stations and each other
+  const avoid = decor.map(d => ({ x: d.x, y: d.y, r: d.type === "cottage" ? 46 : d.type === "station" ? 44 : d.type === "tree" ? 38 : 24 }));
+  const comforts = [];
+  for (let i = 0; i < G.bowls; i++) comforts.push({ type: "food", r: 26, seed: 12001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
+  for (let i = 0; i < G.toys;  i++) comforts.push({ type: "toy",  r: 24, seed: 13001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
+  for (let i = 0; i < G.beds;  i++) comforts.push({ type: "bed",  r: 30, seed: 14001 + i * 7, yBand: [H * 0.54, catFloor() - 8] });
+  const cpos = placeClear(comforts, avoid);
+  comforts.forEach((c, i) => attractors.push({ type: c.type, x: cpos[i].x, y: cpos[i].y }));
   for (const d of decor) {
     if (d.type === "tree")    attractors.push({ type: "tree",    x: clamp(d.x + 14, 32, W - 32), y: clamp(d.y + 20, H * 0.44, catFloor()) });
     if (d.type === "cottage") attractors.push({ type: "cottage", x: clamp(d.x,      32, W - 32), y: clamp(d.y + 14, H * 0.44, catFloor()) });
@@ -1423,8 +1528,9 @@ function dropToken(x, y, value, flair) {
     const idx = fieldTokens.findIndex(t => t.pop === 0);
     fieldTokens.splice(idx < 0 ? 0 : idx, 1);
   }
+  const yy = clamp(y, H * 0.5, catFloor() - 6);   // keep drops in view, clear of the action bar
   fieldTokens.push({
-    x: clamp(x, 16, W - 16), y, baseY: y, value, flair,
+    x: clamp(x + rand(-11, 11), 18, W - 18), y: yy, baseY: yy, value, flair,
     vy: -60, life: 0, ttl: 75, pop: 0,
   });
 }
@@ -1495,8 +1601,8 @@ canvas.addEventListener("pointerdown", (e) => {
   handleTap(x, y);
 });
 function handleTap(x, y) {
-  // tokens first (closest within radius)
-  let bt = null, bd = 26 * 26;
+  // tokens first (closest within radius) — generous target, they're the payout
+  let bt = null, bd = 34 * 34;
   for (const t of fieldTokens) {
     const d = dist2(x, y, t.x, t.y);
     if (d < bd) { bd = d; bt = t; }
@@ -1551,7 +1657,44 @@ const cc = {
   coatEl: document.getElementById("cc-coat"),
   starsEl: document.getElementById("cc-stars"),
   rehomeBtn: document.getElementById("cc-rehome"),
+  dress: document.getElementById("cc-dress"),
 };
+// ---- wardrobe: little canvas accessories the player puts on any cat ----
+const ACCESSORIES = [
+  { key: "collar",  label: "Collar"  },
+  { key: "bandana", label: "Bandana" },
+  { key: "bow",     label: "Bow"     },
+  { key: "scarf",   label: "Scarf"   },
+  { key: "glasses", label: "Glasses" },
+  { key: "flower",  label: "Flower"  },
+  { key: "sunhat",  label: "Sun hat" },
+  { key: "bell",    label: "Bell"    },
+  { key: "crown",   label: "Crown"   },
+];
+const ACC_LABEL = Object.fromEntries(ACCESSORIES.map(a => [a.key, a.label.toLowerCase()]));
+function renderWardrobe(c) {
+  if (!cc.dress) return;
+  if (!c || c.mascot) { cc.dress.hidden = true; cc.dress.innerHTML = ""; return; }
+  cc.dress.hidden = false;
+  const cur = c.accessory || "";
+  const chip = (key, label) =>
+    `<button data-acc="${key}" class="${cur === key ? "on" : ""}">${label}</button>`;
+  cc.dress.innerHTML =
+    `<div class="dl">Dress up</div><div class="chips">` +
+    chip("", "Bare") +
+    ACCESSORIES.map(a => chip(a.key, a.label)).join("") +
+    `</div>`;
+  cc.dress.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    const key = b.dataset.acc || null;
+    if (!cardCat) return;
+    cardCat.accessory = key;
+    cardTimer = 8;                       // keep the card up while they experiment
+    ensureAudio(); tone(523.25, 0.06, "sine", 0.035); if (key) tone(659.25, 0.07, "sine", 0.03, 0.05);
+    spawnParticles(cardCat.x, cardCat.y - 22, "twinkle", 6);
+    renderWardrobe(cardCat);
+    save();
+  }));
+}
 function rehomeReward(c) {
   return { shells: 15 + c.star * 18, pearls: c.star >= 3 ? c.star - 2 : 0 };
 }
@@ -1590,7 +1733,7 @@ let cardCat = null, cardTimer = 0;
 function showCatCard(c) {
   cardCat = c; cardTimer = 6;
   cc.name.textContent = c.name;
-  const acc = c.accessory ? `  ·  ${({bell:"bell collar",collar:"collar",bandana:"bandana",bow:"bow",flower:"flower",crown:"crown"})[c.accessory] || c.accessory}` : "";
+  const acc = c.accessory ? `  ·  ${ACC_LABEL[c.accessory] || c.accessory}` : "";
   cc.coatEl.textContent = (c.mascot
     ? "the cove's founder  ·  never leaves"
     : c.coat.name + (c.isKitten
@@ -1604,6 +1747,7 @@ function showCatCard(c) {
   const rw = rehomeReward(c);
   cc.rehomeBtn.hidden = c.mascot || cats.length <= 3;   // only once the cove is comfortably full
   cc.rehomeBtn.textContent = `Find them a new home  ·  ◈ ${rw.shells}${rw.pearls ? ` ✦ ${rw.pearls}` : ""}`;
+  renderWardrobe(c);
   cc.el.hidden = false;
   positionCard(c);
   updateCatCard();
@@ -1637,45 +1781,39 @@ function updateCatCard() {
 function hideCatCard() { cc.el.hidden = true; cardCat = null; }
 
 /* ---------- shop ---------- */
+const SHOP_GROUPS = [
+  { id:"comforts", label:"Comforts & scenery" },
+  { id:"stations", label:"Activity stations" },
+  { id:"upgrades", label:"Cove upgrades" },
+];
 const SHOP = [
-  { key:"bowls", type:"food", name:"Food bowl", desc:"Cats come here to eat, then wash up. +2 cat capacity.",
+  { key:"bowls", cat:"comforts", type:"food", name:"Food bowl", desc:"Cats come here to eat, then wash up. +2 cat capacity.",
     base:12, mul:1.6, keepMin:1, get:()=>G.bowls, buy:()=>{ G.bowls++; rebuildAttractors(); }, remove:()=>{ G.bowls--; rebuildAttractors(); } },
-  { key:"toys", type:"toy", name:"Toy", desc:"Cats come here to play — playing boosts their output. +1 capacity.",
+  { key:"toys", cat:"comforts", type:"toy", name:"Toy", desc:"Cats come here to play — playing boosts their output. +1 capacity.",
     base:16, mul:1.6, get:()=>G.toys, buy:()=>{ G.toys++; rebuildAttractors(); }, remove:()=>{ G.toys--; rebuildAttractors(); } },
-  { key:"beds", type:"bed", name:"Cozy bed", desc:"A favourite napping spot — sleeping restores mood. +1 capacity.",
+  { key:"beds", cat:"comforts", type:"bed", name:"Cozy bed", desc:"A favourite napping spot — sleeping restores mood. +1 capacity.",
     base:22, mul:1.6, get:()=>G.beds, buy:()=>{ G.beds++; rebuildAttractors(); }, remove:()=>{ G.beds--; rebuildAttractors(); } },
-  { key:"tree", type:"tree", name:"Shade tree", desc:"Cats doze in the shade. Lifts the whole cove's mood.",
+  { key:"tree", cat:"comforts", type:"tree", name:"Shade tree", desc:"Cats doze in the shade. Lifts the whole cove's mood.",
     base:30, mul:1.7, get:()=>G.decor.tree, buy:()=>{ G.decor.tree++; rebuildAttractors(); }, remove:()=>{ G.decor.tree--; rebuildAttractors(); } },
-  { key:"cottage", type:"cottage", name:"Cat cottage", desc:"A little house cats curl up inside to sleep. +2 capacity.",
+  { key:"cottage", cat:"comforts", type:"cottage", name:"Cat cottage", desc:"A little house cats curl up inside to sleep. +2 capacity.",
     base:55, mul:1.8, get:()=>G.decor.cottage, buy:()=>{ G.decor.cottage++; rebuildAttractors(); }, remove:()=>{ G.decor.cottage--; rebuildAttractors(); } },
-  { key:"flowers", type:"flowers", name:"Flower patch", desc:"Just pretty. Raises everyone's baseline mood a little.",
+  { key:"flowers", cat:"comforts", type:"flowers", name:"Flower patch", desc:"Just pretty. Raises everyone's baseline mood a little.",
     base:14, mul:1.5, get:()=>G.decor.flowers, buy:()=>{ G.decor.flowers++; rebuildAttractors(); }, remove:()=>{ G.decor.flowers--; rebuildAttractors(); } },
-  { key:"fishing", type:"fishing", name:"Fishing dock", desc:"Cats fish off the end — big output while they work, plus the odd bonus catch. +2 capacity.",
+  { key:"fishing", cat:"stations", type:"fishing", name:"Fishing dock", desc:"Cats fish off the end — big output while they work, plus the odd bonus catch. +2 capacity.",
     base:70, mul:1.9, get:()=>G.stations.fishing, buy:()=>{ G.stations.fishing++; rebuildAttractors(); }, remove:()=>{ G.stations.fishing--; rebuildAttractors(); } },
-  { key:"bakery", type:"bakery", name:"Little bakery", desc:"Two cats can help at once — steady output and a strong mood lift. +2 capacity.",
+  { key:"bakery", cat:"stations", type:"bakery", name:"Little bakery", desc:"Two cats can help at once — steady output and a strong mood lift. +2 capacity.",
     base:85, mul:1.9, get:()=>G.stations.bakery, buy:()=>{ G.stations.bakery++; rebuildAttractors(); }, remove:()=>{ G.stations.bakery--; rebuildAttractors(); } },
-  { key:"sunbeam", type:"sunbeam", name:"Sunbeam mat", desc:"The comfiest spot in the cove — mood rockets, output ticks over gently. +2 capacity.",
+  { key:"sunbeam", cat:"stations", type:"sunbeam", name:"Sunbeam mat", desc:"The comfiest spot in the cove — mood rockets, output ticks over gently. +2 capacity.",
     base:50, mul:1.8, get:()=>G.stations.sunbeam, buy:()=>{ G.stations.sunbeam++; rebuildAttractors(); }, remove:()=>{ G.stations.sunbeam--; rebuildAttractors(); } },
-  { key:"garden", type:"garden", name:"Catmint garden", desc:"Cats roll in it and leave with the zoomies — a lasting output burst. +2 capacity.",
+  { key:"garden", cat:"stations", type:"garden", name:"Catmint garden", desc:"Cats roll in it and leave with the zoomies — a lasting output burst. +2 capacity.",
     base:65, mul:1.9, get:()=>G.stations.garden, buy:()=>{ G.stations.garden++; rebuildAttractors(); }, remove:()=>{ G.stations.garden--; rebuildAttractors(); } },
-  { key:"trinket", name:"Trinket basket", desc:"Pop a little accessory — collar, bandana, bow or flower — on a cat who isn't wearing one.",
-    base:18, mul:1.4, get:()=>G.trinkets, buy:()=>{ G.trinkets++; giveTrinket(); } },
-  { key:"comfort", name:"Comfort upgrade", desc:"+22% output from every cat. Max level 5.",
+  { key:"comfort", cat:"upgrades", name:"Comfort upgrade", desc:"+22% output from every cat. Max level 5.",
     base:45, mul:2.2, get:()=>G.comfort, max:5, buy:()=>{ G.comfort++; } },
-  { key:"charter", name:"Cove Charter", desc:"A one-time expansion for a well-loved cove — room for up to 24 cats.",
+  { key:"charter", cat:"upgrades", name:"Cove Charter", desc:"A one-time expansion for a well-loved cove — room for up to 24 cats.",
     base:5000, mul:1, pearls:30, get:()=>G.coveCharter ? 1 : 0, max:1,
     need:()=> dexCount() < COATS.length ? `Discover all ${COATS.length} coats first — ${dexCount()}/${COATS.length}` : null,
     buy:()=>{ G.coveCharter = true; } },
 ];
-function giveTrinket() {
-  const bare = cats.filter(c => !c.accessory && !c.mascot);
-  if (!bare.length) { toast("Every cat already has a little something on."); return; }
-  const c = pick(bare);
-  c.accessory = pick(["collar", "bandana", "bow", "flower"]);
-  spawnParticles(c.x, c.y - 22, "twinkle", 6);
-  floatText(c.x, c.y - 30, "✦", "#e8b45a");
-  toast(`${c.name} is trying on a new ${c.accessory}.`);
-}
 const COMFORT_STATE = { food:"eating", toy:"playing", bed:"sleeping", cottage:"sleeping", tree:"sleeping",
   fishing:"fishing", bakery:"baking", sunbeam:"sunbathing", garden:"rolling" };
 // send a couple of free cats straight over to a freshly placed comfort
@@ -1714,7 +1852,14 @@ function renderShop() {
   if (pb) pb.addEventListener("click", () => showPackOffer(false));
   list.appendChild(pack);
 
-  for (const item of SHOP) {
+  for (const grp of SHOP_GROUPS) {
+   const grpItems = SHOP.filter(i => i.cat === grp.id);
+   if (!grpItems.length) continue;
+   const head = document.createElement("div");
+   head.className = "shop-cat";
+   head.textContent = grp.label;
+   list.appendChild(head);
+   for (const item of grpItems) {
     const maxed = item.max != null && item.get() >= item.max;
     const price = priceOf(item);
     const pearlCost = item.pearls || 0;
@@ -1775,6 +1920,7 @@ function renderShop() {
       }
     });
     list.appendChild(row);
+   }
   }
 }
 
@@ -2017,7 +2163,8 @@ function syncHud() {
   cb.classList.toggle("wantcoax", broke && !full);
   document.getElementById("dexBadge").textContent = dexCount() + "/" + COATS.length;
   const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
-  document.getElementById("todayBadge").hidden = !gReady;
+  const advBack = !!(G.adventure && Date.now() >= G.adventure.endsAt);
+  document.getElementById("todayBadge").hidden = !(gReady || advBack || checkinAvailable());
 }
 
 /* ---------- panels: shop / catdex / today ---------- */
@@ -2034,7 +2181,7 @@ function togglePanel(name) {
     panels[name].hidden = false;
     if (name === "shop") renderShop();
     if (name === "dex") renderDex();
-    if (name === "today") renderGoals();
+    if (name === "today") { renderCheckinCard(); renderAdventureCard(); renderGoals(); renderMoments(); }
   }
 }
 document.getElementById("shopBtn").addEventListener("click", () => togglePanel("shop"));
@@ -2246,7 +2393,7 @@ function endTutorial() {
   ensureAudio();
   tutEl.classList.remove("on");
   sfx("coax");    // one happy "let's go" meow as the tutorial closes
-  if (!G.tutorialDone) { G.tutorialDone = true; save(); checkOffline(); }
+  if (!G.tutorialDone) { G.tutorialDone = true; save(); checkOffline(afterReturn); }
 }
 document.getElementById("tutNext").addEventListener("click", () => {
   ensureAudio();   // the tutorial opens from a timeout, not a tap — resume audio on the first real gesture
@@ -2290,7 +2437,7 @@ function resetGame() {
 }
 if (DEV_BUILD) {
   document.getElementById("app").classList.add("dev-build");
-  const vb = document.querySelector(".verbadge"); if (vb) { vb.textContent = "v2 · dev"; vb.removeAttribute("href"); vb.style.pointerEvents = "none"; }
+  const vb = document.querySelector(".verbadge"); if (vb) { vb.textContent = "v3 · dev"; vb.removeAttribute("href"); vb.style.pointerEvents = "none"; }
   window.addEventListener("keydown", (e) => {
     if (e.target && /input|textarea/i.test(e.target.tagName)) return;
     if (e.key === "d" || e.key === "D") devEl.classList.toggle("on");
@@ -2554,8 +2701,9 @@ function aggregateRate() {
   if (!cats.length) return G.ratePerSec || 0;
   return cats.reduce((s, c) => s + c.ratePerSec(), 0);
 }
-function checkOffline() {
+function checkOffline(then) {
   const elapsed = (Date.now() - (G.lastSeen || Date.now())) / 1000;
+  const done = () => { try { then && then(elapsed); } catch (e) {} };
 
   // a cat or two may have wandered in while you were away (~1 per 3h, capped at 4)
   const awayH = elapsed / 3600;
@@ -2566,10 +2714,10 @@ function checkOffline() {
     if (n > 0) setTimeout(() => toast(n === 1 ? "A cat wandered in while you were away." : `${n} cats wandered in while you were away.`, 5), 1100);
   }
 
-  if (elapsed < 45 || !(G.ratePerSec > 0)) return;
-  const capped = Math.min(elapsed, 8 * 3600);
-  const base = Math.floor(G.ratePerSec * capped * 0.5);
-  if (base <= 0) return;
+  if (elapsed < 45 || !(G.ratePerSec > 0)) return done();
+  const capped = Math.min(elapsed, 6 * 3600);   // earnings stop accruing after 6h away
+  const base = Math.floor(G.ratePerSec * capped * 0.35);   // cats keep the cove ticking, but slower than hands-on play
+  if (base <= 0) return done();
   const perm2x = !!(G.ads && G.ads.perm2x);          // Supporter Pack perk
   const earned = perm2x ? base * 2 : base;
   const canWatch = ADS_ENABLED && !perm2x && Ads.rewardReady("offline2x");
@@ -2581,7 +2729,7 @@ function checkOffline() {
       <button class="btn primary" id="m-take">Collect</button>
       ${canWatch ? `<button class="btn rewarded" id="m-2x"><span class="ico">▶</span> Double it &nbsp;<small style="opacity:.6">ad</small></button>` : ""}
     </div>`);
-  document.getElementById("m-take").onclick = () => { G.shells += earned; sfx("collect"); syncHud(); closeModal(); };
+  document.getElementById("m-take").onclick = () => { G.shells += earned; sfx("collect"); syncHud(); closeModal(); done(); };
   const dbl = document.getElementById("m-2x");
   if (dbl) dbl.onclick = async () => {
     closeModal();
@@ -2589,6 +2737,7 @@ function checkOffline() {
     G.shells += watched ? earned * 2 : earned;
     sfx(watched ? "buy" : "collect"); syncHud();
     if (watched) toast(`Doubled — ◈ ${earned * 2} banked.`);
+    done();
   };
 }
 const scrim = document.getElementById("scrim");
@@ -2615,7 +2764,7 @@ function askOwnerName(firstTime) {
   const finish = () => {
     G.ownerAsked = true; closeModal(); syncHud(); save();
     if (firstTime) {
-      const next = () => { if (!G.tutorialDone) setTimeout(openTutorial, 250); else checkOffline(); };
+      const next = () => { if (!G.tutorialDone) setTimeout(openTutorial, 250); else checkOffline(afterReturn); };
       if (ADS_ENABLED && G.ads && !G.ads.asked) setTimeout(() => askAgeGate(next), 250); else next();
     }
   };
@@ -4060,6 +4209,55 @@ function drawAccessory(g, kind, P, coat, kit) {
     g.closePath(); g.fill();
     g.fillStyle = "#f6e08a";
     g.beginPath(); g.arc(hx, y + 1, 1.3, 0, 7); g.fill();
+  } else if (kind === "glasses") {
+    const ey = hy - (kit ? 0 : 1.5), r = kit ? 2.9 : 3.3, dx = kit ? 5 : 5.4;
+    g.fillStyle = "rgba(150,190,205,0.32)";
+    for (const s of [-1, 1]) { g.beginPath(); g.arc(hx + s * dx, ey, r, 0, 7); g.fill(); }
+    // soft brass wire frame — reads on both pale and dark coats
+    g.strokeStyle = "#d8ab52"; g.lineWidth = kit ? 1.5 : 1.8;
+    for (const s of [-1, 1]) { g.beginPath(); g.arc(hx + s * dx, ey, r, 0, 7); g.stroke(); }
+    g.beginPath();
+    g.moveTo(hx - dx + r * 0.7, ey - 0.4);
+    g.quadraticCurveTo(hx, ey - 2.4, hx + dx - r * 0.7, ey - 0.4);
+    g.stroke();
+    g.lineWidth = kit ? 1.2 : 1.4;
+    g.beginPath(); g.moveTo(hx - dx - r, ey - 0.6); g.lineTo(hx - hr * 0.95, ey - hr * 0.3); g.stroke();
+    g.beginPath(); g.moveTo(hx + dx + r, ey - 0.6); g.lineTo(hx + hr * 0.95, ey - hr * 0.3); g.stroke();
+  } else if (kind === "scarf") {
+    const y = hy + hr * 0.86;
+    g.lineCap = "round";
+    g.strokeStyle = "#c9754e"; g.lineWidth = kit ? 4 : 5;
+    g.beginPath(); g.arc(hx, hy, hr, Math.PI * 0.12, Math.PI * 0.88); g.stroke();
+    g.strokeStyle = "rgba(255,255,255,0.3)"; g.lineWidth = 1;
+    g.beginPath(); g.arc(hx, hy, hr, Math.PI * 0.22, Math.PI * 0.5); g.stroke();
+    g.fillStyle = "#c9754e";
+    g.beginPath();
+    g.moveTo(hx - hr * 0.32, y - 1);
+    g.lineTo(hx - hr * 0.6, y + (kit ? 7 : 10));
+    g.lineTo(hx - hr * 0.28, y + (kit ? 6 : 9));
+    g.closePath(); g.fill();
+    g.beginPath();
+    g.moveTo(hx - hr * 0.28, y - 1);
+    g.lineTo(hx - hr * 0.04, y + (kit ? 6 : 9));
+    g.lineTo(hx - hr * 0.2, y + (kit ? 3 : 5));
+    g.closePath(); g.fill();
+    g.fillStyle = "#bd6a44";
+    g.beginPath(); g.arc(hx - hr * 0.3, y - 1, kit ? 2.4 : 3, 0, 7); g.fill();
+  } else if (kind === "sunhat") {
+    const y = hy - hr * 0.44;
+    g.fillStyle = "#e3c07a";
+    g.beginPath(); g.ellipse(hx, y + 2, hr * 1.5, hr * 0.5, 0, 0, 7); g.fill();
+    g.strokeStyle = "rgba(120,90,40,0.32)"; g.lineWidth = 0.9;
+    g.beginPath(); g.ellipse(hx, y + 2, hr * 1.5, hr * 0.5, 0, 0, 7); g.stroke();
+    g.fillStyle = "#eccd8b";
+    g.beginPath(); g.ellipse(hx, y + 2, hr * 0.74, hr * 0.66, 0, Math.PI, 2 * Math.PI); g.closePath(); g.fill();
+    g.fillStyle = "#c9754e";
+    g.beginPath();
+    g.moveTo(hx - hr * 0.7, y + 1.4);
+    g.lineTo(hx + hr * 0.7, y + 1.4);
+    g.lineTo(hx + hr * 0.66, y - (kit ? 0.6 : 1));
+    g.lineTo(hx - hr * 0.66, y - (kit ? 0.6 : 1));
+    g.closePath(); g.fill();
   }
   g.restore();
 }
@@ -4539,24 +4737,53 @@ function drawCat(g, c, isPhoto) {
 }
 
 function drawToken(g, tk) {
-  const bob = Math.sin(performance.now()/300 + tk.x) * 2;
+  const now = performance.now();
+  const bob = Math.sin(now / 300 + tk.x) * 3;
+  const pulse = 0.5 + 0.5 * Math.sin(now / 320 + tk.x * 0.7);   // 0..1 breathing
   const scale = tk.pop > 0 ? (1 + tk.pop * 0.8) : 1;
   const alpha = tk.pop > 0 ? (1 - tk.pop) : (tk.life > tk.ttl - 4 ? (tk.ttl - tk.life) / 4 : 1);
+  const col = tk.flair === "yarn" ? "#c47a35" : tk.flair === "fish" ? "#8fb0c4" : "#e8b45a";
   g.save();
   g.globalAlpha = Math.max(0, alpha);
+
+  // ground shadow — anchors the token so it doesn't float off the scene
+  g.fillStyle = "rgba(40,34,22,0.16)";
+  g.beginPath(); g.ellipse(tk.x, tk.baseY + 9, 8, 3, 0, 0, 7); g.fill();
+
   g.translate(tk.x, tk.y + bob);
   g.scale(scale, scale);
-  // glow
-  g.fillStyle = "rgba(232,180,90,0.28)";
-  g.beginPath(); g.arc(0, 0, 13, 0, 7); g.fill();
-  const col = tk.flair === "yarn" ? "#c47a35" : tk.flair === "fish" ? "#8fb0c4" : "#e8b45a";
+
+  // a "just landed" ring
+  if (tk.life < 0.7) {
+    const p = tk.life / 0.7;
+    g.globalAlpha = Math.max(0, alpha) * (1 - p);
+    g.strokeStyle = col; g.lineWidth = 2;
+    g.beginPath(); g.arc(0, 0, 8 + p * 22, 0, 7); g.stroke();
+    g.globalAlpha = Math.max(0, alpha);
+  }
+
+  // two-layer breathing glow — the whole point is you can't miss it
+  g.fillStyle = "rgba(232,180,90,0.16)";
+  g.beginPath(); g.arc(0, 0, 17 + pulse * 4, 0, 7); g.fill();
+  g.fillStyle = "rgba(232,180,90,0.34)";
+  g.beginPath(); g.arc(0, 0, 11 + pulse * 2, 0, 7); g.fill();
+
   g.fillStyle = col;
-  if (tk.flair === "yarn") { g.beginPath(); g.arc(0,0,7,0,7); g.fill();
-    g.strokeStyle="rgba(0,0,0,0.15)"; g.lineWidth=1.4; g.beginPath(); g.moveTo(-7,0); g.quadraticCurveTo(0,-6,7,0); g.stroke(); }
-  else if (tk.flair === "fish") { g.beginPath(); g.ellipse(0,0,8,5,0,0,7); g.fill();
-    g.beginPath(); g.moveTo(7,0); g.lineTo(12,-4); g.lineTo(12,4); g.fill(); }
-  else { g.beginPath(); g.arc(0,0,7,0,7); g.fill();
-    g.fillStyle="rgba(255,255,255,0.5)"; g.beginPath(); g.arc(-2,-2,2.5,0,7); g.fill(); }
+  if (tk.flair === "yarn") {
+    g.beginPath(); g.arc(0, 0, 7.5, 0, 7); g.fill();
+    g.strokeStyle = "rgba(0,0,0,0.15)"; g.lineWidth = 1.4;
+    g.beginPath(); g.moveTo(-7.5, 0); g.quadraticCurveTo(0, -6, 7.5, 0); g.stroke();
+  } else if (tk.flair === "fish") {
+    g.beginPath(); g.ellipse(0, 0, 8.5, 5.5, 0, 0, 7); g.fill();
+    g.beginPath(); g.moveTo(7.5, 0); g.lineTo(13, -4.5); g.lineTo(13, 4.5); g.fill();
+  } else {
+    g.beginPath(); g.arc(0, 0, 7.5, 0, 7); g.fill();
+  }
+  // crisp rim + specular highlight for contrast against any ground
+  g.strokeStyle = "rgba(255,255,255,0.55)"; g.lineWidth = 1.3;
+  g.beginPath(); g.arc(0, 0, tk.flair === "fish" ? 8 : 7.5, 0, 7); g.stroke();
+  g.fillStyle = "rgba(255,255,255,0.6)";
+  g.beginPath(); g.arc(-2.4, -2.4, 2.4, 0, 7); g.fill();
   g.restore();
 }
 
@@ -4753,6 +4980,499 @@ function fmtTime(s) {
   return `${ss}s`;
 }
 
+/* =========================================================================
+   v3 — the return-visit layer
+   A shared "vignette" runner, a Moments log, "While You Were Away" beats,
+   and Cat Adventures. See the engagement design doc. No fail states: nothing
+   here ever removes a cat, a currency, or an item.
+   ========================================================================= */
+
+const MAP_TOTAL = 4;   // torn-map pieces that make a whole map
+
+/* ---- Moments: a gentle log of the cove's little happenings ---- */
+function logMoment(emoji, text) {
+  if (!G.moments) G.moments = [];
+  G.moments.unshift({ t: Date.now(), emoji: emoji || "·", text: String(text) });
+  if (G.moments.length > 60) G.moments.length = 60;
+  if (panels.today && !panels.today.hidden) renderMoments();
+}
+function agoText(t) {
+  const s = (Date.now() - t) / 1000;
+  if (s < 90) return "just now";
+  if (s < 3600) return Math.round(s / 60) + "m ago";
+  if (s < 86400) return Math.round(s / 3600) + "h ago";
+  return Math.round(s / 86400) + "d ago";
+}
+function renderMoments() {
+  const el = document.getElementById("momentsList");
+  if (!el) return;
+  const m = G.moments || [];
+  if (!m.length) { el.innerHTML = `<div class="moments-empty">Surprises, trips and little discoveries show up here.</div>`; return; }
+  el.innerHTML = m.slice(0, 40).map(x =>
+    `<div class="moment-row"><span class="me">${esc(x.emoji || "·")}</span><span class="mt">${esc(x.text)}</span><span class="ma">${agoText(x.t)}</span></div>`
+  ).join("");
+}
+
+/* ---- daily check-in — a warm little welcome, one a day, 7-day loop ---- */
+const CHECKIN_REWARDS = [
+  { shells: 40 },
+  { shells: 60 },
+  { pearls: 2 },
+  { shells: 100, keepsake: { id: "welcomebasket", emoji: "🧺", label: "a welcome-back basket" } },
+  { shells: 90 },
+  { pearls: 3 },
+  { shells: 160, pearls: 2 },
+];
+function rewardBits(r) {
+  const b = [];
+  if (r.shells) b.push("◈ " + r.shells);
+  if (r.pearls) b.push("✦ " + r.pearls);
+  if (r.keepsake) b.push(r.keepsake.emoji + " " + r.keepsake.label);
+  return b.join("  ·  ");
+}
+function checkinAvailable() {
+  return !G.checkin || G.checkin.lastKey !== todayKey();
+}
+function claimCheckin() {
+  if (!checkinAvailable()) return;
+  if (!G.checkin) G.checkin = { day: 0, lastKey: "" };
+  const idx = (G.checkin.day || 0) % 7;
+  const r = CHECKIN_REWARDS[idx];
+  grantReward(r, cats.find(c => c.mascot) || cats[0]);
+  G.checkin.day = idx + 1;
+  G.checkin.lastKey = todayKey();
+  logMoment("📅", `Day ${idx + 1} welcome — ${rewardBits(r)}.`);
+  toast(`Welcome back — day ${idx + 1}. ${rewardBits(r)}`, 4);
+  save();
+  renderCheckinCard();
+  syncHud();
+}
+function renderCheckinCard() {
+  const el = document.getElementById("checkinCard");
+  if (!el) return;
+  const avail = checkinAvailable();
+  const pos = (G.checkin && G.checkin.day || 0) % 7;   // index of today's / next reward
+  const dots = CHECKIN_REWARDS.map((r, i) => {
+    const claimed = i < pos;
+    const isToday = i === pos;
+    const lbl = r.pearls && !r.shells ? "✦" : r.keepsake ? "🎁" : "◈";
+    return `<span class="ci-dot${claimed ? " done" : ""}${isToday ? " now" : ""}">${claimed ? "✓" : lbl}</span>`;
+  }).join("");
+  if (avail) {
+    el.className = "adv-card ready";
+    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">📅</span>
+      <div><div class="adv-title">A welcome is waiting</div>
+      <div class="adv-sub">day ${pos + 1} of the week &middot; ${rewardBits(CHECKIN_REWARDS[pos])}</div></div></div>
+      <div class="ci-dots">${dots}</div>
+      <button class="btn primary" id="ci-claim">Claim today's welcome</button>`;
+    document.getElementById("ci-claim").onclick = claimCheckin;
+  } else {
+    el.className = "adv-card done";
+    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">📅</span>
+      <div><div class="adv-title">Checked in today</div>
+      <div class="adv-sub">day ${pos === 0 ? 7 : pos} done &middot; next welcome tomorrow</div></div></div>
+      <div class="ci-dots">${dots}</div>`;
+  }
+}
+
+/* ---- weighted pick + reward application, shared by vignettes and adventures ---- */
+function wPick(list) {
+  let total = 0; for (const o of list) total += (o.w || 1);
+  let r = Math.random() * total;
+  for (const o of list) { r -= (o.w || 1); if (r <= 0) return o; }
+  return list[list.length - 1];
+}
+function grantReward(r, atCat) {
+  if (!r) return;
+  const x = atCat ? atCat.x : W / 2, y = atCat ? atCat.y - 24 : H * 0.5;
+  if (r.shells) { G.shells += r.shells; floatText(x, y, "◈ " + r.shells, "#e8b45a"); }
+  if (r.pearls) { G.pearls += r.pearls; floatText(x, y - 16, "✦ " + r.pearls, "#8fb7d6"); }
+  if (r.mood && atCat) atCat.mood = clamp(atCat.mood + r.mood, 0, 100);
+  if (r.keepsake) {
+    if (!G.keepsakes) G.keepsakes = [];
+    G.keepsakes.unshift({ ...r.keepsake, t: Date.now() });
+    if (G.keepsakes.length > 40) G.keepsakes.length = 40;
+  }
+  if (r.mapPiece) {
+    G.mapPieces = (G.mapPieces || 0) + 1;
+    if (G.mapPieces === MAP_TOTAL) logMoment("🗺️", "The torn map is whole again. It points somewhere past the island.");
+  }
+  if (r.coatKey || r.kitten) {
+    if (cats.length < capacity()) {
+      const opts = { _celeb: true, x: -30, y: rand(H * 0.55, H * 0.8) };
+      if (r.coatKey) opts.coatKey = r.coatKey;
+      if (r.kitten) opts.bornAt = Date.now();
+      const nc = spawnCat(opts);
+      if (nc) rebuildAttractors();
+      else { G.shells += 180; floatText(x, y, "◈ 180", "#e8b45a"); }
+    } else { G.shells += 180; floatText(x, y, "◈ 180", "#e8b45a"); }
+  }
+  spawnParticles(x, y, "twinkle", 8);
+  save();
+  syncHud();
+}
+
+/* ---- the vignette engine ---------------------------------------------------
+   v = { kicker, cat?, scenes?: [{ text, art?, choices?: [{label, pick?}] }],
+         resolve?: (ctx) => outcome, outcome?: outcome }
+   outcome = { title?, text, art?, reward?, moment?, close? }
+   ctx = { cat, picks: [], G }
+--------------------------------------------------------------------------- */
+let _vig = null;
+function runVignette(v, opts = {}) {
+  _vig = { v, i: 0, picks: [], cat: v.cat || opts.cat || null, onDone: opts.onDone };
+  vigStep();
+}
+function vigArt(a) { return a ? `<div class="vig-art">${a}</div>` : ""; }
+function vigRewardLine(r) {
+  if (!r) return "";
+  const bits = [];
+  if (r.shells) bits.push(`◈ ${r.shells}`);
+  if (r.pearls) bits.push(`✦ ${r.pearls}`);
+  if (r.keepsake) bits.push(`${r.keepsake.emoji || "🎁"} ${esc(r.keepsake.label)}`);
+  if (r.mapPiece) bits.push(`🗺️ a piece of a map`);
+  if (r.kitten) bits.push(`🐱 a new kitten`);
+  if (r.coatKey) bits.push(`🐈 a new friend`);
+  return bits.length ? `<p class="vig-reward">${bits.join("&nbsp;&nbsp;·&nbsp;&nbsp;")}</p>` : "";
+}
+function vigStep() {
+  const st = _vig; if (!st) return;
+  const v = st.v, scenes = v.scenes || [];
+  if (st.i < scenes.length) {
+    const sc = scenes[st.i];
+    const choices = (sc.choices && sc.choices.length) ? sc.choices : [{ label: "Go on" }];
+    openModal(`<div class="reveal vignette">
+      <div class="kicker">${esc(v.kicker || "While you were away")}</div>
+      ${vigArt(sc.art)}
+      <p class="vig-body">${sc.text}</p>
+      <div class="row">${choices.map((c, k) => `<button class="btn${k === 0 ? " primary" : ""}" data-k="${k}">${esc(c.label)}</button>`).join("")}</div>
+    </div>`);
+    document.querySelectorAll("#modal [data-k]").forEach(b => b.onclick = () => {
+      const c = choices[+b.dataset.k];
+      st.picks.push(c.pick || c.label);
+      st.i++;
+      ensureAudio(); tone(523.25, 0.05, "sine", 0.03);
+      vigStep();
+    });
+    return;
+  }
+  const ctx = { cat: st.cat, picks: st.picks, G };
+  const out = v.resolve ? v.resolve(ctx) : (v.outcome || { text: "Nothing came of it — but it was a nice quiet moment." });
+  grantReward(out.reward, st.cat);
+  if (out.moment) logMoment(out.art || "✨", out.moment);
+  openModal(`<div class="reveal vignette">
+    <div class="kicker">${esc(v.kicker || "While you were away")}</div>
+    ${vigArt(out.art || (out.reward && out.reward.kitten ? "🐱" : "✨"))}
+    ${out.title ? `<h2>${esc(out.title)}</h2>` : ""}
+    <p class="vig-body">${out.text}</p>
+    ${vigRewardLine(out.reward)}
+    <div class="row"><button class="btn primary" id="vig-ok">${esc(out.close || "Lovely")}</button></div>
+  </div>`);
+  document.getElementById("vig-ok").onclick = () => {
+    closeModal(); sfx("collect");
+    const done = st.onDone; _vig = null;
+    if (done) done(out);
+  };
+}
+function otherCat(exclude) {
+  const pool = cats.filter(c => c !== exclude && !c.mascot);
+  return pool.length ? pick(pool) : (cats.find(c => c !== exclude) || null);
+}
+
+/* ---- Hook 1 · While You Were Away ---------------------------------------- */
+const WYWA_EVENTS = [
+  { id: "wet-box", weight: 10, minAwayH: 1, build: (cat) => ({
+    kicker: "While you were away", cat,
+    scenes: [
+      { art: "🐾", text: `${cat ? cat.name : "Midknight"} heard something outside in the night. There are little wet pawprints leading round the back of the café.`, choices: [{ label: "Follow them" }] },
+      { art: "📦", text: "A soggy cardboard box, folded shut. Something inside shifts.", choices: [
+        { label: "Open it", pick: "open" },
+        { label: `Let ${cat ? cat.name : "Midknight"} nose it open`, pick: "cat" }] },
+    ],
+    resolve: (ctx) => wPick([
+      { w: 26, title: "A kitten!", text: "Soaked, furious, and absolutely staying. It headbutts your hand and forgives you instantly.", art: "🐱", reward: { kitten: true }, moment: "A kitten turned up in a box behind the café." },
+      { w: 24, text: "A tin of buttons, a marble, and eleven bottle caps. Treasure, obviously.", art: "🫙", reward: { shells: 140, keepsake: { id: "buttons", emoji: "🔘", label: "a tin of odd buttons" } }, moment: "Found a tin of odds and ends in a box out back." },
+      { w: 18, text: "Half a paper map, water-stained and torn along one edge. It shows a coastline you don't recognise.", art: "🗺️", reward: { mapPiece: true, shells: 40 }, moment: "A torn piece of an old map, tucked in a box." },
+      { w: 16, text: "Three good fish, wrapped in newspaper. Someone was kind.", art: "🐟", reward: { shells: 110 }, moment: "Someone left fish in a box by the café." },
+      { w: 12, text: ctx.picks.includes("cat")
+          ? `${ctx.cat ? ctx.cat.name : "Midknight"} flips it open and a crab strolls out sideways, deeply unimpressed. Dignity is retreated with. You get a shell for the trouble.`
+          : "You lift the flap and a crab strolls out sideways, deeply unimpressed. Everyone agrees to never mention this.",
+        art: "🦀", reward: { shells: 20 }, moment: "There was a crab in the box. There is always a crab." },
+    ]) }) },
+
+  { id: "night-visitor", weight: 8, minAwayH: 3, needs: () => cats.length >= 2, build: (cat) => {
+    const other = otherCat(cat);
+    return { kicker: "While you were away", cat,
+      scenes: [{ art: "🌙", text: `A cat you don't know sat on the wall until dawn. ${cat ? cat.name : "Midknight"} and ${other ? other.name : "the others"} watched it the whole time, tails twitching.`,
+        choices: [{ label: "Leave something out for it", pick: "kind" }, { label: "Let it be", pick: "leave" }] }],
+      resolve: (ctx) => ctx.picks.includes("kind")
+        ? wPick([
+            { w: 3, text: "The bowl was empty by morning, and a smooth grey stone sat in it. A fair trade.", art: "🪨", reward: { shells: 90, keepsake: { id: "greystone", emoji: "🪨", label: "a smooth grey stone" } }, moment: "The wall-cat took the food and left a stone." },
+            { w: 2, text: "It didn't touch the food. But it came back the next night, and the next. It might be staying.", art: "🐈‍⬛", reward: { coatKey: pick(["russian", "black", "greytab"]) }, moment: "The visitor from the wall decided to stay." },
+          ])
+        : { text: "By morning it was gone. The cove felt a little watched all day, in a nice way.", art: "🌙", reward: { shells: 30 }, moment: "A stranger watched the cove from the wall all night." },
+    };
+  } },
+
+  { id: "midknight-mess", weight: 9, minAwayH: 0.5, build: (cat) => ({
+    kicker: "While you were away", cat,
+    scenes: [{ art: "🧶", text: `Every ball of yarn in the cove has been unwound into one enormous web across the whole garden. ${cat ? cat.name : "Midknight"} is asleep in the middle of it, unrepentant.`, choices: [{ label: "Wind it all back up" }] }],
+    resolve: () => wPick([
+      { w: 3, text: "Tangled in the web: a coin, a bee-shaped button, and an unreasonable number of leaves.", art: "🪙", reward: { shells: 70, keepsake: { id: "beebutton", emoji: "🐝", label: "a bee-shaped button" } }, moment: "The whole garden was one big web of yarn this morning." },
+      { w: 2, text: "Nothing in it but leaves. Worth it for the nap they're having.", art: "🍂", reward: { shells: 25 }, moment: "Woke up to a garden wrapped entirely in yarn." },
+    ]) }) },
+
+  { id: "gift-on-step", weight: 10, minAwayH: 1, build: (cat) => {
+    const g = pick([
+      { e: "🪶", n: "a long striped feather", s: 60 },
+      { e: "🐚", n: "a chipped pink shell", s: 80 },
+      { e: "🍄", n: "a very red mushroom (not for eating)", s: 55 },
+      { e: "🗝️", n: "a small brass key to nothing", s: 100 },
+      { e: "🌰", n: "a single perfect conker", s: 45 },
+    ]);
+    return { kicker: "On the doorstep", cat,
+      scenes: [{ art: g.e, text: `${cat ? cat.name : "A cat"} left something on the step for you: ${g.n}. They're watching to see if you like it.`, choices: [{ label: "Make a big fuss of it" }] }],
+      resolve: () => ({ text: "You make a big fuss. They pretend not to care and are visibly delighted.", art: g.e, reward: { shells: g.s, keepsake: { id: "gift" + Date.now(), emoji: g.e, label: g.n } }, moment: `${cat ? cat.name : "A cat"} brought you ${g.n}.` }),
+    };
+  } },
+
+  { id: "storm-umbrella", weight: 7, minAwayH: 4, build: (cat) => ({
+    kicker: "While you were away", cat,
+    scenes: [{ art: "⛈️", text: "A storm came through in the night. The cove is fine — but there's a broken umbrella caught in the hedge that isn't yours.", choices: [{ label: "Pull it free" }] }],
+    resolve: () => wPick([
+      { w: 3, text: "A kitten is under it, bone dry and cross about the interruption.", art: "🐱", reward: { kitten: true }, moment: "Found a kitten sheltering under a broken umbrella after the storm." },
+      { w: 3, text: "Nothing under it but a very confused frog, which you escort to the pond.", art: "🐸", reward: { shells: 60 }, moment: "The storm blew a stranger's umbrella into the hedge." },
+    ]) }) },
+
+  { id: "dawn-fishing", weight: 8, minAwayH: 2, needs: () => G.stations && G.stations.fishing > 0, build: (cat) => ({
+    kicker: "While you were away", cat,
+    scenes: [{ art: "🎣", text: `${cat ? cat.name : "Someone"} was out on the dock before sunrise and hooked something heavy.`, choices: [{ label: "Go and see" }] }],
+    resolve: () => wPick([
+      { w: 4, text: "A fat silver fish, enough to share all round. Moods are high all morning.", art: "🐟", reward: { shells: 130 }, moment: `${cat ? cat.name : "A cat"} landed a big one off the dock at dawn.` },
+      { w: 2, text: "An old boot. Then, inside the boot, a pearl. This cove has strange luck.", art: "🥾", reward: { pearls: 2, shells: 40 }, moment: "Pulled a boot off the dock with a pearl inside it." },
+    ]) }) },
+
+  { id: "cats-truce", weight: 6, minAwayH: 3, needs: () => cats.length >= 3, build: (cat) => {
+    const a = otherCat(null), b = otherCat(a);
+    return { kicker: "While you were away", cat,
+      scenes: [{ art: "🐾", text: `${a ? a.name : "One cat"} and ${b ? b.name : "another"} have never got on. This morning you found them asleep back to back in the same bed.`, choices: [{ label: "Don't say a word" }] }],
+      resolve: () => ({ text: "You say nothing. The truce holds until roughly lunchtime.", art: "❤️", reward: { shells: 65 }, moment: `${a ? a.name : "Two cats"} and ${b ? b.name : "another"} called an overnight truce.` }),
+    };
+  } },
+
+  { id: "moon-pile", weight: 5, minAwayH: 6, build: (cat) => ({
+    kicker: "While you were away", cat,
+    scenes: [{ art: "🌕", text: "You were gone a while. The cove kept its own hours — and left a little pile of things by the door for you.", choices: [{ label: "Look through the pile" }] }],
+    resolve: () => ({ text: "Shells, a feather, two smooth stones, and a note in no language. The cats organised it by size.", art: "🐚", reward: { shells: 220, keepsake: { id: "note", emoji: "📜", label: "a note in no language" } }, moment: "Came home to a neat pile of gifts by the door." }),
+  }) },
+
+  { id: "bakery-experiment", weight: 6, minAwayH: 2, needs: () => G.stations && G.stations.bakery > 0, build: (cat) => ({
+    kicker: "While you were away", cat,
+    scenes: [{ art: "🥐", text: "The bakery has been used. There is flour on the ceiling. On the ceiling.", choices: [{ label: "Try what they made" }] }],
+    resolve: () => wPick([
+      { w: 3, text: "It's… actually good? A flat, buttery, cat-shaped biscuit. You save the recipe.", art: "🍪", reward: { shells: 95, keepsake: { id: "recipe1", emoji: "📖", label: "a cat-shaped biscuit recipe" } }, moment: "The cats baked something overnight. It was somehow good." },
+      { w: 2, text: "Inedible. Structurally impressive. You keep a piece as a paperweight.", art: "🧱", reward: { shells: 35 }, moment: "The cats baked a brick. Flour reached the ceiling." },
+    ]) }) },
+
+  { id: "quiet-return", weight: 5, minAwayH: 0.5, build: (cat) => ({
+    kicker: "While you were away", cat,
+    scenes: [{ art: "☕", text: "Nothing dramatic happened. The cove dozed, the kettle's still faintly warm, and someone left you the good chair.", choices: [{ label: "Take the good chair" }] }],
+    resolve: () => ({ text: "You sit down. Three cats arrive within the minute to sit on you.", art: "🐈", reward: { shells: 45 }, moment: "A quiet day. The cats saved you the good chair." }),
+  }) },
+
+  { id: "bottle-map", weight: 4, minAwayH: 5, build: (cat) => ({
+    kicker: "While you were away", cat,
+    scenes: [{ art: "🍾", text: `${cat ? cat.name : "Midknight"} dragged a corked bottle up from the shoreline. There's paper inside.`, choices: [{ label: "Work the cork out" }] }],
+    resolve: () => ({ text: "Another piece of that torn map. The pieces are starting to line up — and they point past the island.", art: "🗺️", reward: { mapPiece: true, shells: 50 }, moment: "A message in a bottle — another piece of the map." }),
+  }) },
+];
+function maybeWywa(awaySec) {
+  if (restMode || _vig) return;
+  if (!awaySec || awaySec < 25 * 60) return;
+  if (!G.wywa) G.wywa = { lastAt: 0, seen: [] };
+  if (Date.now() - (G.wywa.lastAt || 0) < 15 * 3600e3) return;
+  const h = awaySec / 3600;
+  if (Math.random() > clamp(0.42 + h * 0.05, 0, 0.85)) return;
+  const recent = new Set((G.wywa.seen || []).slice(0, 5));
+  const pool = WYWA_EVENTS.filter(e => h >= (e.minAwayH || 0) && (!e.needs || e.needs()) && !recent.has(e.id));
+  if (!pool.length) return;
+  const e = wPick(pool);
+  const cat = cats.find(c => c.mascot) || pick(cats) || null;
+  G.wywa.lastAt = Date.now();
+  G.wywa.seen = [e.id, ...(G.wywa.seen || [])].slice(0, 8);
+  save();
+  setTimeout(() => { if (!_vig && !restMode) runVignette(e.build(cat), { cat }); }, 550);
+}
+
+/* ---- Hook 2 · Cat Adventures ------------------------------------------- */
+const ADV_DESTS = {
+  fishing: { emoji: "🎣", name: "Fishing Trip", mins: 30,  blurb: "An afternoon on the dock down the coast." },
+  forest:  { emoji: "🌲", name: "Forest Walk",  mins: 120, blurb: "Into the trees behind the cove." },
+  island:  { emoji: "🏝️", name: "Tiny Island",  mins: 360, blurb: "A little boat out to the island offshore." },
+};
+function todayKey() { const d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+function advReady() { return !G.adventure && G.advDay !== todayKey(); }
+function whenText(ts) {
+  const s = (ts - Date.now()) / 1000;
+  return s <= 30 ? "any moment now" : "in " + fmtTime(s);
+}
+function advTraitHint(c) {
+  if (c.traits.includes("curious")) return "a good eye for secrets";
+  if (c.traits.includes("glutton")) return "will come back with food";
+  if (c.traits.includes("climber")) return "gets absolutely everywhere";
+  if (c.traits.includes("bold")) return "unshakeable out there";
+  if (c.traits.includes("shy")) return "plays it safe — smaller haul";
+  if (c.traits.includes("lazy")) return "will take the very scenic route";
+  if (c.traits.includes("grumpy")) return "unpredictable";
+  if (c.traits.includes("cuddly")) return "mostly just misses everyone";
+  return "";
+}
+function advLoot(cat, dest) {
+  const has = t => cat.traits.includes(t);
+  const rnd = Math.random;
+  const reward = { shells: Math.round({ fishing: 90, forest: 120, island: 260 }[dest] * rand(0.8, 1.3)) };
+  const lines = [];
+  const keepPool = {
+    fishing: [{ emoji: "🐚", label: "a spiral shell" }, { emoji: "🪸", label: "a scrap of coral" }, { emoji: "🦴", label: "an intact fish skeleton" }],
+    forest:  [{ emoji: "🍄", label: "a ring of tiny mushrooms" }, { emoji: "🪶", label: "an owl feather" }, { emoji: "🌿", label: "a bundle of wild catmint" }],
+    island:  [{ emoji: "🪙", label: "a foreign coin" }, { emoji: "🍍", label: "something spiky and sweet" }, { emoji: "🐚", label: "a shell that hums faintly" }],
+  }[dest];
+  if (rnd() < 0.55 || has("climber")) { reward.keepsake = pick(keepPool); lines.push(`brought back ${reward.keepsake.label}`); }
+  if (has("glutton")) { reward.keepsake = { emoji: "📖", label: `a recipe from the ${dest === "island" ? "island" : "trail"}` }; lines.push("came back with a new recipe"); }
+  if (has("climber")) { reward.shells += 60; lines.push("got somewhere the others couldn't and pocketed the difference"); }
+  if (has("playful") && !cat.accessory) { cat.accessory = pick(["bow", "bandana", "flower", "scarf"]); lines.push(`came home wearing a ${cat.accessory} it found`); }
+  if (has("lazy")) lines.push("took the very scenic route");
+  if (rnd() < (dest === "island" ? 0.28 : 0.12)) { reward.pearls = dest === "island" ? 3 : 1; lines.push(reward.pearls === 1 ? "turned up a pearl" : `turned up ${reward.pearls} pearls`); }
+  let mapP = { fishing: 0.06, forest: 0.12, island: 0.22 }[dest];
+  if (has("curious")) mapP += 0.16;
+  if ((G.mapPieces || 0) >= MAP_TOTAL) mapP = 0;
+  if (rnd() < mapP) { reward.mapPiece = true; lines.push("found a piece of a torn map"); }
+  if (has("grumpy") && rnd() < 0.15) { reward.shells += 240; lines.push("came back furious and inexplicably rich"); }
+  if (has("cuddly") && rnd() < 0.5) { reward.mood = 18; lines.push("mostly just missed everyone"); }
+  if (has("chatty")) lines.push("will not stop talking about something it saw");
+  if (!has("bold") && !has("shy") && rnd() < 0.18) {
+    lines.push(pick(["lost the fishing rod somehow", "fell in a stream and is pretending it was on purpose", "was chased by a goose and will not discuss it"]));
+    reward.shells = Math.round(reward.shells * 0.7);
+  }
+  if (cat.mascot) lines.push("(Midknight, naturally, lost something on the way home)");
+  return { reward, lines };
+}
+function joinNice(a) {
+  if (a.length <= 1) return a[0] || "";
+  return a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+}
+function advVignette(cat, dest, res) {
+  const d = ADV_DESTS[dest];
+  const body = res.lines.length
+    ? `${cat.name} is back from the ${d.name.toLowerCase()}. They ${joinNice(res.lines)}.`
+    : `${cat.name} is back from the ${d.name.toLowerCase()} — nothing to report, but a lovely time was had.`;
+  return { kicker: `${cat.name}'s adventure`, cat,
+    outcome: { art: d.emoji, title: `${cat.name} is home`, text: body, reward: res.reward, close: "Welcome home",
+      moment: `${cat.name} came home from the ${d.name.toLowerCase()}` +
+        (res.reward.mapPiece ? " with a piece of a map." : res.reward.keepsake ? ` with ${res.reward.keepsake.label}.` : ".") },
+  };
+}
+function startAdventure(name, dest) {
+  if (G.adventure) return;
+  const i = cats.findIndex(c => c.name === name);
+  if (i < 0) return;
+  const c = cats[i];
+  const data = { name: c.name, traits: c.traits, coatKey: c.coatKey, markSeed: c.markSeed, star: c.star,
+    mascot: c.mascot, bornAt: c.bornAt, mood: Math.round(c.mood), accessory: c.accessory ?? null };
+  cats.splice(i, 1);
+  if (typeof cardCat !== "undefined" && cardCat === c) hideCatCard();
+  const mins = ADV_DESTS[dest].mins * (c.traits.includes("lazy") ? 1.6 : 1);
+  G.adventure = { cat: c.name, dest, startedAt: Date.now(), endsAt: Date.now() + mins * 60000, seed: (Math.random() * 1e9) | 0, catData: data };
+  G.advDay = todayKey();
+  save(); syncHud(); rebuildAttractors();
+  logMoment(ADV_DESTS[dest].emoji, `${c.name} set off on a ${ADV_DESTS[dest].name.toLowerCase()}.`);
+  toast(`${c.name} heads off — back ${whenText(G.adventure.endsAt)}.`, 4.5);
+  renderAdventureCard();
+}
+function resolveAdventure() {
+  const a = G.adventure;
+  if (!a) return;
+  const c = new Cat({ ...a.catData, x: -30, y: rand(H * 0.55, H * 0.8) });
+  cats.push(c);
+  const res = advLoot(c, a.dest);
+  G.adventure = null;
+  G.advDay = todayKey();
+  save(); syncHud(); rebuildAttractors();
+  renderAdventureCard();
+  runVignette(advVignette(c, a.dest, res), { cat: c });
+}
+function mapLine() {
+  const n = G.mapPieces || 0;
+  if (!n) return "";
+  return `<div class="adv-map">🗺️ torn map &middot; ${Math.min(n, MAP_TOTAL)} / ${MAP_TOTAL} pieces${n >= MAP_TOTAL ? " — complete" : ""}</div>`;
+}
+function renderAdventureCard() {
+  const el = document.getElementById("advCard");
+  if (!el) return;
+  const a = G.adventure;
+  if (a) {
+    const back = Date.now() >= a.endsAt;
+    const d = ADV_DESTS[a.dest] || ADV_DESTS.forest;
+    el.className = "adv-card" + (back ? " ready" : "");
+    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">${d.emoji}</span>
+      <div><div class="adv-title">${esc(a.cat)} &middot; ${esc(d.name)}</div>
+      <div class="adv-sub">${back ? "back at the cove — go and see how it went" : "back " + whenText(a.endsAt)}</div></div></div>
+      ${back ? `<button class="btn primary" id="adv-claim">See how it went</button>`
+             : (DEV_BUILD ? `<button class="btn tiny" id="adv-skip">skip · dev</button>` : "")}
+      ${mapLine()}`;
+    const cl = document.getElementById("adv-claim");
+    if (cl) cl.onclick = () => resolveAdventure();
+    const sk = document.getElementById("adv-skip");
+    if (sk) sk.onclick = () => { if (G.adventure) { G.adventure.endsAt = Date.now(); renderAdventureCard(); syncHud(); } };
+  } else if (advReady()) {
+    el.className = "adv-card ready";
+    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">🧭</span>
+      <div><div class="adv-title">Send a cat exploring</div>
+      <div class="adv-sub">one trip a day — they'll bring things home</div></div></div>
+      <button class="btn primary" id="adv-start">Choose a trip</button>${mapLine()}`;
+    document.getElementById("adv-start").onclick = openAdventurePicker;
+  } else {
+    el.className = "adv-card done";
+    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">🌙</span>
+      <div><div class="adv-title">Everyone's home</div>
+      <div class="adv-sub">another trip tomorrow</div></div></div>${mapLine()}`;
+  }
+}
+function openAdventurePicker() {
+  const dests = Object.entries(ADV_DESTS).map(([k, d]) =>
+    `<button class="pick-dest" data-d="${k}"><span>${d.emoji}</span><b>${d.name}</b><i>${d.blurb}</i><em>~${d.mins < 60 ? d.mins + " min" : (d.mins / 60) + " h"} away</em></button>`).join("");
+  openModal(`<div class="reveal"><div class="kicker">A day out</div><h2>Where to?</h2>
+    <div class="pick-list">${dests}</div>
+    <button class="linkbtn" id="pick-cancel">Not today</button></div>`);
+  document.getElementById("pick-cancel").onclick = closeModal;
+  document.querySelectorAll("#modal .pick-dest").forEach(b => b.onclick = () => pickAdventureCat(b.dataset.d));
+}
+function pickAdventureCat(dest) {
+  if (!cats.length) { closeModal(); return; }
+  const list = cats.map(c => {
+    const hint = advTraitHint(c);
+    return `<button class="pick-cat" data-c="${esc(c.name)}"><b>${esc(c.name)}${c.mascot ? " · founder" : ""}</b>
+      <i>${c.traits.map(t => TRAITS[t] ? TRAITS[t].label : t).join(" · ")}</i>${hint ? `<em>${esc(hint)}</em>` : ""}</button>`;
+  }).join("");
+  openModal(`<div class="reveal"><div class="kicker">${esc(ADV_DESTS[dest].name)}</div><h2>Who's going?</h2>
+    <div class="pick-list cats">${list}</div>
+    <button class="linkbtn" id="pc-back">Back</button></div>`);
+  document.getElementById("pc-back").onclick = openAdventurePicker;
+  document.querySelectorAll("#modal .pick-cat").forEach(b => b.onclick = () => { startAdventure(b.dataset.c, dest); closeModal(); });
+}
+
+/* ---- on every return: roll a While-You-Were-Away beat, flag a cat that's home ---- */
+function afterReturn(awaySec) {
+  if (G.adventure && Date.now() >= G.adventure.endsAt) {
+    setTimeout(() => toast(`${G.adventure.cat} is back from their trip — open Today.`, 5.5), 1400);
+  }
+  if (checkinAvailable() && G.tutorialDone) {
+    setTimeout(() => { if (checkinAvailable()) toast("A daily welcome is waiting in Today. 📅", 5); }, 2200);
+  }
+  syncHud();
+  maybeWywa(awaySec);
+}
+
 /* ---------- boot ---------- */
 function resize() {
   // measure the canvas's own rendered box so the backing store always matches what's on screen
@@ -4790,6 +5510,29 @@ window.__cove = {
     const c = spawnCat({ coatKey, star, _celeb: !!celeb, x: rand(W*0.3,W*0.7), y: rand(H*0.6,H*0.8) }); syncHud(); return c && c.name; },
   fillDex(){ for (const co of COATS) if (!G.dex[co.key]) G.dex[co.key] = { star: 2, count: 1 }; checkDexMilestones(); syncHud(); return dexCount() + "/" + COATS.length; },
   charter(v = true){ G.coveCharter = !!v; syncHud(); return { coveCharter: G.coveCharter, maxCats: maxCats(), capacity: capacity() }; },
+  moments(){ return G.moments || []; },
+  checkin(cmd){
+    if (cmd === "reset") { G.checkin = { day: 0, lastKey: "" }; syncHud(); return "reset — available again"; }
+    if (cmd === "claim") { claimCheckin(); return G.checkin; }
+    if (cmd === "next") { if (G.checkin) G.checkin.lastKey = ""; syncHud(); return "available again (day kept)"; }
+    return { ...G.checkin, available: checkinAvailable(), todayReward: CHECKIN_REWARDS[(G.checkin && G.checkin.day || 0) % 7] };
+  },
+  wywa(id){
+    const e = id ? WYWA_EVENTS.find(x => x.id === id) : wPick(WYWA_EVENTS);
+    if (!e) return "no such beat. ids: " + WYWA_EVENTS.map(x => x.id).join(", ");
+    const cat = cats.find(c => c.mascot) || cats[0] || null;
+    G.wywa = G.wywa || { lastAt: 0, seen: [] };
+    G.wywa.lastAt = Date.now();
+    runVignette(e.build(cat), { cat });
+    return e.id;
+  },
+  adventure(cmd, arg){
+    if (cmd === "skip") { if (!G.adventure) return "none active"; G.adventure.endsAt = Date.now(); resolveAdventure(); return "resolved"; }
+    if (cmd === "start") { const n = arg || (cats.find(c => !c.mascot) || cats[0] || {}).name; startAdventure(n, "forest"); return G.adventure; }
+    if (cmd === "clear") { if (G.adventure) { cats.push(new Cat({ ...G.adventure.catData, x: W * 0.4, y: H * 0.6 })); G.adventure = null; rebuildAttractors(); } G.advDay = ""; syncHud(); return "cleared"; }
+    if (cmd === "map") { G.mapPieces = arg == null ? (G.mapPieces || 0) + 1 : +arg; return { mapPieces: G.mapPieces }; }
+    return { adventure: G.adventure, advReady: advReady(), mapPieces: G.mapPieces || 0 };
+  },
   step(sec){
     for (let acc = 0; acc < sec; acc += SIM_DT) simulate(SIM_DT);
     renderScene(0.016);
@@ -4831,7 +5574,7 @@ window.__cove = {
   setHour(h){ setDayNight(h); applyAmbienceDayNight(timeOfDay().df, 1.5); return timeOfDay(); },
   station(key = "fishing", n = 1){ G.stations[key] = (G.stations[key] || 0) + n; rebuildAttractors(); return G.stations; },
   rest(cmd){ if (cmd === "open") { syncRestPanelUI(); openRestPanel(); } else if (cmd === "begin") beginRest(false); else if (cmd === "end") endRest(true); else if (cmd === "render") renderRest(0.05); return { on: restMode, idle: restIdleT | 0, dim: +restDim.toFixed(2), drops: glassDrops.length }; },
-  offline(hoursAway = 6){ const before = cats.length; G.lastSeen = Date.now() - hoursAway * 3600e3; checkOffline(); return { hoursAway, capacity: capacity(), before, after: cats.length, arrived: cats.length - before }; },
+  offline(hoursAway = 6){ const before = cats.length; G.lastSeen = Date.now() - hoursAway * 3600e3; checkOffline(afterReturn); return { hoursAway, capacity: capacity(), before, after: cats.length, arrived: cats.length - before }; },
   ads(cmd){
     if (cmd === "on") { ADS_ENABLED = true; return "ADS_ENABLED = true (this session)"; }
     if (cmd === "off") { ADS_ENABLED = false; return "ADS_ENABLED = false"; }
@@ -4880,6 +5623,11 @@ document.addEventListener("visibilitychange", () => {
 });
 window.addEventListener("pagehide", save);
 const _saveInterval = setInterval(save, 5000);
+// keep the Today sheet's adventure countdown / "they're back" state fresh while it's open
+setInterval(() => {
+  if (panels.today && !panels.today.hidden) { renderCheckinCard(); renderAdventureCard(); }
+  if (G.adventure && Date.now() >= G.adventure.endsAt) syncHud();
+}, 5000);
 window.__cove.hardReset = () => {
   _dead = true;
   clearInterval(_saveInterval);
@@ -4918,7 +5666,7 @@ if (G.rest && G.rest.on) {
 } else if (!G.tutorialDone) {
   setTimeout(() => maybeAgeGate(openTutorial), 400);
 } else {
-  maybeAgeGate(checkOffline);
+  maybeAgeGate(() => checkOffline(afterReturn));
 }
 
 // gentle guidance only once the tutorial is behind you
