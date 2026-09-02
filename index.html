@@ -62,6 +62,8 @@
   }
   .pill .dot{width:1.15rem;height:1.15rem;border-radius:50%;background:var(--shell);display:grid;place-items:center;font-size:.7rem;color:#5b4327;}
   .pill .dotp{background:#8fb7d6;color:#274a63;}
+  .pill.drift .dot{background:#d9c9a6;font-size:.72rem;}
+  .pill.drift[hidden]{display:none;}
   .pill.small{font-size:.82rem;padding:.35rem .7rem;color:var(--ink-soft);font-weight:600;}
   #catPill{cursor:pointer;user-select:none;-webkit-user-select:none;}
   .badge{background:var(--accent);color:#fff;border-radius:999px;font-size:.72rem;font-weight:700;
@@ -314,6 +316,12 @@
   .goal .gbar i{display:block;height:100%;background:var(--accent-bright);transition:width .4s ease;}
   .goal button{margin-top:.5rem;width:100%;justify-content:center;}
   .goal.claimed{opacity:.5;}
+  .pj-bar{height:.5rem;border-radius:999px;background:#e4e0cf;overflow:hidden;margin:.5rem 0 .2rem;}
+  .pj-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-bright));transition:width .5s ease;}
+  .modal .pj-req{margin:.6rem 0 .3rem;text-align:left;}
+  .modal .pj-row{display:flex;justify-content:space-between;font-size:.88rem;color:var(--ink-soft);margin-top:.5rem;}
+  .modal .pj-row b{color:var(--ink);font-variant-numeric:tabular-nums;}
+  .modal .pj-note{font-size:.78rem;color:var(--ink-faint);margin:.5rem 0 .2rem;text-align:left;}
 
   /* ---- reveal celebration ---- */
   .reveal{text-align:center;}
@@ -484,6 +492,7 @@
     <div class="hud-group">
       <div class="pill"><span class="dot">◈</span><span id="shells">0</span></div>
       <div class="pill pearl"><span class="dot dotp">✦</span><span id="pearls">0</span></div>
+      <div class="pill drift" id="driftPill" hidden><span class="dot">🪵</span><span id="driftwood">0</span></div>
       <div class="pill small" id="catPill" title=""><span id="catcount">0</span>/<span id="catcap">0</span> cats</div>
       <div class="pill small opens">day <span id="opens">1</span></div>
     </div>
@@ -569,6 +578,7 @@
     <button class="x" data-close="today">✕</button>
     <h2>Today</h2>
     <div id="checkinCard"></div>
+    <div id="projectCard"></div>
     <div id="advCard"></div>
     <div class="streak"><span class="flame">🔥</span><b id="streakN">0</b><span class="muted" style="margin:0">day streak — finish all 3 goals to keep it</span></div>
     <div id="goalList"></div>
@@ -823,6 +833,9 @@ function newGame() {
     advDay: "",                  // yyyy-m-d of the last claimed adventure (one a day)
     mapPieces: 0,                // torn-map fragments toward the island
     keepsakes: [],               // little things cats bring home
+    // v8 — visible cove restoration
+    materials: { driftwood: 0 }, // gathered from cat activity, spent on repairs
+    projects: { dock: { stage: "open", paid: { shells: 0, driftwood: 0 } } },
   };
 }
 
@@ -858,6 +871,12 @@ function load() {
     if (typeof G.advDay !== "string") G.advDay = "";
     if (typeof G.mapPieces !== "number") G.mapPieces = 0;
     if (!Array.isArray(G.keepsakes)) G.keepsakes = [];
+    if (!G.materials || typeof G.materials !== "object") G.materials = { driftwood: 0 };
+    if (typeof G.materials.driftwood !== "number") G.materials.driftwood = 0;
+    if (!G.projects || typeof G.projects !== "object") {
+      // a cove that already owns the fishing dock (bought in the old shop) → dock is already restored
+      G.projects = { dock: { stage: (G.stations && G.stations.fishing > 0) ? "done" : "open", paid: { shells: 0, driftwood: 0 } } };
+    }
     // one-time: the economy was rebalanced (Phase A). Testers are sitting on huge
     // old-economy balances that hide the new pacing — give shells a clean start.
     // The cove, cats, comforts, Catdex, journal, everything else is kept as-is.
@@ -955,6 +974,16 @@ function rebuildDecor() {
       foot.push({ x, y, r: 46 });
     }
   }
+  // restoration projects that aren't finished yet — a "needs work" marker in the world
+  for (const def of PROJECTS) {
+    const st = projectStage(def.id);
+    if (st === "open" || st === "building") {
+      const x = clamp(W * def.home.x, 54, W - 54);
+      const y = clamp(H * def.home.y, H * 0.48, catFloor() - 16);
+      decor.push({ type: "project", pid: def.id, seed: 5500 + def.id.length * 7, x, y });
+      foot.push({ x, y, r: 48 });
+    }
+  }
   const lo = H * 0.46, hi = catFloor();
   const wants = [];
   for (let i = 0; i < G.decor.cottage; i++) wants.push({ type: "cottage", r: 48, seed: 7001 + i * 13, yBand: [lo + 30, hi - 54] });
@@ -967,7 +996,7 @@ function rebuildAttractors() {
   rebuildDecor();                       // decor first so usable pieces have stable positions
   attractors = [];
   // food / toy / bed — placed clear of decor, stations and each other
-  const avoid = decor.map(d => ({ x: d.x, y: d.y, r: d.type === "cottage" ? 46 : d.type === "station" ? 44 : d.type === "tree" ? 38 : 24 }));
+  const avoid = decor.map(d => ({ x: d.x, y: d.y, r: d.type === "cottage" ? 46 : d.type === "station" || d.type === "project" ? 44 : d.type === "tree" ? 38 : 24 }));
   const comforts = [];
   for (let i = 0; i < G.bowls; i++) comforts.push({ type: "food", r: 26, seed: 12001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
   for (let i = 0; i < G.toys;  i++) comforts.push({ type: "toy",  r: 24, seed: 13001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
@@ -990,6 +1019,133 @@ const STATION = {
   sunbeam: { arrive: "sunbathing", dur: () => rand(20, 38), label: "warming in the sunbeam", rate: 0.95, mood: 98, cap: 1 },
   garden:  { arrive: "rolling",    dur: () => rand(6, 11),  label: "rolling in the catmint",  rate: 1.3,  mood: 84, cap: 1 },
 };
+
+/* ---------- restoration projects: visible progress you build, not buy ----------
+   A project sits in the world as a "needs work" marker. You gather its
+   materials (driftwood washes up / cats bring it) + shells, then the cats
+   build it over real hours — progress accrues offline and a little faster
+   with a bigger cove. When it's done the world visibly changes and something
+   new opens up. No countdown on screen, no skip, nothing lost by waiting. */
+const PROJECTS = [{
+  id: "dock", label: "The old dock", station: "fishing",
+  home: { x: 0.18, y: 0.60 },
+  blurb: "Half-rotted and roped off at the shoreline. Fix it and cats can fish here — and there's room for a few more of them.",
+  cost: { shells: 140, driftwood: 4 },
+  buildMin: 270,                       // real minutes at a 2-cat cove; scales down with more cats
+  unlock: "a fishing spot + room for more cats",
+  done: "The dock holds. A cat is already sitting on the end of it, pretending it caught something.",
+  next: "With the dock sound, the overgrown woodland path is what's next.",
+}];
+const PROJECT_BY_ID = Object.fromEntries(PROJECTS.map(p => [p.id, p]));
+function projectStage(id) { const p = G.projects && G.projects[id]; return p ? p.stage : "hidden"; }
+function projectDone(id) { return projectStage(id) === "done"; }
+function projBuildMin(def) { return Math.round(def.buildMin * clamp(1 - Math.max(0, cats.length - 2) * 0.055, 0.5, 1)); }
+function projectProgress(id) {          // 0..1, time-based, accrues while away
+  const p = G.projects && G.projects[id];
+  if (!p) return 0;
+  if (p.stage === "done") return 1;
+  if (p.stage !== "building") return 0;
+  return clamp((Date.now() - (p.startedAt || Date.now())) / (projBuildMin(PROJECT_BY_ID[id]) * 60000), 0, 1);
+}
+function projectNeed(id) {              // remaining {shells, driftwood} to start the build
+  const p = G.projects && G.projects[id], def = PROJECT_BY_ID[id];
+  if (!p || !def) return { shells: 0, driftwood: 0 };
+  const paid = p.paid || { shells: 0, driftwood: 0 };
+  return { shells: Math.max(0, def.cost.shells - paid.shells), driftwood: Math.max(0, def.cost.driftwood - paid.driftwood) };
+}
+function contributeProject(id) {        // pay whatever we can toward the cost, then maybe start the build
+  const p = G.projects && G.projects[id], def = PROJECT_BY_ID[id];
+  if (!p || p.stage !== "open") return;
+  p.paid = p.paid || { shells: 0, driftwood: 0 };
+  const sPay = Math.max(0, Math.min(def.cost.shells - p.paid.shells, Math.floor(G.shells)));
+  const dPay = Math.max(0, Math.min(def.cost.driftwood - p.paid.driftwood, G.materials.driftwood || 0));
+  const already = p.paid.shells >= def.cost.shells && p.paid.driftwood >= def.cost.driftwood;
+  if (sPay <= 0 && dPay <= 0 && !already) { toast("Nothing to add yet — gather a little more first.", 4); return; }
+  G.shells -= sPay; p.paid.shells += sPay;
+  G.materials.driftwood -= dPay; p.paid.driftwood += dPay;
+  if (sPay || dPay) { sfx("collect"); spawnParticles(W / 2, H * 0.55, "twinkle", 8); }
+  if (p.paid.shells >= def.cost.shells && p.paid.driftwood >= def.cost.driftwood) {
+    p.stage = "building"; p.startedAt = Date.now();
+    toast("The repair's underway — the cats are on it. It comes along on its own; check back later.", 6.5);
+    logMoment("🔨", `Started fixing ${def.label.toLowerCase()}.`, "restoration");
+    spawnParticles(W * 0.2, H * 0.6, "twinkle", 14);
+    rebuildAttractors();
+  }
+  syncHud(); save();
+}
+function finishProject(id) {
+  const def = PROJECT_BY_ID[id], p = G.projects[id];
+  if (!p || p.stage === "done") return;
+  p.stage = "done"; p.doneAt = Date.now();
+  if (def.station) G.stations[def.station] = Math.max(1, G.stations[def.station] || 0);
+  rebuildAttractors();
+  logMoment("🎉", `${def.label} restored — ${def.done}`, "restoration");
+  toast(`${def.label} is restored! Unlocked: ${def.unlock}.`, 7);
+  spawnParticles(W / 2, H * 0.5, "twinkle", 22);
+  sfx("buy"); syncHud(); save();
+  if (def.next) setTimeout(() => toast(def.next, 6), 7200);
+}
+function tickProjects() {
+  if (!G.projects) return;
+  for (const id in G.projects) {
+    if (G.projects[id].stage === "building" && projectProgress(id) >= 1) finishProject(id);
+  }
+}
+function gainDriftwood(n, quiet) {
+  if (!G.materials) G.materials = { driftwood: 0 };
+  G.materials.driftwood = (G.materials.driftwood || 0) + n;
+  if (!quiet) toast(n === 1 ? "A piece of driftwood washed up. 🪵" : `${n} pieces of driftwood washed up. 🪵`, 4);
+  syncHud();
+  if (panels.today && !panels.today.hidden && typeof renderProjectCard === "function") renderProjectCard();
+}
+const _bar = (val, max) => `<div class="pj-bar"><i style="width:${clamp(val / max * 100, 0, 100)}%"></i></div>`;
+function openProjectSheet(pid) {
+  const def = PROJECT_BY_ID[pid], p = G.projects[pid];
+  if (!def || !p) return;
+  ensureAudio();
+  if (p.stage === "building") {
+    const prog = projectProgress(pid);
+    const left = Math.max(1, Math.round(projBuildMin(def) * (1 - prog)));
+    openModal(`<div class="reveal">
+      <div class="kicker">Underway</div>
+      <div class="vig-art">🔨</div>
+      <h2>${esc(def.label)}</h2>
+      <p class="sub">The cats are working on it — it comes along on its own, a little faster with a fuller cove. Nothing to do but check back.</p>
+      ${_bar(prog, 1)}
+      <p class="sub" style="margin-top:.5rem">${Math.round(prog * 100)}% · roughly ${left < 90 ? left + " min" : Math.round(left / 60) + " h"} to go</p>
+      <button class="btn primary" id="pj-ok">Leave them to it</button>
+    </div>`);
+    document.getElementById("pj-ok").onclick = closeModal;
+    return;
+  }
+  const need = projectNeed(pid), paid = p.paid || { shells: 0, driftwood: 0 };
+  const dw = G.materials.driftwood || 0;
+  const ready = need.shells === 0 && need.driftwood === 0;
+  const canAdd = (paid.shells < def.cost.shells && G.shells > 0) || (paid.driftwood < def.cost.driftwood && dw > 0);
+  openModal(`<div class="reveal">
+    <div class="kicker">Restoration</div>
+    <div class="vig-art">🛠️</div>
+    <h2>${esc(def.label)}</h2>
+    <p class="sub">${esc(def.blurb)}</p>
+    <div class="pj-req">
+      <div class="pj-row"><span>◈ shells</span><b>${paid.shells} / ${def.cost.shells}</b></div>${_bar(paid.shells, def.cost.shells)}
+      <div class="pj-row"><span>🪵 driftwood</span><b>${paid.driftwood} / ${def.cost.driftwood}</b></div>${_bar(paid.driftwood, def.cost.driftwood)}
+    </div>
+    <p class="pj-note">${dw} driftwood on hand · it washes up along the shore and cats bring it back from the woods.</p>
+    <div class="row">
+      ${ready
+        ? `<button class="btn primary" id="pj-start">Begin the repair</button>`
+        : `<button class="btn primary" id="pj-add" ${canAdd ? "" : "disabled"}>Add what I've got</button>`}
+      <button class="btn" id="pj-close">Later</button>
+    </div>
+    <p class="sub" style="margin-top:.4rem;font-size:.8rem">Finishes it: ${esc(def.unlock)}.</p>
+  </div>`);
+  document.getElementById("pj-close").onclick = closeModal;
+  const addB = document.getElementById("pj-add");
+  if (addB) addB.onclick = () => { contributeProject(pid); closeModal(); setTimeout(() => openProjectSheet(pid), 220); };
+  const startB = document.getElementById("pj-start");
+  if (startB) startB.onclick = () => { contributeProject(pid); closeModal(); };
+}
 function makeAttractor(type, idx) {
   const cols = 4;
   const col = idx % cols, row = Math.floor(idx / cols);
@@ -1680,6 +1836,11 @@ function updateCat(c, dt) {
     return;
   }
   if (c.stateT >= c.stateDur) {
+    // an exploring cat sometimes noses up a bit of driftwood along the shore
+    if (c.state === "exploring" && anyProjectOpen() && Math.random() < 0.35 && !c.mascot) {
+      dropToken(c.x, Math.max(c.y, catFloor() - 40), 0, "driftwood");
+      floatText(c.x, c.y - 28, "found something", "#b9a074");
+    }
     // fresh from the catmint garden → a burst of zoomies (temporary output boost)
     if (c.state === "rolling") {
       c.zoomies = rand(45, 70);
@@ -1743,6 +1904,13 @@ function updateTokens(dt) {
 function collectToken(t, auto) {
   if (t.pop > 0) return;
   t.pop = 0.01;
+  if (t.flair === "driftwood") {
+    gainDriftwood(1, true);
+    spawnParticles(t.x, t.y, "dust", auto ? 3 : 6);
+    floatText(t.x, t.y - 10, "🪵 driftwood", "#b9a074");
+    if (!auto) sfx("collect");
+    return;
+  }
   G.shells += t.value;
   G.metrics.tokens += 1;
   bumpGoal("shells", t.value);
@@ -1809,6 +1977,11 @@ function handleTap(x, y) {
     if (d < bcd) { bcd = d; bc = c; }
   }
   if (bc) { petCat(bc); showCatCard(bc); return; }
+
+  // a restoration project marker
+  for (const d of decor) {
+    if (d.type === "project" && dist2(x, y, d.x, d.y - 6) < 48 * 48) { hideCatCard(); openProjectSheet(d.pid); return; }
+  }
 
   hideCatCard();
 }
@@ -2065,8 +2238,9 @@ const SHOP = [
     base:55, mul:1.8, get:()=>G.decor.cottage, buy:()=>{ G.decor.cottage++; rebuildAttractors(); }, remove:()=>{ G.decor.cottage--; rebuildAttractors(); } },
   { key:"flowers", cat:"comforts", type:"flowers", name:"Flower patch", desc:"Just pretty. Raises everyone's baseline mood a little.",
     base:14, mul:1.5, get:()=>G.decor.flowers, buy:()=>{ G.decor.flowers++; rebuildAttractors(); }, remove:()=>{ G.decor.flowers--; rebuildAttractors(); } },
-  { key:"fishing", cat:"stations", type:"fishing", name:"Fishing dock", desc:"Cats fish off the end — big output while they work, plus the odd bonus catch. +2 capacity.",
-    base:70, mul:1.9, get:()=>G.stations.fishing, buy:()=>{ G.stations.fishing++; rebuildAttractors(); }, remove:()=>{ G.stations.fishing--; rebuildAttractors(); } },
+  { key:"fishing", cat:"stations", name:"Fishing dock", desc:"Not for sale — repair the old dock down at the shore. Tap it in the cove.",
+    base:0, mul:1, max:1, get:()=>projectDone("dock") ? 1 : 0,
+    need:()=> projectDone("dock") ? null : "Repair the dock — tap it at the shore" },
   { key:"bakery", cat:"stations", type:"bakery", name:"Little bakery", desc:"Two cats can help at once — steady output and a strong mood lift. +2 capacity.",
     base:85, mul:1.9, get:()=>G.stations.bakery, buy:()=>{ G.stations.bakery++; rebuildAttractors(); }, remove:()=>{ G.stations.bakery--; rebuildAttractors(); } },
   { key:"sunbeam", cat:"stations", type:"sunbeam", name:"Sunbeam mat", desc:"The comfiest spot in the cove — mood rockets, output ticks over gently. +2 capacity.",
@@ -2544,7 +2718,12 @@ function syncHud() {
   document.getElementById("dexBadge").textContent = dexCount() + "/" + COATS.length;
   const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
   const advBack = !!(G.adventure && Date.now() >= G.adventure.endsAt);
-  document.getElementById("todayBadge").hidden = !(gReady || advBack || checkinAvailable());
+  const projReady = PROJECTS.some(p => { if (projectStage(p.id) !== "open") return false; const n = projectNeed(p.id); return n.shells === 0 && n.driftwood === 0; });
+  document.getElementById("todayBadge").hidden = !(gReady || advBack || checkinAvailable() || projReady);
+  // driftwood pill — only while something needs it
+  const dw = (G.materials && G.materials.driftwood) || 0;
+  const dp = document.getElementById("driftPill");
+  if (dp) { dp.hidden = !(dw > 0 || anyProjectOpen()); document.getElementById("driftwood").textContent = dw; }
 }
 
 /* ---------- panels: shop / catdex / today ---------- */
@@ -2564,7 +2743,7 @@ function togglePanel(name) {
     panels[name].hidden = false;
     if (name === "shop") renderShop();
     if (name === "dex") renderDex();
-    if (name === "today") { renderCheckinCard(); renderAdventureCard(); renderGoals(); renderMoments(); }
+    if (name === "today") { renderCheckinCard(); renderProjectCard(); renderAdventureCard(); renderGoals(); renderMoments(); }
   }
 }
 document.getElementById("shopBtn").addEventListener("click", () => togglePanel("shop"));
@@ -3099,6 +3278,11 @@ function aggregateRate() {
 // a cat or two may have wandered in while you were away (~1 per 3h, capped at 4)
 function offlineArrivals(elapsed) {
   const awayH = elapsed / 3600;
+  // driftwood washes up along the shore while you're away (if a project still needs it)
+  if (awayH >= 1 && anyProjectOpen()) {
+    const dw = Math.min(5, Math.floor(awayH / 2) + (Math.random() < (awayH % 2) / 2 ? 1 : 0));
+    if (dw > 0) { gainDriftwood(dw, true); setTimeout(() => toast(`${dw} piece${dw === 1 ? "" : "s"} of driftwood washed up while you were away. 🪵`, 5), 1900); }
+  }
   if (awayH < 1.5 || cats.length >= capacity()) return;
   const room = capacity() - cats.length;
   const n = Math.max(0, Math.min(4, room, Math.round(awayH / 3)));
@@ -4278,8 +4462,57 @@ function drawDecor(g, d) {
     }
   } else if (d.type === "station") {
     drawStation(g, d.station, d.seed >>> 0);
+  } else if (d.type === "project") {
+    drawProjectMarker(g, d.pid);
   }
   g.restore();
+}
+// a "needs work" marker: a still pond, a few broken planks, a rope, a hand-lettered
+// sign. while building: a bit of scaffold + planks going in ∝ progress.
+function drawProjectMarker(g, pid) {
+  const st = projectStage(pid), prog = projectProgress(pid);
+  const t = performance.now() / 1000;
+  // little pond
+  g.fillStyle = "rgba(30,26,20,0.10)";
+  g.beginPath(); g.ellipse(6, 12, 52, 17, 0, 0, 7); g.fill();
+  const wg = g.createLinearGradient(0, -4, 0, 24);
+  wg.addColorStop(0, "#8fbfd0"); wg.addColorStop(1, "#5c93a9");
+  g.fillStyle = wg;
+  g.beginPath(); g.ellipse(6, 10, 48, 15, 0, 0, 7); g.fill();
+  g.strokeStyle = "rgba(255,255,255,0.18)"; g.lineWidth = 1.1;
+  for (let k = 0; k < 3; k++) { const ry = 4 + k * 5 + Math.sin(t * 0.7 + k) * 1.1;
+    g.beginPath(); g.moveTo(-32, ry); g.bezierCurveTo(-8, ry - 2, 16, ry + 2, 42, ry); g.stroke(); }
+  // dock — planks going in as it builds; broken/gappy when just "open"
+  const planks = st === "building" ? 3 + Math.round(prog * 4) : 2;
+  g.fillStyle = "#9c7a4e";
+  g.beginPath(); g.moveTo(-44, 4); g.lineTo(-44 + planks * 9, 4); g.lineTo(-44 + planks * 9, 12); g.lineTo(-44, 12); g.closePath(); g.fill();
+  g.fillStyle = "rgba(0,0,0,0.12)";
+  for (let i = 0; i < planks; i++) g.fillRect(-42 + i * 9, 4, 2, 8);
+  if (st === "open") {   // a couple of loose, tilted planks + rope
+    g.save(); g.translate(-8, 2); g.rotate(-0.5);
+    g.fillStyle = "#8a6a44"; roundRect(g, -14, -3, 28, 6, 1); g.fill(); g.restore();
+    g.strokeStyle = "#b9a074"; g.lineWidth = 2; g.setLineDash([3, 3]);
+    g.beginPath(); g.moveTo(-30, -6); g.quadraticCurveTo(0, -14, 26, -6); g.stroke(); g.setLineDash([]);
+  } else {               // scaffold poles
+    g.strokeStyle = "#7d6039"; g.lineWidth = 2.6; g.lineCap = "round";
+    for (const px of [-38, -4, 30]) { g.beginPath(); g.moveTo(px, 12); g.lineTo(px + 3, -20 - (px === -4 ? 6 : 0)); g.stroke(); }
+    g.beginPath(); g.moveTo(-38, -12); g.lineTo(33, -18); g.stroke();
+  }
+  // hand-lettered sign
+  g.save(); g.translate(-30, -18); g.rotate(-0.08);
+  g.fillStyle = "#efe6cf"; roundRect(g, -20, -12, 40, 17, 2); g.fill();
+  g.strokeStyle = "rgba(74,53,36,0.4)"; g.lineWidth = 1; roundRect(g, -20, -12, 40, 17, 2); g.stroke();
+  g.fillStyle = "#7a5c38"; g.fillRect(-1.4, 4, 2.8, 12);
+  g.fillStyle = "#5b4634"; g.font = "700 7px 'Fraunces', Georgia, serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(st === "building" ? `${Math.round(prog * 100)}%` : "needs work", 0, -3.5);
+  g.textAlign = "left"; g.textBaseline = "alphabetic";
+  g.restore();
+  // a soft "tap me" pulse when it's still waiting on you
+  if (st === "open") {
+    const a = 0.16 + Math.sin(t * 2.4) * 0.1;
+    g.strokeStyle = `rgba(232,180,90,${a})`; g.lineWidth = 2;
+    g.beginPath(); g.ellipse(0, 0, 44 + Math.sin(t * 2.4) * 3, 26, 0, 0, 7); g.stroke();
+  }
 }
 function drawStation(g, kind, seed) {
   const r = mulberry32(seed || 1);
@@ -5254,7 +5487,7 @@ function drawToken(g, tk) {
   const pulse = 0.5 + 0.5 * Math.sin(now / 320 + tk.x * 0.7);   // 0..1 breathing
   const scale = tk.pop > 0 ? (1 + tk.pop * 0.8) : 1;
   const alpha = tk.pop > 0 ? (1 - tk.pop) : (tk.life > tk.ttl - 4 ? (tk.ttl - tk.life) / 4 : 1);
-  const col = tk.flair === "yarn" ? "#c47a35" : tk.flair === "fish" ? "#8fb0c4" : "#e8b45a";
+  const col = tk.flair === "yarn" ? "#c47a35" : tk.flair === "fish" ? "#8fb0c4" : tk.flair === "driftwood" ? "#b9a074" : "#e8b45a";
   g.save();
   g.globalAlpha = Math.max(0, alpha);
 
@@ -5275,13 +5508,20 @@ function drawToken(g, tk) {
   }
 
   // two-layer breathing glow — the whole point is you can't miss it
-  g.fillStyle = "rgba(232,180,90,0.16)";
+  const glow = tk.flair === "driftwood" ? "185,160,116" : "232,180,90";
+  g.fillStyle = `rgba(${glow},0.16)`;
   g.beginPath(); g.arc(0, 0, 17 + pulse * 4, 0, 7); g.fill();
-  g.fillStyle = "rgba(232,180,90,0.34)";
+  g.fillStyle = `rgba(${glow},0.34)`;
   g.beginPath(); g.arc(0, 0, 11 + pulse * 2, 0, 7); g.fill();
 
   g.fillStyle = col;
-  if (tk.flair === "yarn") {
+  if (tk.flair === "driftwood") {
+    g.save(); g.rotate(-0.35);
+    roundRect(g, -8, -3.2, 16, 6.4, 2); g.fill();
+    g.strokeStyle = "rgba(90,70,45,0.4)"; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(-5, -1); g.lineTo(4, -1); g.moveTo(-3, 1.4); g.lineTo(5, 1.4); g.stroke();
+    g.restore();
+  } else if (tk.flair === "yarn") {
     g.beginPath(); g.arc(0, 0, 7.5, 0, 7); g.fill();
     g.strokeStyle = "rgba(0,0,0,0.15)"; g.lineWidth = 1.4;
     g.beginPath(); g.moveTo(-7.5, 0); g.quadraticCurveTo(0, -6, 7.5, 0); g.stroke();
@@ -5292,10 +5532,12 @@ function drawToken(g, tk) {
     g.beginPath(); g.arc(0, 0, 7.5, 0, 7); g.fill();
   }
   // crisp rim + specular highlight for contrast against any ground
-  g.strokeStyle = "rgba(255,255,255,0.55)"; g.lineWidth = 1.3;
-  g.beginPath(); g.arc(0, 0, tk.flair === "fish" ? 8 : 7.5, 0, 7); g.stroke();
-  g.fillStyle = "rgba(255,255,255,0.6)";
-  g.beginPath(); g.arc(-2.4, -2.4, 2.4, 0, 7); g.fill();
+  if (tk.flair !== "driftwood") {
+    g.strokeStyle = "rgba(255,255,255,0.55)"; g.lineWidth = 1.3;
+    g.beginPath(); g.arc(0, 0, tk.flair === "fish" ? 8 : 7.5, 0, 7); g.stroke();
+    g.fillStyle = "rgba(255,255,255,0.6)";
+    g.beginPath(); g.arc(-2.4, -2.4, 2.4, 0, 7); g.fill();
+  }
   g.restore();
 }
 
@@ -5378,12 +5620,22 @@ function nextVisitorGap() {
   return catsSeen() < 5 ? rand(180, 420) : rand(480, 900);   // ~3-7 min while filling out, ~8-15 min after
 }
 let visitorTimer = rand(60, 150);   // first arrival soon; set() below re-times it once G is loaded
+function anyProjectOpen() { return PROJECTS.some(p => projectStage(p.id) === "open"); }
+let driftTimer = rand(30, 70);
 
 function simulate(dt) {
   visitorTimer -= dt;
   if (visitorTimer <= 0) {
     visitorTimer = nextVisitorGap();
     if (cats.length < capacity()) { spawnCat(); toast("A cat wandered into the cove."); }
+  }
+  // driftwood washes up along the shore while a project still needs it
+  if (anyProjectOpen()) {
+    driftTimer -= dt;
+    if (driftTimer <= 0) {
+      driftTimer = rand(65, 135);
+      dropToken(rand(W * 0.08, W * 0.42), catFloor() - rand(8, 26), 0, "driftwood");
+    }
   }
   for (const c of cats) updateCat(c, dt);
   updateDepartures(dt);
@@ -5504,10 +5756,12 @@ function fmtTime(s) {
 const MAP_TOTAL = 4;   // torn-map pieces that make a whole map
 
 /* ---- Moments: a gentle log of the cove's little happenings ---- */
-function logMoment(emoji, text) {
+function logMoment(emoji, text, kind) {
   if (!G.moments) G.moments = [];
-  G.moments.unshift({ t: Date.now(), emoji: emoji || "·", text: String(text) });
-  if (G.moments.length > 60) G.moments.length = 60;
+  const m = { t: Date.now(), emoji: emoji || "·", text: String(text) };
+  if (kind) m.kind = kind;                 // story kinds (restoration, bond, tale…) — the Cove Journal reads these
+  G.moments.unshift(m);
+  if (G.moments.length > 80) G.moments.length = 80;
   if (panels.today && !panels.today.hidden) renderMoments();
 }
 function agoText(t) {
@@ -5541,6 +5795,7 @@ function rewardBits(r) {
   const b = [];
   if (r.shells) b.push("◈ " + r.shells);
   if (r.pearls) b.push("✦ " + r.pearls);
+  if (r.driftwood) b.push("🪵 " + r.driftwood);
   if (r.keepsake) b.push(r.keepsake.emoji + " " + r.keepsake.label);
   return b.join("  ·  ");
 }
@@ -5602,6 +5857,7 @@ function grantReward(r, atCat) {
   if (r.shells) { G.shells += r.shells; floatText(x, y, "◈ " + r.shells, "#e8b45a"); }
   if (r.pearls) { G.pearls += r.pearls; floatText(x, y - 16, "✦ " + r.pearls, "#8fb7d6"); }
   if (r.mood && atCat) atCat.mood = clamp(atCat.mood + r.mood, 0, 100);
+  if (r.driftwood) { gainDriftwood(r.driftwood, true); floatText(x, y - 28, "🪵 " + r.driftwood, "#b9a074"); }
   if (r.keepsake) {
     if (!G.keepsakes) G.keepsakes = [];
     G.keepsakes.unshift({ ...r.keepsake, t: Date.now() });
@@ -5643,6 +5899,7 @@ function vigRewardLine(r) {
   const bits = [];
   if (r.shells) bits.push(`◈ ${r.shells}`);
   if (r.pearls) bits.push(`✦ ${r.pearls}`);
+  if (r.driftwood) bits.push(`🪵 ${r.driftwood}`);
   if (r.keepsake) bits.push(`${r.keepsake.emoji || "🎁"} ${esc(r.keepsake.label)}`);
   if (r.mapPiece) bits.push(`🗺️ a piece of a map`);
   if (r.kitten) bits.push(`🐱 a new kitten`);
@@ -5911,6 +6168,10 @@ function advLoot(cat, dest) {
     forest:  [{ emoji: "🍄", label: "a ring of tiny mushrooms" }, { emoji: "🪶", label: "an owl feather" }, { emoji: "🌿", label: "a bundle of wild catmint" }],
     island:  [{ emoji: "🪙", label: "a foreign coin" }, { emoji: "🍍", label: "something spiky and sweet" }, { emoji: "🐚", label: "a shell that hums faintly" }],
   }[dest];
+  if (anyProjectOpen() && (dest === "forest" || dest === "fishing")) {
+    reward.driftwood = 1 + (rnd() < 0.5 ? 1 : 0) + (has("curious") ? 1 : 0);
+    lines.push(`dragged home ${reward.driftwood} piece${reward.driftwood === 1 ? "" : "s"} of driftwood`);
+  }
   if (rnd() < 0.55 || has("climber")) { reward.keepsake = pick(keepPool); lines.push(`brought back ${reward.keepsake.label}`); }
   if (has("glutton")) { reward.keepsake = { emoji: "📖", label: `a recipe from the ${dest === "island" ? "island" : "trail"}` }; lines.push("came back with a new recipe"); }
   if (has("climber")) { reward.shells += 60; lines.push("got somewhere the others couldn't and pocketed the difference"); }
@@ -6118,6 +6379,30 @@ function mapLine() {
   if (!n) return "";
   return `<div class="adv-map">🗺️ torn map &middot; ${Math.min(n, MAP_TOTAL)} / ${MAP_TOTAL} pieces${n >= MAP_TOTAL ? " — complete" : ""}</div>`;
 }
+function renderProjectCard() {
+  const el = document.getElementById("projectCard");
+  if (!el) return;
+  const def = PROJECTS.find(p => { const s = projectStage(p.id); return s === "open" || s === "building"; });
+  if (!def) { el.innerHTML = ""; el.className = ""; return; }
+  const st = projectStage(def.id);
+  if (st === "building") {
+    const prog = projectProgress(def.id);
+    el.className = "adv-card";
+    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">🔨</span>
+      <div><div class="adv-title">${esc(def.label)} — underway</div>
+      <div class="adv-sub">${Math.round(prog * 100)}% · the cats are on it</div></div></div>
+      <div class="pj-bar"><i style="width:${Math.round(prog * 100)}%"></i></div>`;
+  } else {
+    const need = projectNeed(def.id), paid = (G.projects[def.id].paid) || { shells: 0, driftwood: 0 };
+    const ready = need.shells === 0 && need.driftwood === 0;
+    el.className = "adv-card ready";
+    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">🛠️</span>
+      <div><div class="adv-title">${esc(def.label)}</div>
+      <div class="adv-sub">${ready ? "ready to begin" : `◈ ${paid.shells}/${def.cost.shells} · 🪵 ${paid.driftwood}/${def.cost.driftwood}`}</div></div></div>
+      <button class="btn primary" id="pj-card-btn">${ready ? "Begin the repair" : "Open the dock"}</button>`;
+    document.getElementById("pj-card-btn").onclick = () => { closeAllPanels(); openProjectSheet(def.id); };
+  }
+}
 function renderAdventureCard() {
   const el = document.getElementById("advCard");
   if (!el) return;
@@ -6223,6 +6508,16 @@ window.__cove = {
   fillDex(){ for (const co of COATS) if (!G.dex[co.key]) G.dex[co.key] = { star: 2, count: 1 }; checkDexMilestones(); syncHud(); return dexCount() + "/" + COATS.length; },
   charter(v = true){ G.coveCharter = !!v; syncHud(); return { coveCharter: G.coveCharter, maxCats: maxCats(), capacity: capacity() }; },
   moments(){ return G.moments || []; },
+  drift(n = 5){ gainDriftwood(n); return G.materials.driftwood; },
+  project(id = "dock", cmd){
+    const p = G.projects[id]; if (!p) return "no such project";
+    if (cmd === "fill") { p.paid = { shells: PROJECT_BY_ID[id].cost.shells, driftwood: PROJECT_BY_ID[id].cost.driftwood }; contributeProject(id); }
+    else if (cmd === "done") { p.stage = "building"; p.startedAt = Date.now() - 1e9; tickProjects(); }
+    else if (cmd === "reset") { G.projects[id] = { stage: "open", paid: { shells: 0, driftwood: 0 } }; G.stations[PROJECT_BY_ID[id].station] = 0; rebuildAttractors(); }
+    else if (cmd === "skip") { if (p.stage === "building") { p.startedAt = Date.now() - 1e9; tickProjects(); } }
+    syncHud();
+    return { stage: p.stage, paid: p.paid, progress: +projectProgress(id).toFixed(2), buildMin: projBuildMin(PROJECT_BY_ID[id]) };
+  },
   boost(mins){
     if (mins === "off" || mins === 0) { G.boostUntil = 0; return "boost off · earnMult " + earnMult().toFixed(2); }
     G.boostUntil = Date.now() + (mins || 20) * 60000;
@@ -6346,7 +6641,8 @@ const _saveInterval = setInterval(save, 5000);
 let _wasBoosted = false;
 setInterval(() => {
   deliverDuePostcards({ pop: false });   // a gentle toast if one's due while you're playing
-  if (panels.today && !panels.today.hidden) { renderCheckinCard(); renderAdventureCard(); }
+  tickProjects();                        // a restoration that finished while you watched
+  if (panels.today && !panels.today.hidden) { renderCheckinCard(); renderAdventureCard(); renderProjectCard(); }
   if (panels.shop && !panels.shop.hidden && (boostActive() || _wasBoosted)) renderShop();   // tick the boost countdown
   if (_wasBoosted && !boostActive()) toast("The catnip's worn off — earnings back to normal.", 4);
   _wasBoosted = boostActive();
@@ -6372,6 +6668,9 @@ initStars();
 initForeground();
 rollDailyGoals();
 checkDexMilestones();
+// a restoration may have finished while the tab was closed — let the return
+// sequence (homecoming / postcard / WYWA) land first, then celebrate the build
+setTimeout(tickProjects, 3800);
 syncHud();
 requestAnimationFrame(frame);
 
