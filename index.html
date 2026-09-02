@@ -2197,14 +2197,17 @@ function openTutorial() {
   ensureAudio();
 }
 function endTutorial() {
+  ensureAudio();
   tutEl.classList.remove("on");
+  sfx("coax");    // one happy "let's go" meow as the tutorial closes
   if (!G.tutorialDone) { G.tutorialDone = true; save(); checkOffline(); }
 }
 document.getElementById("tutNext").addEventListener("click", () => {
-  if (tutIdx < TUT_STEPS.length - 1) { tutIdx++; renderTutStep(); sfx("pet"); }
+  ensureAudio();   // the tutorial opens from a timeout, not a tap — resume audio on the first real gesture
+  if (tutIdx < TUT_STEPS.length - 1) { tutIdx++; renderTutStep(); tone(523.25, 0.08, "sine", 0.04); }
   else endTutorial();
 });
-document.getElementById("tutSkip").addEventListener("click", endTutorial);
+document.getElementById("tutSkip").addEventListener("click", () => { ensureAudio(); endTutorial(); });
 document.getElementById("helpBtn").addEventListener("click", () => { ensureAudio(); openTutorial(); });
 
 /* rest / rainy-day mode wiring */
@@ -2587,6 +2590,9 @@ function ensureAudio() {
   if (actx && actx.state === "suspended") actx.resume();
   if (actx) { startAmbience(); loadSfx(); }
 }
+// catch-all: any tap anywhere un-sticks a suspended context (covers overlays the
+// individual handlers don't touch — the tutorial, modals, the rest panel)
+document.addEventListener("pointerdown", () => { if (actx && actx.state === "suspended") actx.resume(); }, true);
 function tone(freq, dur, type = "sine", vol = 0.16, when = 0) {
   if (muted || !actx) return;
   const t = actx.currentTime + when;
