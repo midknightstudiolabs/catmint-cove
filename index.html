@@ -311,6 +311,8 @@
     padding:.3rem .5rem;border-radius:999px;border:1px solid var(--panel-line);
     background:#eef1e3;color:var(--ink-soft);}
   .cc-dress button.on{background:var(--accent-bright);border-color:var(--accent-bright);color:#fff;}
+  .cc-dress button.locked{opacity:.5;background:transparent;border-style:dashed;}
+  .cc-dress .dhint{font-size:.66rem;color:var(--ink-faint);margin-top:.4rem;}
 
   /* ---- modal ---- */
   #scrim{position:absolute;inset:0;z-index:50;background:rgba(30,26,18,.42);
@@ -427,7 +429,6 @@
     </div>
     <div class="hud-group">
       <button class="pill title-pill" id="titlePill" title="Rename your cove">Catmint <b>Cove</b></button>
-      <a class="verbadge" href="v1/" title="Play the original V1 prototype">v3</a>
       <button class="btn" id="helpBtn" title="How to play"><span class="ico">?</span></button>
       <button class="btn" id="restBtn" title="Rainy day — everyone rests inside"><span class="ico">🌙</span></button>
       <button class="btn" id="muteBtn" title="Sound"><span class="ico">🔊</span></button>
@@ -726,7 +727,8 @@ function newGame() {
     bowls: 1, toys: 0, beds: 0, scratch: 0,
     decor: { tree: 0, cottage: 0, flowers: 0 },
     stations: { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 },   // activity stations cats "work"
-    trinkets: 0,           // (legacy) kept for save back-compat — wardrobe is now free on the cat card
+    trinkets: 0,           // (legacy) kept for save back-compat
+    wardrobe: {},          // accessory key -> true once bought in the Shop; then free to equip per-cat
     coveCharter: false,    // late-game one-time unlock: raises the cat ceiling 16 → 24
     rest: null,            // active rainy-day session { on, startedAt, endsAt, opts }
     ads: newAdsState(),    // monetization: supporter status, age treatment, frequency caps
@@ -774,6 +776,7 @@ function load() {
     if (!G.stations) G.stations = { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 };
     if (G.trinkets === undefined) G.trinkets = 0;
     if (G.scratch === undefined) G.scratch = 0;
+    if (!G.wardrobe || typeof G.wardrobe !== "object") G.wardrobe = {};
     if (G.coveCharter === undefined) G.coveCharter = false;
     G.ads = Object.assign(newAdsState(), G.ads || {});
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
@@ -1731,16 +1734,27 @@ function renderWardrobe(c) {
   if (!c || c.mascot) { cc.dress.hidden = true; cc.dress.innerHTML = ""; return; }
   cc.dress.hidden = false;
   const cur = c.accessory || "";
-  const chip = (key, label) =>
-    `<button data-acc="${key}" class="${cur === key ? "on" : ""}">${label}</button>`;
+  // a cat that showed up (or came home) wearing something → you now know how to make it
+  if (cur && !wardrobeOwned(cur)) { (G.wardrobe || (G.wardrobe = {}))[cur] = true; save(); }
+  const chip = (key, label, locked) =>
+    `<button data-acc="${key}" ${locked ? 'data-locked="1"' : ""} class="${cur === key ? "on" : ""}${locked ? " locked" : ""}">${locked ? "🔒 " : ""}${label}</button>`;
+  const owned = ACCESSORIES.filter(a => wardrobeOwned(a.key));
+  const locked = ACCESSORIES.filter(a => !wardrobeOwned(a.key));
   cc.dress.innerHTML =
     `<div class="dl">Dress up</div><div class="chips">` +
     chip("", "Bare") +
-    ACCESSORIES.map(a => chip(a.key, a.label)).join("") +
-    `</div>`;
+    owned.map(a => chip(a.key, a.label)).join("") +
+    locked.map(a => chip(a.key, a.label, true)).join("") +
+    `</div>` +
+    (locked.length ? `<div class="dhint">Locked ones are in the Shop under “Dress-up”.</div>` : "");
   cc.dress.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
-    const key = b.dataset.acc || null;
     if (!cardCat) return;
+    if (b.dataset.locked) {
+      const w = WARDROBE_ITEMS.find(x => x.key === b.dataset.acc);
+      toast(`${w ? w.name : "That"} isn't unlocked yet — find it in the Shop under “Dress-up”.`);
+      return;
+    }
+    const key = b.dataset.acc || null;
     cardCat.accessory = key;
     cardTimer = 8;                       // keep the card up while they experiment
     ensureAudio(); tone(523.25, 0.06, "sine", 0.035); if (key) tone(659.25, 0.07, "sine", 0.03, 0.05);
@@ -1838,8 +1852,22 @@ function hideCatCard() { cc.el.hidden = true; cardCat = null; }
 const SHOP_GROUPS = [
   { id:"comforts", label:"Comforts & scenery" },
   { id:"stations", label:"Activity stations" },
+  { id:"dress", label:"Dress-up" },
   { id:"upgrades", label:"Cove upgrades" },
 ];
+// one-time cosmetic unlocks — buy once, then any cat can wear it (free) from its card
+const WARDROBE_ITEMS = [
+  { key:"collar",  name:"Collar",  price:12,  desc:"A simple buckle collar." },
+  { key:"bell",    name:"Bell",    price:16,  desc:"A collar with a little brass bell." },
+  { key:"bandana", name:"Bandana", price:20,  desc:"A folded kerchief, knotted at the neck." },
+  { key:"bow",     name:"Bow",     price:20,  desc:"A tidy ribbon bow." },
+  { key:"flower",  name:"Flower",  price:18,  desc:"A single bloom tucked behind an ear." },
+  { key:"scarf",   name:"Scarf",   price:34,  desc:"A knitted scarf with two hanging ends." },
+  { key:"glasses", name:"Glasses", price:44,  desc:"Round brass wire frames." },
+  { key:"sunhat",  name:"Sun hat", price:48,  desc:"A woven straw hat with a brown band." },
+  { key:"crown",   name:"Crown",   price:150, desc:"For the cove's most distinguished loaf." },
+];
+function wardrobeOwned(key) { return !!(G.wardrobe && G.wardrobe[key]); }
 const SHOP = [
   { key:"bowls", cat:"comforts", type:"food", name:"Food bowl", desc:"Cats come here to eat, then wash up. +2 cat capacity.",
     base:12, mul:1.6, keepMin:1, get:()=>G.bowls, buy:()=>{ G.bowls++; rebuildAttractors(); }, remove:()=>{ G.bowls--; rebuildAttractors(); } },
@@ -1869,6 +1897,12 @@ const SHOP = [
     base:5000, mul:1, pearls:30, get:()=>G.coveCharter ? 1 : 0, max:1,
     need:()=> dexCount() < COATS.length ? `Discover all ${COATS.length} coats first — ${dexCount()}/${COATS.length}` : null,
     buy:()=>{ G.coveCharter = true; } },
+  ...WARDROBE_ITEMS.map(w => ({
+    key:"acc_" + w.key, cat:"dress", name:w.name, desc:w.desc + " Tap any cat, then “Dress up”.",
+    base:w.price, mul:1, max:1,
+    get:()=> wardrobeOwned(w.key) ? 1 : 0,
+    buy:()=>{ (G.wardrobe || (G.wardrobe = {}))[w.key] = true; if (cardCat && !cardCat.mascot) renderWardrobe(cardCat); },
+  })),
 ];
 const COMFORT_STATE = { food:"eating", toy:"playing", bed:"sleeping", cottage:"sleeping", tree:"sleeping", scratch:"scratching",
   fishing:"fishing", bakery:"baking", sunbeam:"sunbathing", garden:"rolling" };
@@ -1992,6 +2026,10 @@ function renderShop() {
       syncHud(); renderShop();
       fireTip("first_buy");
       if (item.key === "charter") { toast("The Cove Charter is signed — room for up to 24 cats now. 🏡", 5); spawnParticles(W/2, H*0.45, "twinkle", 18); }
+      if (item.cat === "dress") {
+        toast(`${item.name} unlocked — tap any cat, then “Dress up”, to put it on.`, 4);
+        if (cardCat && !cardCat.mascot) { renderWardrobe(cardCat); cardTimer = 8; }
+      }
       if (item.type === "flowers") {
         toast(`Flowers planted — the whole cove feels a bit brighter`);
       } else if (item.type) {
@@ -2261,10 +2299,12 @@ const panels = {
   dex: document.getElementById("dex"),
   today: document.getElementById("today"),
 };
+function anyPanelOpen() { for (const k in panels) if (!panels[k].hidden) return true; return false; }
+function closeAllPanels() { for (const k in panels) panels[k].hidden = true; }
 function togglePanel(name) {
   ensureAudio();
   const wasOpen = !panels[name].hidden;
-  for (const k in panels) panels[k].hidden = true;
+  closeAllPanels();
   if (!wasOpen) {
     panels[name].hidden = false;
     if (name === "shop") renderShop();
@@ -2277,6 +2317,13 @@ document.getElementById("dexBtn").addEventListener("click", () => togglePanel("d
 document.getElementById("todayBtn").addEventListener("click", () => togglePanel("today"));
 document.querySelectorAll("[data-close]").forEach(b =>
   b.addEventListener("click", () => { const k = b.getAttribute("data-close"); if (panels[k]) panels[k].hidden = true; }));
+// tap anywhere outside an open panel (the cove, the HUD) to dismiss it
+document.addEventListener("pointerdown", (e) => {
+  if (!anyPanelOpen()) return;
+  if (e.target.closest("#shop, #dex, #today")) return;   // interacting with the panel itself
+  closeAllPanels();
+  if (!e.target.closest("#actions")) e.stopPropagation(); // a dismiss tap — don't also pet a cat underneath
+}, true);
 const shopEl = panels.shop;
 
 /* ---------- back up / restore modal ---------- */
@@ -2527,7 +2574,6 @@ function resetGame() {
 }
 if (DEV_BUILD) {
   document.getElementById("app").classList.add("dev-build");
-  const vb = document.querySelector(".verbadge"); if (vb) { vb.textContent = "v3 · dev"; vb.removeAttribute("href"); vb.style.pointerEvents = "none"; }
   window.addEventListener("keydown", (e) => {
     if (e.target && /input|textarea/i.test(e.target.tagName)) return;
     if (e.key === "d" || e.key === "D") devEl.classList.toggle("on");
