@@ -674,8 +674,11 @@ function seededPos(seed, backness) {
 }
 const STATION_HOME = {   // each station has a canonical corner of the cove
   fishing: { x: 0.24, y: 0.58 }, bakery: { x: 0.86, y: 0.50 },
-  sunbeam: { x: 0.34, y: 0.82 }, garden: { x: 0.70, y: 0.78 },
+  sunbeam: { x: 0.34, y: 0.74 }, garden: { x: 0.70, y: 0.72 },
 };
+// lowest a cat anchor / usable attractor should sit — keeps cats and the
+// stations they work clear of the fixed action bar at the bottom of the screen
+const catFloor = () => H - 74;
 function rebuildDecor() {
   decor = [];
   for (let i = 0; i < G.decor.tree; i++)
@@ -689,7 +692,7 @@ function rebuildDecor() {
       const jx = i === 0 ? 0 : (mulberry32(3300 + i * 17)() - 0.5) * 0.12;
       const jy = i === 0 ? 0 : (mulberry32(4400 + i * 17)() - 0.5) * 0.06;
       decor.push({ type: "station", station: type, seed: 3300 + type.length * 100 + i,
-        x: clamp(W * (home.x + jx), 46, W - 46), y: clamp(H * (home.y + jy), H * 0.46, H - 64) });
+        x: clamp(W * (home.x + jx), 46, W - 46), y: clamp(H * (home.y + jy), H * 0.46, catFloor() - 12) });
     }
   }
 }
@@ -699,11 +702,11 @@ function rebuildAttractors() {
   const add = (type, n) => { for (let i = 0; i < n; i++) attractors.push(makeAttractor(type, attractors.length)); };
   add("food", G.bowls); add("toy", G.toys); add("bed", G.beds);
   for (const d of decor) {
-    if (d.type === "tree")    attractors.push({ type: "tree",    x: d.x + 14, y: d.y + 20 });
-    if (d.type === "cottage") attractors.push({ type: "cottage", x: d.x,      y: d.y + 14 });
+    if (d.type === "tree")    attractors.push({ type: "tree",    x: clamp(d.x + 14, 32, W - 32), y: clamp(d.y + 20, H * 0.44, catFloor()) });
+    if (d.type === "cottage") attractors.push({ type: "cottage", x: clamp(d.x,      32, W - 32), y: clamp(d.y + 14, H * 0.44, catFloor()) });
     if (d.type === "station") {
       const off = d.station === "fishing" ? { x: -6, y: 4 } : { x: 0, y: 16 };
-      attractors.push({ type: d.station, station: true, x: d.x + off.x, y: d.y + off.y });
+      attractors.push({ type: d.station, station: true, x: clamp(d.x + off.x, 36, W - 36), y: clamp(d.y + off.y, H * 0.44, catFloor()) });
     }
   }
 }
@@ -718,7 +721,7 @@ function makeAttractor(type, idx) {
   const col = idx % cols, row = Math.floor(idx / cols);
   const x = W * (0.15 + 0.7 * (col / (cols - 1 || 1))) + rand(-16, 16);
   const y = H * (0.58 + 0.13 * row) + rand(-12, 12);
-  return { type, x: clamp(x, 40, W - 40), y: clamp(y, H * 0.54, H - 66) };
+  return { type, x: clamp(x, 40, W - 40), y: clamp(y, H * 0.54, catFloor()) };
 }
 
 function stationCount() { const s = G.stations || {}; return (s.fishing||0) + (s.bakery||0) + (s.sunbeam||0) + (s.garden||0); }
@@ -1058,7 +1061,7 @@ function decide(c) {
 
   // explore — cut right down; wandering is where all the "too much walking" came from
   add(likes.includes("roam") ? 1.3 : 0.3, () =>
-    go(c, "exploring", rand(5, 10), { x: rand(W*0.14, W*0.86), y: rand(H*0.56, H*0.85) }));
+    go(c, "exploring", rand(5, 10), { x: rand(W*0.14, W*0.86), y: rand(H*0.56, H*0.78) }));
 
   // mischief — climbers/curious knock things over (rare, brief)
   const knock = c.t1.knock + c.t2.knock;
@@ -1089,7 +1092,7 @@ function go(c, state, dur, target) {
   c._fx = null;
   if (target) {
     c.tx = clamp(target.x, 24, W - 24);
-    c.ty = clamp(target.y, H * 0.52, H - 60);
+    c.ty = clamp(target.y, H * 0.52, catFloor());
   } else {
     c.tx = c.x; c.ty = c.y;           // stay put — and shed momentum so the stop is clean
     if (c.vx !== undefined) { c.vx *= 0.3; c.vy *= 0.3; }
@@ -1162,7 +1165,7 @@ function updateCat(c, dt) {
 
   // stay in bounds without vibrating against the wall (let newcomers walk in from off-screen)
   if (c.state !== "arriving") {
-    const minX = 18, maxX = W - 18, minY = H * 0.5, maxY = H - 56;
+    const minX = 18, maxX = W - 18, minY = H * 0.5, maxY = catFloor();
     if (c.x < minX) { c.x = minX; if (c.vx < 0) c.vx = 0; }
     else if (c.x > maxX) { c.x = maxX; if (c.vx > 0) c.vx = 0; }
     if (c.y < minY) { c.y = minY; if (c.vy < 0) c.vy = 0; }
@@ -1710,13 +1713,26 @@ function composePhoto() {
   const offY = M + (inner - bh*s) / 2 - by0*s;
   const horizonY = offY + (H * 0.42) * s;
 
-  // sky
+  // sky — follows the current time of day
+  const sky = (typeof timeOfDay === "function" && timeOfDay()) || null;
   const g = pctx.createLinearGradient(0, 0, 0, S);
-  g.addColorStop(0, "#bfe0d6"); g.addColorStop(1, "#eef3e6");
+  if (sky) { g.addColorStop(0, sky.top); g.addColorStop(0.55, sky.mid); g.addColorStop(1, sky.bot); }
+  else { g.addColorStop(0, "#bfe0d6"); g.addColorStop(1, "#eef3e6"); }
   pctx.fillStyle = g; pctx.fillRect(0, 0, S, S);
-  drawSun(pctx, S);
+  // a soft sun (or moon) in the upper-right of the frame
+  const sunLit = !sky || sky.df > 0.34;
+  const sxp = S * 0.74, syp = S * 0.16, rad = sunLit ? 150 : 95;
+  const lightC = sky ? sky.light : "rgb(255,248,225)";
+  const glow = pctx.createRadialGradient(sxp, syp, 3, sxp, syp, rad);
+  glow.addColorStop(0, lightC.replace("rgb", "rgba").replace(")", `,${sunLit ? 0.5 : 0.32})`));
+  glow.addColorStop(1, lightC.replace("rgb", "rgba").replace(")", ",0)"));
+  pctx.fillStyle = glow; pctx.beginPath(); pctx.arc(sxp, syp, rad, 0, 7); pctx.fill();
+  pctx.fillStyle = sunLit ? "rgba(255,249,229,0.95)" : "rgba(238,240,228,0.95)";
+  pctx.beginPath(); pctx.arc(sxp, syp, sunLit ? 24 : 16, 0, 7); pctx.fill();
+  if (!sunLit) { pctx.save(); pctx.globalCompositeOperation = "destination-out";
+    pctx.beginPath(); pctx.arc(sxp + 7, syp - 3, 14, 0, 7); pctx.fill(); pctx.restore(); }
   // ground follows the scaled horizon
-  pctx.fillStyle = "#d8d2bd";
+  pctx.fillStyle = sky ? sky.ground : "#d8d2bd";
   pctx.beginPath();
   pctx.moveTo(0, horizonY);
   pctx.bezierCurveTo(S*0.3, horizonY - 18, S*0.7, horizonY + 14, S, horizonY - 6);
@@ -2836,6 +2852,7 @@ function openRestPanel() {
   document.getElementById("rest").classList.add("on");
   document.getElementById("app").classList.add("resting");
   restMode = true; restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
+  particles.length = 0; floaters.length = 0;   // the sim is paused in rest mode — don't leave FX frozen on the cabin
   restSeatCats();
 }
 function closeRestPanel() {
@@ -2850,6 +2867,7 @@ function beginRest(resumed) {
   if (!resumed) { restStartedAt = Date.now(); restEndsAt = restOpts.hours > 0 ? restStartedAt + restOpts.hours * 3600e3 : 0; }
   restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
   restMode = true;
+  particles.length = 0; floaters.length = 0;
   document.getElementById("rest").classList.add("on");
   document.getElementById("app").classList.add("resting");
   initGlassDrops(); restSeatCats();
@@ -4415,7 +4433,7 @@ function onViewportChange() {
       initClouds(); initFlecks(); initStars(); initForeground();
       _restG = null;
       if (restMode) { initGlassDrops(); restSeatCats(); }
-      else for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, H - 58); }
+      else for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, catFloor()); }
     }
   }, 180);
 }
