@@ -1336,8 +1336,11 @@ function restoreCats() {
   } else {
     seedStarters();
   }
-  // Midknight joins any cove that predates him
-  if (!cats.some(c => c.mascot)) {
+  dedupeCats();
+  // Midknight joins any cove that predates him — but NOT while he's the one away
+  // on a trip (his data is held in G.adventure.catData and comes back on resolve)
+  const mkAway = G.adventure && (G.adventure.catData?.mascot || G.adventure.catData?.coatKey === "midknight" || G.adventure.cat === "Midknight");
+  if (!cats.some(c => c.mascot) && !mkAway) {
     rebuildAttractors();
     const mk = new Cat({ coatKey:"midknight", name:"Midknight", mascot:true, star:2, traits:["grumpy","cuddly"],
       bornAt: Date.now() - KITTEN_MS * 3, mood:70, x: W * 0.42, y: H * 0.6 });
@@ -1346,6 +1349,18 @@ function restoreCats() {
   }
   // make sure every non-mascot cat already in the cove counts as discovered
   for (const c of cats) if (!c.mascot && !G.dex[c.coatKey]) G.dex[c.coatKey] = { star: c.star, count: 1 };
+}
+// belt-and-braces: never keep two mascots or two cats of the same name
+function dedupeCats() {
+  const seen = new Set();
+  let mascotKept = false;
+  cats = cats.filter(c => {
+    if (c.mascot) { if (mascotKept) return false; mascotKept = true; }
+    const key = c.name;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /* ---------- Catdex: the collection spine ---------- */
@@ -6270,6 +6285,7 @@ function startAdventure(name, dest) {
   const i = cats.findIndex(c => c.name === name);
   if (i < 0) return;
   const c = cats[i];
+  if (c.mascot) { toast(`${c.name} never leaves the cove — he's the founder. Send someone else.`, 4); return; }
   const data = { name: c.name, traits: c.traits, coatKey: c.coatKey, markSeed: c.markSeed, star: c.star,
     mascot: c.mascot, bornAt: c.bornAt, mood: Math.round(c.mood), worn: c.worn || [], owned: c.owned || [] };
   cats.splice(i, 1);
@@ -6294,12 +6310,20 @@ function resolveAdventure(onDone) {
   const a = G.adventure;
   if (!a) { if (onDone) onDone(); return; }
   _departures.length = 0;
-  const c = new Cat({ ...a.catData, x: -34, y: rand(H * 0.55, H * 0.8) });
-  cats.push(c);
-  c.state = "arriving"; c.tx = rand(W * 0.25, W * 0.7); c.ty = c.y; c.face = 1;
+  // the traveller may already be back in the cove (a reload re-seeded them, e.g.
+  // Midknight) — reuse that cat instead of adding a second one
+  let c = cats.find(x => x.name === a.cat || (a.catData?.mascot && x.mascot));
+  if (c) {
+    if (a.catData) { c.mood = a.catData.mood ?? c.mood; if (Array.isArray(a.catData.worn)) c.worn = normalizeWorn(a.catData.worn); }
+  } else {
+    c = new Cat({ ...a.catData, x: -34, y: rand(H * 0.55, H * 0.8) });
+    cats.push(c);
+    c.state = "arriving"; c.tx = rand(W * 0.25, W * 0.7); c.ty = c.y; c.face = 1;
+  }
   spawnParticles(c.x + 26, c.y - 14, "twinkle", 9);
   const res = advLoot(c, a.dest);
   G.adventure = null;
+  dedupeCats();
   G.advDay = todayKey();
   save(); syncHud(); rebuildAttractors();
   renderAdventureCard();
@@ -6448,10 +6472,17 @@ function openAdventurePicker() {
   document.querySelectorAll("#modal .pick-dest").forEach(b => b.onclick = () => pickAdventureCat(b.dataset.d));
 }
 function pickAdventureCat(dest) {
-  if (!cats.length) { closeModal(); return; }
-  const list = cats.map(c => {
+  const goers = cats.filter(c => !c.mascot);   // the founder never leaves
+  if (!goers.length) {
+    openModal(`<div class="reveal"><div class="kicker">${esc(ADV_DESTS[dest].name)}</div><h2>Who's going?</h2>
+      <p class="sub">${cats.length <= 1 ? "Midknight never leaves the cove — coax another cat first, then you'll have someone to send." : "Everyone else is busy. Try again in a bit."}</p>
+      <button class="btn primary" id="pc-back">Back</button></div>`);
+    document.getElementById("pc-back").onclick = openAdventurePicker;
+    return;
+  }
+  const list = goers.map(c => {
     const hint = advTraitHint(c);
-    return `<button class="pick-cat" data-c="${esc(c.name)}"><b>${esc(c.name)}${c.mascot ? " · founder" : ""}</b>
+    return `<button class="pick-cat" data-c="${esc(c.name)}"><b>${esc(c.name)}</b>
       <i>${c.traits.map(t => TRAITS[t] ? TRAITS[t].label : t).join(" · ")}</i>${hint ? `<em>${esc(hint)}</em>` : ""}</button>`;
   }).join("");
   openModal(`<div class="reveal"><div class="kicker">${esc(ADV_DESTS[dest].name)}</div><h2>Who's going?</h2>
