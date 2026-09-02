@@ -150,7 +150,36 @@
   .sheet .x{position:absolute;top:.6rem;right:.6rem;width:2rem;height:2rem;border-radius:50%;
     border:1px solid var(--panel-line);background:#fff;cursor:pointer;font-size:1rem;color:var(--ink-soft);}
 
-  #shop{right:clamp(.6rem,2vw,1.2rem);bottom:4.2rem;width:min(92vw,360px);max-height:70vh;overflow-y:auto;}
+  #shop[hidden]{display:none;}
+  #shop{left:50%;top:50%;transform:translate(-50%,-50%);
+    width:min(96vw,560px);max-height:82vh;display:flex;flex-direction:column;
+    padding:0;overflow:hidden;border-radius:22px;}
+  #shop h2{padding:.95rem 1.15rem .1rem;}
+  #shop .x{z-index:3;}
+  @media(max-width:600px){
+    #shop{top:auto;bottom:calc(3.5rem + env(safe-area-inset-bottom));transform:translateX(-50%);
+      width:100vw;max-height:78dvh;border-radius:20px 20px 0 0;}
+  }
+  .shop-tabs{display:flex;gap:.15rem;padding:.5rem .8rem 0;overflow-x:auto;flex:0 0 auto;
+    border-bottom:1px solid var(--panel-line);scrollbar-width:none;}
+  .shop-tabs::-webkit-scrollbar{display:none;}
+  .shop-tabs button{flex:0 0 auto;font:inherit;font-weight:600;font-size:.8rem;
+    padding:.55rem .62rem;border:none;background:none;color:var(--ink-soft);cursor:pointer;
+    border-bottom:2.5px solid transparent;margin-bottom:-1px;border-radius:8px 8px 0 0;}
+  .shop-tabs button:hover{color:var(--ink);}
+  .shop-tabs button.on{color:var(--accent);border-bottom-color:var(--accent);}
+  #shopList{flex:1 1 auto;overflow-y:auto;padding:.2rem 1.15rem 1.4rem;-webkit-overflow-scrolling:touch;}
+  #shopList > .muted{margin:.7rem 0 .2rem;}
+  .dress-cats{display:flex;gap:.35rem;flex-wrap:wrap;margin:.5rem 0 .1rem;}
+  .dress-cats button{font:inherit;font-size:.76rem;font-weight:600;padding:.32rem .6rem;border-radius:999px;
+    border:1px solid var(--panel-line);background:#eef1e3;color:var(--ink-soft);cursor:pointer;}
+  .dress-cats button.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .dress-now{font-size:.82rem;color:var(--ink-soft);margin:.55rem 0 .2rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+  .dress-now b{color:var(--ink);}
+  .shop-item.dress-item{gap:.7rem;}
+  .dress-prev{flex:0 0 auto;width:46px;height:46px;background:#eef1e3;border:1px solid var(--panel-line);border-radius:12px;}
+  .shop-item.dress-item.worn{background:#eaf3ea;border-radius:12px;}
+  .shop-item.dress-item.worn .name{color:var(--accent);}
   .shop-item{
     display:flex;gap:.8rem;align-items:center;justify-content:space-between;
     padding:.75rem 0;border-top:1px solid var(--panel-line);
@@ -208,7 +237,8 @@
   button.btn.primary.wantcoax{opacity:.72;}
 
   /* ---- catdex ---- */
-  #dex{left:50%;transform:translateX(-50%);bottom:4.2rem;width:min(94vw,430px);max-height:74vh;overflow-y:auto;}
+  #dex{left:50%;top:50%;transform:translate(-50%,-50%);width:min(96vw,520px);max-height:82vh;overflow-y:auto;border-radius:22px;}
+  @media(max-width:600px){#dex{top:auto;bottom:calc(3.5rem + env(safe-area-inset-bottom));transform:translateX(-50%);width:100vw;max-height:78dvh;border-radius:20px 20px 0 0;}}
   .dexbar{height:.5rem;border-radius:999px;background:#e4e0cf;overflow:hidden;margin:-.3rem 0 1rem;}
   .dexbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-bright));transition:width .5s ease;}
   #dexGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;}
@@ -223,7 +253,8 @@
   .dexcell .st{position:absolute;top:.2rem;left:0;right:0;font-size:.62rem;font-weight:800;letter-spacing:-1px;}
 
   /* ---- today ---- */
-  #today{left:50%;transform:translateX(-50%);bottom:4.2rem;width:min(94vw,380px);max-height:78vh;overflow-y:auto;}
+  #today{left:50%;top:50%;transform:translate(-50%,-50%);width:min(96vw,480px);max-height:82vh;overflow-y:auto;border-radius:22px;}
+  @media(max-width:600px){#today{top:auto;bottom:calc(3.5rem + env(safe-area-inset-bottom));transform:translateX(-50%);width:100vw;max-height:78dvh;border-radius:20px 20px 0 0;}}
 
   /* ---- v3: adventures, vignettes, moments ---- */
   .vig-art{font-size:2.6rem;line-height:1;margin:.1rem 0 .5rem;}
@@ -311,8 +342,7 @@
     padding:.3rem .5rem;border-radius:999px;border:1px solid var(--panel-line);
     background:#eef1e3;color:var(--ink-soft);}
   .cc-dress button.on{background:var(--accent-bright);border-color:var(--accent-bright);color:#fff;}
-  .cc-dress button.locked{opacity:.5;background:transparent;border-style:dashed;}
-  .cc-dress .dhint{font-size:.66rem;color:var(--ink-faint);margin-top:.4rem;}
+  .cc-dress button.acc-more{background:transparent;border-style:dashed;color:var(--accent);}
 
   /* ---- modal ---- */
   #scrim{position:absolute;inset:0;z-index:50;background:rgba(30,26,18,.42);
@@ -362,13 +392,25 @@
   #rest .rest-bar[hidden]{display:none;}
   #app.resting #hud,#app.resting #actions{opacity:0;pointer-events:none;transition:opacity .5s;}
   #app.resting #toast,#app.resting #dev{opacity:0!important;pointer-events:none;}
-  #rest .rest-bar{pointer-events:auto;position:absolute;left:50%;bottom:calc(2.6rem + env(safe-area-inset-bottom));
-    transform:translateX(-50%);display:flex;align-items:center;gap:.7rem;white-space:nowrap;
-    background:rgba(18,18,26,.5);color:#fff;padding:.5rem .5rem .5rem .95rem;border-radius:999px;font-size:.85rem;
-    font-variant-numeric:tabular-nums;backdrop-filter:blur(4px);transition:opacity .6s;}
+  #rest .rest-bar{pointer-events:auto;position:absolute;left:50%;bottom:32%;
+    transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.75rem;
+    transition:opacity .6s;}
   #rest .rest-bar.dim{opacity:0;}
-  #rest .rest-bar button{background:rgba(255,255,255,.16);border:none;color:#fff;font:inherit;font-weight:600;
-    padding:.35rem .8rem;border-radius:999px;cursor:pointer;}
+  #rest #restWake{display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.94);
+    color:#1e232e;font:inherit;font-weight:700;font-size:1.05rem;letter-spacing:.01em;
+    padding:1rem 2rem;border:none;border-radius:999px;cursor:pointer;
+    box-shadow:0 10px 34px rgba(0,0,0,.34);min-height:3.3rem;white-space:nowrap;}
+  #rest #restWake:hover{background:#fff;}
+  #rest #restWake .rw-ico{font-size:1.15rem;}
+  #rest .rest-sub{display:flex;align-items:center;gap:.55rem;white-space:nowrap;
+    background:rgba(18,18,26,.5);color:#fff;padding:.4rem .45rem .4rem .85rem;border-radius:999px;
+    font-size:.8rem;font-variant-numeric:tabular-nums;backdrop-filter:blur(4px);}
+  #rest .rest-sub button{background:rgba(255,255,255,.16);border:none;color:#fff;font:inherit;font-weight:600;
+    padding:.3rem .7rem;border-radius:999px;cursor:pointer;}
+  @media(max-width:520px){
+    #rest .rest-bar{bottom:30%;width:min(84vw,330px);}
+    #rest #restWake{width:100%;justify-content:center;font-size:1.12rem;padding:1.1rem 1rem;min-height:3.6rem;}
+  }
 
   /* ---- photo mode ---- */
   #photo{position:absolute;inset:0;z-index:60;background:rgba(24,21,15,.78);display:none;
@@ -455,9 +497,11 @@
       <button class="rest-cancel" id="restCancel">Back to the cove</button>
     </div>
     <div class="rest-bar" id="restBar" hidden>
-      <span id="restTime">resting</span>
-      <button id="restFs" title="Fullscreen">⤢</button>
-      <button id="restWake">Wake the cove</button>
+      <button id="restWake"><span class="rw-ico">☂</span> Back to the cove</button>
+      <div class="rest-sub">
+        <span id="restTime">resting</span>
+        <button id="restFs" title="Fullscreen">⤢</button>
+      </div>
     </div>
   </div>
 
@@ -488,8 +532,8 @@
   <!-- shop -->
   <div class="sheet" id="shop" hidden>
     <button class="x" data-close="shop">✕</button>
-    <h2>Grow the cove</h2>
-    <p class="muted">More comforts attract more cats — and the right comfort keeps each personality happy.</p>
+    <h2>Shop</h2>
+    <div class="shop-tabs" id="shopTabs"></div>
     <div id="shopList"></div>
   </div>
 
@@ -727,8 +771,7 @@ function newGame() {
     bowls: 1, toys: 0, beds: 0, scratch: 0,
     decor: { tree: 0, cottage: 0, flowers: 0 },
     stations: { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 },   // activity stations cats "work"
-    trinkets: 0,           // (legacy) kept for save back-compat
-    wardrobe: {},          // accessory key -> true once bought in the Shop; then free to equip per-cat
+    trinkets: 0,           // (legacy) kept for save back-compat — accessories are per-cat now (c.owned)
     coveCharter: false,    // late-game one-time unlock: raises the cat ceiling 16 → 24
     rest: null,            // active rainy-day session { on, startedAt, endsAt, opts }
     ads: newAdsState(),    // monetization: supporter status, age treatment, frequency caps
@@ -776,7 +819,6 @@ function load() {
     if (!G.stations) G.stations = { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 };
     if (G.trinkets === undefined) G.trinkets = 0;
     if (G.scratch === undefined) G.scratch = 0;
-    if (!G.wardrobe || typeof G.wardrobe !== "object") G.wardrobe = {};
     if (G.coveCharter === undefined) G.coveCharter = false;
     G.ads = Object.assign(newAdsState(), G.ads || {});
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
@@ -805,7 +847,7 @@ function save() {
     lastSaveClock = performance.now();
     G.cats = cats.map(c => ({
       name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
-      mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood), accessory:c.accessory ?? null
+      mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood), accessory:c.accessory ?? null, owned:c.owned || []
     }));
     localStorage.setItem(SAVE_KEY, JSON.stringify(G));
   } catch (e) {}
@@ -962,11 +1004,13 @@ class Cat {
     this.mascot = o.mascot || !!(COAT_BY_KEY[this.coatKey] && COAT_BY_KEY[this.coatKey].mascot);
     this.markSeed = o.markSeed ?? (this.mascot ? 424242 : (Math.random() * 1e9 | 0));
     this.star = o.star ?? rollStar();      // 1..4 rarity — drives production + sparkle + the coax reveal
-    // a canvas accessory — some cats show up wearing one; the Shop adds more
+    // a canvas accessory — some cats show up wearing one; the Shop's Dress-up tab adds more, 1:1
     this.accessory = o.accessory !== undefined ? o.accessory
       : this.mascot ? "bell"
       : this.star >= 4 ? "crown"
       : Math.random() < 0.24 ? pick(["collar", "bandana", "bow", "flower"]) : null;
+    this.owned = Array.isArray(o.owned) ? o.owned.filter(k => ACC_BY_KEY[k]) : [];
+    if (this.accessory && !this.owned.includes(this.accessory)) this.owned.push(this.accessory);
     // age: newcomers often arrive as kittens and grow up over ~20h of real time
     this.bornAt = o.bornAt ?? (Math.random() < 0.45 ? Date.now() : Date.now() - KITTEN_MS * (1.2 + Math.random()));
     this._wasKitten = undefined;
@@ -1087,7 +1131,7 @@ function restoreCats() {
       cats.push(new Cat({
         name:s.name, traits:s.traits, coatKey:s.coatKey, markSeed:s.markSeed, star:s.star,
         mascot: s.mascot || s.coatKey === "midknight" || s.name === "Midknight",
-        accessory: s.accessory !== undefined ? s.accessory : undefined,
+        accessory: s.accessory !== undefined ? s.accessory : undefined, owned: s.owned,
         bornAt: s.bornAt ?? (Date.now() - KITTEN_MS * 3), mood:s.mood,
         x: rand(W*0.15,W*0.85), y: rand(H*0.42,H*0.82)
       }));
@@ -1716,51 +1760,68 @@ const cc = {
   rehomeBtn: document.getElementById("cc-rehome"),
   dress: document.getElementById("cc-dress"),
 };
-// ---- wardrobe: little canvas accessories the player puts on any cat ----
+// ---- wardrobe: canvas accessories, bought 1:1 per cat from the Shop's Dress-up tab ----
 const ACCESSORIES = [
-  { key: "collar",  label: "Collar"  },
-  { key: "bandana", label: "Bandana" },
-  { key: "bow",     label: "Bow"     },
-  { key: "scarf",   label: "Scarf"   },
-  { key: "glasses", label: "Glasses" },
-  { key: "flower",  label: "Flower"  },
-  { key: "sunhat",  label: "Sun hat" },
-  { key: "bell",    label: "Bell"    },
-  { key: "crown",   label: "Crown"   },
+  { key:"collar",      label:"Collar",       price:10,  group:"Collars",  blurb:"A simple buckle collar." },
+  { key:"bell",        label:"Bell collar",  price:14,  group:"Collars",  blurb:"A collar with a little brass bell." },
+  { key:"bandana",     label:"Bandana",      price:16,  group:"Neckwear", blurb:"A folded kerchief, knotted at the neck." },
+  { key:"bow",         label:"Bow tie",      price:16,  group:"Neckwear", blurb:"A dapper little bow tie." },
+  { key:"scarf",       label:"Scarf",        price:26,  group:"Neckwear", blurb:"A knitted scarf with two hanging ends." },
+  { key:"glasses",     label:"Glasses",      price:34,  group:"Specs",    blurb:"Round brass wire frames." },
+  { key:"flower",      label:"Ear flower",   price:12,  group:"Blooms",   blurb:"A single bloom tucked behind an ear." },
+  { key:"flowercrown", label:"Flower crown", price:30,  group:"Blooms",   blurb:"A woven ring of little blossoms." },
+  { key:"beanie",      label:"Beanie",       price:22,  group:"Hats",     blurb:"A snug knit cap with a pom." },
+  { key:"cap",         label:"Ball cap",     price:24,  group:"Hats",     blurb:"Brim to the side, face in the clear." },
+  { key:"bucket",      label:"Bucket hat",   price:26,  group:"Hats",     blurb:"Floppy brim, worn tipped back." },
+  { key:"sunhat",      label:"Sun hat",      price:30,  group:"Hats",     blurb:"A woven straw hat pushed back off the face." },
+  { key:"partyhat",    label:"Party hat",    price:20,  group:"Hats",     blurb:"Because every day could be a birthday." },
+  { key:"crown",       label:"Crown",        price:120, group:"Regalia",  blurb:"For the cove's most distinguished loaf." },
 ];
-const ACC_LABEL = Object.fromEntries(ACCESSORIES.map(a => [a.key, a.label.toLowerCase()]));
+const ACC_BY_KEY = Object.fromEntries(ACCESSORIES.map(a => [a.key, a]));
+const ACC_LABEL  = Object.fromEntries(ACCESSORIES.map(a => [a.key, a.label.toLowerCase()]));
+
+function accOwned(c, key) { return !key || !!(c && c.owned && c.owned.includes(key)); }
+function equipAccessory(c, key) {                 // key falsy = take it off; caller ensures it's owned/free
+  if (!c) return;
+  c.accessory = key || null;
+  ensureAudio(); tone(523.25, 0.06, "sine", 0.035); if (key) tone(659.25, 0.07, "sine", 0.03, 0.05);
+  spawnParticles(c.x, c.y - 22, "twinkle", 6);
+  save();
+}
+function buyAccessory(c, key) {                   // buy + wear, 1:1; returns true on success
+  const a = ACC_BY_KEY[key]; if (!a || !c) return false;
+  if (accOwned(c, key)) { equipAccessory(c, key); return true; }
+  if (G.shells < a.price) { toast(`${a.label} is ◈${a.price} — not quite enough shells yet.`); return false; }
+  G.shells -= a.price;
+  (c.owned || (c.owned = [])).push(key);
+  c.accessory = key;
+  sfx("buy");
+  spawnParticles(c.x, c.y - 20, "twinkle", 9);
+  logMoment("🎀", `${c.name} got ${/^[aeiou]/i.test(a.label) ? "an" : "a"} ${a.label.toLowerCase()}.`);
+  fireTip("first_buy");
+  syncHud(); save();
+  return true;
+}
 function renderWardrobe(c) {
   if (!cc.dress) return;
   if (!c || c.mascot) { cc.dress.hidden = true; cc.dress.innerHTML = ""; return; }
   cc.dress.hidden = false;
   const cur = c.accessory || "";
-  // a cat that showed up (or came home) wearing something → you now know how to make it
-  if (cur && !wardrobeOwned(cur)) { (G.wardrobe || (G.wardrobe = {}))[cur] = true; save(); }
-  const chip = (key, label, locked) =>
-    `<button data-acc="${key}" ${locked ? 'data-locked="1"' : ""} class="${cur === key ? "on" : ""}${locked ? " locked" : ""}">${locked ? "🔒 " : ""}${label}</button>`;
-  const owned = ACCESSORIES.filter(a => wardrobeOwned(a.key));
-  const locked = ACCESSORIES.filter(a => !wardrobeOwned(a.key));
+  const own = (c.owned || []).filter(k => ACC_BY_KEY[k]);
+  const chip = (key, label, cls = "") =>
+    `<button data-acc="${key}" class="${cls}${cur === key ? " on" : ""}">${label}</button>`;
   cc.dress.innerHTML =
     `<div class="dl">Dress up</div><div class="chips">` +
     chip("", "Bare") +
-    owned.map(a => chip(a.key, a.label)).join("") +
-    locked.map(a => chip(a.key, a.label, true)).join("") +
-    `</div>` +
-    (locked.length ? `<div class="dhint">Locked ones are in the Shop under “Dress-up”.</div>` : "");
+    own.map(k => chip(k, ACC_BY_KEY[k].label)).join("") +
+    `<button data-shop="1" class="acc-more">＋ Shop</button>` +
+    `</div>`;
   cc.dress.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
     if (!cardCat) return;
-    if (b.dataset.locked) {
-      const w = WARDROBE_ITEMS.find(x => x.key === b.dataset.acc);
-      toast(`${w ? w.name : "That"} isn't unlocked yet — find it in the Shop under “Dress-up”.`);
-      return;
-    }
-    const key = b.dataset.acc || null;
-    cardCat.accessory = key;
-    cardTimer = 8;                       // keep the card up while they experiment
-    ensureAudio(); tone(523.25, 0.06, "sine", 0.035); if (key) tone(659.25, 0.07, "sine", 0.03, 0.05);
-    spawnParticles(cardCat.x, cardCat.y - 22, "twinkle", 6);
+    if (b.dataset.shop) { openShopDress(cardCat); return; }
+    equipAccessory(cardCat, b.dataset.acc || null);
+    cardTimer = 8;
     renderWardrobe(cardCat);
-    save();
   }));
 }
 function rehomeReward(c) {
@@ -1849,25 +1910,13 @@ function updateCatCard() {
 function hideCatCard() { cc.el.hidden = true; cardCat = null; }
 
 /* ---------- shop ---------- */
-const SHOP_GROUPS = [
-  { id:"comforts", label:"Comforts & scenery" },
-  { id:"stations", label:"Activity stations" },
-  { id:"dress", label:"Dress-up" },
-  { id:"upgrades", label:"Cove upgrades" },
+const SHOP_TABS = [
+  { id:"featured", label:"Featured", intro:"Little ways to help the cove along." },
+  { id:"comforts", label:"Comforts", intro:"More comforts draw more cats — and the right one keeps each personality happy." },
+  { id:"stations", label:"Stations", intro:"Spots where cats work: bigger output while they're busy, plus a mood lift." },
+  { id:"dress",    label:"Dress-up", intro:"Pick a cat, then pick a look. Each piece is bought for that one cat." },
+  { id:"upgrades", label:"Upgrades", intro:"Cove-wide boosts and expansions." },
 ];
-// one-time cosmetic unlocks — buy once, then any cat can wear it (free) from its card
-const WARDROBE_ITEMS = [
-  { key:"collar",  name:"Collar",  price:12,  desc:"A simple buckle collar." },
-  { key:"bell",    name:"Bell",    price:16,  desc:"A collar with a little brass bell." },
-  { key:"bandana", name:"Bandana", price:20,  desc:"A folded kerchief, knotted at the neck." },
-  { key:"bow",     name:"Bow",     price:20,  desc:"A tidy ribbon bow." },
-  { key:"flower",  name:"Flower",  price:18,  desc:"A single bloom tucked behind an ear." },
-  { key:"scarf",   name:"Scarf",   price:34,  desc:"A knitted scarf with two hanging ends." },
-  { key:"glasses", name:"Glasses", price:44,  desc:"Round brass wire frames." },
-  { key:"sunhat",  name:"Sun hat", price:48,  desc:"A woven straw hat with a brown band." },
-  { key:"crown",   name:"Crown",   price:150, desc:"For the cove's most distinguished loaf." },
-];
-function wardrobeOwned(key) { return !!(G.wardrobe && G.wardrobe[key]); }
 const SHOP = [
   { key:"bowls", cat:"comforts", type:"food", name:"Food bowl", desc:"Cats come here to eat, then wash up. +2 cat capacity.",
     base:12, mul:1.6, keepMin:1, get:()=>G.bowls, buy:()=>{ G.bowls++; rebuildAttractors(); }, remove:()=>{ G.bowls--; rebuildAttractors(); } },
@@ -1897,12 +1946,6 @@ const SHOP = [
     base:5000, mul:1, pearls:30, get:()=>G.coveCharter ? 1 : 0, max:1,
     need:()=> dexCount() < COATS.length ? `Discover all ${COATS.length} coats first — ${dexCount()}/${COATS.length}` : null,
     buy:()=>{ G.coveCharter = true; } },
-  ...WARDROBE_ITEMS.map(w => ({
-    key:"acc_" + w.key, cat:"dress", name:w.name, desc:w.desc + " Tap any cat, then “Dress up”.",
-    base:w.price, mul:1, max:1,
-    get:()=> wardrobeOwned(w.key) ? 1 : 0,
-    buy:()=>{ (G.wardrobe || (G.wardrobe = {}))[w.key] = true; if (cardCat && !cardCat.mascot) renderWardrobe(cardCat); },
-  })),
 ];
 const COMFORT_STATE = { food:"eating", toy:"playing", bed:"sleeping", cottage:"sleeping", tree:"sleeping", scratch:"scratching",
   fishing:"fishing", bakery:"baking", sunbeam:"sunbathing", garden:"rolling" };
@@ -1938,11 +1981,16 @@ function buyBoost() {
   logMoment("⚡", "Broke out the fresh catnip. The cove went briefly feral (in a productive way).");
   syncHud(); renderShop();
 }
-function renderShop() {
-  const list = document.getElementById("shopList");
-  list.innerHTML = "";
+let shopTab = "featured";
+let shopDressCat = null;
+function openShopDress(cat) {
+  shopTab = "dress";
+  if (cat && !cat.mascot) shopDressCat = cat;
+  if (panels.shop.hidden) togglePanel("shop"); else { renderShop(); document.getElementById("shopList").scrollTop = 0; }
+}
+function shopHead(text) { const h = document.createElement("div"); h.className = "shop-cat"; h.textContent = text; return h; }
 
-  // Cozy Supporter Pack — the one paid item (simulated purchase in this build)
+function shopPackRow() {
   const pack = document.createElement("div");
   pack.className = "shop-item pack";
   pack.innerHTML = Ads.owned()
@@ -1954,9 +2002,9 @@ function renderShop() {
        <button class="btn primary">${SUPPORTER_PRICE}</button>`;
   const pb = pack.querySelector("button");
   if (pb) pb.addEventListener("click", () => showPackOffer(false));
-  list.appendChild(pack);
-
-  // Fresh catnip — a repeatable temporary 2× earnings boost
+  return pack;
+}
+function shopBoostRow() {
   const bc = document.createElement("div");
   bc.className = "shop-item boostcard";
   if (boostActive()) {
@@ -1971,82 +2019,142 @@ function renderShop() {
     const bb = bc.querySelector("button");
     if (bb) bb.addEventListener("click", () => buyBoost());
   }
-  list.appendChild(bc);
+  return bc;
+}
+function shopItemRow(item) {
+  const maxed = item.max != null && item.get() >= item.max;
+  const price = priceOf(item);
+  const pearlCost = item.pearls || 0;
+  const lockMsg = !maxed && item.need ? item.need() : null;
+  const afford = G.shells >= price && G.pearls >= pearlCost;
+  const row = document.createElement("div");
+  row.className = "shop-item" + (item.key === "charter" ? " prestige" : "");
+  const priceLabel = maxed ? "owned" : lockMsg ? "🔒" : pearlCost ? `◈${price} · ✦${pearlCost}` : `◈ ${price}`;
+  const canRemove = !!item.remove && item.get() > (item.keepMin || 0);
+  const refund = canRemove ? Math.max(1, Math.round(item.base * Math.pow(item.mul, item.get() - 1) * 0.4)) : 0;
+  row.innerHTML = `
+    <div class="txt">
+      <div class="name">${item.name} ${item.get() && item.max !== 1 ? `<span class="lv">·&nbsp;${item.max ? ("lv " + item.get()) : ("×" + item.get())}</span>` : ""}</div>
+      <div class="desc">${lockMsg ? "🔒 " + lockMsg : item.desc}</div>
+    </div>
+    <div class="shop-actions">
+      ${canRemove ? `<button class="btn tiny remove" title="Remove one — refunds ◈${refund}">−</button>` : ""}
+      <button class="btn primary" ${maxed || lockMsg || !afford ? "disabled" : ""}>${priceLabel}</button>
+    </div>`;
+  const rmBtn = row.querySelector(".remove");
+  if (rmBtn) rmBtn.addEventListener("click", () => {
+    if (item.get() <= (item.keepMin || 0)) return;
+    item.remove();
+    if (STATION[item.type]) for (const c of cats) if (c._station === item.type || c._pendStation === item.type) { c._station = null; c._pendStation = null; c._fx = null; c.stateDur = 0; }
+    G.shells += refund;
+    tone(392, 0.1, "sine", 0.05); tone(294, 0.14, "sine", 0.04, 0.06);
+    spawnParticles(W / 2, H * 0.55, "dust", 6);
+    syncHud(); renderShop();
+    toast(`Packed away a ${item.name.toLowerCase()} — refunded ◈${refund}.`);
+  });
+  const btn = row.querySelector(".btn.primary");
+  if (!maxed && !lockMsg) btn.addEventListener("click", () => {
+    const p = priceOf(item);
+    if (G.shells < p || G.pearls < pearlCost) return;
+    G.shells -= p;
+    if (pearlCost) G.pearls -= pearlCost;
+    item.buy();
+    sfx("buy");
+    spawnParticles(W / 2, H * 0.5, "spark", 10);
+    syncHud(); renderShop();
+    fireTip("first_buy");
+    if (item.key === "charter") { toast("The Cove Charter is signed — room for up to 24 cats now. 🏡", 5); spawnParticles(W / 2, H * 0.45, "twinkle", 18); }
+    if (item.type === "flowers") {
+      toast(`Flowers planted — the whole cove feels a bit brighter`);
+    } else if (item.type) {
+      welcomeToComfort(item.type);
+      const verb = item.type === "food" ? "eat" : item.type === "toy" ? "play" : item.type === "scratch" ? "have a scratch"
+        : item.type === "tree" ? "doze in the shade" : item.type === "fishing" ? "fish" : item.type === "bakery" ? "help out"
+        : item.type === "sunbeam" ? "sunbathe" : item.type === "garden" ? "roll in the catmint" : "nap";
+      toast(`New ${item.name.toLowerCase()} — cats are heading over to ${verb}`);
+    }
+  });
+  return row;
+}
 
-  for (const grp of SHOP_GROUPS) {
-   const grpItems = SHOP.filter(i => i.cat === grp.id);
-   if (!grpItems.length) continue;
-   const head = document.createElement("div");
-   head.className = "shop-cat";
-   head.textContent = grp.label;
-   list.appendChild(head);
-   for (const item of grpItems) {
-    const maxed = item.max != null && item.get() >= item.max;
-    const price = priceOf(item);
-    const pearlCost = item.pearls || 0;
-    const lockMsg = !maxed && item.need ? item.need() : null;
-    const afford = G.shells >= price && G.pearls >= pearlCost;
-    const row = document.createElement("div");
-    row.className = "shop-item" + (item.key === "charter" ? " prestige" : "");
-    const priceLabel = maxed ? "owned"
-      : lockMsg ? "🔒"
-      : pearlCost ? `◈${price} · ✦${pearlCost}` : `◈ ${price}`;
-    const canRemove = !!item.remove && item.get() > (item.keepMin || 0);
-    const refund = canRemove ? Math.max(1, Math.round(item.base * Math.pow(item.mul, item.get() - 1) * 0.4)) : 0;
-    row.innerHTML = `
-      <div class="txt">
-        <div class="name">${item.name} ${item.get() && item.max !== 1 ? `<span class="lv">·&nbsp;${item.max?("lv "+item.get()):("×"+item.get())}</span>`:""}</div>
-        <div class="desc">${lockMsg ? "🔒 " + lockMsg : item.desc}</div>
-      </div>
-      <div class="shop-actions">
-        ${canRemove ? `<button class="btn tiny remove" title="Remove one — refunds ◈${refund}">−</button>` : ""}
-        <button class="btn primary" ${maxed || lockMsg || !afford ? "disabled":""}>${priceLabel}</button>
-      </div>`;
-    const rmBtn = row.querySelector(".remove");
-    if (rmBtn) rmBtn.addEventListener("click", () => {
-      if (item.get() <= (item.keepMin || 0)) return;
-      item.remove();
-      // shoo any cat off a station type that just lost a spot so it re-decides
-      if (STATION[item.type]) for (const c of cats) if (c._station === item.type || c._pendStation === item.type) { c._station = null; c._pendStation = null; c._fx = null; c.stateDur = 0; }
-      G.shells += refund;
-      tone(392, 0.1, "sine", 0.05); tone(294, 0.14, "sine", 0.04, 0.06);
-      spawnParticles(W / 2, H * 0.55, "dust", 6);
-      syncHud(); renderShop();
-      toast(`Packed away a ${item.name.toLowerCase()} — refunded ◈${refund}.`);
-    });
-    const btn = row.querySelector(".btn.primary");
-    if (!maxed && !lockMsg) btn.addEventListener("click", () => {
-      const p = priceOf(item);
-      if (G.shells < p || G.pearls < pearlCost) return;
-      G.shells -= p;
-      if (pearlCost) G.pearls -= pearlCost;
-      item.buy();
-      sfx("buy");
-      spawnParticles(W/2, H*0.5, "spark", 10);
-      syncHud(); renderShop();
-      fireTip("first_buy");
-      if (item.key === "charter") { toast("The Cove Charter is signed — room for up to 24 cats now. 🏡", 5); spawnParticles(W/2, H*0.45, "twinkle", 18); }
-      if (item.cat === "dress") {
-        toast(`${item.name} unlocked — tap any cat, then “Dress up”, to put it on.`, 4);
-        if (cardCat && !cardCat.mascot) { renderWardrobe(cardCat); cardTimer = 8; }
-      }
-      if (item.type === "flowers") {
-        toast(`Flowers planted — the whole cove feels a bit brighter`);
-      } else if (item.type) {
-        welcomeToComfort(item.type);
-        const verb = item.type === "food" ? "eat"
-          : item.type === "toy" ? "play"
-          : item.type === "scratch" ? "have a scratch"
-          : item.type === "tree" ? "doze in the shade"
-          : item.type === "fishing" ? "fish"
-          : item.type === "bakery" ? "help out"
-          : item.type === "sunbeam" ? "sunbathe"
-          : item.type === "garden" ? "roll in the catmint" : "nap";
-        toast(`New ${item.name.toLowerCase()} — cats are heading over to ${verb}`);
-      }
-    });
-    list.appendChild(row);
-   }
+// a small model-cat head for the Dress-up catalogue previews
+function drawAccPreview(cv, key, coat) {
+  const g = cv.getContext("2d"), s = cv.width;
+  g.clearRect(0, 0, s, s);
+  g.save();
+  g.translate(s / 2, s * 0.64); g.scale(s / 60, s / 60);
+  const fur = (coat && coat.base) || "#7d7267";
+  g.fillStyle = fur;
+  g.beginPath(); g.moveTo(-11, -7); g.lineTo(-15, -18); g.lineTo(-3, -10); g.closePath();
+  g.moveTo(11, -7); g.lineTo(15, -18); g.lineTo(3, -10); g.closePath(); g.fill();
+  g.beginPath(); g.ellipse(0, 0, 13, 12, 0, 0, 7); g.fill();
+  g.fillStyle = (coat && coat.eye) || "#f0c862";
+  g.beginPath(); g.arc(-4.6, -1, 1.7, 0, 7); g.arc(4.6, -1, 1.7, 0, 7); g.fill();
+  try { drawAccessory(g, key, { hr: 13, hx: 0, hy: 0, bw: 14, top: -15 }, coat || { base: fur }, false); } catch (e) {}
+  g.restore();
+}
+
+function renderShopDress(list) {
+  const cs = cats.filter(c => !c.mascot);
+  if (!cs.length) { list.insertAdjacentHTML("beforeend", `<p class="muted">Coax a cat first — then you can dress them up here.</p>`); return; }
+  if (!shopDressCat || !cs.includes(shopDressCat)) shopDressCat = cs[0];
+  const c = shopDressCat;
+
+  const bar = document.createElement("div");
+  bar.innerHTML =
+    `<div class="dress-cats">` + cs.map((x, i) =>
+      `<button data-ci="${i}" class="${x === c ? "on" : ""}">${x.name}</button>`).join("") + `</div>` +
+    `<div class="dress-now">Wearing: <b>${c.accessory ? ACC_BY_KEY[c.accessory].label : "nothing"}</b>` +
+      (c.accessory ? ` <button class="btn small" data-buy="">take it off</button>` : ``) + `</div>`;
+  bar.querySelectorAll(".dress-cats button").forEach(b => b.onclick = () => {
+    shopDressCat = cs[+b.dataset.ci]; renderShop(); list.scrollTop = 0;
+  });
+  list.appendChild(bar);
+
+  for (const grp of [...new Set(ACCESSORIES.map(a => a.group))]) {
+    list.appendChild(shopHead(grp));
+    for (const a of ACCESSORIES.filter(x => x.group === grp)) {
+      const owned = accOwned(c, a.key), worn = c.accessory === a.key;
+      const row = document.createElement("div");
+      row.className = "shop-item dress-item" + (worn ? " worn" : "");
+      row.innerHTML =
+        `<canvas class="dress-prev" width="46" height="46"></canvas>
+         <div class="txt"><div class="name">${a.label}</div>
+           <div class="desc">${worn ? "Worn now" : owned ? "In " + c.name + "'s wardrobe" : a.blurb}</div></div>
+         <button class="btn primary" data-buy="${a.key}" ${worn ? "disabled" : ""}>${worn ? "on" : owned ? "wear" : "◈ " + a.price}</button>`;
+      drawAccPreview(row.querySelector("canvas"), a.key, c.coat);
+      list.appendChild(row);
+    }
+  }
+  list.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => {
+    const k = b.dataset.buy;
+    if (k === "") equipAccessory(c, null);
+    else if (!buyAccessory(c, k)) return;
+    if (cardCat === c) { renderWardrobe(c); cardTimer = 8; }
+    renderShop();
+  });
+}
+
+function renderShop() {
+  const list = document.getElementById("shopList");
+  const tabsEl = document.getElementById("shopTabs");
+  if (!SHOP_TABS.some(t => t.id === shopTab)) shopTab = "featured";
+  tabsEl.innerHTML = SHOP_TABS.map(t => `<button data-tab="${t.id}" class="${t.id === shopTab ? "on" : ""}">${t.label}</button>`).join("");
+  tabsEl.querySelectorAll("button").forEach(b => b.onclick = () => { shopTab = b.dataset.tab; renderShop(); list.scrollTop = 0; });
+
+  list.innerHTML = "";
+  const tab = SHOP_TABS.find(t => t.id === shopTab);
+  list.insertAdjacentHTML("beforeend", `<p class="muted">${tab.intro}</p>`);
+
+  if (shopTab === "featured") {
+    list.appendChild(shopPackRow());
+    list.appendChild(shopBoostRow());
+    const rec = SHOP.find(i => i.cat === "comforts" && i.get() === 0) || SHOP.find(i => i.cat === "stations" && i.get() === 0);
+    if (rec) { list.appendChild(shopHead("Suggested next")); list.appendChild(shopItemRow(rec)); }
+  } else if (shopTab === "dress") {
+    renderShopDress(list);
+  } else {
+    for (const item of SHOP.filter(i => i.cat === shopTab)) list.appendChild(shopItemRow(item));
   }
 }
 
@@ -4403,20 +4511,56 @@ function drawAccessory(g, kind, P, coat, kit) {
     g.fillStyle = "#bd6a44";
     g.beginPath(); g.arc(hx - hr * 0.3, y - 1, kit ? 2.4 : 3, 0, 7); g.fill();
   } else if (kind === "sunhat") {
-    const y = hy - hr * 0.44;
+    // worn pushed back off the face: brim rides high, only dips a little at the sides
+    const y = hy - hr * 0.92;
     g.fillStyle = "#e3c07a";
-    g.beginPath(); g.ellipse(hx, y + 2, hr * 1.5, hr * 0.5, 0, 0, 7); g.fill();
-    g.strokeStyle = "rgba(120,90,40,0.32)"; g.lineWidth = 0.9;
-    g.beginPath(); g.ellipse(hx, y + 2, hr * 1.5, hr * 0.5, 0, 0, 7); g.stroke();
+    g.beginPath(); g.ellipse(hx, y + hr * 0.5, hr * 1.4, hr * 0.34, 0, 0, 7); g.fill();
+    g.strokeStyle = "rgba(120,90,40,0.3)"; g.lineWidth = 0.9;
+    g.beginPath(); g.ellipse(hx, y + hr * 0.5, hr * 1.4, hr * 0.34, 0, 0, 7); g.stroke();
     g.fillStyle = "#eccd8b";
-    g.beginPath(); g.ellipse(hx, y + 2, hr * 0.74, hr * 0.66, 0, Math.PI, 2 * Math.PI); g.closePath(); g.fill();
+    g.beginPath(); g.ellipse(hx, y + hr * 0.42, hr * 0.66, hr * 0.5, 0, Math.PI, 2 * Math.PI); g.fill();
     g.fillStyle = "#c9754e";
-    g.beginPath();
-    g.moveTo(hx - hr * 0.7, y + 1.4);
-    g.lineTo(hx + hr * 0.7, y + 1.4);
-    g.lineTo(hx + hr * 0.66, y - (kit ? 0.6 : 1));
-    g.lineTo(hx - hr * 0.66, y - (kit ? 0.6 : 1));
-    g.closePath(); g.fill();
+    g.fillRect(hx - hr * 0.6, y + hr * 0.3, hr * 1.2, hr * 0.13);
+  } else if (kind === "beanie") {
+    const y = hy - hr * 0.66;
+    g.fillStyle = "#6f9a86";
+    g.beginPath(); g.ellipse(hx, y + hr * 0.14, hr * 0.96, hr * 0.72, 0, Math.PI, 2 * Math.PI); g.fill();
+    g.fillStyle = "#5c8472";
+    g.fillRect(hx - hr * 0.96, y + hr * 0.04, hr * 1.92, hr * 0.2);
+    g.fillStyle = "#a9d0bd";
+    g.beginPath(); g.arc(hx, y - hr * 0.62, hr * 0.15, 0, 7); g.fill();
+  } else if (kind === "cap") {
+    const y = hy - hr * 0.74;
+    g.fillStyle = "#4f7fa8";
+    g.beginPath(); g.ellipse(hx, y + hr * 0.28, hr * 0.8, hr * 0.5, 0, Math.PI, 2 * Math.PI); g.fill();
+    g.fillStyle = "#3f6b90";
+    g.beginPath(); g.ellipse(hx - hr * 0.62, y + hr * 0.34, hr * 0.72, hr * 0.2, -0.22, 0, 7); g.fill();
+    g.fillStyle = "#6fa0c8";
+    g.beginPath(); g.arc(hx, y - hr * 0.24, hr * 0.1, 0, 7); g.fill();
+  } else if (kind === "bucket") {
+    const y = hy - hr * 0.86;
+    g.fillStyle = "#c7b083";
+    g.beginPath(); g.ellipse(hx, y + hr * 0.56, hr * 1.14, hr * 0.28, 0, 0, 7); g.fill();
+    g.fillStyle = "#d8c298";
+    g.beginPath(); g.ellipse(hx, y + hr * 0.42, hr * 0.8, hr * 0.54, 0, Math.PI, 2 * Math.PI); g.fill();
+    g.strokeStyle = "rgba(90,70,40,.28)"; g.lineWidth = 0.8;
+    g.beginPath(); g.ellipse(hx, y + hr * 0.56, hr * 1.14, hr * 0.28, 0, 0, 7); g.stroke();
+  } else if (kind === "partyhat") {
+    const bx = hx + hr * 0.12, by = hy - hr * 0.52;
+    g.fillStyle = "#e488ac";
+    g.beginPath(); g.moveTo(bx - hr * 0.5, by); g.lineTo(bx + hr * 0.5, by); g.lineTo(bx + hr * 0.04, by - hr * 1.5); g.closePath(); g.fill();
+    g.fillStyle = "#f6c6da";
+    for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(bx - hr * 0.18 + i * hr * 0.2, by - hr * 0.32 - i * hr * 0.32, hr * 0.09, 0, 7); g.fill(); }
+    g.fillStyle = "#fff"; g.beginPath(); g.arc(bx + hr * 0.04, by - hr * 1.5, hr * 0.13, 0, 7); g.fill();
+  } else if (kind === "flowercrown") {
+    const y = hy - hr * 0.66;
+    for (let i = -3; i <= 3; i++) {
+      const fx = hx + i * hr * 0.3, fy = y + Math.abs(i) * hr * 0.13;
+      g.fillStyle = (i & 1) ? "#f0a9c4" : "#f6d878";
+      for (let p = 0; p < 5; p++) { const a = p / 5 * Math.PI * 2;
+        g.beginPath(); g.arc(fx + Math.cos(a) * hr * 0.11, fy + Math.sin(a) * hr * 0.11, hr * 0.08, 0, 7); g.fill(); }
+      g.fillStyle = "#e79a3c"; g.beginPath(); g.arc(fx, fy, hr * 0.06, 0, 7); g.fill();
+    }
   }
   g.restore();
 }
@@ -5591,7 +5735,7 @@ function advLoot(cat, dest) {
   if (rnd() < 0.55 || has("climber")) { reward.keepsake = pick(keepPool); lines.push(`brought back ${reward.keepsake.label}`); }
   if (has("glutton")) { reward.keepsake = { emoji: "📖", label: `a recipe from the ${dest === "island" ? "island" : "trail"}` }; lines.push("came back with a new recipe"); }
   if (has("climber")) { reward.shells += 60; lines.push("got somewhere the others couldn't and pocketed the difference"); }
-  if (has("playful") && !cat.accessory) { cat.accessory = pick(["bow", "bandana", "flower", "scarf"]); lines.push(`came home wearing a ${cat.accessory} it found`); }
+  if (has("playful") && !cat.accessory) { const f = pick(["bow", "bandana", "flower", "scarf"]); cat.accessory = f; if (cat.owned && !cat.owned.includes(f)) cat.owned.push(f); lines.push(`came home wearing ${/^[aeiou]/i.test(ACC_LABEL[f] || f) ? "an" : "a"} ${ACC_LABEL[f] || f} it found`); }
   if (has("lazy")) lines.push("took the very scenic route");
   if (rnd() < (dest === "island" ? 0.28 : 0.12)) { reward.pearls = dest === "island" ? 3 : 1; lines.push(reward.pearls === 1 ? "turned up a pearl" : `turned up ${reward.pearls} pearls`); }
   let mapP = { fishing: 0.06, forest: 0.12, island: 0.22 }[dest];
@@ -5682,7 +5826,7 @@ function startAdventure(name, dest) {
   if (i < 0) return;
   const c = cats[i];
   const data = { name: c.name, traits: c.traits, coatKey: c.coatKey, markSeed: c.markSeed, star: c.star,
-    mascot: c.mascot, bornAt: c.bornAt, mood: Math.round(c.mood), accessory: c.accessory ?? null };
+    mascot: c.mascot, bornAt: c.bornAt, mood: Math.round(c.mood), accessory: c.accessory ?? null, owned: c.owned || [] };
   cats.splice(i, 1);
   if (typeof cardCat !== "undefined" && cardCat === c) hideCatCard();
   const mins = ADV_DESTS[dest].mins * (c.traits.includes("lazy") ? 1.6 : 1);
