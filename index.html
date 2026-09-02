@@ -2533,18 +2533,18 @@ function catMeow(kind, c) {
     _lastMeowAt = now;
     if ((G.metrics.pets || 0) > 0 && Math.random() < 0.32) return;  // ~1 in 3 pets is quiet
     if (c && c.petAffinity && c.petAffinity() > 1.15 && Math.random() < 0.22) {
-      if (playSample("purr", { vol: 0.4 })) return;
+      if (playSample("purr", { vol: 0.5 })) return;
     }
     const pool = (c && c.isKitten) ? "kitten" : "meow";
-    if (!playSample(pool, { vol: 0.5 })) meow(true, 0.8);
+    if (!playSample(pool, { vol: 0.8 })) meow(true, 0.8);
     return;
   }
-  if (kind === "grumpy") { if (!playSample("grumpy", { vol: 0.55 })) meow(false, 0.7); return; }
-  if (kind === "eat")    { if (!playSample("meow", { vol: 0.4, rate: 0.97 })) meow(false, 0.7); return; }
-  if (kind === "wake")   { if (!playSample("wake", { vol: 0.5 })) meow(true, 0.7); return; }
+  if (kind === "grumpy") { if (!playSample("grumpy", { vol: 0.7 })) meow(false, 0.7); return; }
+  if (kind === "eat")    { if (!playSample("meow", { vol: 0.55, rate: 0.97 })) meow(false, 0.7); return; }
+  if (kind === "wake")   { if (!playSample("wake", { vol: 0.7 })) meow(true, 0.7); return; }
   // coax / buy / reveal reward voice
   _lastMeowAt = now;
-  if (!playSample("meow", { vol: 0.62 })) meow(true, 1);
+  if (!playSample("meow", { vol: 0.9 })) meow(true, 1);
 }
 
 function sfx(kind, c) {
