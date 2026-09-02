@@ -279,6 +279,7 @@
     cursor:pointer;margin-top:.7rem;text-decoration:underline;}
   #rest .rest-bar[hidden]{display:none;}
   #app.resting #hud,#app.resting #actions{opacity:0;pointer-events:none;transition:opacity .5s;}
+  #app.resting #toast,#app.resting #dev{opacity:0!important;pointer-events:none;}
   #rest .rest-bar{pointer-events:auto;position:absolute;left:50%;bottom:calc(2.6rem + env(safe-area-inset-bottom));
     transform:translateX(-50%);display:flex;align-items:center;gap:.7rem;white-space:nowrap;
     background:rgba(18,18,26,.5);color:#fff;padding:.5rem .5rem .5rem .95rem;border-radius:999px;font-size:.85rem;
@@ -3099,6 +3100,15 @@ function restSeatCats() {
   }));
 }
 
+// the sim (and every timer that dismisses UI) is paused in rest mode, so wipe
+// anything transient before the cabin comes up — toasts, the cat card, a modal,
+// leftover particles/floaters
+function restClearUI() {
+  particles.length = 0; floaters.length = 0;
+  toastEl.classList.remove("on"); toastTimer = 0;
+  try { hideCatCard(); } catch (e) {}
+  try { closeModal(); } catch (e) {}
+}
 function openRestPanel() {
   ensureAudio(); loadRainLoop(); initGlassDrops();
   document.getElementById("restPanel").hidden = false;
@@ -3106,7 +3116,7 @@ function openRestPanel() {
   document.getElementById("rest").classList.add("on");
   document.getElementById("app").classList.add("resting");
   restMode = true; restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
-  particles.length = 0; floaters.length = 0;   // the sim is paused in rest mode — don't leave FX frozen on the cabin
+  restClearUI();
   restSeatCats();
 }
 function closeRestPanel() {
@@ -3121,7 +3131,7 @@ function beginRest(resumed) {
   if (!resumed) { restStartedAt = Date.now(); restEndsAt = restOpts.hours > 0 ? restStartedAt + restOpts.hours * 3600e3 : 0; }
   restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
   restMode = true;
-  particles.length = 0; floaters.length = 0;
+  restClearUI();
   document.getElementById("rest").classList.add("on");
   document.getElementById("app").classList.add("resting");
   initGlassDrops(); restSeatCats();
