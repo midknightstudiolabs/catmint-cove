@@ -1431,7 +1431,7 @@ function updateCat(c, dt) {
   // at a station) only react to a *hard* overlap — otherwise a packed nap pile
   // on a small screen has them all endlessly micro-drifting ("sleeping cat is
   // moving"). Once a held cat has room it goes perfectly still.
-  let crowded = false, hardStacked = false;
+  let crowded = false, hardStacked = false, crowdPush = 0;
   if (c.state !== "being_pet") {
     let sx = 0, sy = 0, hits = 0;
     const R = held ? 34 : 52;
@@ -1443,16 +1443,20 @@ function updateCat(c, dt) {
       if (od < R) { const f = (R - od) / R; sx += (ox / od) * f; sy += (oy / od) * f; hits++; }
     }
     if (hits) {
-      if (held) hardStacked = true; else crowded = true;
-      const k = held ? 20 : travelling ? 32 : 28;
+      if (held) hardStacked = true;
+      else { crowded = true; crowdPush = Math.hypot(sx, sy); }
+      // idle cats properly overlapping get a firm shove so they STEP apart
+      // (legs, not an ooze); a light edge-touch stays gentle so it can settle
+      const k = held ? 20 : travelling ? 32 : (crowdPush >= 0.3 ? 46 : 22);
       ax += sx * k; ay += sy * k;
     }
   }
+  const shoving = crowded && crowdPush >= 0.3;   // idle cat actively stepping clear of an overlap
 
   // integrate + damp. a hard-stacked held cat loosens up briefly to slide clear;
   // otherwise held = clamped tight so it doesn't drift.
   c.vx += ax * dt; c.vy += ay * dt;
-  const damp = held ? (hardStacked ? 5 : 24) : travelling ? 2.4 : 9;
+  const damp = held ? (hardStacked ? 5 : 24) : shoving ? 4 : travelling ? 2.4 : 9;
   const dk = Math.min(1, damp * dt);
   c.vx -= c.vx * dk; c.vy -= c.vy * dk;
 
@@ -1460,8 +1464,9 @@ function updateCat(c, dt) {
   // (but let a stacked cat keep its slow untangle crawl)
   let spd = Math.hypot(c.vx, c.vy);
   if (spd > 62) { const s = 62 / spd; c.vx *= s; c.vy *= s; spd = 62; }
-  // held + not hard-stacked → dead still. idle non-held → still unless crowded.
-  if (!travelling && spd < 3 && (held ? !hardStacked : !crowded)) { c.vx = 0; c.vy = 0; spd = 0; }
+  // held + not hard-stacked → dead still. idle non-held → still unless actively
+  // shoving clear of a real overlap (a light edge-touch is allowed to settle).
+  if (!travelling && spd < 3 && (held ? !hardStacked : !shoving)) { c.vx = 0; c.vy = 0; spd = 0; }
 
   c.x += c.vx * dt; c.y += c.vy * dt;
 
@@ -1474,11 +1479,13 @@ function updateCat(c, dt) {
     else if (c.y > maxY) { c.y = maxY; if (c.vy > 0) c.vy = 0; }
   }
 
-  // gait + facing driven by smoothed velocity (hysteresis stops flip-flicker)
-  c.trotting = spd > 6 && !held;
+  // gait + facing driven by smoothed velocity. the bar to "stepping" sits just
+  // above the dead-stop threshold (with hysteresis) so ANY real movement shows
+  // legs — a slow final approach or a nudge from a neighbour never glides.
+  c.trotting = !held && spd > (c.trotting ? 2.2 : 3.4);
   if (c.trotting) {
-    c.walk += spd * dt * 0.34;            // ~1.7 strides/sec at a normal amble
-    if (Math.abs(c.vx) > 9) c.face = c.vx > 0 ? 1 : -1;
+    c.walk += spd * dt * 0.34;             // stride cadence tracks speed — slow approach = small careful steps
+    if (Math.abs(c.vx) > 4) c.face = c.vx > 0 ? 1 : -1;
   }
   c.walkAmt = c.walkAmt === undefined ? 0 : c.walkAmt + ((c.trotting ? 1 : 0) - c.walkAmt) * Math.min(1, dt * 9);
 
