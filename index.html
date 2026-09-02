@@ -1,5 +1,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!-- always revalidate the page against GitHub Pages so a new deploy shows up immediately (ETag → 304 when unchanged) -->
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="theme-color" content="#bfe0d6">
 <meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -638,6 +642,11 @@
 const SAVE_KEY = "catmintCove.save.v8";
 const OLD_SAVE_KEYS = ["catmintCove.save.v7", "catmintCove.save.v6", "catmintCove.save.v5"];
 const SAVE_VERSIONS = [5, 6, 7, 8];
+// a cache key that changes on every deploy (the file's Last-Modified moves) —
+// appended to the runtime asset fetches so audio never loads stale after an update
+const BUILD = String(Date.parse(document.lastModified) || 0) + ".9";
+// only bust on the hosted web build — the native app bundles assets locally
+const bust = (u) => /^https?:$/.test(location.protocol) ? u + (u.includes("?") ? "&" : "?") + "v=" + BUILD : u;
 // developer build: served at /dev/ or with ?dev — unlocks the dev panel + R-key
 // reset. The plain build (root URL) has none of that, safe to hand to testers.
 const DEV_BUILD = /(^|\/)dev\/?$/.test(location.pathname) || /(^|[?&])dev\b/.test(location.search);
@@ -3211,7 +3220,7 @@ function loadSfx() {
   const urls = [...new Set(Object.values(SFX_FILES).flat())];
   urls.forEach(async u => {
     try {
-      const r = await fetch(u); if (!r.ok) return;
+      const r = await fetch(bust(u)); if (!r.ok) return;
       _sfxBuf[u] = await actx.decodeAudioData(await r.arrayBuffer());
     } catch (e) { /* stays missing → synth fallback */ }
   });
@@ -3527,7 +3536,7 @@ function updateGlassDrops(dt) {
 async function loadRainLoop() {
   if (rainBuffer || !actx) return;
   try {
-    const res = await fetch("rain-loop.opus");
+    const res = await fetch(bust("rain-loop.opus"));
     if (!res.ok) throw 0;
     rainBuffer = await actx.decodeAudioData(await res.arrayBuffer());
   } catch (e) { rainBuffer = null; }
