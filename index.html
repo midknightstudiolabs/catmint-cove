@@ -466,6 +466,11 @@ const OLD_SAVE_KEYS = ["catmintCove.save.v5"];
 // developer build: served at /dev/ or with ?dev — unlocks the dev panel + R-key
 // reset. The plain build (root URL) has none of that, safe to hand to testers.
 const DEV_BUILD = /(^|\/)dev\/?$/.test(location.pathname) || /(^|[?&])dev\b/.test(location.search);
+// Ads are OFF for the store launch. We ship ad-free + the Supporter Pack, get a
+// clean retention baseline, then turn ads on (this flag becomes a remote-config
+// flag in the native build — no re-submission). `?ads` forces them on for QA;
+// the dev "show ad" button flips it at runtime.
+let ADS_ENABLED = /(^|[?&])ads\b/.test(location.search);
 const DAY_MS = 86400000;
 const today = () => Math.floor(Date.now() / DAY_MS);
 let DPR = Math.min(window.devicePixelRatio || 1, 2);   // re-read on every resize (iPad zoom / display change)
@@ -1579,10 +1584,10 @@ function renderShop() {
   pack.className = "shop-item pack";
   pack.innerHTML = Ads.owned()
     ? `<div class="txt"><div class="name">Cozy Supporter Pack</div>
-         <div class="desc">Ads off · offline earnings permanently 2× · thank you 🧡</div></div>
+         <div class="desc">${ADS_ENABLED ? "Ads off · " : ""}offline earnings permanently 2× · thank you 🧡</div></div>
        <span class="owned">Owned</span>`
     : `<div class="txt"><div class="name">Cozy Supporter Pack</div>
-         <div class="desc">No ads ever · permanent 2× offline earnings · ✦50 · a ribbon for Midknight</div></div>
+         <div class="desc">${ADS_ENABLED ? "No ads ever · " : ""}permanent 2× offline earnings · ✦50 · a ribbon for Midknight</div></div>
        <button class="btn primary">${SUPPORTER_PRICE}</button>`;
   const pb = pack.querySelector("button");
   if (pb) pb.addEventListener("click", () => showPackOffer(false));
@@ -1647,7 +1652,7 @@ document.getElementById("coaxBtn").addEventListener("click", () => {
   const p = coaxPrice();
   if (cats.length >= capacity()) { toast("The cove is full. Add comforts in the Shop for more room."); return; }
   if (G.shells < p) {
-    if (Ads.rewardReady("freeCoax")) {
+    if (ADS_ENABLED && Ads.rewardReady("freeCoax")) {
       openModal(`<div class="reveal">
         <div class="kicker">Not enough shells</div>
         <h2>Coax one for free?</h2>
@@ -2093,6 +2098,7 @@ document.getElementById("dev-day").addEventListener("click", () => {
   toast("Skipped ahead a day"); syncHud();
 });
 document.getElementById("dev-ad").addEventListener("click", () => {
+  ADS_ENABLED = true;                                                              // QA the ad flow even in the ad-free build
   G.ads.last = 0; G.ads.dayCount = 0;
   G.firstSeen = Math.min(G.firstSeen || Date.now(), Date.now() - 3 * 24 * 3600e3);  // push past grace
   Ads.interstitial("dev");
@@ -2114,7 +2120,7 @@ day ${G.opens}   cats ${cats.length}/${capacity()}   mood ${avgMood}
 shells ${Math.floor(G.shells)}   pearls ${G.pearls}   dex ${dexCount()}/${COATS.length}
 pets ${G.metrics.pets}  tokens ${G.metrics.tokens}  coaxed ${G.metrics.coaxed}  photos ${G.metrics.photos}
 streak ${G.streak}   rate ${aggregateRate().toFixed(2)}/s   played ${fmtTime(G.allTimeSec || 0)}
-ads: ${Ads.owned() ? "SUPPORTER (off)" : (Date.now()-(G.firstSeen||0) < 48*3600e3 ? "grace" : "on")}  seen ${G.ads.seen}  today ${G.ads.dayCount}  born ${G.ads.born||"—"}  npa ${G.ads.npa?1:0}`;
+ads: ${!ADS_ENABLED ? "DISABLED (ad-free build)" : Ads.owned() ? "SUPPORTER (off)" : (Date.now()-(G.firstSeen||0) < 48*3600e3 ? "grace" : "on")}  seen ${G.ads.seen}  today ${G.ads.dayCount}  born ${G.ads.born||"—"}  npa ${G.ads.npa?1:0}`;
 }
 
 /* ---------- toasts / tips ---------- */
@@ -2218,7 +2224,7 @@ const Ads = (() => {
 
     // opt-in — resolves true only if the player watched it through
     async rewarded(placement) {
-      if (busy()) return false;
+      if (!ADS_ENABLED || busy()) return false;
       const ok = await playSim(true);
       if (ok) markReward(placement);
       return ok;
@@ -2227,7 +2233,7 @@ const Ads = (() => {
     // forced — self-throttling; a no-op whenever a guardrail says so
     async interstitial(trigger) {
       const a = A();
-      if (owned() || inGrace() || busy()) return;
+      if (!ADS_ENABLED || owned() || inGrace() || busy()) return;
       const now = Date.now();
       if (now - (a.last || 0) < MIN_GAP_MS) return;
       const k = dayKey();
@@ -2241,7 +2247,7 @@ const Ads = (() => {
     // session boundary: leaving after a real session queues one ad for the return
     onHide() {
       const a = A();
-      if (owned() || inGrace()) return;
+      if (!ADS_ENABLED || owned() || inGrace()) return;
       if (performance.now() - sessionStart >= SESSION_MIN_MS) { a.pending = true; save(); }
     },
     onShow() {
@@ -2289,13 +2295,13 @@ function grantSupporter() {
   if (mid) mid.accessory = "bow";        // a little supporter ribbon for Midknight
   save(); syncHud();
   spawnParticles(W / 2, H * 0.5, "twinkle", 16);
-  toast("Thank you for supporting the cove 🧡  Ads off · ✦50 · permanent 2× offline");
+  toast(`Thank you for supporting the cove 🧡  ${ADS_ENABLED ? "Ads off · " : ""}✦50 · permanent 2× offline`);
 }
 function showPackOffer(soft) {
   if (Ads.owned()) {
     openModal(`<div class="reveal"><div class="kicker">Cozy Supporter</div>
       <h2>You're a supporter 🧡</h2>
-      <p class="sub">Ads are off, offline earnings are permanently doubled, and Midknight's wearing his ribbon. Thank you.</p>
+      <p class="sub">${ADS_ENABLED ? "Ads are off, offline earnings are permanently doubled" : "Offline earnings are permanently doubled"}, and Midknight's wearing his ribbon. Thank you.</p>
       <div class="row"><button class="btn primary" id="pk-close">Back to the cove</button></div></div>`);
     document.getElementById("pk-close").onclick = closeModal;
     return;
@@ -2304,7 +2310,7 @@ function showPackOffer(soft) {
     <div class="kicker">${soft ? "Enjoying the cove?" : "Cozy Supporter Pack"}</div>
     <h2>Cozy Supporter Pack</h2>
     <ul class="packperks">
-      <li>No more ads — ever (rewarded videos stay optional)</li>
+      ${ADS_ENABLED ? "<li>No more ads — ever (rewarded videos stay optional)</li>" : ""}
       <li>Offline earnings permanently doubled</li>
       <li>✦ 50 pearls</li>
       <li>A ribbon for Midknight + a supporter mark on your cove</li>
@@ -2346,7 +2352,7 @@ function checkOffline() {
   if (base <= 0) return;
   const perm2x = !!(G.ads && G.ads.perm2x);          // Supporter Pack perk
   const earned = perm2x ? base * 2 : base;
-  const canWatch = !perm2x && Ads.rewardReady("offline2x");
+  const canWatch = ADS_ENABLED && !perm2x && Ads.rewardReady("offline2x");
   openModal(`
     <div class="big">◈ ${earned}</div>
     <h2>Your cats were busy</h2>
@@ -2390,7 +2396,7 @@ function askOwnerName(firstTime) {
     G.ownerAsked = true; closeModal(); syncHud(); save();
     if (firstTime) {
       const next = () => { if (!G.tutorialDone) setTimeout(openTutorial, 250); else checkOffline(); };
-      if (G.ads && !G.ads.asked) setTimeout(() => askAgeGate(next), 250); else next();
+      if (ADS_ENABLED && G.ads && !G.ads.asked) setTimeout(() => askAgeGate(next), 250); else next();
     }
   };
   const submit = () => {
@@ -4442,13 +4448,15 @@ window.__cove = {
   rest(cmd){ if (cmd === "open") { syncRestPanelUI(); openRestPanel(); } else if (cmd === "begin") beginRest(false); else if (cmd === "end") endRest(true); else if (cmd === "render") renderRest(0.05); return { on: restMode, idle: restIdleT | 0, dim: +restDim.toFixed(2), drops: glassDrops.length }; },
   offline(hoursAway = 6){ const before = cats.length; G.lastSeen = Date.now() - hoursAway * 3600e3; checkOffline(); return { hoursAway, capacity: capacity(), before, after: cats.length, arrived: cats.length - before }; },
   ads(cmd){
-    if (cmd === "interstitial") { G.ads.last = 0; G.ads.dayCount = 0; G.firstSeen = Math.min(G.firstSeen || Date.now(), Date.now() - 3 * 24 * 3600e3); return Ads.interstitial("dev"); }
-    if (cmd === "rewarded") return Ads.rewarded("dev");
+    if (cmd === "on") { ADS_ENABLED = true; return "ADS_ENABLED = true (this session)"; }
+    if (cmd === "off") { ADS_ENABLED = false; return "ADS_ENABLED = false"; }
+    if (cmd === "interstitial") { ADS_ENABLED = true; G.ads.last = 0; G.ads.dayCount = 0; G.firstSeen = Math.min(G.firstSeen || Date.now(), Date.now() - 3 * 24 * 3600e3); return Ads.interstitial("dev"); }
+    if (cmd === "rewarded") { ADS_ENABLED = true; return Ads.rewarded("dev"); }
     if (cmd === "pack") return showPackOffer(false);
     if (cmd === "gate") { G.ads.asked = false; return askAgeGate(); }
     if (cmd === "supporter") return Ads.owned() ? "already owned" : (grantSupporter(), "granted");
     if (cmd === "reset") { G.ads = newAdsState(); save(); return "reset"; }
-    return { ...G.ads, inGrace: (G.firstSeen||0) > 0 && Date.now() - G.firstSeen < 48*3600e3, owned: Ads.owned() };
+    return { enabled: ADS_ENABLED, ...G.ads, inGrace: (G.firstSeen||0) > 0 && Date.now() - G.firstSeen < 48*3600e3, owned: Ads.owned() };
   },
   // big labelled sheet drawn straight to the canvas for close inspection
   sheet(scale = 2.7, state = "loafing"){
@@ -4517,7 +4525,7 @@ if (G.rest && G.rest.on && (!G.rest.endsAt || Date.now() < G.rest.endsAt)) {
 
 // first run: name the cove → age gate → tutorial → then check offline earnings
 const needName = !G.owner && !G.ownerAsked;
-function maybeAgeGate(then) { if (G.ads && G.ads.asked) return then && then(); askAgeGate(then); }
+function maybeAgeGate(then) { if (!ADS_ENABLED || (G.ads && G.ads.asked)) return then && then(); askAgeGate(then); }
 if (G.rest && G.rest.on) {
   /* resuming rest — skip the usual boot flow */
 } else if (needName) {

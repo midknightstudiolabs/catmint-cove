@@ -48,20 +48,25 @@ no build step, no dependencies.
       (`rain-loop.opus`; long-form versions in `../rain-v2/`).
 - [x] Ads + IAP scaffold — a simulated `Ads` layer (rewarded / interstitial)
       behind the interface the real Google AdMob SDK will use in the native
-      build. Rewarded: double offline earnings, coax a cat for free. One *light*
-      interstitial on the session boundary (48h new-player grace · ≤3/day · none
-      in Rest mode · none for supporters). One-time neutral age gate sets the ad
-      treatment. **Cozy Supporter Pack $4.99** (simulated purchase): removes ads,
-      permanent 2× offline, ✦50, a ribbon for Midknight.
+      build. **Ads ship OFF** (`ADS_ENABLED = false`) — see below. When on:
+      rewarded (double offline earnings, coax a cat for free) + one *light*
+      session-boundary interstitial (48h grace · ≤3/day · none in Rest mode /
+      for supporters) + a one-time neutral age gate for ad treatment.
+- [x] **Cozy Supporter Pack $4.99** (simulated purchase) — permanent 2× offline,
+      ✦50, a ribbon for Midknight. Removes ads too, once ads are on. Works
+      independently of the ad flag.
 
-### Monetization notes
+### Monetization notes — launch ad-free, ads on later
 
-Real AdMob integration waits until Catmint Cove has a **published store listing** —
-[AdMob won't approve ad serving](https://support.google.com/admob/answer/10564477)
-until the app is live in a store with matching IDs and a verified payments
-account. Until then the game ships the simulated `Ads` module (same method
-signatures, so the swap is mechanical). Still to wire before the real SDK: the
-UMP consent SDK, iOS ATT, and families / child-directed tagging.
+`ADS_ENABLED` (top of the script) is **false**. The launch build ships **ad-free
+with the Supporter Pack IAP only** — no interstitials, no rewarded prompts, no
+age gate. This is deliberate: get a clean retention baseline, let the store
+listing age and pass [AdMob's app-readiness review](https://support.google.com/admob/answer/10564477)
+(which needs a *published* app + matching store IDs + verified payments), then
+flip ads on — `ADS_ENABLED` becomes a remote-config flag in the native build, so
+no re-submission. `?ads` in the URL forces ads on for QA; the dev panel's
+**show ad** button does too. Still to wire before the real SDK: UMP consent,
+iOS ATT, families / child-directed tagging.
 
 ## What this is testing
 
