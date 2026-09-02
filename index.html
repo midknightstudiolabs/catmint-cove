@@ -138,7 +138,7 @@
     #actions .btn.primary .badge.cost{background:var(--accent);}
     /* the cat card / toast / dev panel sit above the taller bar */
     #catcard{bottom:auto;}
-    #toast{bottom:calc(4.6rem + env(safe-area-inset-bottom));}
+    #toast{bottom:calc(6.6rem + env(safe-area-inset-bottom));}
     #dev{bottom:calc(4.4rem + env(safe-area-inset-bottom));}
   }
 
@@ -452,11 +452,31 @@
   #photo .hint{color:rgba(255,255,255,.7);font-size:.8rem;margin:0;}
 
   /* ---- toast ---- */
-  #toast{position:absolute;left:50%;bottom:4.4rem;transform:translateX(-50%) translateY(1rem);
+  #toast{position:absolute;left:50%;bottom:6.2rem;transform:translateX(-50%) translateY(1rem);
     z-index:30;background:var(--ink);color:#fff;padding:.6rem 1rem;border-radius:999px;
     font-size:.86rem;font-weight:600;opacity:0;transition:opacity .3s ease,transform .3s ease;pointer-events:none;
     max-width:88vw;text-align:center;}
   #toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ---- next-action hint ---- */
+  #hint{position:absolute;left:50%;transform:translateX(-50%);z-index:22;
+    bottom:calc(3.7rem + env(safe-area-inset-bottom));
+    display:flex;align-items:center;gap:.5rem;width:max-content;max-width:min(94vw,440px);
+    background:var(--panel);border:1px solid var(--panel-line);border-radius:999px;
+    box-shadow:var(--shadow);padding:.42rem .42rem .42rem .8rem;font-size:.82rem;color:var(--ink);
+    animation:hintIn .28s ease both;}
+  #hint[hidden]{display:none;}
+  @keyframes hintIn{from{opacity:0;transform:translateX(-50%) translateY(7px);}}
+  #hint #hintDot{flex:0 0 auto;color:var(--accent-bright);font-size:.85rem;}
+  #hint #hintText{flex:1 1 auto;line-height:1.25;}
+  #hint #hintGo{flex:0 0 auto;font:inherit;font-weight:700;font-size:.76rem;padding:.34rem .62rem;
+    border-radius:999px;border:none;background:var(--accent);color:#fff;cursor:pointer;white-space:nowrap;}
+  #hint #hintGo[hidden]{display:none;}
+  #hint #hintX{flex:0 0 auto;width:1.5rem;height:1.5rem;border-radius:50%;border:none;
+    background:#eef1e3;color:var(--ink-soft);cursor:pointer;font-size:.7rem;line-height:1;padding:0;}
+  #app.resting #hint,#app.resting #toast{opacity:0;pointer-events:none;}
+  @media(max-width:600px){ #hint{bottom:calc(3.95rem + env(safe-area-inset-bottom));font-size:.8rem;} }
+  button.btn.primary.full{background:#c9b98f;color:#4a4230;}
 
   /* ---- dev overlay ---- */
   #dev{position:absolute;left:.6rem;bottom:3.6rem;z-index:35;display:none;
@@ -533,6 +553,8 @@
       </div>
     </div>
   </div>
+
+  <div id="hint" hidden><span id="hintDot">✦</span><span id="hintText"></span><button id="hintGo" hidden></button><button id="hintX" title="Dismiss">✕</button></div>
 
   <div id="actions">
     <button class="btn primary" id="coaxBtn"><span class="ico">🐾</span> <span class="lbl">Coax<span class="lbl-x">&nbsp;a cat</span></span> <span class="badge cost">◈<span id="coaxCost">10</span></span></button>
@@ -2528,7 +2550,13 @@ function doCoax(free) {
 document.getElementById("coaxBtn").addEventListener("click", () => {
   ensureAudio();
   const p = coaxPrice();
-  if (cats.length >= capacity()) { toast("The cove is full. Add comforts in the Shop for more room."); return; }
+  if (cats.length >= capacity()) {
+    const dock = G.projects && G.projects.dock;
+    if (dock && dock.stage === "open") { toast("The cove's full — the dock's your way to more room.", 4); openProjectSheet("dock"); }
+    else if (dock && dock.stage === "building") toast(`The cove's full. The dock's being repaired (${Math.round(projectProgress("dock") * 100)}%) — more room when it's done.`, 5);
+    else { toast("The cove's full. Add a comfort in the Shop for more room.", 4); togglePanel("shop"); }
+    return;
+  }
   if (G.shells < p) {
     if (ADS_ENABLED && Ads.rewardReady("freeCoax")) {
       openModal(`<div class="reveal">
@@ -2743,12 +2771,16 @@ function syncHud() {
   document.getElementById("opens").textContent = G.opens;
   document.getElementById("coaxCost").textContent = coaxPrice();
   const cb = document.getElementById("coaxBtn");
-  // only hard-disable when the cove is physically full; when short on shells the
-  // button still clicks → either the watch-an-ad "coax for free" offer or a hint
+  // never hard-disabled — a tap on a full cove explains why and opens the fix
   const full = cats.length >= capacity();
   const broke = G.shells < coaxPrice();
-  cb.disabled = full;
+  cb.disabled = false;
+  cb.classList.toggle("full", full);
   cb.classList.toggle("wantcoax", broke && !full);
+  const cbl = cb.querySelector(".lbl");
+  if (cbl) cbl.innerHTML = full ? "Cove full" : `Coax<span class="lbl-x">&nbsp;a cat</span>`;
+  const cbc = cb.querySelector(".badge.cost");
+  if (cbc) cbc.style.display = full ? "none" : "";
   document.getElementById("dexBadge").textContent = dexCount() + "/" + COATS.length;
   const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
   const advBack = !!(G.adventure && Date.now() >= G.adventure.endsAt);
@@ -2758,7 +2790,75 @@ function syncHud() {
   const dw = (G.materials && G.materials.driftwood) || 0;
   const dp = document.getElementById("driftPill");
   if (dp) { dp.hidden = !(dw > 0 || anyProjectOpen()); document.getElementById("driftwood").textContent = dw; }
+  renderHint();
 }
+
+/* ---------- contextual "here's what to do next" hint ---------- */
+let _hintCur = null, _hintDismissedText = "", _hintDismissedAt = 0;
+function nextAction() {
+  if (!G.tutorialDone) return null;                       // the opening flow speaks for itself
+  if (restMode || _vig || scrim.classList.contains("on")) return null;
+  if (!panels || !panels.shop) return null;
+
+  // a cat is home from a trip
+  if (G.adventure && Date.now() >= G.adventure.endsAt)
+    return { t: `${G.adventure.cat} is back from a trip.`, go: "See how it went", act: () => resolveAdventure() };
+
+  // a project has everything it needs and is waiting on you to start it
+  for (const def of PROJECTS) {
+    if (projectStage(def.id) !== "open") continue;
+    const n = projectNeed(def.id);
+    if (n.shells === 0 && n.driftwood === 0)
+      return { t: `${def.label} has everything it needs.`, go: "Begin the repair", act: () => openProjectSheet(def.id) };
+  }
+
+  // the cove is full — the whole point: never a dead end
+  if (cats.length >= capacity()) {
+    const dock = G.projects && G.projects.dock;
+    if (dock && dock.stage === "open")
+      return { t: `Cove's full — repair the dock at the shore for more room.`, go: "The dock", act: () => openProjectSheet("dock") };
+    if (dock && dock.stage === "building")
+      return { t: `Cove's full — the dock's ${Math.round(projectProgress("dock") * 100)}% repaired. More room when it's done.` };
+    return { t: `Cove's full — add a comfort in the Shop for more room.`, go: "Shop", act: () => togglePanel("shop") };
+  }
+
+  // a daily welcome to claim
+  if (checkinAvailable())
+    return { t: `A daily welcome is waiting in Today.`, go: "Open Today", act: () => togglePanel("today") };
+
+  // early game — keep the loop legible until the cove has a few cats
+  if (cats.length < 4) {
+    if (G.shells >= coaxPrice())
+      return { t: `You've ◈ ${Math.floor(G.shells)}. Coax another cat to grow the cove.`, go: "Coax", act: () => document.getElementById("coaxBtn").click() };
+    return { t: `Tap the glowing shells the cats leave to gather more.` };
+  }
+  return null;
+}
+let _hintT = 0;
+function renderHint() {
+  const now = performance.now();
+  if (now - _hintT < 400) return;      // syncHud runs every frame — this doesn't need to
+  _hintT = now;
+  const el = document.getElementById("hint");
+  if (!el) return;
+  const a = nextAction();
+  const txt = a ? a.t : null;
+  if (!txt || (txt === _hintDismissedText && Date.now() - _hintDismissedAt < 180000)) {
+    if (!el.hidden) el.hidden = true;
+    _hintCur = null;
+    return;
+  }
+  if (txt !== _hintCur) {
+    _hintCur = txt;
+    document.getElementById("hintText").textContent = txt;
+    const go = document.getElementById("hintGo");
+    if (a.go && a.act) { go.hidden = false; go.textContent = a.go; go._act = a.act; }
+    else go.hidden = true;
+    el.hidden = false;
+  }
+}
+document.getElementById("hintGo").addEventListener("click", (e) => { e.stopPropagation(); ensureAudio(); const f = e.currentTarget._act; if (f) f(); });
+document.getElementById("hintX").addEventListener("click", (e) => { e.stopPropagation(); _hintDismissedText = _hintCur; _hintDismissedAt = Date.now(); document.getElementById("hint").hidden = true; _hintCur = null; });
 
 /* ---------- panels: shop / catdex / today ---------- */
 const panels = {
