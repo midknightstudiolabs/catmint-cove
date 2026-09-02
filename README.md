@@ -4,9 +4,9 @@
 
 | | | |
 |---|---|---|
-| **V2 — beta** (share this) | https://ukiyazero.github.io/catmint-cove/ | the clean build for testers — no dev tools |
-| **V2 — dev** (keep this) | https://ukiyazero.github.io/catmint-cove/dev/ | same game + the dev panel, `D`/`R` keys, `v2 · dev` badge |
-| **V1** (original prototype, frozen) | https://ukiyazero.github.io/catmint-cove/v1/ | the first greybox — tag `v1`, 2026-08-31 |
+| **V2 — beta** (share this) | https://midknightstudiolabs.github.io/catmint-cove/ | the clean build for testers — no dev tools |
+| **V2 — dev** (keep this) | https://midknightstudiolabs.github.io/catmint-cove/dev/ | same game + the dev panel, `D`/`R` keys, `v2 · dev` badge |
+| **V1** (original prototype, frozen) | https://midknightstudiolabs.github.io/catmint-cove/v1/ | the first greybox — tag `v1`, 2026-08-31 |
 
 All live and permanent. V2 ships from `index.html` at the repo root; `/dev/` is a
 one-line redirect to `/?dev` (single source of truth — the `DEV_BUILD` flag reads

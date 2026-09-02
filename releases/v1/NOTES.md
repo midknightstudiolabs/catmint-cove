@@ -1,7 +1,7 @@
 # Catmint Cove — V1
 
 **Snapshot date:** 2026-08-31
-**Live:** https://ukiyazero.github.io/catmint-cove/
+**Live:** https://midknightstudiolabs.github.io/catmint-cove/
 **Repo tag:** `v1`
 
 A frozen copy of the Phase 1 prototype at its first milestone. `index.html` here is
