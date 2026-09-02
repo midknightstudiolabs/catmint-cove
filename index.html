@@ -630,9 +630,9 @@
    Single file, no dependencies. Vanilla canvas.
    ============================================================ */
 
-const SAVE_KEY = "catmintCove.save.v7";
-const OLD_SAVE_KEYS = ["catmintCove.save.v6", "catmintCove.save.v5"];
-const SAVE_VERSIONS = [5, 6, 7];
+const SAVE_KEY = "catmintCove.save.v8";
+const OLD_SAVE_KEYS = ["catmintCove.save.v7", "catmintCove.save.v6", "catmintCove.save.v5"];
+const SAVE_VERSIONS = [5, 6, 7, 8];
 // developer build: served at /dev/ or with ?dev — unlocks the dev panel + R-key
 // reset. The plain build (root URL) has none of that, safe to hand to testers.
 const DEV_BUILD = /(^|\/)dev\/?$/.test(location.pathname) || /(^|[?&])dev\b/.test(location.search);
@@ -766,7 +766,7 @@ function newAdsState() {
 }
 function newGame() {
   return {
-    v: 7,
+    v: 8,
     tutorialDone: false,
     midknightSeeded: false,
     shells: 25,
@@ -819,7 +819,7 @@ function load() {
     const s = JSON.parse(raw);
     if (!s || !SAVE_VERSIONS.includes(s.v)) { G = newGame(); return; }
     G = s;
-    G.v = 7;                                                  // migrate v5/v6 → v7 in place
+    G.v = 8;                                                  // migrate v5/v6/v7 → v8 in place
     if (!G.decor) G.decor = { tree: 0, cottage: 0, flowers: 0 };
     if (!G.stations) G.stations = { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 };
     if (G.trinkets === undefined) G.trinkets = 0;
@@ -982,20 +982,23 @@ function comfortMult() { return 1 + G.comfort * 0.22; }
 function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // ambient mood lift
 
 /* ---------- earnings pacing ----------
-   A generous WELCOME window for the first hour of real play, then it settles
-   to a tighter baseline so upgrades, stations and boosts actually matter.
+   A gentle WELCOME head-start for the first ~40 min of real play, then it
+   settles to a tighter baseline so shells stay meaningful — a worthwhile
+   purchase should always be a session or two away, never 100x over-funded.
    Applies everywhere (active drops, offline, rest) via ratePerSec(). */
-const WELCOME_SEC = 3600;   // first hour of active playtime
+const WELCOME_SEC = 2400;   // ~40 min of active playtime
 function welcomeBoost() {
   const t = G.allTimeSec || 0;
-  return t >= WELCOME_SEC ? 0 : 1.15 * (1 - t / WELCOME_SEC);   // +1.15 → 0 over the hour
+  return t >= WELCOME_SEC ? 0 : 0.7 * (1 - t / WELCOME_SEC);   // +0.7 → 0 over the window
 }
 function boostActive() { return !!(G.boostUntil && Date.now() < G.boostUntil); }
 function earnMult() {
-  let m = 0.68 + welcomeBoost();      // baseline 0.68, up to ~1.83 for a fresh cove
+  let m = 0.5 + welcomeBoost();       // baseline 0.5, up to ~1.2 for a fresh cove
   if (boostActive()) m *= 2;          // a purchased "fresh catnip" boost
   return m;
 }
+const TOKEN_CAP = 45;                 // a dropped token is a nice pickup, never a jackpot
+const ACC_CEIL  = 160;                // a cat can't hoard more than ~3-4 tokens' worth undropped
 
 /* ---------- cat entity ---------- */
 const KITTEN_MS = 20 * 3600 * 1000;   // a cat is a kitten for its first ~20h, then an adult forever
@@ -1503,16 +1506,17 @@ function updateCat(c, dt) {
     }
   }
 
-  // production — cats build up earnings slowly and drop ONE chunky token every ~minute
-  // (calmer scene, fewer taps, each worth a lot; offline earnings cover time away)
-  c.acc += c.ratePerSec() * dt;
+  // production — cats build up earnings slowly and drop ONE token every ~minute
+  // (calmer scene, fewer taps; a token is a nice pickup, capped so it's never a
+  //  jackpot; a backed-up cat just drops a bit more often to catch up)
+  c.acc = Math.min(ACC_CEIL, c.acc + c.ratePerSec() * dt);
   c.dropTimer += dt;
   if (c.dropInterval === undefined) c.dropInterval = rand(90, 150);
   if (c.acc >= 3 && c.dropTimer > c.dropInterval) {
-    const v = Math.max(1, Math.round(c.acc));
+    const v = Math.min(TOKEN_CAP, Math.max(1, Math.round(c.acc)));
     c.acc -= v;
     c.dropTimer = 0;
-    c.dropInterval = rand(90, 150);
+    c.dropInterval = c.acc > TOKEN_CAP * 1.5 ? rand(22, 40) : rand(90, 150);
     dropToken(c.x + rand(-10, 10), c.y - 6, v, tokenFlair(c));
   }
 
@@ -2961,22 +2965,23 @@ function aggregateRate() {
   if (!cats.length) return G.ratePerSec || 0;
   return cats.reduce((s, c) => s + c.ratePerSec(), 0);
 }
-function checkOffline(then) {
-  const elapsed = (Date.now() - (G.lastSeen || Date.now())) / 1000;
-  const done = () => { try { then && then(elapsed); } catch (e) {} };
-
-  // a cat or two may have wandered in while you were away (~1 per 3h, capped at 4)
+// a cat or two may have wandered in while you were away (~1 per 3h, capped at 4)
+function offlineArrivals(elapsed) {
   const awayH = elapsed / 3600;
-  if (awayH >= 1.5 && cats.length < capacity()) {
-    const room = capacity() - cats.length;
-    const n = Math.max(0, Math.min(4, room, Math.round(awayH / 3)));
-    for (let i = 0; i < n; i++) spawnCat({ x: (Math.random() < 0.5 ? -40 : W + 40), y: rand(H * 0.55, H * 0.8) });
-    if (n > 0) setTimeout(() => toast(n === 1 ? "A cat wandered in while you were away." : `${n} cats wandered in while you were away.`, 5), 1100);
-  }
-
+  if (awayH < 1.5 || cats.length >= capacity()) return;
+  const room = capacity() - cats.length;
+  const n = Math.max(0, Math.min(4, room, Math.round(awayH / 3)));
+  for (let i = 0; i < n; i++) spawnCat({ x: (Math.random() < 0.5 ? -40 : W + 40), y: rand(H * 0.55, H * 0.8) });
+  if (n > 0) setTimeout(() => toast(n === 1 ? "A cat wandered in while you were away." : `${n} cats wandered in while you were away.`, 5), 1500);
+}
+// the offline-earnings summary — a gentle trickle, softly capped, shown LAST
+// (after any homecoming / postcard / tale beat) so a return leads with a moment
+function offlineEarnings(elapsed, then) {
+  const done = () => { try { then && then(); } catch (e) {} };
   if (elapsed < 45 || !(G.ratePerSec > 0)) return done();
-  const capped = Math.min(elapsed, 6 * 3600);   // earnings stop accruing after 6h away
-  const base = Math.floor(G.ratePerSec * capped * 0.35);   // cats keep the cove ticking, but slower than hands-on play
+  const capped = Math.min(elapsed, 4 * 3600);          // earnings stop accruing after 4h away
+  let base = Math.floor(G.ratePerSec * capped * 0.18); // the cove ticks over — it doesn't grind for you
+  base = Math.max(0, Math.min(base, 280 + cats.length * 260));   // soft cap: a return is 1-2 nice purchases, not a windfall
   if (base <= 0) return done();
   const perm2x = !!(G.ads && G.ads.perm2x);          // Supporter Pack perk
   const earned = perm2x ? base * 2 : base;
@@ -2999,6 +3004,25 @@ function checkOffline(then) {
     if (watched) toast(`Doubled — ◈ ${earned * 2} banked.`);
     done();
   };
+}
+// coming back: arrivals, then a NARRATIVE beat, then the earnings summary, then `then`
+function checkOffline(then) {
+  const elapsed = (Date.now() - (G.lastSeen || Date.now())) / 1000;
+  offlineArrivals(elapsed);
+  syncHud();
+  const earningsThen = () => offlineEarnings(elapsed, () => { try { then && then(elapsed); } catch (e) {} });
+
+  // 1) a cat came home from a trip — the homecoming vignette IS the moment
+  if (G.adventure && Date.now() >= G.adventure.endsAt) {
+    setTimeout(() => resolveAdventure(earningsThen), 700);
+    return;
+  }
+  // 2) a postcard from a trip still in progress
+  if (deliverDuePostcards({ pop: true, onDone: earningsThen })) return;
+  // 3) a "while you were away" beat
+  if (maybeWywa(elapsed, earningsThen)) return;
+  // 4) nothing narrative — go straight to the (small) earnings line
+  setTimeout(earningsThen, 300);
 }
 const scrim = document.getElementById("scrim");
 function openModal(html) { document.getElementById("modal").innerHTML = html; scrim.classList.add("on"); }
@@ -5697,22 +5721,28 @@ const WYWA_EVENTS = [
   };
   } },
 ];
-function maybeWywa(awaySec) {
-  if (restMode || _vig) return;
-  if (!awaySec || awaySec < 25 * 60) return;
+// returns true if a beat is queued (caller can chain the earnings summary to onDone)
+function maybeWywa(awaySec, onDone) {
+  const bail = () => false;
+  if (restMode || _vig) return bail();
+  if (!awaySec || awaySec < 25 * 60) return bail();
   if (!G.wywa) G.wywa = { lastAt: 0, seen: [] };
-  if (Date.now() - (G.wywa.lastAt || 0) < 15 * 3600e3) return;
+  if (Date.now() - (G.wywa.lastAt || 0) < 15 * 3600e3) return bail();
   const h = awaySec / 3600;
-  if (Math.random() > clamp(0.42 + h * 0.05, 0, 0.85)) return;
+  if (Math.random() > clamp(0.42 + h * 0.05, 0, 0.85)) return bail();
   const recent = new Set((G.wywa.seen || []).slice(0, 5));
   const pool = WYWA_EVENTS.filter(e => h >= (e.minAwayH || 0) && (!e.needs || e.needs()) && !recent.has(e.id));
-  if (!pool.length) return;
+  if (!pool.length) return bail();
   const e = wPick(pool);
   const cat = cats.find(c => c.mascot) || pick(cats) || null;
   G.wywa.lastAt = Date.now();
   G.wywa.seen = [e.id, ...(G.wywa.seen || [])].slice(0, 8);
   save();
-  setTimeout(() => { if (!_vig && !restMode) runVignette(e.build(cat), { cat }); }, 550);
+  setTimeout(() => {
+    if (!_vig && !restMode) runVignette(e.build(cat), { cat, onDone });
+    else if (onDone) onDone();
+  }, 550);
+  return true;
 }
 
 /* ---- Hook 2 · Cat Adventures ------------------------------------------- */
@@ -5861,9 +5891,9 @@ function startAdventure(name, dest) {
   toast(`${c.name} heads off — back ${whenText(G.adventure.endsAt)}.`, 4.5);
   renderAdventureCard();
 }
-function resolveAdventure() {
+function resolveAdventure(onDone) {
   const a = G.adventure;
-  if (!a) return;
+  if (!a) { if (onDone) onDone(); return; }
   _departures.length = 0;
   const c = new Cat({ ...a.catData, x: -34, y: rand(H * 0.55, H * 0.8) });
   cats.push(c);
@@ -5874,7 +5904,7 @@ function resolveAdventure() {
   G.advDay = todayKey();
   save(); syncHud(); rebuildAttractors();
   renderAdventureCard();
-  runVignette(advVignette(c, a.dest, res), { cat: c });
+  runVignette(advVignette(c, a.dest, res), { cat: c, onDone });
 }
 /* ---- postcards: a note home partway through a trip ---- */
 const POSTCARD_LINES = {
@@ -5924,19 +5954,22 @@ function deliverDuePostcards(opts = {}) {
   }
   if (!latest) return false;
   save();
-  if (opts.pop && !_vig) showPostcard(latest, a.cat, a.dest);
-  else toast(`A postcard from ${a.cat} arrived. ✉️`, 5);
   renderAdventureCard();
-  return !!opts.pop;
+  if (opts.pop && !_vig && !scrim.classList.contains("on")) {
+    showPostcard(latest, a.cat, a.dest, opts.onDone);
+    return true;                         // a modal is up — caller must NOT also run earnings
+  }
+  toast(`A postcard from ${a.cat} arrived. ✉️`, 5);
+  return false;
 }
-function showPostcard(text, cat, dest) {
+function showPostcard(text, cat, dest, onDone) {
   openModal(`<div class="reveal vignette">
     <div class="kicker">A postcard from ${esc(cat)}</div>
     <div class="vig-art">✉️</div>
     <p class="vig-body" style="font-style:italic">${esc(text)}</p>
     <div class="row"><button class="btn primary" id="pc-ok">Aw</button></div>
   </div>`);
-  document.getElementById("pc-ok").onclick = closeModal;
+  document.getElementById("pc-ok").onclick = () => { closeModal(); if (onDone) setTimeout(onDone, 250); };
 }
 function latestPostcardFor(cat) {
   return (G.postcards || []).find(p => p.cat === cat);
@@ -6006,17 +6039,12 @@ function pickAdventureCat(dest) {
 }
 
 /* ---- on every return: roll a While-You-Were-Away beat, flag a cat that's home ---- */
+// runs LAST, after checkOffline's narrative beat + the earnings summary have closed
 function afterReturn(awaySec) {
-  const back = !!(G.adventure && Date.now() >= G.adventure.endsAt);
-  if (back) setTimeout(() => toast(`${G.adventure.cat} is back from their trip — open Today.`, 5.5), 1400);
-  if (checkinAvailable() && G.tutorialDone) {
-    setTimeout(() => { if (checkinAvailable()) toast("A daily welcome is waiting in Today. 📅", 5); }, 2200);
-  }
   syncHud();
-  // a postcard waiting from a trip still in progress pops on open; if they're
-  // already home the reunion is the moment, so don't compete with a modal
-  const poppedCard = !back && deliverDuePostcards({ pop: true });
-  if (!poppedCard) maybeWywa(awaySec);
+  if (checkinAvailable() && G.tutorialDone) {
+    setTimeout(() => { if (checkinAvailable()) toast("A daily welcome is waiting in Today. 📅", 5); }, 700);
+  }
 }
 
 /* ---------- boot ---------- */
