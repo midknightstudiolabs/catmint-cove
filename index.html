@@ -791,6 +791,7 @@ function newGame() {
     decor: { tree: 0, cottage: 0, flowers: 0 },
     stations: { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 },   // activity stations cats "work"
     trinkets: 0,           // (legacy) kept for save back-compat — accessories are per-cat now (c.owned)
+    econReset1: true,      // new games already start clean — skip the one-time tester shell reset
     coveCharter: false,    // late-game one-time unlock: raises the cat ceiling 16 → 24
     rest: null,            // active rainy-day session { on, startedAt, endsAt, opts }
     ads: newAdsState(),    // monetization: supporter status, age treatment, frequency caps
@@ -853,10 +854,18 @@ function load() {
     if (typeof G.advDay !== "string") G.advDay = "";
     if (typeof G.mapPieces !== "number") G.mapPieces = 0;
     if (!Array.isArray(G.keepsakes)) G.keepsakes = [];
+    // one-time: the economy was rebalanced (Phase A). Testers are sitting on huge
+    // old-economy balances that hide the new pacing — give shells a clean start.
+    // The cove, cats, comforts, Catdex, journal, everything else is kept as-is.
+    if (!G.econReset1) {
+      G.econReset1 = true;
+      if (G.shells > 80) { _econJustReset = Math.floor(G.shells); G.shells = 25; G.allTimeSec = 0; }
+    }
     G.opens = (G.opens || 1) + 1;
   } catch (e) { G = newGame(); }
 }
 let _dead = false;
+let _econJustReset = 0;   // > 0 → this load did the one-time economy reset (old balance)
 function save() {
   if (_dead || !G) return;
   try {
@@ -6332,6 +6341,11 @@ if (G.rest && G.rest.on) {
 if (G.tutorialDone && !G.tips.includes("welcome")) {
   G.tips.push("welcome");
   setTimeout(() => toast("Tap a cat to pet it. Tap the glowing shells to collect.", 5), 900);
+}
+
+// one-time notice for testers whose shells were reset for the rebalance
+if (_econJustReset) {
+  setTimeout(() => toast("Shells got a fresh start for the economy rebalance — your cove and cats are all still here. 🐚", 7), 1400);
 }
 })();
 </script>
