@@ -57,10 +57,14 @@ Ships MVP steps 1–3; Friendship/Memories, Butterfly Catch and Weekly Events ar
       haul (curious→map fragments, glutton→recipes, lazy→slower, bold→no bad
       encounter, grumpy→rare jackpot, …). Result vignette on return. Rare torn-map
       fragments build toward the island (`G.mapPieces` / `MAP_TOTAL`, island stubbed).
-      `G.adventure`, `__cove.adventure(cmd)`. **Send-off:** the cat trots off the
-      edge of the scene with a little bindle (a stick + cloth bundle over the
-      shoulder) + a sparkle; a chalk tag hangs on the cove sign — *"<name> is out
-      exploring"* — the whole time they're away; they walk back in on return.
+      `G.adventure`, `__cove.adventure(cmd)`. **Send-off:** the cat trots toward
+      the edge, stops to look back at you (a heart), then heads off with a little
+      bindle; a chalk tag hangs on the cove sign — *"<name> is out exploring"* —
+      the whole time; they walk back in on return. **Postcards:** at ~⅓ and ~⅔
+      through the trip a note comes home (*"Met a squirrel. It was rude. The story
+      develops."*) — pops as a card if you've been away, a gentle toast if you're
+      playing, and always shows in the Today adventure card + Moments.
+      `G.postcards`, `POSTCARD_LINES`, `__cove.adventure("card")`.
 - [x] **Daily check-in** — a warm little welcome, one a day, 7-day loop
       (`CHECKIN_REWARDS`). Never punishes a missed day — the cycle just continues.
       Card at the top of the Today sheet; `__cove.checkin()`.

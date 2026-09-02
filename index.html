@@ -234,6 +234,8 @@
   .adv-card>.btn{width:100%;justify-content:center;}
   .adv-card>.btn.tiny{width:auto;padding:.32rem .7rem;font-size:.75rem;}
   .adv-map{font-size:.74rem;color:var(--ink-faint);margin-top:.55rem;font-variant-numeric:tabular-nums;}
+  .adv-postcard{font-size:.8rem;font-style:italic;color:var(--ink-soft);line-height:1.4;
+    margin:.1rem 0 .7rem;padding:.5rem .65rem;background:#f3f0e4;border:1px solid var(--panel-line);border-radius:10px;}
   .ci-dots{display:flex;gap:.3rem;margin:.1rem 0 .7rem;flex-wrap:wrap;}
   .ci-dot{flex:1 1 0;min-width:1.6rem;height:1.6rem;display:grid;place-items:center;border-radius:8px;
     background:#eef1e3;border:1px solid var(--panel-line);font-size:.72rem;color:var(--ink-soft);font-weight:700;}
@@ -738,6 +740,7 @@ function newGame() {
     cats: [],
     // v3 — the return-visit layer
     checkin: { day: 0, lastKey: "" },  // daily welcome — 7-day loop, never punishes a miss
+    postcards: [],               // notes cats send home mid-adventure
     moments: [],                 // gentle log of the cove's little happenings
     wywa: { lastAt: 0, seen: [] },// "While You Were Away" cooldown + anti-repeat
     adventure: null,             // one active { cat, dest, startedAt, endsAt, seed, catData }
@@ -769,6 +772,7 @@ function load() {
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
     if (G.midknightSeeded === undefined) G.midknightSeeded = false;
     if (!G.checkin || typeof G.checkin !== "object") G.checkin = { day: 0, lastKey: "" };
+    if (!Array.isArray(G.postcards)) G.postcards = [];
     if (!Array.isArray(G.moments)) G.moments = [];
     if (!G.wywa || typeof G.wywa !== "object") G.wywa = { lastAt: 0, seen: [] };
     if (!Array.isArray(G.wywa.seen)) G.wywa.seen = [];
@@ -5521,31 +5525,44 @@ function updateDepartures(dt) {
   for (let i = _departures.length - 1; i >= 0; i--) {
     const d = _departures[i], c = d.c;
     d.life += dt;
-    const target = 46 * d.dir;
-    c.vx += (target - c.vx) * dt * 3.2;
+    d.phase = d.phase || "walk";
+    if (d.phase === "walk") {
+      c.vx += (46 * d.dir - c.vx) * dt * 3.2;
+      c.face = d.dir > 0 ? 1 : -1;
+      if (d.life > 1.3) { d.phase = "look"; d.lookT = 0; }
+    } else if (d.phase === "look") {
+      c.vx += (0 - c.vx) * dt * 9;            // pull up and stop
+      c.face = d.dir > 0 ? -1 : 1;            // turn back toward the cove
+      d.lookT += dt;
+      if (d.lookT > 0.25 && !d._heart) { d._heart = true; spawnParticles(c.x, c.y - 24, "heart", 2); }
+      if (d.lookT > 1.1) d.phase = "leave";
+    } else {                                  // leave
+      c.vx += (56 * d.dir - c.vx) * dt * 3;
+      c.face = d.dir > 0 ? 1 : -1;
+    }
+    const walking = d.phase !== "look";
+    c.walkAmt = walking ? Math.min(1, (c.walkAmt || 0) + dt * 3) : Math.max(0, (c.walkAmt || 0) - dt * 4);
+    if (d.phase === "leave" && d.life > 4.5) c.walkAmt = Math.max(0, c.walkAmt - dt * 1.2);   // slip away
     c.x += c.vx * dt;
-    c.face = d.dir > 0 ? 1 : -1;
-    c.walkAmt = Math.min(1, (c.walkAmt || 0) + dt * 3);
     c.walk = (c.walk || 0) + Math.abs(c.vx) * dt * 0.34;
     c.bob = (c.bob || 0) + dt * 3;
     c.blink -= dt; if (c.blink < -0.12) c.blink = rand(2, 6);
-    if (d.life > 1.4) c.walkAmt = Math.max(0, c.walkAmt - dt * 1.5);   // fade the gait as they slip away
-    if (c.x < -70 || c.x > W + 70 || d.life > 9) _departures.splice(i, 1);
+    if (c.x < -70 || c.x > W + 70 || d.life > 13) _departures.splice(i, 1);
   }
 }
 function drawDepartures(g) {
   for (const d of _departures) {
     g.save();
-    g.globalAlpha = d.life > 5 ? Math.max(0, (9 - d.life) / 4) : 1;
+    g.globalAlpha = d.life > 6 ? Math.max(0, (11 - d.life) / 5) : 1;
     drawCat(g, d.c, false);
-    drawBindle(g, d.c, d.dir);
+    drawBindle(g, d.c);
     g.restore();
   }
 }
-function drawBindle(g, c, dir) {
+function drawBindle(g, c) {
   g.save();
   g.translate(c.x, c.y - 15 + Math.sin(c.bob || 0) * 1.3);
-  g.scale(dir > 0 ? -1 : 1, 1);   // the bundle rides on the trailing shoulder
+  g.scale(c.face > 0 ? -1 : 1, 1);   // the bundle rides on the trailing shoulder
   g.strokeStyle = "#9a7346"; g.lineWidth = 2; g.lineCap = "round";
   g.beginPath(); g.moveTo(-6, 6); g.lineTo(12, -12); g.stroke();               // shoulder stick, angled up-back
   g.fillStyle = "#d9b46c";
@@ -5566,6 +5583,7 @@ function startAdventure(name, dest) {
   if (typeof cardCat !== "undefined" && cardCat === c) hideCatCard();
   const mins = ADV_DESTS[dest].mins * (c.traits.includes("lazy") ? 1.6 : 1);
   G.adventure = { cat: c.name, dest, startedAt: Date.now(), endsAt: Date.now() + mins * 60000, seed: (Math.random() * 1e9) | 0, catData: data };
+  G.adventure.cards = scheduleCards(dest, G.adventure.startedAt, G.adventure.endsAt);
   G.advDay = todayKey();
   save(); syncHud(); rebuildAttractors();
   // send-off: a quick wave of the tail, a bindle, and off toward the world
@@ -5594,6 +5612,72 @@ function resolveAdventure() {
   renderAdventureCard();
   runVignette(advVignette(c, a.dest, res), { cat: c });
 }
+/* ---- postcards: a note home partway through a trip ---- */
+const POSTCARD_LINES = {
+  fishing: [
+    "Hour two on the dock. Caught nothing. Named several fish. — {n}",
+    "The bobber went under! It was a leaf. Hope endures. — {n}",
+    "A heron gave me a look. I returned it. We understand each other now. — {n}",
+    "Still fishing. The water keeps doing its little sparkle thing. — {n}",
+  ],
+  forest: [
+    "So many sticks out here. Bringing back the best one. It's this one. — {n}",
+    "Met a squirrel. It was rude. The story develops. — {n}",
+    "Everything smells amazing and I have rolled in most of it. — {n}",
+    "Found a very good log. Have been sitting on it a while. No notes. — {n}",
+  ],
+  island: [
+    "The boat trip was long. I supervised from the bow. — {n}",
+    "There is a crab situation. We are not discussing the crab situation. — {n}",
+    "The sand is warm on top and cool underneath. Nature is wild. — {n}",
+    "It's mostly rocks out here. I love it. Might live here now (I won't). — {n}",
+  ],
+};
+function scheduleCards(dest, startedAt, endsAt) {
+  const pool = (POSTCARD_LINES[dest] || POSTCARD_LINES.forest).slice();
+  for (let i = pool.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+  const span = endsAt - startedAt;
+  return [
+    { at: startedAt + span * 0.35, text: pool[0], shown: false },
+    { at: startedAt + span * 0.70, text: pool[1], shown: false },
+  ];
+}
+function deliverDuePostcards(opts = {}) {
+  const a = G.adventure;
+  if (!a || !Array.isArray(a.cards)) return false;
+  const now = Date.now();
+  let latest = null;
+  for (const card of a.cards) {
+    if (card.shown || card.at > now || now >= a.endsAt) continue;   // skip once the trip itself is over — the homecoming is the event
+    card.shown = true;
+    const full = card.text.replace(/\{n\}/g, a.cat);
+    const bare = card.text.replace(/\s*—\s*\{n\}\s*$/, "");
+    if (!Array.isArray(G.postcards)) G.postcards = [];
+    G.postcards.unshift({ t: now, cat: a.cat, dest: a.dest, text: full });
+    if (G.postcards.length > 30) G.postcards.length = 30;
+    logMoment("✉️", `Postcard from ${a.cat}: “${bare}”`);
+    latest = full;
+  }
+  if (!latest) return false;
+  save();
+  if (opts.pop && !_vig) showPostcard(latest, a.cat, a.dest);
+  else toast(`A postcard from ${a.cat} arrived. ✉️`, 5);
+  renderAdventureCard();
+  return !!opts.pop;
+}
+function showPostcard(text, cat, dest) {
+  openModal(`<div class="reveal vignette">
+    <div class="kicker">A postcard from ${esc(cat)}</div>
+    <div class="vig-art">✉️</div>
+    <p class="vig-body" style="font-style:italic">${esc(text)}</p>
+    <div class="row"><button class="btn primary" id="pc-ok">Aw</button></div>
+  </div>`);
+  document.getElementById("pc-ok").onclick = closeModal;
+}
+function latestPostcardFor(cat) {
+  return (G.postcards || []).find(p => p.cat === cat);
+}
+
 function mapLine() {
   const n = G.mapPieces || 0;
   if (!n) return "";
@@ -5606,10 +5690,13 @@ function renderAdventureCard() {
   if (a) {
     const back = Date.now() >= a.endsAt;
     const d = ADV_DESTS[a.dest] || ADV_DESTS.forest;
+    const pc0 = !back ? latestPostcardFor(a.cat) : null;
+    const pc = (pc0 && pc0.t >= a.startedAt) ? pc0 : null;   // only this trip's postcard
     el.className = "adv-card" + (back ? " ready" : "");
     el.innerHTML = `<div class="adv-top"><span class="adv-emoji">${d.emoji}</span>
       <div><div class="adv-title">${esc(a.cat)} &middot; ${esc(d.name)}</div>
       <div class="adv-sub">${back ? "back at the cove — go and see how it went" : "back " + whenText(a.endsAt)}</div></div></div>
+      ${pc ? `<div class="adv-postcard">✉️ ${esc(pc.text.replace(/\s*—\s*.*$/, ""))}</div>` : ""}
       ${back ? `<button class="btn primary" id="adv-claim">See how it went</button>`
              : (DEV_BUILD ? `<button class="btn tiny" id="adv-skip">skip · dev</button>` : "")}
       ${mapLine()}`;
@@ -5656,14 +5743,16 @@ function pickAdventureCat(dest) {
 
 /* ---- on every return: roll a While-You-Were-Away beat, flag a cat that's home ---- */
 function afterReturn(awaySec) {
-  if (G.adventure && Date.now() >= G.adventure.endsAt) {
-    setTimeout(() => toast(`${G.adventure.cat} is back from their trip — open Today.`, 5.5), 1400);
-  }
+  const back = !!(G.adventure && Date.now() >= G.adventure.endsAt);
+  if (back) setTimeout(() => toast(`${G.adventure.cat} is back from their trip — open Today.`, 5.5), 1400);
   if (checkinAvailable() && G.tutorialDone) {
     setTimeout(() => { if (checkinAvailable()) toast("A daily welcome is waiting in Today. 📅", 5); }, 2200);
   }
   syncHud();
-  maybeWywa(awaySec);
+  // a postcard waiting from a trip still in progress pops on open; if they're
+  // already home the reunion is the moment, so don't compete with a modal
+  const poppedCard = !back && deliverDuePostcards({ pop: true });
+  if (!poppedCard) maybeWywa(awaySec);
 }
 
 /* ---------- boot ---------- */
@@ -5724,7 +5813,8 @@ window.__cove = {
     if (cmd === "start") { const n = arg || (cats.find(c => !c.mascot) || cats[0] || {}).name; startAdventure(n, "forest"); return G.adventure; }
     if (cmd === "clear") { _departures.length = 0; if (G.adventure) { cats.push(new Cat({ ...G.adventure.catData, x: W * 0.4, y: H * 0.6 })); G.adventure = null; rebuildAttractors(); } G.advDay = ""; syncHud(); return "cleared"; }
     if (cmd === "map") { G.mapPieces = arg == null ? (G.mapPieces || 0) + 1 : +arg; return { mapPieces: G.mapPieces }; }
-    return { adventure: G.adventure, advReady: advReady(), mapPieces: G.mapPieces || 0 };
+    if (cmd === "card") { if (!G.adventure || !G.adventure.cards) return "no active trip"; const c = G.adventure.cards.find(x => !x.shown); if (c) c.at = Date.now() - 1; deliverDuePostcards({ pop: true }); return "delivered"; }
+    return { adventure: G.adventure, advReady: advReady(), mapPieces: G.mapPieces || 0, postcards: (G.postcards || []).length };
   },
   step(sec){
     for (let acc = 0; acc < sec; acc += SIM_DT) simulate(SIM_DT);
@@ -5818,6 +5908,7 @@ window.addEventListener("pagehide", save);
 const _saveInterval = setInterval(save, 5000);
 // keep the Today sheet's adventure countdown / "they're back" state fresh while it's open
 setInterval(() => {
+  deliverDuePostcards({ pop: false });   // a gentle toast if one's due while you're playing
   if (panels.today && !panels.today.hidden) { renderCheckinCard(); renderAdventureCard(); }
   if (G.adventure && Date.now() >= G.adventure.endsAt) syncHud();
 }, 5000);
