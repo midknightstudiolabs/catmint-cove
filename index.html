@@ -2718,44 +2718,70 @@ function catMeow(kind, c) {
   if (!playSample("meow", { vol: 0.9 })) meow(true, 1);
 }
 
-/* the shop "acquire" flourish — a warm little music-box arpeggio (C-E-G-C) with a
-   soft low body note. Meant to be the game's signature "something good happened"
-   sound: nostalgic, calm, no meow. */
+/* the shop "acquire" flourish — a warm plucked arpeggio (C-E-G-C) on a
+   Karplus-Strong string (reads as a kalimba / music box), through a soft
+   room reverb. The game's signature "something good happened" sound —
+   nostalgic, calm, no meow. */
+let _chimeVerb = null;
+function chimeReverb() {
+  if (_chimeVerb) return _chimeVerb;
+  const sr = actx.sampleRate, len = Math.floor(sr * 1.3);
+  const ir = actx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
+  }
+  const c = actx.createConvolver(); c.buffer = ir;
+  _chimeVerb = c;
+  return c;
+}
+function pluck(freq, when, dur, level, bright) {
+  const sr = actx.sampleRate;
+  const N = Math.max(2, Math.round(sr / freq));
+  const len = Math.floor(sr * dur);
+  const buf = actx.createBuffer(1, len, sr);
+  const d = buf.getChannelData(0);
+  const ring = new Float32Array(N);
+  for (let i = 0; i < N; i++) ring[i] = Math.random() * 2 - 1;
+  const fb = 0.986 + bright * 0.012;
+  let p = 0;
+  for (let i = 0; i < len; i++) {
+    const cur = ring[p], nxt = ring[(p + 1) % N];
+    ring[p] = (cur + nxt) * 0.5 * fb;
+    d[i] = cur;
+    p = (p + 1) % N;
+  }
+  for (let i = 0; i < 160 && i < len; i++) d[len - 1 - i] *= i / 160;   // tail fade, no click
+  const src = actx.createBufferSource(); src.buffer = buf;
+  const g = actx.createGain(); g.gain.value = level;
+  src.connect(g);
+  return { src, g, when };
+}
 function purchaseChime() {
   if (muted || !actx) return;
   if (actx.state === "suspended") actx.resume();
-  const t0 = actx.currentTime;
-  const out = actx.createGain(); out.gain.value = 0.9;
-  const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3200; lp.Q.value = 0.15;
-  lp.connect(out); out.connect(actx.destination);
+  const t0 = actx.currentTime + 0.01;
 
-  const notes  = [523.25, 659.25, 783.99, 1046.50];   // C5 E5 G5 C6
-  const at     = [0, 0.08, 0.16, 0.30];
-  const peak   = [0.085, 0.085, 0.08, 0.05];
-  const decay  = [0.55, 0.55, 0.62, 0.85];
+  const dry = actx.createGain(); dry.gain.value = 0.9;
+  const wet = actx.createGain(); wet.gain.value = 0.22;
+  const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3400; lp.Q.value = 0.1;
+  lp.connect(dry); dry.connect(actx.destination);
+  try { lp.connect(chimeReverb()); chimeReverb().connect(wet); wet.connect(actx.destination); } catch (e) {}
+
+  const notes = [523.25, 659.25, 783.99, 1046.50];   // C5 E5 G5 C6
+  const at    = [0, 0.085, 0.17, 0.31];
+  const lvl   = [0.5, 0.5, 0.46, 0.32];
+  const dur   = [0.9, 0.9, 1.0, 1.25];
   notes.forEach((f, i) => {
-    const t = t0 + at[i];
-    const o1 = actx.createOscillator(); o1.type = "triangle"; o1.frequency.value = f;
-    const o2 = actx.createOscillator(); o2.type = "sine";     o2.frequency.value = f * 3.01;   // the "tine" ping
-    const g1 = actx.createGain(), g2 = actx.createGain();
-    g1.gain.setValueAtTime(0.0001, t);
-    g1.gain.linearRampToValueAtTime(peak[i], t + 0.006);
-    g1.gain.exponentialRampToValueAtTime(0.0008, t + decay[i]);
-    g2.gain.setValueAtTime(0.0001, t);
-    g2.gain.linearRampToValueAtTime(peak[i] * 0.25, t + 0.004);
-    g2.gain.exponentialRampToValueAtTime(0.0005, t + decay[i] * 0.35);
-    o1.connect(g1); o2.connect(g2); g1.connect(lp); g2.connect(lp);
-    o1.start(t); o2.start(t);
-    o1.stop(t + decay[i] + 0.1); o2.stop(t + decay[i] * 0.35 + 0.1);
+    const v = pluck(f, t0 + at[i], dur[i], lvl[i], 0.55 - i * 0.06);
+    v.g.connect(lp);
+    v.src.start(v.when);
   });
 
-  const lo = actx.createOscillator(); lo.type = "sine"; lo.frequency.value = 130.81;   // C3 warmth
-  const lg = actx.createGain();
-  lg.gain.setValueAtTime(0.0001, t0);
-  lg.gain.linearRampToValueAtTime(0.045, t0 + 0.02);
-  lg.gain.exponentialRampToValueAtTime(0.0006, t0 + 0.42);
-  lo.connect(lg); lg.connect(out);
-  lo.start(t0); lo.stop(t0 + 0.5);
+  // a soft low body note so the arpeggio lands warm
+  const lo = pluck(130.81, t0, 0.7, 0.28, 0.15);
+  lo.g.connect(dry);
+  lo.src.start(lo.when);
 }
 
 function sfx(kind, c) {
