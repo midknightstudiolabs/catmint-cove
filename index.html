@@ -653,12 +653,16 @@
    Single file, no dependencies. Vanilla canvas.
    ============================================================ */
 
-const SAVE_KEY = "catmintCove.save.v8";
-const OLD_SAVE_KEYS = ["catmintCove.save.v7", "catmintCove.save.v6", "catmintCove.save.v5"];
-const SAVE_VERSIONS = [5, 6, 7, 8];
+// v9 = a clean break for the Phase A/B overhaul. Old saves (v5-v8) are NOT
+// migrated — the economy, the restoration projects and cat data all changed
+// enough that a fresh cove is the right call for testers. Old blobs just sit
+// unused in localStorage.
+const SAVE_KEY = "catmintCove.save.v9";
+const OLD_SAVE_KEYS = [];
+const SAVE_VERSIONS = [9];
 // a cache key that changes on every deploy (the file's Last-Modified moves) —
 // appended to the runtime asset fetches so audio never loads stale after an update
-const BUILD = String(Date.parse(document.lastModified) || 0) + ".9";
+const BUILD = String(Date.parse(document.lastModified) || 0) + ".v9";
 // only bust on the hosted web build — the native app bundles assets locally
 const bust = (u) => /^https?:$/.test(location.protocol) ? u + (u.includes("?") ? "&" : "?") + "v=" + BUILD : u;
 // developer build: served at /dev/ or with ?dev — unlocks the dev panel + R-key
@@ -794,7 +798,7 @@ function newAdsState() {
 }
 function newGame() {
   return {
-    v: 8,
+    v: 9,
     tutorialDone: false,
     midknightSeeded: false,
     shells: 25,
@@ -843,6 +847,8 @@ function load() {
   // sets up G only — cats are created afterwards by restoreCats()
   let raw = null;
   try {
+    // tidy up pre-v9 blobs — they're never loaded again
+    for (const k of ["catmintCove.save.v8", "catmintCove.save.v7", "catmintCove.save.v6", "catmintCove.save.v5"]) localStorage.removeItem(k);
     raw = localStorage.getItem(SAVE_KEY);
     if (!raw) for (const k of OLD_SAVE_KEYS) { raw = localStorage.getItem(k); if (raw) break; }
   } catch (e) {}
@@ -851,7 +857,7 @@ function load() {
     const s = JSON.parse(raw);
     if (!s || !SAVE_VERSIONS.includes(s.v)) { G = newGame(); return; }
     G = s;
-    G.v = 8;                                                  // migrate v5/v6/v7 → v8 in place
+    G.v = 9;                                                  // v9 saves only — the guards below just backfill any missing field
     if (!G.decor) G.decor = { tree: 0, cottage: 0, flowers: 0 };
     if (!G.stations) G.stations = { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 };
     if (G.trinkets === undefined) G.trinkets = 0;

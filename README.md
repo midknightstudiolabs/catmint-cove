@@ -13,10 +13,11 @@ one-line redirect to `/?dev` (single source of truth — the `DEV_BUILD` flag re
 the URL). The **beta build has no dev access at all** — no dev panel, and the `R`
 key won't wipe a tester's save. In the **dev build** the panel opens on load with
 live stats + **RESET GAME**, or tap the cats-count pill 5× / press `D`.
-V1 is a copy of the frozen [`releases/v1/`](releases/v1/) snapshot. Each build has
-a small badge in the top bar. GitHub Pages redeploys ~1 min after a push to
-`main`. V1 keeps a separate save (`catmintCove.save.v5`); the current build uses
-`catmintCove.save.v7` and migrates older `.v6` / `.v5` coves in place.
+V1 is a copy of the frozen [`releases/v1/`](releases/v1/) snapshot. GitHub Pages
+redeploys ~1 min after a push to `main`. **The current build uses save
+`catmintCove.save.v9` and does NOT migrate older coves** — v9 is a clean break
+for the Phase A/B overhaul (rebalanced economy, restoration projects), so every
+existing cove starts fresh on this deploy. Pre-v9 blobs are cleared on load.
 
 A playable greybox of the cozy-idle cat game concept. One self-contained HTML file,
 no build step, no dependencies.
@@ -94,7 +95,7 @@ Ships MVP steps 1–3; Friendship/Memories, Butterfly Catch and Weekly Events ar
       welcome + goals + streak) and **"Send a cat exploring"** (adventures +
       postcards); the shells/shop step mentions Fresh catnip; the drops step notes
       the first-hour boost.
-- [x] Save `catmintCove.save.v7` — migrates `.v6` / `.v5` in place.
+- [x] Save `catmintCove.save.v9` — clean break, no migration from v5–v8.
 - [ ] Friendship ❤️1–10 + Memories (the moat) — next
 - [ ] Butterfly Catch — one 40s optional mini-game — next
 - [ ] Weekly rotating events (template) — next
