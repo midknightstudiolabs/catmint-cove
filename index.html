@@ -46,8 +46,8 @@
             .6rem calc(clamp(.7rem,2vw,1.2rem) + env(safe-area-inset-left));
     pointer-events:none;
   }
-  .hud-group{flex-wrap:wrap;}
-  .hud-group{display:flex;gap:.55rem;align-items:center;pointer-events:auto;}
+  .hud-group{display:flex;gap:.55rem;align-items:center;pointer-events:auto;min-width:0;flex-wrap:wrap;}
+  #hud .hud-group:last-child{flex-wrap:nowrap;flex-shrink:0;}   /* the buttons stay on one row */
   .pill{
     display:flex;align-items:center;gap:.45rem;
     background:var(--panel);border:1px solid var(--panel-line);border-radius:999px;
@@ -306,6 +306,18 @@
   @media (max-width:560px){
     .title-pill{display:none;}
     .pill.small.opens{display:none;}
+    .verbadge{display:none;}
+  }
+  @media (max-width:460px){
+    #hud{gap:.3rem;padding-left:calc(.5rem + env(safe-area-inset-left));padding-right:calc(.5rem + env(safe-area-inset-right));}
+    #hud .hud-group{gap:.3rem;flex-wrap:nowrap;min-width:0;}   /* everything stays on one row */
+    #hud .hud-group:first-child{overflow:hidden;}
+    #hud .pill{padding:.35rem .55rem .35rem .42rem;font-size:.86rem;}
+    #hud .pill.small{font-size:.72rem;padding:.3rem .5rem;}
+    #hud .pill .dot{width:.95rem;height:.95rem;font-size:.62rem;}
+    #hud button.btn{padding:.4rem .5rem;}
+    #hud .btn .ico{font-size:1rem;}
+    #hud .pill.pearl{display:none;}   /* pearls live in the Today sheet on phones */
   }
 </style>
 
@@ -725,7 +737,11 @@ function makeAttractor(type, idx) {
 }
 
 function stationCount() { const s = G.stations || {}; return (s.fishing||0) + (s.bakery||0) + (s.sunbeam||0) + (s.garden||0); }
-function capacity() { return 4 + (G.bowls - 1) * 2 + G.toys + G.beds + G.decor.cottage * 2 + stationCount() * 2; }
+// hard ceiling. the sim + render stay smooth well past this — the cap is about
+// the *feel*: past ~16 a small phone screen reads as a mosh pit, not a cozy cove.
+// "Find them a new home" on the cat card is the release valve for collectors.
+const MAX_CATS = 16;
+function capacity() { return Math.min(MAX_CATS, 4 + (G.bowls - 1) * 2 + G.toys + G.beds + G.decor.cottage * 2 + stationCount() * 2); }
 function comfortMult() { return 1 + G.comfort * 0.22; }
 function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // ambient mood lift
 
@@ -1055,7 +1071,9 @@ function decide(c) {
       c._arriveState = st.arrive;
       c._arriveDur = st.dur();
       c._pendStation = key;
-      return go(c, "seeking", 18, { x: a.x + rand(-12, 12), y: a.y + rand(-6, 8) });
+      // spread arrivals so a 2-cat station (bakery) doesn't stack them
+      const slot = st.cap > 1 ? (cats.filter(o => o !== c && o._station === key).length ? 1 : -1) : 0;
+      return go(c, "seeking", 18, { x: a.x + slot * 26 + rand(-8, 8), y: a.y + rand(-6, 8) });
     });
   }
 
@@ -1123,7 +1141,9 @@ function updateCat(c, dt) {
 
   /* -------- steering: velocity-based, damped, no teleporting -------- */
   const travelling = ["arriving", "seeking", "exploring", "socializing", "knocking"].includes(c.state);
-  const held = c.state === "being_pet" || c.state === "sleeping";
+  // "held" cats hold their chosen spot — they still push others away but aren't pushed themselves
+  const HELD_STATES = ["being_pet", "sleeping", "eating", "baking", "sunbathing", "fishing", "grooming", "rolling"];
+  const held = HELD_STATES.includes(c.state);
   let ax = 0, ay = 0;
 
   if (travelling) {
@@ -1138,28 +1158,35 @@ function updateCat(c, dt) {
     }
   }
 
-  // gentle separation — a soft steering nudge only when genuinely overlapping
-  if (!held) {
+  // personal space — keep a body's width between cats so they never stack.
+  // held cats (asleep, at a station) still get a slow nudge so a pile untangles
+  // itself instead of freezing overlapped.
+  let crowded = false;
+  if (c.state !== "being_pet") {
     let sx = 0, sy = 0, hits = 0;
+    const R = 52;
     for (const o of cats) {
-      if (o === c) continue;
-      const ox = c.x - o.x, oy = c.y - o.y;
-      const od = Math.hypot(ox, oy);
-      if (od > 0.001 && od < 24) { const f = (24 - od) / 24; sx += (ox / od) * f; sy += (oy / od) * f; hits++; }
+      if (o === c || o === c.partner) continue;   // sit close to a friend on purpose
+      let ox = c.x - o.x, oy = (c.y - o.y) * 0.55;   // vertical proximity matters less — the y-sort layers them by depth
+      let od = Math.hypot(ox, oy);
+      if (od < 0.001) { ox = (Math.random() - 0.5); oy = (Math.random() - 0.5); od = Math.hypot(ox, oy) || 1; }  // exact overlap → break the tie
+      if (od < R) { const f = (R - od) / R; sx += (ox / od) * f; sy += (oy / od) * f; hits++; }
     }
-    if (hits) { const k = travelling ? 22 : 14; ax += sx * k; ay += sy * k; }
+    if (hits) { crowded = true; const k = held ? 24 : travelling ? 32 : 28; ax += sx * k; ay += sy * k; }
   }
 
-  // integrate + damp
+  // integrate + damp — a held cat that's stacked loosens the damping so the pile
+  // gently spreads out, then re-freezes once everyone has room
   c.vx += ax * dt; c.vy += ay * dt;
-  const damp = held ? 16 : travelling ? 2.4 : 9;
+  const damp = held ? (crowded ? 3.5 : 16) : travelling ? 2.4 : 9;
   const dk = Math.min(1, damp * dt);
   c.vx -= c.vx * dk; c.vy -= c.vy * dk;
 
   // cap speed, and kill sub-pixel drift so idle cats are perfectly still
+  // (but let a stacked cat keep its slow untangle crawl)
   let spd = Math.hypot(c.vx, c.vy);
   if (spd > 62) { const s = 62 / spd; c.vx *= s; c.vy *= s; spd = 62; }
-  if (!travelling && spd < 2.5) { c.vx = 0; c.vy = 0; spd = 0; }
+  if (!travelling && !crowded && spd < 2.5) { c.vx = 0; c.vy = 0; spd = 0; }
 
   c.x += c.vx * dt; c.y += c.vy * dt;
 
@@ -1750,7 +1777,7 @@ function composePhoto() {
   for (const f of foreground) players.push({ y: f.y, f });
   players.sort((p, q) => p.y - q.y);
   for (const it of players) {
-    if (it.c) { drawCat(pctx, it.c, true); if (it.c._station === "fishing" && it.c._fx) drawFishingRig(pctx, it.c); }
+    if (it.c) { drawCat(pctx, it.c, true); if (it.c.state === "fishing" && it.c._station === "fishing" && it.c._fx) drawFishingRig(pctx, it.c); }
     else drawGrassTuft(pctx, it.f, pgt, pnight);
   }
   pctx.restore();
@@ -2012,8 +2039,8 @@ document.getElementById("muteBtn").addEventListener("click", (e) => {
   muted = !muted;
   e.currentTarget.querySelector(".ico").textContent = muted ? "🔇" : "🔊";
   ensureAudio();
-  if (ambience && actx) rampParam(ambience.master.gain, muted ? 0 : (restMode ? 0.1 : AMB_MASTER));
-  if (restBus && actx) rampParam(restBus.gain, muted ? 0 : (restOpts.rain ? 0.9 : 0));
+  if (ambience && actx) rampParam(ambience.master.gain, muted || restMode ? 0 : AMB_MASTER);   // rest mode = rain only
+  if (restBus && actx) rampParam(restBus.gain, muted || !restOpts.rain ? 0.0001 : 0.9);
 });
 
 /* ---------- tutorial (skippable, reopen with the ? button) ---------- */
@@ -2614,7 +2641,7 @@ function startAmbience() {
   const master = actx.createGain();
   master.gain.value = 0;
   master.connect(actx.destination);
-  master.gain.linearRampToValueAtTime(muted ? 0 : AMB_MASTER, now + 3);
+  master.gain.linearRampToValueAtTime(muted || restMode ? 0 : AMB_MASTER, now + 3);   // stay silent if we boot straight into rest
 
   // brook — pink noise, low-passed, a slow babble wobble. Kept gentle.
   const water = loopNoise("pink", 8);
@@ -2710,12 +2737,18 @@ let restOpts = { rain: true, fire: true, thunder: false, hours: 0 };
 let restStartedAt = 0, restEndsAt = 0;
 let restIdleT = 0, restDim = 0, restDrift = 0, _restFlash = 0, _restRainScroll = 0, _restTimerIv = 0, _restAcc = 0, _restG = null;
 let rainBuffer = null, rainSrc = null, restBus = null, _wakeLock = null;
-let glassDrops = [];
+let glassDrops = [], rainStreaks = [];
 
 function initGlassDrops() {
   glassDrops = [];
   for (let i = 0; i < 34; i++) glassDrops.push({
     x: Math.random(), y: Math.random(), r: rand(1.1, 3.6), v: 0, hold: rand(0, 3), trail: 0,
+  });
+  // falling rain behind the glass — each streak its own lane, speed, length & phase
+  // so the sheet never wraps in unison (that read as a jump)
+  rainStreaks = [];
+  for (let i = 0; i < 46; i++) rainStreaks.push({
+    x: Math.random(), y: Math.random(), spd: rand(0.55, 1.15), len: rand(11, 22), a: rand(0.16, 0.4),
   });
 }
 // full-screen gradients cost an allocation each — build them once per size
@@ -2759,13 +2792,20 @@ async function loadRainLoop() {
     rainBuffer = await actx.decodeAudioData(await res.arrayBuffer());
   } catch (e) { rainBuffer = null; }
 }
+let _restAudioGen = 0;
 async function startRestAudio() {
   if (!actx) return;
+  const gen = ++_restAudioGen;          // any earlier start() is now stale
+  stopRestAudio(true);                  // tear down anything already playing (keeps gen)
+  _restAudioGen = gen;
+  // the cove's own ambient bed goes fully silent in rest mode — rain only
+  if (ambience) rampParam(ambience.master.gain, 0, 1.2);
   await loadRainLoop();
+  if (gen !== _restAudioGen || !restMode) return;   // superseded, or we already left rest
   restBus = actx.createGain();
   restBus.gain.value = 0.0001;
   restBus.connect(actx.destination);
-  restBus.gain.linearRampToValueAtTime(muted || !restOpts.rain ? 0.0001 : 0.9, actx.currentTime + 2.5);
+  rampParam(restBus.gain, muted || !restOpts.rain ? 0.0001 : 0.9, 2.5);
   rainSrc = actx.createBufferSource();
   if (rainBuffer) {
     rainSrc.buffer = rainBuffer; rainSrc.loop = true;
@@ -2777,18 +2817,18 @@ async function startRestAudio() {
     rainSrc.connect(lp); lp.connect(rg); rg.connect(restBus);
   }
   rainSrc.start();
-  if (ambience) ambience.master.gain.linearRampToValueAtTime(0.1, actx.currentTime + 2);
   scheduleRestThunder();
 }
-function stopRestAudio() {
+function stopRestAudio(keepGen) {
+  if (!keepGen) _restAudioGen++;        // invalidate any in-flight startRestAudio()
   if (!actx) return;
   const t = actx.currentTime;
-  if (restBus) restBus.gain.linearRampToValueAtTime(0.0001, t + 1.4);
-  if (rainSrc) { try { rainSrc.stop(t + 1.6); } catch (e) {} }
   const bus = restBus, src = rainSrc;
-  setTimeout(() => { try { src && src.disconnect(); } catch (e) {} try { bus && bus.disconnect(); } catch (e) {} }, 2200);
   restBus = null; rainSrc = null;
-  if (ambience) ambience.master.gain.linearRampToValueAtTime(muted ? 0 : AMB_MASTER, t + 2);
+  if (bus) rampParam(bus.gain, 0.0001, 1.2);
+  if (src) { try { src.stop(t + 1.4); } catch (e) {} }
+  setTimeout(() => { try { src && src.disconnect(); } catch (e) {} try { bus && bus.disconnect(); } catch (e) {} }, 2000);
+  if (ambience && !keepGen) rampParam(ambience.master.gain, muted ? 0 : AMB_MASTER, 1.6);
 }
 function scheduleRestThunder() {
   if (!restMode) return;
@@ -2972,14 +3012,15 @@ function renderRest(dt) {
   g.lineTo(wx + ww, wy + wh); g.closePath(); g.fill();
   if (_restFlash > 0.02) { g.fillStyle = `rgba(190,210,255,${_restFlash * 0.7})`; g.fillRect(wx, wy, ww, wh); }
   if (!dim) {
-    g.strokeStyle = "rgba(200,214,236,0.34)"; g.lineWidth = 1.1;
-    g.beginPath();
-    for (let i = 0; i < 40; i++) {
-      const rxp = (i * 89.7) % ww;
-      const ph = ((_restRainScroll * 300 + i * 61) % (wh + 44)) - 22;
-      g.moveTo(wx + rxp, wy + ph); g.lineTo(wx + rxp - 5, wy + ph + 16);
+    g.strokeStyle = "rgba(206,220,240,0.9)"; g.lineWidth = 1.1; g.lineCap = "round";
+    for (const s of rainStreaks) {
+      s.y += s.spd * dt;
+      if (s.y > 1.08) { s.y -= 1.16; s.x = Math.random(); }
+      const rx = wx + s.x * ww, ry = wy + (s.y - 0.04) * wh;
+      g.globalAlpha = s.a;
+      g.beginPath(); g.moveTo(rx, ry); g.lineTo(rx - s.len * 0.28, ry + s.len); g.stroke();
     }
-    g.stroke();
+    g.globalAlpha = 1;
   }
   for (const d of glassDrops) {
     const px = wx + d.x * ww, py = wy + d.y * wh;
@@ -3030,9 +3071,10 @@ function renderRest(dt) {
   g.lineTo(ox + ow / 2, hbase - 8);
   g.closePath(); g.fill();
   if (restOpts.fire) {
-    const flick = 0.55 + 0.45 * Math.sin(pn / 80) + 0.18 * Math.sin(pn / 33);
+    // gentle, slow flicker — no fast strobe
+    const flick = 0.78 + 0.14 * Math.sin(pn / 320) + 0.08 * Math.sin(pn / 130 + 1.3);
     g.save();
-    g.globalAlpha = clamp(0.8 * flick, 0, 1);
+    g.globalAlpha = clamp(0.78 * flick, 0, 0.92);
     g.fillStyle = R.glow; g.fillRect(-8, htop - 60, W * 0.7, H - htop + 90);
     g.restore();
     g.fillStyle = "#4a3120"; g.save(); g.translate(ox, hbase - 12); g.rotate(-0.12);
@@ -3045,13 +3087,13 @@ function renderRest(dt) {
     g.beginPath(); g.ellipse(ox, by, ow * 0.42, 5, 0, 0, 7); g.fill();
     // 3 overlapping organic flames + an inner core
     const layers = [
-      { col: "#e07a26", w: ow * 0.4, h: oh * 0.9, sp: 55 },
-      { col: "#f4b13e", w: ow * 0.28, h: oh * 1.05, sp: 42 },
-      { col: "#fbe08a", w: ow * 0.16, h: oh * 0.8, sp: 33 },
+      { col: "#e07a26", w: ow * 0.4, h: oh * 0.9, sp: 260 },
+      { col: "#f4b13e", w: ow * 0.28, h: oh * 1.05, sp: 200 },
+      { col: "#fbe08a", w: ow * 0.16, h: oh * 0.8, sp: 150 },
     ];
     for (const ly of layers) {
       const s1 = Math.sin(pn / ly.sp), s2 = Math.sin(pn / (ly.sp * 1.7) + 1);
-      const tipX = ox + s1 * ly.w * 0.35, tipY = by - ly.h * (0.85 + s2 * 0.15);
+      const tipX = ox + s1 * ly.w * 0.28, tipY = by - ly.h * (0.88 + s2 * 0.12);
       g.fillStyle = ly.col;
       g.beginPath();
       g.moveTo(ox - ly.w, by);
@@ -3607,13 +3649,18 @@ function drawCoveSign(g, W, H) {
 }
 
 /* ---------- cat rendering: recognisable loaf-cats with real coat types ---------- */
-function poseParams(pose) {
+function poseParams(pose, sleepStyle) {
   // V2 look: a chunky loaf — wide body, big head sunk into the mass, ruff-forward
   const P = { bw: 27, top: -33, hx: 3, hy: -33, hr: 17 };      // default: loaf / rest
   if (pose === "sit")   { P.bw = 22, P.top = -45, P.hx = 4,  P.hy = -44, P.hr = 16; }
   else if (pose === "play")  { P.bw = 23, P.top = -27, P.hx = 11, P.hy = -29, P.hr = 15.5; }
   else if (pose === "trot")  { P.bw = 24, P.top = -29, P.hx = 8,  P.hy = -33, P.hr = 15.5; }
-  else if (pose === "sleep") { P.bw = 29, P.top = -22, P.hx = 6,  P.hy = -19, P.hr = 13.5; }
+  else if (pose === "sleep") {
+    // three stable sleeping shapes so a nap-heavy cove doesn't look like a row of clones
+    if (sleepStyle === 1)      { P.bw = 25, P.top = -20, P.hx = -3, P.hy = -13, P.hr = 12.5; }  // curled tight, nose to tail
+    else if (sleepStyle === 2) { P.bw = 34, P.top = -15, P.hx = 15, P.hy = -10, P.hr = 12.5; }  // flopped on one side
+    else                       { P.bw = 29, P.top = -22, P.hx = 6,  P.hy = -19, P.hr = 13.5; }  // classic sleeping loaf
+  }
   return P;
 }
 function catSil(g, P) {
@@ -3903,7 +3950,8 @@ function drawCat(g, c, isPhoto) {
   // so the shape never pops between a "trot" pose and a "rest" pose as the gait eases in/out
   const pose = asleep ? "sleep" : playing ? "play"
              : (c.state === "socializing" || grooming) ? "sit" : "rest";
-  const P = poseParams(pose);
+  const sleepStyle = asleep ? ((c.markSeed || 0) % 3) : 0;   // 0 loaf · 1 curl · 2 side-flop (stable per cat)
+  const P = poseParams(pose, sleepStyle);
   const lick = grooming ? Math.sin(c.stateT * 7) : 0;   // washing rhythm
 
   // --- age: kittens are small, round, big-headed, big-eyed ---
@@ -3954,12 +4002,13 @@ function drawCat(g, c, isPhoto) {
 
   g.save();
   g.scale(c.face, 1);
-  if (lean) g.rotate(lean);          // tip forward while walking (feet-anchored)
+  const sleepTilt = sleepStyle === 2 ? 0.12 : 0;      // the side-flop lies at an angle
+  if (lean || sleepTilt) g.rotate(lean + sleepTilt);  // tip forward while walking (feet-anchored)
   g.save();
   g.scale(scaleX, scaleY);           // squash anchored at the feet (y = 0)
 
   const wag = Math.sin(c.tail) + wk * CHARM * Math.sin(gp * 0.5) * 1.4;   // swishy tail on the walk
-  const tailMode = wk > 0.35 ? "stream" : playing ? "lash" : "wrap";
+  const tailMode = wk > 0.35 ? "stream" : playing ? "lash" : (sleepStyle === 2 ? "stream" : "wrap");
 
   // --- far-side legs (behind the body), drawn on the ground ---
   if (wk > 0.02) drawWalkLegs(g, c, P, coat, stridePh, wk, true, walkLift, hop * 3.4);
@@ -4329,7 +4378,7 @@ function renderScene(dt) {
   for (const it of layer) {
     if (it.c) {
       drawCat(ctx, it.c, false);
-      if (it.c._station === "fishing" && it.c._fx) drawFishingRig(ctx, it.c);
+      if (it.c.state === "fishing" && it.c._station === "fishing" && it.c._fx) drawFishingRig(ctx, it.c);
       if (it.c.star >= 3) drawStarAura(ctx, it.c, dt);
     } else {
       drawGrassTuft(ctx, it.f, gt, gnight);
@@ -4367,10 +4416,11 @@ function frame(now) {
   last = now;
   if (frameDt > 0.25) frameDt = 0.25;      // tab was backgrounded — don't fast-forward
   if (restMode) {
-    // a screensaver doesn't need 60fps — 30 while active, 12 once it dims (that's
-    // most of an 8-hour session). Keeps the tab light on battery.
+    // full 60fps while you're actually watching (the first ~26s — rain & fire
+    // need it to look smooth), then drop to 15fps once it dims for burn-in.
+    // The dim state is ~all of an 8-hour session, so battery cost stays tiny.
     _restAcc += frameDt;
-    const step = restDim > 0.5 ? 1 / 12 : 1 / 30;
+    const step = restDim > 0.5 ? 1 / 15 : 1 / 60;
     if (_restAcc >= step) { renderRest(_restAcc); _restAcc = 0; }
     requestAnimationFrame(frame);
     return;
