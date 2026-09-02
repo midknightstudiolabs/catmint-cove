@@ -215,6 +215,10 @@
   .shop-item.boostcard{background:linear-gradient(180deg,#fff6e6,#f6ecd6);border-radius:14px;padding:.7rem .8rem;margin:.35rem 0;border-top:none;}
   .shop-item.boostcard .name{color:var(--apricot);}
   .shop-item.boostcard .owned{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--apricot);font-variant-numeric:tabular-nums;}
+  .shop-item.soon{opacity:.6;}
+  .shop-item.soon .btn.primary{background:#e7e2d2;color:var(--ink-faint);border-color:var(--panel-line);text-transform:uppercase;font-size:.66rem;letter-spacing:.06em;}
+  .soon-tag{display:inline-block;margin-left:.3rem;padding:.05rem .4rem;border-radius:999px;background:#e7e2d2;
+    font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);white-space:nowrap;}
   .shop-cat{font-family:"Fraunces",serif;font-size:.82rem;font-weight:600;color:var(--accent);
     margin:1rem 0 -.1rem;padding-top:.7rem;border-top:1px solid var(--panel-line);letter-spacing:.01em;}
   .shop-cat:first-of-type{border-top:none;padding-top:.2rem;margin-top:.3rem;}
@@ -972,8 +976,8 @@ function rebuildAttractors() {
   const cpos = placeClear(comforts, avoid);
   comforts.forEach((c, i) => attractors.push({ type: c.type, x: cpos[i].x, y: cpos[i].y }));
   for (const d of decor) {
-    if (d.type === "tree")    attractors.push({ type: "tree",    x: clamp(d.x + 14, 32, W - 32), y: clamp(d.y + 20, H * 0.44, catFloor()) });
-    if (d.type === "cottage") attractors.push({ type: "cottage", x: clamp(d.x,      32, W - 32), y: clamp(d.y + 14, H * 0.44, catFloor()) });
+    if (d.type === "tree")    attractors.push({ type: "tree",    x: clamp(d.x + 14, 32, W - 32), y: clamp(d.y + 34, H * 0.44, catFloor()) });
+    if (d.type === "cottage") attractors.push({ type: "cottage", x: clamp(d.x,      32, W - 32), y: clamp(d.y + 34, H * 0.44, catFloor()) });
     if (d.type === "station") {
       const off = d.station === "fishing" ? { x: -6, y: 4 } : { x: 0, y: 16 };
       attractors.push({ type: d.station, station: true, x: clamp(d.x + off.x, 36, W - 36), y: clamp(d.y + off.y, H * 0.44, catFloor()) });
@@ -1481,7 +1485,34 @@ function updateCat(c, dt) {
       ax += sx * k; ay += sy * k;
     }
   }
-  const shoving = crowded && crowdPush >= 0.3;   // idle cat actively stepping clear of an overlap
+  let decorShove = false;
+  // don't clip through the solid bits of big scenery — a small core at the base
+  // of a tree trunk / the body of a cottage. Cats sit in FRONT of these (the
+  // tree/cottage attractor points are ~34px below, well clear of the core), so
+  // only a passing / loafing cat gets nudged around, never one settled there.
+  if (!held && c.state !== "arriving") {
+    for (const d of decor) {
+      let cy = d.y, cr = 0;
+      if (d.type === "tree") { cy = d.y - 2; cr = 12; }
+      else if (d.type === "cottage") { cy = d.y - 8; cr = 20; }
+      else continue;
+      let ox = c.x - d.x, oy = c.y - cy;
+      let od = Math.hypot(ox, oy);
+      const reach = cr + 15;                   // + a cat's half-width
+      if (od < reach) {
+        if (od < 0.01) { ox = 1; oy = 0; od = 1; }
+        const f = (reach - od) / reach;
+        ax += (ox / od) * f * 90; ay += (oy / od) * f * 90;
+        decorShove = true;
+        if (travelling) {   // steer AROUND, not just into a standoff — pick the side that heads toward the target
+          const tx = -oy / od, ty = ox / od;
+          const s = ((c.tx - c.x) * tx + (c.ty - c.y) * ty) >= 0 ? 1 : -1;
+          ax += tx * s * 75; ay += ty * s * 75;
+        }
+      }
+    }
+  }
+  const shoving = (crowded && crowdPush >= 0.3) || decorShove;   // actively stepping clear of an overlap
 
   // integrate + damp. a hard-stacked held cat loosens up briefly to slide clear;
   // otherwise held = clamped tight so it doesn't drift.
@@ -1507,6 +1538,20 @@ function updateCat(c, dt) {
     else if (c.x > maxX) { c.x = maxX; if (c.vx > 0) c.vx = 0; }
     if (c.y < minY) { c.y = minY; if (c.vy < 0) c.vy = 0; }
     else if (c.y > maxY) { c.y = maxY; if (c.vy > 0) c.vy = 0; }
+    // hard stop at a tree trunk / cottage body — a cat never ends up inside one
+    if (!held) for (const d of decor) {
+      let cy, cr;
+      if (d.type === "tree") { cy = d.y - 2; cr = 15; }
+      else if (d.type === "cottage") { cy = d.y - 8; cr = 24; }
+      else continue;
+      let ox = c.x - d.x, oy = c.y - cy, od = Math.hypot(ox, oy);
+      if (od < cr) {
+        if (od < 0.01) { ox = 1; od = 1; }
+        c.x = d.x + (ox / od) * cr; c.y = cy + (oy / od) * cr;
+        const into = (c.vx * ox + c.vy * oy) / od;               // velocity component heading inward
+        if (into < 0) { c.vx -= (ox / od) * into; c.vy -= (oy / od) * into; }
+      }
+    }
   }
 
   // gait + facing driven by smoothed velocity. the bar to "stepping" sits just
@@ -2034,6 +2079,11 @@ const SHOP = [
     base:5000, mul:1, pearls:30, get:()=>G.coveCharter ? 1 : 0, max:1,
     need:()=> dexCount() < COATS.length ? `Discover all ${COATS.length} coats first — ${dexCount()}/${COATS.length}` : null,
     buy:()=>{ G.coveCharter = true; } },
+  // seasonal decor — a sneak-peek. shows locked until the season lands.
+  { key:"pumpkins", cat:"comforts", soon:true, name:"🎃 Pumpkin patch", desc:"Carved pumpkins, a few cobwebs, a very unbothered black cat.",
+    base:55, mul:1, get:()=>0, max:1, need:()=>"Coming this autumn" },
+  { key:"wintertree", cat:"comforts", soon:true, name:"🎄 Winter tree", desc:"A little spruce with lights and a star — cats bat the low baubles.",
+    base:70, mul:1, get:()=>0, max:1, need:()=>"Coming this winter" },
 ];
 const COMFORT_STATE = { food:"eating", toy:"playing", bed:"sleeping", cottage:"sleeping", tree:"sleeping", scratch:"scratching",
   fishing:"fishing", bakery:"baking", sunbeam:"sunbathing", garden:"rolling" };
@@ -2117,14 +2167,14 @@ function shopItemRow(item) {
   const lockMsg = !maxed && item.need ? item.need() : null;
   const afford = G.shells >= price && G.pearls >= pearlCost;
   const row = document.createElement("div");
-  row.className = "shop-item" + (item.key === "charter" ? " prestige" : "");
-  const priceLabel = maxed ? "owned" : lockMsg ? "🔒" : pearlCost ? `◈${price} · ✦${pearlCost}` : `◈ ${price}`;
+  row.className = "shop-item" + (item.key === "charter" ? " prestige" : "") + (item.soon ? " soon" : "");
+  const priceLabel = maxed ? "owned" : item.soon ? "soon" : lockMsg ? "🔒" : pearlCost ? `◈${price} · ✦${pearlCost}` : `◈ ${price}`;
   const canRemove = !!item.remove && item.get() > (item.keepMin || 0);
   const refund = canRemove ? Math.max(1, Math.round(item.base * Math.pow(item.mul, item.get() - 1) * 0.4)) : 0;
   row.innerHTML = `
     <div class="txt">
       <div class="name">${item.name} ${item.get() && item.max !== 1 ? `<span class="lv">·&nbsp;${item.max ? ("lv " + item.get()) : ("×" + item.get())}</span>` : ""}</div>
-      <div class="desc">${lockMsg ? "🔒 " + lockMsg : item.desc}</div>
+      <div class="desc">${item.soon ? item.desc + ` <span class="soon-tag">${esc(item.need())}</span>` : lockMsg ? "🔒 " + lockMsg : item.desc}</div>
     </div>
     <div class="shop-actions">
       ${canRemove ? `<button class="btn tiny remove" title="Remove one — refunds ◈${refund}">−</button>` : ""}
@@ -2239,12 +2289,18 @@ function renderShop() {
   if (shopTab === "featured") {
     list.appendChild(shopPackRow());
     list.appendChild(shopBoostRow());
-    const rec = SHOP.find(i => i.cat === "comforts" && i.get() === 0) || SHOP.find(i => i.cat === "stations" && i.get() === 0);
+    const rec = SHOP.find(i => i.cat === "comforts" && !i.soon && i.get() === 0) || SHOP.find(i => i.cat === "stations" && !i.soon && i.get() === 0);
     if (rec) { list.appendChild(shopHead("Suggested next")); list.appendChild(shopItemRow(rec)); }
   } else if (shopTab === "dress") {
     renderShopDress(list);
   } else {
-    for (const item of SHOP.filter(i => i.cat === shopTab)) list.appendChild(shopItemRow(item));
+    const items = SHOP.filter(i => i.cat === shopTab);
+    for (const item of items.filter(i => !i.soon)) list.appendChild(shopItemRow(item));
+    const soon = items.filter(i => i.soon);
+    if (soon.length) {
+      list.appendChild(shopHead("Coming soon"));
+      for (const item of soon) list.appendChild(shopItemRow(item));
+    }
   }
 }
 
