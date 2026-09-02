@@ -67,6 +67,13 @@ Ships MVP steps 1–3; Friendship/Memories, Butterfly Catch and Weekly Events ar
 - [x] **No more overlapping scenery** — `placeClear()` lays out cottages, trees,
       flower patches and food/toy/bed spots with footprint-aware spacing so
       nothing lands on top of a station or another object.
+- [x] **Wake-up stretch** — waking from a nap (or a scratch), a cat has a ~40%
+      chance of a brief `stretching` state: body lengthens, chest drops, front
+      paws slide forward. Eases in and out over ~1.3s.
+- [x] **Scratch pad** — a new Comforts shop item. Cats stop by for a `scratching`
+      state (both front paws raking an angled sisal board, fluff puffs), a mood
+      lift, and they always stretch after. Climbers / playful / bold cats love it.
+      `G.scratch`, +1 capacity.
 - [x] Save `catmintCove.save.v7` — migrates `.v6` / `.v5` in place.
 - [ ] Friendship ❤️1–10 + Memories (the moat) — next
 - [ ] Butterfly Catch — one 40s optional mini-game — next

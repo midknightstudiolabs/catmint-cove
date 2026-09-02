@@ -716,7 +716,7 @@ function newGame() {
     pearls: 0,             // premium currency (earned via Catdex / daily goals)
     comfort: 0,            // 0..5 global production tiers
     coax: 0,               // times coaxed (price scaling)
-    bowls: 1, toys: 0, beds: 0,
+    bowls: 1, toys: 0, beds: 0, scratch: 0,
     decor: { tree: 0, cottage: 0, flowers: 0 },
     stations: { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 },   // activity stations cats "work"
     trinkets: 0,           // (legacy) kept for save back-compat — wardrobe is now free on the cat card
@@ -763,6 +763,7 @@ function load() {
     if (!G.decor) G.decor = { tree: 0, cottage: 0, flowers: 0 };
     if (!G.stations) G.stations = { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 };
     if (G.trinkets === undefined) G.trinkets = 0;
+    if (G.scratch === undefined) G.scratch = 0;
     if (G.coveCharter === undefined) G.coveCharter = false;
     G.ads = Object.assign(newAdsState(), G.ads || {});
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
@@ -881,6 +882,7 @@ function rebuildAttractors() {
   for (let i = 0; i < G.bowls; i++) comforts.push({ type: "food", r: 26, seed: 12001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
   for (let i = 0; i < G.toys;  i++) comforts.push({ type: "toy",  r: 24, seed: 13001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
   for (let i = 0; i < G.beds;  i++) comforts.push({ type: "bed",  r: 30, seed: 14001 + i * 7, yBand: [H * 0.54, catFloor() - 8] });
+  for (let i = 0; i < (G.scratch || 0); i++) comforts.push({ type: "scratch", r: 24, seed: 15001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
   const cpos = placeClear(comforts, avoid);
   comforts.forEach((c, i) => attractors.push({ type: c.type, x: cpos[i].x, y: cpos[i].y }));
   for (const d of decor) {
@@ -912,7 +914,7 @@ function stationCount() { const s = G.stations || {}; return (s.fishing||0) + (s
 // A dedicated player can buy the Cove Charter (full Catdex + a steep price) to
 // push it to 24; "Find them a new home" on the cat card is the release valve.
 function maxCats() { return G.coveCharter ? 24 : 16; }
-function capacity() { return Math.min(maxCats(), 4 + (G.bowls - 1) * 2 + G.toys + G.beds + G.decor.cottage * 2 + stationCount() * 2); }
+function capacity() { return Math.min(maxCats(), 4 + (G.bowls - 1) * 2 + G.toys + G.beds + (G.scratch || 0) + G.decor.cottage * 2 + stationCount() * 2); }
 function comfortMult() { return 1 + G.comfort * 0.22; }
 function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // ambient mood lift
 
@@ -1146,6 +1148,7 @@ const STATE_LABEL = {
   arriving:"finding a spot", loafing:"loafing", sleeping:"fast asleep", eating:"at the food bowl",
   playing:"playing", socializing:"socializing", exploring:"exploring", knocking:"knocking things over",
   sulking:"sulking", being_pet:"being petted", seeking:"heading somewhere", grooming:"washing up",
+  scratching:"having a good scratch", stretching:"having a big stretch",
   fishing:"fishing off the dock", baking:"helping at the bakery", sunbathing:"in the sunbeam", rolling:"rolling in the catmint",
 };
 
@@ -1224,6 +1227,17 @@ function decide(c) {
       c._arriveState = cf.state;
       c._arriveDur = cf.dur();
       return go(c, "seeking", 16, { x: a.x + rand(-14, 14), y: a.y + rand(-8, 8) });
+    });
+  }
+
+  // scratching post — a quick, satisfying stop; the destructive traits love it
+  const scr = nearestAttractor(c, "scratch");
+  if (scr) {
+    const clawy = c.traits.includes("climber") || c.traits.includes("playful") || c.traits.includes("bold");
+    add(2.4 + (clawy ? 1.8 : 0), () => {
+      c._arriveState = "scratching";
+      c._arriveDur = rand(4, 7);
+      return go(c, "seeking", 16, { x: scr.x + rand(-10, 10), y: scr.y + rand(-4, 6) });
     });
   }
 
@@ -1313,7 +1327,7 @@ function updateCat(c, dt) {
   /* -------- steering: velocity-based, damped, no teleporting -------- */
   const travelling = ["arriving", "seeking", "exploring", "socializing", "knocking"].includes(c.state);
   // "held" cats hold their chosen spot — they still push others away but aren't pushed themselves
-  const HELD_STATES = ["being_pet", "sleeping", "eating", "baking", "sunbathing", "fishing", "grooming", "rolling"];
+  const HELD_STATES = ["being_pet", "sleeping", "eating", "baking", "sunbathing", "fishing", "grooming", "rolling", "scratching", "stretching"];
   const held = HELD_STATES.includes(c.state);
   let ax = 0, ay = 0;
 
@@ -1389,6 +1403,8 @@ function updateCat(c, dt) {
   if (c.state === "sleeping") target = 94;
   else if (c.state === "socializing") target = 88;
   else if (c.state === "grooming") target = 80;
+  else if (c.state === "scratching") target = 84;
+  else if (c.state === "stretching") target = 78;
   else if (c.state === "eating") target = 82;
   else if (c.state === "playing") target = 86;
   else if (c.state === "loafing") target = 64 + flowerMood() * 0.5;
@@ -1425,6 +1441,11 @@ function updateCat(c, dt) {
   // purring: a gentle trickle of little hearts
   if (c._purredThisRun && c.state === "being_pet" && performance.now() - (c._purring || 0) < 1300 && Math.random() < dt * 1.6) {
     spawnParticles(c.x + rand(-5, 5), c.y - 26, "heart", 1);
+  }
+
+  // scratching: little puffs of fluff/dust as the claws work
+  if (c.state === "scratching" && Math.random() < dt * 4) {
+    spawnParticles(c.x + c.face * rand(6, 12), c.y + rand(0, 5), "dust", 2);
   }
 
   // working the fishing dock: a cast → wait → bite → reel → cook → eat loop
@@ -1504,6 +1525,10 @@ function updateCat(c, dt) {
       c.face *= -1;
       sfx("grumpy");
       toast(`${c.name} has had enough petting for now.`);
+    } else if (c.state === "sleeping" && Math.random() < 0.4) {
+      go(c, "stretching", rand(1.1, 1.7), null);    // wake up with a big luxurious stretch
+    } else if (c.state === "scratching" && Math.random() < 0.6) {
+      go(c, "stretching", rand(0.9, 1.4), null);    // a stretch after a good scratch
     } else if (c.state === "eating" && Math.random() < 0.6) {
       go(c, "grooming", rand(4, 8), null);          // a wash after every meal
     } else if ((c.state === "grooming" || c.state === "loafing") && Math.random() < 0.32) {
@@ -1793,6 +1818,8 @@ const SHOP = [
     base:16, mul:1.6, get:()=>G.toys, buy:()=>{ G.toys++; rebuildAttractors(); }, remove:()=>{ G.toys--; rebuildAttractors(); } },
   { key:"beds", cat:"comforts", type:"bed", name:"Cozy bed", desc:"A favourite napping spot — sleeping restores mood. +1 capacity.",
     base:22, mul:1.6, get:()=>G.beds, buy:()=>{ G.beds++; rebuildAttractors(); }, remove:()=>{ G.beds--; rebuildAttractors(); } },
+  { key:"scratch", cat:"comforts", type:"scratch", name:"Scratch pad", desc:"Cats stop by for a good scratch — sharpens the claws, lifts the mood, and they always stretch after. +1 capacity.",
+    base:20, mul:1.6, get:()=>G.scratch, buy:()=>{ G.scratch++; rebuildAttractors(); }, remove:()=>{ G.scratch--; rebuildAttractors(); } },
   { key:"tree", cat:"comforts", type:"tree", name:"Shade tree", desc:"Cats doze in the shade. Lifts the whole cove's mood.",
     base:30, mul:1.7, get:()=>G.decor.tree, buy:()=>{ G.decor.tree++; rebuildAttractors(); }, remove:()=>{ G.decor.tree--; rebuildAttractors(); } },
   { key:"cottage", cat:"comforts", type:"cottage", name:"Cat cottage", desc:"A little house cats curl up inside to sleep. +2 capacity.",
@@ -1814,7 +1841,7 @@ const SHOP = [
     need:()=> dexCount() < COATS.length ? `Discover all ${COATS.length} coats first — ${dexCount()}/${COATS.length}` : null,
     buy:()=>{ G.coveCharter = true; } },
 ];
-const COMFORT_STATE = { food:"eating", toy:"playing", bed:"sleeping", cottage:"sleeping", tree:"sleeping",
+const COMFORT_STATE = { food:"eating", toy:"playing", bed:"sleeping", cottage:"sleeping", tree:"sleeping", scratch:"scratching",
   fishing:"fishing", bakery:"baking", sunbeam:"sunbathing", garden:"rolling" };
 // send a couple of free cats straight over to a freshly placed comfort
 function welcomeToComfort(type) {
@@ -1911,6 +1938,7 @@ function renderShop() {
         welcomeToComfort(item.type);
         const verb = item.type === "food" ? "eat"
           : item.type === "toy" ? "play"
+          : item.type === "scratch" ? "have a scratch"
           : item.type === "tree" ? "doze in the shade"
           : item.type === "fishing" ? "fish"
           : item.type === "bakery" ? "help out"
@@ -3763,7 +3791,7 @@ function puff(x, y, s) {
   ctx.fill();
 }
 function drawAttractor(g, a) {
-  if (a.type !== "food" && a.type !== "toy" && a.type !== "bed") return;   // tree/cottage drawn as decor
+  if (a.type !== "food" && a.type !== "toy" && a.type !== "bed" && a.type !== "scratch") return;   // tree/cottage drawn as decor
   g.save();
   g.translate(a.x, a.y);
   g.fillStyle = "rgba(36,31,23,0.12)";
@@ -3780,6 +3808,17 @@ function drawAttractor(g, a) {
     g.strokeStyle = "rgba(0,0,0,0.14)"; g.lineWidth = 1.4;
     g.beginPath(); g.moveTo(-8, 6); g.quadraticCurveTo(0, -1, 8, 6);
     g.moveTo(-6, 10); g.quadraticCurveTo(2, 3, 8, 3); g.stroke();
+  } else if (a.type === "scratch") {     // an angled sisal scratch ramp on a wooden frame
+    g.fillStyle = "#7d6039"; roundRect(g, -16, 6, 32, 7, 2); g.fill();            // base
+    g.fillStyle = "#5b4634"; g.fillRect(-16, 11, 32, 2);
+    g.save(); g.translate(2, 3); g.rotate(-0.42);                                 // the ramp leans back
+    g.fillStyle = "#c9b487"; roundRect(g, -6, -30, 20, 34, 3); g.fill();          // sisal face
+    g.fillStyle = "#bda676"; roundRect(g, -6, -30, 20, 6, 3); g.fill();           // worn top edge
+    g.strokeStyle = "rgba(120,95,55,0.35)"; g.lineWidth = 1;
+    for (let y = -26; y <= 0; y += 3) { g.beginPath(); g.moveTo(-5, y); g.lineTo(13, y); g.stroke(); }
+    g.strokeStyle = "rgba(84,64,42,0.55)"; g.lineWidth = 1.5; g.lineCap = "round";
+    for (const dx of [-2, 2, 6]) { g.beginPath(); g.moveTo(dx, -22); g.lineTo(dx + 1.5, -6); g.stroke(); }  // claw tracks
+    g.restore();
   } else {                               // cozy bed
     g.fillStyle = "#8f9c92"; roundRect(g, -22, -6, 44, 18, 9); g.fill();
     g.fillStyle = "#e7e2d2"; roundRect(g, -17, -8, 34, 12, 7); g.fill();
@@ -4422,13 +4461,18 @@ function drawCat(g, c, isPhoto) {
   const pet = c.state === "being_pet";
   const playing = c.state === "playing" || c.state === "knocking";
   const grooming = c.state === "grooming";
+  const scratching = c.state === "scratching";
+  const stretching = c.state === "stretching";
+  // a big luxurious wake-up stretch: a bell curve over the state's short life
+  const strK = stretching ? Math.sin(clamp(c.stateT / Math.max(0.4, c.stateDur), 0, 1) * Math.PI) : 0;
 
   // walking uses the normal loaf body — the lean, stretch, bob and legs carry the motion,
   // so the shape never pops between a "trot" pose and a "rest" pose as the gait eases in/out
   const pose = asleep ? "sleep" : playing ? "play"
-             : (c.state === "socializing" || grooming) ? "sit" : "rest";
+             : (c.state === "socializing" || grooming || scratching) ? "sit" : "rest";
   const sleepStyle = asleep ? ((c.markSeed || 0) % 3) : 0;   // 0 loaf · 1 curl · 2 side-flop (stable per cat)
   const P = poseParams(pose, sleepStyle);
+  if (strK > 0.05) { P.hy += strK * 7; P.hr *= 1 - strK * 0.06; }   // stretch: head drops toward the ground
   const lick = grooming ? Math.sin(c.stateT * 7) : 0;   // washing rhythm
 
   // --- age: kittens are small, round, big-headed, big-eyed ---
@@ -4454,9 +4498,10 @@ function drawCat(g, c, isPhoto) {
   const sq = c.squash;
   const breathe = 1 + Math.sin(c.bob) * 0.015;
   const gs = wk * CHARM * air * 0.07;                       // squash on the plant, stretch in the air
-  const scaleX = ag * (1 + sq * 0.18) * (1 + wk * 0.05 - gs * 0.7);
-  const scaleY = ag * (1 - sq * 0.14) * breathe * (1 + gs);
-  const lean = wk * 0.06 + wk * CHARM * Math.sin(gp * 2) * 0.02;   // forward lean + a jaunty rock
+  const scaleX = ag * (1 + sq * 0.18) * (1 + wk * 0.05 - gs * 0.7) * (1 + strK * 0.34);   // stretch: long
+  const scaleY = ag * (1 - sq * 0.14) * breathe * (1 + gs) * (1 - strK * 0.20);           // stretch: low and flat
+  const lean = wk * 0.06 + wk * CHARM * Math.sin(gp * 2) * 0.02 + strK * 0.26             // stretch: chest tips right down, rear lifts
+             + (scratching ? 0.09 : 0);                                                   // scratch: lean into the pad
   const walkLift = wk * (3.5 + CHARM * 1.5);                // raise the body so the legs prance
   const earFlop = wk * CHARM * Math.sin(gp * 2 + 0.6) * 0.11;
 
@@ -4684,6 +4729,36 @@ function drawCat(g, c, isPhoto) {
     // tiny tongue tip
     g.fillStyle = "#e58fa0";
     g.beginPath(); g.ellipse(P.hx + 2, P.hy + P.hr * 0.42, 1.7, 1.2, 0, 0, 7); g.fill();
+  }
+
+  // wake-up stretch: front paws slide way forward along the ground, chest low
+  if (strK > 0.15) {
+    const reach = P.bw * (0.42 + strK * 0.38);
+    const pawCol2 = coat.white && coat.white.includes("paws") ? "#f8f5ee" : (coat.pattern === "points" ? coat.point : coat.base);
+    g.strokeStyle = coat.pattern === "points" ? coat.point : coat.base;
+    g.lineWidth = 4.4; g.lineCap = "round";
+    g.beginPath(); g.moveTo(P.bw * 0.2, -2); g.quadraticCurveTo(P.bw * 0.42, 1, reach, 1); g.stroke();
+    g.beginPath(); g.moveTo(P.bw * 0.16, -3); g.quadraticCurveTo(P.bw * 0.4, 0, reach - 5, 0); g.stroke();
+    g.fillStyle = pawCol2;
+    g.beginPath(); g.ellipse(reach, 1, 3.4, 2.7, 0, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(reach - 5, 0, 3, 2.4, 0, 0, 7); g.fill();
+  }
+
+  // scratching: both front paws reaching UP and raking DOWN, alternating, fast
+  if (scratching) {
+    const rake = Math.sin(c.stateT * 22);
+    const pawCol = coat.white && coat.white.includes("paws") ? "#f8f5ee" : (coat.pattern === "points" ? coat.point : coat.base);
+    g.strokeStyle = coat.pattern === "points" ? coat.point : coat.base;
+    g.lineWidth = 4.2; g.lineCap = "round";
+    const reachX = P.bw * 0.42 + 5;
+    const topY = P.hy - P.hr * 0.5;         // up around the head
+    const y1 = topY + 4 + rake * 5;
+    const y2 = topY + 4 - rake * 5;
+    g.beginPath(); g.moveTo(P.bw * 0.24, -3); g.quadraticCurveTo(P.bw * 0.4, topY, reachX, y1); g.stroke();
+    g.beginPath(); g.moveTo(P.bw * 0.20, -1); g.quadraticCurveTo(P.bw * 0.36, topY + 3, reachX - 4, y2); g.stroke();
+    g.fillStyle = pawCol;
+    g.beginPath(); g.ellipse(reachX, y1, 3.2, 2.6, 0, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(reachX - 4, y2, 2.9, 2.3, 0, 0, 7); g.fill();
   }
 
   g.restore(); // end walkLift — back to the ground frame
