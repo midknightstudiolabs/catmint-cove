@@ -759,7 +759,7 @@ const STATION_HOME = {   // each station has a canonical corner of the cove
 };
 // lowest a cat anchor / usable attractor should sit — keeps cats and the
 // stations they work clear of the fixed action bar at the bottom of the screen
-const catFloor = () => H - (W < 600 ? 92 : 66);   // more clearance on mobile — the tab bar is fixed & taller
+const catFloor = () => H - (W < 600 ? 84 : 66);   // a bit more clearance on mobile — the tab bar is fixed & taller
 function rebuildDecor() {
   decor = [];
   for (let i = 0; i < G.decor.tree; i++)
@@ -1228,13 +1228,14 @@ function updateCat(c, dt) {
     }
   }
 
-  // personal space — keep a body's width between cats so they never stack.
-  // held cats (asleep, at a station) still get a slow nudge so a pile untangles
-  // itself instead of freezing overlapped.
-  let crowded = false;
+  // personal space. moving / idle cats keep a body's width. HELD cats (asleep,
+  // at a station) only react to a *hard* overlap — otherwise a packed nap pile
+  // on a small screen has them all endlessly micro-drifting ("sleeping cat is
+  // moving"). Once a held cat has room it goes perfectly still.
+  let crowded = false, hardStacked = false;
   if (c.state !== "being_pet") {
     let sx = 0, sy = 0, hits = 0;
-    const R = 52;
+    const R = held ? 34 : 52;
     for (const o of cats) {
       if (o === c || o === c.partner) continue;   // sit close to a friend on purpose
       let ox = c.x - o.x, oy = (c.y - o.y) * 0.55;   // vertical proximity matters less — the y-sort layers them by depth
@@ -1242,13 +1243,17 @@ function updateCat(c, dt) {
       if (od < 0.001) { ox = (Math.random() - 0.5); oy = (Math.random() - 0.5); od = Math.hypot(ox, oy) || 1; }  // exact overlap → break the tie
       if (od < R) { const f = (R - od) / R; sx += (ox / od) * f; sy += (oy / od) * f; hits++; }
     }
-    if (hits) { crowded = true; const k = held ? 24 : travelling ? 32 : 28; ax += sx * k; ay += sy * k; }
+    if (hits) {
+      if (held) hardStacked = true; else crowded = true;
+      const k = held ? 20 : travelling ? 32 : 28;
+      ax += sx * k; ay += sy * k;
+    }
   }
 
-  // integrate + damp — a held cat that's stacked loosens the damping so the pile
-  // gently spreads out, then re-freezes once everyone has room
+  // integrate + damp. a hard-stacked held cat loosens up briefly to slide clear;
+  // otherwise held = clamped tight so it doesn't drift.
   c.vx += ax * dt; c.vy += ay * dt;
-  const damp = held ? (crowded ? 3.5 : 16) : travelling ? 2.4 : 9;
+  const damp = held ? (hardStacked ? 5 : 24) : travelling ? 2.4 : 9;
   const dk = Math.min(1, damp * dt);
   c.vx -= c.vx * dk; c.vy -= c.vy * dk;
 
@@ -1256,7 +1261,8 @@ function updateCat(c, dt) {
   // (but let a stacked cat keep its slow untangle crawl)
   let spd = Math.hypot(c.vx, c.vy);
   if (spd > 62) { const s = 62 / spd; c.vx *= s; c.vy *= s; spd = 62; }
-  if (!travelling && !crowded && spd < 2.5) { c.vx = 0; c.vy = 0; spd = 0; }
+  // held + not hard-stacked → dead still. idle non-held → still unless crowded.
+  if (!travelling && spd < 3 && (held ? !hardStacked : !crowded)) { c.vx = 0; c.vy = 0; spd = 0; }
 
   c.x += c.vx * dt; c.y += c.vy * dt;
 
