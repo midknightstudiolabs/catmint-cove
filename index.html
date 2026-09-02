@@ -1480,6 +1480,10 @@ function handleTap(x, y) {
 }
 function petCat(c) {
   if (c.state === "sulking") { toast(`${c.name} is sulking. Give it a minute.`); showCatCard(c); return; }
+  // a "run" of pets on the same cat — keep going and a cuddly one settles into a purr
+  const _now = performance.now();
+  c._petRun = (_now - (c._petAt || 0) < 2400) ? (c._petRun || 0) + 1 : 1;
+  c._petAt = _now;
   c.petCount += 1;
   c.squash = 1;
   c.state = "being_pet";
@@ -1584,6 +1588,9 @@ function updateCatCard() {
   if (!cardCat || cc.el.hidden) return;
   let s = STATE_LABEL[cardCat.state] || cardCat.state;
   if (cardCat._station === "fishing" && cardCat._fx) s = FISH_LABEL[cardCat._fx.p] || s;
+  if (cardCat.state === "being_pet" && (cardCat._petRun || 0) >= 2
+      && performance.now() - (cardCat._petAt || 0) < 2600
+      && (cardCat.traits.includes("cuddly") || cardCat.traits.includes("playful"))) s = "purring 🧡";
   cc.state.textContent = s;
   const m = Math.round(cardCat.mood);
   cc.mood.style.width = m + "%";
@@ -2168,7 +2175,7 @@ const TUT_STEPS = [
   { coat:"midknight", star:2, title:"Meet Midknight",
     body:"Your first cat and the face of the cove. He looks grumpy. He isn't — much. He never leaves." },
   { coat:"ginger", star:2, title:"Pet your cats",
-    body:"Tap any cat to pet it. Their mood goes up and they produce more for a while. Prickly cats sulk if you overdo it." },
+    body:"Tap a cat to pet it — mood up, output up for a while. Keep petting a cuddly one and it'll purr. Prickly cats sulk if you overdo it." },
   { coat:"calico", star:3, title:"Collect the drops",
     body:"Cats leave a chunky token every so often. Tap it to bank shells — or leave it, it auto-collects after a bit." },
   { coat:"russian", star:2, title:"Spend your shells",
@@ -2697,16 +2704,22 @@ function playSample(pool, { vol = 1, rate = 1, jitter = 0.06 } = {}) {
   try { src.start(); } catch (e) { return false; }
   return true;
 }
-let _lastMeowAt = 0;
+let _lastMeowAt = 0, _lastPurrAt = 0;
 function catMeow(kind, c) {
   const now = performance.now();
   if (kind === "pet") {
-    if (now - _lastMeowAt < 380) return;                       // ignore rapid re-taps
-    _lastMeowAt = now;
-    if ((G.metrics.pets || 0) > 0 && Math.random() < 0.32) return;  // ~1 in 3 pets is quiet
-    if (c && c.petAffinity && c.petAffinity() > 1.15 && Math.random() < 0.22) {
-      if (playSample("purr", { vol: 0.5 })) return;
+    // Cuddly and Playful cats purr; everyone else meows
+    const cuddly = c && c.traits && (c.traits.includes("cuddly") || c.traits.includes("playful"));
+    // keep petting one of them (2nd pet in a run) → it settles into a purr
+    const sustainedPurr = cuddly && (c._petRun || 0) >= 2;
+    if (now - _lastMeowAt < 380 && !sustainedPurr) return;     // ignore rapid re-taps (but a purr still lands)
+    if (sustainedPurr && now - _lastPurrAt > 1400) {
+      _lastPurrAt = now; _lastMeowAt = now;
+      if (playSample("purr", { vol: 0.55 })) { spawnParticles(c.x, c.y - 24, "heart", 2); return; }
     }
+    _lastMeowAt = now;
+    if ((G.metrics.pets || 0) > 0 && Math.random() < 0.32) return;  // ~1 in 3 single pets is quiet
+    if (cuddly && Math.random() < 0.14) { if (playSample("purr", { vol: 0.5 })) return; }  // rare purr on a lone pet
     const pool = (c && c.isKitten) ? "kitten" : "meow";
     if (!playSample(pool, { vol: 0.8 })) meow(true, 0.8);
     return;
