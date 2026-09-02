@@ -2183,7 +2183,7 @@ const TUT_STEPS = [
   { coat:"midknight", star:2, title:"Meet Midknight",
     body:"Your first cat and the face of the cove. He looks grumpy. He isn't — much. He never leaves." },
   { coat:"ginger", star:2, title:"Pet your cats",
-    body:"Tap a cat to pet it — mood up, output up for a while. Keep petting a cuddly one and it'll purr. Prickly cats sulk if you overdo it." },
+    body:"Tap a cat to pet it — mood up, output up for a while. Keep petting a cuddly one and it might start purring. Prickly cats sulk if you overdo it." },
   { coat:"calico", star:3, title:"Collect the drops",
     body:"Cats leave a chunky token every so often. Tap it to bank shells — or leave it, it auto-collects after a bit." },
   { coat:"russian", star:2, title:"Spend your shells",
@@ -2716,24 +2716,23 @@ let _lastMeowAt = 0;
 function catMeow(kind, c) {
   const now = performance.now();
   if (kind === "pet") {
-    // Cuddly and Playful cats purr; everyone else meows
+    // Cuddly / Playful cats can purr — a roll on every pet, better odds the
+    // longer you've been petting this one. Once it purrs it holds the purr
+    // (no meows mixed in) until the clip fades, then it can roll again.
     const cuddly = c && c.traits && (c.traits.includes("cuddly") || c.traits.includes("playful"));
-    // keep petting one of them (2nd pet in a run) → it's purring now, and it
-    // stays purring — no meows mixed in until you stop
-    if (cuddly && (c._petRun || 0) >= 2) {
-      c._purring = now;                                       // visual flag, refreshed each pet
-      if (now > (c._purrUntil || 0) - 900) {                  // re-trigger the loop only as it fades
+    if (cuddly) {
+      if (now < (c._purrUntil || 0) - 900) { c._purring = now; return; }   // still mid-purr → hold, stay quiet
+      const chance = Math.min(0.7, 0.16 + Math.max(0, (c._petRun || 1) - 1) * 0.12);
+      if (Math.random() < chance) {
+        c._purring = now;
         if (playSample("purr", { vol: 0.55 })) c._purrUntil = now + 4400;
-        else { c._purrUntil = now + 2000; meow(true, 0.5); }
+        else { c._purrUntil = now + 1800; meow(true, 0.5); }
+        return;
       }
-      return;
     }
     if (now - _lastMeowAt < 380) return;                      // ignore rapid re-taps
     _lastMeowAt = now;
     if ((G.metrics.pets || 0) > 0 && Math.random() < 0.32) return;  // ~1 in 3 single pets is quiet
-    if (cuddly && Math.random() < 0.14) {                     // rare purr on a lone pet
-      if (playSample("purr", { vol: 0.5 })) { c._purring = now; c._purrUntil = now + 4400; return; }
-    }
     const pool = (c && c.isKitten) ? "kitten" : "meow";
     if (!playSample(pool, { vol: 0.8 })) meow(true, 0.8);
     return;
