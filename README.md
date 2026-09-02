@@ -57,7 +57,10 @@ Ships MVP steps 1–3; Friendship/Memories, Butterfly Catch and Weekly Events ar
       haul (curious→map fragments, glutton→recipes, lazy→slower, bold→no bad
       encounter, grumpy→rare jackpot, …). Result vignette on return. Rare torn-map
       fragments build toward the island (`G.mapPieces` / `MAP_TOTAL`, island stubbed).
-      `G.adventure`, `__cove.adventure(cmd)`.
+      `G.adventure`, `__cove.adventure(cmd)`. **Send-off:** the cat trots off the
+      edge of the scene with a little bindle (a stick + cloth bundle over the
+      shoulder) + a sparkle; a chalk tag hangs on the cove sign — *"<name> is out
+      exploring"* — the whole time they're away; they walk back in on return.
 - [x] **Daily check-in** — a warm little welcome, one a day, 7-day loop
       (`CHECKIN_REWARDS`). Never punishes a missed day — the cycle just continues.
       Card at the top of the Today sheet; `__cove.checkin()`.

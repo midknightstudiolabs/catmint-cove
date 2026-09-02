@@ -4111,6 +4111,18 @@ function drawCoveSign(g, W, H) {
   g.textAlign = "center"; g.textBaseline = "middle";
   g.font = `700 ${fs}px 'Fraunces', Georgia, serif`;
   g.fillText(label, 0, -10.5);
+  // a little chalk tag while a cat is out adventuring
+  if (typeof G !== "undefined" && G && G.adventure) {
+    const tag = `${G.adventure.cat} is out exploring`;
+    g.font = "600 7.5px 'Fraunces', Georgia, serif";
+    const tw = Math.max(g.measureText(tag).width + 12, 40);
+    g.fillStyle = "#efe9d8";
+    roundRect(g, -tw / 2, 3, tw, 14, 3); g.fill();
+    g.strokeStyle = "rgba(74,53,36,0.28)"; g.lineWidth = 1;
+    roundRect(g, -tw / 2, 3, tw, 14, 3); g.stroke();
+    g.fillStyle = "#7a5c38"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(tag, 0, 10.5);
+  }
   g.textAlign = "left"; g.textBaseline = "alphabetic";
   g.restore();
 }
@@ -4949,6 +4961,7 @@ function simulate(dt) {
     if (cats.length < capacity()) { spawnCat(); toast("A cat wandered into the cove."); }
   }
   for (const c of cats) updateCat(c, dt);
+  updateDepartures(dt);
   updateTokens(dt);
   updateFX(dt);
   if (toastTimer > 0) { toastTimer -= dt; if (toastTimer <= 0) toastEl.classList.remove("on"); }
@@ -4981,6 +4994,7 @@ function renderScene(dt) {
       drawGrassTuft(ctx, it.f, gt, gnight);
     }
   }
+  drawDepartures(ctx);
   for (const tk of fieldTokens) drawToken(ctx, tk);
   drawFX(ctx);
 
@@ -5501,6 +5515,46 @@ function advVignette(cat, dest, res) {
         (res.reward.mapPiece ? " with a piece of a map." : res.reward.keepsake ? ` with ${res.reward.keepsake.label}.` : ".") },
   };
 }
+// a cosmetic send-off: the departing cat trots to the edge with a little bindle
+let _departures = [];
+function updateDepartures(dt) {
+  for (let i = _departures.length - 1; i >= 0; i--) {
+    const d = _departures[i], c = d.c;
+    d.life += dt;
+    const target = 46 * d.dir;
+    c.vx += (target - c.vx) * dt * 3.2;
+    c.x += c.vx * dt;
+    c.face = d.dir > 0 ? 1 : -1;
+    c.walkAmt = Math.min(1, (c.walkAmt || 0) + dt * 3);
+    c.walk = (c.walk || 0) + Math.abs(c.vx) * dt * 0.34;
+    c.bob = (c.bob || 0) + dt * 3;
+    c.blink -= dt; if (c.blink < -0.12) c.blink = rand(2, 6);
+    if (d.life > 1.4) c.walkAmt = Math.max(0, c.walkAmt - dt * 1.5);   // fade the gait as they slip away
+    if (c.x < -70 || c.x > W + 70 || d.life > 9) _departures.splice(i, 1);
+  }
+}
+function drawDepartures(g) {
+  for (const d of _departures) {
+    g.save();
+    g.globalAlpha = d.life > 5 ? Math.max(0, (9 - d.life) / 4) : 1;
+    drawCat(g, d.c, false);
+    drawBindle(g, d.c, d.dir);
+    g.restore();
+  }
+}
+function drawBindle(g, c, dir) {
+  g.save();
+  g.translate(c.x, c.y - 15 + Math.sin(c.bob || 0) * 1.3);
+  g.scale(dir > 0 ? -1 : 1, 1);   // the bundle rides on the trailing shoulder
+  g.strokeStyle = "#9a7346"; g.lineWidth = 2; g.lineCap = "round";
+  g.beginPath(); g.moveTo(-6, 6); g.lineTo(12, -12); g.stroke();               // shoulder stick, angled up-back
+  g.fillStyle = "#d9b46c";
+  g.beginPath(); g.ellipse(14, -14, 6, 5.6, 0.35, 0, 7); g.fill();             // cloth bundle
+  g.strokeStyle = "rgba(120,90,50,0.4)"; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(10, -10); g.lineTo(14, -21); g.moveTo(18, -10); g.lineTo(14, -21); g.stroke();
+  g.restore();
+}
+
 function startAdventure(name, dest) {
   if (G.adventure) return;
   const i = cats.findIndex(c => c.name === name);
@@ -5514,6 +5568,13 @@ function startAdventure(name, dest) {
   G.adventure = { cat: c.name, dest, startedAt: Date.now(), endsAt: Date.now() + mins * 60000, seed: (Math.random() * 1e9) | 0, catData: data };
   G.advDay = todayKey();
   save(); syncHud(); rebuildAttractors();
+  // send-off: a quick wave of the tail, a bindle, and off toward the world
+  const dir = dest === "forest" ? 1 : -1;
+  c.state = "exploring"; c.vx = dir * 24; c.vy = 0; c.walkAmt = 0.4; c.stateDur = 1e6;
+  _departures.length = 0;
+  _departures.push({ c, dir, life: 0 });
+  spawnParticles(c.x, c.y - 12, "twinkle", 6);
+  floatText(c.x, c.y - 30, ADV_DESTS[dest].emoji, "#c9a24a");
   logMoment(ADV_DESTS[dest].emoji, `${c.name} set off on a ${ADV_DESTS[dest].name.toLowerCase()}.`);
   toast(`${c.name} heads off — back ${whenText(G.adventure.endsAt)}.`, 4.5);
   renderAdventureCard();
@@ -5521,8 +5582,11 @@ function startAdventure(name, dest) {
 function resolveAdventure() {
   const a = G.adventure;
   if (!a) return;
-  const c = new Cat({ ...a.catData, x: -30, y: rand(H * 0.55, H * 0.8) });
+  _departures.length = 0;
+  const c = new Cat({ ...a.catData, x: -34, y: rand(H * 0.55, H * 0.8) });
   cats.push(c);
+  c.state = "arriving"; c.tx = rand(W * 0.25, W * 0.7); c.ty = c.y; c.face = 1;
+  spawnParticles(c.x + 26, c.y - 14, "twinkle", 9);
   const res = advLoot(c, a.dest);
   G.adventure = null;
   G.advDay = todayKey();
@@ -5658,7 +5722,7 @@ window.__cove = {
   adventure(cmd, arg){
     if (cmd === "skip") { if (!G.adventure) return "none active"; G.adventure.endsAt = Date.now(); resolveAdventure(); return "resolved"; }
     if (cmd === "start") { const n = arg || (cats.find(c => !c.mascot) || cats[0] || {}).name; startAdventure(n, "forest"); return G.adventure; }
-    if (cmd === "clear") { if (G.adventure) { cats.push(new Cat({ ...G.adventure.catData, x: W * 0.4, y: H * 0.6 })); G.adventure = null; rebuildAttractors(); } G.advDay = ""; syncHud(); return "cleared"; }
+    if (cmd === "clear") { _departures.length = 0; if (G.adventure) { cats.push(new Cat({ ...G.adventure.catData, x: W * 0.4, y: H * 0.6 })); G.adventure = null; rebuildAttractors(); } G.advDay = ""; syncHud(); return "cleared"; }
     if (cmd === "map") { G.mapPieces = arg == null ? (G.mapPieces || 0) + 1 : +arg; return { mapPieces: G.mapPieces }; }
     return { adventure: G.adventure, advReady: advReady(), mapPieces: G.mapPieces || 0 };
   },
