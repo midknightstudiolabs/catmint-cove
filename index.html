@@ -5181,110 +5181,164 @@ function otherCat(exclude) {
 
 /* ---- Hook 1 · While You Were Away ---------------------------------------- */
 const WYWA_EVENTS = [
-  { id: "wet-box", weight: 10, minAwayH: 1, build: (cat) => ({
-    kicker: "While you were away", cat,
+  // --- box on the doorstep: the classic "you bought the bed, they chose the box" ---
+  { id: "wet-box", weight: 9, minAwayH: 1, build: (cat) => {
+    const n = cat ? cat.name : "Midknight";
+    return { kicker: "While you were away", cat,
     scenes: [
-      { art: "🐾", text: `${cat ? cat.name : "Midknight"} heard something outside in the night. There are little wet pawprints leading round the back of the café.`, choices: [{ label: "Follow them" }] },
-      { art: "📦", text: "A soggy cardboard box, folded shut. Something inside shifts.", choices: [
+      { art: "🐾", text: `${n} heard something outside in the night. Wet pawprints, cat-sized, lead round the back of the café.`, choices: [{ label: "Follow them" }] },
+      { art: "📦", text: `A soggy cardboard box, folded shut. It shifts. Somewhere in the cove is a perfectly good cat bed you paid actual money for. The box, however, has arrived.`, choices: [
         { label: "Open it", pick: "open" },
-        { label: `Let ${cat ? cat.name : "Midknight"} nose it open`, pick: "cat" }] },
+        { label: `Let ${n} handle it`, pick: "cat" }] },
     ],
     resolve: (ctx) => wPick([
-      { w: 26, title: "A kitten!", text: "Soaked, furious, and absolutely staying. It headbutts your hand and forgives you instantly.", art: "🐱", reward: { kitten: true }, moment: "A kitten turned up in a box behind the café." },
-      { w: 24, text: "A tin of buttons, a marble, and eleven bottle caps. Treasure, obviously.", art: "🫙", reward: { shells: 140, keepsake: { id: "buttons", emoji: "🔘", label: "a tin of odd buttons" } }, moment: "Found a tin of odds and ends in a box out back." },
-      { w: 18, text: "Half a paper map, water-stained and torn along one edge. It shows a coastline you don't recognise.", art: "🗺️", reward: { mapPiece: true, shells: 40 }, moment: "A torn piece of an old map, tucked in a box." },
-      { w: 16, text: "Three good fish, wrapped in newspaper. Someone was kind.", art: "🐟", reward: { shells: 110 }, moment: "Someone left fish in a box by the café." },
+      { w: 26, title: "A kitten!", text: `A kitten. Soaked, outraged, and the exact size of the box. It fits, so it sits — and it forgives you the second you pick it up.`, art: "🐱", reward: { kitten: true }, moment: "A kitten turned up in a box behind the café." },
+      { w: 24, text: `A tin of buttons, a marble, and eleven bottle caps. ${cat ? cat.name : "Midknight"} inspects the haul, then climbs into the now-empty box. Priorities.`, art: "🫙", reward: { shells: 140, keepsake: { id: "buttons", emoji: "🔘", label: "a tin of odd buttons" } }, moment: "Found a tin of odds and ends in a box out back." },
+      { w: 18, text: "Half a paper map, water-stained and torn along one edge — a coastline you don't recognise. You're allowed to read it for about four seconds before the box is claimed.", art: "🗺️", reward: { mapPiece: true, shells: 40 }, moment: "A torn piece of an old map, tucked in a box." },
+      { w: 16, text: "Three good fish wrapped in newspaper. Someone was kind. The cats form an orderly queue, which lasts until roughly the second fish.", art: "🐟", reward: { shells: 110 }, moment: "Someone left fish in a box by the café." },
       { w: 12, text: ctx.picks.includes("cat")
-          ? `${ctx.cat ? ctx.cat.name : "Midknight"} flips it open and a crab strolls out sideways, deeply unimpressed. Dignity is retreated with. You get a shell for the trouble.`
-          : "You lift the flap and a crab strolls out sideways, deeply unimpressed. Everyone agrees to never mention this.",
+          ? `${ctx.cat ? ctx.cat.name : "Midknight"} flips the flap open and a crab strolls out sideways, deeply unbothered, and leaves. Nobody mentions it again. You get a shell for your trouble.`
+          : "You lift the flap and a crab strolls out sideways, deeply unbothered, and leaves. Everyone agrees this did not happen.",
         art: "🦀", reward: { shells: 20 }, moment: "There was a crab in the box. There is always a crab." },
-    ]) }) },
+    ]) };
+  } },
 
-  { id: "night-visitor", weight: 8, minAwayH: 3, needs: () => cats.length >= 2, build: (cat) => {
+  // --- the box that is one size too small ---
+  { id: "small-box", weight: 8, minAwayH: 0.5, build: (cat) => {
+    const n = cat ? cat.name : "Midknight";
+    return { kicker: "While you were away", cat,
+      scenes: [{ art: "📦", text: `A parcel arrived while you were out. ${n} is now sitting in the box it came in. The box is at least one size too small. ${n} is spilling over every edge and has never been happier.`, choices: [{ label: "Leave them to it" }] }],
+      resolve: () => wPick([
+        { w: 3, text: `An hour later ${n} is still in there, now joined by a second cat attempting to share the same box. Physics has quietly left the room.`, art: "🐈", reward: { shells: 60, mood: 10 }, moment: `${n} chose the box. ${n} always chooses the box.` },
+        { w: 2, text: `The box gives out around teatime with a soft, dignified crunch. ${n} remains inside it, on principle.`, art: "📦", reward: { shells: 45, keepsake: { id: "goodbox", emoji: "📦", label: "one very loved box" } }, moment: `${n} loved a box to pieces. Literally.` },
+      ]) };
+  } },
+
+  // --- staring contest with a stranger on the wall ---
+  { id: "night-visitor", weight: 6, minAwayH: 3, needs: () => cats.length >= 2, build: (cat) => {
     const other = otherCat(cat);
     return { kicker: "While you were away", cat,
-      scenes: [{ art: "🌙", text: `A cat you don't know sat on the wall until dawn. ${cat ? cat.name : "Midknight"} and ${other ? other.name : "the others"} watched it the whole time, tails twitching.`,
+      scenes: [{ art: "🌙", text: `A cat you've never seen sat on the wall until dawn. ${cat ? cat.name : "Midknight"} and ${other ? other.name : "the others"} watched the entire time without blinking, like it was on television.`,
         choices: [{ label: "Leave something out for it", pick: "kind" }, { label: "Let it be", pick: "leave" }] }],
       resolve: (ctx) => ctx.picks.includes("kind")
         ? wPick([
-            { w: 3, text: "The bowl was empty by morning, and a smooth grey stone sat in it. A fair trade.", art: "🪨", reward: { shells: 90, keepsake: { id: "greystone", emoji: "🪨", label: "a smooth grey stone" } }, moment: "The wall-cat took the food and left a stone." },
-            { w: 2, text: "It didn't touch the food. But it came back the next night, and the next. It might be staying.", art: "🐈‍⬛", reward: { coatKey: pick(["russian", "black", "greytab"]) }, moment: "The visitor from the wall decided to stay." },
+            { w: 3, text: "The bowl was empty by morning and a smooth grey stone sat in it. In cat terms, this is a thank-you card.", art: "🪨", reward: { shells: 90, keepsake: { id: "greystone", emoji: "🪨", label: "a smooth grey stone" } }, moment: "The wall-cat took the food and left a stone." },
+            { w: 2, text: "It ignored the food completely. Then it came back the next night, and the next, and now it lives here. Cats decide these things, not you.", art: "🐈‍⬛", reward: { coatKey: pick(["russian", "black", "greytab"]) }, moment: "The visitor from the wall decided to stay." },
           ])
-        : { text: "By morning it was gone. The cove felt a little watched all day, in a nice way.", art: "🌙", reward: { shells: 30 }, moment: "A stranger watched the cove from the wall all night." },
+        : { text: "Gone by morning. The cove kept one ear pointed at the wall all day, just in case.", art: "🌙", reward: { shells: 30 }, moment: "A stranger watched the cove from the wall all night." },
     };
   } },
 
-  { id: "midknight-mess", weight: 9, minAwayH: 0.5, build: (cat) => ({
-    kicker: "While you were away", cat,
-    scenes: [{ art: "🧶", text: `Every ball of yarn in the cove has been unwound into one enormous web across the whole garden. ${cat ? cat.name : "Midknight"} is asleep in the middle of it, unrepentant.`, choices: [{ label: "Wind it all back up" }] }],
+  // --- 3am chaos, eye contact included ---
+  { id: "midknight-mess", weight: 8, minAwayH: 0.5, build: (cat) => {
+    const n = cat ? cat.name : "Midknight";
+    return { kicker: "While you were away", cat,
+    scenes: [{ art: "🧶", text: `Some time around 3am, every ball of yarn in the cove was unwound into one enormous web across the garden. ${n} is asleep in the centre of it, and made unbroken eye contact with you before going back to sleep.`, choices: [{ label: "Wind it all back up" }] }],
     resolve: () => wPick([
-      { w: 3, text: "Tangled in the web: a coin, a bee-shaped button, and an unreasonable number of leaves.", art: "🪙", reward: { shells: 70, keepsake: { id: "beebutton", emoji: "🐝", label: "a bee-shaped button" } }, moment: "The whole garden was one big web of yarn this morning." },
-      { w: 2, text: "Nothing in it but leaves. Worth it for the nap they're having.", art: "🍂", reward: { shells: 25 }, moment: "Woke up to a garden wrapped entirely in yarn." },
-    ]) }) },
+      { w: 3, text: "Caught in the web: a coin, a bee-shaped button, and enough leaves to fill a hat. Worth it. Mostly.", art: "🪙", reward: { shells: 70, keepsake: { id: "beebutton", emoji: "🐝", label: "a bee-shaped button" } }, moment: "The whole garden was one big web of yarn this morning." },
+      { w: 2, text: `Just leaves. But the nap ${n} is having is the best nap in the world and you are not going to be the one who ends it.`, art: "🍂", reward: { shells: 25 }, moment: "Woke up to a garden wrapped entirely in yarn." },
+    ]) };
+  } },
 
-  { id: "gift-on-step", weight: 10, minAwayH: 1, build: (cat) => {
+  // --- the doorstep offering ---
+  { id: "gift-on-step", weight: 9, minAwayH: 1, build: (cat) => {
+    const n = cat ? cat.name : "A cat";
     const g = pick([
       { e: "🪶", n: "a long striped feather", s: 60 },
       { e: "🐚", n: "a chipped pink shell", s: 80 },
-      { e: "🍄", n: "a very red mushroom (not for eating)", s: 55 },
-      { e: "🗝️", n: "a small brass key to nothing", s: 100 },
-      { e: "🌰", n: "a single perfect conker", s: 45 },
+      { e: "🍄", n: "a very red mushroom, which you gently confiscate", s: 55 },
+      { e: "🗝️", n: "a small brass key that opens nothing", s: 100 },
+      { e: "🌰", n: "one completely perfect conker", s: 45 },
+      { e: "🧦", n: "a single sock — yours, long presumed lost", s: 50 },
+      { e: "🍂", n: "a leaf they were extremely committed to", s: 40 },
     ]);
     return { kicker: "On the doorstep", cat,
-      scenes: [{ art: g.e, text: `${cat ? cat.name : "A cat"} left something on the step for you: ${g.n}. They're watching to see if you like it.`, choices: [{ label: "Make a big fuss of it" }] }],
-      resolve: () => ({ text: "You make a big fuss. They pretend not to care and are visibly delighted.", art: g.e, reward: { shells: g.s, keepsake: { id: "gift" + Date.now(), emoji: g.e, label: g.n } }, moment: `${cat ? cat.name : "A cat"} brought you ${g.n}.` }),
+      scenes: [{ art: g.e, text: `${n} left something on the step for you: ${g.n}. They are sitting a polite distance away, pretending not to watch, watching intently.`, choices: [{ label: "Make a big fuss of it" }] }],
+      resolve: () => ({ text: `You make an enormous fuss. ${n} looks away, unbothered, tail going like a metronome. Delighted.`, art: g.e, reward: { shells: g.s, keepsake: { id: "gift" + Date.now(), emoji: g.e, label: g.n } }, moment: `${n} brought you ${g.n}.` }),
     };
   } },
 
-  { id: "storm-umbrella", weight: 7, minAwayH: 4, build: (cat) => ({
+  // --- the floor is lava ---
+  { id: "storm-umbrella", weight: 6, minAwayH: 4, build: (cat) => ({
     kicker: "While you were away", cat,
-    scenes: [{ art: "⛈️", text: "A storm came through in the night. The cove is fine — but there's a broken umbrella caught in the hedge that isn't yours.", choices: [{ label: "Pull it free" }] }],
+    scenes: [{ art: "⛈️", text: "A storm rolled through overnight. The cove's fine — every cat relocated to high ground and treated the floor as lava until it passed. There's a broken umbrella in the hedge that isn't yours.", choices: [{ label: "Pull it free" }] }],
     resolve: () => wPick([
-      { w: 3, text: "A kitten is under it, bone dry and cross about the interruption.", art: "🐱", reward: { kitten: true }, moment: "Found a kitten sheltering under a broken umbrella after the storm." },
-      { w: 3, text: "Nothing under it but a very confused frog, which you escort to the pond.", art: "🐸", reward: { shells: 60 }, moment: "The storm blew a stranger's umbrella into the hedge." },
+      { w: 3, text: "A kitten, bone dry, deeply annoyed that you've let the weather in.", art: "🐱", reward: { kitten: true }, moment: "Found a kitten sheltering under a broken umbrella after the storm." },
+      { w: 3, text: "A very startled frog, which you walk back to the pond. The cats supervise from a safe and dignified distance.", art: "🐸", reward: { shells: 60 }, moment: "The storm blew a stranger's umbrella into the hedge." },
     ]) }) },
 
-  { id: "dawn-fishing", weight: 8, minAwayH: 2, needs: () => G.stations && G.stations.fishing > 0, build: (cat) => ({
-    kicker: "While you were away", cat,
-    scenes: [{ art: "🎣", text: `${cat ? cat.name : "Someone"} was out on the dock before sunrise and hooked something heavy.`, choices: [{ label: "Go and see" }] }],
+  // --- "I did that" ---
+  { id: "dawn-fishing", weight: 7, minAwayH: 2, needs: () => G.stations && G.stations.fishing > 0, build: (cat) => {
+    const n = cat ? cat.name : "A cat";
+    return { kicker: "While you were away", cat,
+    scenes: [{ art: "🎣", text: `${n} was on the dock before sunrise "helping". Something heavy is on the line and ${n} is already taking full credit.`, choices: [{ label: "Go and see" }] }],
     resolve: () => wPick([
-      { w: 4, text: "A fat silver fish, enough to share all round. Moods are high all morning.", art: "🐟", reward: { shells: 130 }, moment: `${cat ? cat.name : "A cat"} landed a big one off the dock at dawn.` },
-      { w: 2, text: "An old boot. Then, inside the boot, a pearl. This cove has strange luck.", art: "🥾", reward: { pearls: 2, shells: 40 }, moment: "Pulled a boot off the dock with a pearl inside it." },
-    ]) }) },
+      { w: 4, text: `A fat silver fish, enough for the whole cove. ${n} accepts the applause on everyone's behalf.`, art: "🐟", reward: { shells: 130 }, moment: `${n} landed a big one off the dock at dawn.` },
+      { w: 2, text: `An old boot. Inside the boot, a pearl. ${n} maintains that this was the plan all along.`, art: "🥾", reward: { pearls: 2, shells: 40 }, moment: "Pulled a boot off the dock with a pearl inside it." },
+    ]) };
+  } },
 
+  // --- warmth: the frenemies ---
   { id: "cats-truce", weight: 6, minAwayH: 3, needs: () => cats.length >= 3, build: (cat) => {
     const a = otherCat(null), b = otherCat(a);
+    const an = a ? a.name : "One cat", bn = b ? b.name : "another";
     return { kicker: "While you were away", cat,
-      scenes: [{ art: "🐾", text: `${a ? a.name : "One cat"} and ${b ? b.name : "another"} have never got on. This morning you found them asleep back to back in the same bed.`, choices: [{ label: "Don't say a word" }] }],
-      resolve: () => ({ text: "You say nothing. The truce holds until roughly lunchtime.", art: "❤️", reward: { shells: 65 }, moment: `${a ? a.name : "Two cats"} and ${b ? b.name : "another"} called an overnight truce.` }),
+      scenes: [{ art: "🐾", text: `${an} and ${bn} have been rivals since the day ${bn} arrived. This morning you found them asleep in the same bed, back to back, each pretending the other isn't there.`, choices: [{ label: "Don't say a word" }] }],
+      resolve: () => ({ text: "You don't say a word. It lasts until breakfast, at which point normal service resumes.", art: "❤️", reward: { shells: 65 }, moment: `${an} and ${bn} called an overnight truce.` }),
     };
   } },
 
-  { id: "moon-pile", weight: 5, minAwayH: 6, build: (cat) => ({
+  // --- warmth: the pile by the door ---
+  { id: "moon-pile", weight: 6, minAwayH: 6, build: (cat) => ({
     kicker: "While you were away", cat,
-    scenes: [{ art: "🌕", text: "You were gone a while. The cove kept its own hours — and left a little pile of things by the door for you.", choices: [{ label: "Look through the pile" }] }],
-    resolve: () => ({ text: "Shells, a feather, two smooth stones, and a note in no language. The cats organised it by size.", art: "🐚", reward: { shells: 220, keepsake: { id: "note", emoji: "📜", label: "a note in no language" } }, moment: "Came home to a neat pile of gifts by the door." }),
+    scenes: [{ art: "🌕", text: "You were away a while. The cove ran on its own schedule — mostly sleeping — and left a small pile by the door for you.", choices: [{ label: "Look through the pile" }] }],
+    resolve: () => ({ text: "Shells, a feather, two smooth stones, and a note written in no known language. Sorted by size. The effort is genuinely moving.", art: "🐚", reward: { shells: 220, keepsake: { id: "note", emoji: "📜", label: "a note in no known language" } }, moment: "Came home to a neat pile of gifts by the door." }),
   }) },
 
+  // --- if I fits, I bakes ---
   { id: "bakery-experiment", weight: 6, minAwayH: 2, needs: () => G.stations && G.stations.bakery > 0, build: (cat) => ({
     kicker: "While you were away", cat,
-    scenes: [{ art: "🥐", text: "The bakery has been used. There is flour on the ceiling. On the ceiling.", choices: [{ label: "Try what they made" }] }],
+    scenes: [{ art: "🥐", text: "The bakery's been used. Flour on the counter, flour on the floor, flour — somehow — on the ceiling. A cat is asleep in the mixing bowl.", choices: [{ label: "Try what they made" }] }],
     resolve: () => wPick([
-      { w: 3, text: "It's… actually good? A flat, buttery, cat-shaped biscuit. You save the recipe.", art: "🍪", reward: { shells: 95, keepsake: { id: "recipe1", emoji: "📖", label: "a cat-shaped biscuit recipe" } }, moment: "The cats baked something overnight. It was somehow good." },
-      { w: 2, text: "Inedible. Structurally impressive. You keep a piece as a paperweight.", art: "🧱", reward: { shells: 35 }, moment: "The cats baked a brick. Flour reached the ceiling." },
+      { w: 3, text: "It's a flat, buttery, faintly cat-shaped biscuit and it is genuinely good. Recipe saved. The baker is unavailable for comment (asleep).", art: "🍪", reward: { shells: 95, keepsake: { id: "recipe1", emoji: "📖", label: "a cat-shaped biscuit recipe" } }, moment: "The cats baked something overnight. It was somehow good." },
+      { w: 2, text: "Structurally sound. Nutritionally a brick. You keep a corner as a paperweight.", art: "🧱", reward: { shells: 35 }, moment: "The cats baked a brick. Flour reached the ceiling." },
     ]) }) },
 
-  { id: "quiet-return", weight: 5, minAwayH: 0.5, build: (cat) => ({
+  // --- shouting at nothing ---
+  { id: "wall-watch", weight: 7, minAwayH: 1, build: (cat) => {
+    const n = cat ? cat.name : "Midknight";
+    return { kicker: "While you were away", cat,
+      scenes: [{ art: "👀", text: `At some point in the night ${n} stood in the hallway and meowed at a completely blank wall for eleven minutes. Every other cat got up to check. There was nothing there. Probably.`, choices: [{ label: "Get up and look" }] }],
+      resolve: () => wPick([
+        { w: 3, text: `A moth, a draught, or simply a vibe. Whatever it was, it's gone, and ${n} has moved on to wanting breakfast.`, art: "🌙", reward: { shells: 40 }, moment: `${n} held an eleven-minute meeting with a wall.` },
+        { w: 2, text: "One moth, escorted outside with full honours. The cats consider the matter handled and themselves the heroes of it.", art: "🦋", reward: { shells: 55, keepsake: { id: "mothnote", emoji: "🦋", label: "a moth, released (a memory, not an item)" } }, moment: "The wall situation was resolved. It was a moth." },
+      ]) };
+  } },
+
+  // --- undefeated against a spot of light ---
+  { id: "red-dot", weight: 7, minAwayH: 1, build: (cat) => {
+    const n = cat ? cat.name : "Midknight";
+    return { kicker: "While you were away", cat,
+      scenes: [{ art: "🔴", text: `A neighbour's wind chime has been throwing a spot of afternoon sun onto the wall. The entire cove has been hunting it for hours. It has, so far, escaped every single attempt.`, choices: [{ label: "Watch the hunt" }] }],
+      resolve: () => ({ text: `The dot moves as the sun does; the cats remain undefeated in their own minds. ${n} retires for a well-earned nap, having "nearly had it".`, art: "🔴", reward: { shells: 45, mood: 8 }, moment: "The whole cove spent an afternoon losing, heroically, to a spot of light." }),
+    };
+  } },
+
+  // --- warmth: nothing happened, and that's the gift ---
+  { id: "quiet-return", weight: 8, minAwayH: 0.5, build: (cat) => ({
     kicker: "While you were away", cat,
-    scenes: [{ art: "☕", text: "Nothing dramatic happened. The cove dozed, the kettle's still faintly warm, and someone left you the good chair.", choices: [{ label: "Take the good chair" }] }],
-    resolve: () => ({ text: "You sit down. Three cats arrive within the minute to sit on you.", art: "🐈", reward: { shells: 45 }, moment: "A quiet day. The cats saved you the good chair." }),
+    scenes: [{ art: "☕", text: "Nothing happened. The kettle's still faintly warm, the cove's had a slow day, and the best chair has been kept free for you.", choices: [{ label: "Take the good chair" }] }],
+    resolve: () => ({ text: "You sit. Within a minute you have three cats; within two you can't reach your drink. Perfect.", art: "🐈", reward: { shells: 45 }, moment: "A quiet day. The cats saved you the good chair." }),
   }) },
 
-  { id: "bottle-map", weight: 4, minAwayH: 5, build: (cat) => ({
-    kicker: "While you were away", cat,
-    scenes: [{ art: "🍾", text: `${cat ? cat.name : "Midknight"} dragged a corked bottle up from the shoreline. There's paper inside.`, choices: [{ label: "Work the cork out" }] }],
-    resolve: () => ({ text: "Another piece of that torn map. The pieces are starting to line up — and they point past the island.", art: "🗺️", reward: { mapPiece: true, shells: 50 }, moment: "A message in a bottle — another piece of the map." }),
-  }) },
+  // --- lore: the map ---
+  { id: "bottle-map", weight: 4, minAwayH: 5, build: (cat) => {
+    const n = cat ? cat.name : "Midknight";
+    return { kicker: "While you were away", cat,
+    scenes: [{ art: "🍾", text: `${n} hauled a corked bottle up from the tideline, carried it the whole way home, and is now guarding it from everyone, including you.`, choices: [{ label: "Work the cork out" }] }],
+    resolve: () => ({ text: `Another piece of the torn map. Laid beside the others, the coastline points somewhere past the island. ${n} reclaims the empty bottle immediately.`, art: "🗺️", reward: { mapPiece: true, shells: 50 }, moment: "A message in a bottle — another piece of the map." }),
+  };
+  } },
 ];
 function maybeWywa(awaySec) {
   if (restMode || _vig) return;

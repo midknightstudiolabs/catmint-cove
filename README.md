@@ -47,8 +47,11 @@ Ships MVP steps 1–3; Friendship/Memories, Butterfly Catch and Weekly Events ar
       sheet. `logMoment()`, `__cove.moments()`.
 - [x] **While You Were Away** — on return, a capped chance (scales with time away,
       ~15h cooldown, anti-repeat) that a small story is waiting: a kitten in a box,
-      a gift on the step, a crab with opinions. 11 beats. Never a loss. Rolls after
-      the offline-earnings modal via `checkOffline(afterReturn)`.
+      a gift on the step, a crab with opinions, an eleven-minute meeting with a
+      wall. **14 beats**, deadpan / all-ages, ~70% comic and ~30% pure warmth,
+      heavy on cat-nature humour (the box beats the bed, 3am eye contact, the
+      undefeatable red dot). Never a loss. Rolls after the offline-earnings modal
+      via `checkOffline(afterReturn)`.
 - [x] **Cat Adventures** — one trip a day: pick a destination (Fishing ~30m /
       Forest ~2h / Island ~6h) and a cat. The cat leaves the cove; traits shape the
       haul (curious→map fragments, glutton→recipes, lazy→slower, bold→no bad
