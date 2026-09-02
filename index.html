@@ -4746,6 +4746,7 @@ window.__cove = {
       crick: ambience.crickGain.gain.value, bird: ambience.birdGain.gain.value, master: ambience.master.gain.value } : null,
     samples: Object.fromEntries(Object.entries(SFX_FILES).map(([k,v]) => [k, v.filter(u => _sfxBuf[u]).length + "/" + v.length])) }; },
   meow(pool = "meow"){ ensureAudio(); return playSample(pool, { vol: 0.6 }); },
+  chime(){ ensureAudio(); setTimeout(purchaseChime, 40); return "played the purchase chime"; },
   setHour(h){ setDayNight(h); applyAmbienceDayNight(timeOfDay().df, 1.5); return timeOfDay(); },
   station(key = "fishing", n = 1){ G.stations[key] = (G.stations[key] || 0) + n; rebuildAttractors(); return G.stations; },
   rest(cmd){ if (cmd === "open") { syncRestPanelUI(); openRestPanel(); } else if (cmd === "begin") beginRest(false); else if (cmd === "end") endRest(true); else if (cmd === "render") renderRest(0.05); return { on: restMode, idle: restIdleT | 0, dim: +restDim.toFixed(2), drops: glassDrops.length }; },
