@@ -139,6 +139,8 @@
   .shop-item.pack{background:linear-gradient(180deg,#fff8ec,#fdeeceff);border-radius:14px;padding:.75rem;margin:.35rem 0;border-top:none;}
   .shop-item.pack .name{color:var(--apricot);}
   .shop-item.pack .owned{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-bright);}
+  .shop-item.prestige{background:linear-gradient(180deg,#f0f4ea,#e7efe0);border-radius:14px;padding:.75rem;margin:.35rem 0;border-top:none;}
+  .shop-item.prestige .name{color:var(--accent);}
 
   /* ---- ads (simulated here; Google AdMob in the native build) ---- */
   #adv{position:absolute;inset:0;z-index:90;display:none;align-items:center;justify-content:center;
@@ -619,6 +621,7 @@ function newGame() {
     decor: { tree: 0, cottage: 0, flowers: 0 },
     stations: { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 },   // activity stations cats "work"
     trinkets: 0,           // accessories handed out from the Shop
+    coveCharter: false,    // late-game one-time unlock: raises the cat ceiling 16 → 24
     rest: null,            // active rainy-day session { on, startedAt, endsAt, opts }
     ads: newAdsState(),    // monetization: supporter status, age treatment, frequency caps
     owner: null,           // the player names their cove on first run
@@ -653,6 +656,7 @@ function load() {
     if (!G.decor) G.decor = { tree: 0, cottage: 0, flowers: 0 };
     if (!G.stations) G.stations = { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 };
     if (G.trinkets === undefined) G.trinkets = 0;
+    if (G.coveCharter === undefined) G.coveCharter = false;
     G.ads = Object.assign(newAdsState(), G.ads || {});
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
     if (G.midknightSeeded === undefined) G.midknightSeeded = false;
@@ -739,9 +743,10 @@ function makeAttractor(type, idx) {
 function stationCount() { const s = G.stations || {}; return (s.fishing||0) + (s.bakery||0) + (s.sunbeam||0) + (s.garden||0); }
 // hard ceiling. the sim + render stay smooth well past this — the cap is about
 // the *feel*: past ~16 a small phone screen reads as a mosh pit, not a cozy cove.
-// "Find them a new home" on the cat card is the release valve for collectors.
-const MAX_CATS = 16;
-function capacity() { return Math.min(MAX_CATS, 4 + (G.bowls - 1) * 2 + G.toys + G.beds + G.decor.cottage * 2 + stationCount() * 2); }
+// A dedicated player can buy the Cove Charter (full Catdex + a steep price) to
+// push it to 24; "Find them a new home" on the cat card is the release valve.
+function maxCats() { return G.coveCharter ? 24 : 16; }
+function capacity() { return Math.min(maxCats(), 4 + (G.bowls - 1) * 2 + G.toys + G.beds + G.decor.cottage * 2 + stationCount() * 2); }
 function comfortMult() { return 1 + G.comfort * 0.22; }
 function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // ambient mood lift
 
@@ -1575,6 +1580,10 @@ const SHOP = [
     base:18, mul:1.4, get:()=>G.trinkets, buy:()=>{ G.trinkets++; giveTrinket(); } },
   { key:"comfort", name:"Comfort upgrade", desc:"+22% output from every cat. Max level 5.",
     base:45, mul:2.2, get:()=>G.comfort, max:5, buy:()=>{ G.comfort++; } },
+  { key:"charter", name:"Cove Charter", desc:"A one-time expansion for a well-loved cove — room for up to 24 cats.",
+    base:5000, mul:1, pearls:30, get:()=>G.coveCharter ? 1 : 0, max:1,
+    need:()=> dexCount() < COATS.length ? `Discover all ${COATS.length} coats first — ${dexCount()}/${COATS.length}` : null,
+    buy:()=>{ G.coveCharter = true; } },
 ];
 function giveTrinket() {
   const bare = cats.filter(c => !c.accessory && !c.mascot);
@@ -1626,26 +1635,32 @@ function renderShop() {
   for (const item of SHOP) {
     const maxed = item.max != null && item.get() >= item.max;
     const price = priceOf(item);
+    const pearlCost = item.pearls || 0;
+    const lockMsg = !maxed && item.need ? item.need() : null;
+    const afford = G.shells >= price && G.pearls >= pearlCost;
     const row = document.createElement("div");
-    row.className = "shop-item";
+    row.className = "shop-item" + (item.key === "charter" ? " prestige" : "");
+    const priceLabel = maxed ? "owned"
+      : lockMsg ? "🔒"
+      : pearlCost ? `◈${price} · ✦${pearlCost}` : `◈ ${price}`;
     row.innerHTML = `
       <div class="txt">
-        <div class="name">${item.name} ${item.get() ? `<span class="lv">·&nbsp;${item.max?("lv "+item.get()):("×"+item.get())}</span>`:""}</div>
-        <div class="desc">${item.desc}</div>
+        <div class="name">${item.name} ${item.get() && item.max !== 1 ? `<span class="lv">·&nbsp;${item.max?("lv "+item.get()):("×"+item.get())}</span>`:""}</div>
+        <div class="desc">${lockMsg ? "🔒 " + lockMsg : item.desc}</div>
       </div>
-      <button class="btn primary" ${maxed || G.shells < price ? "disabled":""}>
-        ${maxed ? "maxed" : `◈ ${price}`}
-      </button>`;
+      <button class="btn primary" ${maxed || lockMsg || !afford ? "disabled":""}>${priceLabel}</button>`;
     const btn = row.querySelector("button");
-    if (!maxed) btn.addEventListener("click", () => {
+    if (!maxed && !lockMsg) btn.addEventListener("click", () => {
       const p = priceOf(item);
-      if (G.shells < p) return;
+      if (G.shells < p || G.pearls < pearlCost) return;
       G.shells -= p;
+      if (pearlCost) G.pearls -= pearlCost;
       item.buy();
       sfx("buy");
       spawnParticles(W/2, H*0.5, "spark", 10);
       syncHud(); renderShop();
       fireTip("first_buy");
+      if (item.key === "charter") { toast("The Cove Charter is signed — room for up to 24 cats now. 🏡", 5); spawnParticles(W/2, H*0.45, "twinkle", 18); }
       if (item.type === "flowers") {
         toast(`Flowers planted — the whole cove feels a bit brighter`);
       } else if (item.type) {
@@ -4516,6 +4531,8 @@ window.__cove = {
   get dex(){return G.dex}, get goals(){return G.goals}, get revealQ(){return revealQueue},
   giveCat(coatKey, star, celeb){ if (celeb) delete G.dex[coatKey];
     const c = spawnCat({ coatKey, star, _celeb: !!celeb, x: rand(W*0.3,W*0.7), y: rand(H*0.6,H*0.8) }); syncHud(); return c && c.name; },
+  fillDex(){ for (const co of COATS) if (!G.dex[co.key]) G.dex[co.key] = { star: 2, count: 1 }; checkDexMilestones(); syncHud(); return dexCount() + "/" + COATS.length; },
+  charter(v = true){ G.coveCharter = !!v; syncHud(); return { coveCharter: G.coveCharter, maxCats: maxCats(), capacity: capacity() }; },
   step(sec){
     for (let acc = 0; acc < sec; acc += SIM_DT) simulate(SIM_DT);
     renderScene(0.016);
