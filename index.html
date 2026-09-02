@@ -1321,7 +1321,8 @@ function decide(c) {
     add(2.4 + (clawy ? 1.8 : 0), () => {
       c._arriveState = "scratching";
       c._arriveDur = rand(4, 7);
-      return go(c, "seeking", 16, { x: scr.x + rand(-10, 10), y: scr.y + rand(-4, 6) });
+      // stand just to the LEFT of the post and rake toward it — a consistent spot
+      return go(c, "seeking", 16, { x: scr.x - 20, y: scr.y + rand(2, 6) });
     });
   }
 
@@ -1584,6 +1585,7 @@ function updateCat(c, dt) {
       go(c, c._arriveState || "loafing", c._arriveDur || 8, null);
       c._station = c._pendStation || null;
       c._pendStation = null;
+      if (c.state === "scratching") c.face = 1;   // always stand left of the post, rake toward it
       if (c._station === "garden") spawnParticles(c.x, c.y - 10, "leaf", 5);
     }
     else if (c.stateT > 14) { c._pendStation = null; decide(c); }
@@ -4072,15 +4074,15 @@ function drawAttractor(g, a) {
     g.beginPath(); g.moveTo(-8, 6); g.quadraticCurveTo(0, -1, 8, 6);
     g.moveTo(-6, 10); g.quadraticCurveTo(2, 3, 8, 3); g.stroke();
   } else if (a.type === "scratch") {     // an angled sisal scratch ramp on a wooden frame
-    g.fillStyle = "#7d6039"; roundRect(g, -16, 6, 32, 7, 2); g.fill();            // base
-    g.fillStyle = "#5b4634"; g.fillRect(-16, 11, 32, 2);
-    g.save(); g.translate(2, 3); g.rotate(-0.42);                                 // the ramp leans back
-    g.fillStyle = "#c9b487"; roundRect(g, -6, -30, 20, 34, 3); g.fill();          // sisal face
-    g.fillStyle = "#bda676"; roundRect(g, -6, -30, 20, 6, 3); g.fill();           // worn top edge
+    g.fillStyle = "#7d6039"; roundRect(g, -19, 6, 38, 7, 2); g.fill();            // base
+    g.fillStyle = "#5b4634"; g.fillRect(-19, 11, 38, 2);
+    g.save(); g.translate(4, 3); g.rotate(-0.4);                                  // the ramp leans back
+    g.fillStyle = "#c9b487"; roundRect(g, -7, -36, 24, 40, 3); g.fill();          // sisal face
+    g.fillStyle = "#bda676"; roundRect(g, -7, -36, 24, 6, 3); g.fill();           // worn top edge
     g.strokeStyle = "rgba(120,95,55,0.35)"; g.lineWidth = 1;
-    for (let y = -26; y <= 0; y += 3) { g.beginPath(); g.moveTo(-5, y); g.lineTo(13, y); g.stroke(); }
+    for (let y = -32; y <= 0; y += 3) { g.beginPath(); g.moveTo(-6, y); g.lineTo(16, y); g.stroke(); }
     g.strokeStyle = "rgba(84,64,42,0.55)"; g.lineWidth = 1.5; g.lineCap = "round";
-    for (const dx of [-2, 2, 6]) { g.beginPath(); g.moveTo(dx, -22); g.lineTo(dx + 1.5, -6); g.stroke(); }  // claw tracks
+    for (const dx of [-2, 3, 8]) { g.beginPath(); g.moveTo(dx, -26); g.lineTo(dx + 1.5, -8); g.stroke(); }  // claw tracks
     g.restore();
   } else {                               // cozy bed
     g.fillStyle = "#8f9c92"; roundRect(g, -22, -6, 44, 18, 9); g.fill();
@@ -4783,7 +4785,7 @@ function drawCat(g, c, isPhoto) {
              : (c.state === "socializing" || grooming || scratching) ? "sit" : "rest";
   const sleepStyle = asleep ? ((c.markSeed || 0) % 3) : 0;   // 0 loaf · 1 curl · 2 side-flop (stable per cat)
   const P = poseParams(pose, sleepStyle);
-  if (strK > 0.05) { P.hy += strK * 7; P.hr *= 1 - strK * 0.06; }   // stretch: head drops toward the ground
+  if (strK > 0.05) { P.hy += strK * 11; P.hr *= 1 - strK * 0.06; }  // stretch: chin & chest sink toward the ground
   const lick = grooming ? Math.sin(c.stateT * 7) : 0;   // washing rhythm
 
   // --- age: kittens are small, round, big-headed, big-eyed ---
@@ -4805,14 +4807,14 @@ function drawCat(g, c, isPhoto) {
   const waddle = wk * CHARM * Math.sin(gp) * 1.7;           // hips sway once per stride
 
   const gaitBob = -hop * 3.4;
-  const bobY = asleep ? 0 : Math.sin(c.bob) * (playing ? 4 : 1.3) + gaitBob;
+  const bobY = asleep ? 0 : Math.sin(c.bob) * (playing ? 2.6 : 1.1) + gaitBob;
   const sq = c.squash;
   const breathe = 1 + Math.sin(c.bob) * 0.015;
   const gs = wk * CHARM * air * 0.07;                       // squash on the plant, stretch in the air
   const scaleX = ag * (1 + sq * 0.18) * (1 + wk * 0.05 - gs * 0.7) * (1 + strK * 0.34);   // stretch: long
   const scaleY = ag * (1 - sq * 0.14) * breathe * (1 + gs) * (1 - strK * 0.20);           // stretch: low and flat
-  const lean = wk * 0.06 + wk * CHARM * Math.sin(gp * 2) * 0.02 + strK * 0.26             // stretch: chest tips right down, rear lifts
-             + (scratching ? 0.09 : 0);                                                   // scratch: lean into the pad
+  const lean = wk * 0.06 + wk * CHARM * Math.sin(gp * 2) * 0.02 + strK * 0.09             // stretch: a gentle chest tip (chest drop carries the pose, rear stays down)
+             + (scratching ? 0.07 : 0);                                                   // scratch: a slight lean toward the post
   const walkLift = wk * (3.5 + CHARM * 1.5);                // raise the body so the legs prance
   const earFlop = wk * CHARM * Math.sin(gp * 2 + 0.6) * 0.11;
 
@@ -5055,18 +5057,20 @@ function drawCat(g, c, isPhoto) {
     g.beginPath(); g.ellipse(reach - 5, 0, 3, 2.4, 0, 0, 7); g.fill();
   }
 
-  // scratching: both front paws reaching UP and raking DOWN, alternating, fast
+  // scratching: both front paws on the post's sisal face (just right of the cat,
+  // mid-height), raking up and down in alternation
   if (scratching) {
-    const rake = Math.sin(c.stateT * 22);
+    const rake = Math.sin(c.stateT * 20);
     const pawCol = coat.white && coat.white.includes("paws") ? "#f8f5ee" : (coat.pattern === "points" ? coat.point : coat.base);
     g.strokeStyle = coat.pattern === "points" ? coat.point : coat.base;
     g.lineWidth = 4.2; g.lineCap = "round";
-    const reachX = P.bw * 0.42 + 5;
-    const topY = P.hy - P.hr * 0.5;         // up around the head
-    const y1 = topY + 4 + rake * 5;
-    const y2 = topY + 4 - rake * 5;
-    g.beginPath(); g.moveTo(P.bw * 0.24, -3); g.quadraticCurveTo(P.bw * 0.4, topY, reachX, y1); g.stroke();
-    g.beginPath(); g.moveTo(P.bw * 0.20, -1); g.quadraticCurveTo(P.bw * 0.36, topY + 3, reachX - 4, y2); g.stroke();
+    const reachX = P.bw * 0.55 + 6;         // out to the post beside the cat
+    const midY = -13;                        // mid-height of the sisal face (~ground + 13)
+    const y1 = midY + rake * 8;
+    const y2 = midY - rake * 8;
+    const sh = P.bw * 0.26;
+    g.beginPath(); g.moveTo(sh, -3); g.quadraticCurveTo(sh + 8, midY - 7, reachX, y1); g.stroke();
+    g.beginPath(); g.moveTo(sh - 2, -1); g.quadraticCurveTo(sh + 5, midY - 3, reachX - 4, y2); g.stroke();
     g.fillStyle = pawCol;
     g.beginPath(); g.ellipse(reachX, y1, 3.2, 2.6, 0, 0, 7); g.fill();
     g.beginPath(); g.ellipse(reachX - 4, y2, 2.9, 2.3, 0, 0, 7); g.fill();
@@ -5078,7 +5082,7 @@ function drawCat(g, c, isPhoto) {
   if (wk > 0.02) {
     drawWalkLegs(g, c, P, coat, stridePh, wk, false, walkLift, hop * 3.4);
   }
-  if (wk < 0.98 && !playing) {
+  if (wk < 0.98) {
     g.globalAlpha = 1 - wk;
     g.fillStyle = coat.white && coat.white.includes("paws") ? "#f8f5ee" : coat.base;
     g.beginPath(); g.ellipse(P.bw * 0.30, -1.5, 4.6, 3.4, 0, 0, 7); g.fill();
