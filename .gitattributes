@@ -1,0 +1,7 @@
+# Keep LF in the repo for everything CI and tooling touches
+* text=auto eol=lf
+*.png binary
+*.opus binary
+*.mp3 binary
+*.jks binary
+*.keystore binary

@@ -1,0 +1,26 @@
+{
+  "appId": "com.midknightstudiolabs.catmintcove",
+  "appName": "Catmint Cove",
+  "webDir": "www",
+  "backgroundColor": "#eef3e6",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 900,
+      "backgroundColor": "#eef3e6",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
+    },
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "DARK",
+      "backgroundColor": "#00000000"
+    }
+  },
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#eef3e6"
+  }
+}

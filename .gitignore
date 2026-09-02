@@ -6,4 +6,17 @@ node_modules/
 midknight-bible.html
 v1-v2-sprite.html
 v2-cat-designs.html
-catmint-cove-web.zip
+
+# --- Capacitor / app build ---
+# Native projects are generated fresh in CI (`npx cap add …`) so they never
+# drift from capacitor.config.json. Everything that shapes the build lives in
+# package.json / capacitor.config.json / scripts/ / assets/ / .github/.
+www/
+android/
+ios/
+*.keystore
+*.jks
+*.mobileprovision
+*.p12
+google-services.json
+GoogleService-Info.plist

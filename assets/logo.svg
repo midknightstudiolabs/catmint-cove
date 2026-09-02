@@ -1,0 +1,28 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- placeholder app mark — a chunky loaf cat. Replace with final Midknight art. -->
+  <rect width="1024" height="1024" fill="#e9f0dd"/>
+  <circle cx="512" cy="536" r="392" fill="#dfe9cf"/>
+  <g transform="translate(512 560)">
+    <!-- contact shadow -->
+    <ellipse cx="0" cy="196" rx="250" ry="40" fill="#000" opacity="0.12"/>
+    <!-- ears (behind head) -->
+    <path d="M-150 -120 L-96 -232 L-30 -140 Z" fill="#2b2620"/>
+    <path d="M150 -120 L96 -232 L30 -140 Z" fill="#2b2620"/>
+    <!-- body: a wide rounded-triangle loaf -->
+    <path d="M-250 190
+             C-268 40 -170 -150 0 -150
+             C170 -150 268 40 250 190
+             C250 208 -250 208 -250 190 Z" fill="#2b2620"/>
+    <!-- head sunk into the ruff -->
+    <ellipse cx="0" cy="-92" rx="176" ry="150" fill="#2b2620"/>
+    <!-- white shirtfront -->
+    <path d="M0 -150 C64 -150 92 -40 78 120 C60 190 -60 190 -78 120 C-92 -40 -64 -150 0 -150 Z" fill="#f6f2e6"/>
+    <!-- deadpan gold eyes -->
+    <ellipse cx="-66" cy="-96" rx="30" ry="22" fill="#e8b45a"/>
+    <ellipse cx="66" cy="-96" rx="30" ry="22" fill="#e8b45a"/>
+    <ellipse cx="-58" cy="-100" rx="10" ry="10" fill="#241f17"/>
+    <ellipse cx="74" cy="-100" rx="10" ry="10" fill="#241f17"/>
+    <!-- nose -->
+    <path d="M0 -58 l14 -12 l-28 0 Z" fill="#d6688a"/>
+  </g>
+</svg>

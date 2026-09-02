@@ -1,0 +1,93 @@
+name: Android build
+
+# Manual trigger, or push a tag like  android-v2.0.1
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: "Google Play track"
+        type: choice
+        options: [none, internal, alpha, beta, production]
+        default: none
+  push:
+    tags: ["android-v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Work out the version
+        id: ver
+        run: |
+          NAME="${GITHUB_REF_NAME#android-v}"
+          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="2.0.$GITHUB_RUN_NUMBER"; fi
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Generate the native project
+        run: |
+          npx cap add android
+          npx @capacitor/assets generate --android
+          npx cap sync android
+
+      - name: Stamp the version
+        run: |
+          sed -i "s/versionCode 1/versionCode ${{ steps.ver.outputs.code }}/" android/app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"${{ steps.ver.outputs.name }}\"/" android/app/build.gradle
+
+      - name: Build release bundle (.aab)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon --stacktrace
+
+      - name: Sign the bundle
+        id: sign
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: android/app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
+
+      - name: Keep the .aab as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: catmint-cove-${{ steps.ver.outputs.name }}.aab
+          path: ${{ steps.sign.outputs.signedReleaseFile }}
+          if-no-files-found: error
+
+      - name: Upload to Google Play
+        if: ${{ inputs.track != '' && inputs.track != 'none' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.midknightstudiolabs.catmintcove
+          releaseFiles: ${{ steps.sign.outputs.signedReleaseFile }}
+          track: ${{ inputs.track }}
+          status: ${{ inputs.track == 'production' && 'completed' || 'draft' }}

@@ -20,6 +20,20 @@ a small badge in the top bar. GitHub Pages redeploys ~1 min after a push to
 A playable greybox of the cozy-idle cat game concept. One self-contained HTML file,
 no build step, no dependencies.
 
+## Shipping to the app stores
+
+The same `index.html` is wrapped with **Capacitor** and built/signed by **GitHub
+Actions** (no Mac needed). See **[STORE-SETUP.md](STORE-SETUP.md)** for the
+one-time account + secrets setup. After that:
+
+```bash
+git tag android-v2.0.1 && git push origin android-v2.0.1   # → signed .aab
+git tag ios-v2.0.1     && git push origin ios-v2.0.1        # → TestFlight
+```
+
+`npm run build` assembles `www/` from `index.html`; `npm run sync` runs Capacitor.
+Native `android/` and `ios/` folders are generated fresh in CI, never committed.
+
 ## V2 roadmap
 
 - [x] Midknight mascot + chunky-loaf cat art, deadpan gold eyes

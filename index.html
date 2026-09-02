@@ -1873,6 +1873,11 @@ function savePhoto() {
   composePhoto();
   G.metrics.photos += 1;
   bumpGoal("photo", 1);
+  if (window.CoveNative && window.CoveNative.savePhoto && window.CoveNative.savePhoto(pc.toDataURL("image/png"))) {
+    document.getElementById("photoHint").textContent = "Opening share…";
+    sfx("collect");
+    return;
+  }
   try {
     pc.toBlob((blob) => {
       if (!blob) { photoHintFail(); return; }

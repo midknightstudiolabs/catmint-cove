@@ -1,0 +1,91 @@
+name: iOS build (TestFlight)
+
+# Manual trigger, or push a tag like  ios-v2.0.1
+# Requires the Apple secrets listed in STORE-SETUP.md. Until those exist this
+# workflow will fail at "Import signing certificate" — that's expected.
+on:
+  workflow_dispatch:
+  push:
+    tags: ["ios-v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Work out the version
+        id: ver
+        run: |
+          NAME="${GITHUB_REF_NAME#ios-v}"
+          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="2.0.$GITHUB_RUN_NUMBER"; fi
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "build=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Generate the native project
+        run: |
+          npx cap add ios
+          npx @capacitor/assets generate --ios
+          npx cap sync ios
+
+      - name: Import signing certificate
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.IOS_DIST_CERT_P12 }}
+          p12-password: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+
+      - name: Install provisioning profile
+        run: |
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          echo "${{ secrets.IOS_PROVISIONING_PROFILE }}" | base64 --decode > "$HOME/Library/MobileDevice/Provisioning Profiles/catmintcove.mobileprovision"
+
+      - name: CocoaPods
+        run: cd ios/App && pod install
+
+      - name: Archive
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -destination "generic/platform=iOS" \
+            clean archive \
+            DEVELOPMENT_TEAM="${{ secrets.IOS_TEAM_ID }}" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="${{ secrets.IOS_PROFILE_NAME }}" \
+            MARKETING_VERSION="${{ steps.ver.outputs.name }}" \
+            CURRENT_PROJECT_VERSION="${{ steps.ver.outputs.build }}"
+
+      - name: Export .ipa
+        run: |
+          sed -e "s/__TEAM_ID__/${{ secrets.IOS_TEAM_ID }}/" -e "s/__PROFILE_NAME__/${{ secrets.IOS_PROFILE_NAME }}/" \
+            ci/ExportOptions.plist > "$RUNNER_TEMP/ExportOptions.plist"
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+
+      - name: Upload to TestFlight
+        run: |
+          xcrun altool --upload-app -f "$RUNNER_TEMP"/export/*.ipa -t ios \
+            -u "${{ secrets.APPLE_ID }}" -p "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}"
+
+      - name: Keep the .ipa as an artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catmint-cove-${{ steps.ver.outputs.name }}.ipa
+          path: ${{ runner.temp }}/export/*.ipa
+          if-no-files-found: warn

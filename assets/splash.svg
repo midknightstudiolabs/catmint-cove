@@ -1,0 +1,17 @@
+<svg width="2732" height="2732" viewBox="0 0 2732 2732" xmlns="http://www.w3.org/2000/svg">
+  <!-- placeholder splash — cream ground, the loaf-cat mark centred. -->
+  <rect width="2732" height="2732" fill="#eef3e6"/>
+  <g transform="translate(1366 1300) scale(1.7)">
+    <ellipse cx="0" cy="196" rx="250" ry="40" fill="#000" opacity="0.10"/>
+    <path d="M-150 -120 L-96 -232 L-30 -140 Z" fill="#2b2620"/>
+    <path d="M150 -120 L96 -232 L30 -140 Z" fill="#2b2620"/>
+    <path d="M-250 190 C-268 40 -170 -150 0 -150 C170 -150 268 40 250 190 C250 208 -250 208 -250 190 Z" fill="#2b2620"/>
+    <ellipse cx="0" cy="-92" rx="176" ry="150" fill="#2b2620"/>
+    <path d="M0 -150 C64 -150 92 -40 78 120 C60 190 -60 190 -78 120 C-92 -40 -64 -150 0 -150 Z" fill="#f6f2e6"/>
+    <ellipse cx="-66" cy="-96" rx="30" ry="22" fill="#e8b45a"/>
+    <ellipse cx="66" cy="-96" rx="30" ry="22" fill="#e8b45a"/>
+    <ellipse cx="-58" cy="-100" rx="10" ry="10" fill="#241f17"/>
+    <ellipse cx="74" cy="-100" rx="10" ry="10" fill="#241f17"/>
+  </g>
+  <text x="1366" y="1820" font-family="Georgia, 'Times New Roman', serif" font-size="130" fill="#4c4536" text-anchor="middle" font-style="italic">Catmint Cove</text>
+</svg>
