@@ -177,6 +177,9 @@
   .shop-item.pack .owned{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-bright);}
   .shop-item.prestige{background:linear-gradient(180deg,#f0f4ea,#e7efe0);border-radius:14px;padding:.75rem;margin:.35rem 0;border-top:none;}
   .shop-item.prestige .name{color:var(--accent);}
+  .shop-item.boostcard{background:linear-gradient(180deg,#fff6e6,#f6ecd6);border-radius:14px;padding:.7rem .8rem;margin:.35rem 0;border-top:none;}
+  .shop-item.boostcard .name{color:var(--apricot);}
+  .shop-item.boostcard .owned{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--apricot);font-variant-numeric:tabular-nums;}
   .shop-cat{font-family:"Fraunces",serif;font-size:.82rem;font-weight:600;color:var(--accent);
     margin:1rem 0 -.1rem;padding-top:.7rem;border-top:1px solid var(--panel-line);letter-spacing:.01em;}
   .shop-cat:first-of-type{border-top:none;padding-top:.2rem;margin-top:.3rem;}
@@ -740,6 +743,8 @@ function newGame() {
     cats: [],
     // v3 — the return-visit layer
     checkin: { day: 0, lastKey: "" },  // daily welcome — 7-day loop, never punishes a miss
+    boostUntil: 0,               // ts — "fresh catnip" 2× earnings window
+    boostBuys: 0,                // how many boosts bought (price scaling)
     postcards: [],               // notes cats send home mid-adventure
     moments: [],                 // gentle log of the cove's little happenings
     wywa: { lastAt: 0, seen: [] },// "While You Were Away" cooldown + anti-repeat
@@ -772,6 +777,8 @@ function load() {
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
     if (G.midknightSeeded === undefined) G.midknightSeeded = false;
     if (!G.checkin || typeof G.checkin !== "object") G.checkin = { day: 0, lastKey: "" };
+    if (typeof G.boostUntil !== "number") G.boostUntil = 0;
+    if (typeof G.boostBuys !== "number") G.boostBuys = 0;
     if (!Array.isArray(G.postcards)) G.postcards = [];
     if (!Array.isArray(G.moments)) G.moments = [];
     if (!G.wywa || typeof G.wywa !== "object") G.wywa = { lastAt: 0, seen: [] };
@@ -922,6 +929,22 @@ function capacity() { return Math.min(maxCats(), 4 + (G.bowls - 1) * 2 + G.toys 
 function comfortMult() { return 1 + G.comfort * 0.22; }
 function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // ambient mood lift
 
+/* ---------- earnings pacing ----------
+   A generous WELCOME window for the first hour of real play, then it settles
+   to a tighter baseline so upgrades, stations and boosts actually matter.
+   Applies everywhere (active drops, offline, rest) via ratePerSec(). */
+const WELCOME_SEC = 3600;   // first hour of active playtime
+function welcomeBoost() {
+  const t = G.allTimeSec || 0;
+  return t >= WELCOME_SEC ? 0 : 1.15 * (1 - t / WELCOME_SEC);   // +1.15 → 0 over the hour
+}
+function boostActive() { return !!(G.boostUntil && Date.now() < G.boostUntil); }
+function earnMult() {
+  let m = 0.68 + welcomeBoost();      // baseline 0.68, up to ~1.83 for a fresh cove
+  if (boostActive()) m *= 2;          // a purchased "fresh catnip" boost
+  return m;
+}
+
 /* ---------- cat entity ---------- */
 const KITTEN_MS = 20 * 3600 * 1000;   // a cat is a kitten for its first ~20h, then an adult forever
 let cats = [];
@@ -984,7 +1007,7 @@ class Cat {
   }
   starMul() { return 1 + (this.star - 1) * 0.3; }             // ★1 x1  →  ★4 x1.9
   ratePerSec() {
-    let s = 0.55 * this.traitRate() * comfortMult() * this.moodMul() * this.starMul();
+    let s = 0.55 * earnMult() * this.traitRate() * comfortMult() * this.moodMul() * this.starMul();
     s *= 0.5 + this.growth * 0.5;                 // kittens are still learning — half output, ramping up
     if (this.state === "eating" || this.state === "playing") s *= 1.3;
     if (this.state === "sleeping") s *= 0.8;      // napping in a bed: less output, but mood recovers
@@ -1865,6 +1888,20 @@ function welcomeToComfort(type) {
   }
 }
 function priceOf(item) { return Math.round(item.base * Math.pow(item.mul, item.get())); }
+function boostPrice() { return Math.round(180 * Math.pow(1.3, G.boostBuys || 0)); }
+function buyBoost() {
+  const p = boostPrice();
+  if (G.shells < p || boostActive()) return;
+  G.shells -= p;
+  G.boostBuys = (G.boostBuys || 0) + 1;
+  G.boostUntil = Date.now() + 20 * 60000;
+  sfx("buy");
+  spawnParticles(W / 2, H * 0.5, "spark", 14);
+  for (const c of cats) if (Math.random() < 0.5) spawnParticles(c.x, c.y - 14, "twinkle", 3);
+  toast("Fresh catnip! The whole cove is buzzing — 2× earnings for 20 minutes.", 4.5);
+  logMoment("⚡", "Broke out the fresh catnip. The cove went briefly feral (in a productive way).");
+  syncHud(); renderShop();
+}
 function renderShop() {
   const list = document.getElementById("shopList");
   list.innerHTML = "";
@@ -1882,6 +1919,23 @@ function renderShop() {
   const pb = pack.querySelector("button");
   if (pb) pb.addEventListener("click", () => showPackOffer(false));
   list.appendChild(pack);
+
+  // Fresh catnip — a repeatable temporary 2× earnings boost
+  const bc = document.createElement("div");
+  bc.className = "shop-item boostcard";
+  if (boostActive()) {
+    bc.innerHTML = `<div class="txt"><div class="name">⚡ The cove is buzzing</div>
+      <div class="desc">2× earnings — ${fmtTime((G.boostUntil - Date.now()) / 1000)} left</div></div>
+      <span class="owned">active</span>`;
+  } else {
+    const bp = boostPrice();
+    bc.innerHTML = `<div class="txt"><div class="name">⚡ Fresh catnip</div>
+      <div class="desc">The whole cove perks up — 2× earnings for 20 minutes.</div></div>
+      <button class="btn primary" ${G.shells < bp ? "disabled" : ""}>◈ ${bp}</button>`;
+    const bb = bc.querySelector("button");
+    if (bb) bb.addEventListener("click", () => buyBoost());
+  }
+  list.appendChild(bc);
 
   for (const grp of SHOP_GROUPS) {
    const grpItems = SHOP.filter(i => i.cat === grp.id);
@@ -2394,11 +2448,13 @@ const TUT_STEPS = [
   { coat:"ginger", star:2, title:"Pet your cats",
     body:"Tap a cat to pet it — mood up, output up for a while. Keep petting a cuddly one and it might start purring. Prickly cats sulk if you overdo it." },
   { coat:"calico", star:3, title:"Collect the drops",
-    body:"Cats leave a chunky token every so often. Tap it to bank shells — or leave it, it auto-collects after a bit." },
+    body:"Cats leave a chunky token every so often — tap it to bank shells, or leave it, it collects itself. Earnings run fast for your first hour, then settle down." },
   { coat:"russian", star:2, title:"Spend your shells",
-    body:"Coax a new cat, or open the Shop for bowls, beds and toys. The right comfort keeps each personality happy." },
-  { coat:"tortie", star:4, title:"Keep your streak",
-    body:"Finish the 3 goals in Today each day to build a streak. There's no way to lose — just a calm cove to tend." },
+    body:"Coax a new cat, or open the Shop for bowls, beds, toys — and Fresh catnip, a quick 2× earnings boost when you want to push on." },
+  { coat:"siamese", star:3, title:"Check in on Today",
+    body:"Tap Today for a daily welcome (a small gift — miss a day and nothing's lost), three little goals, and your streak. There's no way to lose here." },
+  { coat:"browntab", star:2, title:"Send a cat exploring",
+    body:"Once a day, pick a trip — the dock, the woods, a far island — and a cat to send. They pack a bundle, look back at you, and head off. Postcards arrive while they're gone; they come home with finds and a story." },
   { coat:"greywhite", star:2, pose:"sleeping", title:"Rainy days",
     body:"Tap 🌙 for a rainy-day rest. Everyone pads inside — a cat on the sill, one by the fire, the rest in a pile — with real rain playing. Leave it running while you work, or fall asleep to it with your cats." },
 ];
@@ -5793,6 +5849,12 @@ window.__cove = {
   fillDex(){ for (const co of COATS) if (!G.dex[co.key]) G.dex[co.key] = { star: 2, count: 1 }; checkDexMilestones(); syncHud(); return dexCount() + "/" + COATS.length; },
   charter(v = true){ G.coveCharter = !!v; syncHud(); return { coveCharter: G.coveCharter, maxCats: maxCats(), capacity: capacity() }; },
   moments(){ return G.moments || []; },
+  boost(mins){
+    if (mins === "off" || mins === 0) { G.boostUntil = 0; return "boost off · earnMult " + earnMult().toFixed(2); }
+    G.boostUntil = Date.now() + (mins || 20) * 60000;
+    syncHud();
+    return { boostUntil: G.boostUntil, earnMult: +earnMult().toFixed(2), welcomeBoost: +welcomeBoost().toFixed(2), allTimeMin: Math.round((G.allTimeSec||0)/60) };
+  },
   checkin(cmd){
     if (cmd === "reset") { G.checkin = { day: 0, lastKey: "" }; syncHud(); return "reset — available again"; }
     if (cmd === "claim") { claimCheckin(); return G.checkin; }
@@ -5907,9 +5969,13 @@ document.addEventListener("visibilitychange", () => {
 window.addEventListener("pagehide", save);
 const _saveInterval = setInterval(save, 5000);
 // keep the Today sheet's adventure countdown / "they're back" state fresh while it's open
+let _wasBoosted = false;
 setInterval(() => {
   deliverDuePostcards({ pop: false });   // a gentle toast if one's due while you're playing
   if (panels.today && !panels.today.hidden) { renderCheckinCard(); renderAdventureCard(); }
+  if (panels.shop && !panels.shop.hidden && (boostActive() || _wasBoosted)) renderShop();   // tick the boost countdown
+  if (_wasBoosted && !boostActive()) toast("The catnip's worn off — earnings back to normal.", 4);
+  _wasBoosted = boostActive();
   if (G.adventure && Date.now() >= G.adventure.endsAt) syncHud();
 }, 5000);
 window.__cove.hardReset = () => {

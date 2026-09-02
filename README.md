@@ -81,6 +81,19 @@ Ships MVP steps 1–3; Friendship/Memories, Butterfly Catch and Weekly Events ar
       state (both front paws raking an angled sisal board, fluff puffs), a mood
       lift, and they always stretch after. Climbers / playful / bold cats love it.
       `G.scratch`, +1 capacity.
+- [x] **Earnings pacing** — an `earnMult()` applied everywhere via `ratePerSec()`:
+      a generous **welcome window** (~1.8× a fresh cove, fading to baseline over
+      the first hour of *active* playtime, tracked by `G.allTimeSec`), then a
+      **tighter baseline** (~0.68 — roughly a third below the old rate) so
+      upgrades and stations matter. Token *frequency* is unchanged — the drops
+      are just bigger or smaller.
+- [x] **Fresh catnip** — a repeatable Shop item (◈, price ×1.3 each buy): **2×
+      earnings for 20 minutes**. Card shows a live countdown while active; a toast
+      when it wears off. `G.boostUntil` / `G.boostBuys`, `__cove.boost(mins)`.
+- [x] **Tutorial refreshed** — now 7 steps: added **"Check in on Today"** (daily
+      welcome + goals + streak) and **"Send a cat exploring"** (adventures +
+      postcards); the shells/shop step mentions Fresh catnip; the drops step notes
+      the first-hour boost.
 - [x] Save `catmintCove.save.v7` — migrates `.v6` / `.v5` in place.
 - [ ] Friendship ❤️1–10 + Memories (the moat) — next
 - [ ] Butterfly Catch — one 40s optional mini-game — next
