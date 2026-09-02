@@ -1289,7 +1289,7 @@ function updateCat(c, dt) {
   if (c.zoomies > 0) c.zoomies = Math.max(0, c.zoomies - dt);
 
   // purring: a gentle trickle of little hearts
-  if (c._purring && performance.now() - c._purring < 1400 && Math.random() < dt * 2) {
+  if (c._purredThisRun && c.state === "being_pet" && performance.now() - (c._purring || 0) < 1300 && Math.random() < dt * 1.6) {
     spawnParticles(c.x + rand(-5, 5), c.y - 26, "heart", 1);
   }
 
@@ -1486,9 +1486,10 @@ function handleTap(x, y) {
 }
 function petCat(c) {
   if (c.state === "sulking") { toast(`${c.name} is sulking. Give it a minute.`); showCatCard(c); return; }
-  // a "run" of pets on the same cat — keep going and a cuddly one settles into a purr
+  // a "run" of pets on the same cat — keep going and a cuddly one may purr (once per run)
   const _now = performance.now();
-  c._petRun = (_now - (c._petAt || 0) < 2400) ? (c._petRun || 0) + 1 : 1;
+  if (_now - (c._petAt || 0) < 2400) { c._petRun = (c._petRun || 0) + 1; }
+  else { c._petRun = 1; c._purredThisRun = false; }   // paused long enough → fresh run
   c._petAt = _now;
   c.petCount += 1;
   c.squash = 1;
@@ -1598,7 +1599,7 @@ function updateCatCard() {
   if (!cardCat || cc.el.hidden) return;
   let s = STATE_LABEL[cardCat.state] || cardCat.state;
   if (cardCat._station === "fishing" && cardCat._fx) s = FISH_LABEL[cardCat._fx.p] || s;
-  if (cardCat._purring && performance.now() - cardCat._purring < 2200) s = "purring 🧡";
+  if (cardCat._purredThisRun && cardCat.state === "being_pet" && performance.now() - (cardCat._purring || 0) < 2000) s = "purring 🧡";
   cc.state.textContent = s;
   const m = Math.round(cardCat.mood);
   cc.mood.style.width = m + "%";
@@ -2716,17 +2717,16 @@ let _lastMeowAt = 0;
 function catMeow(kind, c) {
   const now = performance.now();
   if (kind === "pet") {
-    // Cuddly / Playful cats can purr — a roll on every pet, better odds the
-    // longer you've been petting this one. Once it purrs it holds the purr
-    // (no meows mixed in) until the clip fades, then it can roll again.
+    // Cuddly / Playful cats can purr — one roll per run of petting, better odds
+    // the longer the run. Once it has purred this run it's content and quiet
+    // (no repeated / droning purr); pause and start again for another chance.
     const cuddly = c && c.traits && (c.traits.includes("cuddly") || c.traits.includes("playful"));
     if (cuddly) {
-      if (now < (c._purrUntil || 0) - 900) { c._purring = now; return; }   // still mid-purr → hold, stay quiet
-      const chance = Math.min(0.7, 0.16 + Math.max(0, (c._petRun || 1) - 1) * 0.12);
+      if (c._purredThisRun) { c._purring = now; return; }   // already purred this run → stay quiet-content
+      const chance = Math.min(0.75, 0.14 + Math.max(0, (c._petRun || 1) - 1) * 0.14);
       if (Math.random() < chance) {
-        c._purring = now;
-        if (playSample("purr", { vol: 0.55 })) c._purrUntil = now + 4400;
-        else { c._purrUntil = now + 1800; meow(true, 0.5); }
+        c._purredThisRun = true; c._purring = now;
+        if (!playSample("purr", { vol: 0.55 })) meow(true, 0.5);
         return;
       }
     }
@@ -4236,16 +4236,18 @@ function drawCat(g, c, isPhoto) {
   // whisker/eye blink bookkeeping
   const blinking = c.blink < 0.12;
 
-  // purring: a fast little body tremor + a warm halo
-  const purring = c._purring && performance.now() - c._purring < 1600;
-  const purrBuzz = purring ? Math.sin(t * 80) * 0.55 : 0;
+  // purring: a subtle body tremor + a warm halo, only while actively being petted
+  const purrAge = performance.now() - (c._purring || -1e9);
+  const purring = c._purredThisRun && c.state === "being_pet" && purrAge < 1400;
+  const purrFade = purring ? Math.min(1, purrAge < 250 ? purrAge / 250 : (1400 - purrAge) / 400) : 0;
+  const purrBuzz = purring ? Math.sin(t * 74) * 0.4 * purrFade : 0;
 
   g.save();
   g.translate(c.x + purrBuzz, c.y + bobY);
 
   if (purring) {
-    const rad = ag * (P.bw + 26);
-    const a = 0.11 + Math.sin(t * 6) * 0.035;
+    const rad = ag * (P.bw + 24);
+    const a = (0.08 + Math.sin(t * 5.5) * 0.028) * purrFade;
     const pg = g.createRadialGradient(0, P.top * 0.5, 2, 0, P.top * 0.5, rad);
     pg.addColorStop(0, `rgba(216,110,142,${a})`);
     pg.addColorStop(1, "rgba(216,110,142,0)");
