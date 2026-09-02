@@ -1728,9 +1728,15 @@ function composePhoto() {
   drawCoveSign(pctx, W, H);
   drawDecorLayer(pctx);
   for (const a of attractors) drawAttractor(pctx, a);
-  const sorted = [...cats].sort((p,q)=>p.y-q.y);
-  for (const c of sorted) { drawCat(pctx, c, true); if (c._station === "fishing" && c._fx) drawFishingRig(pctx, c); }
-  drawForeground(pctx, performance.now() / 1000, window._sky);
+  const pgt = performance.now() / 1000, pnight = window._sky ? 1 - window._sky.df : 0;
+  const players = [];
+  for (const c of cats) players.push({ y: c.y, c });
+  for (const f of foreground) players.push({ y: f.y, f });
+  players.sort((p, q) => p.y - q.y);
+  for (const it of players) {
+    if (it.c) { drawCat(pctx, it.c, true); if (it.c._station === "fishing" && it.c._fx) drawFishingRig(pctx, it.c); }
+    else drawGrassTuft(pctx, it.f, pgt, pnight);
+  }
   pctx.restore();
 
   pctx.restore(); // unclip
@@ -3233,30 +3239,33 @@ function initForeground() {
   }
   foreground.sort((a, b) => a.y - b.y);
 }
+function drawGrassTuft(g, f, t, night) {
+  const base = `rgba(${112 - night*58},${150 - night*84},${112 - night*66},`;
+  g.strokeStyle = base + "0.9)";
+  g.lineWidth = 1.6 * f.s; g.lineCap = "round";
+  const w = Math.sin(t * 1.3 + f.sway) * 1.6 * f.s;
+  for (let b = 0; b < f.blades; b++) {
+    const bx = f.x + (b - f.blades / 2) * 3 * f.s;
+    const h = (10 + (b % 2) * 6) * f.s;
+    g.beginPath();
+    g.moveTo(bx, f.y);
+    g.quadraticCurveTo(bx + w * 0.5, f.y - h * 0.6, bx + w, f.y - h);
+    g.stroke();
+  }
+  if (f.flower) {
+    const fx = f.x + w, fy = f.y - 13 * f.s;
+    g.fillStyle = night > 0.4 ? "rgba(180,170,190,0.8)" : f.flower;
+    for (let p = 0; p < 5; p++) { const a = p / 5 * Math.PI * 2;
+      g.beginPath(); g.ellipse(fx + Math.cos(a) * 2.2 * f.s, fy + Math.sin(a) * 2.2 * f.s, 1.7 * f.s, 1.7 * f.s, 0, 0, 7); g.fill(); }
+    g.fillStyle = night > 0.4 ? "rgba(210,200,150,0.8)" : "#e9c85a";
+    g.beginPath(); g.arc(fx, fy, 1.3 * f.s, 0, 7); g.fill();
+  }
+}
+// used by the photo composer (cats are drawn in one pass there); the live scene
+// interleaves tufts with cats by y so a blade never covers a cat in front of it
 function drawForeground(g, t, sky) {
   const night = sky ? 1 - sky.df : 0;
-  for (const f of foreground) {
-    const base = `rgba(${112 - night*58},${150 - night*84},${112 - night*66},`;
-    g.strokeStyle = base + "0.9)";
-    g.lineWidth = 1.6 * f.s; g.lineCap = "round";
-    const w = Math.sin(t * 1.3 + f.sway) * 1.6 * f.s;
-    for (let b = 0; b < f.blades; b++) {
-      const bx = f.x + (b - f.blades / 2) * 3 * f.s;
-      const h = (10 + (b % 2) * 6) * f.s;
-      g.beginPath();
-      g.moveTo(bx, f.y);
-      g.quadraticCurveTo(bx + w * 0.5, f.y - h * 0.6, bx + w, f.y - h);
-      g.stroke();
-    }
-    if (f.flower) {
-      const fx = f.x + w, fy = f.y - 13 * f.s;
-      g.fillStyle = night > 0.4 ? "rgba(180,170,190,0.8)" : f.flower;
-      for (let p = 0; p < 5; p++) { const a = p / 5 * Math.PI * 2;
-        g.beginPath(); g.ellipse(fx + Math.cos(a) * 2.2 * f.s, fy + Math.sin(a) * 2.2 * f.s, 1.7 * f.s, 1.7 * f.s, 0, 0, 7); g.fill(); }
-      g.fillStyle = night > 0.4 ? "rgba(210,200,150,0.8)" : "#e9c85a";
-      g.beginPath(); g.arc(fx, fy, 1.3 * f.s, 0, 7); g.fill();
-    }
-  }
+  for (const f of foreground) drawGrassTuft(g, f, t, night);
 }
 function puff(x, y, s) {
   ctx.beginPath();
@@ -4291,15 +4300,25 @@ function renderScene(dt) {
   drawCoveSign(ctx, W, H);
   drawDecorLayer(ctx);
   for (const a of attractors) drawAttractor(ctx, a);
-  const order = [...cats].sort((a, b) => a.y - b.y);
-  for (const c of order) {
-    drawCat(ctx, c, false);
-    if (c._station === "fishing" && c._fx) drawFishingRig(ctx, c);
-    if (c.star >= 3) drawStarAura(ctx, c, dt);
+  // interleave cats and grass tufts by y so nearer grass covers farther cats and
+  // a cat in front is never hidden behind a blade
+  const gt = performance.now() / 1000;
+  const gnight = window._sky ? 1 - window._sky.df : 0;
+  const layer = [];
+  for (const c of cats) layer.push({ y: c.y, c });
+  for (const f of foreground) layer.push({ y: f.y, f });
+  layer.sort((a, b) => a.y - b.y);
+  for (const it of layer) {
+    if (it.c) {
+      drawCat(ctx, it.c, false);
+      if (it.c._station === "fishing" && it.c._fx) drawFishingRig(ctx, it.c);
+      if (it.c.star >= 3) drawStarAura(ctx, it.c, dt);
+    } else {
+      drawGrassTuft(ctx, it.f, gt, gnight);
+    }
   }
   for (const tk of fieldTokens) drawToken(ctx, tk);
   drawFX(ctx);
-  drawForeground(ctx, performance.now() / 1000, window._sky);
 
   // dusk / night mood wash — cools and settles the whole scene as the light fades
   const sky = window._sky;
