@@ -2261,8 +2261,11 @@ const SHOP = [
   { key:"fishing", cat:"stations", name:"Fishing dock", desc:"Not for sale — repair the old dock down at the shore. Tap it in the cove.",
     base:0, mul:1, max:1, get:()=>projectDone("dock") ? 1 : 0,
     need:()=> projectDone("dock") ? null : "Repair the dock — tap it at the shore" },
-  { key:"bakery", cat:"stations", type:"bakery", name:"Little bakery", desc:"Two cats can help at once — steady output and a strong mood lift. +2 capacity.",
-    base:85, mul:1.9, get:()=>G.stations.bakery, buy:()=>{ G.stations.bakery++; rebuildAttractors(); }, remove:()=>{ G.stations.bakery--; rebuildAttractors(); } },
+  { key:"bakery", cat:"stations", type:"bakery", soon:true, name:"Little bakery",
+    desc:"Not sold any more — a proper bakery is being built for you to restore, like the dock. Any you already have still work.",
+    base:85, mul:1.9, get:()=>G.stations.bakery,
+    need:()=>"in the works",
+    buy:()=>{ G.stations.bakery++; rebuildAttractors(); }, remove:()=>{ G.stations.bakery--; rebuildAttractors(); } },
   { key:"sunbeam", cat:"stations", type:"sunbeam", name:"Sunbeam mat", desc:"The comfiest spot in the cove — mood rockets, output ticks over gently. +2 capacity.",
     base:50, mul:1.8, get:()=>G.stations.sunbeam, buy:()=>{ G.stations.sunbeam++; rebuildAttractors(); }, remove:()=>{ G.stations.sunbeam--; rebuildAttractors(); } },
   { key:"garden", cat:"stations", type:"garden", name:"Catmint garden", desc:"Cats roll in it and leave with the zoomies — a lasting output burst. +2 capacity.",
@@ -2359,10 +2362,12 @@ function shopItemRow(item) {
   const price = priceOf(item);
   const pearlCost = item.pearls || 0;
   const lockMsg = !maxed && item.need ? item.need() : null;
+  const owns = item.get() > 0;
+  const soonLook = !!item.soon && !owns;      // a retired item you already own isn't "coming soon" — it works
   const afford = G.shells >= price && G.pearls >= pearlCost;
   const row = document.createElement("div");
-  row.className = "shop-item" + (item.key === "charter" ? " prestige" : "") + (item.soon ? " soon" : "");
-  const priceLabel = maxed ? "owned" : item.soon ? "soon" : lockMsg ? "🔒" : pearlCost ? `◈${price} · ✦${pearlCost}` : `◈ ${price}`;
+  row.className = "shop-item" + (item.key === "charter" ? " prestige" : "") + (soonLook ? " soon" : "");
+  const priceLabel = maxed ? "owned" : soonLook ? "soon" : item.soon ? "—" : lockMsg ? "🔒" : pearlCost ? `◈${price} · ✦${pearlCost}` : `◈ ${price}`;
   const canRemove = !!item.remove && item.get() > (item.keepMin || 0);
   const refund = canRemove ? Math.max(1, Math.round(item.base * Math.pow(item.mul, item.get() - 1) * 0.4)) : 0;
   row.innerHTML = `
@@ -2489,8 +2494,9 @@ function renderShop() {
     renderShopDress(list);
   } else {
     const items = SHOP.filter(i => i.cat === shopTab);
-    for (const item of items.filter(i => !i.soon)) list.appendChild(shopItemRow(item));
-    const soon = items.filter(i => i.soon);
+    const isSoon = i => i.soon && i.get() === 0;     // a retired item you own stays in the main list
+    for (const item of items.filter(i => !isSoon(i))) list.appendChild(shopItemRow(item));
+    const soon = items.filter(isSoon);
     if (soon.length) {
       list.appendChild(shopHead("Coming soon"));
       for (const item of soon) list.appendChild(shopItemRow(item));
