@@ -135,6 +135,19 @@
   .shop-item .name{font-weight:600;}
   .shop-item .desc{font-size:.8rem;color:var(--ink-soft);margin-top:.1rem;}
   .shop-item button{flex:0 0 auto;white-space:nowrap;}
+  .shop-actions{display:flex;gap:.35rem;align-items:center;flex:0 0 auto;}
+  .btn.tiny{padding:.3rem .55rem;min-height:0;font-size:.9rem;line-height:1;}
+  .btn.tiny.remove{background:#f1ede2;color:var(--ink-soft);border-color:var(--panel-line);font-weight:700;}
+  .btn.tiny.remove:hover{background:#fbeceb;color:#b4524a;border-color:#e6b3ad;}
+  button.btn.small{padding:.35rem .7rem;font-size:.8rem;}
+  .backup-row{display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+    margin-top:.9rem;padding-top:.8rem;border-top:1px solid var(--panel-line);flex-wrap:wrap;}
+  .backup-row .muted{font-size:.8rem;}
+  .save-box{width:100%;min-height:4.5rem;resize:none;font:600 .74rem/1.4 "IBM Plex Mono",ui-monospace,monospace;
+    border:1px solid var(--panel-line);background:#f2f0e6;color:var(--ink);border-radius:12px;
+    padding:.6rem .7rem;margin:.2rem 0 .9rem;word-break:break-all;}
+  .linkbtn{background:none;border:none;color:var(--ink-soft);font:inherit;font-weight:600;font-size:.82rem;
+    cursor:pointer;margin-top:.7rem;text-decoration:underline;}
   .shop-item .lv{font-size:.72rem;color:var(--accent-bright);font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
   .shop-item.pack{background:linear-gradient(180deg,#fff8ec,#fdeeceff);border-radius:14px;padding:.75rem;margin:.35rem 0;border-top:none;}
   .shop-item.pack .name{color:var(--apricot);}
@@ -413,6 +426,10 @@
     <h2>Today</h2>
     <div class="streak"><span class="flame">🔥</span><b id="streakN">0</b><span class="muted" style="margin:0">day streak — finish all 3 goals to keep it</span></div>
     <div id="goalList"></div>
+    <div class="backup-row">
+      <span class="muted" style="margin:0">Your cove is saved on this device.</span>
+      <button class="btn small" id="backupBtn">Back up / restore</button>
+    </div>
   </div>
 
   <!-- cat card -->
@@ -679,6 +696,25 @@ function save() {
   } catch (e) {}
 }
 let lastSaveClock = performance.now();
+
+/* ---------- back up / restore (a portable save code) ---------- *
+ * The device already keeps the save across app updates. This is the manual
+ * safety net: a string you can stash or move to another device. In the native
+ * build this sits alongside Google Play Games / Game Center cloud saves. */
+function saveCode() {
+  try { save(); return "CMC1." + btoa(unescape(encodeURIComponent(localStorage.getItem(SAVE_KEY) || JSON.stringify(G)))); }
+  catch (e) { return ""; }
+}
+function applySaveCode(code) {
+  try {
+    const b64 = String(code).trim().replace(/^CMC1\./, "");
+    const raw = decodeURIComponent(escape(atob(b64)));
+    const obj = JSON.parse(raw);
+    if (!obj || typeof obj !== "object" || (obj.v !== 5 && obj.v !== 6)) return false;
+    localStorage.setItem(SAVE_KEY, raw);
+    return true;
+  } catch (e) { return false; }
+}
 
 /* ---------- attractors (things cats walk to and use) + decor (scenery) ---------- */
 let attractors = [];
@@ -1557,25 +1593,25 @@ function hideCatCard() { cc.el.hidden = true; cardCat = null; }
 /* ---------- shop ---------- */
 const SHOP = [
   { key:"bowls", type:"food", name:"Food bowl", desc:"Cats come here to eat, then wash up. +2 cat capacity.",
-    base:12, mul:1.6, get:()=>G.bowls, buy:()=>{ G.bowls++; rebuildAttractors(); } },
+    base:12, mul:1.6, keepMin:1, get:()=>G.bowls, buy:()=>{ G.bowls++; rebuildAttractors(); }, remove:()=>{ G.bowls--; rebuildAttractors(); } },
   { key:"toys", type:"toy", name:"Toy", desc:"Cats come here to play — playing boosts their output. +1 capacity.",
-    base:16, mul:1.6, get:()=>G.toys, buy:()=>{ G.toys++; rebuildAttractors(); } },
+    base:16, mul:1.6, get:()=>G.toys, buy:()=>{ G.toys++; rebuildAttractors(); }, remove:()=>{ G.toys--; rebuildAttractors(); } },
   { key:"beds", type:"bed", name:"Cozy bed", desc:"A favourite napping spot — sleeping restores mood. +1 capacity.",
-    base:22, mul:1.6, get:()=>G.beds, buy:()=>{ G.beds++; rebuildAttractors(); } },
+    base:22, mul:1.6, get:()=>G.beds, buy:()=>{ G.beds++; rebuildAttractors(); }, remove:()=>{ G.beds--; rebuildAttractors(); } },
   { key:"tree", type:"tree", name:"Shade tree", desc:"Cats doze in the shade. Lifts the whole cove's mood.",
-    base:30, mul:1.7, get:()=>G.decor.tree, buy:()=>{ G.decor.tree++; rebuildAttractors(); } },
+    base:30, mul:1.7, get:()=>G.decor.tree, buy:()=>{ G.decor.tree++; rebuildAttractors(); }, remove:()=>{ G.decor.tree--; rebuildAttractors(); } },
   { key:"cottage", type:"cottage", name:"Cat cottage", desc:"A little house cats curl up inside to sleep. +2 capacity.",
-    base:55, mul:1.8, get:()=>G.decor.cottage, buy:()=>{ G.decor.cottage++; rebuildAttractors(); } },
+    base:55, mul:1.8, get:()=>G.decor.cottage, buy:()=>{ G.decor.cottage++; rebuildAttractors(); }, remove:()=>{ G.decor.cottage--; rebuildAttractors(); } },
   { key:"flowers", type:"flowers", name:"Flower patch", desc:"Just pretty. Raises everyone's baseline mood a little.",
-    base:14, mul:1.5, get:()=>G.decor.flowers, buy:()=>{ G.decor.flowers++; rebuildAttractors(); } },
+    base:14, mul:1.5, get:()=>G.decor.flowers, buy:()=>{ G.decor.flowers++; rebuildAttractors(); }, remove:()=>{ G.decor.flowers--; rebuildAttractors(); } },
   { key:"fishing", type:"fishing", name:"Fishing dock", desc:"Cats fish off the end — big output while they work, plus the odd bonus catch. +2 capacity.",
-    base:70, mul:1.9, get:()=>G.stations.fishing, buy:()=>{ G.stations.fishing++; rebuildAttractors(); } },
+    base:70, mul:1.9, get:()=>G.stations.fishing, buy:()=>{ G.stations.fishing++; rebuildAttractors(); }, remove:()=>{ G.stations.fishing--; rebuildAttractors(); } },
   { key:"bakery", type:"bakery", name:"Little bakery", desc:"Two cats can help at once — steady output and a strong mood lift. +2 capacity.",
-    base:85, mul:1.9, get:()=>G.stations.bakery, buy:()=>{ G.stations.bakery++; rebuildAttractors(); } },
+    base:85, mul:1.9, get:()=>G.stations.bakery, buy:()=>{ G.stations.bakery++; rebuildAttractors(); }, remove:()=>{ G.stations.bakery--; rebuildAttractors(); } },
   { key:"sunbeam", type:"sunbeam", name:"Sunbeam mat", desc:"The comfiest spot in the cove — mood rockets, output ticks over gently. +2 capacity.",
-    base:50, mul:1.8, get:()=>G.stations.sunbeam, buy:()=>{ G.stations.sunbeam++; rebuildAttractors(); } },
+    base:50, mul:1.8, get:()=>G.stations.sunbeam, buy:()=>{ G.stations.sunbeam++; rebuildAttractors(); }, remove:()=>{ G.stations.sunbeam--; rebuildAttractors(); } },
   { key:"garden", type:"garden", name:"Catmint garden", desc:"Cats roll in it and leave with the zoomies — a lasting output burst. +2 capacity.",
-    base:65, mul:1.9, get:()=>G.stations.garden, buy:()=>{ G.stations.garden++; rebuildAttractors(); } },
+    base:65, mul:1.9, get:()=>G.stations.garden, buy:()=>{ G.stations.garden++; rebuildAttractors(); }, remove:()=>{ G.stations.garden--; rebuildAttractors(); } },
   { key:"trinket", name:"Trinket basket", desc:"Pop a little accessory — collar, bandana, bow or flower — on a cat who isn't wearing one.",
     base:18, mul:1.4, get:()=>G.trinkets, buy:()=>{ G.trinkets++; giveTrinket(); } },
   { key:"comfort", name:"Comfort upgrade", desc:"+22% output from every cat. Max level 5.",
@@ -1643,13 +1679,30 @@ function renderShop() {
     const priceLabel = maxed ? "owned"
       : lockMsg ? "🔒"
       : pearlCost ? `◈${price} · ✦${pearlCost}` : `◈ ${price}`;
+    const canRemove = !!item.remove && item.get() > (item.keepMin || 0);
+    const refund = canRemove ? Math.max(1, Math.round(item.base * Math.pow(item.mul, item.get() - 1) * 0.4)) : 0;
     row.innerHTML = `
       <div class="txt">
         <div class="name">${item.name} ${item.get() && item.max !== 1 ? `<span class="lv">·&nbsp;${item.max?("lv "+item.get()):("×"+item.get())}</span>`:""}</div>
         <div class="desc">${lockMsg ? "🔒 " + lockMsg : item.desc}</div>
       </div>
-      <button class="btn primary" ${maxed || lockMsg || !afford ? "disabled":""}>${priceLabel}</button>`;
-    const btn = row.querySelector("button");
+      <div class="shop-actions">
+        ${canRemove ? `<button class="btn tiny remove" title="Remove one — refunds ◈${refund}">−</button>` : ""}
+        <button class="btn primary" ${maxed || lockMsg || !afford ? "disabled":""}>${priceLabel}</button>
+      </div>`;
+    const rmBtn = row.querySelector(".remove");
+    if (rmBtn) rmBtn.addEventListener("click", () => {
+      if (item.get() <= (item.keepMin || 0)) return;
+      item.remove();
+      // shoo any cat off a station type that just lost a spot so it re-decides
+      if (STATION[item.type]) for (const c of cats) if (c._station === item.type || c._pendStation === item.type) { c._station = null; c._pendStation = null; c._fx = null; c.stateDur = 0; }
+      G.shells += refund;
+      tone(392, 0.1, "sine", 0.05); tone(294, 0.14, "sine", 0.04, 0.06);
+      spawnParticles(W / 2, H * 0.55, "dust", 6);
+      syncHud(); renderShop();
+      toast(`Packed away a ${item.name.toLowerCase()} — refunded ◈${refund}.`);
+    });
+    const btn = row.querySelector(".btn.primary");
     if (!maxed && !lockMsg) btn.addEventListener("click", () => {
       const p = priceOf(item);
       if (G.shells < p || G.pearls < pearlCost) return;
@@ -1939,6 +1992,51 @@ document.getElementById("todayBtn").addEventListener("click", () => togglePanel(
 document.querySelectorAll("[data-close]").forEach(b =>
   b.addEventListener("click", () => { const k = b.getAttribute("data-close"); if (panels[k]) panels[k].hidden = true; }));
 const shopEl = panels.shop;
+
+/* ---------- back up / restore modal ---------- */
+function openBackup() {
+  const code = saveCode();
+  openModal(`<div class="reveal">
+    <div class="kicker">Back up your cove</div>
+    <h2>Your save code</h2>
+    <p class="sub">Keep this somewhere safe. Paste it on another device — or here later — to restore your cove exactly as it is now. It doesn't expire.</p>
+    <textarea class="save-box" id="bk-out" readonly>${code}</textarea>
+    <div class="row">
+      <button class="btn primary" id="bk-copy">Copy code</button>
+      <button class="btn" id="bk-restore">Restore from a code…</button>
+    </div>
+    <button class="linkbtn" id="bk-close">Close</button>
+  </div>`);
+  document.getElementById("bk-close").onclick = closeModal;
+  const out = document.getElementById("bk-out");
+  document.getElementById("bk-copy").onclick = async () => {
+    try { await navigator.clipboard.writeText(code); } catch (e) { out.focus(); out.select(); document.execCommand && document.execCommand("copy"); }
+    toast("Save code copied.");
+  };
+  document.getElementById("bk-restore").onclick = () => {
+    openModal(`<div class="reveal">
+      <div class="kicker">Restore</div>
+      <h2>Paste a save code</h2>
+      <p class="sub">This replaces the cove on this device. Back up first if you're not sure.</p>
+      <textarea class="save-box" id="bk-in" placeholder="CMC1.…"></textarea>
+      <div class="row">
+        <button class="btn primary" id="bk-go">Restore this cove</button>
+        <button class="btn" id="bk-back">Back</button>
+      </div>
+    </div>`);
+    document.getElementById("bk-back").onclick = openBackup;
+    document.getElementById("bk-go").onclick = () => {
+      const v = document.getElementById("bk-in").value.trim();
+      if (!v) return;
+      if (!applySaveCode(v)) { toast("That code didn't look right — nothing changed."); return; }
+      if (!confirm("Restore this cove? Your current progress on this device will be replaced.")) return;
+      _dead = true;
+      try { clearInterval(_saveInterval); } catch (e) {}
+      location.reload();
+    };
+  };
+}
+document.getElementById("backupBtn").addEventListener("click", openBackup);
 
 /* ---------- Catdex render ---------- */
 function miniCat(canvasEl, coatKey, star, state) {
