@@ -896,6 +896,7 @@ function save() {
     G.ratePerSec = aggregateRate();
     G.allTimeSec = (G.allTimeSec || 0) + (performance.now() - lastSaveClock) / 1000;
     lastSaveClock = performance.now();
+    if (typeof dedupeCats === "function") dedupeCats();   // a dup never makes it to disk
     G.cats = cats.map(c => ({
       name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
       mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood), worn:c.worn || [], owned:c.owned || []
@@ -1352,15 +1353,19 @@ function restoreCats() {
 }
 // belt-and-braces: never keep two mascots or two cats of the same name
 function dedupeCats() {
+  if (!Array.isArray(cats)) return 0;
   const seen = new Set();
-  let mascotKept = false;
+  let mascotKept = false, removed = 0;
   cats = cats.filter(c => {
-    if (c.mascot) { if (mascotKept) return false; mascotKept = true; }
-    const key = c.name;
-    if (seen.has(key)) return false;
+    // the founder is one-of-a-kind: coat/name/mascot flag all identify him
+    const isMk = c.mascot || c.coatKey === "midknight" || c.name === "Midknight";
+    if (isMk) { if (mascotKept) { removed++; return false; } mascotKept = true; c.mascot = true; }
+    const key = isMk ? "__mascot__" : (c.name + "|" + c.coatKey + "|" + c.markSeed);
+    if (seen.has(key)) { removed++; return false; }
     seen.add(key);
     return true;
   });
+  return removed;
 }
 
 /* ---------- Catdex: the collection spine ---------- */
@@ -6540,6 +6545,7 @@ window.__cove = {
   charter(v = true){ G.coveCharter = !!v; syncHud(); return { coveCharter: G.coveCharter, maxCats: maxCats(), capacity: capacity() }; },
   moments(){ return G.moments || []; },
   drift(n = 5){ gainDriftwood(n); return G.materials.driftwood; },
+  dedupe(){ const n = dedupeCats(); syncHud(); save(); return { removed: n, cats: cats.map(c => c.name) }; },
   project(id = "dock", cmd){
     const p = G.projects[id]; if (!p) return "no such project";
     if (cmd === "fill") { p.paid = { shells: PROJECT_BY_ID[id].cost.shells, driftwood: PROJECT_BY_ID[id].cost.driftwood }; contributeProject(id); }
@@ -6672,6 +6678,7 @@ const _saveInterval = setInterval(save, 5000);
 let _wasBoosted = false;
 setInterval(() => {
   deliverDuePostcards({ pop: false });   // a gentle toast if one's due while you're playing
+  if (dedupeCats()) { syncHud(); save(); }   // self-heal if a duplicate ever slips in
   tickProjects();                        // a restoration that finished while you watched
   if (panels.today && !panels.today.hidden) { renderCheckinCard(); renderAdventureCard(); renderProjectCard(); }
   if (panels.shop && !panels.shop.hidden && (boostActive() || _wasBoosted)) renderShop();   // tick the boost countdown
