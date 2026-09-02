@@ -348,6 +348,11 @@
     background:#eef1e3;color:var(--ink-soft);}
   .cc-dress button.on{background:var(--accent-bright);border-color:var(--accent-bright);color:#fff;}
   .cc-dress button.acc-more{background:transparent;border-style:dashed;color:var(--accent);}
+  .cc-dress .dress-slot{display:flex;align-items:center;gap:.4rem;margin-bottom:.32rem;}
+  .cc-dress .ds-l{flex:0 0 2.4rem;font-size:.62rem;font-weight:700;text-transform:uppercase;
+    letter-spacing:.06em;color:var(--ink-faint);}
+  .cc-dress .dress-slot .chips{flex:1;}
+  .cc-dress button.acc-bare{background:transparent;border-style:dashed;color:var(--ink-soft);}
 
   /* ---- modal ---- */
   #scrim{position:absolute;inset:0;z-index:50;background:rgba(30,26,18,.42);
@@ -852,7 +857,7 @@ function save() {
     lastSaveClock = performance.now();
     G.cats = cats.map(c => ({
       name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
-      mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood), accessory:c.accessory ?? null, owned:c.owned || []
+      mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood), worn:c.worn || [], owned:c.owned || []
     }));
     localStorage.setItem(SAVE_KEY, JSON.stringify(G));
   } catch (e) {}
@@ -1012,13 +1017,18 @@ class Cat {
     this.mascot = o.mascot || !!(COAT_BY_KEY[this.coatKey] && COAT_BY_KEY[this.coatKey].mascot);
     this.markSeed = o.markSeed ?? (this.mascot ? 424242 : (Math.random() * 1e9 | 0));
     this.star = o.star ?? rollStar();      // 1..4 rarity — drives production + sparkle + the coax reveal
-    // a canvas accessory — some cats show up wearing one; the Shop's Dress-up tab adds more, 1:1
-    this.accessory = o.accessory !== undefined ? o.accessory
-      : this.mascot ? "bell"
-      : this.star >= 4 ? "crown"
-      : Math.random() < 0.24 ? pick(["collar", "bandana", "bow", "flower"]) : null;
+    // canvas accessories — one per body zone; some cats arrive wearing one,
+    // the Shop's Dress-up tab adds more. `worn` is the new slot list; older
+    // saves carry a single `accessory` string, migrated here.
+    const initWorn = Array.isArray(o.worn) ? o.worn
+      : o.accessory != null ? [o.accessory]
+      : o.accessory === null ? []                       // explicit "wearing nothing" from a save
+      : this.mascot ? ["bell"]
+      : this.star >= 4 ? ["crown"]
+      : Math.random() < 0.24 ? [pick(["collar", "bandana", "bow", "flower"])] : [];
+    this.worn = normalizeWorn(initWorn);
     this.owned = Array.isArray(o.owned) ? o.owned.filter(k => ACC_BY_KEY[k]) : [];
-    if (this.accessory && !this.owned.includes(this.accessory)) this.owned.push(this.accessory);
+    for (const k of this.worn) if (!this.owned.includes(k)) this.owned.push(k);
     // age: newcomers often arrive as kittens and grow up over ~20h of real time
     this.bornAt = o.bornAt ?? (Math.random() < 0.45 ? Date.now() : Date.now() - KITTEN_MS * (1.2 + Math.random()));
     this._wasKitten = undefined;
@@ -1049,6 +1059,7 @@ class Cat {
   }
   get t1() { return TRAITS[this.traits[0]]; }
   get t2() { return TRAITS[this.traits[1]]; }
+  get accessory() { return (this.worn && this.worn[0]) || null; }   // back-compat: first worn item
   get coat() { return COAT_BY_KEY[this.coatKey] || COATS[0]; }
   get growth() { return clamp((Date.now() - this.bornAt) / KITTEN_MS, 0, 1); }   // 0 = newborn, 1 = grown
   get isKitten() { return this.growth < 1; }
@@ -1139,7 +1150,7 @@ function restoreCats() {
       cats.push(new Cat({
         name:s.name, traits:s.traits, coatKey:s.coatKey, markSeed:s.markSeed, star:s.star,
         mascot: s.mascot || s.coatKey === "midknight" || s.name === "Midknight",
-        accessory: s.accessory !== undefined ? s.accessory : undefined, owned: s.owned,
+        worn: s.worn, accessory: s.accessory, owned: s.owned,
         bornAt: s.bornAt ?? (Date.now() - KITTEN_MS * 3), mood:s.mood,
         x: rand(W*0.15,W*0.85), y: rand(H*0.42,H*0.82)
       }));
@@ -1778,41 +1789,66 @@ const cc = {
   rehomeBtn: document.getElementById("cc-rehome"),
   dress: document.getElementById("cc-dress"),
 };
-// ---- wardrobe: canvas accessories, bought 1:1 per cat from the Shop's Dress-up tab ----
+// ---- wardrobe: canvas accessories, bought 1:1 per cat. one per body zone
+//      (neck / ear / face / head), layered — a cat can wear a collar + glasses
+//      + a hat at once, but not two neck items or two hats.
 const ACCESSORIES = [
-  { key:"collar",      label:"Collar",       price:10,  group:"Collars",  blurb:"A simple buckle collar." },
-  { key:"bell",        label:"Bell collar",  price:14,  group:"Collars",  blurb:"A collar with a little brass bell." },
-  { key:"bandana",     label:"Bandana",      price:16,  group:"Neckwear", blurb:"A folded kerchief, knotted at the neck." },
-  { key:"bow",         label:"Bow tie",      price:16,  group:"Neckwear", blurb:"A dapper little bow tie." },
-  { key:"scarf",       label:"Scarf",        price:26,  group:"Neckwear", blurb:"A knitted scarf with two hanging ends." },
-  { key:"glasses",     label:"Glasses",      price:34,  group:"Specs",    blurb:"Round brass wire frames." },
-  { key:"flower",      label:"Ear flower",   price:12,  group:"Blooms",   blurb:"A single bloom tucked behind an ear." },
-  { key:"flowercrown", label:"Flower crown", price:30,  group:"Blooms",   blurb:"A woven ring of little blossoms." },
-  { key:"beanie",      label:"Beanie",       price:22,  group:"Hats",     blurb:"A snug knit cap with a pom." },
-  { key:"cap",         label:"Ball cap",     price:24,  group:"Hats",     blurb:"Brim to the side, face in the clear." },
-  { key:"bucket",      label:"Bucket hat",   price:26,  group:"Hats",     blurb:"Floppy brim, worn tipped back." },
-  { key:"sunhat",      label:"Sun hat",      price:30,  group:"Hats",     blurb:"A woven straw hat pushed back off the face." },
-  { key:"partyhat",    label:"Party hat",    price:20,  group:"Hats",     blurb:"Because every day could be a birthday." },
-  { key:"crown",       label:"Crown",        price:120, group:"Regalia",  blurb:"For the cove's most distinguished loaf." },
+  { key:"collar",      label:"Collar",       price:10,  slot:"neck", group:"Collars",  blurb:"A simple buckle collar." },
+  { key:"bell",        label:"Bell collar",  price:14,  slot:"neck", group:"Collars",  blurb:"A collar with a little brass bell." },
+  { key:"bandana",     label:"Bandana",      price:16,  slot:"neck", group:"Neckwear", blurb:"A folded kerchief, knotted at the neck." },
+  { key:"bow",         label:"Bow tie",      price:16,  slot:"neck", group:"Neckwear", blurb:"A dapper little bow tie." },
+  { key:"scarf",       label:"Scarf",        price:26,  slot:"neck", group:"Neckwear", blurb:"A knitted scarf with two hanging ends." },
+  { key:"glasses",     label:"Glasses",      price:34,  slot:"face", group:"Specs",    blurb:"Round brass wire frames." },
+  { key:"flower",      label:"Ear flower",   price:12,  slot:"ear",  group:"Blooms",   blurb:"A single bloom tucked behind an ear." },
+  { key:"flowercrown", label:"Flower crown", price:30,  slot:"head", group:"Blooms",   blurb:"A woven ring of little blossoms." },
+  { key:"beanie",      label:"Beanie",       price:22,  slot:"head", group:"Hats",     blurb:"A snug knit cap with a pom." },
+  { key:"cap",         label:"Ball cap",     price:24,  slot:"head", group:"Hats",     blurb:"Brim to the side, face in the clear." },
+  { key:"bucket",      label:"Bucket hat",   price:26,  slot:"head", group:"Hats",     blurb:"Floppy brim, worn tipped back." },
+  { key:"sunhat",      label:"Sun hat",      price:30,  slot:"head", group:"Hats",     blurb:"A woven straw hat pushed back off the face." },
+  { key:"partyhat",    label:"Party hat",    price:20,  slot:"head", group:"Hats",     blurb:"Because every day could be a birthday." },
+  { key:"crown",       label:"Crown",        price:120, slot:"head", group:"Regalia",  blurb:"For the cove's most distinguished loaf." },
 ];
 const ACC_BY_KEY = Object.fromEntries(ACCESSORIES.map(a => [a.key, a]));
 const ACC_LABEL  = Object.fromEntries(ACCESSORIES.map(a => [a.key, a.label.toLowerCase()]));
+const ACC_SLOTS  = ["neck", "ear", "face", "head"];   // also the draw order (head on top)
+const ACC_SLOT_LABEL = { neck:"Neck", ear:"Ear", face:"Face", head:"Hat" };
+function accSlot(key) { return (ACC_BY_KEY[key] || {}).slot; }
+function catWears(c, key) { return !!(c && c.worn && c.worn.includes(key)); }
+function wornList(c) {   // in draw / display order
+  const w = (c && c.worn) || [];
+  return ACC_SLOTS.flatMap(s => w.filter(k => accSlot(k) === s));
+}
+function normalizeWorn(list) {   // at most one item per slot, valid keys only
+  const out = [];
+  for (const k of (list || [])) {
+    const a = ACC_BY_KEY[k];
+    if (a && !out.some(w => ACC_BY_KEY[w].slot === a.slot)) out.push(k);
+  }
+  return out;
+}
 
 function accOwned(c, key) { return !key || !!(c && c.owned && c.owned.includes(key)); }
-function equipAccessory(c, key) {                 // key falsy = take it off; caller ensures it's owned/free
+function equipAccessory(c, key, forceOn) {
   if (!c) return;
-  c.accessory = key || null;
-  ensureAudio(); tone(523.25, 0.06, "sine", 0.035); if (key) tone(659.25, 0.07, "sine", 0.03, 0.05);
+  if (!Array.isArray(c.worn)) c.worn = [];
+  if (!key) {
+    c.worn = [];                                       // "Bare" — take everything off
+  } else {
+    const slot = accSlot(key), had = c.worn.includes(key);
+    c.worn = c.worn.filter(k => accSlot(k) !== slot);  // clear this body zone
+    if (!had || forceOn) c.worn.push(key);             // tapping a worn item again takes it off
+  }
+  ensureAudio(); tone(523.25, 0.06, "sine", 0.035); if (c.worn.length) tone(659.25, 0.07, "sine", 0.03, 0.05);
   spawnParticles(c.x, c.y - 22, "twinkle", 6);
   save();
 }
-function buyAccessory(c, key) {                   // buy + wear, 1:1; returns true on success
+function buyAccessory(c, key) {                   // buy + wear; returns true on success
   const a = ACC_BY_KEY[key]; if (!a || !c) return false;
-  if (accOwned(c, key)) { equipAccessory(c, key); return true; }
+  if (accOwned(c, key)) { equipAccessory(c, key, true); return true; }
   if (G.shells < a.price) { toast(`${a.label} is ◈${a.price} — not quite enough shells yet.`); return false; }
   G.shells -= a.price;
   (c.owned || (c.owned = [])).push(key);
-  c.accessory = key;
+  equipAccessory(c, key, true);
   sfx("buy");
   spawnParticles(c.x, c.y - 20, "twinkle", 9);
   logMoment("🎀", `${c.name} got ${/^[aeiou]/i.test(a.label) ? "an" : "a"} ${a.label.toLowerCase()}.`);
@@ -1824,16 +1860,24 @@ function renderWardrobe(c) {
   if (!cc.dress) return;
   if (!c || c.mascot) { cc.dress.hidden = true; cc.dress.innerHTML = ""; return; }
   cc.dress.hidden = false;
-  const cur = c.accessory || "";
-  const own = (c.owned || []).filter(k => ACC_BY_KEY[k]);
-  const chip = (key, label, cls = "") =>
-    `<button data-acc="${key}" class="${cls}${cur === key ? " on" : ""}">${label}</button>`;
-  cc.dress.innerHTML =
-    `<div class="dl">Dress up</div><div class="chips">` +
-    chip("", "Bare") +
-    own.map(k => chip(k, ACC_BY_KEY[k].label)).join("") +
-    `<button data-shop="1" class="acc-more">＋ Shop</button>` +
-    `</div>`;
+  const worn = new Set(c.worn || []);
+  const bySlot = {};
+  for (const k of (c.owned || [])) { const a = ACC_BY_KEY[k]; if (a) (bySlot[a.slot] = bySlot[a.slot] || []).push(k); }
+  const slots = ACC_SLOTS.filter(s => bySlot[s]);
+  let html = `<div class="dl">Dress up</div>`;
+  if (!slots.length) {
+    html += `<div class="chips"><button data-shop="1" class="acc-more">＋ Shop for a look</button></div>`;
+  } else {
+    for (const s of slots) {
+      html += `<div class="dress-slot"><span class="ds-l">${ACC_SLOT_LABEL[s]}</span><span class="chips">` +
+        bySlot[s].map(k => `<button data-acc="${k}" class="${worn.has(k) ? "on" : ""}">${ACC_BY_KEY[k].label}</button>`).join("") +
+        `</span></div>`;
+    }
+    html += `<div class="chips">` +
+      (worn.size ? `<button data-acc="" class="acc-bare">Bare</button>` : ``) +
+      `<button data-shop="1" class="acc-more">＋ Shop</button></div>`;
+  }
+  cc.dress.innerHTML = html;
   cc.dress.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
     if (!cardCat) return;
     if (b.dataset.shop) { openShopDress(cardCat); return; }
@@ -1880,7 +1924,7 @@ let cardCat = null, cardTimer = 0;
 function showCatCard(c) {
   cardCat = c; cardTimer = 6;
   cc.name.textContent = c.name;
-  const acc = c.accessory ? `  ·  ${ACC_LABEL[c.accessory] || c.accessory}` : "";
+  const acc = (c.worn && c.worn.length) ? "  ·  " + wornList(c).map(k => ACC_LABEL[k] || k).join(", ") : "";
   cc.coatEl.textContent = (c.mascot
     ? "the cove's founder  ·  never leaves"
     : c.coat.name + (c.isKitten
@@ -2131,8 +2175,8 @@ function renderShopDress(list) {
   bar.innerHTML =
     `<div class="dress-cats">` + cs.map((x, i) =>
       `<button data-ci="${i}" class="${x === c ? "on" : ""}">${x.name}</button>`).join("") + `</div>` +
-    `<div class="dress-now">Wearing: <b>${c.accessory ? ACC_BY_KEY[c.accessory].label : "nothing"}</b>` +
-      (c.accessory ? ` <button class="btn small" data-buy="">take it off</button>` : ``) + `</div>`;
+    `<div class="dress-now">Wearing: <b>${c.worn && c.worn.length ? wornList(c).map(k => ACC_BY_KEY[k].label).join(", ") : "nothing"}</b>` +
+      (c.worn && c.worn.length ? ` <button class="btn small" data-buy="">take it all off</button>` : ``) + `</div>`;
   bar.querySelectorAll(".dress-cats button").forEach(b => b.onclick = () => {
     shopDressCat = cs[+b.dataset.ci]; renderShop(); list.scrollTop = 0;
   });
@@ -2141,14 +2185,14 @@ function renderShopDress(list) {
   for (const grp of [...new Set(ACCESSORIES.map(a => a.group))]) {
     list.appendChild(shopHead(grp));
     for (const a of ACCESSORIES.filter(x => x.group === grp)) {
-      const owned = accOwned(c, a.key), worn = c.accessory === a.key;
+      const owned = accOwned(c, a.key), worn = catWears(c, a.key);
       const row = document.createElement("div");
       row.className = "shop-item dress-item" + (worn ? " worn" : "");
       row.innerHTML =
         `<canvas class="dress-prev" width="46" height="46"></canvas>
          <div class="txt"><div class="name">${a.label}</div>
            <div class="desc">${worn ? "Worn now" : owned ? "In " + c.name + "'s wardrobe" : a.blurb}</div></div>
-         <button class="btn primary" data-buy="${a.key}" ${worn ? "disabled" : ""}>${worn ? "on" : owned ? "wear" : "◈ " + a.price}</button>`;
+         <button class="btn primary" data-buy="${a.key}">${worn ? "take off" : owned ? "wear" : "◈ " + a.price}</button>`;
       drawAccPreview(row.querySelector("canvas"), a.key, c.coat);
       list.appendChild(row);
     }
@@ -2156,6 +2200,7 @@ function renderShopDress(list) {
   list.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => {
     const k = b.dataset.buy;
     if (k === "") equipAccessory(c, null);
+    else if (catWears(c, k)) equipAccessory(c, k);      // "take off"
     else if (!buyAccessory(c, k)) return;
     if (cardCat === c) { renderWardrobe(c); cardTimer = 8; }
     renderShop();
@@ -2931,7 +2976,10 @@ function grantSupporter() {
   G.ads.pending = false;
   G.pearls += 50;
   const mid = cats.find(c => c.mascot);
-  if (mid) mid.accessory = "bow";        // a little supporter ribbon for Midknight
+  if (mid) {                             // a little supporter ribbon for Midknight (replaces his bell)
+    mid.worn = normalizeWorn([...(mid.worn || []).filter(k => accSlot(k) !== "neck"), "bow"]);
+    if (!mid.owned.includes("bow")) mid.owned.push("bow");
+  }
   save(); syncHud();
   sfx("buy");
   spawnParticles(W / 2, H * 0.5, "twinkle", 16);
@@ -5026,7 +5074,7 @@ function drawCat(g, c, isPhoto) {
 
   g.restore(); // face tilt
 
-  if (c.accessory) drawAccessory(g, c.accessory, P, coat, kit);
+  if (c.worn && c.worn.length) for (const k of wornList(c)) drawAccessory(g, k, P, coat, kit);
 
   // grooming: a front paw raised to the muzzle, bobbing with the lick
   if (grooming) {
@@ -5792,7 +5840,12 @@ function advLoot(cat, dest) {
   if (rnd() < 0.55 || has("climber")) { reward.keepsake = pick(keepPool); lines.push(`brought back ${reward.keepsake.label}`); }
   if (has("glutton")) { reward.keepsake = { emoji: "📖", label: `a recipe from the ${dest === "island" ? "island" : "trail"}` }; lines.push("came back with a new recipe"); }
   if (has("climber")) { reward.shells += 60; lines.push("got somewhere the others couldn't and pocketed the difference"); }
-  if (has("playful") && !cat.accessory) { const f = pick(["bow", "bandana", "flower", "scarf"]); cat.accessory = f; if (cat.owned && !cat.owned.includes(f)) cat.owned.push(f); lines.push(`came home wearing ${/^[aeiou]/i.test(ACC_LABEL[f] || f) ? "an" : "a"} ${ACC_LABEL[f] || f} it found`); }
+  if (has("playful") && !(cat.worn && cat.worn.length)) {
+    const f = pick(["bow", "bandana", "flower", "scarf"]);
+    cat.worn = normalizeWorn([...(cat.worn || []), f]);
+    if (cat.owned && !cat.owned.includes(f)) cat.owned.push(f);
+    lines.push(`came home wearing ${/^[aeiou]/i.test(ACC_LABEL[f] || f) ? "an" : "a"} ${ACC_LABEL[f] || f} it found`);
+  }
   if (has("lazy")) lines.push("took the very scenic route");
   if (rnd() < (dest === "island" ? 0.28 : 0.12)) { reward.pearls = dest === "island" ? 3 : 1; lines.push(reward.pearls === 1 ? "turned up a pearl" : `turned up ${reward.pearls} pearls`); }
   let mapP = { fishing: 0.06, forest: 0.12, island: 0.22 }[dest];
@@ -5883,7 +5936,7 @@ function startAdventure(name, dest) {
   if (i < 0) return;
   const c = cats[i];
   const data = { name: c.name, traits: c.traits, coatKey: c.coatKey, markSeed: c.markSeed, star: c.star,
-    mascot: c.mascot, bornAt: c.bornAt, mood: Math.round(c.mood), accessory: c.accessory ?? null, owned: c.owned || [] };
+    mascot: c.mascot, bornAt: c.bornAt, mood: Math.round(c.mood), worn: c.worn || [], owned: c.owned || [] };
   cats.splice(i, 1);
   if (typeof cardCat !== "undefined" && cardCat === c) hideCatCard();
   const mins = ADV_DESTS[dest].mins * (c.traits.includes("lazy") ? 1.6 : 1);
