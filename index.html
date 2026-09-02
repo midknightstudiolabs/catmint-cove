@@ -318,7 +318,12 @@
   .cc-stars{font-size:.85rem;letter-spacing:1px;margin-bottom:.5rem;}
 
   /* ---- cat card ---- */
-  #catcard{width:min(84vw,264px);padding:.8rem .95rem .9rem;transition:opacity .15s ease;}
+  #catcard{width:min(84vw,264px);padding:.8rem .95rem .9rem;transition:opacity .16s ease, transform .16s ease;}
+  #catcard:not([hidden]){animation:cardIn .18s ease both;}
+  #catcard.leaving{opacity:0;transform:translateY(5px);pointer-events:none;}
+  @keyframes cardIn{from{opacity:0;transform:translateY(5px);}}
+  #shop:not([hidden]),#dex:not([hidden]),#today:not([hidden]){animation:sheetIn .16s ease both;}
+  @keyframes sheetIn{from{opacity:0;}}
   #catcard h2{font-size:1.02rem;margin-bottom:.1rem;}
   .cc-coat{font-size:.74rem;color:var(--ink-faint);text-transform:capitalize;margin-bottom:.4rem;}
   .traitrow{display:flex;gap:.35rem;flex-wrap:wrap;margin:.15rem 0 .6rem;}
@@ -1877,6 +1882,7 @@ function showCatCard(c) {
   cc.rehomeBtn.hidden = c.mascot || cats.length <= 3;   // only once the cove is comfortably full
   cc.rehomeBtn.textContent = `Find them a new home  ·  ◈ ${rw.shells}${rw.pearls ? ` ✦ ${rw.pearls}` : ""}`;
   renderWardrobe(c);
+  clearTimeout(cc.el._hideT); cc.el.classList.remove("leaving");
   cc.el.hidden = false;
   positionCard(c);
   updateCatCard();
@@ -1907,7 +1913,14 @@ function updateCatCard() {
   cc.mood.style.width = m + "%";
   cc.moodpct.textContent = m + "%";
 }
-function hideCatCard() { cc.el.hidden = true; cardCat = null; }
+function hideCatCard(instant) {
+  cardCat = null;
+  const el = cc.el;
+  clearTimeout(el._hideT);
+  if (instant || el.hidden) { el.hidden = true; el.classList.remove("leaving"); return; }
+  el.classList.add("leaving");
+  el._hideT = setTimeout(() => { el.hidden = true; el.classList.remove("leaving"); }, 180);
+}
 
 /* ---------- shop ---------- */
 const SHOP_TABS = [
@@ -1986,7 +1999,8 @@ let shopDressCat = null;
 function openShopDress(cat) {
   shopTab = "dress";
   if (cat && !cat.mascot) shopDressCat = cat;
-  if (panels.shop.hidden) togglePanel("shop"); else { renderShop(); document.getElementById("shopList").scrollTop = 0; }
+  if (panels.shop.hidden) togglePanel("shop");
+  else { hideCatCard(); hideToast(); renderShop(); document.getElementById("shopList").scrollTop = 0; }
 }
 function shopHead(text) { const h = document.createElement("div"); h.className = "shop-cat"; h.textContent = text; return h; }
 
@@ -2414,6 +2428,7 @@ function togglePanel(name) {
   const wasOpen = !panels[name].hidden;
   closeAllPanels();
   if (!wasOpen) {
+    hideCatCard(); hideToast();            // clear anything floating over the cove before the panel comes up
     panels[name].hidden = false;
     if (name === "shop") renderShop();
     if (name === "dex") renderDex();
@@ -2741,6 +2756,7 @@ function toast(msg, secs = 3.4) {
   toastEl.classList.add("on");
   toastTimer = secs;
 }
+function hideToast() { toastEl.classList.remove("on"); toastTimer = 0; }
 const TIPS = {
   first_pet: "Petting lifts mood — and a happy cat produces more.",
   first_collect: "Those are your shells. Tap them before they fade.",
