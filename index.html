@@ -1926,12 +1926,13 @@ document.querySelectorAll("[data-close]").forEach(b =>
 const shopEl = panels.shop;
 
 /* ---------- Catdex render ---------- */
-function miniCat(canvasEl, coatKey, star) {
+function miniCat(canvasEl, coatKey, star, state) {
   const g = canvasEl.getContext("2d");
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, canvasEl.width, canvasEl.height);
   const fake = new Cat({ coatKey, star: star || 1, bornAt: 0, x: 0, y: 0 });
-  fake.state = "loafing"; fake.blink = 3; fake.bob = 0.6; fake.tail = 0.3; fake.trotting = false;
+  fake.state = state || "loafing"; fake.blink = 3; fake.bob = 0.6; fake.tail = 0.3; fake.trotting = false;
+  if (state === "sleeping") fake.markSeed = 1;   // show the curled-up sleeper
   g.save();
   g.translate(canvasEl.width / 2, canvasEl.height - 6);
   g.scale(1.15, 1.15);
@@ -2055,6 +2056,8 @@ const TUT_STEPS = [
     body:"Coax a new cat, or open the Shop for bowls, beds and toys. The right comfort keeps each personality happy." },
   { coat:"tortie", star:4, title:"Keep your streak",
     body:"Finish the 3 goals in Today each day to build a streak. There's no way to lose — just a calm cove to tend." },
+  { coat:"greywhite", star:2, pose:"sleeping", title:"Rainy days",
+    body:"Tap 🌙 for a rainy-day rest. Everyone pads inside — a cat on the sill, one by the fire, the rest in a pile — with real rain playing. Leave it running while you work, or fall asleep to it with your cats." },
 ];
 let tutIdx = 0;
 const tutEl = document.getElementById("tut");
@@ -2067,7 +2070,7 @@ function renderTutStep() {
   document.getElementById("tutNext").textContent = tutIdx === TUT_STEPS.length - 1 ? "Start playing" : "Next";
   document.getElementById("tutDots").innerHTML =
     TUT_STEPS.map((_, i) => `<i class="${i === tutIdx ? "on" : ""}"></i>`).join("");
-  try { miniCat(tutArt, s.coat, s.star); } catch (e) {}
+  try { miniCat(tutArt, s.coat, s.star, s.pose); } catch (e) {}
 }
 function openTutorial() {
   tutIdx = 0;
@@ -2872,13 +2875,33 @@ function restLayout() {
 }
 function restSeatCats() {
   const L = restLayout();
+  // deterministic per rest session (so a resize doesn't reshuffle mid-nap) but
+  // different every time you start one — a fresh cat gets the windowsill
+  const rnd = mulberry32(((restStartedAt || Date.now()) >>> 0) ^ 0x5ca7);
   const list = [...cats];
-  const seat = (c, o) => Object.assign(c, { vx: 0, vy: 0, walkAmt: 0, walk: 0, blink: 3, stateDur: 1e6, stateT: Math.random() * 3, _station: null, _fx: null, ...o });
+  const seat = (c, o) => Object.assign(c, { vx: 0, vy: 0, walkAmt: 0, walk: 0, blink: 3, stateDur: 1e6, stateT: rnd() * 3, _station: null, _fx: null, ...o });
+
+  // Midknight always claims the fire (founder's privilege)
   const fireC = list.find(c => c.mascot) || list[0];
   if (fireC) seat(fireC, { x: L.fireX, y: L.fireY, face: -1, state: "loafing" });
-  const rest = list.filter(c => c !== fireC);
-  if (rest[0]) seat(rest[0], { x: L.sillX, y: L.sillY, face: -1, state: "loafing" });
-  rest.slice(1).forEach((c, i) => seat(c, {
+  const others = list.filter(c => c !== fireC);
+
+  // windowsill: the cat most likely to sit and watch the rain, weighted + rolled
+  let sill = null;
+  if (others.length) {
+    const w = others.map(c => 1
+      + (c.traits.includes("curious") ? 3 : 0) + (c.traits.includes("chatty") ? 2 : 0)
+      + (c.traits.includes("climber") ? 2 : 0) + (c.traits.includes("bold") ? 1 : 0));
+    let t = w.reduce((a, b) => a + b, 0), r = rnd() * t;
+    for (let i = 0; i < others.length; i++) { r -= w[i]; if (r <= 0) { sill = others[i]; break; } }
+    sill = sill || others[0];
+    seat(sill, { x: L.sillX, y: L.sillY, face: rnd() < 0.5 ? -1 : 1, state: "loafing" });
+  }
+
+  // everyone else: a shuffled nap pile on the rug
+  const pile = others.filter(c => c !== sill);
+  for (let i = pile.length - 1; i > 0; i--) { const j = (rnd() * (i + 1)) | 0; [pile[i], pile[j]] = [pile[j], pile[i]]; }
+  pile.forEach((c, i) => seat(c, {
     x: L.napX + ((i % 3) - 1) * W * 0.075 + (Math.floor(i / 3) % 2) * W * 0.035,
     y: L.napY + Math.floor(i / 3) * H * 0.05,
     face: i % 2 ? 1 : -1, state: "sleeping",
