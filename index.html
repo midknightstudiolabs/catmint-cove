@@ -1543,8 +1543,10 @@ function seedStarters() {
   // The second cat arrives on-screen during the cold open (see startColdOpen /
   // scriptArrival); a returning cove that never ran the intro is covered by
   // endColdOpen's guarantee.
-  spawnCat({ coatKey:"midknight", name:"Midknight", mascot:true, star:2, traits:["grumpy","cuddly"],
+  const mk = spawnCat({ coatKey:"midknight", name:"Midknight", mascot:true, star:2, traits:["grumpy","cuddly"],
     bornAt:grown, x: W * 0.46, y: H * 0.62, mood: 70 });
+  // the very first frame shows him mid-wash, not a statue
+  if (mk) { mk.state = "grooming"; mk.stateT = 0; mk.stateDur = rand(5, 8); }
   G.midknightSeeded = true;
 }
 // a friendly newcomer, scripted: walks in, celebratory reveal, legible trait.
@@ -5170,6 +5172,61 @@ function drawForeground(g, t, sky) {
   const night = sky ? 1 - sky.df : 0;
   for (const f of foreground) drawGrassTuft(g, f, t, night);
 }
+
+/* ---------- a butterfly drifts through in daylight ---------- */
+let _butterfly = null, _bflyTimer = rand(5, 16), _bflyCol = "#efc45a";
+function _dayLit() { return window._sky ? window._sky.df > 0.4 : true; }
+function updateButterfly(dt) {
+  if (_reduceMotion) return;
+  if (_butterfly) {
+    const b = _butterfly;
+    b.t += dt; b.wing += dt * (b.rest > 0 ? 4 : 17);
+    if (b.rest > 0) { b.rest -= dt; if (b.rest <= 0) b.pick(); }
+    else {
+      const dx = b.tx - b.x, dy = b.ty - b.y, d = Math.hypot(dx, dy) || 1;
+      b.x += (dx / d) * 46 * dt + Math.sin(b.t * 6) * 14 * dt;
+      b.y += (dy / d) * 40 * dt + Math.cos(b.t * 5) * 12 * dt;
+      if (d < 14) { if (Math.random() < 0.4) { b.rest = rand(1.6, 3.2); } else b.pick(); }
+    }
+    if (b.x < -30 || b.x > W + 30 || b.t > 26 || !_dayLit()) _butterfly = null;
+    return;
+  }
+  _bflyTimer -= dt;
+  if (_bflyTimer <= 0 && _dayLit() && G && G.tutorialDone !== undefined) {
+    _bflyTimer = rand(28, 80);
+    const fromL = Math.random() < 0.5;
+    _bflyCol = pick(["#efc45a", "#e78fae", "#8fb0e0", "#f0efe6"]);
+    _butterfly = {
+      x: fromL ? -20 : W + 20, y: rand(H * 0.5, catFloor() - 30),
+      tx: 0, ty: 0, t: 0, wing: 0, rest: 0,
+      pick() {
+        const fl = foreground.filter(f => f.flower);
+        if (fl.length && Math.random() < 0.5) { const f = pick(fl); this.tx = f.x; this.ty = f.y - 14 * f.s; }
+        else { this.tx = rand(W * 0.15, W * 0.85); this.ty = rand(H * 0.48, catFloor() - 24); }
+      },
+    };
+    _butterfly.pick();
+  }
+}
+function drawButterfly(g) {
+  if (!_butterfly) return;
+  const b = _butterfly;
+  const flap = 0.35 + Math.abs(Math.sin(b.wing)) * 0.65;
+  g.save();
+  g.translate(b.x, b.y);
+  // faint shadow when near the ground / resting
+  if (b.rest > 0) { g.fillStyle = "rgba(40,30,14,0.10)"; g.beginPath(); g.ellipse(0, 10, 6, 2, 0, 0, 7); g.fill(); }
+  g.fillStyle = _bflyCol;
+  for (const s of [-1, 1]) {
+    g.beginPath();
+    g.ellipse(s * 4 * flap, -1, 4.4 * flap, 5.2, s * 0.5, 0, 7); g.fill();
+    g.beginPath();
+    g.ellipse(s * 3.4 * flap, 4, 3 * flap, 3.4, s * 0.4, 0, 7); g.fill();
+  }
+  g.strokeStyle = "rgba(60,44,30,0.55)"; g.lineWidth = 1.1;
+  g.beginPath(); g.moveTo(0, -4); g.lineTo(0, 6); g.stroke();
+  g.restore();
+}
 function puff(x, y, s) {
   ctx.beginPath();
   ctx.ellipse(x, y, 34*s, 16*s, 0, 0, 7);
@@ -6733,6 +6790,7 @@ function simulate(dt) {
   updateDepartures(dt);
   updateTokens(dt);
   updateFX(dt);
+  updateButterfly(dt);
   if (toastTimer > 0) { toastTimer -= dt; if (toastTimer <= 0) toastEl.classList.remove("on"); }
   if (cardTimer > 0) { cardTimer -= dt; if (cardTimer <= 0) hideCatCard(); }
   if (shakeAmt > 0) shakeAmt = Math.max(0, shakeAmt - dt * 26);
@@ -6765,6 +6823,7 @@ function renderScene(dt) {
     }
   }
   drawDepartures(ctx);
+  drawButterfly(ctx);
   for (const tk of fieldTokens) drawToken(ctx, tk);
   drawFX(ctx);
 
