@@ -1184,6 +1184,7 @@ function applySaveCode(code) {
 /* ---------- attractors (things cats walk to and use) + decor (scenery) ---------- */
 let attractors = [];
 let decor = [];        // trees / cottages / flower patches — scenery, trees & cottages are also usable
+let waterZones = [];   // {x,y,rx,ry} ellipses cats route around and never nap in
 function seededPos(seed, backness) {
   const r = mulberry32(seed);
   return { x: clamp(W * (0.1 + 0.8 * r()) , 44, W - 44),
@@ -1254,8 +1255,15 @@ function rebuildDecor() {
 function rebuildAttractors() {
   rebuildDecor();                       // decor first so usable pieces have stable positions
   attractors = [];
-  // food / toy / bed — placed clear of decor, stations and each other
-  const avoid = decor.map(d => ({ x: d.x, y: d.y, r: d.type === "cottage" ? 46 : d.type === "station" || d.type === "project" ? 44 : d.type === "tree" ? 38 : 24 }));
+  // water bodies cats keep off of (open water only — the dock/near edge stays walkable)
+  waterZones = [];
+  for (const d of decor) {
+    if (d.type === "station" && d.station === "fishing") waterZones.push({ x: d.x + 74, y: d.y + 22, rx: 58, ry: 21 });
+    if (d.type === "project" && d.pid === "dock")        waterZones.push({ x: d.x + 6,  y: d.y + 10, rx: 44, ry: 15 });
+  }
+  // food / toy / bed — placed clear of decor, stations, water and each other
+  const avoid = decor.map(d => ({ x: d.x, y: d.y, r: d.type === "cottage" ? 46 : d.type === "station" || d.type === "project" ? 44 : d.type === "tree" ? 38 : 24 }))
+    .concat(waterZones.map(w => ({ x: w.x, y: w.y, r: Math.max(w.rx, w.ry) * 0.9 })));
   const comforts = [];
   for (let i = 0; i < G.bowls; i++) comforts.push({ type: "food", r: 26, seed: 12001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
   for (let i = 0; i < G.toys;  i++) comforts.push({ type: "toy",  r: 24, seed: 13001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
@@ -1609,7 +1617,10 @@ class Cat {
   get coat() { return COAT_BY_KEY[this.coatKey] || COATS[0]; }
   get growth() { return clamp((Date.now() - this.bornAt) / KITTEN_MS, 0, 1); }   // 0 = newborn, 1 = grown
   get isKitten() { return this.growth < 1; }
-  get ageScale() { return 0.56 + this.growth * 0.44; }                            // little kitten → full size
+  get lifeStage() { const g = this.growth; return g < 0.34 ? "kitten" : g < 0.72 ? "teen" : "adult"; }
+  // tiny kitten → half-grown teen → adult. adult tops out at 0.8 (was 1.0 — cats
+  // were reading oversized); grows quickly early, then eases to full size.
+  get ageScale() { return 0.5 + Math.pow(this.growth, 0.72) * 0.3; }
   speedMul() { return (this.t1.speed + this.t2.speed) / 2; }
   moodMul() { return 0.6 + (this.mood / 100) * 0.8; }        // 0.6 .. 1.4
   traitRate() { return (this.t1.rate + this.t2.rate) / 2; }
@@ -1868,7 +1879,7 @@ const STATE_LABEL = {
   arriving:"finding a spot", loafing:"loafing", sleeping:"fast asleep", eating:"at the food bowl",
   playing:"playing", socializing:"socializing", exploring:"exploring", knocking:"knocking things over",
   sulking:"sulking", being_pet:"being petted", seeking:"heading somewhere", grooming:"washing up",
-  scratching:"having a good scratch", stretching:"having a big stretch", zooming:"got the zoomies",
+  scratching:"having a good scratch", stretching:"having a big stretch", zooming:"got the zoomies", chasing:"on the hunt",
   fishing:"fishing off the dock", baking:"helping at the bakery", sunbathing:"in the sunbeam", rolling:"rolling in the catmint",
 };
 
@@ -1930,6 +1941,13 @@ function decide(c) {
   const bedish = nearestAttractor(c, "bed") || nearestAttractor(c, "cottage") || nearestAttractor(c, "tree");
   add((lazyish ? 4 : 2.6) + (c.mood < 55 ? 1.5 : 0) + (bedish ? 1.2 : 0), () => {
     return go(c, "sleeping", rand(bedish ? 22 : 16, bedish ? 38 : 28), napSpot(c));
+  });
+
+  // --- some cats would rather nap out of sight, inside the cottage ---
+  const cotD = decor.find(d => d.type === "cottage" && !cats.some(o => o !== c && o.state === "indoors" && o._cotX === d.x));
+  if (cotD) add((lazyish || c.traits.includes("shy") ? 2.4 : 1.1) + (c.mood < 62 ? 0.7 : 0), () => {
+    c._arriveState = "indoors"; c._arriveDur = rand(28, 56); c._cotX = cotD.x; c._cotY = cotD.y;
+    return go(c, "seeking", 16, { x: cotD.x, y: cotD.y + 10 });
   });
 
   // --- grooming: a cat washing itself. short, common, adorable ---
@@ -2057,8 +2075,12 @@ function go(c, state, dur, target) {
   if (c._fx && c._fx.p === "bake") _bakeOvenLit = Math.max(0, _bakeOvenLit - 1);
   c._fx = null;
   if (target) {
-    c.tx = clamp(target.x, 24, W - 24);
-    c.ty = clamp(target.y, H * 0.52, catFloor());
+    let tx = clamp(target.x, 24, W - 24), ty = clamp(target.y, H * 0.52, catFloor());
+    for (const wz of waterZones) {           // never aim into open water
+      const nx = (tx - wz.x) / wz.rx, ny = (ty - wz.y) / wz.ry, nd = Math.hypot(nx, ny);
+      if (nd < 1.05 && nd > 0.001) { tx = wz.x + (nx / nd) * wz.rx * 1.1; ty = wz.y + (ny / nd) * wz.ry * 1.1; }
+    }
+    c.tx = tx; c.ty = ty;
   } else {
     c.tx = c.x; c.ty = c.y;           // stay put — and shed momentum so the stop is clean
     if (c.vx !== undefined) { c.vx *= 0.3; c.vy *= 0.3; }
@@ -2165,9 +2187,9 @@ function updateCat(c, dt) {
   if (c.petBuff > 0) c.petBuff -= dt;
 
   /* -------- steering: velocity-based, damped, no teleporting -------- */
-  const travelling = ["arriving", "seeking", "exploring", "socializing", "knocking", "zooming"].includes(c.state);
+  const travelling = ["arriving", "seeking", "exploring", "socializing", "knocking", "zooming", "chasing"].includes(c.state);
   // "held" cats hold their chosen spot — they still push others away but aren't pushed themselves
-  const HELD_STATES = ["being_pet", "sleeping", "eating", "baking", "sunbathing", "fishing", "grooming", "rolling", "scratching", "stretching"];
+  const HELD_STATES = ["being_pet", "sleeping", "eating", "baking", "sunbathing", "fishing", "grooming", "rolling", "scratching", "stretching", "indoors"];
   const held = HELD_STATES.includes(c.state);
   let ax = 0, ay = 0;
 
@@ -2235,6 +2257,21 @@ function updateCat(c, dt) {
         }
       }
     }
+    // open water — a cat won't wade in
+    for (const wz of waterZones) {
+      const nx = (c.x - wz.x) / wz.rx, ny = (c.y - wz.y) / wz.ry, nd = Math.hypot(nx, ny);
+      if (nd < 1.12) {
+        let ox = c.x - wz.x, oy = c.y - wz.y, od = Math.hypot(ox, oy) || 1;
+        const f = (1.12 - nd) * 150;
+        ax += (ox / od) * f; ay += (oy / od) * f;
+        decorShove = true;
+        if (travelling) {
+          const tx = -oy / od, ty = ox / od;
+          const s = ((c.tx - c.x) * tx + (c.ty - c.y) * ty) >= 0 ? 1 : -1;
+          ax += tx * s * 95; ay += ty * s * 95;
+        }
+      }
+    }
   }
   const shoving = (crowded && crowdPush >= 0.3) || decorShove;   // actively stepping clear of an overlap
 
@@ -2275,6 +2312,16 @@ function updateCat(c, dt) {
         c.x = d.x + (ox / od) * cr; c.y = cy + (oy / od) * cr;
         const into = (c.vx * ox + c.vy * oy) / od;               // velocity component heading inward
         if (into < 0) { c.vx -= (ox / od) * into; c.vy -= (oy / od) * into; }
+      }
+    }
+    // never end a step standing in open water — pop out to the nearest bank
+    if (!held) for (const wz of waterZones) {
+      const nx = (c.x - wz.x) / wz.rx, ny = (c.y - wz.y) / wz.ry, nd = Math.hypot(nx, ny);
+      if (nd < 1 && nd > 0.001) {
+        c.x = wz.x + (nx / nd) * wz.rx;
+        c.y = wz.y + (ny / nd) * wz.ry;
+        const into = (c.vx * (c.x - wz.x) + c.vy * (c.y - wz.y));
+        if (into < 0) { c.vx *= 0.25; c.vy *= 0.25; }
       }
     }
   }
@@ -2401,6 +2448,32 @@ function updateCat(c, dt) {
     }
   }
 
+  // chasing a butterfly or the bird — retarget onto the prey, pounce when close
+  if (c.state === "chasing") {
+    const bird = c._chaseTgt === "bird";
+    const prey = bird ? _bird : _butterfly;
+    const alive = prey && (bird ? prey.phase === "perch" || prey.phase === "in" : true);
+    if (!alive || c.stateT > c.stateDur) {
+      if (prey && prey.chaser === c) prey.chaser = null;
+      c._chaseTgt = null;
+      go(c, "grooming", rand(1.6, 3), null);   // lost it — sit down and pretend that was the plan
+      return;
+    }
+    c.tx = clamp(prey.x, 24, W - 24);
+    c.ty = bird ? catFloor() - 14 : clamp(prey.y + 10, H * 0.5, catFloor());
+    const near = bird ? Math.abs(prey.x - c.x) < 20 : Math.hypot(prey.x - c.x, prey.y + 10 - c.y) < 24;
+    if (near) {
+      c.squash = 1; spawnParticles(c.x, c.y - 4, "dust", 4);
+      floatText(c.x, c.y - 26, "!", "#e8b45a");
+      c.mood = clamp(c.mood + 3, 0, 100);
+      if (!bird && _butterfly) { _butterfly.rest = 0; _butterfly.pick(); _butterfly.chaser = null; }
+      if (bird && _bird) { _bird.phase = "out"; _bird.dir = c.x < _bird.x ? 1 : -1; _bird.chaser = null; }
+      c._chaseTgt = null;
+      go(c, "grooming", rand(1.6, 3.2), null);
+    }
+    return;
+  }
+
   // distance to current target, for state transitions
   const atTarget = Math.hypot(c.tx - c.x, c.ty - c.y) < 7;
 
@@ -2415,9 +2488,17 @@ function updateCat(c, dt) {
       c._station = c._pendStation || null;
       c._pendStation = null;
       if (c.state === "scratching") c.face = 1;   // always stand left of the post, rake toward it
+      if (c.state === "indoors") { c.x = c._cotX; c.y = c._cotY - 1; c.vx = 0; c.vy = 0; c.face = -1; }
       if (c._station === "garden") spawnParticles(c.x, c.y - 10, "leaf", 5);
     }
     else if (c.stateT > 14) { c._pendStation = null; decide(c); }
+    return;
+  }
+  if (c.state === "indoors") {
+    if (c.stateT > c.stateDur) {
+      const cx = c._cotX, cy = c._cotY; c._cotX = null;
+      go(c, "loafing", rand(3, 6), { x: cx + rand(-26, 26), y: cy + 42 });
+    }
     return;
   }
   if (c.state === "knocking") {
@@ -3052,7 +3133,7 @@ function showCatCard(c) {
     : c.visitor
     ? "Midknight's sidekick  ·  just visiting"
     : c.coat.name + (c.isKitten
-      ? `  ·  kitten (${Math.max(1, Math.round(c.growth * 20))}h old)`
+      ? `  ·  ${c.lifeStage} (${Math.max(1, Math.round(c.growth * 20))}h old)`
       : c.title ? `  ·  ${c.title}` : "  ·  adult")) + acc;
   cc.starsEl.innerHTML = c.mascot ? `<span style="color:${STAR_COL[2]};font-weight:700">★ Mascot</span>`
     : c.visitor ? `<span style="color:${STAR_COL[3]};font-weight:700">✦ Visitor</span>` : starGlyphs(c.star);
@@ -5679,6 +5760,29 @@ function drawButterfly(g) {
   g.restore();
 }
 
+// a playful / curious / young cat sometimes breaks off to chase the butterfly
+// (or stalk the bird while it's low). One chaser at a time per critter.
+function maybeGiveChase(dt) {
+  if (_reduceMotion || !G || !G.tutorialDone) return;
+  const critters = [];
+  if (_butterfly && !_butterfly.chaser) critters.push({ c: _butterfly, kind: "butterfly", x: _butterfly.x, y: _butterfly.y });
+  if (_bird && !_bird.chaser && _bird.phase === "perch")
+    critters.push({ c: _bird, kind: "bird", x: _bird.x, y: catFloor() - 14 });
+  for (const cr of critters) {
+    if (Math.random() > dt * 0.5) continue;
+    const cand = cats.filter(c => !c.visitor
+      && (c.state === "loafing" || c.state === "exploring" || c.state === "socializing")
+      && (c.isKitten || c.traits.includes("playful") || c.traits.includes("curious") || c.traits.includes("bold"))
+      && c.mood > 42 && Math.hypot(c.x - cr.x, c.y - cr.y) < 250);
+    if (!cand.length) continue;
+    const cat = cand.reduce((a, b) => Math.hypot(a.x - cr.x, a.y - cr.y) < Math.hypot(b.x - cr.x, b.y - cr.y) ? a : b);
+    cr.c.chaser = cat;
+    cat._chaseTgt = cr.kind;
+    go(cat, "chasing", rand(4.5, 8.5), { x: cr.x, y: cr.y + 10 });
+    if (Math.random() < 0.5) floatText(cat.x, cat.y - 26, cr.kind === "bird" ? "…" : "!", "#7aa86a");
+  }
+}
+
 /* ---------- a bird visits the cove sign now and then ---------- */
 let _bird = null, _birdTimer = rand(40, 110);
 function updateBird(dt) {
@@ -5744,17 +5848,18 @@ function drawAttractor(g, a) {
     g.strokeStyle = "rgba(0,0,0,0.14)"; g.lineWidth = 1.4;
     g.beginPath(); g.moveTo(-8, 6); g.quadraticCurveTo(0, -1, 8, 6);
     g.moveTo(-6, 10); g.quadraticCurveTo(2, 3, 8, 3); g.stroke();
-  } else if (a.type === "scratch") {     // an angled sisal scratch ramp on a wooden frame
-    g.fillStyle = "#7d6039"; roundRect(g, -19, 6, 38, 7, 2); g.fill();            // base
-    g.fillStyle = "#5b4634"; g.fillRect(-19, 11, 38, 2);
-    g.save(); g.translate(4, 3); g.rotate(-0.4);                                  // the ramp leans back
-    g.fillStyle = "#c9b487"; roundRect(g, -7, -36, 24, 40, 3); g.fill();          // sisal face
-    g.fillStyle = "#bda676"; roundRect(g, -7, -36, 24, 6, 3); g.fill();           // worn top edge
-    g.strokeStyle = "rgba(120,95,55,0.35)"; g.lineWidth = 1;
-    for (let y = -32; y <= 0; y += 3) { g.beginPath(); g.moveTo(-6, y); g.lineTo(16, y); g.stroke(); }
-    g.strokeStyle = "rgba(84,64,42,0.55)"; g.lineWidth = 1.5; g.lineCap = "round";
-    for (const dx of [-2, 3, 8]) { g.beginPath(); g.moveTo(dx, -26); g.lineTo(dx + 1.5, -8); g.stroke(); }  // claw tracks
-    g.restore();
+  } else if (a.type === "scratch") {     // a vertical sisal scratch pole on a round base
+    g.fillStyle = "#7d6039"; g.beginPath(); g.ellipse(0, 9, 15, 5.5, 0, 0, 7); g.fill();   // base
+    g.fillStyle = "#8f6f4a"; g.beginPath(); g.ellipse(0, 6, 12.5, 4.5, 0, 0, 7); g.fill();
+    g.fillStyle = "#c9b487"; roundRect(g, -5, -40, 10, 47, 4); g.fill();                    // the pole
+    g.fillStyle = "#bda676"; roundRect(g, -5, -40, 10, 5, 4); g.fill();                     // worn cap
+    g.strokeStyle = "rgba(120,95,55,0.28)"; g.lineWidth = 1;
+    for (let y = -36; y <= 3; y += 3.5) { g.beginPath(); g.moveTo(-4, y); g.lineTo(4, y - 1); g.stroke(); }   // sisal wind
+    g.strokeStyle = "rgba(84,64,42,0.5)"; g.lineWidth = 1.4; g.lineCap = "round";
+    for (const dx of [-2, 1.5]) { g.beginPath(); g.moveTo(dx, -24); g.lineTo(dx + 1, -7); g.stroke(); }        // claw tracks
+    g.strokeStyle = "#9a8258"; g.lineWidth = 1.3;                                           // a felt ball on a string
+    g.beginPath(); g.moveTo(3, -38); g.quadraticCurveTo(9, -34, 8, -27); g.stroke();
+    g.fillStyle = "#d98b3f"; g.beginPath(); g.arc(8, -25, 3.1, 0, 7); g.fill();
   } else {                               // cozy bed
     g.fillStyle = "#8f9c92"; roundRect(g, -22, -6, 44, 18, 9); g.fill();
     g.fillStyle = "#e7e2d2"; roundRect(g, -17, -8, 34, 12, 7); g.fill();
@@ -5829,6 +5934,46 @@ function drawDecor(g, d) {
     drawStation(g, d.station, d.seed >>> 0);
   } else if (d.type === "project") {
     drawProjectMarker(g, d.pid);
+  }
+  g.restore();
+}
+// a cat napping inside the cottage — a face (or, for a dark cat, just eyes) at the door
+function drawCottageFace(g, c) {
+  const coat = c.coat;
+  const dark = coatLum(coat.base) < 0.30;
+  const t = performance.now() / 1000;
+  const peek = Math.sin(c.stateT * 0.6 + (c.markSeed || 0)) > 0.5;   // brief awake windows
+  g.save();
+  g.translate(c.x, (c._cotY || c.y) - 1);
+  g.fillStyle = "rgba(18,14,10,0.55)";
+  g.beginPath();
+  g.moveTo(-8.5, 9); g.lineTo(-8.5, -9); g.quadraticCurveTo(0, -19, 8.5, -9); g.lineTo(8.5, 9); g.closePath(); g.fill();
+  if (dark) {
+    if (peek) {
+      g.fillStyle = coat.eye || "#e0b24b";
+      g.beginPath(); g.ellipse(-3, -1, 1.7, 1.3, 0, 0, 7); g.ellipse(3, -1, 1.7, 1.3, 0, 0, 7); g.fill();
+      g.fillStyle = "rgba(255,255,255,0.5)";
+      g.beginPath(); g.ellipse(-3.4, -1.4, 0.6, 0.5, 0, 0, 7); g.ellipse(2.6, -1.4, 0.6, 0.5, 0, 0, 7); g.fill();
+    }
+  } else {
+    g.fillStyle = coat.base;
+    g.beginPath(); g.ellipse(0, -1, 8.5, 7.5, 0, 0, 7); g.fill();
+    for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s * 3.5, -6); g.lineTo(s * 8, -13); g.lineTo(s * 8, -4); g.closePath(); g.fill(); }
+    g.fillStyle = coat.white && coat.white.includes("muzzle") ? "#f8f5ee" : coat.base;
+    g.beginPath(); g.ellipse(0, 3, 4.2, 3.2, 0, 0, 7); g.fill();
+    if (peek) {
+      g.fillStyle = coat.eye || "#c98b4b";
+      g.beginPath(); g.ellipse(-3, -1, 1.5, 1.7, 0, 0, 7); g.ellipse(3, -1, 1.5, 1.7, 0, 0, 7); g.fill();
+    } else {
+      g.strokeStyle = "#3a322a"; g.lineWidth = 1.1; g.lineCap = "round";
+      g.beginPath(); g.moveTo(-4.5, -1); g.quadraticCurveTo(-3, 0.6, -1.5, -1); g.moveTo(1.5, -1); g.quadraticCurveTo(3, 0.6, 4.5, -1); g.stroke();
+    }
+    g.fillStyle = coat.nose || "#c77f86";
+    g.beginPath(); g.moveTo(-1, 2); g.lineTo(1, 2); g.lineTo(0, 3.4); g.closePath(); g.fill();
+  }
+  if (!peek && Math.sin(t * 1.4 + (c.markSeed || 0)) > 0.72) {
+    g.fillStyle = "rgba(200,192,175,0.55)"; g.font = "8px 'Fraunces', serif"; g.textAlign = "left";
+    g.fillText("z", 9, -9);
   }
   g.restore();
 }
@@ -6684,8 +6829,10 @@ function drawCat(g, c, isPhoto) {
 
   // --- age: kittens are small, round, big-headed, big-eyed ---
   const kit = c.isKitten;
-  const ag = c.ageScale;                                // 0.56 newborn → 1.0 grown
-  if (kit) { P.hr *= 1.2; P.hy *= 1.05; P.bw *= 0.92; P.top *= 0.9; }
+  const ag = c.ageScale;                                // 0.5 newborn → 0.8 grown
+  // big-head kitten proportions fade out as they grow — a teen is nearly adult-shaped
+  const kitK = kit ? clamp(1 - c.growth / 0.72, 0, 1) : 0;
+  if (kitK > 0) { P.hr *= 1 + 0.22 * kitK; P.hy *= 1 + 0.05 * kitK; P.bw *= 1 - 0.08 * kitK; P.top *= 1 - 0.1 * kitK; }
 
   const wk = c.walkAmt || 0;                       // 0..1 eased "is walking"
   const gp = c.walk || 0;                          // stride phase
@@ -6717,9 +6864,9 @@ function drawCat(g, c, isPhoto) {
   const scaleX = ag * (1 + sq * 0.18) * (1 + wk * 0.05 - gs * 0.7) * (1 + strK * 0.34);   // stretch: long
   const scaleY = ag * (1 - sq * 0.14) * breathe * (1 + gs) * (1 - strK * 0.20);           // stretch: low and flat
   const lean = wk * 0.06 + wk * CHARM * Math.sin(gp * 2) * 0.02 + strK * 0.09             // stretch: a gentle chest tip (chest drop carries the pose, rear stays down)
-             + (scratching ? 0.07 : 0)                                                    // scratch: a slight lean toward the post
+             - (scratching ? 0.20 : 0)                                                    // scratch: reared back, chest up toward the pole
              + wriggle * 0.05;                                                            // catmint: a happy wriggle
-  const walkLift = wk * (3.5 + CHARM * 1.5);                // raise the body so the legs prance
+  const walkLift = wk * (3.5 + CHARM * 1.5) + (scratching ? 5 : 0);   // scratch: up onto the hind feet
   const earFlop = wk * CHARM * Math.sin(gp * 2 + 0.6) * 0.11;
 
   // whisker/eye blink bookkeeping
@@ -7057,23 +7204,22 @@ function drawCat(g, c, isPhoto) {
     g.beginPath(); g.ellipse(reach - 5, 0, 3, 2.4, 0, 0, 7); g.fill();
   }
 
-  // scratching: both front paws on the post's sisal face (just right of the cat,
-  // mid-height), raking up and down in alternation
+  // scratching: reared up on the hind legs, both front paws high on the pole
+  // beside the cat, raking down in alternation
   if (scratching) {
-    const rake = Math.sin(c.stateT * 20);
+    const rake = Math.sin(c.stateT * 15);
     const pawCol = coat.white && coat.white.includes("paws") ? "#f8f5ee" : (coat.pattern === "points" ? coat.point : coat.base);
     g.strokeStyle = coat.pattern === "points" ? coat.point : coat.base;
     g.lineWidth = 4.2; g.lineCap = "round";
-    const reachX = P.bw * 0.55 + 6;         // out to the post beside the cat
-    const midY = -13;                        // mid-height of the sisal face (~ground + 13)
-    const y1 = midY + rake * 8;
-    const y2 = midY - rake * 8;
-    const sh = P.bw * 0.26;
-    g.beginPath(); g.moveTo(sh, -3); g.quadraticCurveTo(sh + 8, midY - 7, reachX, y1); g.stroke();
-    g.beginPath(); g.moveTo(sh - 2, -1); g.quadraticCurveTo(sh + 5, midY - 3, reachX - 4, y2); g.stroke();
+    const reachX = P.bw * 0.60 + 9;         // the pole, just past the cat's right
+    const topY = -30;                        // reaching high up the pole
+    const y1 = topY + rake * 6, y2 = topY - rake * 6 + 5;
+    const sh = P.bw * 0.28;
+    g.beginPath(); g.moveTo(sh, -6); g.quadraticCurveTo(sh + 10, topY - 2, reachX, y1); g.stroke();
+    g.beginPath(); g.moveTo(sh - 2, -3); g.quadraticCurveTo(sh + 7, topY + 3, reachX - 3, y2); g.stroke();
     g.fillStyle = pawCol;
-    g.beginPath(); g.ellipse(reachX, y1, 3.2, 2.6, 0, 0, 7); g.fill();
-    g.beginPath(); g.ellipse(reachX - 4, y2, 2.9, 2.3, 0, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(reachX, y1, 3, 2.5, 0, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(reachX - 3, y2, 2.8, 2.3, 0, 0, 7); g.fill();
   }
 
   g.restore(); // end walkLift — back to the ground frame
@@ -7501,6 +7647,7 @@ function simulate(dt) {
   updateFX(dt);
   updateButterfly(dt);
   updateBird(dt);
+  maybeGiveChase(dt);
   if (toastTimer > 0) { toastTimer -= dt; if (toastTimer <= 0) toastEl.classList.remove("on"); }
   if (cardTimer > 0) { cardTimer -= dt; if (cardTimer <= 0) hideCatCard(); }
   if (shakeAmt > 0) shakeAmt = Math.max(0, shakeAmt - dt * 26);
@@ -7527,6 +7674,7 @@ function renderScene(dt) {
   layer.sort((a, b) => a.y - b.y);
   for (const it of layer) {
     if (it.c) {
+      if (it.c.state === "indoors") { drawCottageFace(ctx, it.c); continue; }   // it's inside — just a face at the door
       drawCat(ctx, it.c, false);
       if (it.c.state === "fishing" && it.c._station === "fishing" && it.c._fx) drawFishingRig(ctx, it.c);
       if (it.c.state === "baking" && it.c._station === "bakery" && it.c._fx) drawBakeryRig(ctx, it.c);
