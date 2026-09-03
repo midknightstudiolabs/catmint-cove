@@ -1905,10 +1905,42 @@ function go(c, state, dur, target) {
   return c;
 }
 
+// per-cat idle-motion flavour, derived once from personality: a lazy cat's tail
+// barely moves, a playful one's whips, a grumpy one flicks its tail-tip
+function catMotion(c) {
+  if (c._motion) return c._motion;
+  const has = t => c.traits && c.traits.includes(t);
+  let tailAmp = 1, tailRate = 1, blinkEvery = 1, twitch = 0;
+  if (has("lazy"))    { tailAmp *= 0.35; tailRate *= 0.6;  blinkEvery *= 1.6; }
+  if (has("grumpy"))  { tailAmp *= 0.7;  twitch += 0.6;    blinkEvery *= 1.2; }
+  if (has("shy"))     { tailAmp *= 0.6;  blinkEvery *= 0.7; }
+  if (has("playful")) { tailAmp *= 1.7;  tailRate *= 1.4; }
+  if (has("bold"))    { tailAmp *= 1.3;  tailRate *= 1.1; }
+  if (has("curious")) { twitch += 0.4;   blinkEvery *= 0.85; }
+  if (has("chatty"))  { twitch += 0.3; }
+  if (has("cuddly"))  { tailRate *= 0.85; c._softBlinker = true; }
+  if (c.isKitten)     { tailAmp *= 1.4;  tailRate *= 1.5; }
+  c._motion = {
+    tailAmp: clamp(tailAmp, 0.25, 2.4), tailRate: clamp(tailRate, 0.4, 2.2),
+    blinkEvery: clamp(blinkEvery, 0.5, 2), twitch: Math.min(twitch, 1),
+  };
+  return c._motion;
+}
+
 function updateCat(c, dt) {
   c.stateT += dt;
+  const _m = catMotion(c);
+  // blink; a slow, soft blink now and then for cuddly cats and any cat you just petted
   c.blink -= dt;
-  if (c.blink < -0.12) c.blink = rand(2.4, 6.5);
+  if (c._slowBlink > 0) c._slowBlink -= dt;
+  if (c.blink < -0.12) {
+    c.blink = rand(2.4, 6.5) * _m.blinkEvery;
+    if ((c._softBlinker || performance.now() - (c._petAt || 0) < 4000) && Math.random() < 0.4) c._slowBlink = 0.55;
+  }
+  // tail-tip flick for the twitchy ones — a sharp extra offset every few seconds
+  c._twitchT = (c._twitchT || rand(2, 5)) - dt;
+  if (_m.twitch > 0 && c._twitchT <= 0) { c._twitchT = rand(2.5, 6); c._tailFlick = 0.22; }
+  if (c._tailFlick > 0) c._tailFlick -= dt;
   if (c.visitor && !c._leaving && Date.now() >= (c._leaveAt || Infinity)) { labubuLeave(c); return; }
   // growing up
   if (c._wasKitten === undefined) c._wasKitten = c.isKitten;
@@ -1920,7 +1952,7 @@ function updateCat(c, dt) {
     sfx("wake");
   }
   const kittenBounce = c.isKitten ? 1.9 : 1;      // kittens are extra jiggly
-  c.tail += dt * (c.state === "playing" ? 9 : c.state === "sulking" ? 1 : 3.5) * kittenBounce;
+  c.tail += dt * (c.state === "playing" ? 9 : c.state === "sulking" ? 1 : 3.5) * kittenBounce * _m.tailRate;
   c.bob += dt * (c.state === "playing" ? 12 : 3) * kittenBounce;
   if (c.squash > 0) c.squash = Math.max(0, c.squash - dt * 4);
   if (c.petCount > 0) c.petCount -= dt * 0.15;
@@ -6132,7 +6164,9 @@ function drawCat(g, c, isPhoto) {
   g.save();
   g.scale(scaleX, scaleY);           // squash anchored at the feet (y = 0)
 
-  const wag = Math.sin(c.tail) + wk * CHARM * Math.sin(gp * 0.5) * 1.4;   // swishy tail on the walk
+  const _cm = catMotion(c);
+  const wag = (Math.sin(c.tail) * _cm.tailAmp + (c._tailFlick > 0 ? Math.sin(c._tailFlick * 60) * 1.6 : 0))
+    + wk * CHARM * Math.sin(gp * 0.5) * 1.4;   // swishy tail on the walk; personality sets the idle amplitude + flick
   const tailMode = wk > 0.35 ? "stream" : playing ? "lash" : (sleepStyle === 2 ? "stream" : "wrap");
 
   // --- far-side legs (behind the body), drawn on the ground ---
@@ -6270,8 +6304,12 @@ function drawCat(g, c, isPhoto) {
   const tilt = pet ? -0.16 : sulk ? 0.13 : grooming ? 0.34 + lick * 0.06 : 0;
   g.translate(P.hx, P.hy); g.rotate(c.face < 0 ? -tilt : tilt); g.translate(-P.hx, -P.hy);
 
+  const sb = c._slowBlink || 0;
   const eyeMode = asleep || grooming ? "closed" : pet ? "happy"
-    : blinking ? "blink" : (c.mood > 80 && !playing) ? "half"
+    : (sb > 0.28 && sb <= 0.42) ? "blink"                       // soft slow-blink: closed at the middle
+    : (sb > 0.42 || (sb > 0.12 && sb <= 0.28)) ? "half"         //   half-lidded easing in and out
+    : blinking ? "blink"
+    : (c.mood > 80 && !playing) ? "half"
     : playing ? "wide" : "open";
   const eyeY = P.hy - (kit ? 0 : 1.5);
   const eDx = (kit ? 5.2 : 5.4);
