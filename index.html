@@ -1182,7 +1182,9 @@ function rebuildAttractors() {
     if (d.type === "tree")    attractors.push({ type: "tree",    x: clamp(d.x + 14, 32, W - 32), y: clamp(d.y + 34, H * 0.44, catFloor()) });
     if (d.type === "cottage") attractors.push({ type: "cottage", x: clamp(d.x,      32, W - 32), y: clamp(d.y + 34, H * 0.44, catFloor()) });
     if (d.type === "station") {
-      const off = d.station === "fishing" ? { x: -6, y: 4 } : { x: 0, y: 16 };
+      const off = d.station === "fishing" ? { x: -6, y: 4 }
+                : d.station === "bakery"  ? { x: 26, y: 6 }     // beside the oven, not in front of it
+                : { x: 0, y: 16 };
       attractors.push({ type: d.station, station: true, x: clamp(d.x + off.x, 36, W - 36), y: clamp(d.y + off.y, H * 0.44, catFloor()) });
     }
   }
@@ -1447,6 +1449,7 @@ function catQuirkLine(c) {
 const KITTEN_MS = 20 * 3600 * 1000;   // a cat is a kitten for its first ~20h, then an adult forever
 let cats = [];
 let _fishFireLit = 0;                 // how many cats are cooking a catch right now (drives the campfire)
+let _bakeOvenLit = 0;                 // how many cats have a tray in the oven right now (drives the oven glow)
 class Cat {
   constructor(o = {}) {
     this.name = o.name || uniqueName();
@@ -1952,6 +1955,7 @@ function go(c, state, dur, target) {
   c._station = null;
   c._fishT = 0;
   if (c._fx && c._fx.p === "cook") _fishFireLit = Math.max(0, _fishFireLit - 1);
+  if (c._fx && c._fx.p === "bake") _bakeOvenLit = Math.max(0, _bakeOvenLit - 1);
   c._fx = null;
   if (target) {
     c.tx = clamp(target.x, 24, W - 24);
@@ -2036,10 +2040,12 @@ function updateCat(c, dt) {
     if (c.friend === c.partner.name) { c.mood = clamp(c.mood + 2, 0, 100); c.partner.mood = clamp(c.partner.mood + 2, 0, 100); }
   }
   if (c._boop > 0) c._boop -= dt;
-  // a puff of flour off the bakery counter now and then
+  // a puff of flour off the bakery counter — more while hands are in the dough
   if (c.state === "baking") {
-    c._flourT = (c._flourT || rand(1, 3)) - dt;
-    if (c._flourT <= 0) { c._flourT = rand(1.6, 3.4); spawnParticles(c.x + rand(-6, 8), c.y - 8, "dust", 3); }
+    const ph = c._fx && c._fx.p;
+    const active = ph === "knead" || ph === "shape";
+    c._flourT = (c._flourT || rand(1, 3)) - dt * (active ? 1 : 0.3);
+    if (c._flourT <= 0) { c._flourT = active ? rand(1.1, 2.4) : rand(3, 5); spawnParticles(c.x + rand(-6, 8), c.y - 8, "dust", active ? 3 : 1); }
   }
   if (c.visitor && !c._leaving && Date.now() >= (c._leaveAt || Infinity)) { labubuLeave(c); return; }
   // growing up
@@ -2264,6 +2270,34 @@ function updateCat(c, dt) {
         c.mood = clamp(c.mood + 6, 8, 100);
         dropToken(c.x + rand(-8, 8), c.y - 6, (rand(5, 12) | 0), "fish");
         spawnParticles(c.x, c.y - 16, "heart", 3);
+      }
+    }
+  }
+
+  // helping at the bakery: knead → shape → bake → share, on a loop
+  if (c._station === "bakery") {
+    const a = nearestAttractor(c, "bakery");
+    if (!c._fx) c._fx = { p: "knead", t: 0, n: 0 };
+    const fx = c._fx;
+    fx.t += dt;
+    fx.ox = a ? a.x : c.x; fx.oy = a ? a.y : c.y;
+    c.face = -1;                           // turned toward the oven at its left
+    if (fx.p === "knead") {
+      if (fx.t > 3.4) { fx.p = "shape"; fx.t = 0; }
+    } else if (fx.p === "shape") {
+      if (fx.t > 1.7) { fx.p = "bake"; fx.t = 0; _bakeOvenLit++; spawnParticles(fx.ox, fx.oy - 16, "dust", 2); }
+    } else if (fx.p === "bake") {
+      if (fx.t > 3.0) {
+        fx.p = "share"; fx.t = 0; _bakeOvenLit = Math.max(0, _bakeOvenLit - 1);
+        spawnParticles(c.x + 9, c.y - 12, "twinkle", 4);
+      }
+    } else if (fx.p === "share") {
+      if (fx.t > 1.7) {
+        fx.p = "knead"; fx.t = 0; fx.n = (fx.n || 0) + 1;
+        c.mood = clamp(c.mood + 6, 8, 100);
+        dropToken(c.x + rand(-8, 8), c.y - 4, (rand(4, 10) | 0) || 1, "shell");
+        spawnParticles(c.x, c.y - 16, "heart", 3);
+        sfx("eat");
       }
     }
   }
@@ -3391,7 +3425,7 @@ function composePhoto() {
   for (const f of foreground) players.push({ y: f.y, f });
   players.sort((p, q) => p.y - q.y);
   for (const it of players) {
-    if (it.c) { drawCat(pctx, it.c, true); if (it.c.state === "fishing" && it.c._station === "fishing" && it.c._fx) drawFishingRig(pctx, it.c); }
+    if (it.c) { drawCat(pctx, it.c, true); if (it.c.state === "fishing" && it.c._station === "fishing" && it.c._fx) drawFishingRig(pctx, it.c); if (it.c.state === "baking" && it.c._station === "bakery" && it.c._fx) drawBakeryRig(pctx, it.c); }
     else drawGrassTuft(pctx, it.f, pgt, pnight);
   }
   pctx.restore();
@@ -5854,19 +5888,62 @@ function drawStation(g, kind, seed) {
       g.beginPath(); g.moveTo(cfx - 10, cfy - 9); g.lineTo(cfx + 10, cfy - 9); g.stroke();
     }
   } else if (kind === "bakery") {
-    // a tiny market stall with a striped awning
-    g.fillStyle = "#e7dcc4"; roundRect(g, -24, -20, 48, 28, 3); g.fill();
-    g.fillStyle = "rgba(0,0,0,0.06)"; roundRect(g, -24, 0, 48, 8, 3); g.fill();
-    g.fillStyle = "#8a6b4a"; g.fillRect(-24, -20, 3, 28); g.fillRect(21, -20, 3, 28);
-    for (let i = 0; i < 6; i++) {
-      g.fillStyle = i % 2 ? "#d98b7a" : "#f3ece0";
-      g.beginPath(); g.moveTo(-27 + i*9, -20); g.lineTo(-27 + i*9 + 9, -20);
-      g.lineTo(-27 + i*9 + 5, -12); g.closePath(); g.fill();
+    // a little clay oven on a stone hearth, a cooling shelf beside it
+    const t = performance.now() / 1000;
+    const lit = _bakeOvenLit > 0;
+    const gl = g.createRadialGradient(0, 2, 3, 0, 2, 40);
+    gl.addColorStop(0, `rgba(255,208,140,${lit ? 0.4 : 0.2})`);
+    gl.addColorStop(1, "rgba(255,208,140,0)");
+    g.fillStyle = gl; g.beginPath(); g.ellipse(0, 2, 40, 16, 0, 0, 7); g.fill();
+    // stone base
+    g.fillStyle = "#8f8474"; roundRect(g, -27, -14, 54, 16, 3); g.fill();
+    g.fillStyle = "#a29684"; roundRect(g, -27, -14, 54, 5, 3); g.fill();
+    g.fillStyle = "rgba(0,0,0,0.12)"; g.fillRect(-27, 0, 54, 3);
+    // clay dome
+    g.fillStyle = "#c98b5f";
+    g.beginPath();
+    g.moveTo(-25, -12);
+    g.bezierCurveTo(-29, -44, -15, -54, 0, -54);
+    g.bezierCurveTo(15, -54, 29, -44, 25, -12);
+    g.closePath(); g.fill();
+    g.fillStyle = "rgba(255,255,255,0.10)"; g.beginPath(); g.ellipse(-8, -38, 9, 15, -0.3, 0, 7); g.fill();
+    g.fillStyle = "rgba(60,36,22,0.13)";
+    g.beginPath(); g.moveTo(8, -12); g.bezierCurveTo(24, -18, 27, -36, 21, -46); g.bezierCurveTo(29, -34, 26, -16, 25, -12); g.closePath(); g.fill();
+    // a band of clay bricks round the base of the dome
+    g.strokeStyle = "rgba(90,55,34,0.22)"; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(-24, -16); g.quadraticCurveTo(0, -20, 24, -16); g.stroke();
+    // chimney + a lazy wisp
+    g.fillStyle = "#b07d54"; g.fillRect(10, -60, 8, 14);
+    g.fillStyle = "#8a5f3e"; g.fillRect(9, -61, 10, 3.5);
+    if (!_reduceMotion) {
+      g.fillStyle = "rgba(180,170,160,0.24)";
+      for (let s = 0; s < 3; s++) {
+        const sy = -61 - ((t * 8 + s * 10) % 30);
+        const sx = 14 + Math.sin((t + s) * 1.3) * 5;
+        g.beginPath(); g.arc(sx, sy, 2 + (-(sy + 61) / 30) * 5, 0, 7); g.fill();
+      }
     }
-    g.fillStyle = "#c98b4b";
-    g.beginPath(); g.ellipse(-8, -2, 5, 3.4, 0, 0, 7); g.ellipse(3, -1, 5, 3.4, 0, 0, 7); g.ellipse(12, -3, 4, 3, 0, 0, 7); g.fill();
-    g.fillStyle = "rgba(255,238,200,0.5)";
-    g.beginPath(); g.ellipse(0, -6, 20, 12, 0, 0, 7); g.fill();
+    // oven mouth + inner glow
+    g.fillStyle = "#2c211a";
+    g.beginPath();
+    g.moveTo(-13, -12); g.lineTo(-13, -24);
+    g.bezierCurveTo(-13, -33, 13, -33, 13, -24);
+    g.lineTo(13, -12); g.closePath(); g.fill();
+    const pulse = lit ? 0.8 + Math.sin(t * 6) * 0.22 : 0.34 + Math.sin(t * 1.4) * 0.06;
+    const og = g.createRadialGradient(0, -17, 1, 0, -17, 17);
+    og.addColorStop(0, `rgba(255,${lit ? 196 : 150},${lit ? 110 : 92},${pulse})`);
+    og.addColorStop(1, "rgba(255,120,60,0)");
+    g.fillStyle = og; g.beginPath(); g.ellipse(0, -16, 13, 11, 0, 0, 7); g.fill();
+    if (lit) {
+      g.fillStyle = `rgba(255,224,150,${(0.45 * pulse).toFixed(3)})`;
+      g.beginPath(); g.ellipse(0, -15, 6, 4, 0, 0, 7); g.fill();
+    }
+    g.fillStyle = lit ? "#7a4a26" : "#4a3524"; g.fillRect(-9, -14, 18, 2.8);
+    if (lit) { g.fillStyle = "#f2a740"; for (let e = 0; e < 3; e++) g.fillRect(-7 + e * 6, -14, 2, 2.8); }
+    // cooling shelf with two buns on the far side
+    g.fillStyle = "#8a6b4a"; g.fillRect(-38, -10, 12, 3);
+    g.fillStyle = "#d9a35c";
+    g.beginPath(); g.ellipse(-33, -12, 3.2, 2.4, 0, 0, 7); g.ellipse(-29, -12, 2.8, 2.1, 0, 0, 7); g.fill();
   } else if (kind === "sunbeam") {
     // a bright woven mat catching a soft shaft of warm light from above
     g.save();
@@ -5958,6 +6035,62 @@ function drawFishingRig(g, c) {
     drawFish(g, fX, fY, (-0.6 + k * 1.1) * dir, "#a6c2cc", 0.95);
   } else { // cast — line trailing out
     g.beginPath(); g.moveTo(tipX, tipY); g.lineTo(tipX + dir * 3, tipY + 9); g.stroke();
+  }
+}
+
+// the board / dough / tray / oven-run rig for a cat helping at the bakery
+function drawBakeryRig(g, c) {
+  const fx = c._fx; if (!fx) return;
+  const a = nearestAttractor(c, "bakery");
+  const t = performance.now() / 1000;
+  const bx = c.x - 19, by = c.y + 1;                              // the work board, between cat and oven
+  const ovenX = (a ? a.x : c.x) - 26, ovenY = (a ? a.y : c.y) - 24;   // the oven mouth (art sits left of the work spot)
+
+  g.fillStyle = "#a97c50";
+  g.beginPath(); g.ellipse(bx, by + 4, 12, 4, 0, 0, 7); g.fill();
+  g.fillStyle = "rgba(255,255,255,0.10)";
+  g.beginPath(); g.ellipse(bx - 2, by + 3, 9, 2.6, 0, 0, 7); g.fill();
+
+  if (fx.p === "knead") {
+    const push = Math.max(0, Math.sin(c.stateT * 6));
+    g.fillStyle = "#efe4cb";
+    g.beginPath(); g.ellipse(bx, by + 1 - push * 1.2, 6.5 - push * 1.6, 4.4 + push * 1.4, 0, 0, 7); g.fill();
+    g.fillStyle = "rgba(120,90,55,0.15)";
+    g.beginPath(); g.ellipse(bx + 1, by + 2.6, 5, 1.6, 0, 0, 7); g.fill();
+  } else if (fx.p === "shape") {
+    const n = Math.min(3, 1 + Math.floor(fx.t / 0.55));
+    g.fillStyle = "#e7d3a9";
+    for (let i = 0; i < n; i++) { g.beginPath(); g.ellipse(bx - 5 + i * 5, by + 1, 2.6, 2.2, 0, 0, 7); g.fill(); }
+  } else if (fx.p === "bake") {
+    const k = Math.min(1, fx.t / 0.7);
+    if (k < 1) {
+      const tx = bx + (ovenX - bx) * k, ty = by + (ovenY - by) * k - Math.sin(k * Math.PI) * 10;
+      g.fillStyle = "#7d6039"; g.fillRect(tx - 7, ty - 1, 14, 2.4);
+      g.fillStyle = "#e7d3a9";
+      for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(tx - 5 + i * 5, ty - 2, 2.1, 0, 7); g.fill(); }
+    } else if (!_reduceMotion) {
+      g.strokeStyle = "rgba(255,220,170,0.28)"; g.lineWidth = 1.4; g.lineCap = "round";
+      for (let s = 0; s < 3; s++) {
+        const wx = ovenX - 6 + s * 6, base = ovenY - 4;
+        g.beginPath();
+        g.moveTo(wx, base);
+        g.quadraticCurveTo(wx + Math.sin(t * 3 + s) * 3, base - 7, wx + Math.sin(t * 2 + s) * 2, base - 14);
+        g.stroke();
+      }
+    }
+  } else if (fx.p === "share") {
+    const rise = Math.min(1, fx.t / 0.5);
+    g.fillStyle = "#d99a52";
+    g.beginPath(); g.ellipse(bx, by - rise * 1.5, 4.2, 3.4, 0, 0, 7); g.fill();
+    g.fillStyle = "rgba(255,255,255,0.25)";
+    g.beginPath(); g.ellipse(bx - 1.4, by - rise * 1.5 - 1, 1.8, 1.1, 0, 0, 7); g.fill();
+    if (!_reduceMotion) {
+      g.strokeStyle = "rgba(240,232,220,0.4)"; g.lineWidth = 1.2; g.lineCap = "round";
+      g.beginPath();
+      g.moveTo(bx, by - 3);
+      g.quadraticCurveTo(bx + Math.sin(t * 4) * 3, by - 9, bx + Math.sin(t * 3) * 2, by - 15);
+      g.stroke();
+    }
   }
 }
 
@@ -6432,7 +6565,8 @@ function drawCat(g, c, isPhoto) {
   const baking = c.state === "baking";
   const sunning = c.state === "sunbathing";
   const rollingS = c.state === "rolling";
-  const knead = baking ? Math.max(0, Math.sin(c.stateT * 6)) : 0;
+  const _bph = baking && c._fx ? c._fx.p : null;
+  const knead = (_bph === "knead" || _bph === "shape") ? Math.max(0, Math.sin(c.stateT * (_bph === "shape" ? 3.4 : 6))) : 0;
   const wriggle = rollingS ? Math.sin(c.stateT * 16) : 0;
   const sunBreath = sunning ? Math.sin(c.stateT * 1.1) * 0.05 : 0;
 
@@ -6644,9 +6778,10 @@ function drawCat(g, c, isPhoto) {
 
   // --- face ---
   g.save();
-  const groomTilt = c._groomMove === "chest" ? 0.52 : c._groomMove === "hindleg" ? 0.6 : c._groomMove === "ear" ? 0.18 : 0.34;
+  const groomTilt = c._groomMove === "chest" ? 0.52 : c._groomMove === "hindleg" ? 0.86 : c._groomMove === "ear" ? 0.18 : 0.34;
   const tilt = pet ? -0.16 : sulk ? 0.13 : grooming ? groomTilt + lick * 0.06 : 0;
-  g.translate(P.hx, P.hy); g.rotate(c.face < 0 ? -tilt : tilt); g.translate(-P.hx, -P.hy);
+  const groomDip = grooming && c._groomMove === "hindleg" ? 3.4 + lick * 1.3 : 0;   // airplane: the head tucks down to meet the raised leg
+  g.translate(P.hx, P.hy + groomDip); g.rotate(c.face < 0 ? -tilt : tilt); g.translate(-P.hx, -P.hy);
 
   const sb = c._slowBlink || 0;
   const eyeMode = asleep || grooming ? "closed" : pet ? "happy"
@@ -6712,13 +6847,31 @@ function drawCat(g, c, isPhoto) {
     const limbCol = coat.pattern === "points" ? coat.point : coat.base;
     g.lineCap = "round";
     if (move === "hindleg") {
-      // the airplane — one back leg pointed up, head buried toward the belly
-      g.strokeStyle = limbCol; g.lineWidth = 4.6;
-      const lx = P.bw * 0.5, lty = P.hy - P.hr * 0.2 + lick * 2;
-      g.beginPath(); g.moveTo(P.bw * 0.2, 0); g.quadraticCurveTo(P.bw * 0.62, -6, lx, lty); g.stroke();
-      g.fillStyle = pawCol; g.beginPath(); g.ellipse(lx, lty, 3.6, 3, 0, 0, 7); g.fill();
+      // the airplane — a back leg hoisted straight up, knee kinked, the head tucked
+      // down to meet it; a front paw planted for balance, with a small wobble
+      const wob = Math.sin(c.stateT * 5.2) * 1.3;
+      const hipX = -P.bw * 0.04, hipY = -1;
+      const kneeX = P.bw * 0.10 + wob * 0.4, kneeY = P.hy * 0.5;
+      const toeX = P.bw * 0.30 + wob, toeY = P.hy - P.hr * 1.0 + lick * 2.4;
+      g.strokeStyle = limbCol; g.lineCap = "round";
+      g.lineWidth = 5.4;
+      g.beginPath(); g.moveTo(hipX, hipY); g.lineTo(kneeX, kneeY); g.stroke();      // thigh
+      g.lineWidth = 4.6;
+      g.beginPath(); g.moveTo(kneeX, kneeY); g.lineTo(toeX, toeY); g.stroke();      // shin
+      // a soft edge light so the leg reads even on a dark coat
+      g.strokeStyle = "rgba(255,255,255,0.16)"; g.lineWidth = 1.6;
+      g.beginPath(); g.moveTo(hipX, hipY); g.lineTo(kneeX, kneeY); g.lineTo(toeX, toeY); g.stroke();
+      g.fillStyle = pawCol;
+      g.beginPath(); g.ellipse(toeX, toeY, 3.2, 4.4, wob * 0.05, 0, 7); g.fill();   // upturned foot
+      g.fillStyle = "#d8a2ab";
+      g.beginPath(); g.ellipse(toeX, toeY + 1.6, 1.5, 1, 0, 0, 7); g.fill();        // toe bean
+      // planted front paw taking the weight
+      g.strokeStyle = limbCol; g.lineWidth = 4;
+      g.beginPath(); g.moveTo(-P.bw * 0.30, -2); g.quadraticCurveTo(-P.bw * 0.46, 7, -P.bw * 0.5, 12); g.stroke();
+      g.fillStyle = pawCol; g.beginPath(); g.ellipse(-P.bw * 0.5, 12.5, 3.3, 2.5, 0, 0, 7); g.fill();
+      // tongue reaching the inner thigh
       g.fillStyle = "#e58fa0";
-      g.beginPath(); g.ellipse(P.hx + 4, P.hy + P.hr * 0.5, 1.9, 1.3, 0, 0, 7); g.fill();
+      g.beginPath(); g.ellipse(P.hx + 3, P.hy + P.hr * 0.55 + lick * 1.6, 2, 1.5, 0, 0, 7); g.fill();
     } else {
       // paw to the head — height sets face / ear
       const up = move === "ear" ? P.hr * 0.9 : P.hr * 0.55;
@@ -7225,6 +7378,7 @@ function renderScene(dt) {
     if (it.c) {
       drawCat(ctx, it.c, false);
       if (it.c.state === "fishing" && it.c._station === "fishing" && it.c._fx) drawFishingRig(ctx, it.c);
+      if (it.c.state === "baking" && it.c._station === "bakery" && it.c._fx) drawBakeryRig(ctx, it.c);
       if (it.c.star >= 3) drawStarAura(ctx, it.c, dt);
     } else {
       // a nearby cat brushing past bends the blades away from it
