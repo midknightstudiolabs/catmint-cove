@@ -794,7 +794,8 @@ const MIDKNIGHT_COAT = { key:"midknight", name:"Midknight", base:"#26232b", bell
 // Labubu — Midknight's sidekick. A snowshoe: seal points, white boots + blaze,
 // blue eyes. A visitor, never a resident — see the labubu* helpers below.
 const LABUBU_COAT = { key:"labubu", name:"Labubu", base:"#e7dcc6", belly:"#f4efe3", pattern:"points",
-  point:"#5f4b3d", white:["bib","belly","muzzle","blaze","paws"], eye:"#7fb6d6", nose:"#d98f97", inner:"#caa0a0", visitor:true };
+  point:"#5f4b3d", white:["bib","belly","muzzle","blaze","paws"], eye:"#7fb6d6", nose:"#d98f97", inner:"#caa0a0",
+  collarCol:"#a24bb0", bellCol:"#b76fc7", visitor:true };   // his purple bell — canon, from the real cat
 const COAT_BY_KEY = Object.fromEntries([...COATS, MIDKNIGHT_COAT, LABUBU_COAT].map(c => [c.key, c]));
 function weightedCoat() {
   const undiscovered = COATS.filter(c => !G.dex[c.key]);
@@ -5306,11 +5307,12 @@ function drawAccessory(g, kind, P, coat, kit) {
   g.lineJoin = "round"; g.lineCap = "round";
   if (kind === "collar" || kind === "bell") {
     const y = hy + hr * 0.82;
-    g.strokeStyle = kind === "bell" ? "#c34f4f" : "#5b8fb0";
+    const strap = kind === "bell" ? (coat && coat.collarCol || "#c34f4f") : "#5b8fb0";
+    g.strokeStyle = strap;
     g.lineWidth = kit ? 2.4 : 3;
     g.beginPath(); g.arc(hx, hy, hr * 0.98, Math.PI * 0.16, Math.PI * 0.84); g.stroke();
     if (kind === "bell") {
-      g.fillStyle = "#e8b84a";
+      g.fillStyle = (coat && coat.bellCol) || "#e8b84a";
       g.beginPath(); g.arc(hx, y + 1.5, kit ? 2.4 : 3, 0, 7); g.fill();
       g.strokeStyle = "rgba(90,60,20,0.55)"; g.lineWidth = 0.8;
       g.beginPath(); g.moveTo(hx - 2, y + 1.5); g.lineTo(hx + 2, y + 1.5); g.stroke();
