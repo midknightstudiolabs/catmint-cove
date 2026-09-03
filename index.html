@@ -378,6 +378,10 @@
   #cc-bondname{font-weight:600;color:var(--heart);}
   .cat-trait-desc{font-size:.77rem;color:var(--ink-soft);margin-top:.45rem;line-height:1.4;
     display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+  .cc-pref{font-size:.77rem;line-height:1.4;margin-top:.4rem;}
+  .cc-pref .lk{color:var(--ink);}
+  .cc-pref .qk{color:var(--heart);}
+  .cc-pref .hidden-hint{color:var(--ink-faint);font-style:italic;}
   .rehome{margin-top:.7rem;width:100%;background:none;border:1px solid var(--panel-line);border-radius:999px;
     padding:.4rem .7rem;font:inherit;font-size:.78rem;font-weight:600;color:var(--ink-soft);cursor:pointer;}
   .rehome:hover{background:#fff;color:var(--ink);}
@@ -680,6 +684,7 @@
       <div class="moodlabel"><span id="cc-bondname">New here</span><span id="cc-bondpct">0%</span></div>
     </div>
     <div class="cat-trait-desc" id="cc-desc"></div>
+    <div class="cc-pref" id="cc-pref"></div>
     <div class="cc-dress" id="cc-dress"></div>
     <button class="rehome" id="cc-rehome" hidden>Find them a new home →</button>
   </div>
@@ -992,7 +997,8 @@ function save() {
     G.cats = cats.filter(c => !c.visitor).map(c => ({     // Labubu is a guest — never saved as a resident
       name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
       mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood), worn:c.worn || [], owned:c.owned || [],
-      bond:Math.round(c.bond || 0), bondSeen:c.bondSeen || 0, bondDay:c.bondDay || ""
+      bond:Math.round(c.bond || 0), bondSeen:c.bondSeen || 0, bondDay:c.bondDay || "",
+      pref:c.pref, quirk:c.quirk, quirkKnown:!!c.quirkKnown
     }));
     localStorage.setItem(SAVE_KEY, JSON.stringify(G));
   } catch (e) {}
@@ -1317,6 +1323,43 @@ const BOND_LEVELS = [
 function bondLevel(v) { let i = 0; for (let k = 0; k < BOND_LEVELS.length; k++) if (v >= BOND_LEVELS[k].at) i = k; return i; }
 function bondName(v) { return BOND_LEVELS[bondLevel(v)].name; }
 
+/* ---------- preferences — one visible, one you have to notice ---------- */
+const PREFS = {
+  sunbeam: { line: "a warm sunbeam",               station: "sunbeam" },
+  garden:  { line: "the catmint garden",           station: "garden"  },
+  fishing: { line: "the water off the dock",        station: "fishing" },
+  bakery:  { line: "the warm smell of the bakery",  station: "bakery"  },
+  toy:     { line: "the toy — endlessly",           want: "toy"  },
+  bed:     { line: "the softest bed in the cove",   want: "bed"  },
+  bowl:    { line: "the food bowl, always",         want: "food" },
+  tree:    { line: "being up in the tree",          want: "roam" },
+  jingle:  { line: "anything that jingles" },
+  boxes:   { line: "boxes — the smaller the better" },
+  mornings:{ line: "the very first light of day" },
+  puddles: { line: "the puddle left after rain" },
+};
+const PREF_KEYS = Object.keys(PREFS);
+const QUIRKS = [
+  "sleeps curled in a perfect circle, always",
+  "waits by the gate whenever a cat's away on a trip",
+  "keeps one ear pointed at you at all times",
+  "hides its favourite thing, then forgets where",
+  "sneezes exactly once every morning",
+  "sits on the highest thing available, on principle",
+  "grooms the other cats when it thinks no one's looking",
+  "has a spot, and will wait for you to move off it",
+  "carries a single leaf around for a whole afternoon",
+  "blinks slowly at you across the whole cove",
+];
+function catPrefLine(c) {
+  if (c.mascot) return "his loafing spot right by the sign";
+  return (PREFS[c.pref] || PREFS.bed).line;
+}
+function catQuirkLine(c) {
+  if (c.mascot) return "carries small things off and stashes them somewhere";
+  return QUIRKS[(c.quirk | 0) % QUIRKS.length] || QUIRKS[0];
+}
+
 /* ---------- cat entity ---------- */
 const KITTEN_MS = 20 * 3600 * 1000;   // a cat is a kitten for its first ~20h, then an adult forever
 let cats = [];
@@ -1369,6 +1412,11 @@ class Cat {
     this.bond = clamp(o.bond ?? (this.mascot ? 35 : 8), 0, 100);
     this.bondSeen = o.bondSeen ?? bondLevel(this.bond);   // highest level the player's been shown
     this.bondDay = o.bondDay || "";                       // last day a first-of-day bond chunk landed
+    // preferences — a visible like + a quirk you only learn once you're Friends
+    this.pref = (PREFS[o.pref] ? o.pref : null) || pick(PREF_KEYS);
+    this.quirk = (o.quirk != null ? (o.quirk | 0) : (Math.random() * QUIRKS.length | 0));
+    this.quirkKnown = o.quirkKnown ?? (bondLevel(this.bond) >= 2);
+    this.favStation = (PREFS[this.pref] && PREFS[this.pref].station) || null;
     this.bob = Math.random() * 6;
     this.blink = rand(2, 6);
     this.tail = Math.random() * 6;
@@ -1489,6 +1537,7 @@ function restoreCats() {
         worn: s.worn, accessory: s.accessory, owned: s.owned,
         bornAt: s.bornAt ?? (Date.now() - KITTEN_MS * 3), mood:s.mood,
         bond: s.bond, bondSeen: s.bondSeen, bondDay: s.bondDay,
+        pref: s.pref, quirk: s.quirk, quirkKnown: s.quirkKnown,
         x: rand(W*0.15,W*0.85), y: rand(H*0.42,H*0.82)
       }));
     }
@@ -1690,7 +1739,8 @@ function decide(c) {
     const a = nearestAttractor(c, cf.type);
     if (!a) continue;
     const wanted = likes.includes(cf.want);
-    add(wanted ? 4.5 : cf.type === "food" || cf.type === "toy" ? 2.4 : 1.7, () => {
+    const prefBump = (PREFS[c.pref] && PREFS[c.pref].want === cf.want) ? 3 : 0;   // their own favourite thing
+    add((wanted ? 4.5 : cf.type === "food" || cf.type === "toy" ? 2.4 : 1.7) + prefBump, () => {
       c._arriveState = cf.state;
       c._arriveDur = cf.dur();
       return go(c, "seeking", 16, { x: a.x + rand(-14, 14), y: a.y + rand(-8, 8) });
@@ -1716,6 +1766,7 @@ function decide(c) {
     const busy = cats.filter(o => o !== c && o._station === key).length;
     if (busy >= st.cap) continue;
     let w = 3.6;
+    if (key === c.favStation) w += 3;               // their favourite station — they'll queue for it
     if (key === "sunbeam" && (lazyish || c.mood < 60)) w += 2.5;
     if (key === "garden" && (c.traits.includes("playful") || c.traits.includes("curious"))) w += 2.2;
     if (key === "fishing" && (c.traits.includes("glutton") || c.traits.includes("bold"))) w += 2;
@@ -2240,6 +2291,11 @@ function onBondMilestone(c, lvl, quiet) {
   }
   toast(lvl >= 4 ? `${c.name} — bonded. 💛` : `${c.name}: ${BOND_LEVELS[lvl].name.toLowerCase()}. 💛`, 4);
   sfx("reveal");
+  // Friends: you've had them long enough to notice their little habit
+  if (lvl >= 2 && !c.quirkKnown && !c.visitor) {
+    c.quirkKnown = true;
+    setTimeout(() => { logMoment("👀", `You've noticed: ${c.name} ${catQuirkLine(c)}.`, "bond"); if (cardCat === c) renderCatPref(c); }, 900);
+  }
 }
 
 /* ---------- cat card ---------- */
@@ -2255,6 +2311,7 @@ const cc = {
   bondname: document.getElementById("cc-bondname"),
   bondpct: document.getElementById("cc-bondpct"),
   desc: document.getElementById("cc-desc"),
+  prefEl: document.getElementById("cc-pref"),
   coatEl: document.getElementById("cc-coat"),
   starsEl: document.getElementById("cc-stars"),
   rehomeBtn: document.getElementById("cc-rehome"),
@@ -2412,6 +2469,7 @@ function showCatCard(c) {
     : c.visitor
     ? "Follows Midknight around and turns up with things. Won't stay long — he never does."
     : c.t1.desc + " " + c.t2.desc;
+  renderCatPref(c);
   const rw = rehomeReward(c);
   cc.rehomeBtn.hidden = c.mascot || c.visitor || cats.length <= 3;   // only once the cove is comfortably full
   cc.rehomeBtn.textContent = `Find them a new home  ·  ◈ ${rw.shells}${rw.pearls ? ` ✦ ${rw.pearls}` : ""}`;
@@ -2420,6 +2478,15 @@ function showCatCard(c) {
   cc.el.hidden = false;
   positionCard(c);
   updateCatCard();
+}
+function renderCatPref(c) {
+  if (!cc.prefEl) return;
+  if (c.visitor) { cc.prefEl.innerHTML = ""; return; }
+  const like = `<span class="lk">Loves ${esc(catPrefLine(c))}.</span>`;
+  const quirk = c.quirkKnown
+    ? `<span class="qk">You've noticed: ${esc(c.name)} ${esc(catQuirkLine(c))}.</span>`
+    : `<span class="hidden-hint">There's a habit of ${c.mascot ? "his" : esc(c.name) + "'s"} you haven't spotted yet — get closer.</span>`;
+  cc.prefEl.innerHTML = like + "<br>" + quirk;
 }
 function positionCard(c) {
   const r = canvas.getBoundingClientRect();
