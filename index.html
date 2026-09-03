@@ -1891,6 +1891,12 @@ function decide(c) {
   return go(c, "loafing", 8, null);
 }
 function napSpot(c) {
+  // a friend who's already settled → curl up right next to them (a nap pile)
+  if (c.friend) {
+    const f = cats.find(o => o !== c && !o.visitor && o.name === c.friend
+      && (o.state === "sleeping" || o.state === "loafing"));
+    if (f) return { x: f.x + (f.x < W / 2 ? 1 : -1) * rand(16, 26), y: f.y + rand(-4, 6) };
+  }
   const a = nearestAttractor(c, "cottage") || nearestAttractor(c, "bed") || nearestAttractor(c, "tree");
   return a ? { x: a.x + rand(-14, 14), y: a.y + rand(-4, 6) } : null;
 }
@@ -1975,6 +1981,16 @@ function updateCat(c, dt) {
     if (!(c._groomFrozen > 0) && Math.random() < 0.007) c._groomFrozen = rand(0.9, 1.7);
     if (c._groomFrozen > 0) c._groomFrozen -= dt;
   } else if (c._groomMove != null) { c._groomMove = null; c._groomFrozen = 0; }
+  // cats sitting together sometimes boop noses — friends more so, and it lifts their mood
+  if (c.state === "socializing" && c.partner && !c.partner.visitor && c.stateT > 1.4
+      && c.stateT > (c._boopT || 0) && Math.hypot(c.x - c.partner.x, c.y - c.partner.y) < 56
+      && Math.random() < 0.018) {
+    c._boopT = c.stateT + 3;
+    c._boop = 0.4; c.partner._boop = 0.4;
+    spawnParticles((c.x + c.partner.x) / 2, (c.y + c.partner.y) / 2 - 20, "heart", 2);
+    if (c.friend === c.partner.name) { c.mood = clamp(c.mood + 2, 0, 100); c.partner.mood = clamp(c.partner.mood + 2, 0, 100); }
+  }
+  if (c._boop > 0) c._boop -= dt;
   if (c.visitor && !c._leaving && Date.now() >= (c._leaveAt || Infinity)) { labubuLeave(c); return; }
   // growing up
   if (c._wasKitten === undefined) c._wasKitten = c.isKitten;
@@ -6150,6 +6166,11 @@ function drawCat(g, c, isPhoto) {
   const sleepStyle = asleep ? ((c.markSeed || 0) % 3) : 0;   // 0 loaf · 1 curl · 2 side-flop (stable per cat)
   const P = poseParams(pose, sleepStyle);
   if (strK > 0.05) { P.hy += strK * 11; P.hr *= 1 - strK * 0.06; }  // stretch: chin & chest sink toward the ground
+  if (c._boop > 0 && c.partner) {   // lean the head in for a nose boop
+    const k = Math.sin(Math.max(0, 0.4 - c._boop) / 0.4 * Math.PI);
+    P.hx += k * (c.partner.x > c.x ? 1 : -1) * 5 * (c.face > 0 ? 1 : -1);
+    P.hy -= k * 1.5;
+  }
   const groomFrozen = grooming && c._groomFrozen > 0;
   const lick = grooming ? (groomFrozen ? 0.9 : Math.sin(c.stateT * 7)) : 0;   // washing rhythm; held out mid-freeze
 
