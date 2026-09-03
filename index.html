@@ -160,7 +160,7 @@
     -webkit-overflow-scrolling:touch;touch-action:pan-x;display:flex;background:#171310;}
   #stage::-webkit-scrollbar{display:none;}
   #c{margin:auto;display:block;flex:0 0 auto;}
-  #dexGrid canvas,#modal canvas,#photoCanvas{position:static;}
+  .dex-grid canvas,#modal canvas,#photoCanvas{position:static;}
 
   /* ---- panels ---- */
   .sheet{
@@ -263,21 +263,28 @@
   .btn.rewarded{background:#f3ede0;border-color:var(--panel-line);}
   button.btn.primary.wantcoax{opacity:.72;}
 
-  /* ---- catdex ---- */
+  /* ---- catdex / field guide ---- */
   #dex{left:50%;top:50%;transform:translate(-50%,-50%);width:min(96vw,520px);max-height:82vh;overflow-y:auto;border-radius:22px;}
   @media(max-width:600px){#dex{top:auto;bottom:calc(3.5rem + env(safe-area-inset-bottom));transform:translateX(-50%);width:100vw;max-height:78dvh;border-radius:20px 20px 0 0;}}
-  .dexbar{height:.5rem;border-radius:999px;background:#e4e0cf;overflow:hidden;margin:-.3rem 0 1rem;}
-  .dexbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-bright));transition:width .5s ease;}
-  #dexGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;}
-  @media(max-width:420px){#dexGrid{grid-template-columns:repeat(3,1fr);}}
-  .dexcell{background:#eef1e3;border:1px solid var(--panel-line);border-radius:12px;padding:.5rem .2rem .35rem;
-    text-align:center;position:relative;min-height:92px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:.1rem;}
+  .dex-tier{margin:0 0 1.15rem;}
+  .dex-th{display:flex;justify-content:space-between;align-items:baseline;margin:.1rem .1rem .35rem;}
+  .dex-th .tn{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:.95rem;color:var(--ink);}
+  .dex-th .tc{font-family:"IBM Plex Mono","SFMono-Regular",monospace;font-size:.66rem;letter-spacing:.04em;color:var(--ink-faint);}
+  .dex-tbar{height:.28rem;border-radius:999px;background:#e4e0cf;overflow:hidden;margin:0 .1rem .6rem;}
+  .dex-tbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-bright));transition:width .5s ease;}
+  .dex-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.45rem;}
+  @media(max-width:420px){.dex-grid{grid-template-columns:repeat(3,1fr);}}
+  .dexcell{background:#eef1e3;border:1px solid var(--panel-line);border-radius:12px;padding:.4rem .2rem .35rem;
+    text-align:center;position:relative;min-height:92px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:.1rem;cursor:pointer;transition:transform .08s ease;}
+  .dexcell:active{transform:scale(.95);}
   .dexcell.found{background:var(--panel);}
-  .dexcell canvas{width:50px;height:46px;}
-  .dexcell .q{font-family:"Fraunces",serif;font-size:1.7rem;color:#b7b09a;margin:auto 0;}
+  .dexcell:not(.found){opacity:.72;}
+  .dexcell canvas{width:52px;height:44px;}
   .dexcell .nm{font-size:.58rem;line-height:1.05;color:var(--ink-soft);font-weight:600;
     max-width:100%;overflow-wrap:break-word;hyphens:auto;}
+  .dexcell:not(.found) .nm{letter-spacing:.14em;color:var(--ink-faint);}
   .dexcell .st{position:absolute;top:.2rem;left:0;right:0;font-size:.62rem;font-weight:800;letter-spacing:-1px;}
+  #cn-cv{display:block;margin:0 auto;}
 
   /* ---- today ---- */
   #today{left:50%;top:50%;transform:translate(-50%,-50%);width:min(96vw,480px);max-height:82vh;overflow-y:auto;border-radius:22px;}
@@ -653,7 +660,7 @@
 
   <div id="actions">
     <button class="btn primary" id="coaxBtn"><span class="ico">🐾</span> <span class="lbl">Coax<span class="lbl-x">&nbsp;a cat</span></span> <span class="badge cost">◈<span id="coaxCost">10</span></span></button>
-    <button class="btn" id="dexBtn"><span class="ico">📖</span> <span class="lbl">Catdex</span> <span class="badge" id="dexBadge">0/11</span></button>
+    <button class="btn" id="dexBtn"><span class="ico">📖</span> <span class="lbl">Catdex</span> <span class="badge" id="dexBadge">0</span></button>
     <button class="btn" id="todayBtn"><span class="ico">📋</span> <span class="lbl">Today</span> <span class="badge alert" id="todayBadge" hidden>!</span></button>
     <button class="btn" id="shopBtn"><span class="ico">🧺</span> <span class="lbl">Shop</span></button>
     <button class="btn" id="photoBtn"><span class="ico">📷</span> <span class="lbl">Photo</span></button>
@@ -687,9 +694,8 @@
   <div class="sheet" id="dex" hidden>
     <button class="x" data-close="dex">✕</button>
     <h2>Catdex</h2>
-    <p class="muted"><span id="dexProg">0</span> / <span id="dexTotal">11</span> coats discovered · keep coaxing to find them all</p>
-    <div class="dexbar"><i id="dexBarFill"></i></div>
-    <div id="dexGrid"></div>
+    <p class="muted" id="dexSub">Every cat that's wandered through. Tap one for its note.</p>
+    <div id="dexTiers"></div>
   </div>
 
   <!-- today: daily goals + streak -->
@@ -843,31 +849,78 @@ const TRAIT_WEIGHT = { glutton:10, playful:10, shy:8, cuddly:5, climber:7, chatt
    white   = list of white markings: bib, belly, muzzle, blaze, paws
    stripe  = tabby stripe colour   point = siamese point colour
    eye, nose, inner (ear) colours                                       */
+// tier: everyday · uncommon · rare · special. weightedCoat() scales w by TIER_W;
+// note = the deadpan one-line field-guide entry shown once you've met the coat.
 const COATS = [
-  { key:"tuxedo",   name:"tuxedo cat",        w:13, base:"#26232b", belly:"#34303a", pattern:"solid",
-    white:["bib","belly","muzzle","paws","blaze"], eye:"#e0b24b", nose:"#2c2530", inner:"#e2b4b4" },
-  { key:"ginger",   name:"ginger tabby",      w:14, base:"#d5813c", belly:"#f1dcbe", pattern:"mackerel",
-    stripe:"#b0672a", white:["muzzle","bib","paws"], eye:"#e6ad3e", nose:"#cd7a6c", inner:"#e5a79e" },
-  { key:"greytab",  name:"grey tabby",        w:12, base:"#8a949e", belly:"#c7cac9", pattern:"mackerel",
-    stripe:"#67717b", eye:"#c6cf5a", nose:"#6a6264", inner:"#c99a9a" },
-  { key:"browntab", name:"brown tabby",       w:11, base:"#997c53", belly:"#c0a67e", pattern:"mackerel",
-    stripe:"#6b5636", eye:"#cd923c", nose:"#5b4633", inner:"#bd9088" },
-  { key:"greywhite",name:"grey & white",      w:10, base:"#98a2aa", belly:"#c7cac9", pattern:"mackerel",
-    stripe:"#67717b", white:["bib","belly","muzzle","paws","blaze"], eye:"#e0b24b", nose:"#c98f8f", inner:"#d7a9a9" },
-  { key:"black",    name:"black cat",         w:11, base:"#26232b", belly:"#33303a", pattern:"solid",
-    eye:"#f0c23b", nose:"#2a2622", inner:"#7c5c5c" },
-  { key:"calico",   name:"calico cat",        w:10, base:"#f4f1e8", belly:"#fbf8ef", pattern:"calico",
-    p1:"#dd8a3e", p2:"#312c34", white:["bib","belly","muzzle","paws"], eye:"#c98b4b", nose:"#e0a0a0", inner:"#eab8b8" },
-  { key:"tortie",   name:"tortoiseshell",     w:8,  base:"#312c34", belly:"#413b44", pattern:"tortie",
-    p1:"#cf7d33", eye:"#c98b4b", nose:"#3a332e", inner:"#8a6a5c" },
-  { key:"white",    name:"white cat",         w:7,  base:"#f6f2ea", belly:"#ffffff", pattern:"solid",
-    eye:"#7fb7d8", nose:"#e6a6a6", inner:"#ecbcbc" },
-  { key:"russian",  name:"russian blue",      w:8,  base:"#7c8790", belly:"#98a1a9", pattern:"solid",
-    eye:"#8fc46b", nose:"#6a6b6d", inner:"#b79a9a" },
-  { key:"siamese",  name:"siamese cat",       w:6,  base:"#efe4cf", belly:"#f7efdc", pattern:"points",
-    point:"#5a4636", eye:"#6fb0d8", nose:"#4a3a30", inner:"#5a463c" },
+  // ---- EVERYDAY ----
+  { key:"tuxedo",   name:"tuxedo cat",        tier:"everyday", w:13, base:"#26232b", belly:"#34303a", pattern:"solid",
+    white:["bib","belly","muzzle","paws","blaze"], eye:"#e0b24b", nose:"#2c2530", inner:"#e2b4b4",
+    note:"Dressed for an occasion that keeps getting cancelled. Entirely at peace with this." },
+  { key:"ginger",   name:"ginger tabby",      tier:"everyday", w:14, base:"#d5813c", belly:"#f1dcbe", pattern:"mackerel",
+    stripe:"#b0672a", white:["muzzle","bib","paws"], eye:"#e6ad3e", nose:"#cd7a6c", inner:"#e5a79e",
+    note:"Runs warm. Will locate the one sunbeam in a week of solid cloud and lie in it." },
+  { key:"greytab",  name:"grey tabby",        tier:"everyday", w:12, base:"#8a949e", belly:"#c7cac9", pattern:"mackerel",
+    stripe:"#67717b", eye:"#c6cf5a", nose:"#6a6264", inner:"#c99a9a",
+    note:"The cove's default setting. Camouflages against fences, gravel, tree bark, and most kinds of afternoon." },
+  { key:"browntab", name:"brown tabby",       tier:"everyday", w:11, base:"#997c53", belly:"#c0a67e", pattern:"mackerel",
+    stripe:"#6b5636", eye:"#cd923c", nose:"#5b4633", inner:"#bd9088",
+    note:"The woodland trim. Considers a twig lodged in the fur to be a completed outfit." },
+  { key:"greywhite",name:"grey & white",      tier:"everyday", w:10, base:"#98a2aa", belly:"#c7cac9", pattern:"mackerel",
+    stripe:"#67717b", white:["bib","belly","muzzle","paws","blaze"], eye:"#e0b24b", nose:"#c98f8f", inner:"#d7a9a9",
+    note:"A grey tabby that got too close to a tray of white paint. Wears it well." },
+  { key:"black",    name:"black cat",         tier:"everyday", w:11, base:"#26232b", belly:"#33303a", pattern:"solid",
+    eye:"#f0c23b", nose:"#2a2622", inner:"#7c5c5c",
+    note:"In photos it comes out as two eyes and a cat-shaped gap in the light. Best admired in person." },
+  { key:"white",    name:"white cat",         tier:"everyday", w:7,  base:"#f6f2ea", belly:"#ffffff", pattern:"solid",
+    eye:"#7fb7d8", nose:"#e6a6a6", inner:"#ecbcbc",
+    note:"Spotless, always. In exchange, you will find one white hair on everything you own, forever." },
+  { key:"orangewhite", name:"orange & white", tier:"everyday", w:9, base:"#dd8c44", belly:"#f6ead6", pattern:"mackerel",
+    stripe:"#bd7330", white:["bib","belly","muzzle","paws"], eye:"#e0a63e", nose:"#cd7a6c", inner:"#e7b49e",
+    note:"Ginger, rationed. The white parts are where the orange ran out." },
+  { key:"browntabwhite", name:"brown tabby & white", tier:"everyday", w:8, base:"#997c53", belly:"#c0a67e", pattern:"mackerel",
+    stripe:"#6b5636", white:["bib","muzzle","paws"], eye:"#cd923c", nose:"#5b4633", inner:"#bd9088",
+    note:"The woodland tabby, with socks it keeps clean for exactly one afternoon." },
+  { key:"greytabwhite", name:"grey tabby & white", tier:"everyday", w:8, base:"#8a949e", belly:"#c7cac9", pattern:"mackerel",
+    stripe:"#67717b", white:["bib","belly","muzzle","paws"], eye:"#c6cf5a", nose:"#6a6264", inner:"#c99a9a",
+    note:"Came with a bib. Still gets dinner everywhere. The bib was optimistic." },
+  // ---- UNCOMMON ----
+  { key:"calico",   name:"calico cat",        tier:"uncommon", w:10, base:"#f4f1e8", belly:"#fbf8ef", pattern:"calico",
+    p1:"#dd8a3e", p2:"#312c34", white:["bib","belly","muzzle","paws"], eye:"#c98b4b", nose:"#e0a0a0", inner:"#eab8b8",
+    note:"Three colours that shouldn't agree, arranged by nobody, somehow the right amount of each." },
+  { key:"tortie",   name:"tortoiseshell",     tier:"uncommon", w:8,  base:"#312c34", belly:"#413b44", pattern:"tortie",
+    p1:"#cf7d33", eye:"#c98b4b", nose:"#3a332e", inner:"#8a6a5c",
+    note:"Holds opinions. You will be offered a selection, at volume, at six in the morning." },
+  { key:"russian",  name:"russian blue",      tier:"uncommon", w:8,  base:"#7c8790", belly:"#98a1a9", pattern:"solid",
+    eye:"#8fc46b", nose:"#6a6b6d", inner:"#b79a9a",
+    note:"Reserved. Your lap is under review; a decision is pending indefinitely." },
+  { key:"siamese",  name:"siamese cat",       tier:"uncommon", w:6,  base:"#efe4cf", belly:"#f7efdc", pattern:"points",
+    point:"#5a4636", eye:"#6fb0d8", nose:"#4a3a30", inner:"#5a463c",
+    note:"Narrates the day at length. The subject is never clear; the delivery is urgent and the eye contact total." },
+  { key:"silver",   name:"silver tabby",      tier:"uncommon", w:5,  base:"#b9c0c4", belly:"#e6e9e8", pattern:"mackerel",
+    stripe:"#5c6468", eye:"#a9c25a", nose:"#7d7a7c", inner:"#d0b0b0",
+    note:"A grey tabby dusted silver, like it walked through an early frost and kept it." },
+  { key:"cream",    name:"cream cat",         tier:"uncommon", w:5,  base:"#e8d2a8", belly:"#f6ecd8", pattern:"mackerel",
+    stripe:"#d3b985", eye:"#d8a63c", nose:"#cf9f8f", inner:"#e7c9b4",
+    note:"A ginger left out in the sun until the colour went soft. Found near the mat, horizontal." },
+  { key:"bluepoint",name:"blue point",        tier:"uncommon", w:4,  base:"#e4e6e6", belly:"#f0f2f1", pattern:"points",
+    point:"#7c8790", eye:"#8ec5dd", nose:"#8a8d8f", inner:"#c9b0b0",
+    note:"Siamese, in cooler colours. Dressed for a chill, then complained about the chill." },
+  { key:"flamepoint",name:"flame point",      tier:"uncommon", w:4,  base:"#f3e8d6", belly:"#f9f0de", pattern:"points",
+    point:"#d5813c", eye:"#8ec5dd", nose:"#cd7a6c", inner:"#e7b49e",
+    note:"Siamese at heart, ginger at the edges. Got into something orange and committed to it." },
+  { key:"dilutecalico", name:"dilute calico", tier:"uncommon", w:4,  base:"#f4f1e8", belly:"#fbf8ef", pattern:"calico",
+    p1:"#d8a878", p2:"#9a94a0", white:["bib","belly","muzzle","paws"], eye:"#c8a24a", nose:"#d69a9a", inner:"#eab8b8",
+    note:"Calico, faded to soft in a sunny window. Same three colours, all turned down a notch." },
 ];
-// the mascot — a fixed character, never rolled, not part of the 11-coat Catdex
+const COAT_TIERS = ["everyday", "uncommon", "rare", "special"];
+const TIER_LABEL = { everyday:"Everyday", uncommon:"Uncommon", rare:"Rare", special:"Visitors" };
+const TIER_W = { everyday:1, uncommon:0.5, rare:0.16, special:0 };
+// coats that can turn up on their own (the Catdex "completion" set — Visitors don't count)
+const ROLLABLE = COATS.filter(c => TIER_W[c.tier] > 0);
+const CHARTER_DEX = 15;   // discover this many coats → the Cove Charter unlocks
+// the original 11 — a save that had them all is grandfathered past the new gate
+const ORIGINAL_11 = ["tuxedo","ginger","greytab","browntab","greywhite","black","calico","tortie","white","russian","siamese"];
+// the mascot — a fixed character, never rolled; a Catdex "Visitors" entry (Phase 3)
 const MIDKNIGHT_COAT = { key:"midknight", name:"Midknight", base:"#26232b", belly:"#34303b", pattern:"solid",
   white:["bib","belly","muzzle","paws"], eye:"#e0b24b", nose:"#2c2530", inner:"#e2b4b4", mascot:true };
 // Labubu — Midknight's sidekick. A snowshoe: seal points, white boots + blaze,
@@ -877,27 +930,35 @@ const LABUBU_COAT = { key:"labubu", name:"Labubu", base:"#e7dcc6", belly:"#f4efe
   snowMask:true,                          // custom face: an off-centre dark muzzle splotch, not a clean blaze
   collarCol:"#a24bb0", bellCol:"#b76fc7", visitor:true };   // his purple bell — canon, from the real cat
 const COAT_BY_KEY = Object.fromEntries([...COATS, MIDKNIGHT_COAT, LABUBU_COAT].map(c => [c.key, c]));
+function currentSeason() {
+  const m = new Date().getMonth();                              // 0 = Jan
+  return (m <= 1 || m === 11) ? "winter" : m <= 4 ? "spring" : m <= 7 ? "summer" : "autumn";
+}
+function coatSeasonOK(c) { return !c.season || c.season === currentSeason(); }
+function dexInPool() { let n = 0; for (const c of ROLLABLE) if (G.dex[c.key]) n++; return n; }
 function weightedCoat() {
-  const undiscovered = COATS.filter(c => !G.dex[c.key]);
+  const pool = ROLLABLE.filter(coatSeasonOK);                    // Visitors + off-season coats never roll
+  const tw = c => c.w * TIER_W[c.tier];
+  const undiscovered = pool.filter(c => !G.dex[c.key]);
   // soft pity — a long dry spell without a new coat guarantees the next one
   // (shorter fuse when only a coat or two remain, so the last ones aren't a slog)
   const pityAt = 8 + undiscovered.length * 2;
   if (undiscovered.length && (G.metrics.dryStreak || 0) >= pityAt) {
-    let t = 0; for (const c of undiscovered) t += c.w;
+    let t = 0; for (const c of undiscovered) t += tw(c);
     let r = Math.random() * t;
-    for (const c of undiscovered) { r -= c.w; if (r <= 0) return c.key; }
+    for (const c of undiscovered) { r -= tw(c); if (r <= 0) return c.key; }
     return undiscovered[0].key;
   }
   // otherwise: as the Catdex fills, undiscovered coats get progressively rarer so
   // "a new coat!" stays a real event instead of every other cat (paces completion
-  // to ~1-2 weeks rather than a day)
-  const fill = Object.keys(G.dex).length / COATS.length;   // 0 → ~1
-  const rareMul = 1 - fill * 0.8;                           // down to ~20% of base weight
+  // to ~2-3 weeks rather than a day)
+  const fill = dexInPool() / pool.length;                        // 0 → ~1
+  const rareMul = 1 - fill * 0.82;                               // down to ~18% of tier weight
   let total = 0;
-  const w = COATS.map(c => { const x = G.dex[c.key] ? c.w : c.w * rareMul; total += x; return x; });
+  const w = pool.map(c => { const x = G.dex[c.key] ? tw(c) : tw(c) * rareMul; total += x; return x; });
   let r = Math.random() * total;
-  for (let i = 0; i < COATS.length; i++) { r -= w[i]; if (r <= 0) return COATS[i].key; }
-  return COATS[0].key;
+  for (let i = 0; i < pool.length; i++) { r -= w[i]; if (r <= 0) return pool[i].key; }
+  return pool[0].key;
 }
 function mulberry32(a) {
   return function () {
@@ -1001,6 +1062,8 @@ function load() {
     if (G.trinkets === undefined) G.trinkets = 0;
     if (G.scratch === undefined) G.scratch = 0;
     if (G.coveCharter === undefined) G.coveCharter = false;
+    // field-guide expansion: a cove that had the original 11 keeps its Charter access
+    if (G.dexGrandfathered === undefined) G.dexGrandfathered = ORIGINAL_11.every(k => G.dex && G.dex[k]);
     G.ads = Object.assign(newAdsState(), G.ads || {});
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
     if (typeof G.coldStep !== "number") G.coldStep = G.tutorialDone ? 99 : 0;
@@ -1695,10 +1758,19 @@ function dedupeCats() {
 }
 
 /* ---------- Catdex: the collection spine ---------- */
+// pearl rewards as the field guide fills. the last one lands on the rollable total
+// (Visitors don't count toward completion); reward ramps as coats get rarer.
 const DEX_MILESTONES = [
-  { at: 3, pearls: 3 }, { at: 6, pearls: 5 }, { at: 9, pearls: 8 }, { at: COATS.length, pearls: 20 },
+  { at: 4, pearls: 3 }, { at: 8, pearls: 5 }, { at: 12, pearls: 8 },
+  { at: 16, pearls: 12 }, { at: ROLLABLE.length, pearls: 25 },
 ];
-function dexCount() { return Object.keys(G.dex).length; }
+function dexCount() { return dexInPool(); }                     // coats met that count toward completion
+function dexSpecialCount() { return Object.keys(G.dex).filter(k => (COAT_BY_KEY[k] || {}).tier === "special").length; }
+function tierProgress(tier) {
+  const list = COATS.filter(c => c.tier === tier);
+  return { found: list.filter(c => G.dex[c.key]).length, total: list.length };
+}
+function charterEarned() { return G.coveCharter || !!G.dexGrandfathered || dexCount() >= CHARTER_DEX; }
 function registerInDex(c, celebrate) {
   if (c.mascot || c.visitor) return;          // Midknight and Labubu are characters, not Catdex coats
   const prev = G.dex[c.coatKey];
@@ -1725,7 +1797,9 @@ function checkDexMilestones() {
     if (n >= m.at && !G.dexRewards.includes(m.at)) {
       G.dexRewards.push(m.at);
       G.pearls += m.pearls;
-      toast(`Catdex ${m.at}/${COATS.length} — +${m.pearls} pearls`, 4);
+      const done = m.at >= ROLLABLE.length;
+      toast(done ? `The field guide is full — every coat met. +${m.pearls} pearls 🐾`
+                 : `${n} coats in the field guide now — +${m.pearls} pearls`, 4);
     }
   }
 }
@@ -3070,7 +3144,7 @@ const SHOP = [
     base:45, mul:2.2, get:()=>G.comfort, max:5, buy:()=>{ G.comfort++; } },
   { key:"charter", cat:"upgrades", name:"Cove Charter", desc:"A one-time expansion for a well-loved cove — room for up to 24 cats.",
     base:5000, mul:1, pearls:30, get:()=>G.coveCharter ? 1 : 0, max:1,
-    need:()=> dexCount() < COATS.length ? `Discover all ${COATS.length} coats first — ${dexCount()}/${COATS.length}` : null,
+    need:()=> charterEarned() ? null : `Meet ${CHARTER_DEX} coats first — ${dexCount()} so far`,
     buy:()=>{ G.coveCharter = true; } },
   // seasonal decor — a sneak-peek. shows locked until the season lands.
   { key:"pumpkins", cat:"comforts", soon:true, name:"🎃 Pumpkin patch", desc:"Carved pumpkins, a few cobwebs, a very unbothered black cat.",
@@ -3553,7 +3627,7 @@ function syncHud() {
   if (cbl) cbl.innerHTML = full ? "Cove full" : `Coax<span class="lbl-x">&nbsp;a cat</span>`;
   const cbc = cb.querySelector(".badge.cost");
   if (cbc) cbc.style.display = full ? "none" : "";
-  document.getElementById("dexBadge").textContent = dexCount() + "/" + COATS.length;
+  document.getElementById("dexBadge").textContent = dexCount() + dexSpecialCount() + "";
   const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
   const advBack = anyAdvBack();
   const projReady = PROJECTS.some(p => { if (projectStage(p.id) !== "open") return false; const n = projectNeed(p.id); return n.shells === 0 && n.driftwood === 0; });
@@ -3740,39 +3814,81 @@ function openBackup() {
 document.getElementById("backupBtn").addEventListener("click", openBackup);
 
 /* ---------- Catdex render ---------- */
-function miniCat(canvasEl, coatKey, star, state) {
+function miniCat(canvasEl, coatKey, star, state, silhouette, scale) {
   const g = canvasEl.getContext("2d");
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, canvasEl.width, canvasEl.height);
-  const fake = new Cat({ coatKey, star: star || 1, bornAt: 0, x: 0, y: 0 });
+  const fake = new Cat({ coatKey: coatKey || "greytab", star: star || 1, bornAt: 0, x: 0, y: 0 });
   fake.state = state || "loafing"; fake.blink = 3; fake.bob = 0.6; fake.tail = 0.3; fake.trotting = false;
   if (state === "sleeping") fake.markSeed = 1;   // show the curled-up sleeper
   g.save();
   g.translate(canvasEl.width / 2, canvasEl.height - 6);
-  g.scale(1.15, 1.15);
+  const s = scale || 1.15;
+  g.scale(s, s);
   drawCat(g, fake, true);
   g.restore();
+  if (silhouette) {                              // flatten to one colour — a "not met yet" sketch
+    g.save();
+    g.globalCompositeOperation = "source-in";
+    g.fillStyle = (getComputedStyle(document.documentElement).getPropertyValue("--ink-faint") || "#b7b09a").trim();
+    g.fillRect(0, 0, canvasEl.width, canvasEl.height);
+    g.restore();
+  }
 }
 function renderDex() {
-  const n = dexCount();
-  document.getElementById("dexProg").textContent = n;
-  document.getElementById("dexTotal").textContent = COATS.length;
-  document.getElementById("dexBarFill").style.width = (n / COATS.length * 100) + "%";
-  const grid = document.getElementById("dexGrid");
-  grid.innerHTML = "";
-  for (const coat of COATS) {
-    const rec = G.dex[coat.key];
-    const cell = document.createElement("div");
-    cell.className = "dexcell" + (rec ? " found" : "");
-    if (rec) {
-      cell.innerHTML = `<span class="st" style="color:${STAR_COL[rec.star]}">${"★".repeat(rec.star)}</span>
-        <canvas width="72" height="66"></canvas><span class="nm">${coat.name}</span>`;
-      miniCat(cell.querySelector("canvas"), coat.key, rec.star);
-    } else {
-      cell.innerHTML = `<span class="q">?</span><span class="nm">???</span>`;
+  const met = dexCount(), total = ROLLABLE.length;
+  const sub = document.getElementById("dexSub");
+  if (sub) sub.textContent = met >= total
+    ? "Every coat met — new ones turn up as the seasons turn. Tap one for its note."
+    : `${met} coats so far. Tap any one for its note.`;
+  const host = document.getElementById("dexTiers");
+  host.innerHTML = "";
+  for (const tier of COAT_TIERS) {
+    const list = COATS.filter(c => c.tier === tier);
+    if (!list.length) continue;
+    const p = tierProgress(tier);
+    const sec = document.createElement("div");
+    sec.className = "dex-tier";
+    sec.innerHTML =
+      `<div class="dex-th"><span class="tn">${TIER_LABEL[tier]}</span><span class="tc">${p.found} of ${p.total}</span></div>` +
+      `<div class="dex-tbar"><i style="width:${Math.round(p.found / p.total * 100)}%"></i></div>` +
+      `<div class="dex-grid"></div>`;
+    const grid = sec.querySelector(".dex-grid");
+    for (const coat of list) {
+      const rec = G.dex[coat.key];
+      const cell = document.createElement("div");
+      cell.className = "dexcell" + (rec ? " found" : "");
+      const cv = document.createElement("canvas"); cv.width = 96; cv.height = 80;
+      cell.appendChild(cv);
+      const nm = document.createElement("div"); nm.className = "nm";
+      nm.textContent = rec ? coat.name : "— — —";
+      cell.appendChild(nm);
+      if (rec) {
+        const st = document.createElement("div"); st.className = "st";
+        st.style.color = STAR_COL[rec.star] || "";
+        st.textContent = "★".repeat(rec.star);
+        cell.appendChild(st);
+      }
+      miniCat(cv, coat.key, rec ? rec.star : 1, "loafing", !rec, 1.5);
+      cell.addEventListener("click", () => showCoatNote(coat, rec));
+      grid.appendChild(cell);
     }
-    grid.appendChild(cell);
+    host.appendChild(sec);
   }
+}
+function showCoatNote(coat, rec) {
+  const met = !!rec;
+  openModal(`<div class="reveal vignette">
+    <div class="kicker">${met ? esc(TIER_LABEL[coat.tier]) : "Not met yet"}</div>
+    <canvas id="cn-cv" width="200" height="150"></canvas>
+    <h2 style="margin:.15rem 0 .1rem">${met ? esc(coat.name) : "? ? ?"}</h2>
+    <p class="vig-body">${met ? esc(coat.note || "") : "You haven't crossed paths with this one yet. It's out there."}</p>
+    ${met && rec.count > 1 ? `<p class="sub" style="margin:.2rem 0 0">met ${rec.count} times</p>` : ""}
+    <div class="row"><button class="btn primary" id="cn-ok">Close</button></div>
+  </div>`);
+  const cv = document.getElementById("cn-cv");
+  if (cv) miniCat(cv, coat.key, met ? rec.star : 1, "loafing", !met, 3);
+  document.getElementById("cn-ok").onclick = closeModal;
 }
 
 /* ---------- daily goals render ---------- */
@@ -3835,7 +3951,7 @@ function flushReveal() {
     <p class="sub">${rv.coatName} · ${STAR_NAME[rv.star]}${rv.star>=2?` — produces ${Math.round((1+(rv.star-1)*0.3)*100)}% shells`:""}</p>
     <button class="btn primary" id="rv-ok">${revealQueue.length ? "Next" : "Welcome them in"}</button>
   </div>`);
-  miniCat(document.querySelector("#modal canvas"), rv.coatKey, rv.star);
+  miniCat(document.querySelector("#modal canvas"), rv.coatKey, rv.star, "loafing", false, 2.7);
   sfx(rv.star >= 3 ? "reveal" : "coax");
   shake(rv.star >= 3 ? 5 : 2);
   document.getElementById("rv-ok").onclick = () => { closeModal(); setTimeout(flushReveal, 120); };
@@ -4100,7 +4216,7 @@ function updateDev() {
   devStats.textContent =
 `SESSION ${fmtTime(sessSec)}   ·  D hides · R resets
 day ${G.opens}   cats ${cats.length}/${capacity()}   mood ${avgMood}
-shells ${Math.floor(G.shells)}   pearls ${G.pearls}   dex ${dexCount()}/${COATS.length}
+shells ${Math.floor(G.shells)}   pearls ${G.pearls}   dex ${dexCount()}/${ROLLABLE.length}
 pets ${G.metrics.pets}  tokens ${G.metrics.tokens}  coaxed ${G.metrics.coaxed}  photos ${G.metrics.photos}
 streak ${G.streak}   rate ${aggregateRate().toFixed(2)}/s   played ${fmtTime(G.allTimeSec || 0)}
 ads: ${!ADS_ENABLED ? "DISABLED (ad-free build)" : Ads.owned() ? "SUPPORTER (off)" : (Date.now()-(G.firstSeen||0) < 48*3600e3 ? "grace" : "on")}  seen ${G.ads.seen}  today ${G.ads.dayCount}  born ${G.ads.born||"—"}  npa ${G.ads.npa?1:0}`;
@@ -8477,7 +8593,7 @@ window.__cove = {
   get dex(){return G.dex}, get goals(){return G.goals}, get revealQ(){return revealQueue},
   giveCat(coatKey, star, celeb){ if (celeb) delete G.dex[coatKey];
     const c = spawnCat({ coatKey, star, _celeb: !!celeb, x: rand(W*0.3,W*0.7), y: rand(H*0.6,H*0.8) }); syncHud(); return c && c.name; },
-  fillDex(){ for (const co of COATS) if (!G.dex[co.key]) G.dex[co.key] = { star: 2, count: 1 }; checkDexMilestones(); syncHud(); return dexCount() + "/" + COATS.length; },
+  fillDex(){ for (const co of COATS) if (!G.dex[co.key]) G.dex[co.key] = { star: 2, count: 1 }; checkDexMilestones(); syncHud(); return dexCount() + "/" + ROLLABLE.length; },
   charter(v = true){ G.coveCharter = !!v; syncHud(); return { coveCharter: G.coveCharter, maxCats: maxCats(), capacity: capacity() }; },
   moments(){ return G.moments || []; },
   drift(n = 5){ gainDriftwood(n); return G.materials.driftwood; },
