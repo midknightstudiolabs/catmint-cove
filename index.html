@@ -812,6 +812,7 @@ const stage = document.getElementById("stage");
 const W = 1150, H = 780;
 let displayScale = 1;   // css px per world unit
 let _worldOffX = 0, _worldOffY = 0, _overX = 0;   // FILL mode centres/crops the cove to cover the viewport; PAN mode leaves both 0
+let _viewBottomY = 780, _narrowUI = false;        // world-y at the bottom of the viewport, and whether the mobile tab bar is up
 
 /* ---------- trait model ---------- */
 // likes: which attractor the cat gravitates to. 'cats' = other cats, 'roam' = wander.
@@ -1112,7 +1113,9 @@ const STATION_HOME = {   // each station has a canonical corner of the cove
 };
 // lowest a cat anchor / usable attractor should sit — keeps cats and the
 // stations they work clear of the fixed action bar at the bottom of the screen
-const catFloor = () => H - (W < 600 ? 84 : 66);   // a bit more clearance on mobile — the tab bar is fixed & taller
+// lowest a cat / usable attractor sits — clear of the action bar, and above the
+// FILL-mode crop so nobody's feet get shaved off at the bottom of the screen
+const catFloor = () => _viewBottomY - (_narrowUI ? 84 : 62);
 // Place a set of footprints so nothing lands on top of anything else.
 // Each item: { r (footprint radius), seed (stable), yBand:[lo,hi] }. Returns [{x,y}].
 // `avoid` is a list of pre-placed footprints { x, y, r } the new items must clear too.
@@ -8437,19 +8440,20 @@ function resize() {
     _worldOffX = 0; _worldOffY = 0;
     cssW = fvh * aspect;
   } else {
-    // FILL: desktop / tablet-landscape. Scale the cove to cover the whole viewport,
-    // centring the crop — never shave more than ~13% off the top+bottom so every
-    // cat stays in frame (they roam down to catFloor ≈ H-66); any leftover width
-    // on an ultrawide becomes sky/ground rather than a deeper crop.
-    displayScale = Math.max(fvw / W, fvh / H);
-    const minVisibleH = H * 0.87;
-    if (fvh / displayScale < minVisibleH) displayScale = fvh / minVisibleH;
+    // FILL: desktop / tablet-landscape. Scale the cove to *cover* the whole
+    // viewport (edge to edge), centring the crop. catFloor() follows _worldOffY
+    // so the vertical crop only ever eats sky and foreground grass, never a cat.
+    // The zoom is capped at 1.5× the height-fit so an ultrawide gets a little
+    // sky/ground margin instead of the cove blown up to a sliver.
+    displayScale = Math.min(Math.max(fvw / W, fvh / H), (fvh / H) * 1.5);
     _worldOffX = (fvw / displayScale - W) / 2;   // < 0 crops the sides, > 0 = margin
-    _worldOffY = (fvh / displayScale - H) / 2;   // <= 0 always (cover)
+    _worldOffY = (fvh / displayScale - H) / 2;   // <= 0 (cover)
     cssW = fvw;
   }
   const cssH = fvh;
   _overX = Math.max(0, _worldOffX) + 6;
+  _viewBottomY = H + Math.min(0, _worldOffY);   // world-y at the viewport's bottom edge
+  _narrowUI = fvw < 600;                        // the fixed mobile tab bar is up
   canvas.style.width = Math.round(cssW) + "px";
   canvas.style.height = Math.round(cssH) + "px";
   const bw = Math.round(cssW * DPR), bh = Math.round(cssH * DPR);
@@ -8460,17 +8464,17 @@ function resize() {
   refreshShellAnchor();
 }
 // wired to every way the viewport can change (iOS rotate, address bar, split view)
-let _lastW = 0, _lastH = 0, _relayoutT = 0;
+let _lastViewBottom = 780, _relayoutT = 0;
 function onViewportChange() {
   _resizeRetry = 0;                   // a real viewport event — let resize() retry from scratch if needed
   resize();                          // keep the canvas backing store matched to the box — immediately
   clearTimeout(_relayoutT);
   _relayoutT = setTimeout(() => {
-    // only re-lay-out the scene on a real size change (not on every address-bar nudge)
-    if (Math.abs(W - _lastW) > 32 || Math.abs(H - _lastH) > 32) {
-      _lastW = W; _lastH = H;
+    // W/H are fixed, so a resize is usually just a rescale — but the FILL-mode
+    // crop (via _viewBottomY → catFloor) can move the usable band; re-settle then.
+    if (Math.abs(_viewBottomY - _lastViewBottom) > 36) {
+      _lastViewBottom = _viewBottomY;
       rebuildAttractors();
-      initClouds(); initFlecks(); initStars(); initForeground();
       _restG = null;
       if (restMode) { initGlassDrops(); restSeatCats(); }
       else for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, catFloor()); }
@@ -8698,7 +8702,7 @@ Object.defineProperty(window.__cove, "cam", { get: () => ({
 }) });
 
 resize();
-_lastW = W; _lastH = H;
+_lastViewBottom = _viewBottomY;
 load();
 restoreCats();
 visitorTimer = nextVisitorGap();      // now that G is loaded, time the next free arrival properly
