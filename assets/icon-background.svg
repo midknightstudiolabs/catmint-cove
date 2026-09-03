@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Catmint Cove — Android adaptive icon background layer -->
+  <defs>
+    <radialGradient id="bg" gradientUnits="userSpaceOnUse" cx="430" cy="346" r="864">
+      <stop offset="0" stop-color="#76a561"/>
+      <stop offset="1" stop-color="#4a713f"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="332" fill="#88b271" opacity="0.18"/>
+</svg>

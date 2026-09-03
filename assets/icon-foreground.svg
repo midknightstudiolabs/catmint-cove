@@ -1,25 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2732" height="2732" viewBox="0 0 2732 2732">
-  <!-- Catmint Cove — launch splash. Pale ground matches capacitor.config backgroundColor (#eef3e6). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Catmint Cove — Android adaptive icon foreground layer (matches logo.svg, no ground). -->
   <defs>
-    <radialGradient id="sky" gradientUnits="userSpaceOnUse" cx="1160" cy="1000" r="1900">
-      <stop offset="0" stop-color="#f1f4e9"/>
-      <stop offset="1" stop-color="#e2ebd5"/>
-    </radialGradient>
     <radialGradient id="gold" cx="40%" cy="33%" r="72%">
       <stop offset="0" stop-color="#f6cc62"/>
       <stop offset="1" stop-color="#cd8c28"/>
     </radialGradient>
   </defs>
 
-  <rect width="2732" height="2732" fill="url(#sky)"/>
-  <circle cx="1366" cy="1250" r="560" fill="#d8e6c6" opacity="0.5"/>
+  <path fill="#f3ecd6" fill-rule="evenodd" d="M300 300 m-72 0 a72 72 0 1 0 144 0 a72 72 0 1 0 -144 0 M274 282 m-61 0 a61 61 0 1 0 122 0 a61 61 0 1 0 -122 0Z"/>
+  <path fill="#f3ecd6" d="M406 214 Q411 233 430 238 Q411 243 406 262 Q401 243 382 238 Q401 233 406 214Z"/>
+  <circle cx="236" cy="400" r="5" fill="#f3ecd6" opacity="0.7"/>
 
-  <!-- crescent moon -->
-  <path fill="#e7c766" fill-rule="evenodd" d="M1120 1030 m-96 0 a96 96 0 1 0 192 0 a96 96 0 1 0 -192 0 M1082 1006 m-80 0 a80 80 0 1 0 160 0 a80 80 0 1 0 -160 0Z"/>
-  <path fill="#e7c766" d="M1268 900 Q1275 926 1300 933 Q1275 940 1268 966 Q1261 940 1236 933 Q1261 926 1268 900Z"/>
-
-  <!-- ===== Midknight ===== -->
-  <g transform="translate(1366 1250) scale(1.34) translate(-512 -512)">
+  <g transform="translate(512 536) scale(0.92) translate(-512 -512)">
     <path fill="#262220" d="M512 196 Q344 196 284 266 Q228 330 236 458 Q242 572 304 648 Q370 730 512 740 Q654 730 720 648 Q782 572 788 458 Q796 330 740 266 Q680 196 512 196Z"/>
     <path fill="#262220" d="M278 300 Q286 150 344 124 Q398 154 452 286 Q366 306 278 300Z"/>
     <path fill="#262220" d="M746 300 Q738 150 680 124 Q626 154 572 286 Q658 306 746 300Z"/>
@@ -56,6 +48,4 @@
       <path d="M572 600 Q644 618 692 648"/>
     </g>
   </g>
-
-  <text x="1366" y="1990" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="150" fill="#3f5d34">Catmint Cove</text>
 </svg>
