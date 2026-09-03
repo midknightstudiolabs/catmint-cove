@@ -554,10 +554,10 @@
       <div class="pill small opens" data-tip="Days you've dropped by the cove.">day <span id="opens">1</span></div>
     </div>
     <div class="hud-group">
-      <button class="pill title-pill" id="titlePill" title="Rename your cove">Catmint <b>Cove</b></button>
-      <button class="btn" id="helpBtn" title="How to play"><span class="ico">?</span></button>
-      <button class="btn" id="restBtn" title="Rainy day — everyone rests inside"><span class="ico">🌙</span></button>
-      <button class="btn" id="muteBtn" title="Sound"><span class="ico">🔊</span></button>
+      <button class="pill title-pill" id="titlePill" data-tip="Your cove's name. Tap to rename it.">Catmint <b>Cove</b></button>
+      <button class="btn" id="helpBtn" data-tip="How the cove works — a quick guide to everything."><span class="ico">?</span></button>
+      <button class="btn" id="restBtn" data-tip="Rainy-day rest — everyone naps inside with real rain. Tap any time, good to work or sleep to."><span class="ico">🌙</span></button>
+      <button class="btn" id="muteBtn" data-tip="Sounds — tap to mute or unmute."><span class="ico">🔊</span></button>
     </div>
   </div>
 
@@ -3752,7 +3752,9 @@ document.getElementById("titlePill").addEventListener("click", () => askOwnerNam
   function hide() { tip.hidden = true; curEl = null; clearTimeout(hideT); }
   document.addEventListener("pointerdown", (e) => {
     const el = e.target.closest("#hud [data-tip]");
-    if (el) { (curEl === el ? hide() : place(el)); return; }
+    // a button's tap already does something (opens a panel, mutes) — that's the
+    // feedback; only the read-only pills explain themselves on tap.
+    if (el && el.tagName !== "BUTTON") { (curEl === el ? hide() : place(el)); return; }
     if (!tip.hidden) hide();
   }, true);
   if (canHover) {
