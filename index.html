@@ -922,6 +922,7 @@ function newGame() {
     materials: { driftwood: 0 }, // gathered from cat activity, spent on repairs
     projects: { dock: { stage: "open", paid: { shells: 0, driftwood: 0 } } },
     labubu: { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 },   // Midknight's sidekick — a recurring visitor
+    cairn: { stage: 0, progress: 0, size: 0, nextAt: 0 },        // Midknight's slow monument of borrowed things by the sign
   };
 }
 
@@ -967,6 +968,7 @@ function load() {
     if (!G.materials || typeof G.materials !== "object") G.materials = { driftwood: 0 };
     if (typeof G.materials.driftwood !== "number") G.materials.driftwood = 0;
     if (!G.labubu || typeof G.labubu !== "object") G.labubu = { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 };
+    if (!G.cairn || typeof G.cairn !== "object") G.cairn = { stage: 0, progress: 0, size: 0, nextAt: 0 };
     if (!G.projects || typeof G.projects !== "object") {
       // a cove that already owns the fishing dock (bought in the old shop) → dock is already restored
       G.projects = { dock: { stage: (G.stations && G.stations.fishing > 0) ? "done" : "open", paid: { shells: 0, driftwood: 0 } } };
@@ -1740,6 +1742,12 @@ function decide(c) {
   const kitten = c.isKitten;
   const opts = [];
   const add = (w, fn) => { if (w > 0) opts.push([w, fn]); };
+
+  // Midknight, mid-cairn: keeps drifting back to the sign to fuss over his pile
+  if (c.mascot && G.cairn && G.cairn.stage >= 1 && G.cairn.stage < 4) {
+    const sx = clamp(W * 0.12, 70, W - 70) + 20;
+    add(7, () => go(c, "loafing", rand(10, 18), { x: sx + rand(-14, 22), y: H * 0.42 + rand(20, 34) }));
+  }
 
   // --- SLEEPING is the dominant pastime — this is a game about cats napping ---
   const bedish = nearestAttractor(c, "bed") || nearestAttractor(c, "cottage") || nearestAttractor(c, "tree");
@@ -3038,6 +3046,7 @@ function composePhoto() {
   pctx.translate(offX, offY);
   pctx.scale(s, s);
   drawCoveSign(pctx, W, H);
+  drawCairn(pctx, W, H);
   drawDecorLayer(pctx);
   for (const a of attractors) drawAttractor(pctx, a);
   const pgt = performance.now() / 1000, pnight = window._sky ? 1 - window._sky.df : 0;
@@ -6486,6 +6495,120 @@ function labubuTick() {
   if (G.labubu.nextAt && Date.now() >= G.labubu.nextAt && labubuDayCap()) labubuArrive();
 }
 
+/* ---------- Midknight's cairn — the founder's slow monument ----------
+   Labubu keeps dragging odds and ends to the shelf by the sign. Once the pile
+   is big enough, Midknight (whose quirk is carrying small things off) starts
+   nosing at it, then quietly stacking a little tower of borrowed things over a
+   few days. When it's done you're asked to leave it or tidy it away — leaving
+   it makes a permanent cairn by the sign. Authored, one-time, per cove. */
+function cairnJunkCount() {
+  return (G.keepsakes || []).filter(k => k && k.from === "labubu").length;
+}
+function mkHome() {
+  const away = G.adventure && (G.adventure.party || []).some(d => d && (d.mascot || d.name === "Midknight"));
+  return !away && cats.some(c => c.mascot);
+}
+function cairnGap() { return rand(10, 16) * 60e3; }   // a beat every ~quarter hour of play
+function cairnTick() {
+  if (!G || !G.tutorialDone || restMode) return;
+  const cn = G.cairn || (G.cairn = { stage: 0, progress: 0, size: 0, nextAt: 0 });
+  if (cn.stage >= 4) return;                                  // resolved (kept or tidied)
+  if (!mkHome()) return;                                      // he only works on it when he's home
+
+  if (cn.stage === 0) {
+    if (cairnJunkCount() < 4) return;
+    cn.stage = 1; cn.progress = 0; cn.size = 0; cn.nextAt = Date.now() + cairnGap();
+    logMoment("🐾", "Midknight has started circling the shelf by the sign, nosing through Labubu's pile.", "tale");
+    toast("Midknight's taken an interest in Labubu's pile of odds and ends…", 5);
+    return;
+  }
+  // stages 1–3: a beat lands each time the timer comes due (catch up several if offline)
+  let guard = 6;
+  while (cn.stage >= 1 && cn.stage <= 3 && cn.nextAt && Date.now() >= cn.nextAt && guard-- > 0) {
+    cn.progress++;
+    cn.size = Math.min(3, cn.progress);
+    cn.nextAt = Date.now() + cairnGap();
+    if (cn.progress === 1) {
+      cn.stage = 2;
+      logMoment("🪨", "There's a small heap of borrowed things by the sign now — Midknight keeps rearranging it.", "tale");
+    } else if (cn.progress === 2) {
+      logMoment("🐾", "The pile's turning into a stack. A bottlecap, a coat button, one very good twig, all balanced just so.", "tale");
+    } else if (cn.progress >= 3) {
+      cn.stage = 3;
+      break;
+    }
+  }
+  if (cn.stage === 3) offerCairnChoice();
+}
+let _cairnAsking = false;
+function offerCairnChoice() {
+  if (_cairnAsking) return;
+  if (scrim.classList.contains("on")) return;                 // wait for a clear moment
+  _cairnAsking = true;
+  openModal(`<div class="reveal">
+    <div class="kicker">Midknight's cairn</div>
+    <h2>A small monument</h2>
+    <p class="sub">Midknight has stacked a careful little tower of borrowed things by the sign — Labubu's finds, a few of his own. He keeps checking that it's still standing.</p>
+    <div class="row">
+      <button class="btn primary" id="cairn-keep">Leave it standing</button>
+      <button class="btn" id="cairn-tidy">Tidy it away</button>
+    </div></div>`);
+  const done = () => { _cairnAsking = false; closeModal(); save(); syncHud(); };
+  document.getElementById("cairn-keep").onclick = () => {
+    G.cairn.stage = 4; G.cairn.size = 3; G.cairn.nextAt = 0;
+    logMoment("🗿", "Midknight's cairn stands by the sign now — a little monument to everything worth carrying home.", "tale");
+    toast("The cairn stays. Midknight seems satisfied. 🗿", 5);
+    const sx = clamp(W * 0.12, 70, W - 70);
+    spawnParticles(sx + 20, H * 0.42 + 18, "twinkle", 8);
+    sfx("reveal");
+    done();
+  };
+  document.getElementById("cairn-tidy").onclick = () => {
+    G.cairn.stage = 4; G.cairn.size = 0; G.cairn.nextAt = 0; G.cairn.tidied = true;
+    logMoment("🧹", "You tidied the pile away. Midknight watched you do it, then padded off to start another one somewhere you won't find it.", "tale");
+    toast("All tidied. Labubu's finds are still on the shelf.", 5);
+    done();
+  };
+}
+function drawCairn(g, W, H) {
+  const cn = G && G.cairn;
+  if (!cn || cn.tidied) return;
+  const n = cn.stage >= 4 ? 3 : (cn.size | 0);
+  if (n <= 0) return;
+  const sx = clamp(W * 0.12, 70, W - 70) + 24;   // just right of the sign
+  const gy = H * 0.42 + 24;                        // at the foot of the posts
+  g.save();
+  g.translate(sx, gy);
+  g.fillStyle = "rgba(36,31,23,0.14)";
+  g.beginPath(); g.ellipse(0, 3, 17, 5, 0, 0, 7); g.fill();
+  const stones = [
+    { w: 15,   h: 10, c: "#94886f", dx: -1 },
+    { w: 12,   h: 9,  c: "#aa9d84", dx:  2 },
+    { w: 9,    h: 7,  c: "#c2b697", dx: -1.5 },
+    { w: 6,    h: 5.5, c: "#d3c8ac", dx: 1 },
+  ];
+  const tiers = cn.stage >= 4 ? 4 : Math.min(n + 1, 3);
+  let yy = 2;
+  for (let i = 0; i < tiers; i++) {
+    const s = stones[i];
+    yy -= s.h - 1.5;
+    g.fillStyle = s.c;
+    g.beginPath(); g.ellipse(s.dx, yy, s.w, s.h, 0, 0, 7); g.fill();
+    g.fillStyle = "rgba(255,255,255,0.13)";
+    g.beginPath(); g.ellipse(s.dx - s.w * 0.3, yy - s.h * 0.32, s.w * 0.4, s.h * 0.34, 0, 0, 7); g.fill();
+    g.fillStyle = "rgba(50,40,28,0.10)";
+    g.beginPath(); g.ellipse(s.dx + s.w * 0.25, yy + s.h * 0.3, s.w * 0.5, s.h * 0.3, 0, 0, 7); g.fill();
+  }
+  if (cn.stage >= 4) {
+    // a scrap of foil catching the light on top, much admired
+    g.fillStyle = "#ecdca8";
+    g.beginPath(); g.ellipse(1, yy - 5, 3, 3, 0, 0, 7); g.fill();
+    g.fillStyle = "rgba(255,255,255,0.6)";
+    g.beginPath(); g.ellipse(0, yy - 6, 1, 1, 0, 0, 7); g.fill();
+  }
+  g.restore();
+}
+
 function simulate(dt) {
   if (G.tutorialDone) {                 // hold the world still during the cold open
     visitorTimer -= dt;
@@ -6518,6 +6641,7 @@ function renderScene(dt) {
   if (shakeAmt > 0) ctx.translate(rand(-shakeAmt, shakeAmt), rand(-shakeAmt, shakeAmt));
   drawBackground(dt);
   drawCoveSign(ctx, W, H);
+  drawCairn(ctx, W, H);
   drawDecorLayer(ctx);
   for (const a of attractors) drawAttractor(ctx, a);
   // interleave cats and grass tufts by y so nearer grass covers farther cats and
@@ -7532,6 +7656,17 @@ window.__cove = {
     else if (cmd === "reset") { G.labubu = { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 }; }
     return { ...G.labubu, here: labubuHere(), inMin: G.labubu.nextAt ? Math.round((G.labubu.nextAt - Date.now()) / 60000) : null };
   },
+  cairn(cmd){
+    if (!G.cairn) G.cairn = { stage: 0, progress: 0, size: 0, nextAt: 0 };
+    if (cmd === "seed") {   // drop 4 Labubu finds on the shelf so stage 0 can trigger
+      for (let i = 0; i < 4; i++) grantLabubuFind(pick(LABUBU_FINDS));
+      G.cairn.nextAt = 0; cairnTick();
+    } else if (cmd === "next") { G.cairn.nextAt = Date.now() - 1; cairnTick(); }
+    else if (cmd === "ask") { G.cairn.stage = 3; offerCairnChoice(); }
+    else if (cmd === "reset") { G.cairn = { stage: 0, progress: 0, size: 0, nextAt: 0 }; delete G.cairn.tidied; }
+    save();
+    return { ...G.cairn, junk: cairnJunkCount(), mkHome: mkHome() };
+  },
   project(id = "dock", cmd){
     const p = G.projects[id]; if (!p) return "no such project";
     if (cmd === "fill") { p.paid = { shells: PROJECT_BY_ID[id].cost.shells, driftwood: PROJECT_BY_ID[id].cost.driftwood }; contributeProject(id); }
@@ -7667,6 +7802,7 @@ setInterval(() => {
   if (dedupeCats()) { syncHud(); save(); }   // self-heal if a duplicate ever slips in
   tickProjects();                        // a restoration that finished while you watched
   labubuTick();                          // Midknight's sidekick may be due for a visit
+  cairnTick();                           // the founder's slow monument by the sign
   if (panels.today && !panels.today.hidden) { renderCheckinCard(); renderAdventureCard(); renderProjectCard(); renderFindsCard(); }
   if (panels.shop && !panels.shop.hidden && (boostActive() || _wasBoosted)) renderShop();   // tick the boost countdown
   if (_wasBoosted && !boostActive()) toast("The catnip's worn off — earnings back to normal.", 4);
