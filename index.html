@@ -304,6 +304,11 @@
     border-radius:14px;padding:.6rem .8rem;cursor:pointer;font:inherit;color:var(--ink);text-align:left;line-height:1.3;}
   .pick-dest{display:flow-root;}   /* contain the floated emoji */
   .pick-dest:hover,.pick-cat:hover{border-color:var(--accent-bright);background:#fff;}
+  .pick-cat{position:relative;padding-right:2.2rem;}
+  .pick-cat.on{border-color:var(--accent);background:#eaf3ec;}
+  .pick-cat.on::after{content:"✓";position:absolute;right:.7rem;top:50%;transform:translateY(-50%);
+    color:var(--accent);font-weight:800;font-size:.95rem;}
+  .pick-cat.mk b::after{content:" · founder";color:var(--apricot);font-weight:600;font-size:.76rem;}
   .pick-dest>span{font-size:1.3rem;float:left;margin-right:.55rem;line-height:1;}
   .pick-dest b,.pick-cat b{display:block;font-size:.94rem;}
   .pick-dest i,.pick-cat i{display:block;font-style:normal;font-size:.78rem;color:var(--ink-soft);margin-top:.12rem;}
@@ -939,6 +944,10 @@ function load() {
     if (!G.wywa || typeof G.wywa !== "object") G.wywa = { lastAt: 0, seen: [] };
     if (!Array.isArray(G.wywa.seen)) G.wywa.seen = [];
     if (G.adventure === undefined) G.adventure = null;
+    if (G.adventure && !G.adventure.party) {            // pre-multi-cat save → wrap the lone traveller
+      G.adventure.party = G.adventure.catData ? [G.adventure.catData] : [];
+      G.adventure.cats = G.adventure.cat ? [G.adventure.cat] : [];
+    }
     if (typeof G.advDay !== "string") G.advDay = "";
     if (typeof G.mapPieces !== "number") G.mapPieces = 0;
     if (!Array.isArray(G.keepsakes)) G.keepsakes = [];
@@ -1462,9 +1471,11 @@ function restoreCats() {
     seedStarters();
   }
   dedupeCats();
-  // Midknight joins any cove that predates him — but NOT while he's the one away
-  // on a trip (his data is held in G.adventure.catData and comes back on resolve)
-  const mkAway = G.adventure && (G.adventure.catData?.mascot || G.adventure.catData?.coatKey === "midknight" || G.adventure.cat === "Midknight");
+  // Midknight joins any cove that predates him — but NOT while he's out on a trip
+  // (his data is held in G.adventure.party and comes back on resolve)
+  const advParty = G.adventure ? (G.adventure.party || (G.adventure.catData ? [G.adventure.catData] : [])) : [];
+  const mkAway = advParty.some(d => d && (d.mascot || d.coatKey === "midknight" || d.name === "Midknight"))
+    || G.adventure && G.adventure.cat === "Midknight";
   if (!cats.some(c => c.mascot) && !mkAway) {
     rebuildAttractors();
     const mk = new Cat({ coatKey:"midknight", name:"Midknight", mascot:true, star:2, traits:["grumpy","cuddly"],
@@ -2923,9 +2934,11 @@ function nextAction() {
   if (restMode || _vig || scrim.classList.contains("on")) return null;
   if (!panels || !panels.shop) return null;
 
-  // a cat is home from a trip
-  if (G.adventure && Date.now() >= G.adventure.endsAt)
-    return { t: `${G.adventure.cat} is back from a trip.`, go: "See how it went", act: () => resolveAdventure() };
+  // a cat (or the party) is home from a trip
+  if (G.adventure && Date.now() >= G.adventure.endsAt) {
+    const n = (G.adventure.cats && G.adventure.cats.length) || 1;
+    return { t: n > 1 ? `The party's back from a trip.` : `${G.adventure.cat} is back from a trip.`, go: "See how it went", act: () => resolveAdventure() };
+  }
 
   // a project has everything it needs and is waiting on you to start it
   for (const def of PROJECTS) {
@@ -2958,7 +2971,7 @@ function nextAction() {
   }
 
   // a trip is available and the cove can spare a cat
-  if (advReady() && cats.filter(c => !c.mascot).length >= 2 && !G.tips.includes("explore_seen"))
+  if (advReady() && cats.filter(c => !c.visitor).length >= 2 && !G.tips.includes("explore_seen"))
     return { t: `A cat could take a trip today — pick a spot in Today.`, go: "Open Today", act: () => togglePanel("today") };
 
   // early game — keep the loop legible until the cove has a few cats
@@ -5217,7 +5230,8 @@ function drawCoveSign(g, W, H) {
   g.fillText(label, 0, -10.5);
   // a little chalk tag while a cat is out adventuring
   if (typeof G !== "undefined" && G && G.adventure) {
-    const tag = `${G.adventure.cat} is out exploring`;
+    const _n = (G.adventure.cats && G.adventure.cats.length) || 1;
+    const tag = _n > 1 ? `${_n} cats are out exploring` : `${G.adventure.cat} is out exploring`;
     g.font = "600 7.5px 'Fraunces', Georgia, serif";
     const tw = Math.max(g.measureText(tag).width + 12, 40);
     g.fillStyle = "#efe9d8";
@@ -6475,9 +6489,10 @@ function grantReward(r, atCat) {
   if (r.pearls) { G.pearls += r.pearls; floatText(x, y - 16, "✦ " + r.pearls, "#8fb7d6"); }
   if (r.mood && atCat) atCat.mood = clamp(atCat.mood + r.mood, 0, 100);
   if (r.driftwood) { gainDriftwood(r.driftwood, true); floatText(x, y - 28, "🪵 " + r.driftwood, "#b9a074"); }
-  if (r.keepsake) {
+  const keeps = r.keepsakes ? r.keepsakes.slice() : (r.keepsake ? [r.keepsake] : []);
+  if (keeps.length) {
     if (!G.keepsakes) G.keepsakes = [];
-    G.keepsakes.unshift({ ...r.keepsake, t: Date.now() });
+    for (const k of keeps) G.keepsakes.unshift({ ...k, t: Date.now() });
     if (G.keepsakes.length > 40) G.keepsakes.length = 40;
   }
   if (r.mapPiece) {
@@ -6517,7 +6532,8 @@ function vigRewardLine(r) {
   if (r.shells) bits.push(`◈ ${r.shells}`);
   if (r.pearls) bits.push(`✦ ${r.pearls}`);
   if (r.driftwood) bits.push(`🪵 ${r.driftwood}`);
-  if (r.keepsake) bits.push(`${r.keepsake.emoji || "🎁"} ${esc(r.keepsake.label)}`);
+  const kk = r.keepsakes || (r.keepsake ? [r.keepsake] : []);
+  for (const k of kk) bits.push(`${k.emoji || "🎁"} ${esc(k.label)}`);
   if (r.mapPiece) bits.push(`🗺️ a piece of a map`);
   if (r.kitten) bits.push(`🐱 a new kitten`);
   if (r.coatKey) bits.push(`🐈 a new friend`);
@@ -6754,9 +6770,12 @@ function maybeWywa(awaySec, onDone) {
 
 /* ---- Hook 2 · Cat Adventures ------------------------------------------- */
 const ADV_DESTS = {
-  fishing: { emoji: "🎣", name: "Fishing Trip", mins: 30,  blurb: "An afternoon on the dock down the coast." },
-  forest:  { emoji: "🌲", name: "Forest Walk",  mins: 120, blurb: "Into the trees behind the cove." },
-  island:  { emoji: "🏝️", name: "Tiny Island",  mins: 360, blurb: "A little boat out to the island offshore." },
+  fishing: { emoji: "🎣", name: "Fishing Trip",  mins: 30,  blurb: "An afternoon on the dock down the coast." },
+  meadow:  { emoji: "🌼", name: "Meadow",        mins: 75,  blurb: "The long grass past the woodland path." },
+  forest:  { emoji: "🌲", name: "Forest Walk",   mins: 120, blurb: "Into the trees behind the cove." },
+  market:  { emoji: "🏘️", name: "Market Town",   mins: 240, blurb: "The little town up the coast road." },
+  island:  { emoji: "🏝️", name: "Tiny Island",   mins: 360, blurb: "A boat out to the island offshore." },
+  peak:    { emoji: "⛰️", name: "The Peak",       mins: 480, blurb: "The hill that looks down on everything." },
 };
 function todayKey() { const d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
 function advReady() { return !G.adventure && G.advDay !== todayKey(); }
@@ -6778,14 +6797,18 @@ function advTraitHint(c) {
 function advLoot(cat, dest) {
   const has = t => cat.traits.includes(t);
   const rnd = Math.random;
-  const reward = { shells: Math.round({ fishing: 90, forest: 120, island: 260 }[dest] * rand(0.8, 1.3)) };
+  const base = { fishing: 90, meadow: 110, forest: 120, market: 190, island: 250, peak: 300 }[dest] || 120;
+  const reward = { shells: Math.round(base * rand(0.8, 1.3)) };
   const lines = [];
   const keepPool = {
     fishing: [{ emoji: "🐚", label: "a spiral shell" }, { emoji: "🪸", label: "a scrap of coral" }, { emoji: "🦴", label: "an intact fish skeleton" }],
+    meadow:  [{ emoji: "🌼", label: "a fistful of daisies" }, { emoji: "🐝", label: "a bee, escorted (a memory, not an item)" }, { emoji: "🍀", label: "a four-leaf clover, probably" }],
     forest:  [{ emoji: "🍄", label: "a ring of tiny mushrooms" }, { emoji: "🪶", label: "an owl feather" }, { emoji: "🌿", label: "a bundle of wild catmint" }],
+    market:  [{ emoji: "🧵", label: "a spool of good ribbon" }, { emoji: "🔔", label: "a little brass bell" }, { emoji: "🫖", label: "a chipped but charming teapot" }],
     island:  [{ emoji: "🪙", label: "a foreign coin" }, { emoji: "🍍", label: "something spiky and sweet" }, { emoji: "🐚", label: "a shell that hums faintly" }],
-  }[dest];
-  if (anyProjectOpen() && (dest === "forest" || dest === "fishing")) {
+    peak:    [{ emoji: "🪨", label: "a stone from the very top" }, { emoji: "🦅", label: "a huge feather" }, { emoji: "❄️", label: "a jar of cold mountain air" }],
+  }[dest] || [];
+  if (anyProjectOpen() && (dest === "forest" || dest === "fishing" || dest === "meadow")) {
     reward.driftwood = 1 + (rnd() < 0.5 ? 1 : 0) + (has("curious") ? 1 : 0);
     lines.push(`dragged home ${reward.driftwood} piece${reward.driftwood === 1 ? "" : "s"} of driftwood`);
   }
@@ -6799,8 +6822,9 @@ function advLoot(cat, dest) {
     lines.push(`came home wearing ${/^[aeiou]/i.test(ACC_LABEL[f] || f) ? "an" : "a"} ${ACC_LABEL[f] || f} it found`);
   }
   if (has("lazy")) lines.push("took the very scenic route");
-  if (rnd() < (dest === "island" ? 0.28 : 0.12)) { reward.pearls = dest === "island" ? 3 : 1; lines.push(reward.pearls === 1 ? "turned up a pearl" : `turned up ${reward.pearls} pearls`); }
-  let mapP = { fishing: 0.06, forest: 0.12, island: 0.22 }[dest];
+  const pearlP = { island: 0.28, peak: 0.32, market: 0.16 }[dest] || 0.1;
+  if (rnd() < pearlP) { reward.pearls = (dest === "island" || dest === "peak") ? 3 : 1; lines.push(reward.pearls === 1 ? "turned up a pearl" : `turned up ${reward.pearls} pearls`); }
+  let mapP = { fishing: 0.06, meadow: 0.09, forest: 0.12, market: 0.16, island: 0.22, peak: 0.26 }[dest] || 0.1;
   if (has("curious")) mapP += 0.16;
   if ((G.mapPieces || 0) >= MAP_TOTAL) mapP = 0;
   if (rnd() < mapP) { reward.mapPiece = true; lines.push("found a piece of a torn map"); }
@@ -6811,23 +6835,44 @@ function advLoot(cat, dest) {
     lines.push(pick(["lost the fishing rod somehow", "fell in a stream and is pretending it was on purpose", "was chased by a goose and will not discuss it"]));
     reward.shells = Math.round(reward.shells * 0.7);
   }
-  if (cat.mascot) lines.push("(Midknight, naturally, lost something on the way home)");
+  if (cat.mascot) lines.push("lost something on the way home, naturally");
   return { reward, lines };
 }
 function joinNice(a) {
   if (a.length <= 1) return a[0] || "";
   return a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
 }
-function advVignette(cat, dest, res) {
-  const d = ADV_DESTS[dest];
-  const body = res.lines.length
-    ? `${cat.name} is back from the ${d.name.toLowerCase()}. They ${joinNice(res.lines)}.`
-    : `${cat.name} is back from the ${d.name.toLowerCase()} — nothing to report, but a lovely time was had.`;
-  return { kicker: `${cat.name}'s adventure`, cat,
-    outcome: { art: d.emoji, title: `${cat.name} is home`, text: body, reward: res.reward, close: "Welcome home",
-      moment: `${cat.name} came home from the ${d.name.toLowerCase()}` +
-        (res.reward.mapPiece ? " with a piece of a map." : res.reward.keepsake ? ` with ${res.reward.keepsake.label}.` : ".") },
-  };
+function destPhrase(dest) {                 // "the forest walk" / "the peak" (no double "the")
+  const nm = (ADV_DESTS[dest] || ADV_DESTS.forest).name.toLowerCase();
+  return /^the\b/.test(nm) ? nm : "the " + nm;
+}
+function advVignette(dest, results) {
+  const d = ADV_DESTS[dest] || ADV_DESTS.forest;
+  const solo = results.length === 1;
+  const combined = { shells: 0, pearls: 0, driftwood: 0, keepsakes: [] };
+  const per = [];
+  for (const { cat, res } of results) {
+    const r = res.reward;
+    combined.shells += r.shells || 0;
+    combined.pearls += r.pearls || 0;
+    combined.driftwood += r.driftwood || 0;
+    if (r.keepsake) combined.keepsakes.push(r.keepsake);
+    if (r.mapPiece) combined.mapPiece = true;
+    const subj = solo ? "They" : cat.name;
+    per.push(res.lines.length ? `${subj} ${joinNice(res.lines)}` : `${subj} had a lovely quiet time`);
+  }
+  if (!combined.pearls) delete combined.pearls;
+  if (!combined.driftwood) delete combined.driftwood;
+  if (!combined.keepsakes.length) delete combined.keepsakes;
+  if (!solo) combined.shells = Math.round(combined.shells * (1 + 0.08 * (results.length - 1)));   // a small bonus for going together
+  const mkHome = results.some(x => x.cat.mascot);
+  const names = joinNice(results.map(x => x.cat.name));
+  const verb = solo ? "is" : "are";
+  const body = `${names} ${verb} back from ${destPhrase(dest)}. ${per.join(". ")}.` +
+    (mkHome ? " The cove settles the moment Midknight is back through the gap in the fence." : "");
+  return { kicker: solo ? `${names}'s trip` : "The party's home", cat: results[0].cat,
+    outcome: { art: d.emoji, title: `${names} ${verb} home`, text: body, reward: combined, close: "Welcome home",
+      moment: `${names} came home from ${destPhrase(dest)}.` } };
 }
 // a cosmetic send-off: the departing cat trots to the edge with a little bindle
 let _departures = [];
@@ -6882,55 +6927,78 @@ function drawBindle(g, c) {
   g.restore();
 }
 
-function startAdventure(name, dest) {
-  if (G.adventure) return;
-  const i = cats.findIndex(c => c.name === name);
-  if (i < 0) return;
-  const c = cats[i];
-  if (c.mascot) { toast(`${c.name} never leaves the cove — he's the founder. Send someone else.`, 4); return; }
-  const data = { name: c.name, traits: c.traits, coatKey: c.coatKey, markSeed: c.markSeed, star: c.star,
+function snapshotCat(c) {
+  return { name: c.name, traits: c.traits, coatKey: c.coatKey, markSeed: c.markSeed, star: c.star,
     mascot: c.mascot, bornAt: c.bornAt, mood: Math.round(c.mood), worn: c.worn || [], owned: c.owned || [] };
-  cats.splice(i, 1);
-  if (typeof cardCat !== "undefined" && cardCat === c) hideCatCard();
-  const mins = ADV_DESTS[dest].mins * (c.traits.includes("lazy") ? 1.6 : 1);
-  G.adventure = { cat: c.name, dest, startedAt: Date.now(), endsAt: Date.now() + mins * 60000, seed: (Math.random() * 1e9) | 0, catData: data };
+}
+// names: a string or an array of 1-3 cat names
+function startAdventure(names, dest) {
+  if (G.adventure) return;
+  const wanted = Array.isArray(names) ? names : [names];
+  const going = [];
+  for (const nm of wanted) {
+    const i = cats.findIndex(c => c.name === nm && !c.visitor);
+    if (i < 0) continue;
+    going.push(cats[i]);
+  }
+  if (!going.length) return;
+  const party = going.map(snapshotCat);
+  const anyLazy = going.some(c => c.traits.includes("lazy"));
+  const mins = ADV_DESTS[dest].mins * (anyLazy ? 1.5 : 1);
+  for (const c of going) {
+    if (typeof cardCat !== "undefined" && cardCat === c) hideCatCard();
+    cats.splice(cats.indexOf(c), 1);
+  }
+  G.adventure = { cat: party[0].name, cats: party.map(p => p.name), party, dest,
+    startedAt: Date.now(), endsAt: Date.now() + mins * 60000, seed: (Math.random() * 1e9) | 0 };
   G.adventure.cards = scheduleCards(dest, G.adventure.startedAt, G.adventure.endsAt);
   G.advDay = todayKey();
   if (G.tips && !G.tips.includes("explore_seen")) G.tips.push("explore_seen");
   save(); syncHud(); rebuildAttractors();
-  // send-off: a quick wave of the tail, a bindle, and off toward the world
-  const dir = dest === "forest" ? 1 : -1;
-  c.state = "exploring"; c.vx = dir * 24; c.vy = 0; c.walkAmt = 0.4; c.stateDur = 1e6;
+  // send-off — each traveller trots to an edge with a bindle
+  const dir = dest === "forest" || dest === "peak" ? 1 : -1;
   _departures.length = 0;
-  _departures.push({ c, dir, life: 0 });
-  spawnParticles(c.x, c.y - 12, "twinkle", 6);
-  floatText(c.x, c.y - 30, ADV_DESTS[dest].emoji, "#c9a24a");
-  logMoment(ADV_DESTS[dest].emoji, `${c.name} set off on a ${ADV_DESTS[dest].name.toLowerCase()}.`);
-  toast(`${c.name} heads off — back ${whenText(G.adventure.endsAt)}.`, 4.5);
+  going.forEach((c, k) => {
+    c.state = "exploring"; c.vx = dir * 24; c.vy = 0; c.walkAmt = 0.4; c.stateDur = 1e6;
+    _departures.push({ c, dir, life: -k * 0.35 });   // a little stagger so they file out
+    spawnParticles(c.x, c.y - 12, "twinkle", 5);
+  });
+  floatText(going[0].x, going[0].y - 30, ADV_DESTS[dest].emoji, "#c9a24a");
+  const who = joinNice(going.map(c => c.name));
+  const mkGoing = going.some(c => c.mascot);
+  logMoment(ADV_DESTS[dest].emoji, `${who} set off ${going.length > 1 ? "together " : ""}for ${destPhrase(dest)}.`);
+  toast(mkGoing ? `Midknight actually left the cove — ${who} head off, back ${whenText(G.adventure.endsAt)}.`
+    : `${who} head${going.length > 1 ? "" : "s"} off — back ${whenText(G.adventure.endsAt)}.`, 5);
   renderAdventureCard();
 }
 function resolveAdventure(onDone) {
   const a = G.adventure;
   if (!a) { if (onDone) onDone(); return; }
   _departures.length = 0;
-  // the traveller may already be back in the cove (a reload re-seeded them, e.g.
-  // Midknight) — reuse that cat instead of adding a second one
-  let c = cats.find(x => x.name === a.cat || (a.catData?.mascot && x.mascot));
-  if (c) {
-    if (a.catData) { c.mood = a.catData.mood ?? c.mood; if (Array.isArray(a.catData.worn)) c.worn = normalizeWorn(a.catData.worn); }
-  } else {
-    c = new Cat({ ...a.catData, x: -34, y: rand(H * 0.55, H * 0.8) });
-    cats.push(c);
-    c.state = "arriving"; c.tx = rand(W * 0.25, W * 0.7); c.ty = c.y; c.face = 1;
-  }
-  spawnParticles(c.x + 26, c.y - 14, "twinkle", 9);
-  const res = advLoot(c, a.dest);
+  const party = a.party || [a.catData];   // pre-multi-cat saves stored a single catData
+  const results = [];
+  party.forEach((data, k) => {
+    // a traveller may already be back (a reload re-seeded them, e.g. Midknight) — reuse, don't double
+    let c = cats.find(x => x.name === data.name || (data.mascot && x.mascot));
+    if (c) {
+      if (data.mood != null) c.mood = data.mood;
+      if (Array.isArray(data.worn)) c.worn = normalizeWorn(data.worn);
+    } else {
+      c = new Cat({ ...data, x: -34 - k * 30, y: rand(H * 0.55, H * 0.8) });
+      cats.push(c);
+      c.state = "arriving"; c.tx = clamp(W * (0.3 + k * 0.16), 40, W - 40); c.ty = c.y; c.face = 1;
+    }
+    const res = advLoot(c, a.dest);
+    if (res.reward.mood) { c.mood = clamp(c.mood + res.reward.mood, 8, 100); delete res.reward.mood; }
+    spawnParticles(c.x + 24, c.y - 14, "twinkle", 7);
+    results.push({ cat: c, res });
+  });
   G.adventure = null;
   dedupeCats();
   G.advDay = todayKey();
   save(); syncHud(); rebuildAttractors();
   renderAdventureCard();
-  runVignette(advVignette(c, a.dest, res), { cat: c, onDone });
+  runVignette(advVignette(a.dest, results), { cat: results[0].cat, onDone });
 }
 /* ---- postcards: a note home partway through a trip ---- */
 const POSTCARD_LINES = {
@@ -6951,6 +7019,24 @@ const POSTCARD_LINES = {
     "There is a crab situation. We are not discussing the crab situation. — {n}",
     "The sand is warm on top and cool underneath. Nature is wild. — {n}",
     "It's mostly rocks out here. I love it. Might live here now (I won't). — {n}",
+  ],
+  meadow: [
+    "The grass is taller than me out here. I am undefeated at hide and seek. — {n}",
+    "A butterfly led me somewhere on purpose, I think. Still following. — {n}",
+    "Lay down in a sunny patch for 'a second'. It has been some time. — {n}",
+    "There are bees. We have an understanding. It is fragile. — {n}",
+  ],
+  market: [
+    "So many stalls. A man tried to sell me a hat. I already have a hat (I don't). — {n}",
+    "The fish counter is a spiritual experience and I have not left it. — {n}",
+    "Someone's dog. It was fine. We do not need to discuss it further. — {n}",
+    "Bringing back something wrapped in paper. I don't know what it is yet either. — {n}",
+  ],
+  peak: [
+    "You can see the whole cove from up here. It's tiny. You're all tiny. — {n}",
+    "It got cold about halfway up. I have grown a serious opinion about wind. — {n}",
+    "Reached a flat rock. This is the rock now. I am the rock's cat. — {n}",
+    "An eagle looked at me like a peer. I have never felt so seen. — {n}",
   ],
 };
 function scheduleCards(dest, startedAt, endsAt) {
@@ -7039,9 +7125,10 @@ function renderAdventureCard() {
     const d = ADV_DESTS[a.dest] || ADV_DESTS.forest;
     const pc0 = !back ? latestPostcardFor(a.cat) : null;
     const pc = (pc0 && pc0.t >= a.startedAt) ? pc0 : null;   // only this trip's postcard
+    const who = (a.cats && a.cats.length) ? (a.cats.length > 2 ? `${a.cats[0]} + ${a.cats.length - 1}` : joinNice(a.cats)) : a.cat;
     el.className = "adv-card" + (back ? " ready" : "");
     el.innerHTML = `<div class="adv-top"><span class="adv-emoji">${d.emoji}</span>
-      <div><div class="adv-title">${esc(a.cat)} &middot; ${esc(d.name)}</div>
+      <div><div class="adv-title">${esc(who)} &middot; ${esc(d.name)}</div>
       <div class="adv-sub">${back ? "back at the cove — go and see how it went" : "back " + whenText(a.endsAt)}</div></div></div>
       ${pc ? `<div class="adv-postcard">✉️ ${esc(pc.text.replace(/\s*—\s*.*$/, ""))}</div>` : ""}
       ${back ? `<button class="btn primary" id="adv-claim">See how it went</button>`
@@ -7054,8 +7141,8 @@ function renderAdventureCard() {
   } else if (advReady()) {
     el.className = "adv-card ready";
     el.innerHTML = `<div class="adv-top"><span class="adv-emoji">🧭</span>
-      <div><div class="adv-title">Send a cat exploring</div>
-      <div class="adv-sub">one trip a day — they'll bring things home</div></div></div>
+      <div><div class="adv-title">Send cats exploring</div>
+      <div class="adv-sub">one trip a day — take up to three</div></div></div>
       <button class="btn primary" id="adv-start">Choose a trip</button>${mapLine()}`;
     document.getElementById("adv-start").onclick = openAdventurePicker;
   } else {
@@ -7074,25 +7161,37 @@ function openAdventurePicker() {
   document.getElementById("pick-cancel").onclick = closeModal;
   document.querySelectorAll("#modal .pick-dest").forEach(b => b.onclick = () => pickAdventureCat(b.dataset.d));
 }
+const PARTY_MAX = 3;
 function pickAdventureCat(dest) {
-  const goers = cats.filter(c => !c.mascot && !c.visitor);   // the founder never leaves; Labubu's just passing through
+  const goers = cats.filter(c => !c.visitor);   // Labubu's just passing through; Midknight can go now
   if (!goers.length) {
     openModal(`<div class="reveal"><div class="kicker">${esc(ADV_DESTS[dest].name)}</div><h2>Who's going?</h2>
-      <p class="sub">${cats.length <= 1 ? "Midknight never leaves the cove — coax another cat first, then you'll have someone to send." : "Everyone else is busy. Try again in a bit."}</p>
+      <p class="sub">Nobody's around to send. Coax a cat first.</p>
       <button class="btn primary" id="pc-back">Back</button></div>`);
     document.getElementById("pc-back").onclick = openAdventurePicker;
     return;
   }
   const list = goers.map(c => {
     const hint = advTraitHint(c);
-    return `<button class="pick-cat" data-c="${esc(c.name)}"><b>${esc(c.name)}</b>
+    return `<button class="pick-cat${c.mascot ? " mk" : ""}" data-c="${esc(c.name)}"><b>${esc(c.name)}</b>
       <i>${c.traits.map(t => TRAITS[t] ? TRAITS[t].label : t).join(" · ")}</i>${hint ? `<em>${esc(hint)}</em>` : ""}</button>`;
   }).join("");
   openModal(`<div class="reveal"><div class="kicker">${esc(ADV_DESTS[dest].name)}</div><h2>Who's going?</h2>
+    <p class="sub" style="margin:.1rem 0 .1rem">Pick up to ${PARTY_MAX} — more cats, a little more brought home.</p>
     <div class="pick-list cats">${list}</div>
-    <button class="linkbtn" id="pc-back">Back</button></div>`);
+    <div class="row"><button class="btn primary" id="pc-send" disabled>Send them</button>
+    <button class="btn" id="pc-back">Back</button></div></div>`);
+  const sel = new Set();
+  const sendBtn = document.getElementById("pc-send");
+  const sync = () => { sendBtn.disabled = !sel.size; sendBtn.textContent = sel.size <= 1 ? "Send them" : `Send all ${sel.size}`; };
   document.getElementById("pc-back").onclick = openAdventurePicker;
-  document.querySelectorAll("#modal .pick-cat").forEach(b => b.onclick = () => { startAdventure(b.dataset.c, dest); closeModal(); });
+  document.querySelectorAll("#modal .pick-cat").forEach(b => b.onclick = () => {
+    const n = b.dataset.c;
+    if (sel.has(n)) { sel.delete(n); b.classList.remove("on"); }
+    else if (sel.size < PARTY_MAX) { sel.add(n); b.classList.add("on"); }
+    sync();
+  });
+  sendBtn.onclick = () => { if (sel.size) { startAdventure([...sel], dest); closeModal(); } };
 }
 
 /* ---- on every return: roll a While-You-Were-Away beat, flag a cat that's home ---- */
@@ -7183,8 +7282,8 @@ window.__cove = {
   },
   adventure(cmd, arg){
     if (cmd === "skip") { if (!G.adventure) return "none active"; G.adventure.endsAt = Date.now(); resolveAdventure(); return "resolved"; }
-    if (cmd === "start") { const n = arg || (cats.find(c => !c.mascot) || cats[0] || {}).name; startAdventure(n, "forest"); return G.adventure; }
-    if (cmd === "clear") { _departures.length = 0; if (G.adventure) { cats.push(new Cat({ ...G.adventure.catData, x: W * 0.4, y: H * 0.6 })); G.adventure = null; rebuildAttractors(); } G.advDay = ""; syncHud(); return "cleared"; }
+    if (cmd === "start") { const n = arg || (cats.find(c => !c.mascot && !c.visitor) || cats[0] || {}).name; startAdventure(Array.isArray(n) ? n : [n], "forest"); return G.adventure; }
+    if (cmd === "clear") { _departures.length = 0; if (G.adventure) { for (const d of (G.adventure.party || [])) cats.push(new Cat({ ...d, x: W * 0.4, y: H * 0.6 })); G.adventure = null; dedupeCats(); rebuildAttractors(); } G.advDay = ""; syncHud(); return "cleared"; }
     if (cmd === "map") { G.mapPieces = arg == null ? (G.mapPieces || 0) + 1 : +arg; return { mapPieces: G.mapPieces }; }
     if (cmd === "card") { if (!G.adventure || !G.adventure.cards) return "no active trip"; const c = G.adventure.cards.find(x => !x.shown); if (c) c.at = Date.now() - 1; deliverDuePostcards({ pop: true }); return "delivered"; }
     return { adventure: G.adventure, advReady: advReady(), mapPieces: G.mapPieces || 0, postcards: (G.postcards || []).length };
