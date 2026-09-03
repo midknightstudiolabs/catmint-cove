@@ -5653,6 +5653,8 @@ function timeOfDay(){
     _todCache.bot = mixHex(_todCache.bot, th.sky[2], k);
     _todCache.ground = mixHex(_todCache.ground, th.ground, k * 0.92);
     _todCache.theme = th;
+    _todCache._grassRGB = th.grass ? hx2rgb(th.grass) : null;
+    _todCache._grassAltRGB = th.grassAlt ? hx2rgb(th.grassAlt) : _todCache._grassRGB;
   }
   return _todCache;
 }
@@ -5740,10 +5742,42 @@ function drawBackground(dt) {
     const f = groundFlecks[i];
     ctx.beginPath(); ctx.ellipse(f.x * W, hz + 14 + f.y * (H - hz - 30), f.r, f.r * 0.5, 0, 0, 7); ctx.fill();
   }
-  // soft vignette
-  const vg = ctx.createRadialGradient(W/2, H*0.55, Math.min(W,H)*0.3, W/2, H*0.55, Math.max(W,H)*0.7);
-  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(40,34,24,0.10)");
-  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  // soft vignette (fixed to W/H — build once)
+  if (!_vignetteGrad) {
+    _vignetteGrad = ctx.createRadialGradient(W/2, H*0.55, Math.min(W,H)*0.3, W/2, H*0.55, Math.max(W,H)*0.7);
+    _vignetteGrad.addColorStop(0, "rgba(0,0,0,0)"); _vignetteGrad.addColorStop(1, "rgba(40,34,24,0.10)");
+  }
+  ctx.fillStyle = _vignetteGrad; ctx.fillRect(0, 0, W, H);
+}
+let _vignetteGrad = null;
+// a couple of reusable soft radial gradients for the cat contact shadow, keyed
+// by a bucketed radius — canvas gradient creation is one of the costlier calls
+const _shadowGrads = new Map();
+function catShadowGrad(g, r) {
+  const key = Math.max(9, Math.round(r / 3) * 3);
+  let sg = _shadowGrads.get(key);
+  if (!sg) {
+    sg = g.createRadialGradient(0, 0, 2, 0, 0, key);
+    sg.addColorStop(0, "rgba(52,44,40,0.20)");
+    sg.addColorStop(0.6, "rgba(52,44,40,0.09)");
+    sg.addColorStop(1, "rgba(52,44,40,0)");
+    _shadowGrads.set(key, sg);
+  }
+  return sg;
+}
+const _silShadeGrads = new Map();
+function silShadeGrad(g, silTop) {
+  const key = Math.round(silTop / 2) * 2;
+  let sh = _silShadeGrads.get(key);
+  if (!sh) {
+    sh = g.createLinearGradient(0, key, 0, 4);
+    sh.addColorStop(0, "rgba(255,255,255,0.14)");
+    sh.addColorStop(0.35, "rgba(255,255,255,0)");
+    sh.addColorStop(0.8, "rgba(30,26,20,0)");
+    sh.addColorStop(1, "rgba(30,26,20,0.12)");
+    _silShadeGrads.set(key, sh);
+  }
+  return sh;
 }
 let groundFlecks = [];
 function initFlecks() {
@@ -5774,9 +5808,9 @@ function initForeground() {
 }
 function drawGrassTuft(g, f, t, night, push) {
   let r = 112 - night * 58, gg = 150 - night * 84, bl = 112 - night * 66;
-  const th = window._sky && window._sky.theme;
-  if (th && th.grass && night < 0.82) {
-    const c = hx2rgb(((f.x | 0) % 2 && th.grassAlt) ? th.grassAlt : th.grass), k = (1 - night) * 0.72;
+  const sky = window._sky;
+  if (sky && sky._grassRGB && night < 0.82) {
+    const c = ((f.x | 0) & 1) ? sky._grassAltRGB : sky._grassRGB, k = (1 - night) * 0.72;
     r = r * (1 - k) + c[0] * k; gg = gg * (1 - k) + c[1] * k; bl = bl * (1 - k) + c[2] * k;
   }
   const base = `rgba(${r | 0},${gg | 0},${bl | 0},`;
@@ -7154,14 +7188,13 @@ function drawCat(g, c, isPhoto) {
 
   // warm contact shadow — anchored at the ground, unaffected by the body bob; a dense core + a soft halo
   const shW = ag * (P.bw + 3) * (1 + wk * 0.1 - hop * 0.22);
-  const sg = g.createRadialGradient(0, 3 - bobY, 2, 0, 3 - bobY, shW);
-  sg.addColorStop(0, "rgba(52,44,40,0.20)");
-  sg.addColorStop(0.6, "rgba(52,44,40,0.09)");
-  sg.addColorStop(1, "rgba(52,44,40,0)");
-  g.fillStyle = sg;
+  g.save();
+  g.translate(0, 3 - bobY);
+  g.fillStyle = catShadowGrad(g, shW);
   g.beginPath();
-  g.ellipse(0, 3 - bobY, shW, ag * 5 * (1 - hop * 0.2), 0, 0, 7);
+  g.ellipse(0, 0, shW, ag * 5 * (1 - hop * 0.2), 0, 0, 7);
   g.fill();
+  g.restore();
 
   g.save();
   g.scale(c.face, 1);
@@ -7203,12 +7236,7 @@ function drawCat(g, c, isPhoto) {
   // soft sticker shading — one gradient spanning the whole silhouette:
   // a light kiss on the crown, cool shade pooling at the base, nothing mid-body
   const silTop = P.hy - P.hr;
-  const shTop = g.createLinearGradient(0, silTop, 0, 4);
-  shTop.addColorStop(0, "rgba(255,255,255,0.14)");
-  shTop.addColorStop(0.35, "rgba(255,255,255,0)");
-  shTop.addColorStop(0.8, "rgba(30,26,20,0)");
-  shTop.addColorStop(1, "rgba(30,26,20,0.12)");
-  g.fillStyle = shTop;
+  g.fillStyle = silShadeGrad(g, silTop);
   g.beginPath(); g.rect(-P.bw - 4, silTop - 4, P.bw * 2 + 8, -silTop + 10); g.fill();
 
   // pattern
