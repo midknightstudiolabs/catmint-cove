@@ -43,6 +43,13 @@ jobs:
           npx @capacitor/assets generate --ios
           npx cap sync ios
 
+      - name: Lock the app to portrait
+        run: |
+          P=ios/App/App/Info.plist
+          plutil -replace UISupportedInterfaceOrientations -json '["UIInterfaceOrientationPortrait"]' "$P"
+          plutil -replace 'UISupportedInterfaceOrientations~ipad' -json '["UIInterfaceOrientationPortrait","UIInterfaceOrientationPortraitUpsideDown"]' "$P"
+          plutil -p "$P" | grep -A3 Orientation
+
       - name: Import signing certificate
         uses: apple-actions/import-codesign-certs@v3
         with:

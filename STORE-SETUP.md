@@ -38,6 +38,10 @@ Windows should all succeed. A full Android build also needs Android Studio + JDK
   Replace them with the real Midknight art (keep the same filenames — 1024×1024
   and 2732×2732 equivalents, or SVG). `@capacitor/assets` regenerates every
   density in CI.
+- **Orientation:** portrait-locked. Both build workflows patch the generated
+  `AndroidManifest.xml` / `Info.plist` after `cap sync` (see the "Lock the app to
+  portrait" steps). The web build enforces it too (`#rotate` overlay +
+  `screen.orientation.lock`).
 
 ---
 
@@ -47,13 +51,35 @@ Both stores need these before you can submit — none of it is code:
 
 - App icon (1024×1024 PNG, no transparency for iOS)
 - Screenshots: phone (a few), 7" tablet, 10" tablet. iOS also wants 6.7" and 6.5".
-- Short description (80 chars) + full description
+  All **portrait** (the app is portrait-locked).
+- Store copy — drafts below, tweak freely:
+  - **App Store subtitle** (30 char max): `A cozy cat sanctuary`
+  - **Play short description** (80 char max):
+    `A cozy corner where cats come to be looked after — and you make it theirs.`
+  - **Full description** (both stores):
+    > Catmint Cove is a calm place. Cats wander in, and you look after them —
+    > a warm spot in the sun, a bowl by the door, a scratch behind the ears.
+    >
+    > There is no timer and no fail state. Time is weather here, not a countdown.
+    > Leave for a day and nothing is lost; come back and the cove has carried on
+    > without you. Every cat has its own way of being a cat — a lazy one loafs,
+    > a bold one gets the zoomies, a shy one watches from the long grass — and
+    > the more time you spend together, the more you notice.
+    >
+    > Slowly you make the place theirs: mend the old dock, plant the catmint,
+    > light the little bakery oven. Send a few cats off exploring and read the
+    > postcards they send home. Fill the field guide. Sit with one cat a while
+    > and just watch it groom.
+    >
+    > A cozy corner of the world where cats come to be looked after — and you
+    > slowly make it theirs.
+  - **Keywords** (App Store, 100 char): `cat,cats,cozy,idle,relax,calm,pet,animal,collector,sanctuary,kitten,chill,wholesome`
+  - **Category:** Games ▸ Simulation (or Casual)
 - **Privacy policy URL** — required. Put a page on `midknightstudiolabs.com`.
 - Content rating questionnaire (IARC for Play, Apple's own for the App Store)
 - Data safety form (Play) / privacy nutrition labels (App Store). This build
   stores everything **locally on device** and (with ads off) collects nothing —
   keep it that way until AdMob goes in, then revisit.
-- Category: **Games ▸ Simulation** (or Casual)
 
 ---
 

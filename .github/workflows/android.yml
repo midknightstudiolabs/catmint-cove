@@ -52,6 +52,13 @@ jobs:
           npx @capacitor/assets generate --android
           npx cap sync android
 
+      - name: Lock the app to portrait
+        run: |
+          M=android/app/src/main/AndroidManifest.xml
+          grep -q 'android:screenOrientation' "$M" || \
+            sed -i -E 's#(\s*)android:name="\.MainActivity"#\1android:screenOrientation="portrait"\n\1android:name=".MainActivity"#' "$M"
+          grep -n 'screenOrientation' "$M"
+
       - name: Stamp the version
         run: |
           sed -i "s/versionCode 1/versionCode ${{ steps.ver.outputs.code }}/" android/app/build.gradle
