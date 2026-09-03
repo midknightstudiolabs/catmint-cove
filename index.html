@@ -477,6 +477,25 @@
   #app.resting #hint,#app.resting #toast{opacity:0;pointer-events:none;}
   @media(max-width:600px){ #hint{bottom:calc(3.95rem + env(safe-area-inset-bottom));font-size:.8rem;} }
   button.btn.primary.full{background:#c9b98f;color:#4a4230;}
+  /* ---- cold open: the hint pill carries Midknight's line + the cue on one band ---- */
+  #hint.cold{flex-direction:column;align-items:flex-start;gap:.15rem;text-align:left;
+    padding:.55rem .7rem;max-width:min(94vw,420px);
+    bottom:calc(4rem + env(safe-area-inset-bottom));}
+  @media(max-width:600px){ #hint.cold{bottom:calc(4.6rem + env(safe-area-inset-bottom));} }
+  #app.cold-open #toast{bottom:calc(8.4rem + env(safe-area-inset-bottom));}   /* the 2-line cold band is taller — keep toasts clear */
+  #hint.cold #hintDot{display:none;}
+  #hint .cold-say{display:block;color:var(--ink-soft);font-style:italic;font-size:.82rem;line-height:1.32;}
+  #hint .cold-cue{display:block;font-weight:700;line-height:1.3;}
+  #hint.cold #hintGo{align-self:flex-end;margin-top:.15rem;}
+  .btn.cold-cue-pulse{animation:coldPulse 1.35s ease-in-out infinite;}
+  @keyframes coldPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,178,75,0);}50%{box-shadow:0 0 0 6px rgba(224,178,75,.3);}}
+  @media (prefers-reduced-motion:reduce){ .btn.cold-cue-pulse{animation:none;outline:2px solid var(--accent-bright);} }
+  .shop-note{background:#f3efe2;border:1px solid var(--panel-line);border-radius:12px;
+    padding:.55rem .72rem;font-size:.82rem;color:var(--ink-soft);line-height:1.4;margin:.1rem 0 .6rem;}
+  #tut .guide-list{text-align:left;max-height:56vh;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:.5rem 0 1rem;}
+  #tut .guide-row{margin:0 0 .85rem;}
+  #tut .guide-row b{font-family:"Fraunces",serif;font-size:1rem;}
+  #tut .guide-row p{margin:.15rem 0 0;color:var(--ink-soft);font-size:.88rem;line-height:1.46;}
 
   /* ---- dev overlay ---- */
   #dev{position:absolute;left:.6rem;bottom:3.6rem;z-index:35;display:none;
@@ -638,19 +657,9 @@
   <!-- ad surface (simulated; real build swaps in Google AdMob behind the Ads module) -->
   <div id="adv"></div>
 
-  <!-- tutorial -->
+  <!-- reference card ("?" button) — filled by openGuide() -->
   <div id="tut">
-    <div class="card">
-      <canvas class="art" id="tutArt" width="240" height="220"></canvas>
-      <div class="step" id="tutStep">Step 1 / 5</div>
-      <h2 id="tutTitle">—</h2>
-      <p id="tutBody">—</p>
-      <div class="dots" id="tutDots"></div>
-      <div class="row">
-        <button class="btn primary" id="tutNext">Next</button>
-      </div>
-      <button class="skip" id="tutSkip">Skip — I've got this</button>
-    </div>
+    <div class="card"></div>
   </div>
 
   <!-- photo mode -->
@@ -824,6 +833,7 @@ function newGame() {
   return {
     v: 9,
     tutorialDone: false,
+    coldStep: 0,          // cold-open progress (0..COLD.length) — resumes if interrupted
     midknightSeeded: false,
     shells: 25,
     pearls: 0,             // premium currency (earned via Catdex / daily goals)
@@ -889,6 +899,7 @@ function load() {
     if (G.coveCharter === undefined) G.coveCharter = false;
     G.ads = Object.assign(newAdsState(), G.ads || {});
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
+    if (typeof G.coldStep !== "number") G.coldStep = G.tutorialDone ? 99 : 0;
     if (G.midknightSeeded === undefined) G.midknightSeeded = false;
     if (!G.checkin || typeof G.checkin !== "object") G.checkin = { day: 0, lastKey: "" };
     if (typeof G.boostUntil !== "number") G.boostUntil = 0;
@@ -1134,6 +1145,7 @@ function openProjectSheet(pid) {
   const def = PROJECT_BY_ID[pid], p = G.projects[pid];
   if (!def || !p) return;
   ensureAudio();
+  if (pid === "dock" && G.tips && !G.tips.includes("dock_seen")) G.tips.push("dock_seen");
   if (p.stage === "building") {
     const prog = projectProgress(pid);
     const left = Math.max(1, Math.round(projBuildMin(def) * (1 - prog)));
@@ -1335,14 +1347,32 @@ function weightedTrait() {
 
 function seedStarters() {
   rebuildAttractors();
-  const grown = Date.now() - KITTEN_MS * 3;   // your first cats are already grown
-  // Midknight — the mascot, always your first cat, and he never leaves
+  const grown = Date.now() - KITTEN_MS * 3;   // your first cat is already grown
+  // Midknight — the mascot, always your first cat, and he never leaves.
+  // The second cat arrives on-screen during the cold open (see startColdOpen /
+  // scriptArrival); a returning cove that never ran the intro is covered by
+  // endColdOpen's guarantee.
   spawnCat({ coatKey:"midknight", name:"Midknight", mascot:true, star:2, traits:["grumpy","cuddly"],
-    bornAt:grown, x: W * 0.42, y: H * 0.62, mood: 70 });
-  // one more, random, for company
-  const second = pick(["ginger", "greytab", "browntab", "calico", "greywhite", "russian"]);
-  spawnCat({ coatKey: second, star: rollStar(0.02), bornAt: grown, x: W * 0.6, y: H * 0.56, mood: 63 });
+    bornAt:grown, x: W * 0.46, y: H * 0.62, mood: 70 });
   G.midknightSeeded = true;
+}
+// a friendly newcomer, scripted: walks in, celebratory reveal, legible trait.
+const COLD_TRAIT_LINE = {
+  playful: "playful. It'll knock things off the shelf and look proud about it.",
+  cuddly:  "cuddly. It'll be in a pile with the others by nightfall.",
+  curious: "curious. It'll wander off, then come back with something in its mouth.",
+  chatty:  "chatty. It has opinions, and you're going to hear all of them.",
+  bold:    "bold. Walked in like it pays rent — it'll settle fast.",
+};
+function scriptArrival() {
+  const free = ["ginger", "greytab", "browntab", "calico", "greywhite", "russian"].filter(k => !G.dex[k]);
+  const coat = pick(free.length ? free : ["ginger", "greytab", "browntab"]);
+  const t0 = pick(Object.keys(COLD_TRAIT_LINE));
+  const t1 = pick(TRAIT_KEYS.filter(k => k !== t0));
+  const c = spawnCat({ coatKey: coat, star: rollStar(0.05), traits: [t0, t1],
+    bornAt: Date.now() - KITTEN_MS * 3, x: -40, y: catFloor() - 40, mood: 64, _celeb: true });
+  if (c) logMoment("🐾", `${c.name} wandered in — ${TRAITS[t0].label.toLowerCase()}.`, "arrival");
+  return c;
 }
 function spawnCat(o) {
   if (cats.length >= capacity() && !o) return null;
@@ -2507,6 +2537,7 @@ function renderShopDress(list) {
 function renderShop() {
   const list = document.getElementById("shopList");
   const tabsEl = document.getElementById("shopTabs");
+  if (_coldShopFocus) shopTab = "comforts";   // the cold open steers the first purchase
   if (!SHOP_TABS.some(t => t.id === shopTab)) shopTab = "featured";
   tabsEl.innerHTML = SHOP_TABS.map(t => `<button data-tab="${t.id}" class="${t.id === shopTab ? "on" : ""}">${t.label}</button>`).join("");
   tabsEl.querySelectorAll("button").forEach(b => b.onclick = () => { shopTab = b.dataset.tab; renderShop(); list.scrollTop = 0; });
@@ -2514,6 +2545,8 @@ function renderShop() {
   list.innerHTML = "";
   const tab = SHOP_TABS.find(t => t.id === shopTab);
   list.insertAdjacentHTML("beforeend", `<p class="muted">${tab.intro}</p>`);
+  if (_coldShopFocus && shopTab === "comforts")
+    list.insertAdjacentHTML("beforeend", `<div class="shop-note">Start with a food bowl — it makes room for a cat or two more.</div>`);
 
   if (shopTab === "featured") {
     list.appendChild(shopPackRow());
@@ -2790,6 +2823,7 @@ function syncHud() {
   const dw = (G.materials && G.materials.driftwood) || 0;
   const dp = document.getElementById("driftPill");
   if (dp) { dp.hidden = !(dw > 0 || anyProjectOpen()); document.getElementById("driftwood").textContent = dw; }
+  if (coldTick()) return;   // the cold open owns the hint band while it runs
   renderHint();
 }
 
@@ -2826,6 +2860,14 @@ function nextAction() {
   if (checkinAvailable())
     return { t: `A daily welcome is waiting in Today.`, go: "Open Today", act: () => togglePanel("today") };
 
+  // first look at the shore — the dock's there, you've never opened it
+  if (G.projects && G.projects.dock && G.projects.dock.stage === "open" && !G.tips.includes("dock_seen"))
+    return { t: `Midknight keeps an eye on the old dock. Tap it to see what it'd take.`, go: "The dock", act: () => openProjectSheet("dock") };
+
+  // a trip is available and the cove can spare a cat
+  if (advReady() && cats.filter(c => !c.mascot).length >= 2 && !G.tips.includes("explore_seen"))
+    return { t: `A cat could take a trip today — pick a spot in Today.`, go: "Open Today", act: () => togglePanel("today") };
+
   // early game — keep the loop legible until the cove has a few cats
   if (cats.length < 4) {
     if (G.shells >= coaxPrice())
@@ -2858,7 +2900,12 @@ function renderHint() {
   }
 }
 document.getElementById("hintGo").addEventListener("click", (e) => { e.stopPropagation(); ensureAudio(); const f = e.currentTarget._act; if (f) f(); });
-document.getElementById("hintX").addEventListener("click", (e) => { e.stopPropagation(); _hintDismissedText = _hintCur; _hintDismissedAt = Date.now(); document.getElementById("hint").hidden = true; _hintCur = null; });
+document.getElementById("hintX").addEventListener("click", (e) => {
+  e.stopPropagation(); ensureAudio();
+  if (e.currentTarget._skip || _cold) { endColdOpen(true); return; }   // ✕ = skip the intro while it's running
+  _hintDismissedText = _hintCur; _hintDismissedAt = Date.now();
+  document.getElementById("hint").hidden = true; _hintCur = null;
+});
 
 /* ---------- panels: shop / catdex / today ---------- */
 const panels = {
@@ -2877,7 +2924,13 @@ function togglePanel(name) {
     panels[name].hidden = false;
     if (name === "shop") renderShop();
     if (name === "dex") renderDex();
-    if (name === "today") { renderCheckinCard(); renderProjectCard(); renderAdventureCard(); renderGoals(); renderMoments(); }
+    if (name === "today") {
+      renderCheckinCard(); renderProjectCard(); renderAdventureCard(); renderGoals(); renderMoments();
+      if (G.tips && !G.tips.includes("today_seen")) {
+        G.tips.push("today_seen");
+        toast("A little welcome each day, three small goals, your streak. Miss a day and nothing's lost.", 5);
+      }
+    }
   }
 }
 document.getElementById("shopBtn").addEventListener("click", () => togglePanel("shop"));
@@ -3058,55 +3111,155 @@ document.getElementById("muteBtn").addEventListener("click", (e) => {
   if (restBus && actx) rampParam(restBus.gain, muted || !restOpts.rain ? 0.0001 : 0.9);
 });
 
-/* ---------- tutorial (skippable, reopen with the ? button) ---------- */
-const TUT_STEPS = [
-  { coat:"midknight", star:2, title:"Meet Midknight",
-    body:"Your first cat and the face of the cove. He looks grumpy. He isn't — much. He never leaves." },
-  { coat:"ginger", star:2, title:"Pet your cats",
-    body:"Tap a cat to pet it — mood up, output up for a while. Keep petting a cuddly one and it might start purring. Prickly cats sulk if you overdo it." },
-  { coat:"calico", star:3, title:"Collect the drops",
-    body:"Cats leave a chunky token every so often — tap it to bank shells, or leave it, it collects itself. Earnings run fast for your first hour, then settle down." },
-  { coat:"russian", star:2, title:"Spend your shells",
-    body:"Coax a new cat, or open the Shop for bowls, beds, toys — and Fresh catnip, a quick 2× earnings boost when you want to push on." },
-  { coat:"siamese", star:3, title:"Check in on Today",
-    body:"Tap Today for a daily welcome (a small gift — miss a day and nothing's lost), three little goals, and your streak. There's no way to lose here." },
-  { coat:"browntab", star:2, title:"Send a cat exploring",
-    body:"Once a day, pick a trip — the dock, the woods, a far island — and a cat to send. They pack a bundle, look back at you, and head off. Postcards arrive while they're gone; they come home with finds and a story." },
-  { coat:"greywhite", star:2, pose:"sleeping", title:"Rainy days",
-    body:"Tap 🌙 for a rainy-day rest. Everyone pads inside — a cat on the sill, one by the fire, the rest in a pile — with real rain playing. Leave it running while you work, or fall asleep to it with your cats." },
-];
-let tutIdx = 0;
+/* ---------- the cold open — Midknight shows you the cove ----------
+   Two short beats, ~90s, played not read. The band (#hint) carries one line
+   of Midknight's voice + the cue for the control you actually tap. The five
+   things this used to explain in panels (spend / Today / explore / rainy days
+   / catnip) now surface as contextual hints the moment they matter. The "?"
+   button opens a plain reference card for anyone who wants the whole list. */
 const tutEl = document.getElementById("tut");
-const tutArt = document.getElementById("tutArt");
-function renderTutStep() {
-  const s = TUT_STEPS[tutIdx];
-  document.getElementById("tutStep").textContent = `Step ${tutIdx + 1} / ${TUT_STEPS.length}`;
-  document.getElementById("tutTitle").textContent = s.title;
-  document.getElementById("tutBody").textContent = s.body;
-  document.getElementById("tutNext").textContent = tutIdx === TUT_STEPS.length - 1 ? "Start playing" : "Next";
-  document.getElementById("tutDots").innerHTML =
-    TUT_STEPS.map((_, i) => `<i class="${i === tutIdx ? "on" : ""}"></i>`).join("");
-  try { miniCat(tutArt, s.coat, s.star, s.pose); } catch (e) {}
+let _cold = null;          // { i, armed, shownKey, newCat } while the cold open runs
+let _coldTarget = null;    // a Cat to ring on the canvas
+let _coldShopFocus = false;
+
+const COLD = [
+  { // 1 — meet Midknight, earn the first shell
+    say: "This is Midknight. He was here before the cove had a name.",
+    cue: "Tap Midknight to say hello.",
+    arm(s) { s.mk = cats.find(c => c.mascot); s.armPet = s.mk ? s.mk.petCount : 0; _coldTarget = s.mk || null; },
+    test(s) { return s.mk && s.mk.petCount > s.armPet; },
+    exit(s) { const mk = s.mk; if (mk) dropToken(mk.x + rand(-6, 6), mk.y - 12, 12, null); _coldTarget = null; },
+  },
+  { // 2 — collect it
+    say: "Cats leave these. Tap them, or don't — they always find you.",
+    cue: "Tap the shell to bank it.",
+    arm(s) { s.armTok = G.metrics.tokens; if (!fieldTokens.length) { const mk = cats.find(c => c.mascot) || cats[0]; if (mk) dropToken(mk.x, mk.y - 12, 12, null); } },
+    test(s) { return G.metrics.tokens > s.armTok; },
+  },
+  { // 3 — place a comfort
+    say: "Others come and go. They stay if there's a reason to.",
+    cue: "Open the Shop and set down a food bowl.",
+    go() { _coldShopFocus = true; togglePanel("shop"); },
+    arm(s) { s.armBowls = G.bowls; _coldShopFocus = true; document.getElementById("shopBtn").classList.add("cold-cue-pulse"); },
+    test(s) { return G.bowls > s.armBowls; },
+    exit(s) {
+      document.getElementById("shopBtn").classList.remove("cold-cue-pulse");
+      _coldShopFocus = false; closeAllPanels();
+      s.newCat = scriptArrival();
+    },
+  },
+  { // 4 — meet the newcomer, discover its personality
+    say: null, cue: null,   // filled in arm() once the cat has a name
+    arm(s) {
+      const c = s.newCat || (s.newCat = cats.find(x => !x.mascot) || scriptArrival());
+      _coldTarget = c;
+      this.say = `That's ${c.name} — ${COLD_TRAIT_LINE[c.traits[0]] || "settling in already."}`;
+      this.cue = `Tap ${c.name} to say hello. Every cat's a little different.`;
+      s.armPet2 = c ? c.petCount : 0;
+    },
+    test(s) { return s.newCat && s.newCat.petCount > s.armPet2; },
+    exit() { _coldTarget = null; },
+  },
+];
+
+function startColdOpen() {
+  if (G.tutorialDone) return;
+  const i = Math.min(Math.max(G.coldStep | 0, 0), COLD.length - 1);
+  _cold = { i, armed: false, shownKey: null };
+  if (i >= 3) _cold.newCat = cats.find(c => !c.mascot) || scriptArrival();
+  G.coldStep = i;
+  document.getElementById("app").classList.add("cold-open");
+  ensureAudio();
+  syncHud();
 }
-function openTutorial() {
-  tutIdx = 0;
-  renderTutStep();
+
+// driven every frame from syncHud(); returns true while it owns the band
+function coldTick() {
+  if (!_cold) return false;
+  const band = document.getElementById("hint");
+  const go = document.getElementById("hintGo");
+  const x = document.getElementById("hintX");
+  const modalUp = document.getElementById("scrim").classList.contains("on");
+  if (modalUp) { band.hidden = true; return true; }   // a reveal is showing — wait for it
+
+  let step = COLD[_cold.i];
+  if (!step) { endColdOpen(false); return false; }
+  if (!_cold.armed) { try { step.arm.call(step, _cold); } catch (e) {} _cold.armed = true; _cold.shownKey = null; }
+
+  if (step.test(_cold)) {
+    try { step.exit && step.exit.call(step, _cold); } catch (e) {}
+    _cold.i++; G.coldStep = _cold.i;
+    tone(523.25, 0.07, "sine", 0.04);
+    if (_cold.i >= COLD.length) { endColdOpen(false); return false; }
+    // arm the next step in the SAME tick so a fast tap / auto-bank can't slip
+    // through the gap and be counted against the new step's baseline
+    step = COLD[_cold.i];
+    try { step.arm.call(step, _cold); } catch (e) {}
+    _cold.armed = true; _cold.shownKey = null;
+    return true;
+  }
+
+  const key = (step.say || "") + "|" + (step.cue || "");
+  if (_cold.shownKey !== key) {
+    _cold.shownKey = key;
+    band.classList.add("cold");
+    document.getElementById("hintText").innerHTML =
+      (step.say ? `<span class="cold-say">${esc(step.say)}</span>` : "") +
+      `<span class="cold-cue">${esc(step.cue || "")}</span>`;
+    if (step.go) { go.hidden = false; go.textContent = "Open Shop"; go._act = step.go; }
+    else go.hidden = true;
+    x.hidden = false; x.title = "Skip intro"; x._skip = true;
+    band.hidden = false;
+  }
+  return true;
+}
+
+function endColdOpen(skipped) {
+  if (G.tutorialDone) return;
+  // guarantee the intro's outcomes even if the player skipped mid-beat
+  if (!cats.some(c => !c.mascot)) scriptArrival();
+  if (G.bowls < 2) { G.bowls = 2; rebuildAttractors(); }
+  _cold = null; _coldTarget = null; _coldShopFocus = false;
+  document.getElementById("app").classList.remove("cold-open");
+  document.getElementById("shopBtn").classList.remove("cold-cue-pulse");
+  const band = document.getElementById("hint");
+  band.classList.remove("cold"); band.hidden = true;
+  document.getElementById("hintX")._skip = false;
+  document.getElementById("hintX").title = "Dismiss";
+  document.getElementById("hintText").textContent = "";
+  G.tutorialDone = true;
+  G.coldStep = COLD.length;
+  closeAllPanels();
+  sfx("coax");
+  if (!(G.moments || []).some(m => m.kind === "tale"))
+    logMoment("🐾", "Midknight showed you around the cove. He's not going anywhere.", "tale");   // Phase C picks this thread up
+  save();
+  // an honest reason to come back — the things that really change overnight
+  setTimeout(() => toast("Come back tomorrow — a welcome will be waiting, and the shore always turns something up.", 6), 500);
+  setTimeout(() => { try { checkOffline(afterReturn); } catch (e) {} }, 700);
+  syncHud();
+}
+
+/* ---------- reference card (the "?" button) ---------- */
+const GUIDE = [
+  ["Pet your cats", "Tap a cat — mood up, output up for a bit. Cuddly cats may start purring; prickly ones sulk if you overdo it."],
+  ["Collect the drops", "Cats leave a shell every so often. Tap it, or leave it — it banks itself. Earnings run fast your first hour, then settle."],
+  ["Grow the cove", "Coax a cat, or open the Shop for bowls, beds and toys — each one makes room for more. Fresh catnip doubles earnings for 20 minutes."],
+  ["Restore the cove", "Down at the shore, places like the old dock come back over time — shells plus driftwood the cats turn up. Tap one to see what it needs."],
+  ["Today", "A welcome gift each day, three small goals, your streak. Miss a day and nothing's lost — there's no way to fall behind here."],
+  ["Send a cat exploring", "Once a day, pick a trip and a cat. Postcards arrive while they're away; they come home with finds and a story. Midknight never leaves."],
+  ["Rainy days", "Tap 🌙 any time — everyone pads inside, real rain plays. Leave it running while you work, or sleep to it."],
+];
+function openGuide() {
+  ensureAudio();
+  const card = tutEl.querySelector(".card");
+  card.innerHTML = `<h2 style="margin:.1rem 0 .2rem">How the cove works</h2>
+    <div class="guide-list">${GUIDE.map(([h, b]) => `<div class="guide-row"><b>${esc(h)}</b><p>${esc(b)}</p></div>`).join("")}</div>
+    <div class="row"><button class="btn primary" id="guideOk">Got it</button></div>`;
   tutEl.classList.add("on");
-  ensureAudio();
+  document.getElementById("guideOk").onclick = () => tutEl.classList.remove("on");
 }
-function endTutorial() {
-  ensureAudio();
-  tutEl.classList.remove("on");
-  sfx("coax");    // one happy "let's go" meow as the tutorial closes
-  if (!G.tutorialDone) { G.tutorialDone = true; save(); checkOffline(afterReturn); }
-}
-document.getElementById("tutNext").addEventListener("click", () => {
-  ensureAudio();   // the tutorial opens from a timeout, not a tap — resume audio on the first real gesture
-  if (tutIdx < TUT_STEPS.length - 1) { tutIdx++; renderTutStep(); tone(523.25, 0.08, "sine", 0.04); }
-  else endTutorial();
-});
-document.getElementById("tutSkip").addEventListener("click", () => { ensureAudio(); endTutorial(); });
-document.getElementById("helpBtn").addEventListener("click", () => { ensureAudio(); openTutorial(); });
+document.getElementById("helpBtn").addEventListener("click", openGuide);
 
 /* rest / rainy-day mode wiring */
 document.getElementById("restBtn").addEventListener("click", () => { if (!restMode) { syncRestPanelUI(); openRestPanel(); } });
@@ -3243,7 +3396,7 @@ const Ads = (() => {
   const owned = () => !!A().supporter;
   const inGrace = () => { const t = G.firstSeen || 0; return t > 0 && Date.now() - t < GRACE_MS; };
   const busy = () => (scrim && scrim.classList.contains("on"))
-    || (tutEl && tutEl.classList.contains("on")) || restMode;
+    || (tutEl && tutEl.classList.contains("on")) || !!_cold || !G.tutorialDone || restMode;
 
   function rewardReady(p) {
     const cd = REWARD_CD[p] || 0;
@@ -3497,13 +3650,13 @@ function askOwnerName(firstTime) {
   const finish = () => {
     G.ownerAsked = true; closeModal(); syncHud(); save();
     if (firstTime) {
-      const next = () => { if (!G.tutorialDone) setTimeout(openTutorial, 250); else checkOffline(afterReturn); };
+      const next = () => { if (!G.tutorialDone) setTimeout(startColdOpen, 250); else checkOffline(afterReturn); };
       if (ADS_ENABLED && G.ads && !G.ads.asked) setTimeout(() => askAgeGate(next), 250); else next();
     }
   };
   const submit = () => {
     const v = inp.value.trim().replace(/\s+/g, " ").slice(0, 18);
-    if (v) { G.owner = v; toast(`Welcome to ${coveName()}`, 4); }
+    if (v) { G.owner = v; if (!firstTime) toast(`Welcome to ${coveName()}`, 4); }   // first run: the cold open does the welcome
     finish();
   };
   document.getElementById("own-ok").onclick = submit;
@@ -5758,13 +5911,15 @@ function anyProjectOpen() { return PROJECTS.some(p => projectStage(p.id) === "op
 let driftTimer = rand(30, 70);
 
 function simulate(dt) {
-  visitorTimer -= dt;
-  if (visitorTimer <= 0) {
-    visitorTimer = nextVisitorGap();
-    if (cats.length < capacity()) { spawnCat(); toast("A cat wandered into the cove."); }
+  if (G.tutorialDone) {                 // hold the world still during the cold open
+    visitorTimer -= dt;
+    if (visitorTimer <= 0) {
+      visitorTimer = nextVisitorGap();
+      if (cats.length < capacity()) { spawnCat(); toast("A cat wandered into the cove."); }
+    }
   }
   // driftwood washes up along the shore while a project still needs it
-  if (anyProjectOpen()) {
+  if (G.tutorialDone && anyProjectOpen()) {
     driftTimer -= dt;
     if (driftTimer <= 0) {
       driftTimer = rand(65, 135);
@@ -5808,6 +5963,16 @@ function renderScene(dt) {
   drawDepartures(ctx);
   for (const tk of fieldTokens) drawToken(ctx, tk);
   drawFX(ctx);
+
+  // cold open: a soft ring under the cat the cue is pointing at
+  if (_coldTarget && cats.includes(_coldTarget)) {
+    const c = _coldTarget, r = 24 + Math.sin(performance.now() / 300) * 4;
+    ctx.save();
+    ctx.strokeStyle = "rgba(224,178,75,.75)";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.ellipse(c.x, c.y + 3, r, r * 0.46, 0, 0, 7); ctx.stroke();
+    ctx.restore();
+  }
 
   // dusk / night mood wash — cools and settles the whole scene as the light fades
   const sky = window._sky;
@@ -6413,6 +6578,7 @@ function startAdventure(name, dest) {
   G.adventure = { cat: c.name, dest, startedAt: Date.now(), endsAt: Date.now() + mins * 60000, seed: (Math.random() * 1e9) | 0, catData: data };
   G.adventure.cards = scheduleCards(dest, G.adventure.startedAt, G.adventure.endsAt);
   G.advDay = todayKey();
+  if (G.tips && !G.tips.includes("explore_seen")) G.tips.push("explore_seen");
   save(); syncHud(); rebuildAttractors();
   // send-off: a quick wave of the tail, a bindle, and off toward the world
   const dir = dest === "forest" ? 1 : -1;
@@ -6831,23 +6997,27 @@ if (G.rest && G.rest.on && (!G.rest.endsAt || Date.now() < G.rest.endsAt)) {
   setTimeout(() => resumeRest(G.rest), 250);
 } else if (G.rest) { G.rest = null; }
 
-// first run: name the cove → age gate → tutorial → then check offline earnings
+// first run: name the cove → age gate → cold open → then check offline earnings
 const needName = !G.owner && !G.ownerAsked;
 function maybeAgeGate(then) { if (!ADS_ENABLED || (G.ads && G.ads.asked)) return then && then(); askAgeGate(then); }
 if (G.rest && G.rest.on) {
   /* resuming rest — skip the usual boot flow */
 } else if (needName) {
-  setTimeout(() => askOwnerName(true), 500);      // chains → maybeAgeGate → tutorial (see askOwnerName)
+  setTimeout(() => askOwnerName(true), 500);      // chains → maybeAgeGate → startColdOpen (see askOwnerName)
 } else if (!G.tutorialDone) {
-  setTimeout(() => maybeAgeGate(openTutorial), 400);
+  setTimeout(() => maybeAgeGate(startColdOpen), 400);
 } else {
   maybeAgeGate(() => checkOffline(afterReturn));
 }
 
-// gentle guidance only once the tutorial is behind you
+// one-time nudges, now that the cold open is behind you
 if (G.tutorialDone && !G.tips.includes("welcome")) {
   G.tips.push("welcome");
   setTimeout(() => toast("Tap a cat to pet it. Tap the glowing shells to collect.", 5), 900);
+}
+if (G.tutorialDone && G.opens >= 2 && !G.tips.includes("rain_seen")) {
+  G.tips.push("rain_seen");
+  setTimeout(() => toast("Tap 🌙 any time for a rainy-day rest — everyone naps inside with real rain. Good to work or sleep to.", 6), 2400);
 }
 
 // one-time notice for testers whose shells were reset for the rebalance
