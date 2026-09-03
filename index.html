@@ -540,11 +540,6 @@
   #hint.cold #hintX{position:absolute;top:.42rem;right:.5rem;width:auto;height:auto;
     padding:.12rem .38rem;border-radius:7px;background:transparent;color:var(--ink-faint);
     font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
-  .btn.cold-cue-pulse{animation:coldPulse 1.35s ease-in-out infinite;}
-  @keyframes coldPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,178,75,0);}50%{box-shadow:0 0 0 6px rgba(224,178,75,.3);}}
-  @media (prefers-reduced-motion:reduce){ .btn.cold-cue-pulse{animation:none;outline:2px solid var(--accent-bright);} }
-  .shop-note{background:#f3efe2;border:1px solid var(--panel-line);border-radius:12px;
-    padding:.55rem .72rem;font-size:.82rem;color:var(--ink-soft);line-height:1.4;margin:.1rem 0 .6rem;}
   #tut .guide-list{text-align:left;max-height:56vh;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:.5rem 0 1rem;}
   #tut .guide-row{margin:0 0 .85rem;}
   #tut .guide-row b{font-family:"Fraunces",serif;font-size:1rem;}
@@ -3278,7 +3273,6 @@ function renderShopDress(list) {
 function renderShop() {
   const list = document.getElementById("shopList");
   const tabsEl = document.getElementById("shopTabs");
-  if (_coldShopFocus) shopTab = "comforts";   // the cold open steers the first purchase
   if (!SHOP_TABS.some(t => t.id === shopTab)) shopTab = "featured";
   tabsEl.innerHTML = SHOP_TABS.map(t => `<button data-tab="${t.id}" class="${t.id === shopTab ? "on" : ""}">${t.label}</button>`).join("");
   tabsEl.querySelectorAll("button").forEach(b => b.onclick = () => { shopTab = b.dataset.tab; renderShop(); list.scrollTop = 0; });
@@ -3286,8 +3280,6 @@ function renderShop() {
   list.innerHTML = "";
   const tab = SHOP_TABS.find(t => t.id === shopTab);
   list.insertAdjacentHTML("beforeend", `<p class="muted">${tab.intro}</p>`);
-  if (_coldShopFocus && shopTab === "comforts")
-    list.insertAdjacentHTML("beforeend", `<div class="shop-note">Start with a food bowl — it makes room for a cat or two more.</div>`);
 
   if (shopTab === "featured") {
     list.appendChild(shopPackRow());
@@ -3875,7 +3867,6 @@ document.getElementById("muteBtn").addEventListener("click", (e) => {
 const tutEl = document.getElementById("tut");
 let _cold = null;          // { i, armed, shownKey, newCat } while the cold open runs
 let _coldTarget = null;    // a Cat to ring on the canvas
-let _coldShopFocus = false;
 
 const COLD = [
   { // 1 — meet Midknight, and the first hello lands
@@ -3986,9 +3977,8 @@ function endColdOpen(skipped) {
   // guarantee the intro's outcomes even if the player skipped mid-beat
   if (!cats.some(c => !c.mascot)) scriptArrival();
   if (G.bowls < 2) { G.bowls = 2; rebuildAttractors(); }
-  _cold = null; _coldTarget = null; _coldShopFocus = false;
+  _cold = null; _coldTarget = null;
   document.getElementById("app").classList.remove("cold-open");
-  document.getElementById("shopBtn").classList.remove("cold-cue-pulse");
   const band = document.getElementById("hint");
   band.classList.remove("cold"); band.hidden = true;
   const xb = document.getElementById("hintX");
