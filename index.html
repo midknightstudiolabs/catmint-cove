@@ -372,7 +372,10 @@
   .statebadge b{color:var(--ink);text-transform:capitalize;}
   .moodbar{height:.55rem;border-radius:999px;background:#e4e0cf;overflow:hidden;}
   .moodbar i{display:block;height:100%;background:linear-gradient(90deg,var(--apricot),var(--accent-bright));transition:width .4s ease;}
+  .moodbar.bond i{background:linear-gradient(90deg,#e6a7c4,var(--heart));}
   .moodlabel{display:flex;justify-content:space-between;font-size:.72rem;color:var(--ink-soft);margin-top:.3rem;}
+  .bondwrap{margin-top:.5rem;}
+  #cc-bondname{font-weight:600;color:var(--heart);}
   .cat-trait-desc{font-size:.77rem;color:var(--ink-soft);margin-top:.45rem;line-height:1.4;
     display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
   .rehome{margin-top:.7rem;width:100%;background:none;border:1px solid var(--panel-line);border-radius:999px;
@@ -672,6 +675,10 @@
     <div class="statebadge">Right now: <b id="cc-state">—</b></div>
     <div class="moodbar"><i id="cc-mood" style="width:60%"></i></div>
     <div class="moodlabel"><span>mood</span><span id="cc-moodpct">60%</span></div>
+    <div class="bondwrap" id="cc-bondwrap">
+      <div class="moodbar bond"><i id="cc-bond" style="width:0%"></i></div>
+      <div class="moodlabel"><span id="cc-bondname">New here</span><span id="cc-bondpct">0%</span></div>
+    </div>
     <div class="cat-trait-desc" id="cc-desc"></div>
     <div class="cc-dress" id="cc-dress"></div>
     <button class="rehome" id="cc-rehome" hidden>Find them a new home →</button>
@@ -984,7 +991,8 @@ function save() {
     if (typeof dedupeCats === "function") dedupeCats();   // a dup never makes it to disk
     G.cats = cats.filter(c => !c.visitor).map(c => ({     // Labubu is a guest — never saved as a resident
       name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
-      mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood), worn:c.worn || [], owned:c.owned || []
+      mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood), worn:c.worn || [], owned:c.owned || [],
+      bond:Math.round(c.bond || 0), bondSeen:c.bondSeen || 0, bondDay:c.bondDay || ""
     }));
     localStorage.setItem(SAVE_KEY, JSON.stringify(G));
   } catch (e) {}
@@ -1298,6 +1306,17 @@ function earnMult() {
 const TOKEN_CAP = 40;                 // a dropped token is a nice pickup, never a jackpot
 const ACC_CEIL  = 150;                // a cat can't hoard more than ~3-4 tokens' worth undropped
 
+/* ---------- bonds — how well you know each cat ---------- */
+const BOND_LEVELS = [
+  { at: 0,  name: "New here" },
+  { at: 22, name: "Warming up" },
+  { at: 45, name: "Friends" },
+  { at: 70, name: "Close" },
+  { at: 90, name: "Bonded" },
+];
+function bondLevel(v) { let i = 0; for (let k = 0; k < BOND_LEVELS.length; k++) if (v >= BOND_LEVELS[k].at) i = k; return i; }
+function bondName(v) { return BOND_LEVELS[bondLevel(v)].name; }
+
 /* ---------- cat entity ---------- */
 const KITTEN_MS = 20 * 3600 * 1000;   // a cat is a kitten for its first ~20h, then an adult forever
 let cats = [];
@@ -1345,6 +1364,11 @@ class Cat {
     this.dropInterval = rand(25, 45);      // a quicker first payout, then settles to ~2 min
     this.petCount = 0;
     this.petBuff = 0;      // seconds of x1.5
+    // bond — a slow lifetime accumulator, never decays. earned through varied
+    // interactions (see gainBond); repetitive tapping gives diminishing returns.
+    this.bond = clamp(o.bond ?? (this.mascot ? 35 : 8), 0, 100);
+    this.bondSeen = o.bondSeen ?? bondLevel(this.bond);   // highest level the player's been shown
+    this.bondDay = o.bondDay || "";                       // last day a first-of-day bond chunk landed
     this.bob = Math.random() * 6;
     this.blink = rand(2, 6);
     this.tail = Math.random() * 6;
@@ -1464,6 +1488,7 @@ function restoreCats() {
         mascot: s.mascot || s.coatKey === "midknight" || s.name === "Midknight",
         worn: s.worn, accessory: s.accessory, owned: s.owned,
         bornAt: s.bornAt ?? (Date.now() - KITTEN_MS * 3), mood:s.mood,
+        bond: s.bond, bondSeen: s.bondSeen, bondDay: s.bondDay,
         x: rand(W*0.15,W*0.85), y: rand(H*0.42,H*0.82)
       }));
     }
@@ -2008,6 +2033,11 @@ function updateCat(c, dt) {
     return;
   }
   if (c.stateT >= c.stateDur) {
+    // bond: a cat that just got what it wanted warms to you a little — the
+    // reward for stocking the cove with the things they like (quiet, no toast)
+    if (["eating", "playing", "sunbathing", "rolling", "baking", "sleeping"].includes(c.state) && Math.random() < 0.35)
+      gainBond(c, 0.4, true);
+    if (c.state === "socializing" && Math.random() < 0.25) gainBond(c, 0.3, true);
     // an exploring cat sometimes noses up a bit of driftwood along the shore
     if (c.state === "exploring" && anyProjectOpen() && Math.random() < 0.35 && !c.mascot) {
       dropToken(c.x, Math.max(c.y, catFloor() - 40), 0, "driftwood");
@@ -2181,6 +2211,35 @@ function petCat(c) {
   shake(3);
   sfx("pet", c);
   fireTip("first_pet");
+  // bond: the first pet of the day is worth real time; more pets in the same
+  // run give less and less — and a prickly cat barely warms to it at all
+  if (c.bondDay !== todayKey()) { c.bondDay = todayKey(); gainBond(c, 3.2 * Math.max(0.5, c.petAffinity())); }
+  else {
+    const dim = 1 / (1 + (c._petRun || 1) * 0.9);
+    gainBond(c, (c.petAffinity() > 0.7 ? 1.5 : 0.35) * dim);
+  }
+}
+/* ---------- bonds ---------- */
+function gainBond(c, amt, quiet) {
+  if (!c || c.visitor || !(amt > 0)) return;
+  const before = c.bond || 0;
+  c.bond = clamp(before + amt, 0, 100);
+  const now = bondLevel(c.bond);
+  if (now > bondLevel(before) && now > (c.bondSeen || 0)) {
+    c.bondSeen = now;
+    onBondMilestone(c, now, quiet);
+  }
+  if (cardCat === c) updateCatCard();
+}
+function onBondMilestone(c, lvl, quiet) {
+  const nm = BOND_LEVELS[lvl].name.toLowerCase();
+  logMoment("💛", lvl >= 4 ? `${c.name} is fully at home with you now.` : `You and ${c.name} are ${nm} now.`, "bond");
+  if (!quiet && cats.includes(c)) {
+    spawnParticles(c.x, c.y - 24, "heart", 9);
+    floatText(c.x, c.y - 42, BOND_LEVELS[lvl].name, "#d6688a");
+  }
+  toast(lvl >= 4 ? `${c.name} — bonded. 💛` : `${c.name}: ${BOND_LEVELS[lvl].name.toLowerCase()}. 💛`, 4);
+  sfx("reveal");
 }
 
 /* ---------- cat card ---------- */
@@ -2191,6 +2250,10 @@ const cc = {
   state: document.getElementById("cc-state"),
   mood: document.getElementById("cc-mood"),
   moodpct: document.getElementById("cc-moodpct"),
+  bondwrap: document.getElementById("cc-bondwrap"),
+  bond: document.getElementById("cc-bond"),
+  bondname: document.getElementById("cc-bondname"),
+  bondpct: document.getElementById("cc-bondpct"),
   desc: document.getElementById("cc-desc"),
   coatEl: document.getElementById("cc-coat"),
   starsEl: document.getElementById("cc-stars"),
@@ -2383,6 +2446,16 @@ function updateCatCard() {
   const m = Math.round(cardCat.mood);
   cc.mood.style.width = m + "%";
   cc.moodpct.textContent = m + "%";
+  if (cc.bondwrap) {
+    const showBond = !cardCat.visitor;
+    cc.bondwrap.hidden = !showBond;
+    if (showBond) {
+      const b = Math.round(cardCat.bond || 0);
+      cc.bond.style.width = b + "%";
+      cc.bondname.textContent = bondName(b);
+      cc.bondpct.textContent = b + "%";
+    }
+  }
 }
 function hideCatCard(instant) {
   cardCat = null;
@@ -6990,6 +7063,7 @@ function resolveAdventure(onDone) {
     }
     const res = advLoot(c, a.dest);
     if (res.reward.mood) { c.mood = clamp(c.mood + res.reward.mood, 8, 100); delete res.reward.mood; }
+    gainBond(c, party.length > 1 ? 5 : 4, true);   // time away together — a real bond bump
     spawnParticles(c.x + 24, c.y - 14, "twinkle", 7);
     results.push({ cat: c, res });
   });
@@ -7243,6 +7317,10 @@ window.__cove = {
   moments(){ return G.moments || []; },
   drift(n = 5){ gainDriftwood(n); return G.materials.driftwood; },
   dedupe(){ const n = dedupeCats(); syncHud(); save(); return { removed: n, cats: cats.map(c => c.name) }; },
+  bond(name, v){
+    if (name != null && v != null) { const c = cats.find(x => x.name === name); if (c) { c.bond = clamp(+v, 0, 100); c.bondSeen = bondLevel(c.bond); if (cardCat === c) updateCatCard(); save(); } }
+    else if (name != null) { const c = cats.find(x => x.name === name); if (c) gainBond(c, 10); }
+    return cats.filter(x => !x.visitor).map(x => `${x.name}: ${Math.round(x.bond)} (${bondName(x.bond)})`); },
   labubu(cmd){
     if (cmd === "come") { G.labubu.nextAt = Date.now() - 1; G.labubu.dayKey = ""; labubuArrive(); }
     else if (cmd === "go") { const l = cats.find(c => c.visitor); if (l) labubuLeave(l); }
