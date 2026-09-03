@@ -465,25 +465,25 @@
   #rest .rest-bar[hidden]{display:none;}
   #app.resting #hud,#app.resting #actions{opacity:0;pointer-events:none;transition:opacity .5s;}
   #app.resting #toast,#app.resting #dev{opacity:0!important;pointer-events:none;}
-  #rest .rest-bar{pointer-events:auto;position:absolute;left:50%;bottom:32%;
-    transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.75rem;
-    transition:opacity .6s;}
-  #rest .rest-bar.dim{opacity:0;}
-  #rest #restWake{display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.94);
-    color:#1e232e;font:inherit;font-weight:700;font-size:1.05rem;letter-spacing:.01em;
-    padding:1rem 2rem;border:none;border-radius:999px;cursor:pointer;
-    box-shadow:0 10px 34px rgba(0,0,0,.34);min-height:3.3rem;white-space:nowrap;}
-  #rest #restWake:hover{background:#fff;}
-  #rest #restWake .rw-ico{font-size:1.15rem;}
-  #rest .rest-sub{display:flex;align-items:center;gap:.55rem;white-space:nowrap;
-    background:rgba(18,18,26,.5);color:#fff;padding:.4rem .45rem .4rem .85rem;border-radius:999px;
-    font-size:.8rem;font-variant-numeric:tabular-nums;backdrop-filter:blur(4px);}
-  #rest .rest-sub button{background:rgba(255,255,255,.16);border:none;color:#fff;font:inherit;font-weight:600;
-    padding:.3rem .7rem;border-radius:999px;cursor:pointer;}
-  @media(max-width:520px){
-    #rest .rest-bar{bottom:30%;width:min(84vw,330px);}
-    #rest #restWake{width:100%;justify-content:center;font-size:1.12rem;padding:1.1rem 1rem;min-height:3.6rem;}
-  }
+  /* the way out: one slim bar at the bottom edge, below every cat */
+  #rest .rest-bar{pointer-events:auto;position:absolute;left:50%;
+    bottom:max(.9rem, env(safe-area-inset-bottom));transform:translateX(-50%);
+    width:min(88vw,360px);display:flex;align-items:center;gap:0;
+    background:rgba(14,12,18,.44);backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.09);border-radius:999px;
+    color:rgba(255,255,255,.9);font-size:.8rem;font-variant-numeric:tabular-nums;
+    padding:.34rem .35rem;transition:opacity .55s;}
+  #rest .rest-bar.ambient{opacity:.32;}
+  #rest .rest-bar.dim{opacity:0;pointer-events:none;}
+  #rest .rb-back{display:flex;align-items:center;gap:.35rem;background:none;border:none;
+    color:#fff;font:inherit;font-weight:600;font-size:.82rem;padding:.42rem .8rem;
+    border-radius:999px;cursor:pointer;white-space:nowrap;}
+  #rest .rb-back:hover{background:rgba(255,255,255,.12);}
+  #rest .rb-back span{font-size:1.05rem;line-height:1;opacity:.75;}
+  #rest .rb-time{flex:1;text-align:center;color:rgba(255,255,255,.55);letter-spacing:.02em;white-space:nowrap;}
+  #rest .rb-fs{background:none;border:none;color:rgba(255,255,255,.6);font:inherit;
+    padding:.42rem .6rem;border-radius:999px;cursor:pointer;}
+  #rest .rb-fs:hover{background:rgba(255,255,255,.12);color:#fff;}
 
   /* ---- photo mode ---- */
   #photo{position:absolute;inset:0;z-index:60;background:rgba(24,21,15,.78);display:none;
@@ -615,11 +615,9 @@
       <button class="rest-cancel" id="restCancel">Back to the cove</button>
     </div>
     <div class="rest-bar" id="restBar" hidden>
-      <button id="restWake"><span class="rw-ico">☂</span> Back to the cove</button>
-      <div class="rest-sub">
-        <span id="restTime">resting</span>
-        <button id="restFs" title="Fullscreen">⤢</button>
-      </div>
+      <button class="rb-back" id="restWake"><span>‹</span> Back to the cove</button>
+      <span class="rb-time" id="restTime">resting</span>
+      <button class="rb-fs" id="restFs" title="Fullscreen">⤢</button>
     </div>
   </div>
 
@@ -4821,9 +4819,13 @@ function renderRest(dt) {
   _restRainScroll += dt;
   if (_restFlash > 0) _restFlash = Math.max(0, _restFlash - dt * 2.2);
   updateGlassDrops(dt);
-  const targetDim = restIdleT > 26 ? 0.6 : 0;
+  const targetDim = restIdleT > 34 ? 0.6 : 0;
   restDim += (targetDim - restDim) * Math.min(1, dt * 0.9);
-  document.getElementById("restBar").classList.toggle("dim", restDim > 0.35);
+  // the way-out bar: full for the first ~4s (or after any touch), then it recedes,
+  // then it's gone with the screensaver dim
+  const _rb = document.getElementById("restBar");
+  _rb.classList.toggle("dim", restDim > 0.35);
+  _rb.classList.toggle("ambient", restIdleT > 4 && restDim <= 0.35);
 
   const g = ctx;
   g.save();
