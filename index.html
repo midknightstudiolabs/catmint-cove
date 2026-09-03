@@ -794,7 +794,8 @@ const MIDKNIGHT_COAT = { key:"midknight", name:"Midknight", base:"#26232b", bell
 // Labubu — Midknight's sidekick. A snowshoe: seal points, white boots + blaze,
 // blue eyes. A visitor, never a resident — see the labubu* helpers below.
 const LABUBU_COAT = { key:"labubu", name:"Labubu", base:"#e7dcc6", belly:"#f4efe3", pattern:"points",
-  point:"#5f4b3d", white:["bib","belly","muzzle","blaze","paws"], eye:"#7fb6d6", nose:"#d98f97", inner:"#caa0a0",
+  point:"#5f4b3d", white:["bib","belly","muzzle","paws"], eye:"#7fb6d6", nose:"#d98f97", inner:"#caa0a0",
+  snowMask:true,                          // custom face: an off-centre dark muzzle splotch, not a clean blaze
   collarCol:"#a24bb0", bellCol:"#b76fc7", visitor:true };   // his purple bell — canon, from the real cat
 const COAT_BY_KEY = Object.fromEntries([...COATS, MIDKNIGHT_COAT, LABUBU_COAT].map(c => [c.key, c]));
 function weightedCoat() {
@@ -5779,7 +5780,10 @@ function drawCat(g, c, isPhoto) {
       g.beginPath(); g.ellipse(P.bw * 0.28, -2.5, 4.2, 4, 0, 0, 7); g.fill();
       g.beginPath(); g.ellipse(P.bw * 0.62, -2.5, 4.2, 4, 0, 0, 7); g.fill();
     }
-    if (coat.white.includes("muzzle")) { g.beginPath(); g.ellipse(P.hx + 1, P.hy + P.hr * 0.5, 4.4, 3.4, 0, 0, 7); g.fill(); }
+    if (coat.white.includes("muzzle")) {
+      const mw = coat.snowMask ? 5.6 : 4.4, mh = coat.snowMask ? 4.2 : 3.4;   // Labubu's white muzzle is a bit fuller
+      g.beginPath(); g.ellipse(P.hx + 1, P.hy + P.hr * 0.5, mw, mh, 0, 0, 7); g.fill();
+    }
     if (coat.white.includes("blaze"))  {
       g.beginPath();
       g.moveTo(P.hx - 1.5, P.hy - P.hr * 0.74);
@@ -5788,6 +5792,19 @@ function drawCat(g, c, isPhoto) {
       g.quadraticCurveTo(P.hx, P.hy + P.hr * 0.62, P.hx - 1.6, P.hy + P.hr * 0.5);
       g.quadraticCurveTo(P.hx - 2.4, P.hy - 3, P.hx - 1.5, P.hy - P.hr * 0.74);
       g.fill();
+    }
+    // Labubu — one irregular seal blotch dripping down the cat's-right of the
+    // muzzle toward the nose. The rest of the muzzle stays white. No tidy blaze.
+    if (coat.snowMask) {
+      const R = P.hr;
+      g.fillStyle = coat.point;
+      g.beginPath();
+      g.moveTo(P.hx + 0.2, P.hy - R * 0.34);
+      g.bezierCurveTo(P.hx + 4.6, P.hy - R * 0.30, P.hx + 5.0, P.hy - R * 0.02, P.hx + 3.8, P.hy + R * 0.30);
+      g.bezierCurveTo(P.hx + 3.0, P.hy + R * 0.48, P.hx + 2.0, P.hy + R * 0.52, P.hx + 1.4, P.hy + R * 0.40);
+      g.bezierCurveTo(P.hx + 1.0, P.hy + R * 0.30, P.hx + 1.3, P.hy + R * 0.16, P.hx + 0.9, P.hy + R * 0.04);
+      g.bezierCurveTo(P.hx + 0.3, P.hy - R * 0.10, P.hx - 0.5, P.hy - R * 0.16, P.hx + 0.2, P.hy - R * 0.34);
+      g.closePath(); g.fill();
     }
   }
   // warm rim light on the top-left edge (clipped to the silhouette so it reads as an inner rim)
@@ -5836,6 +5853,10 @@ function drawCat(g, c, isPhoto) {
     g.moveTo(nx, ny + 2.9); g.quadraticCurveTo(nx + 2.3, ny + 4, nx + 3.2, ny + 2.7);
   }
   g.stroke();
+  if (coat.snowMask) {                    // Labubu's little dark chin smudge
+    g.fillStyle = coat.point;
+    g.beginPath(); g.ellipse(nx - 0.6, ny + 4.6, 1.6, 1.1, 0.1, 0, 7); g.fill();
+  }
 
   // whiskers — a soft drooping fan, kept close to the muzzle so they don't streak into the sky
   const wl = kit ? 7 : 11;
