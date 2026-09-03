@@ -2460,6 +2460,14 @@ function updateCat(c, dt) {
   // distance to current target, for state transitions
   const atTarget = Math.hypot(c.tx - c.x, c.ty - c.y) < 7;
 
+  // a comfort was sold out from under the cat — don't scratch / hide in thin air
+  if ((c.state === "scratching" && !nearestAttractor(c, "scratch")) ||
+      (c.state === "indoors" && !(G.decor && G.decor.cottage > 0))) {
+    c._arriveState = null; c._cotX = null;
+    go(c, "grooming", rand(1.2, 2.6), null);
+    return;
+  }
+
   // state transitions
   if (c.state === "arriving") {
     if (atTarget || c.stateT > 14) decide(c);
@@ -2467,7 +2475,11 @@ function updateCat(c, dt) {
   }
   if (c.state === "seeking") {
     if (atTarget) {
-      go(c, c._arriveState || "loafing", c._arriveDur || 8, null);
+      let arr = c._arriveState || "loafing";
+      if (arr === "scratching" && !nearestAttractor(c, "scratch")) arr = "loafing";
+      if (arr === "indoors" && !(G.decor && G.decor.cottage > 0)) arr = "loafing";
+      go(c, arr, c._arriveDur || 8, null);
+      c._arriveState = null;                      // consumed — don't let it linger
       c._station = c._pendStation || null;
       c._pendStation = null;
       if (c.state === "scratching") c.face = 1;   // always stand left of the post, rake toward it
@@ -3343,6 +3355,11 @@ function shopItemRow(item) {
     if (item.get() <= (item.keepMin || 0)) return;
     item.remove();
     if (STATION[item.type]) for (const c of cats) if (c._station === item.type || c._pendStation === item.type) { c._station = null; c._pendStation = null; c._fx = null; c.stateDur = 0; }
+    // sold the last scratch pad → nobody's still raking at where it used to be
+    if (item.type === "scratch" && item.get() === 0) for (const c of cats) {
+      if (c._arriveState === "scratching") c._arriveState = null;
+      if (c.state === "scratching") c.stateDur = 0;
+    }
     G.shells += refund;
     tone(392, 0.1, "sine", 0.05); tone(294, 0.14, "sine", 0.04, 0.06);
     spawnParticles(W / 2, H * 0.55, "dust", 6);
