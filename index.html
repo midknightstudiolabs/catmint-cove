@@ -8396,7 +8396,7 @@ function maybePanHint() {
   if (!G || G.tips.includes("pan_seen") || restMode || _cold) return;
   if (stage.scrollWidth > stage.clientWidth + 8 && G.tutorialDone) {
     G.tips.push("pan_seen"); save();
-    toast("The cove's wider than your screen — drag to look around. 🐾", 6);
+    toast("The cove's wider than your screen — drag to look around, or turn your phone sideways to see it all. 🐾", 7);
   }
 }
 setTimeout(maybePanHint, 3500);
