@@ -290,6 +290,18 @@
   .adv-sub{font-size:.78rem;color:var(--ink-soft);margin-top:.05rem;}
   .adv-card>.btn{width:100%;justify-content:center;}
   .adv-card>.btn.tiny{width:auto;padding:.32rem .7rem;font-size:.75rem;}
+  .adv-trip,.adv-send{padding-bottom:.7rem;margin-bottom:.7rem;border-bottom:1px solid var(--panel-line);}
+  .adv-trip:last-of-type,.adv-send:last-of-type{border-bottom:0;padding-bottom:0;margin-bottom:0;}
+  .adv-trip .btn,.adv-send .btn{width:100%;justify-content:center;}
+  .adv-trip .btn.tiny{width:auto;padding:.3rem .7rem;font-size:.74rem;}
+  .adv-trip.back .adv-emoji{filter:none;}
+  .pick-label{font-size:.8rem;color:var(--ink-soft);font-weight:600;margin:.2rem 0 .35rem;text-align:left;}
+  .pick-tiers{display:flex;gap:.4rem;margin-bottom:.7rem;}
+  .pick-tier{flex:1 1 0;background:#eef1e3;border:1px solid var(--panel-line);border-radius:12px;
+    padding:.45rem .3rem;cursor:pointer;font:inherit;color:var(--ink);text-align:center;line-height:1.25;}
+  .pick-tier b{display:block;font-size:.8rem;}
+  .pick-tier i{display:block;font-style:normal;font-size:.68rem;color:var(--ink-soft);margin-top:.15rem;}
+  .pick-tier.on{border-color:var(--accent);background:#eaf3ec;}
   .adv-map{font-size:.74rem;color:var(--ink-faint);margin-top:.55rem;font-variant-numeric:tabular-nums;}
   .adv-postcard{font-size:.8rem;font-style:italic;color:var(--ink-soft);line-height:1.4;
     margin:.1rem 0 .7rem;padding:.5rem .65rem;background:#f3f0e4;border:1px solid var(--panel-line);border-radius:10px;}
@@ -914,8 +926,9 @@ function newGame() {
     postcards: [],               // notes cats send home mid-adventure
     moments: [],                 // gentle log of the cove's little happenings
     wywa: { lastAt: 0, seen: [] },// "While You Were Away" cooldown + anti-repeat
-    adventure: null,             // one active { cat, dest, startedAt, endsAt, seed, catData }
-    advDay: "",                  // yyyy-m-d of the last claimed adventure (one a day)
+    adventure: null,             // legacy single-trip slot — superseded by `adventures`
+    adventures: [],              // up to ADV_SLOTS active trips { id, cats, party, dest, tier, startedAt, endsAt, seed, cards }
+    advDay: "",                  // legacy — the one-a-day cap has been removed
     mapPieces: 0,                // torn-map fragments toward the island
     keepsakes: [],               // little things cats bring home
     // v8 — visible cove restoration
@@ -962,6 +975,17 @@ function load() {
       G.adventure.party = G.adventure.catData ? [G.adventure.catData] : [];
       G.adventure.cats = G.adventure.cat ? [G.adventure.cat] : [];
     }
+    // multi-expedition: a single active trip becomes the first of the list
+    if (!Array.isArray(G.adventures)) {
+      G.adventures = [];
+      if (G.adventure) {
+        const a = G.adventure;
+        a.id = a.id || "adv_" + a.startedAt;
+        a.tier = a.tier || "day";
+        G.adventures.push(a);
+      }
+    }
+    G.adventure = null;                                 // superseded by G.adventures
     if (typeof G.advDay !== "string") G.advDay = "";
     if (typeof G.mapPieces !== "number") G.mapPieces = 0;
     if (!Array.isArray(G.keepsakes)) G.keepsakes = [];
@@ -1566,10 +1590,9 @@ function restoreCats() {
   }
   dedupeCats();
   // Midknight joins any cove that predates him — but NOT while he's out on a trip
-  // (his data is held in G.adventure.party and comes back on resolve)
-  const advParty = G.adventure ? (G.adventure.party || (G.adventure.catData ? [G.adventure.catData] : [])) : [];
-  const mkAway = advParty.some(d => d && (d.mascot || d.coatKey === "midknight" || d.name === "Midknight"))
-    || G.adventure && G.adventure.cat === "Midknight";
+  // (his data is held in an adventure party and comes back on resolve)
+  const mkAway = (G.adventures || []).some(a =>
+    (a.party || (a.catData ? [a.catData] : [])).some(d => d && (d.mascot || d.coatKey === "midknight" || d.name === "Midknight")));
   if (!cats.some(c => c.mascot) && !mkAway) {
     rebuildAttractors();
     const mk = new Cat({ coatKey:"midknight", name:"Midknight", mascot:true, star:2, traits:["grumpy","cuddly"],
@@ -1593,8 +1616,8 @@ function reconcileFriends() {
   const byName = {};
   for (const c of cats) if (!c.visitor) byName[c.name] = c;
   // cats away on a trip still count as real residents — their link comes home with them
-  const advParty = G.adventure ? (G.adventure.party || (G.adventure.catData ? [G.adventure.catData] : [])) : [];
-  for (const d of advParty) if (d && d.name) byName[d.name] = byName[d.name] || d;
+  for (const a of (G.adventures || []))
+    for (const d of (a.party || (a.catData ? [a.catData] : []))) if (d && d.name) byName[d.name] = byName[d.name] || d;
   const backLink = nm => { const f = byName[nm]; return f ? f.friend : null; };
   for (const c of cats) {
     if (c.visitor || !c.friend) continue;
@@ -3193,7 +3216,7 @@ function syncHud() {
   if (cbc) cbc.style.display = full ? "none" : "";
   document.getElementById("dexBadge").textContent = dexCount() + "/" + COATS.length;
   const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
-  const advBack = !!(G.adventure && Date.now() >= G.adventure.endsAt);
+  const advBack = anyAdvBack();
   const projReady = PROJECTS.some(p => { if (projectStage(p.id) !== "open") return false; const n = projectNeed(p.id); return n.shells === 0 && n.driftwood === 0; });
   document.getElementById("todayBadge").hidden = !(gReady || advBack || checkinAvailable() || projReady);
   // driftwood pill — only while something needs it
@@ -3212,9 +3235,10 @@ function nextAction() {
   if (!panels || !panels.shop) return null;
 
   // a cat (or the party) is home from a trip
-  if (G.adventure && Date.now() >= G.adventure.endsAt) {
-    const n = (G.adventure.cats && G.adventure.cats.length) || 1;
-    return { t: n > 1 ? `The party's back from a trip.` : `${G.adventure.cat} is back from a trip.`, go: "See how it went", act: () => resolveAdventure() };
+  const backAdv = activeAdvs().filter(a => Date.now() >= a.endsAt).sort((x, y) => x.endsAt - y.endsAt)[0];
+  if (backAdv) {
+    const n = (backAdv.cats && backAdv.cats.length) || 1;
+    return { t: n > 1 ? `The party's back from a trip.` : `${backAdv.cat} is back from a trip.`, go: "See how it went", act: () => resolveAdventure(backAdv.id) };
   }
 
   // a project has everything it needs and is waiting on you to start it
@@ -4013,8 +4037,15 @@ function checkOffline(then) {
   const earningsThen = () => offlineEarnings(elapsed, () => { try { then && then(elapsed); } catch (e) {} });
 
   // 1) a cat came home from a trip — the homecoming vignette IS the moment
-  if (G.adventure && Date.now() >= G.adventure.endsAt) {
-    setTimeout(() => resolveAdventure(earningsThen), 700);
+  //    (more than one party back → resolve them in turn, then earnings)
+  const backNow = () => activeAdvs().filter(a => Date.now() >= a.endsAt);
+  if (backNow().length) {
+    const step = () => {
+      const b = backNow().sort((x, y) => x.endsAt - y.endsAt)[0];
+      if (b) resolveAdventure(b.id, () => setTimeout(step, 400));
+      else earningsThen();
+    };
+    setTimeout(step, 700);
     return;
   }
   // 2) a postcard from a trip still in progress
@@ -5505,10 +5536,11 @@ function drawCoveSign(g, W, H) {
   g.textAlign = "center"; g.textBaseline = "middle";
   g.font = `700 ${fs}px 'Fraunces', Georgia, serif`;
   g.fillText(label, 0, -10.5);
-  // a little chalk tag while a cat is out adventuring
-  if (typeof G !== "undefined" && G && G.adventure) {
-    const _n = (G.adventure.cats && G.adventure.cats.length) || 1;
-    const tag = _n > 1 ? `${_n} cats are out exploring` : `${G.adventure.cat} is out exploring`;
+  // a little chalk tag while cats are out adventuring
+  if (typeof G !== "undefined" && G && Array.isArray(G.adventures) && G.adventures.length) {
+    const _n = G.adventures.reduce((s, a) => s + ((a.cats && a.cats.length) || 1), 0);
+    const one = G.adventures.length === 1 && _n === 1 ? G.adventures[0].cat : null;
+    const tag = one ? `${one} is out exploring` : `${_n} cats are out exploring`;
     g.font = "600 7.5px 'Fraunces', Georgia, serif";
     const tw = Math.max(g.measureText(tag).width + 12, 40);
     g.fillStyle = "#efe9d8";
@@ -6513,8 +6545,7 @@ function cairnJunkCount() {
   return (G.keepsakes || []).filter(k => k && k.from === "labubu").length;
 }
 function mkAtHome() {
-  const away = G.adventure && (G.adventure.party || []).some(d => d && (d.mascot || d.name === "Midknight"));
-  return !away && cats.some(c => c.mascot);
+  return !mkOnTrip() && cats.some(c => c.mascot);
 }
 function cairnGap() { return rand(10, 16) * 60e3; }   // a beat every ~quarter hour of play
 function cairnTick() {
@@ -7160,17 +7191,37 @@ function maybeWywa(awaySec, onDone) {
   return true;
 }
 
-/* ---- Hook 2 · Cat Adventures ------------------------------------------- */
+/* ---- Hook 2 · Cat Adventures -----------------------------------------------
+   Two expeditions can be out at once (ADV_SLOTS), up to 3 cats each, at most
+   ADV_AWAY_CAP cats away in total. No daily cap — the clock and the empty
+   spot in the cove are the throttle. You pick a place (flavour + loot table)
+   then a length. Longer trips pay more shells AND much better rare-drop odds,
+   but always below what a cat would earn at home — a trip is a bonus, not the
+   main income. */
+const ADV_SLOTS = 2;
+const ADV_AWAY_CAP = 4;
 const ADV_DESTS = {
-  fishing: { emoji: "🎣", name: "Fishing Trip",  mins: 30,  blurb: "An afternoon on the dock down the coast." },
-  meadow:  { emoji: "🌼", name: "Meadow",        mins: 75,  blurb: "The long grass past the woodland path." },
-  forest:  { emoji: "🌲", name: "Forest Walk",   mins: 120, blurb: "Into the trees behind the cove." },
-  market:  { emoji: "🏘️", name: "Market Town",   mins: 240, blurb: "The little town up the coast road." },
-  island:  { emoji: "🏝️", name: "Tiny Island",   mins: 360, blurb: "A boat out to the island offshore." },
-  peak:    { emoji: "⛰️", name: "The Peak",       mins: 480, blurb: "The hill that looks down on everything." },
+  fishing: { emoji: "🎣", name: "Fishing Trip", blurb: "The dock down the coast." },
+  meadow:  { emoji: "🌼", name: "Meadow",       blurb: "Long grass past the woodland path." },
+  forest:  { emoji: "🌲", name: "Forest Walk",  blurb: "Into the trees behind the cove." },
+  market:  { emoji: "🏘️", name: "Market Town",  blurb: "The little town up the coast road." },
+  island:  { emoji: "🏝️", name: "Tiny Island",  blurb: "A boat out to the island offshore." },
+  peak:    { emoji: "⛰️", name: "The Peak",      blurb: "The hill that looks down on everything." },
 };
+const ADV_TIERS = {
+  short: { key: "short", label: "Short outing", mins: 60,  rareMul: 1.0, note: "back within the hour" },
+  day:   { key: "day",   label: "Day trip",     mins: 300, rareMul: 1.9, note: "gone for the day" },
+  night: { key: "night", label: "Overnight",    mins: 720, rareMul: 3.2, note: "back tomorrow" },
+};
+function advTier(t) { return ADV_TIERS[t] || ADV_TIERS.day; }
+function activeAdvs() { return Array.isArray(G.adventures) ? G.adventures : (G.adventures = []); }
+function advPartyOf(a) { return a.party || (a.catData ? [a.catData] : []); }
+function catsAway() { return activeAdvs().reduce((n, a) => n + advPartyOf(a).length, 0); }
+function advSlotOpen() { return activeAdvs().length < ADV_SLOTS; }
+function anyAdvBack() { return activeAdvs().some(a => Date.now() >= a.endsAt); }
+function mkOnTrip() { return activeAdvs().some(a => advPartyOf(a).some(d => d && (d.mascot || d.coatKey === "midknight" || d.name === "Midknight"))); }
 function todayKey() { const d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
-function advReady() { return !G.adventure && G.advDay !== todayKey(); }
+function advReady() { return advSlotOpen() && catsAway() < ADV_AWAY_CAP; }
 function whenText(ts) {
   const s = (ts - Date.now()) / 1000;
   return s <= 30 ? "any moment now" : "in " + fmtTime(s);
@@ -7186,11 +7237,16 @@ function advTraitHint(c) {
   if (c.traits.includes("cuddly")) return "mostly just misses everyone";
   return "";
 }
-function advLoot(cat, dest) {
+function advLoot(cat, dest, tier) {
   const has = t => cat.traits.includes(t);
   const rnd = Math.random;
-  const base = { fishing: 90, meadow: 110, forest: 120, market: 190, island: 250, peak: 300 }[dest] || 120;
-  const reward = { shells: Math.round(base * rand(0.8, 1.3)) };
+  const T = advTier(tier);
+  const hrs = T.mins / 60;
+  const rm = T.rareMul;
+  // shells: a per-hour stipend, always below the ~1,000-1,500/hr a cat earns at
+  // home — the trip is a bonus for the hours you're away, not a better job
+  const perHr = { fishing: 160, meadow: 180, forest: 200, market: 240, island: 280, peak: 320 }[dest] || 200;
+  const reward = { shells: Math.round(perHr * hrs * rand(0.82, 1.2)) };
   const lines = [];
   const keepPool = {
     fishing: [{ emoji: "🐚", label: "a spiral shell" }, { emoji: "🪸", label: "a scrap of coral" }, { emoji: "🦴", label: "an intact fish skeleton" }],
@@ -7201,12 +7257,13 @@ function advLoot(cat, dest) {
     peak:    [{ emoji: "🪨", label: "a stone from the very top" }, { emoji: "🦅", label: "a huge feather" }, { emoji: "❄️", label: "a jar of cold mountain air" }],
   }[dest] || [];
   if (anyProjectOpen() && (dest === "forest" || dest === "fishing" || dest === "meadow")) {
-    reward.driftwood = 1 + (rnd() < 0.5 ? 1 : 0) + (has("curious") ? 1 : 0);
+    reward.driftwood = 1 + (rnd() < 0.4 ? 1 : 0) + (has("curious") ? 1 : 0) + (tier === "night" ? 1 : 0);
     lines.push(`dragged home ${reward.driftwood} piece${reward.driftwood === 1 ? "" : "s"} of driftwood`);
   }
-  if (rnd() < 0.55 || has("climber")) { reward.keepsake = pick(keepPool); lines.push(`brought back ${reward.keepsake.label}`); }
+  const keepP = clamp(0.42 + 0.12 * (rm - 1), 0, 0.9);
+  if (rnd() < keepP || has("climber")) { reward.keepsake = pick(keepPool); lines.push(`brought back ${reward.keepsake.label}`); }
   if (has("glutton")) { reward.keepsake = { emoji: "📖", label: `a recipe from the ${dest === "island" ? "island" : "trail"}` }; lines.push("came back with a new recipe"); }
-  if (has("climber")) { reward.shells += 60; lines.push("got somewhere the others couldn't and pocketed the difference"); }
+  if (has("climber")) { reward.shells += Math.round(40 * hrs); lines.push("got somewhere the others couldn't and pocketed the difference"); }
   if (has("playful") && !(cat.worn && cat.worn.length)) {
     const f = pick(["bow", "bandana", "flower", "scarf"]);
     cat.worn = normalizeWorn([...(cat.worn || []), f]);
@@ -7214,13 +7271,18 @@ function advLoot(cat, dest) {
     lines.push(`came home wearing ${/^[aeiou]/i.test(ACC_LABEL[f] || f) ? "an" : "a"} ${ACC_LABEL[f] || f} it found`);
   }
   if (has("lazy")) lines.push("took the very scenic route");
-  const pearlP = { island: 0.28, peak: 0.32, market: 0.16 }[dest] || 0.1;
-  if (rnd() < pearlP) { reward.pearls = (dest === "island" || dest === "peak") ? 3 : 1; lines.push(reward.pearls === 1 ? "turned up a pearl" : `turned up ${reward.pearls} pearls`); }
-  let mapP = { fishing: 0.06, meadow: 0.09, forest: 0.12, market: 0.16, island: 0.22, peak: 0.26 }[dest] || 0.1;
-  if (has("curious")) mapP += 0.16;
+  const highDest = dest === "island" || dest === "peak";
+  const pearlP = Math.min(0.7, ({ island: 0.10, peak: 0.12, market: 0.05 }[dest] || 0.035) * rm);
+  if (rnd() < pearlP) {
+    reward.pearls = highDest ? (tier === "night" ? 3 : 2) : 1;
+    lines.push(reward.pearls === 1 ? "turned up a pearl" : `turned up ${reward.pearls} pearls`);
+  }
+  let mapP = ({ fishing: 0.02, meadow: 0.03, forest: 0.045, market: 0.06, island: 0.09, peak: 0.11 }[dest] || 0.04) * rm;
+  if (has("curious")) mapP += 0.10;
+  mapP = Math.min(0.45, mapP);
   if ((G.mapPieces || 0) >= MAP_TOTAL) mapP = 0;
   if (rnd() < mapP) { reward.mapPiece = true; lines.push("found a piece of a torn map"); }
-  if (has("grumpy") && rnd() < 0.15) { reward.shells += 240; lines.push("came back furious and inexplicably rich"); }
+  if (has("grumpy") && rnd() < 0.15) { const j = Math.round(120 * hrs); reward.shells += j; lines.push("came back furious and inexplicably rich"); }
   if (has("cuddly") && rnd() < 0.5) { reward.mood = 18; lines.push("mostly just missed everyone"); }
   if (has("chatty")) lines.push("will not stop talking about something it saw");
   if (!has("bold") && !has("shy") && rnd() < 0.18) {
@@ -7326,12 +7388,15 @@ function snapshotCat(c) {
     pref: c.pref, quirk: c.quirk, quirkKnown: !!c.quirkKnown, friend: c.friend || null,
     title: c.title || null, gaveKeepsake: !!c.gaveKeepsake };
 }
-// names: a string or an array of 1-3 cat names
-function startAdventure(names, dest) {
-  if (G.adventure) return;
+// names: a string or an array of 1-3 cat names; tier: "short" | "day" | "night"
+function startAdventure(names, dest, tier) {
+  if (!advSlotOpen()) return;
+  tier = ADV_TIERS[tier] ? tier : "day";
   const wanted = Array.isArray(names) ? names : [names];
+  const room = ADV_AWAY_CAP - catsAway();
   const going = [];
   for (const nm of wanted) {
+    if (going.length >= Math.min(PARTY_MAX, room)) break;
     const i = cats.findIndex(c => c.name === nm && !c.visitor);
     if (i < 0) continue;
     going.push(cats[i]);
@@ -7339,20 +7404,21 @@ function startAdventure(names, dest) {
   if (!going.length) return;
   const party = going.map(snapshotCat);
   const anyLazy = going.some(c => c.traits.includes("lazy"));
-  const mins = ADV_DESTS[dest].mins * (anyLazy ? 1.5 : 1);
+  const mins = advTier(tier).mins * (anyLazy ? 1.5 : 1);
   for (const c of going) {
     if (typeof cardCat !== "undefined" && cardCat === c) hideCatCard();
     cats.splice(cats.indexOf(c), 1);
   }
-  G.adventure = { cat: party[0].name, cats: party.map(p => p.name), party, dest,
-    startedAt: Date.now(), endsAt: Date.now() + mins * 60000, seed: (Math.random() * 1e9) | 0 };
-  G.adventure.cards = scheduleCards(dest, G.adventure.startedAt, G.adventure.endsAt);
-  G.advDay = todayKey();
+  const now = Date.now();
+  const adv = { id: "adv_" + now + "_" + ((Math.random() * 1e4) | 0),
+    cat: party[0].name, cats: party.map(p => p.name), party, dest, tier,
+    startedAt: now, endsAt: now + mins * 60000, seed: (Math.random() * 1e9) | 0 };
+  adv.cards = scheduleCards(dest, adv.startedAt, adv.endsAt);
+  activeAdvs().push(adv);
   if (G.tips && !G.tips.includes("explore_seen")) G.tips.push("explore_seen");
   save(); syncHud(); rebuildAttractors();
   // send-off — each traveller trots to an edge with a bindle
   const dir = dest === "forest" || dest === "peak" ? 1 : -1;
-  _departures.length = 0;
   going.forEach((c, k) => {
     c.state = "exploring"; c.vx = dir * 24; c.vy = 0; c.walkAmt = 0.4; c.stateDur = 1e6;
     _departures.push({ c, dir, life: -k * 0.35 });   // a little stagger so they file out
@@ -7362,15 +7428,18 @@ function startAdventure(names, dest) {
   const who = joinNice(going.map(c => c.name));
   const mkGoing = going.some(c => c.mascot);
   logMoment(ADV_DESTS[dest].emoji, `${who} set off ${going.length > 1 ? "together " : ""}for ${destPhrase(dest)}.`);
-  toast(mkGoing ? `Midknight actually left the cove — ${who} head off, back ${whenText(G.adventure.endsAt)}.`
-    : `${who} head${going.length > 1 ? "" : "s"} off — back ${whenText(G.adventure.endsAt)}.`, 5);
+  toast(mkGoing ? `Midknight actually left the cove — ${who} head off, back ${whenText(adv.endsAt)}.`
+    : `${who} head${going.length > 1 ? "" : "s"} off — back ${whenText(adv.endsAt)}.`, 5);
   renderAdventureCard();
 }
-function resolveAdventure(onDone) {
-  const a = G.adventure;
+function resolveAdventure(advId, onDone) {
+  if (typeof advId === "function") { onDone = advId; advId = null; }
+  const list = activeAdvs();
+  // the named trip, else the one that's been back longest, else any
+  let a = advId ? list.find(x => x.id === advId) : null;
+  if (!a) a = list.filter(x => Date.now() >= x.endsAt).sort((x, y) => x.endsAt - y.endsAt)[0] || list[0];
   if (!a) { if (onDone) onDone(); return; }
-  _departures.length = 0;
-  const party = a.party || [a.catData];   // pre-multi-cat saves stored a single catData
+  const party = a.party || (a.catData ? [a.catData] : []);
   const results = [];
   party.forEach((data, k) => {
     // a traveller may already be back (a reload re-seeded them, e.g. Midknight) — reuse, don't double
@@ -7383,15 +7452,16 @@ function resolveAdventure(onDone) {
       cats.push(c);
       c.state = "arriving"; c.tx = clamp(W * (0.3 + k * 0.16), 40, W - 40); c.ty = c.y; c.face = 1;
     }
-    const res = advLoot(c, a.dest);
+    // clear any lingering send-off walker for this cat
+    for (let i = _departures.length - 1; i >= 0; i--) if (_departures[i].c === c) _departures.splice(i, 1);
+    const res = advLoot(c, a.dest, a.tier);
     if (res.reward.mood) { c.mood = clamp(c.mood + res.reward.mood, 8, 100); delete res.reward.mood; }
     gainBond(c, party.length > 1 ? 5 : 4, true);   // time away together — a real bond bump
     spawnParticles(c.x + 24, c.y - 14, "twinkle", 7);
     results.push({ cat: c, res });
   });
-  G.adventure = null;
+  G.adventures = list.filter(x => x !== a);
   dedupeCats();
-  G.advDay = todayKey();
   save(); syncHud(); rebuildAttractors();
   renderAdventureCard();
   runVignette(advVignette(a.dest, results), { cat: results[0].cat, onDone });
@@ -7445,29 +7515,30 @@ function scheduleCards(dest, startedAt, endsAt) {
   ];
 }
 function deliverDuePostcards(opts = {}) {
-  const a = G.adventure;
-  if (!a || !Array.isArray(a.cards)) return false;
   const now = Date.now();
-  let latest = null;
-  for (const card of a.cards) {
-    if (card.shown || card.at > now || now >= a.endsAt) continue;   // skip once the trip itself is over — the homecoming is the event
-    card.shown = true;
-    const full = card.text.replace(/\{n\}/g, a.cat);
-    const bare = card.text.replace(/\s*—\s*\{n\}\s*$/, "");
-    if (!Array.isArray(G.postcards)) G.postcards = [];
-    G.postcards.unshift({ t: now, cat: a.cat, dest: a.dest, text: full });
-    if (G.postcards.length > 30) G.postcards.length = 30;
-    logMoment("✉️", `Postcard from ${a.cat}: “${bare}”`);
-    latest = full;
+  let latest = null, latestA = null;
+  for (const a of activeAdvs()) {
+    if (!Array.isArray(a.cards)) continue;
+    for (const card of a.cards) {
+      if (card.shown || card.at > now || now >= a.endsAt) continue;   // skip once the trip itself is over — the homecoming is the event
+      card.shown = true;
+      const full = card.text.replace(/\{n\}/g, a.cat);
+      const bare = card.text.replace(/\s*—\s*\{n\}\s*$/, "");
+      if (!Array.isArray(G.postcards)) G.postcards = [];
+      G.postcards.unshift({ t: now, cat: a.cat, dest: a.dest, text: full });
+      if (G.postcards.length > 30) G.postcards.length = 30;
+      logMoment("✉️", `Postcard from ${a.cat}: “${bare}”`);
+      latest = full; latestA = a;
+    }
   }
   if (!latest) return false;
   save();
   renderAdventureCard();
   if (opts.pop && !_vig && !scrim.classList.contains("on")) {
-    showPostcard(latest, a.cat, a.dest, opts.onDone);
+    showPostcard(latest, latestA.cat, latestA.dest, opts.onDone);
     return true;                         // a modal is up — caller must NOT also run earnings
   }
-  toast(`A postcard from ${a.cat} arrived. ✉️`, 5);
+  toast(`A postcard from ${latestA.cat} arrived. ✉️`, 5);
   return false;
 }
 function showPostcard(text, cat, dest, onDone) {
@@ -7515,51 +7586,71 @@ function renderProjectCard() {
 function renderAdventureCard() {
   const el = document.getElementById("advCard");
   if (!el) return;
-  const a = G.adventure;
-  if (a) {
+  const list = activeAdvs();
+  let html = "", ready = advReady();
+  el.className = "adv-card" + (anyAdvBack() ? " ready" : ready && !list.length ? " ready" : "");
+  for (const a of list) {
     const back = Date.now() >= a.endsAt;
     const d = ADV_DESTS[a.dest] || ADV_DESTS.forest;
+    const T = advTier(a.tier);
     const pc0 = !back ? latestPostcardFor(a.cat) : null;
-    const pc = (pc0 && pc0.t >= a.startedAt) ? pc0 : null;   // only this trip's postcard
+    const pc = (pc0 && pc0.t >= a.startedAt) ? pc0 : null;
     const who = (a.cats && a.cats.length) ? (a.cats.length > 2 ? `${a.cats[0]} + ${a.cats.length - 1}` : joinNice(a.cats)) : a.cat;
-    el.className = "adv-card" + (back ? " ready" : "");
-    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">${d.emoji}</span>
+    html += `<div class="adv-trip${back ? " back" : ""}">
+      <div class="adv-top"><span class="adv-emoji">${d.emoji}</span>
       <div><div class="adv-title">${esc(who)} &middot; ${esc(d.name)}</div>
-      <div class="adv-sub">${back ? "back at the cove — go and see how it went" : "back " + whenText(a.endsAt)}</div></div></div>
+      <div class="adv-sub">${back ? "back at the cove — see how it went" : `${T.label.toLowerCase()} · back ${whenText(a.endsAt)}`}</div></div></div>
       ${pc ? `<div class="adv-postcard">✉️ ${esc(pc.text.replace(/\s*—\s*.*$/, ""))}</div>` : ""}
-      ${back ? `<button class="btn primary" id="adv-claim">See how it went</button>`
-             : (DEV_BUILD ? `<button class="btn tiny" id="adv-skip">skip · dev</button>` : "")}
-      ${mapLine()}`;
-    const cl = document.getElementById("adv-claim");
-    if (cl) cl.onclick = () => resolveAdventure();
-    const sk = document.getElementById("adv-skip");
-    if (sk) sk.onclick = () => { if (G.adventure) { G.adventure.endsAt = Date.now(); renderAdventureCard(); syncHud(); } };
-  } else if (advReady()) {
-    el.className = "adv-card ready";
-    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">🧭</span>
-      <div><div class="adv-title">Send cats exploring</div>
-      <div class="adv-sub">one trip a day — take up to three</div></div></div>
-      <button class="btn primary" id="adv-start">Choose a trip</button>${mapLine()}`;
-    document.getElementById("adv-start").onclick = openAdventurePicker;
-  } else {
-    el.className = "adv-card done";
-    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">🌙</span>
-      <div><div class="adv-title">Everyone's home</div>
-      <div class="adv-sub">another trip tomorrow</div></div></div>${mapLine()}`;
+      ${back ? `<button class="btn primary" data-claim="${a.id}">See how it went</button>`
+             : (DEV_BUILD ? `<button class="btn tiny" data-skip="${a.id}">skip · dev</button>` : "")}
+    </div>`;
   }
+  if (ready) {
+    const another = list.length > 0;
+    html += `<div class="adv-send">
+      <div class="adv-top"><span class="adv-emoji">🧭</span>
+      <div><div class="adv-title">${another ? "Send another party" : "Send cats exploring"}</div>
+      <div class="adv-sub">${ADV_AWAY_CAP - catsAway()} more can go · up to ${PARTY_MAX} per trip</div></div></div>
+      <button class="btn ${another ? "" : "primary"}" id="adv-start">Choose a trip</button></div>`;
+  } else if (list.length >= ADV_SLOTS) {
+    html += `<div class="adv-sub" style="padding:.2rem .1rem">Both expeditions are out — room for another when one's back.</div>`;
+  } else if (catsAway() >= ADV_AWAY_CAP) {
+    html += `<div class="adv-sub" style="padding:.2rem .1rem">${ADV_AWAY_CAP} cats are away — the most the cove can spare.</div>`;
+  }
+  html += mapLine();
+  el.innerHTML = html;
+  el.querySelectorAll("[data-claim]").forEach(b => b.onclick = () => resolveAdventure(b.dataset.claim));
+  el.querySelectorAll("[data-skip]").forEach(b => b.onclick = () => {
+    const a = activeAdvs().find(x => x.id === b.dataset.skip);
+    if (a) { a.endsAt = Date.now(); renderAdventureCard(); syncHud(); }
+  });
+  const st = document.getElementById("adv-start");
+  if (st) st.onclick = openAdventurePicker;
 }
 function openAdventurePicker() {
+  if (!advSlotOpen()) { toast("Both expeditions are already out.", 3.5); return; }
   const dests = Object.entries(ADV_DESTS).map(([k, d]) =>
-    `<button class="pick-dest" data-d="${k}"><span>${d.emoji}</span><b>${d.name}</b><i>${d.blurb}</i><em>~${d.mins < 60 ? d.mins + " min" : (d.mins / 60) + " h"} away</em></button>`).join("");
+    `<button class="pick-dest" data-d="${k}"><span>${d.emoji}</span><b>${d.name}</b><i>${d.blurb}</i></button>`).join("");
+  const tiers = Object.values(ADV_TIERS).map((t, i) =>
+    `<button class="pick-tier${i === 1 ? " on" : ""}" data-t="${t.key}"><b>${t.label}</b><i>${t.note}</i></button>`).join("");
   openModal(`<div class="reveal"><div class="kicker">A day out</div><h2>Where to?</h2>
     <div class="pick-list">${dests}</div>
+    <div class="pick-label">How long?</div>
+    <div class="pick-tiers">${tiers}</div>
     <button class="linkbtn" id="pick-cancel">Not today</button></div>`);
+  let tier = "day";
+  document.querySelectorAll("#modal .pick-tier").forEach(b => b.onclick = () => {
+    document.querySelectorAll("#modal .pick-tier").forEach(x => x.classList.remove("on"));
+    b.classList.add("on"); tier = b.dataset.t;
+  });
   document.getElementById("pick-cancel").onclick = closeModal;
-  document.querySelectorAll("#modal .pick-dest").forEach(b => b.onclick = () => pickAdventureCat(b.dataset.d));
+  document.querySelectorAll("#modal .pick-dest").forEach(b => b.onclick = () => pickAdventureCat(b.dataset.d, tier));
 }
 const PARTY_MAX = 3;
-function pickAdventureCat(dest) {
+function pickAdventureCat(dest, tier) {
+  const room = Math.min(PARTY_MAX, ADV_AWAY_CAP - catsAway());
   const goers = cats.filter(c => !c.visitor);   // Labubu's just passing through; Midknight can go now
+  const T = advTier(tier);
   if (!goers.length) {
     openModal(`<div class="reveal"><div class="kicker">${esc(ADV_DESTS[dest].name)}</div><h2>Who's going?</h2>
       <p class="sub">Nobody's around to send. Coax a cat first.</p>
@@ -7567,14 +7658,14 @@ function pickAdventureCat(dest) {
     document.getElementById("pc-back").onclick = openAdventurePicker;
     return;
   }
-  const list = goers.map(c => {
+  const listHtml = goers.map(c => {
     const hint = advTraitHint(c);
     return `<button class="pick-cat${c.mascot ? " mk" : ""}" data-c="${esc(c.name)}"><b>${esc(c.name)}</b>
       <i>${c.traits.map(t => TRAITS[t] ? TRAITS[t].label : t).join(" · ")}</i>${hint ? `<em>${esc(hint)}</em>` : ""}</button>`;
   }).join("");
-  openModal(`<div class="reveal"><div class="kicker">${esc(ADV_DESTS[dest].name)}</div><h2>Who's going?</h2>
-    <p class="sub" style="margin:.1rem 0 .1rem">Pick up to ${PARTY_MAX} — more cats, a little more brought home.</p>
-    <div class="pick-list cats">${list}</div>
+  openModal(`<div class="reveal"><div class="kicker">${esc(ADV_DESTS[dest].name)} · ${esc(T.label)}</div><h2>Who's going?</h2>
+    <p class="sub" style="margin:.1rem 0 .1rem">Pick up to ${room} — more cats, a little more brought home.</p>
+    <div class="pick-list cats">${listHtml}</div>
     <div class="row"><button class="btn primary" id="pc-send" disabled>Send them</button>
     <button class="btn" id="pc-back">Back</button></div></div>`);
   const sel = new Set();
@@ -7584,10 +7675,10 @@ function pickAdventureCat(dest) {
   document.querySelectorAll("#modal .pick-cat").forEach(b => b.onclick = () => {
     const n = b.dataset.c;
     if (sel.has(n)) { sel.delete(n); b.classList.remove("on"); }
-    else if (sel.size < PARTY_MAX) { sel.add(n); b.classList.add("on"); }
+    else if (sel.size < room) { sel.add(n); b.classList.add("on"); }
     sync();
   });
-  sendBtn.onclick = () => { if (sel.size) { startAdventure([...sel], dest); closeModal(); } };
+  sendBtn.onclick = () => { if (sel.size) { startAdventure([...sel], dest, tier); closeModal(); } };
 }
 
 /* ---- on every return: roll a While-You-Were-Away beat, flag a cat that's home ---- */
@@ -7705,13 +7796,23 @@ window.__cove = {
     runVignette(e.build(cat), { cat });
     return e.id;
   },
-  adventure(cmd, arg){
-    if (cmd === "skip") { if (!G.adventure) return "none active"; G.adventure.endsAt = Date.now(); resolveAdventure(); return "resolved"; }
-    if (cmd === "start") { const n = arg || (cats.find(c => !c.mascot && !c.visitor) || cats[0] || {}).name; startAdventure(Array.isArray(n) ? n : [n], "forest"); return G.adventure; }
-    if (cmd === "clear") { _departures.length = 0; if (G.adventure) { for (const d of (G.adventure.party || [])) cats.push(new Cat({ ...d, x: W * 0.4, y: H * 0.6 })); G.adventure = null; dedupeCats(); rebuildAttractors(); } G.advDay = ""; syncHud(); return "cleared"; }
+  adventure(cmd, arg, arg2){
+    if (cmd === "skip") { const a = activeAdvs()[0]; if (!a) return "none active"; a.endsAt = Date.now(); resolveAdventure(a.id); return "resolved " + a.id; }
+    if (cmd === "start") {
+      const n = arg || (cats.find(c => !c.mascot && !c.visitor) || cats[0] || {}).name;
+      startAdventure(Array.isArray(n) ? n : [n], arg2 && ADV_DESTS[arg2] ? arg2 : "forest", "day");
+      return activeAdvs().map(a => ({ id: a.id, who: a.cats, dest: a.dest, tier: a.tier }));
+    }
+    if (cmd === "tier") { const a = activeAdvs()[0]; if (!a) return "none active"; a.tier = ADV_TIERS[arg] ? arg : a.tier; a.endsAt = a.startedAt + advTier(a.tier).mins * 60000; return { tier: a.tier, endsAt: a.endsAt }; }
+    if (cmd === "clear") {
+      _departures.length = 0;
+      for (const a of activeAdvs()) for (const d of (a.party || [])) cats.push(new Cat({ ...d, x: W * 0.4, y: H * 0.6 }));
+      G.adventures = []; dedupeCats(); rebuildAttractors(); syncHud(); return "cleared";
+    }
     if (cmd === "map") { G.mapPieces = arg == null ? (G.mapPieces || 0) + 1 : +arg; return { mapPieces: G.mapPieces }; }
-    if (cmd === "card") { if (!G.adventure || !G.adventure.cards) return "no active trip"; const c = G.adventure.cards.find(x => !x.shown); if (c) c.at = Date.now() - 1; deliverDuePostcards({ pop: true }); return "delivered"; }
-    return { adventure: G.adventure, advReady: advReady(), mapPieces: G.mapPieces || 0, postcards: (G.postcards || []).length };
+    if (cmd === "card") { const a = activeAdvs().find(x => x.cards && x.cards.some(c => !c.shown)); if (!a) return "no pending postcard"; a.cards.find(c => !c.shown).at = Date.now() - 1; deliverDuePostcards({ pop: true }); return "delivered"; }
+    return { adventures: activeAdvs().map(a => ({ id: a.id, who: a.cats, dest: a.dest, tier: a.tier, back: Date.now() >= a.endsAt })),
+      slots: ADV_SLOTS, away: catsAway(), advReady: advReady(), mapPieces: G.mapPieces || 0 };
   },
   step(sec){
     for (let acc = 0; acc < sec; acc += SIM_DT) simulate(SIM_DT);
@@ -7815,7 +7916,7 @@ setInterval(() => {
   if (panels.shop && !panels.shop.hidden && (boostActive() || _wasBoosted)) renderShop();   // tick the boost countdown
   if (_wasBoosted && !boostActive()) toast("The catnip's worn off — earnings back to normal.", 4);
   _wasBoosted = boostActive();
-  if (G.adventure && Date.now() >= G.adventure.endsAt) syncHud();
+  if (anyAdvBack()) syncHud();
 }, 5000);
 window.__cove.hardReset = () => {
   _dead = true;
