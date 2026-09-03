@@ -3761,9 +3761,10 @@ function esc(s) { return String(s).replace(/[<>&"]/g, c => ({ "<":"&lt;", ">":"&
 function coveName() {
   return G.owner ? `${G.owner}’s Cove` : "Catmint Cove";
 }
+let _hudTitle = "", _hudFull = null;
 function syncHud() {
-  const tp = document.getElementById("titlePill");
-  tp.innerHTML = G.owner ? `${esc(G.owner)}<b>’s Cove</b>` : "Catmint <b>Cove</b>";
+  const wantTitle = G.owner ? `${esc(G.owner)}<b>’s Cove</b>` : "Catmint <b>Cove</b>";
+  if (wantTitle !== _hudTitle) { document.getElementById("titlePill").innerHTML = _hudTitle = wantTitle; }
   elShells.textContent = Math.floor(G.shells);
   document.getElementById("pearls").textContent = G.pearls || 0;
   document.getElementById("pearls").closest(".pill").classList.toggle("empty", !(G.pearls > 0));
@@ -3778,10 +3779,13 @@ function syncHud() {
   cb.disabled = false;
   cb.classList.toggle("full", full);
   cb.classList.toggle("wantcoax", broke && !full);
-  const cbl = cb.querySelector(".lbl");
-  if (cbl) cbl.innerHTML = full ? "Cove full" : `Coax<span class="lbl-x">&nbsp;a cat</span>`;
-  const cbc = cb.querySelector(".badge.cost");
-  if (cbc) cbc.style.display = full ? "none" : "";
+  if (full !== _hudFull) {
+    _hudFull = full;
+    const cbl = cb.querySelector(".lbl");
+    if (cbl) cbl.innerHTML = full ? "Cove full" : `Coax<span class="lbl-x">&nbsp;a cat</span>`;
+    const cbc = cb.querySelector(".badge.cost");
+    if (cbc) cbc.style.display = full ? "none" : "";
+  }
   document.getElementById("dexBadge").textContent = dexCount() + "";
   const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
   const advBack = anyAdvBack();
@@ -8014,12 +8018,13 @@ function renderScene(dt) {
     ctx.restore();
   }
 
-  // hud bits that change each frame
-  updateCatCard();
-  if (cardCat) positionCard(cardCat);
-  updateDev();
-  syncHud();
+  // hud bits — the card follows a moving cat every frame; the rest of the HUD is
+  // just counters and doesn't need 60fps (its DOM writes, incl. innerHTML, add up)
+  if (cardCat) { updateCatCard(); positionCard(cardCat); }
+  const _now = performance.now();
+  if (_now - _lastHudSync > 110) { _lastHudSync = _now; updateDev(); syncHud(); }
 }
+let _lastHudSync = 0;
 
 let _paused = false;
 const SIM_DT = 1 / 60;            // physics runs at a fixed step so motion is framerate-independent
