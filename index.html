@@ -1184,7 +1184,7 @@ function applySaveCode(code) {
 /* ---------- attractors (things cats walk to and use) + decor (scenery) ---------- */
 let attractors = [];
 let decor = [];        // trees / cottages / flower patches — scenery, trees & cottages are also usable
-let waterZones = [];   // {x,y,rx,ry} ellipses cats route around and never nap in
+let obstacles = [];    // {x,y,rx,ry,water?} ellipses cats route around and never settle inside
 function seededPos(seed, backness) {
   const r = mulberry32(seed);
   return { x: clamp(W * (0.1 + 0.8 * r()) , 44, W - 44),
@@ -1255,15 +1255,21 @@ function rebuildDecor() {
 function rebuildAttractors() {
   rebuildDecor();                       // decor first so usable pieces have stable positions
   attractors = [];
-  // water bodies cats keep off of (open water only — the dock/near edge stays walkable)
-  waterZones = [];
+  // solid scenery cores + open water — ellipses cats route around and never
+  // settle inside. water zones are offset toward the open side so the dock and
+  // fishing spot stay walkable.
+  obstacles = [];
   for (const d of decor) {
-    if (d.type === "station" && d.station === "fishing") waterZones.push({ x: d.x + 74, y: d.y + 22, rx: 58, ry: 21 });
-    if (d.type === "project" && d.pid === "dock")        waterZones.push({ x: d.x + 6,  y: d.y + 10, rx: 44, ry: 15 });
+    if (d.type === "tree")    obstacles.push({ x: d.x, y: d.y - 2,  rx: 15, ry: 13 });
+    if (d.type === "cottage") obstacles.push({ x: d.x, y: d.y - 12, rx: 28, ry: 22 });
+    // the fishing pond is drawn at station-local (64, 24), ~92×34 — cover it, and
+    // let the angler through (fishing cats are exempt below, so this can be big)
+    if (d.type === "station" && d.station === "fishing") obstacles.push({ x: d.x + 66, y: d.y + 24, rx: 86, ry: 33, water: true });
+    if (d.type === "project" && d.pid === "dock")        obstacles.push({ x: d.x + 10, y: d.y + 10, rx: 50, ry: 17, water: true });
   }
   // food / toy / bed — placed clear of decor, stations, water and each other
   const avoid = decor.map(d => ({ x: d.x, y: d.y, r: d.type === "cottage" ? 46 : d.type === "station" || d.type === "project" ? 44 : d.type === "tree" ? 38 : 24 }))
-    .concat(waterZones.map(w => ({ x: w.x, y: w.y, r: Math.max(w.rx, w.ry) * 0.9 })));
+    .concat(obstacles.map(o => ({ x: o.x, y: o.y, r: Math.max(o.rx, o.ry) * 0.95 })));
   const comforts = [];
   for (let i = 0; i < G.bowls; i++) comforts.push({ type: "food", r: 26, seed: 12001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
   for (let i = 0; i < G.toys;  i++) comforts.push({ type: "toy",  r: 24, seed: 13001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
@@ -2076,9 +2082,11 @@ function go(c, state, dur, target) {
   c._fx = null;
   if (target) {
     let tx = clamp(target.x, 24, W - 24), ty = clamp(target.y, H * 0.52, catFloor());
-    for (const wz of waterZones) {           // never aim into open water
-      const nx = (tx - wz.x) / wz.rx, ny = (ty - wz.y) / wz.ry, nd = Math.hypot(nx, ny);
-      if (nd < 1.05 && nd > 0.001) { tx = wz.x + (nx / nd) * wz.rx * 1.1; ty = wz.y + (ny / nd) * wz.ry * 1.1; }
+    const anglerT = c._arriveState === "fishing" || c._station === "fishing";
+    for (const o of obstacles) {             // never aim into water or a solid
+      if (o.water && anglerT) continue;
+      const nx = (tx - o.x) / o.rx, ny = (ty - o.y) / o.ry, nd = Math.hypot(nx, ny);
+      if (nd < 1.06 && nd > 0.001) { tx = o.x + (nx / nd) * o.rx * 1.12; ty = o.y + (ny / nd) * o.ry * 1.12; }
     }
     c.tx = tx; c.ty = ty;
   } else {
@@ -2232,43 +2240,25 @@ function updateCat(c, dt) {
     }
   }
   let decorShove = false;
-  // don't clip through the solid bits of big scenery — a small core at the base
-  // of a tree trunk / the body of a cottage. Cats sit in FRONT of these (the
-  // tree/cottage attractor points are ~34px below, well clear of the core), so
-  // only a passing / loafing cat gets nudged around, never one settled there.
+  // don't clip through the solid bits of scenery (tree trunk, cottage body) or
+  // wade into open water. one ellipse per obstacle; a passing / loafing cat gets
+  // shoved out and, if travelling, steered around toward its target.
+  const angler = c._station === "fishing" || c._pendStation === "fishing" || c._arriveState === "fishing";
   if (!held && c.state !== "arriving") {
-    for (const d of decor) {
-      let cy = d.y, cr = 0;
-      if (d.type === "tree") { cy = d.y - 2; cr = 12; }
-      else if (d.type === "cottage") { cy = d.y - 8; cr = 20; }
-      else continue;
-      let ox = c.x - d.x, oy = c.y - cy;
-      let od = Math.hypot(ox, oy);
-      const reach = cr + 15;                   // + a cat's half-width
-      if (od < reach) {
+    for (const o of obstacles) {
+      if (o.water && angler) continue;                    // the angler works from the dock
+      const margin = 15 / Math.min(o.rx, o.ry);           // ~a cat's half-width, in normalised units
+      const nx = (c.x - o.x) / o.rx, ny = (c.y - o.y) / o.ry, nd = Math.hypot(nx, ny);
+      if (nd < 1 + margin) {
+        let ox = c.x - o.x, oy = c.y - o.y, od = Math.hypot(ox, oy) || 1;
         if (od < 0.01) { ox = 1; oy = 0; od = 1; }
-        const f = (reach - od) / reach;
-        ax += (ox / od) * f * 90; ay += (oy / od) * f * 90;
-        decorShove = true;
-        if (travelling) {   // steer AROUND, not just into a standoff — pick the side that heads toward the target
-          const tx = -oy / od, ty = ox / od;
-          const s = ((c.tx - c.x) * tx + (c.ty - c.y) * ty) >= 0 ? 1 : -1;
-          ax += tx * s * 75; ay += ty * s * 75;
-        }
-      }
-    }
-    // open water — a cat won't wade in
-    for (const wz of waterZones) {
-      const nx = (c.x - wz.x) / wz.rx, ny = (c.y - wz.y) / wz.ry, nd = Math.hypot(nx, ny);
-      if (nd < 1.12) {
-        let ox = c.x - wz.x, oy = c.y - wz.y, od = Math.hypot(ox, oy) || 1;
-        const f = (1.12 - nd) * 150;
+        const f = (1 + margin - nd) * (o.water ? 150 : 130);
         ax += (ox / od) * f; ay += (oy / od) * f;
         decorShove = true;
-        if (travelling) {
+        if (travelling) {   // steer AROUND, not into a standoff — pick the side heading toward the target
           const tx = -oy / od, ty = ox / od;
           const s = ((c.tx - c.x) * tx + (c.ty - c.y) * ty) >= 0 ? 1 : -1;
-          ax += tx * s * 95; ay += ty * s * 95;
+          ax += tx * s * (o.water ? 100 : 82); ay += ty * s * (o.water ? 100 : 82);
         }
       }
     }
@@ -2300,28 +2290,15 @@ function updateCat(c, dt) {
     else if (c.x > maxX) { c.x = maxX; if (c.vx > 0) c.vx = 0; }
     if (c.y < minY) { c.y = minY; if (c.vy < 0) c.vy = 0; }
     else if (c.y > maxY) { c.y = maxY; if (c.vy > 0) c.vy = 0; }
-    // hard stop at a tree trunk / cottage body — a cat never ends up inside one
-    if (!held) for (const d of decor) {
-      let cy, cr;
-      if (d.type === "tree") { cy = d.y - 2; cr = 15; }
-      else if (d.type === "cottage") { cy = d.y - 8; cr = 24; }
-      else continue;
-      let ox = c.x - d.x, oy = c.y - cy, od = Math.hypot(ox, oy);
-      if (od < cr) {
-        if (od < 0.01) { ox = 1; od = 1; }
-        c.x = d.x + (ox / od) * cr; c.y = cy + (oy / od) * cr;
-        const into = (c.vx * ox + c.vy * oy) / od;               // velocity component heading inward
-        if (into < 0) { c.vx -= (ox / od) * into; c.vy -= (oy / od) * into; }
-      }
-    }
-    // never end a step standing in open water — pop out to the nearest bank
-    if (!held) for (const wz of waterZones) {
-      const nx = (c.x - wz.x) / wz.rx, ny = (c.y - wz.y) / wz.ry, nd = Math.hypot(nx, ny);
+    // never end a step inside an obstacle — pop out to its edge
+    if (!held) for (const o of obstacles) {
+      if (o.water && angler) continue;
+      const nx = (c.x - o.x) / o.rx, ny = (c.y - o.y) / o.ry, nd = Math.hypot(nx, ny);
       if (nd < 1 && nd > 0.001) {
-        c.x = wz.x + (nx / nd) * wz.rx;
-        c.y = wz.y + (ny / nd) * wz.ry;
-        const into = (c.vx * (c.x - wz.x) + c.vy * (c.y - wz.y));
-        if (into < 0) { c.vx *= 0.25; c.vy *= 0.25; }
+        c.x = o.x + (nx / nd) * o.rx;
+        c.y = o.y + (ny / nd) * o.ry;
+        const into = c.vx * (c.x - o.x) + c.vy * (c.y - o.y);    // heading further in
+        if (into < 0) { c.vx *= o.water ? 0.25 : 0.15; c.vy *= o.water ? 0.25 : 0.15; }
       }
     }
   }
