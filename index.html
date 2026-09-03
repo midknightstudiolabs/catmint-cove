@@ -156,7 +156,18 @@
     #dev{bottom:calc(4.4rem + env(safe-area-inset-bottom));}
   }
 
-  #c{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:manipulation;}
+  #stage{position:absolute;inset:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;touch-action:pan-x;display:flex;background:#171310;}
+  #stage::-webkit-scrollbar{display:none;}
+  #c{margin:auto;display:block;flex:0 0 auto;}
+  #camBtn{position:absolute;left:50%;bottom:calc(4.7rem + env(safe-area-inset-bottom));transform:translateX(-50%);
+    z-index:22;width:2.4rem;height:2.4rem;border-radius:999px;border:1px solid var(--panel-line);
+    background:rgba(251,249,240,.9);backdrop-filter:blur(4px);box-shadow:var(--shadow);cursor:pointer;
+    display:grid;place-items:center;font-size:1.1rem;color:var(--ink-soft);opacity:.62;transition:opacity .2s;}
+  #camBtn:hover{opacity:1;}
+  #camBtn[hidden]{display:none;}
+  #camBtn.fit{background:var(--accent);color:#fff;border-color:transparent;opacity:1;}
+  #app.resting #camBtn,#app.cold-open #camBtn{display:none;}
   #dexGrid canvas,#modal canvas,#photoCanvas{position:static;}
 
   /* ---- panels ---- */
@@ -595,7 +606,9 @@
     </div>
   </div>
 
-  <canvas id="c"></canvas>
+  <div id="stage"><canvas id="c"></canvas></div>
+
+  <button id="camBtn" hidden title="See the whole cove"><span class="ico">⊹</span></button>
 
   <div id="rest">
     <div class="rest-panel" id="restPanel">
@@ -766,7 +779,12 @@ let DPR = Math.min(window.devicePixelRatio || 1, 2);   // re-read on every resiz
 
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
-let W = Math.max(320, window.innerWidth || 390), H = Math.max(480, window.innerHeight || 780);
+const stage = document.getElementById("stage");
+// the cove is a fixed design space; the viewport is a window onto it that you
+// pan (Close mode, phones) or shrink to fit the whole thing (Fit mode).
+const W = 1150, H = 780;
+let displayScale = 1;   // css px per world unit
+let _worldOffY = 0;     // world-y of the top of the canvas (fit mode centres the cove)
 
 /* ---------- trait model ---------- */
 // likes: which attractor the cat gravitates to. 'cats' = other cats, 'roam' = wander.
@@ -895,6 +913,7 @@ function newGame() {
     tutorialDone: false,
     coldStep: 0,          // cold-open progress (0..COLD.length) — resumes if interrupted
     midknightSeeded: false,
+    camFit: false,                // camera: false = close/pan, true = whole cove on screen
     shells: 25,
     pearls: 0,             // premium currency (earned via Catdex / daily goals)
     comfort: 0,            // 0..5 global production tiers
@@ -964,6 +983,7 @@ function load() {
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
     if (typeof G.coldStep !== "number") G.coldStep = G.tutorialDone ? 99 : 0;
     if (G.midknightSeeded === undefined) G.midknightSeeded = false;
+    if (typeof G.camFit !== "boolean") G.camFit = false;
     if (!G.checkin || typeof G.checkin !== "object") G.checkin = { day: 0, lastKey: "" };
     if (typeof G.boostUntil !== "number") G.boostUntil = 0;
     if (typeof G.boostBuys !== "number") G.boostBuys = 0;
@@ -2402,7 +2422,10 @@ function refreshShellAnchor() {
   try {
     const p = document.getElementById("shellPill").getBoundingClientRect();
     const cr = canvas.getBoundingClientRect();
-    if (p.width) _shellAnchor = { x: p.left - cr.left + p.width * 0.5, y: p.top - cr.top + p.height * 0.5 };
+    if (p.width) _shellAnchor = {
+      x: (p.left - cr.left + p.width * 0.5) / displayScale,
+      y: (p.top - cr.top + p.height * 0.5) / displayScale - _worldOffY,
+    };
   } catch (e) {}
 }
 function pulseShellPill() {
@@ -2445,12 +2468,25 @@ let shakeAmt = 0;
 function shake(a) { shakeAmt = Math.min(shakeAmt + a, 12); }
 
 /* ---------- input ---------- */
+// tap vs. pan: a tap is a press+release in ~the same spot with no scroll between
+let _tpX = null, _tpY = null, _tpScroll = 0, _tpMoved = false;
 canvas.addEventListener("pointerdown", (e) => {
   ensureAudio();
-  const r = canvas.getBoundingClientRect();
-  const x = e.clientX - r.left, y = e.clientY - r.top;
-  handleTap(x, y);
+  _tpX = e.clientX; _tpY = e.clientY; _tpScroll = stage.scrollLeft; _tpMoved = false;
 });
+canvas.addEventListener("pointermove", (e) => {
+  if (_tpX != null && Math.hypot(e.clientX - _tpX, e.clientY - _tpY) > 9) _tpMoved = true;
+});
+canvas.addEventListener("pointerup", (e) => {
+  if (_tpX == null) return;
+  const panned = Math.abs(stage.scrollLeft - _tpScroll) > 4;
+  const near = Math.hypot(e.clientX - _tpX, e.clientY - _tpY) <= 9;
+  _tpX = _tpY = null;
+  if (_tpMoved || panned || !near) return;
+  const r = canvas.getBoundingClientRect();
+  handleTap((e.clientX - r.left) / displayScale, (e.clientY - r.top) / displayScale - _worldOffY);
+});
+canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; });
 function handleTap(x, y) {
   // tokens first (closest within radius) — generous target, they're the payout
   let bt = null, bd = 34 * 34;
@@ -2794,15 +2830,13 @@ function renderCatPref(c) {
 function positionCard(c) {
   const r = canvas.getBoundingClientRect();
   const cardW = cc.el.offsetWidth || 260, cardH = cc.el.offsetHeight || 180;
-  const gap = 64;   // clearance so the heart burst + "+mood" over the cat's head stays visible
-  let left = clamp(c.x - cardW / 2, 8, r.width - cardW - 8);
-  // above the head by default, so the pet reaction (hearts / purr glow) reads
-  let top = c.y - gap - cardH;
-  if (top < 50) {
-    // not enough sky above — drop below the cat, still leaving a gap for the hearts
-    top = c.y + gap;
-  }
-  top = clamp(top, 50, r.height - cardH - 76);
+  const gap = 56;   // clearance so the heart burst + "+mood" over the cat's head stays visible
+  const sx = r.left + c.x * displayScale;         // world → screen (canvas rect tracks the pan)
+  const sy = r.top + (c.y + _worldOffY) * displayScale;
+  let left = clamp(sx - cardW / 2, 8, window.innerWidth - cardW - 8);
+  let top = sy - gap - cardH;
+  if (top < 50) top = sy + gap;                   // not enough sky above → drop below
+  top = clamp(top, 50, window.innerHeight - cardH - 76);
   cc.el.style.left = left + "px";
   cc.el.style.top = top + "px";
 }
@@ -3829,6 +3863,17 @@ function openGuide() {
   document.getElementById("guideOk").onclick = () => tutEl.classList.remove("on");
 }
 document.getElementById("helpBtn").addEventListener("click", openGuide);
+
+/* camera: fit the whole cove ↔ close view you pan around */
+document.getElementById("camBtn").addEventListener("click", () => {
+  G.camFit = !G.camFit;
+  save();
+  resize();
+  if (!G.camFit) {   // zooming back in — centre on the sign / Midknight
+    const mk = cats.find(c => c.mascot);
+    stage.scrollLeft = clamp(((mk ? mk.x : W * 0.2) * displayScale) - window.innerWidth / 2, 0, stage.scrollWidth);
+  }
+});
 
 /* rest / rainy-day mode wiring */
 document.getElementById("restBtn").addEventListener("click", () => { if (!restMode) { syncRestPanelUI(); openRestPanel(); } });
@@ -5189,7 +5234,10 @@ function drawBackground(dt) {
     _skyGradFill.addColorStop(0, sky.top); _skyGradFill.addColorStop(0.5, sky.mid); _skyGradFill.addColorStop(1, sky.bot);
     _skyGrad = sky; _skyGradH = H;
   }
-  ctx.fillStyle = _skyGradFill; ctx.fillRect(0, 0, W, H);
+  // in fit mode the canvas is taller than the world — extend sky up, ground down to fill
+  const over = _worldOffY > 0 ? _worldOffY + 4 : 0;
+  ctx.fillStyle = _skyGradFill; ctx.fillRect(0, -over, W, H + over);
+  if (over) { ctx.fillStyle = sky.top; ctx.fillRect(0, -over, W, over); }
   drawCelestial(ctx, sky);
   // clouds — bright by day, dim grey-blue at night
   ctx.fillStyle = `rgba(${255-(1-sky.df)*160},${255-(1-sky.df)*150},${255-(1-sky.df)*130},${0.34 + sky.df*0.38})`;
@@ -5212,7 +5260,7 @@ function drawBackground(dt) {
   ctx.beginPath();
   ctx.moveTo(0, hz);
   ctx.bezierCurveTo(W*0.28, hz - 4, W*0.7, hz + 4, W, hz - 2);
-  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.fill();
+  ctx.lineTo(W, H + over); ctx.lineTo(0, H + over); ctx.fill();
   // sunlit strip just past the horizon
   ctx.fillStyle = sky.light.replace("rgb", "rgba").replace(")", `,${0.12 + sky.df * 0.28})`);
   ctx.beginPath();
@@ -7039,7 +7087,7 @@ function simulate(dt) {
 
 function renderScene(dt) {
   ctx.save();
-  ctx.clearRect(0, 0, W, H);
+  ctx.clearRect(0, -_worldOffY - 8, W, H + _worldOffY * 2 + 16);
   if (shakeAmt > 0) ctx.translate(rand(-shakeAmt, shakeAmt), rand(-shakeAmt, shakeAmt));
   drawBackground(dt);
   drawCoveSign(ctx, W, H);
@@ -8066,16 +8114,38 @@ function afterReturn(awaySec) {
 
 /* ---------- boot ---------- */
 function resize() {
-  // measure the canvas's own rendered box so the backing store always matches what's on screen
-  const r = canvas.getBoundingClientRect();
-  const w = r.width || window.innerWidth, h = r.height || window.innerHeight;
-  // ignore transient 0-size layouts (orientation flip, split-screen, backgrounded tab)
-  if (w >= 120 && h >= 120) { W = w; H = h; }
+  const vw = window.innerWidth || 390, vh = window.innerHeight || 780;
   DPR = Math.min(window.devicePixelRatio || 1, 2);
-  const bw = Math.round(W * DPR), bh = Math.round(H * DPR);
+  const aspect = W / H;
+  const fitsAnyway = vh * aspect <= vw + 1;        // wide enough that the whole cove shows
+  const fit = fitsAnyway || !!(G && G.camFit);
+  let cssW, cssH;
+  if (fit) {
+    // the whole cove, scaled to the viewport width, centred vertically — the sky
+    // and ground extend to fill the rest so it's framed, not letterboxed
+    cssW = Math.min(vw, vh * aspect);
+    displayScale = cssW / W;
+    cssH = Math.min(vh, Math.max(cssW / aspect, vh));   // canvas fills the height on a tall screen
+  } else {
+    cssH = vh; cssW = vh * aspect;                       // fill the height, overflow the width → pan
+    displayScale = cssW / W;
+  }
+  canvas.style.width = Math.round(cssW) + "px";
+  canvas.style.height = Math.round(cssH) + "px";
+  const bw = Math.round(cssW * DPR), bh = Math.round(cssH * DPR);
   if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  _worldOffY = fit ? Math.max(0, (cssH / displayScale - H) / 2) : 0;   // vertical centre in fit mode
+  ctx.setTransform(DPR * displayScale, 0, 0, DPR * displayScale, 0, _worldOffY * DPR * displayScale);
+  stage.scrollLeft = clamp(stage.scrollLeft, 0, Math.max(0, cssW - vw));
+  updateCamBtn(!fitsAnyway);
   refreshShellAnchor();
+}
+function updateCamBtn(canToggle) {
+  const b = document.getElementById("camBtn");
+  if (!b) return;
+  b.hidden = !canToggle;
+  b.classList.toggle("fit", !!(G && G.camFit));
+  b.title = (G && G.camFit) ? "Zoom back in" : "See the whole cove";
 }
 // wired to every way the viewport can change (iOS rotate, address bar, split view)
 let _lastW = 0, _lastH = 0, _relayoutT = 0;
@@ -8303,6 +8373,7 @@ window.__cove.hardReset = () => {
 resize();
 _lastW = W; _lastH = H;
 load();
+resize();                          // re-apply now that G.camFit is known
 restoreCats();
 visitorTimer = nextVisitorGap();      // now that G is loaded, time the next free arrival properly
 rebuildAttractors();
