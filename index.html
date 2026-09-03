@@ -791,7 +791,11 @@ const COATS = [
 // the mascot — a fixed character, never rolled, not part of the 11-coat Catdex
 const MIDKNIGHT_COAT = { key:"midknight", name:"Midknight", base:"#26232b", belly:"#34303b", pattern:"solid",
   white:["bib","belly","muzzle","paws"], eye:"#e0b24b", nose:"#2c2530", inner:"#e2b4b4", mascot:true };
-const COAT_BY_KEY = Object.fromEntries([...COATS, MIDKNIGHT_COAT].map(c => [c.key, c]));
+// Labubu — Midknight's sidekick. A snowshoe: seal points, white boots + blaze,
+// blue eyes. A visitor, never a resident — see the labubu* helpers below.
+const LABUBU_COAT = { key:"labubu", name:"Labubu", base:"#e7dcc6", belly:"#f4efe3", pattern:"points",
+  point:"#5f4b3d", white:["bib","belly","muzzle","blaze","paws"], eye:"#7fb6d6", nose:"#d98f97", inner:"#caa0a0", visitor:true };
+const COAT_BY_KEY = Object.fromEntries([...COATS, MIDKNIGHT_COAT, LABUBU_COAT].map(c => [c.key, c]));
 function weightedCoat() {
   const undiscovered = COATS.filter(c => !G.dex[c.key]);
   // soft pity — a long dry spell without a new coat guarantees the next one
@@ -890,6 +894,7 @@ function newGame() {
     // v8 — visible cove restoration
     materials: { driftwood: 0 }, // gathered from cat activity, spent on repairs
     projects: { dock: { stage: "open", paid: { shells: 0, driftwood: 0 } } },
+    labubu: { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 },   // Midknight's sidekick — a recurring visitor
   };
 }
 
@@ -930,6 +935,7 @@ function load() {
     if (!Array.isArray(G.keepsakes)) G.keepsakes = [];
     if (!G.materials || typeof G.materials !== "object") G.materials = { driftwood: 0 };
     if (typeof G.materials.driftwood !== "number") G.materials.driftwood = 0;
+    if (!G.labubu || typeof G.labubu !== "object") G.labubu = { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 };
     if (!G.projects || typeof G.projects !== "object") {
       // a cove that already owns the fishing dock (bought in the old shop) → dock is already restored
       G.projects = { dock: { stage: (G.stations && G.stations.fishing > 0) ? "done" : "open", paid: { shells: 0, driftwood: 0 } } };
@@ -958,7 +964,7 @@ function save() {
     G.allTimeSec = (G.allTimeSec || 0) + (performance.now() - lastSaveClock) / 1000;
     lastSaveClock = performance.now();
     if (typeof dedupeCats === "function") dedupeCats();   // a dup never makes it to disk
-    G.cats = cats.map(c => ({
+    G.cats = cats.filter(c => !c.visitor).map(c => ({     // Labubu is a guest — never saved as a resident
       name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
       mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood), worn:c.worn || [], owned:c.owned || []
     }));
@@ -1251,6 +1257,7 @@ function stationCount() { const s = G.stations || {}; return (s.fishing||0) + (s
 // push it to 24; "Find them a new home" on the cat card is the release valve.
 function maxCats() { return G.coveCharter ? 24 : 16; }
 function capacity() { return Math.min(maxCats(), 4 + (G.bowls - 1) * 2 + G.toys + G.beds + (G.scratch || 0) + G.decor.cottage * 2 + stationCount() * 2); }
+function residentCount() { return cats.reduce((n, c) => n + (c.visitor ? 0 : 1), 0); }   // Labubu doesn't take a slot
 function comfortMult() { return 1 + G.comfort * 0.22; }
 function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // ambient mood lift
 
@@ -1283,6 +1290,7 @@ class Cat {
     this.traits = o.traits || rollTraits();
     this.coatKey = o.coatKey || (COAT_BY_KEY[o.coat] ? o.coat : weightedCoat());
     this.mascot = o.mascot || !!(COAT_BY_KEY[this.coatKey] && COAT_BY_KEY[this.coatKey].mascot);
+    this.visitor = !!o.visitor || !!(COAT_BY_KEY[this.coatKey] && COAT_BY_KEY[this.coatKey].visitor);   // a guest, not a resident
     this.markSeed = o.markSeed ?? (this.mascot ? 424242 : (Math.random() * 1e9 | 0));
     this.star = o.star ?? rollStar();      // 1..4 rarity — drives production + sparkle + the coax reveal
     // canvas accessories — one per body zone; some cats arrive wearing one,
@@ -1422,11 +1430,11 @@ function scriptArrival() {
   return c;
 }
 function spawnCat(o) {
-  if (cats.length >= capacity() && !o) return null;
+  if (residentCount() >= capacity() && !o) return null;
   const c = new Cat(o || {});
   cats.push(c);
-  G.metrics.catsAllTime++;
-  registerInDex(c, o ? !!o._celeb : true);   // silent for starters, celebratory for coaxed/visitors
+  if (!c.visitor) G.metrics.catsAllTime++;
+  registerInDex(c, o ? !!o._celeb : true);   // silent for starters, celebratory for coaxed cats
   return c;
 }
 function restoreCats() {
@@ -1456,7 +1464,7 @@ function restoreCats() {
     G.midknightSeeded = true;
   }
   // make sure every non-mascot cat already in the cove counts as discovered
-  for (const c of cats) if (!c.mascot && !G.dex[c.coatKey]) G.dex[c.coatKey] = { star: c.star, count: 1 };
+  for (const c of cats) if (!c.mascot && !c.visitor && !G.dex[c.coatKey]) G.dex[c.coatKey] = { star: c.star, count: 1 };
 }
 // belt-and-braces: never keep two mascots or two cats of the same name
 function dedupeCats() {
@@ -1464,6 +1472,7 @@ function dedupeCats() {
   const seen = new Set();
   let mascotKept = false, removed = 0;
   cats = cats.filter(c => {
+    if (c.visitor) return true;                 // guests aren't deduped against residents
     // the founder is one-of-a-kind: coat/name/mascot flag all identify him
     const isMk = c.mascot || c.coatKey === "midknight" || c.name === "Midknight";
     if (isMk) { if (mascotKept) { removed++; return false; } mascotKept = true; c.mascot = true; }
@@ -1481,7 +1490,7 @@ const DEX_MILESTONES = [
 ];
 function dexCount() { return Object.keys(G.dex).length; }
 function registerInDex(c, celebrate) {
-  if (c.mascot) return;                       // Midknight is a character, not a Catdex coat
+  if (c.mascot || c.visitor) return;          // Midknight and Labubu are characters, not Catdex coats
   const prev = G.dex[c.coatKey];
   if (!prev) {
     G.dex[c.coatKey] = { star: c.star, count: 1 };
@@ -1575,6 +1584,19 @@ function decide(c) {
   c.stateT = 0;
   c.partner = null;
   c._station = null;
+
+  // Labubu just mooches around near Midknight while he's visiting
+  if (c.visitor) {
+    const mk = cats.find(x => x.mascot && x !== c);
+    const r = Math.random();
+    if (mk && r < 0.55) {
+      c.partner = mk;
+      return go(c, "socializing", rand(9, 18), { x: mk.x + (c.x < mk.x ? -1 : 1) * rand(26, 40), y: mk.y + rand(-6, 10) });
+    }
+    if (r < 0.72) return go(c, "grooming", rand(4, 8), null);
+    if (r < 0.86) return go(c, "loafing", rand(8, 15), null);
+    return go(c, "arriving", rand(5, 10), { x: rand(W * 0.28, W * 0.72), y: rand(H * 0.6, catFloor() - 22) });
+  }
 
   // low mood → sleep it off (never punished, just recovers)
   if (c.mood < 32 && Math.random() < 0.75) {
@@ -1708,6 +1730,7 @@ function updateCat(c, dt) {
   c.stateT += dt;
   c.blink -= dt;
   if (c.blink < -0.12) c.blink = rand(2.4, 6.5);
+  if (c.visitor && !c._leaving && Date.now() >= (c._leaveAt || Infinity)) { labubuLeave(c); return; }
   // growing up
   if (c._wasKitten === undefined) c._wasKitten = c.isKitten;
   if (c._wasKitten && !c.isKitten) {
@@ -1874,15 +1897,17 @@ function updateCat(c, dt) {
   // production — cats build up earnings slowly and drop ONE token every ~minute
   // (calmer scene, fewer taps; a token is a nice pickup, capped so it's never a
   //  jackpot; a backed-up cat just drops a bit more often to catch up)
-  c.acc = Math.min(ACC_CEIL, c.acc + c.ratePerSec() * dt);
-  c.dropTimer += dt;
-  if (c.dropInterval === undefined) c.dropInterval = rand(105, 165);
-  if (c.acc >= 3 && c.dropTimer > c.dropInterval) {
-    const v = Math.min(TOKEN_CAP, Math.max(1, Math.round(c.acc)));
-    c.acc -= v;
-    c.dropTimer = 0;
-    c.dropInterval = c.acc > TOKEN_CAP * 1.5 ? rand(26, 46) : rand(105, 165);
-    dropToken(c.x + rand(-10, 10), c.y - 6, v, tokenFlair(c));
+  if (!c.visitor) {                     // Labubu is a guest — he brings gifts, he doesn't earn
+    c.acc = Math.min(ACC_CEIL, c.acc + c.ratePerSec() * dt);
+    c.dropTimer += dt;
+    if (c.dropInterval === undefined) c.dropInterval = rand(105, 165);
+    if (c.acc >= 3 && c.dropTimer > c.dropInterval) {
+      const v = Math.min(TOKEN_CAP, Math.max(1, Math.round(c.acc)));
+      c.acc -= v;
+      c.dropTimer = 0;
+      c.dropInterval = c.acc > TOKEN_CAP * 1.5 ? rand(26, 46) : rand(105, 165);
+      dropToken(c.x + rand(-10, 10), c.y - 6, v, tokenFlair(c));
+    }
   }
 
   // catmint zoomies fade
@@ -2221,7 +2246,7 @@ function buyAccessory(c, key) {                   // buy + wear; returns true on
 }
 function renderWardrobe(c) {
   if (!cc.dress) return;
-  if (!c || c.mascot) { cc.dress.hidden = true; cc.dress.innerHTML = ""; return; }
+  if (!c || c.mascot || c.visitor) { cc.dress.hidden = true; cc.dress.innerHTML = ""; return; }
   cc.dress.hidden = false;
   const worn = new Set(c.worn || []);
   const bySlot = {};
@@ -2291,16 +2316,21 @@ function showCatCard(c) {
   const acc = (c.worn && c.worn.length) ? "  ·  " + wornList(c).map(k => ACC_LABEL[k] || k).join(", ") : "";
   cc.coatEl.textContent = (c.mascot
     ? "the cove's founder  ·  never leaves"
+    : c.visitor
+    ? "Midknight's sidekick  ·  just visiting"
     : c.coat.name + (c.isKitten
       ? `  ·  kitten (${Math.max(1, Math.round(c.growth * 20))}h old)`
       : "  ·  adult")) + acc;
-  cc.starsEl.innerHTML = c.mascot ? `<span style="color:${STAR_COL[2]};font-weight:700">★ Mascot</span>` : starGlyphs(c.star);
+  cc.starsEl.innerHTML = c.mascot ? `<span style="color:${STAR_COL[2]};font-weight:700">★ Mascot</span>`
+    : c.visitor ? `<span style="color:${STAR_COL[3]};font-weight:700">✦ Visitor</span>` : starGlyphs(c.star);
   cc.traits.innerHTML = c.traits.map(k => `<span class="trait">${TRAITS[k].label}</span>`).join("");
   cc.desc.textContent = c.mascot
     ? "Looks like he's drafting a complaint. Actually just wants to loaf near you. " + c.t1.desc
+    : c.visitor
+    ? "Follows Midknight around and turns up with things. Won't stay long — he never does."
     : c.t1.desc + " " + c.t2.desc;
   const rw = rehomeReward(c);
-  cc.rehomeBtn.hidden = c.mascot || cats.length <= 3;   // only once the cove is comfortably full
+  cc.rehomeBtn.hidden = c.mascot || c.visitor || cats.length <= 3;   // only once the cove is comfortably full
   cc.rehomeBtn.textContent = `Find them a new home  ·  ◈ ${rw.shells}${rw.pearls ? ` ✦ ${rw.pearls}` : ""}`;
   renderWardrobe(c);
   clearTimeout(cc.el._hideT); cc.el.classList.remove("leaving");
@@ -2543,7 +2573,7 @@ function drawAccPreview(cv, key, coat) {
 }
 
 function renderShopDress(list) {
-  const cs = cats.filter(c => !c.mascot);
+  const cs = cats.filter(c => !c.mascot && !c.visitor);
   if (!cs.length) { list.insertAdjacentHTML("beforeend", `<p class="muted">Coax a cat first — then you can dress them up here.</p>`); return; }
   if (!shopDressCat || !cs.includes(shopDressCat)) shopDressCat = cs[0];
   const c = shopDressCat;
@@ -2633,7 +2663,7 @@ function doCoax(free) {
 document.getElementById("coaxBtn").addEventListener("click", () => {
   ensureAudio();
   const p = coaxPrice();
-  if (cats.length >= capacity()) {
+  if (residentCount() >= capacity()) {
     const dock = G.projects && G.projects.dock;
     if (dock && dock.stage === "open") { toast("The cove's full — the dock's your way to more room.", 4); openProjectSheet("dock"); }
     else if (dock && dock.stage === "building") toast(`The cove's full. The dock's being repaired (${Math.round(projectProgress("dock") * 100)}%) — more room when it's done.`, 5);
@@ -2849,13 +2879,13 @@ function syncHud() {
   tp.innerHTML = G.owner ? `${esc(G.owner)}<b>’s Cove</b>` : "Catmint <b>Cove</b>";
   elShells.textContent = Math.floor(G.shells);
   document.getElementById("pearls").textContent = G.pearls || 0;
-  elCatCount.textContent = cats.length;
+  elCatCount.textContent = residentCount();
   elCatCap.textContent = capacity();
   document.getElementById("opens").textContent = G.opens;
   document.getElementById("coaxCost").textContent = coaxPrice();
   const cb = document.getElementById("coaxBtn");
   // never hard-disabled — a tap on a full cove explains why and opens the fix
-  const full = cats.length >= capacity();
+  const full = residentCount() >= capacity();
   const broke = G.shells < coaxPrice();
   cb.disabled = false;
   cb.classList.toggle("full", full);
@@ -2897,7 +2927,7 @@ function nextAction() {
   }
 
   // the cove is full — the whole point: never a dead end
-  if (cats.length >= capacity()) {
+  if (residentCount() >= capacity()) {
     const dock = G.projects && G.projects.dock;
     if (dock && dock.stage === "open")
       return { t: `Cove's full — repair the dock at the shore for more room.`, go: "The dock", act: () => openProjectSheet("dock") };
@@ -3628,8 +3658,18 @@ function offlineArrivals(elapsed) {
     const dw = Math.min(5, Math.floor(awayH / 2) + (Math.random() < (awayH % 2) / 2 ? 1 : 0));
     if (dw > 0) { gainDriftwood(dw, true); setTimeout(() => toast(`${dw} piece${dw === 1 ? "" : "s"} of driftwood washed up while you were away. 🪵`, 5), 1900); }
   }
-  if (awayH < 1.5 || cats.length >= capacity()) return;
-  const room = capacity() - cats.length;
+  // Labubu may have swung by while you were out — one gift waiting, never a pile
+  if (G.labubu && G.labubu.nextAt && Date.now() >= G.labubu.nextAt && awayH >= 0.5 && residentCount() >= 1) {
+    const gift = pickLabubuGift();
+    if (gift.driftwood) gainDriftwood(gift.driftwood, true); else G.shells += gift.shells;
+    G.labubu.visits = (G.labubu.visits || 0) + 1;
+    scheduleNextLabubu();
+    const what = gift.driftwood ? `${gift.driftwood} driftwood 🪵` : `◈ ${gift.shells}`;
+    logMoment("✦", `Labubu came by while you were out — left ${what} by the sign.`, "visit");
+    setTimeout(() => toast(`Labubu stopped by while you were away — left ${what} by the sign.`, 5), 2600);
+  }
+  if (awayH < 1.5 || residentCount() >= capacity()) return;
+  const room = capacity() - residentCount();
   const n = Math.max(0, Math.min(4, room, Math.round(awayH / 3)));
   for (let i = 0; i < n; i++) spawnCat({ x: (Math.random() < 0.5 ? -40 : W + 40), y: rand(H * 0.55, H * 0.8) });
   if (n > 0) setTimeout(() => toast(n === 1 ? "A cat wandered in while you were away." : `${n} cats wandered in while you were away.`, 5), 1500);
@@ -6057,12 +6097,82 @@ let visitorTimer = rand(60, 150);   // first arrival soon; set() below re-times 
 function anyProjectOpen() { return PROJECTS.some(p => projectStage(p.id) === "open"); }
 let driftTimer = rand(30, 70);
 
+/* ---------- Labubu — Midknight's sidekick, a recurring visitor ----------
+   Turns up ~10 min into the first session, then up to 2x a day at random,
+   3-7h apart. Pads around near Midknight for a couple of minutes, drops off
+   a little something (driftwood, or a few shells), then heads back out.
+   Never a resident: not in the Catdex, not counted toward capacity, never
+   saved into G.cats — his whole state is G.labubu. */
+function labubuHere() { return cats.some(c => c.visitor) || _departures.some(d => d.c && d.c.visitor); }
+function labubuDayCap() {
+  const k = todayKey();
+  if (!G.labubu) return true;
+  if (G.labubu.dayKey !== k) return true;
+  return (G.labubu.dayCount || 0) < 2;
+}
+function scheduleNextLabubu() {
+  if (!G.labubu) G.labubu = { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 };
+  G.labubu.nextAt = Date.now() + rand(3, 7) * 3600e3;
+}
+function pickLabubuGift() {
+  const r = Math.random();
+  if (anyProjectOpen() && r < 0.62) return { driftwood: 1 + (Math.random() < 0.4 ? 1 : 0) };
+  if (r < 0.9) return { shells: Math.round(rand(12, 26)) };
+  return { shells: Math.round(rand(28, 44)) };
+}
+function labubuArrive() {
+  if (labubuHere() || residentCount() < 1) return;
+  const gift = pickLabubuGift();
+  const fromLeft = Math.random() < 0.5;
+  const c = spawnCat({ coatKey: "labubu", name: "Labubu", visitor: true, star: 3,
+    traits: ["cuddly", "curious"], worn: ["bell"], mood: 84,
+    x: fromLeft ? -40 : W + 40, y: rand(H * 0.6, H * 0.8) });
+  if (!c) return;
+  c._leaveAt = Date.now() + rand(95, 155) * 1000;
+  G.labubu.visits = (G.labubu.visits || 0) + 1;
+  const k = todayKey();
+  if (G.labubu.dayKey !== k) { G.labubu.dayKey = k; G.labubu.dayCount = 0; }
+  G.labubu.dayCount = (G.labubu.dayCount || 0) + 1;
+  scheduleNextLabubu();
+  // he trots in carrying it — drops it near the sign once he's on screen
+  setTimeout(() => {
+    if (!cats.includes(c)) return;
+    const dx = clamp(c.x, 46, W * 0.55);
+    if (gift.driftwood) for (let i = 0; i < gift.driftwood; i++) dropToken(dx + rand(-14, 14), catFloor() - rand(24, 40), 0, "driftwood");
+    else dropToken(dx, c.y - 8, gift.shells, "");
+    floatText(c.x, c.y - 30, "🎁", "#c88fd0");
+  }, 2600);
+  logMoment("✦", gift.driftwood
+    ? `Labubu stopped by with ${gift.driftwood} piece${gift.driftwood === 1 ? "" : "s"} of driftwood.`
+    : `Labubu stopped by and dropped ◈ ${gift.shells} by the sign.`, "visit");
+  toast(gift.driftwood
+    ? "Labubu trotted in with driftwood in his mouth 🪵 — Midknight's little shadow."
+    : "Labubu trotted in — Midknight's little shadow.", 5);
+  sfx("coax");
+}
+function labubuLeave(c) {
+  if (c._leaving) return;
+  c._leaving = true; c._gone = true;
+  const dir = c.x > W / 2 ? 1 : -1;
+  c.state = "exploring"; c.stateDur = 1e6; c.vx = dir * 20; c.walkAmt = 0.4;
+  _departures.push({ c, dir, life: 0 });
+  spawnParticles(c.x, c.y - 12, "twinkle", 5);
+  logMoment("🐾", "Labubu headed back out on his rounds.", "visit");
+  toast("Labubu slipped off after a while — back another day.", 4);
+}
+function labubuTick() {
+  if (!G || !G.tutorialDone || restMode || labubuHere()) return;
+  if (!G.labubu) G.labubu = { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 };
+  if (!G.labubu.visits && !G.labubu.nextAt) { G.labubu.nextAt = Date.now() + rand(8, 12) * 60e3; return; }
+  if (G.labubu.nextAt && Date.now() >= G.labubu.nextAt && labubuDayCap()) labubuArrive();
+}
+
 function simulate(dt) {
   if (G.tutorialDone) {                 // hold the world still during the cold open
     visitorTimer -= dt;
     if (visitorTimer <= 0) {
       visitorTimer = nextVisitorGap();
-      if (cats.length < capacity()) { spawnCat(); toast("A cat wandered into the cove."); }
+      if (residentCount() < capacity()) { spawnCat(); toast("A cat wandered into the cove."); }
     }
   }
   // driftwood washes up along the shore while a project still needs it
@@ -6074,6 +6184,7 @@ function simulate(dt) {
     }
   }
   for (const c of cats) updateCat(c, dt);
+  if (cats.some(c => c._gone)) cats = cats.filter(c => !c._gone);   // a departed visitor lives on only in _departures
   updateDepartures(dt);
   updateTokens(dt);
   updateFX(dt);
@@ -6314,7 +6425,7 @@ function grantReward(r, atCat) {
     if (G.mapPieces === MAP_TOTAL) logMoment("🗺️", "The torn map is whole again. It points somewhere past the island.");
   }
   if (r.coatKey || r.kitten) {
-    if (cats.length < capacity()) {
+    if (residentCount() < capacity()) {
       const opts = { _celeb: true, x: -30, y: rand(H * 0.55, H * 0.8) };
       if (r.coatKey) opts.coatKey = r.coatKey;
       if (r.kitten) opts.bornAt = Date.now();
@@ -6904,7 +7015,7 @@ function openAdventurePicker() {
   document.querySelectorAll("#modal .pick-dest").forEach(b => b.onclick = () => pickAdventureCat(b.dataset.d));
 }
 function pickAdventureCat(dest) {
-  const goers = cats.filter(c => !c.mascot);   // the founder never leaves
+  const goers = cats.filter(c => !c.mascot && !c.visitor);   // the founder never leaves; Labubu's just passing through
   if (!goers.length) {
     openModal(`<div class="reveal"><div class="kicker">${esc(ADV_DESTS[dest].name)}</div><h2>Who's going?</h2>
       <p class="sub">${cats.length <= 1 ? "Midknight never leaves the cove — coax another cat first, then you'll have someone to send." : "Everyone else is busy. Try again in a bit."}</p>
@@ -6973,6 +7084,13 @@ window.__cove = {
   moments(){ return G.moments || []; },
   drift(n = 5){ gainDriftwood(n); return G.materials.driftwood; },
   dedupe(){ const n = dedupeCats(); syncHud(); save(); return { removed: n, cats: cats.map(c => c.name) }; },
+  labubu(cmd){
+    if (cmd === "come") { G.labubu.nextAt = Date.now() - 1; G.labubu.dayKey = ""; labubuArrive(); }
+    else if (cmd === "go") { const l = cats.find(c => c.visitor); if (l) labubuLeave(l); }
+    else if (cmd === "next") { G.labubu.nextAt = Date.now() + 20e3; G.labubu.dayKey = ""; return "arrives in ~20s"; }
+    else if (cmd === "reset") { G.labubu = { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 }; }
+    return { ...G.labubu, here: labubuHere(), inMin: G.labubu.nextAt ? Math.round((G.labubu.nextAt - Date.now()) / 60000) : null };
+  },
   project(id = "dock", cmd){
     const p = G.projects[id]; if (!p) return "no such project";
     if (cmd === "fill") { p.paid = { shells: PROJECT_BY_ID[id].cost.shells, driftwood: PROJECT_BY_ID[id].cost.driftwood }; contributeProject(id); }
@@ -7107,6 +7225,7 @@ setInterval(() => {
   deliverDuePostcards({ pop: false });   // a gentle toast if one's due while you're playing
   if (dedupeCats()) { syncHud(); save(); }   // self-heal if a duplicate ever slips in
   tickProjects();                        // a restoration that finished while you watched
+  labubuTick();                          // Midknight's sidekick may be due for a visit
   if (panels.today && !panels.today.hidden) { renderCheckinCard(); renderAdventureCard(); renderProjectCard(); }
   if (panels.shop && !panels.shop.hidden && (boostActive() || _wasBoosted)) renderShop();   // tick the boost countdown
   if (_wasBoosted && !boostActive()) toast("The catnip's worn off — earnings back to normal.", 4);
