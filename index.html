@@ -3840,6 +3840,7 @@ function endColdOpen(skipped) {
   // an honest reason to come back — the things that really change overnight
   setTimeout(() => toast("Come back tomorrow — a welcome will be waiting, and the shore always turns something up.", 6), 500);
   setTimeout(() => { try { checkOffline(afterReturn); } catch (e) {} }, 700);
+  setTimeout(() => { try { maybePanHint(); } catch (e) {} }, 3200);
   syncHud();
 }
 
@@ -8423,5 +8424,15 @@ if (G.tutorialDone && G.opens >= 2 && !G.tips.includes("rain_seen")) {
 if (_econJustReset) {
   setTimeout(() => toast("Shells got a fresh start for the economy rebalance — your cove and cats are all still here. 🐚", 7), 1400);
 }
+
+// one-time: the cove is wider than the screen → tell them they can look around
+function maybePanHint() {
+  if (!G || G.tips.includes("pan_seen") || restMode || _cold) return;
+  if (stage.scrollWidth > stage.clientWidth + 8 && !G.camFit && G.tutorialDone) {
+    G.tips.push("pan_seen"); save();
+    toast("Drag to look around the cove — or tap ⊹ to see it all at once.", 6);
+  }
+}
+setTimeout(maybePanHint, 3500);
 })();
 </script>
