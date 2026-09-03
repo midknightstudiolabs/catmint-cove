@@ -3567,41 +3567,52 @@ let _coldTarget = null;    // a Cat to ring on the canvas
 let _coldShopFocus = false;
 
 const COLD = [
-  { // 1 — meet Midknight, earn the first shell
+  { // 1 — meet Midknight, and the first hello lands
     say: "This is Midknight. He was here before the cove had a name.",
     cue: "Tap Midknight to say hello.",
     arm(s) { s.mk = cats.find(c => c.mascot); s.armPet = s.mk ? s.mk.petCount : 0; _coldTarget = s.mk || null; },
     test(s) { return s.mk && s.mk.petCount > s.armPet; },
-    exit(s) { const mk = s.mk; if (mk) dropToken(mk.x + rand(-6, 6), mk.y - 12, 12, null); _coldTarget = null; },
-  },
-  { // 2 — collect it
-    say: "Cats leave these. Tap them, or don't — they always find you.",
-    cue: "Tap the shell to bank it.",
-    arm(s) { s.armTok = G.metrics.tokens; if (!fieldTokens.length) { const mk = cats.find(c => c.mascot) || cats[0]; if (mk) dropToken(mk.x, mk.y - 12, 12, null); } },
-    test(s) { return G.metrics.tokens > s.armTok; },
-  },
-  { // 3 — place a comfort
-    say: "Others come and go. They stay if there's a reason to.",
-    cue: "Open the Shop and set down a food bowl.",
-    go() { _coldShopFocus = true; togglePanel("shop"); },
-    arm(s) { s.armBowls = G.bowls; _coldShopFocus = true; document.getElementById("shopBtn").classList.add("cold-cue-pulse"); },
-    test(s) { return G.bowls > s.armBowls; },
     exit(s) {
-      document.getElementById("shopBtn").classList.remove("cold-cue-pulse");
-      _coldShopFocus = false; closeAllPanels();
-      s.newCat = scriptArrival();
+      const mk = s.mk;
+      if (mk) {
+        spawnParticles(mk.x, mk.y - 22, "heart", 16);
+        spawnParticles(mk.x, mk.y - 18, "twinkle", 8);
+        floatText(mk.x, mk.y - 46, "Midknight", "#d6688a");
+        mk.squash = 1;
+        sfx("reveal");
+        dropToken(mk.x + rand(-6, 6), mk.y - 12, 12, null);   // his hello leaves you a shell
+      }
+      _coldTarget = null;
     },
   },
-  { // 4 — meet the newcomer, discover its personality
+  { // 2 — collect the first shell (the arc + chime carry it)
+    say: "Cats leave these. Tap them, or don't — they always find you.",
+    cue: "Tap the shell.",
+    arm(s) { s.armTok = G.metrics.tokens; if (!fieldTokens.length) { const mk = cats.find(c => c.mascot) || cats[0]; if (mk) dropToken(mk.x, mk.y - 12, 12, null); } },
+    test(s) { return G.metrics.tokens > s.armTok; },
+    exit(s) { s.newCat = scriptArrival(); },   // a second cat starts walking in
+  },
+  { // 3 — meet the newcomer, discover its personality
     say: null, cue: null,   // filled in arm() once the cat has a name
     arm(s) {
       const c = s.newCat || (s.newCat = cats.find(x => !x.mascot) || scriptArrival());
       _coldTarget = c;
-      this.say = `That's ${c.name} — ${COLD_TRAIT_LINE[c.traits[0]] || "settling in already."}`;
+      this.say = `Someone new. That's ${c.name} — ${COLD_TRAIT_LINE[c.traits[0]] || "settling in already."}`;
       this.cue = `Tap ${c.name} to say hello. Every cat's a little different.`;
       s.armPet2 = c ? c.petCount : 0;
     },
     test(s) { return s.newCat && s.newCat.petCount > s.armPet2; },
+    exit() { _coldTarget = null; },
+  },
+  { // 4 — the cove is yours (a beat, not a task)
+    say: null, cue: null,
+    arm(s) {
+      _coldTarget = cats.find(c => c.mascot) || null;
+      this.say = "Cats turn up, some stay, the shore keeps handing things back.";
+      this.cue = "It's yours to look after now.";
+      s.doneAt = performance.now() + 4200;
+    },
+    test(s) { return performance.now() >= s.doneAt; },
     exit() { _coldTarget = null; },
   },
 ];
@@ -3610,7 +3621,7 @@ function startColdOpen() {
   if (G.tutorialDone) return;
   const i = Math.min(Math.max(G.coldStep | 0, 0), COLD.length - 1);
   _cold = { i, armed: false, shownKey: null };
-  if (i >= 3) _cold.newCat = cats.find(c => !c.mascot) || scriptArrival();
+  if (i >= 2) _cold.newCat = cats.find(c => !c.mascot) || scriptArrival();
   G.coldStep = i;
   document.getElementById("app").classList.add("cold-open");
   ensureAudio();
@@ -3677,7 +3688,8 @@ function endColdOpen(skipped) {
   closeAllPanels();
   sfx("coax");
   if (!(G.moments || []).some(m => m.kind === "tale"))
-    logMoment("🐾", "Midknight showed you around the cove. He's not going anywhere.", "tale");   // Phase C picks this thread up
+    logMoment("🐾", "Midknight decided you could stay. He went back to his spot by the sign — the cove's yours to look after now.", "tale");   // Phase C picks this thread up
+  visitorTimer = rand(45, 90);   // a third cat wanders in soon after the intro — "oh, they just turn up"
   save();
   // an honest reason to come back — the things that really change overnight
   setTimeout(() => toast("Come back tomorrow — a welcome will be waiting, and the shore always turns something up.", 6), 500);
