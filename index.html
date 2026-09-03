@@ -999,7 +999,8 @@ function save() {
       name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
       mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood), worn:c.worn || [], owned:c.owned || [],
       bond:Math.round(c.bond || 0), bondSeen:c.bondSeen || 0, bondDay:c.bondDay || "",
-      pref:c.pref, quirk:c.quirk, quirkKnown:!!c.quirkKnown, friend:c.friend || null
+      pref:c.pref, quirk:c.quirk, quirkKnown:!!c.quirkKnown, friend:c.friend || null,
+      title:c.title || null, gaveKeepsake:!!c.gaveKeepsake
     }));
     localStorage.setItem(SAVE_KEY, JSON.stringify(G));
   } catch (e) {}
@@ -1340,6 +1341,14 @@ const PREFS = {
   puddles: { line: "the puddle left after rain" },
 };
 const PREF_KEYS = Object.keys(PREFS);
+// a title the cat earns at the "Close" bond milestone, drawn from what they love
+const PREF_TITLE = {
+  sunbeam: "the sun-chaser",     garden: "the garden regular",   fishing: "the dock-watcher",
+  bakery:  "the bakery loiterer", toy:   "the tireless one",      bed:    "the professional napper",
+  bowl:    "first in line",        tree:  "the climber",           jingle: "the jingle-follower",
+  boxes:   "the box inspector",    mornings: "the early riser",    puddles: "the puddle-sitter",
+};
+function catTitle(c) { return c.title || null; }
 const QUIRKS = [
   "sleeps curled in a perfect circle, always",
   "waits by the gate whenever a cat's away on a trip",
@@ -1421,6 +1430,9 @@ class Cat {
     // friendship — one mutual friend per cat, name only. formed slowly while two
     // partnerless residents keep each other company. friendships only, no rivalries.
     this.friend = o.friend || null;
+    // a title earned at the "Close" bond milestone; a personal keepsake at "Bonded"
+    this.title = o.title || null;
+    this.gaveKeepsake = !!o.gaveKeepsake;
     this.bob = Math.random() * 6;
     this.blink = rand(2, 6);
     this.tail = Math.random() * 6;
@@ -1542,6 +1554,7 @@ function restoreCats() {
         bornAt: s.bornAt ?? (Date.now() - KITTEN_MS * 3), mood:s.mood,
         bond: s.bond, bondSeen: s.bondSeen, bondDay: s.bondDay,
         pref: s.pref, quirk: s.quirk, quirkKnown: s.quirkKnown, friend: s.friend,
+        title: s.title, gaveKeepsake: s.gaveKeepsake,
         x: rand(W*0.15,W*0.85), y: rand(H*0.42,H*0.82)
       }));
     }
@@ -1564,6 +1577,12 @@ function restoreCats() {
   // make sure every non-mascot cat already in the cove counts as discovered
   for (const c of cats) if (!c.mascot && !c.visitor && !G.dex[c.coatKey]) G.dex[c.coatKey] = { star: c.star, count: 1 };
   reconcileFriends();
+  // backfill milestone rewards for saves that predate them (quiet — no toasts)
+  for (const c of cats) {
+    if (c.visitor || c.mascot) continue;
+    if (!c.title && bondLevel(c.bond) >= 3) c.title = PREF_TITLE[c.pref] || "the cove favourite";
+    if (bondLevel(c.bond) >= 4) c.gaveKeepsake = true;
+  }
 }
 // keep friendships mutual and real — drop a link whose other end is gone or
 // no longer points back (e.g. one cat rehomed, save hand-edited)
@@ -2331,6 +2350,41 @@ function onBondMilestone(c, lvl, quiet) {
     c.quirkKnown = true;
     setTimeout(() => { logMoment("👀", `You've noticed: ${c.name} ${catQuirkLine(c)}.`, "bond"); if (cardCat === c) renderCatPref(c); }, 900);
   }
+  // Close: the cat earns a title, drawn from what they love
+  if (lvl >= 3 && !c.title && !c.visitor && !c.mascot) {
+    c.title = PREF_TITLE[c.pref] || "the cove favourite";
+    setTimeout(() => {
+      logMoment("🏷️", `${c.name} is known around the cove now — ${c.title}.`, "bond");
+      if (cardCat === c) showCatCard(c);
+    }, 900);
+  }
+  // Bonded: they carry something small to the shelf by the sign, just for you
+  if (lvl >= 4 && !c.gaveKeepsake && !c.visitor && !c.mascot) {
+    c.gaveKeepsake = true;
+    setTimeout(() => grantCatKeepsake(c), 1400);
+  }
+}
+// a personal keepsake a fully-bonded cat leaves on the shelf — feeds the cairn
+const CAT_KEEPSAKES = [
+  { emoji:"🪶", label:"a single soft feather" },
+  { emoji:"🌰", label:"a chestnut, polished by carrying" },
+  { emoji:"🐚", label:"a chipped shell they clearly loved" },
+  { emoji:"🍂", label:"one perfect dry leaf" },
+  { emoji:"🪨", label:"a smooth grey pebble" },
+  { emoji:"🌼", label:"a flattened daisy" },
+  { emoji:"🧶", label:"a short length of favourite string" },
+  { emoji:"🌾", label:"a stalk of dune grass" },
+];
+function grantCatKeepsake(c) {
+  if (!G.keepsakes) G.keepsakes = [];
+  const k = pick(CAT_KEEPSAKES);
+  G.keepsakes.unshift({ id: "cat_" + c.name.toLowerCase().replace(/[^a-z0-9]/g, "") + "_" + (k.emoji), emoji: k.emoji, label: k.label, t: Date.now(), from: c.name });
+  if (G.keepsakes.length > 40) G.keepsakes.length = 40;
+  logMoment("💛", `${c.name} carried ${k.label} to the shelf by the sign — for you.`, "bond");
+  if (cats.includes(c)) { spawnParticles(c.x, c.y - 24, "heart", 7); floatText(c.x, c.y - 40, "for you", "#d6688a"); }
+  toast(`${c.name} left you ${k.label}. 💛`, 5);
+  if (typeof renderFindsCard === "function") renderFindsCard();
+  save();
 }
 
 // two partnerless residents who keep each other company slowly become friends.
@@ -2523,7 +2577,7 @@ function showCatCard(c) {
     ? "Midknight's sidekick  ·  just visiting"
     : c.coat.name + (c.isKitten
       ? `  ·  kitten (${Math.max(1, Math.round(c.growth * 20))}h old)`
-      : "  ·  adult")) + acc;
+      : c.title ? `  ·  ${c.title}` : "  ·  adult")) + acc;
   cc.starsEl.innerHTML = c.mascot ? `<span style="color:${STAR_COL[2]};font-weight:700">★ Mascot</span>`
     : c.visitor ? `<span style="color:${STAR_COL[3]};font-weight:700">✦ Visitor</span>` : starGlyphs(c.star);
   cc.traits.innerHTML = c.traits.map(k => `<span class="trait">${TRAITS[k].label}</span>`).join("");
@@ -7137,7 +7191,8 @@ function snapshotCat(c) {
   return { name: c.name, traits: c.traits, coatKey: c.coatKey, markSeed: c.markSeed, star: c.star,
     mascot: c.mascot, bornAt: c.bornAt, mood: Math.round(c.mood), worn: c.worn || [], owned: c.owned || [],
     bond: Math.round(c.bond || 0), bondSeen: c.bondSeen || 0, bondDay: c.bondDay || "",
-    pref: c.pref, quirk: c.quirk, quirkKnown: !!c.quirkKnown, friend: c.friend || null };
+    pref: c.pref, quirk: c.quirk, quirkKnown: !!c.quirkKnown, friend: c.friend || null,
+    title: c.title || null, gaveKeepsake: !!c.gaveKeepsake };
 }
 // names: a string or an array of 1-3 cat names
 function startAdventure(names, dest) {
