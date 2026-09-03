@@ -6504,7 +6504,7 @@ function labubuTick() {
 function cairnJunkCount() {
   return (G.keepsakes || []).filter(k => k && k.from === "labubu").length;
 }
-function mkHome() {
+function mkAtHome() {
   const away = G.adventure && (G.adventure.party || []).some(d => d && (d.mascot || d.name === "Midknight"));
   return !away && cats.some(c => c.mascot);
 }
@@ -6513,7 +6513,7 @@ function cairnTick() {
   if (!G || !G.tutorialDone || restMode) return;
   const cn = G.cairn || (G.cairn = { stage: 0, progress: 0, size: 0, nextAt: 0 });
   if (cn.stage >= 4) return;                                  // resolved (kept or tidied)
-  if (!mkHome()) return;                                      // he only works on it when he's home
+  if (!mkAtHome()) return;                                    // he only works on it when he's home
 
   if (cn.stage === 0) {
     if (cairnJunkCount() < 4) return;
@@ -7665,7 +7665,7 @@ window.__cove = {
     else if (cmd === "ask") { G.cairn.stage = 3; offerCairnChoice(); }
     else if (cmd === "reset") { G.cairn = { stage: 0, progress: 0, size: 0, nextAt: 0 }; delete G.cairn.tidied; }
     save();
-    return { ...G.cairn, junk: cairnJunkCount(), mkHome: mkHome() };
+    return { ...G.cairn, junk: cairnJunkCount(), mkHome: mkAtHome() };
   },
   project(id = "dock", cmd){
     const p = G.projects[id]; if (!p) return "no such project";
