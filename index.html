@@ -2335,7 +2335,7 @@ function showCatCard(c) {
   cc.name.textContent = c.name;
   const acc = (c.worn && c.worn.length) ? "  ·  " + wornList(c).map(k => ACC_LABEL[k] || k).join(", ") : "";
   cc.coatEl.textContent = (c.mascot
-    ? "the cove's founder  ·  never leaves"
+    ? "the cove's founder  ·  rarely goes far"
     : c.visitor
     ? "Midknight's sidekick  ·  just visiting"
     : c.coat.name + (c.isKitten
