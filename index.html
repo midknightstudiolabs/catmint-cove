@@ -8096,7 +8096,14 @@ function afterReturn(awaySec) {
 
 /* ---------- boot ---------- */
 function resize() {
-  const vw = window.innerWidth || 390, vh = window.innerHeight || 780;
+  // size to the LAYOUT viewport (documentElement), not window.innerWidth/Height —
+  // on mobile the latter is the *visual* viewport, which shrinks behind the URL
+  // bar / landscape toolbar, so the canvas came up short and #stage's dark
+  // background showed through top & bottom. #app is position:fixed inset:0, so the
+  // documentElement client box is exactly the area the canvas must cover.
+  const de = document.documentElement;
+  const vw = Math.max(de.clientWidth || 0, window.innerWidth || 0) || 390;
+  const vh = Math.max(de.clientHeight || 0, window.innerHeight || 0) || 780;
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   const aspect = W / H;
   // the canvas fills the viewport height, and at least its width. narrow screen →
