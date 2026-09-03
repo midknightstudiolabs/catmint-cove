@@ -1366,7 +1366,10 @@ function stationCount() { const s = G.stations || {}; return (s.fishing||0) + (s
 // push it to 24; "Find them a new home" on the cat card is the release valve.
 function maxCats() { return G.coveCharter ? 24 : 16; }
 function capacity() { return Math.min(maxCats(), 4 + (G.bowls - 1) * 2 + G.toys + G.beds + (G.scratch || 0) + G.decor.cottage * 2 + stationCount() * 2); }
-function residentCount() { return cats.reduce((n, c) => n + (c.visitor ? 0 : 1), 0); }   // Labubu doesn't take a slot
+// cats on an adventure are spliced out of `cats` but still belong to the cove —
+// count them so sending a party out doesn't free up slots for new arrivals that
+// would then overflow capacity when the party comes home. (Labubu never counts.)
+function residentCount() { return cats.reduce((n, c) => n + (c.visitor ? 0 : 1), 0) + (typeof G !== "undefined" && G ? catsAway() : 0); }
 function comfortMult() { return 1 + G.comfort * 0.22; }
 function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // ambient mood lift
 
@@ -8403,22 +8406,31 @@ function afterReturn(awaySec) {
 }
 
 /* ---------- boot ---------- */
+let _resizeRetry = 0;
 function resize() {
-  // size to the LAYOUT viewport (documentElement), not window.innerWidth/Height —
-  // on mobile the latter is the *visual* viewport, which shrinks behind the URL
-  // bar / landscape toolbar, so the canvas came up short and #stage's dark
-  // background showed through top & bottom. #app is position:fixed inset:0, so the
-  // documentElement client box is exactly the area the canvas must cover.
+  // The canvas must exactly cover #stage (position:absolute inset:0 inside a
+  // position:fixed #app), so measure the box we're filling directly. #stage's own
+  // client box is the most reliable; window.innerWidth/Height and
+  // documentElement.clientWidth/Height are fallbacks (and on mobile innerHeight is
+  // the shrinking *visual* viewport, which used to letterbox the canvas).
   const de = document.documentElement;
-  const vw = Math.max(de.clientWidth || 0, window.innerWidth || 0) || 390;
-  const vh = Math.max(de.clientHeight || 0, window.innerHeight || 0) || 780;
+  const vw = Math.max(stage.clientWidth || 0, de.clientWidth || 0, window.innerWidth || 0);
+  const vh = Math.max(stage.clientHeight || 0, de.clientHeight || 0, window.innerHeight || 0);
+  if ((vw < 200 || vh < 200) && _resizeRetry < 20) {   // layout not settled yet — try again next frame
+    _resizeRetry++;
+    requestAnimationFrame(resize);
+    if (vw < 200 && vh < 200) return;                  // nothing usable at all — wait
+  } else {
+    _resizeRetry = 0;
+  }
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   const aspect = W / H;
+  const fvw = vw || 390, fvh = vh || 780;
   // the canvas fills the viewport height, and at least its width. narrow screen →
   // it overflows the width and you pan. wide screen → the cove is centred and the
   // sky/ground extend past both sides so there's no letterbox.
-  displayScale = vh / H;                       // cats a consistent size everywhere
-  const cssH = vh, cssW = Math.max(vw, vh * aspect);
+  displayScale = fvh / H;                      // cats a consistent size everywhere
+  const cssH = fvh, cssW = Math.max(fvw, fvh * aspect);
   const viewW = cssW / displayScale;           // world units visible horizontally
   _worldOffX = Math.max(0, (viewW - W) / 2);
   _overX = _worldOffX + 6;
@@ -8427,12 +8439,13 @@ function resize() {
   const bw = Math.round(cssW * DPR), bh = Math.round(cssH * DPR);
   if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
   ctx.setTransform(DPR * displayScale, 0, 0, DPR * displayScale, _worldOffX * DPR * displayScale, 0);
-  stage.scrollLeft = clamp(stage.scrollLeft, 0, Math.max(0, cssW - vw));
+  stage.scrollLeft = clamp(stage.scrollLeft, 0, Math.max(0, cssW - fvw));
   refreshShellAnchor();
 }
 // wired to every way the viewport can change (iOS rotate, address bar, split view)
 let _lastW = 0, _lastH = 0, _relayoutT = 0;
 function onViewportChange() {
+  _resizeRetry = 0;                   // a real viewport event — let resize() retry from scratch if needed
   resize();                          // keep the canvas backing store matched to the box — immediately
   clearTimeout(_relayoutT);
   _relayoutT = setTimeout(() => {
