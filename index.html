@@ -595,6 +595,20 @@
   @keyframes rotNudge{0%,50%{transform:rotate(0)}70%,100%{transform:rotate(-90deg)}}
   @media (prefers-reduced-motion:reduce){#rotate .glyph{animation:none;}}
   @media (orientation:landscape) and (max-height:500px){ #rotate{display:flex;} }
+
+  /* focus camera — press & hold a cat to sit with it; the chrome recedes */
+  #hud,#actions,#toast,#hint{transition:opacity .35s ease;}
+  #app.focusing #hud,#app.focusing #actions,#app.focusing #toast,#app.focusing #hint{opacity:0;pointer-events:none;}
+  #focusBar{
+    position:absolute;left:50%;transform:translateX(-50%);
+    bottom:max(1.1rem,calc(env(safe-area-inset-bottom) + .5rem));
+    z-index:21;display:flex;align-items:center;gap:.34rem;
+    padding:.5rem 1rem;border-radius:999px;
+    background:rgba(24,21,15,.44);color:#f3efe4;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+    font:600 .82rem/1 "Hanken Grotesk",-apple-system,sans-serif;letter-spacing:.02em;
+    cursor:pointer;opacity:0;pointer-events:none;transition:opacity .3s ease .12s;
+  }
+  #app.focusing #focusBar{opacity:.9;pointer-events:auto;}
 </style>
 
 <div id="app">
@@ -746,6 +760,8 @@
       <button class="btn" id="photoClose">Back to the cove</button>
     </div>
   </div>
+
+  <div id="focusBar">‹&nbsp; step back</div>
 </div>
 
 <div id="rotate" aria-hidden="true">
@@ -2476,26 +2492,123 @@ function updateFX(dt) {
 let shakeAmt = 0;
 function shake(a) { shakeAmt = Math.min(shakeAmt + a, 12); }
 
+/* ---------- focus camera: press-and-hold a cat to sit with it ---------- */
+const FOCUS_ZOOM = 2.35;
+let _focus = null;            // the Cat being watched (null → easing back out)
+let _focusT = 0;              // 0 = full cove, 1 = zoomed in
+let _wasFocusing = false;     // so cleanup runs exactly once
+let _camX = 0, _camY = 0;                 // world point held at screen centre (eased)
+let _camScale = 1, _camTx = 0, _camTy = 0;   // derived screen-space transform
+let _preCamX = 0, _preCamY = 0;           // pre-focus framing, to ease home on exit
+let _frozenScroll = 0, _frozenLeft = 0, _frozenTop = 0;
+
+function focusEligible(c) {
+  return c && !_cold && !restMode && !anyPanelOpen() && cats.includes(c);
+}
+function enterFocus(c) {
+  if (!focusEligible(c) || _focus === c) return;
+  hideCatCard(true);
+  const r = canvas.getBoundingClientRect();
+  _frozenScroll = stage.scrollLeft; _frozenLeft = r.left; _frozenTop = r.top;
+  _preCamX = _camX = (window.innerWidth  / 2 - r.left) / displayScale - _worldOffX;
+  _preCamY = _camY = (window.innerHeight / 2 - r.top) / displayScale;
+  _focus = c;
+  stage.style.touchAction = "none";
+  document.getElementById("app").classList.add("focusing");
+  if (G && G.tips && !G.tips.includes("focus_seen")) { G.tips.push("focus_seen"); save(); }
+}
+function exitFocus() { _focus = null; }
+
+function updateCamera(dt) {
+  if (!_focus && _focusT <= 0) {
+    if (_wasFocusing) {
+      _wasFocusing = false;
+      stage.style.touchAction = "";
+      document.getElementById("app").classList.remove("focusing");
+    }
+    return;
+  }
+  _wasFocusing = true;
+  if (_focus && !cats.includes(_focus)) _focus = null;   // cat went on a trip / was rehomed
+  if (_focusT > 0) stage.scrollLeft = _frozenScroll;      // hold the pan still while zoomed
+
+  const target = _focus ? 1 : 0;
+  _focusT = _reduceMotion ? target : _focusT + (target - _focusT) * Math.min(1, 7 * dt);
+  if (!_focus && _focusT < 0.06) _focusT = 0;             // last sliver is imperceptible — snap & clean up
+  if (_focus && _focusT > 0.999) _focusT = 1;
+
+  let aimX = _focus ? _focus.x : _preCamX;
+  let aimY = _focus ? _focus.y - 26 : _preCamY;
+  const sc = displayScale * FOCUS_ZOOM;                   // clamp against the deepest zoom
+  const halfW = (window.innerWidth  / 2) / sc, halfH = (window.innerHeight / 2) / sc;
+  aimX = clamp(aimX, halfW - _worldOffX, W + _worldOffX - halfW);
+  aimY = clamp(aimY, halfH, H - halfH);
+  // ease toward the aim; the cap only smooths a big jump (fly-in, a teleport) —
+  // a cat's own top speed is well under it, so following never stutters
+  const k = _reduceMotion ? 1 : Math.min(1, dt * 4), mx = 1500 * dt;
+  _camX += clamp((aimX - _camX) * k, -mx, mx);
+  _camY += clamp((aimY - _camY) * k, -mx, mx);
+
+  const e = _focusT * _focusT * (3 - 2 * _focusT);
+  _camScale = displayScale * (1 + (FOCUS_ZOOM - 1) * e);
+  _camTx = window.innerWidth  / 2 - _camX * _camScale;
+  _camTy = window.innerHeight / 2 - _camY * _camScale;
+}
+function applyCamera() {
+  if (_focusT <= 0) {
+    ctx.setTransform(DPR * displayScale, 0, 0, DPR * displayScale, _worldOffX * DPR * displayScale, 0);
+  } else {
+    ctx.setTransform(DPR * _camScale, 0, 0, DPR * _camScale,
+      (_camTx - _frozenLeft) * DPR, (_camTy - _frozenTop) * DPR);
+  }
+}
+function screenToWorld(cx, cy) {
+  if (_focusT > 0) return { x: (cx - _camTx) / _camScale, y: (cy - _camTy) / _camScale };
+  const r = canvas.getBoundingClientRect();
+  return { x: (cx - r.left) / displayScale - _worldOffX, y: (cy - r.top) / displayScale };
+}
+function catAt(x, y, rad) {
+  let bc = null, bd = (rad || 40) * (rad || 40);
+  for (const c of cats) { const d = dist2(x, y, c.x, c.y - 18); if (d < bd) { bd = d; bc = c; } }
+  return bc;
+}
+
 /* ---------- input ---------- */
-// tap vs. pan: a tap is a press+release in ~the same spot with no scroll between
+// tap vs. pan: a tap is a press+release in ~the same spot with no scroll between.
+// press-and-hold on a cat opens the focus camera.
 let _tpX = null, _tpY = null, _tpScroll = 0, _tpMoved = false;
+let _lpTimer = 0, _lpFired = false;
 canvas.addEventListener("pointerdown", (e) => {
   ensureAudio();
-  _tpX = e.clientX; _tpY = e.clientY; _tpScroll = stage.scrollLeft; _tpMoved = false;
+  _tpX = e.clientX; _tpY = e.clientY; _tpScroll = stage.scrollLeft; _tpMoved = false; _lpFired = false;
+  clearTimeout(_lpTimer);
+  if (!_focus) _lpTimer = setTimeout(() => {
+    if (_tpX == null || _tpMoved) return;
+    const w = screenToWorld(_tpX, _tpY);
+    const c = catAt(w.x, w.y, 46);
+    if (c) { enterFocus(c); _lpFired = true; try { if (navigator.userActivation ? navigator.userActivation.hasBeenActive : true) navigator.vibrate && navigator.vibrate(11); } catch (_) {} }
+  }, 430);
 });
 canvas.addEventListener("pointermove", (e) => {
-  if (_tpX != null && Math.hypot(e.clientX - _tpX, e.clientY - _tpY) > 9) _tpMoved = true;
+  if (_tpX != null && Math.hypot(e.clientX - _tpX, e.clientY - _tpY) > 9) { _tpMoved = true; clearTimeout(_lpTimer); }
 });
 canvas.addEventListener("pointerup", (e) => {
+  clearTimeout(_lpTimer);
   if (_tpX == null) return;
   const panned = Math.abs(stage.scrollLeft - _tpScroll) > 4;
   const near = Math.hypot(e.clientX - _tpX, e.clientY - _tpY) <= 9;
   _tpX = _tpY = null;
+  if (_lpFired) { _lpFired = false; return; }        // the hold already acted
   if (_tpMoved || panned || !near) return;
-  const r = canvas.getBoundingClientRect();
-  handleTap((e.clientX - r.left) / displayScale - _worldOffX, (e.clientY - r.top) / displayScale);
+  const w = screenToWorld(e.clientX, e.clientY);
+  if (_focus) {
+    if (catAt(w.x, w.y, 62) === _focus) petCat(_focus);   // still pettable up close
+    else exitFocus();                                     // tap the surrounds → step back
+    return;
+  }
+  handleTap(w.x, w.y);
 });
-canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; });
+canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeout(_lpTimer); _lpFired = false; });
 function handleTap(x, y) {
   // tokens first (closest within radius) — generous target, they're the payout
   let bt = null, bd = 34 * 34;
@@ -2506,11 +2619,7 @@ function handleTap(x, y) {
   if (bt) { collectToken(bt); return; }
 
   // cats
-  let bc = null, bcd = 40 * 40;
-  for (const c of cats) {
-    const d = dist2(x, y, c.x, c.y - 18);
-    if (d < bcd) { bcd = d; bc = c; }
-  }
+  const bc = catAt(x, y, 40);
   if (bc) { petCat(bc); showCatCard(bc); return; }
 
   // a restoration project marker
@@ -2550,6 +2659,11 @@ function petCat(c) {
   else {
     const dim = 1 / (1 + (c._petRun || 1) * 0.9);
     gainBond(c, (c.petAffinity() > 0.7 ? 1.5 : 0.35) * dim);
+  }
+  // once they know the tap, tell them about the hold
+  if (!_focus && G && G.tutorialDone && G.tips && !G.tips.includes("focus_hinted")) {
+    G.tips.push("focus_hinted"); save();
+    setTimeout(() => { if (!_focus && !anyPanelOpen()) toast("Press and hold a cat to sit with it a while. 🐾", 6); }, 1500);
   }
 }
 /* ---------- bonds ---------- */
@@ -2795,7 +2909,7 @@ function starGlyphs(n) {
 }
 let cardCat = null, cardTimer = 0;
 function showCatCard(c) {
-  if (_cold) return;                    // the cold open speaks for the cats itself — no card over Midknight's
+  if (_cold || _focusT > 0) return;     // cold open / focus view speak for themselves — no card
   cardCat = c; cardTimer = 6;
   cc.name.textContent = c.name;
   const acc = (c.worn && c.worn.length) ? "  ·  " + wornList(c).map(k => ACC_LABEL[k] || k).join(", ") : "";
@@ -3516,6 +3630,7 @@ function anyPanelOpen() { for (const k in panels) if (!panels[k].hidden) return 
 function closeAllPanels() { for (const k in panels) panels[k].hidden = true; }
 function togglePanel(name) {
   ensureAudio();
+  exitFocus();
   const wasOpen = !panels[name].hidden;
   closeAllPanels();
   if (!wasOpen) {
@@ -3873,6 +3988,7 @@ function openGuide() {
   document.getElementById("guideOk").onclick = () => tutEl.classList.remove("on");
 }
 document.getElementById("helpBtn").addEventListener("click", openGuide);
+document.getElementById("focusBar").addEventListener("click", exitFocus);
 
 /* rest / rainy-day mode wiring */
 document.getElementById("restBtn").addEventListener("click", () => { if (!restMode) { syncRestPanelUI(); openRestPanel(); } });
@@ -4886,6 +5002,8 @@ function restClearUI() {
 }
 function openRestPanel() {
   ensureAudio(); loadRainLoop(); initGlassDrops();
+  exitFocus(); _focusT = 0; _wasFocusing = false;
+  stage.style.touchAction = ""; document.getElementById("app").classList.remove("focusing");
   document.getElementById("restPanel").hidden = false;
   document.getElementById("restBar").hidden = true;
   document.getElementById("rest").classList.add("on");
@@ -4984,8 +5102,9 @@ function renderRest(dt) {
   _rb.classList.toggle("ambient", restIdleT > 4 && restDim <= 0.35);
 
   const g = ctx;
+  g.setTransform(DPR * displayScale, 0, 0, DPR * displayScale, _worldOffX * DPR * displayScale, 0);
   g.save();
-  g.clearRect(-8, -8, W + 16, H + 16);
+  g.clearRect(-_worldOffX - _overX - 8, -8, W + (_worldOffX + _overX) * 2 + 16, H + 16);
   g.translate(Math.sin(restDrift) * 3, Math.cos(restDrift * 0.7) * 2);   // slow burn-in drift
 
   const R = restGrads();
@@ -7055,6 +7174,7 @@ function drawCairn(g, W, H) {
 }
 
 function simulate(dt) {
+  updateCamera(dt);
   if (G.tutorialDone) {                 // hold the world still during the cold open
     visitorTimer -= dt;
     if (visitorTimer <= 0) {
@@ -7083,8 +7203,10 @@ function simulate(dt) {
 }
 
 function renderScene(dt) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
-  ctx.clearRect(-_worldOffX - _overX - 8, -8, W + (_worldOffX + _overX) * 2 + 16, H + 16);
+  applyCamera();
   if (shakeAmt > 0) ctx.translate(rand(-shakeAmt, shakeAmt), rand(-shakeAmt, shakeAmt));
   drawBackground(dt);
   drawCoveSign(ctx, W, H);
@@ -7152,6 +7274,17 @@ function renderScene(dt) {
     ctx.fillStyle = warm; ctx.fillRect(0, 0, W, H);
   }
   ctx.restore();
+
+  // focus camera: darken the surrounds so it's just you and the cat
+  if (_focusT > 0.01) {
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const cw = canvas.width, ch = canvas.height;
+    const g = ctx.createRadialGradient(cw / 2, ch / 2, Math.min(cw, ch) * 0.30, cw / 2, ch / 2, Math.max(cw, ch) * 0.66);
+    g.addColorStop(0, "rgba(18,15,11,0)");
+    g.addColorStop(1, `rgba(18,15,11,${(0.5 * _focusT).toFixed(3)})`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, cw, ch);
+    ctx.restore();
+  }
 
   // hud bits that change each frame
   updateCatCard();
@@ -8368,6 +8501,17 @@ window.__cove.hardReset = () => {
   try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
   location.reload();
 };
+window.__cove.focus = (name) => {
+  if (name === "off" || name === false) { exitFocus(); return "exiting"; }
+  const c = name ? cats.find(x => x.name === name) : cats[0];
+  if (c) { enterFocus(c); return "focusing " + c.name; }
+  return "no such cat";
+};
+Object.defineProperty(window.__cove, "cam", { get: () => ({
+  focus: _focus && _focus.name, focusT: +_focusT.toFixed(3),
+  camX: Math.round(_camX), camY: Math.round(_camY), camScale: +_camScale.toFixed(3),
+  aim: _focus && [Math.round(_focus.x), Math.round(_focus.y)],
+}) });
 
 resize();
 _lastW = W; _lastH = H;
