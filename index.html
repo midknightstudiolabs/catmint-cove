@@ -574,7 +574,7 @@
     #hud .pill .dot{width:.95rem;height:.95rem;font-size:.62rem;}
     #hud button.btn{padding:.4rem .5rem;}
     #hud .btn .ico{font-size:1rem;}
-    #hud .pill.pearl{display:none;}   /* pearls live in the Today sheet on phones */
+    #hud .pill.pearl.empty{display:none;}   /* on phones, the pearl pill shows only once you have some */
   }
 </style>
 
@@ -3347,6 +3347,7 @@ function syncHud() {
   tp.innerHTML = G.owner ? `${esc(G.owner)}<b>’s Cove</b>` : "Catmint <b>Cove</b>";
   elShells.textContent = Math.floor(G.shells);
   document.getElementById("pearls").textContent = G.pearls || 0;
+  document.getElementById("pearls").closest(".pill").classList.toggle("empty", !(G.pearls > 0));
   elCatCount.textContent = residentCount();
   elCatCap.textContent = capacity();
   document.getElementById("opens").textContent = G.opens;
