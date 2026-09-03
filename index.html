@@ -928,6 +928,10 @@ function load() {
       // a cove that already owns the fishing dock (bought in the old shop) → dock is already restored
       G.projects = { dock: { stage: (G.stations && G.stations.fishing > 0) ? "done" : "open", paid: { shells: 0, driftwood: 0 } } };
     }
+    // pre-existing owners: a station bought in the old shop counts as its project already restored
+    if (!G.projects.woodland && G.stations && G.stations.garden > 0)
+      G.projects.woodland = { stage: "done", paid: { shells: 0, driftwood: 0 } };
+    syncProjectUnlocks();   // dock already done on an older save → open the woodland path now
     // one-time: the economy was rebalanced (Phase A). Testers are sitting on huge
     // old-economy balances that hide the new pacing — give shells a clean start.
     // The cove, cats, comforts, Catdex, journal, everything else is kept as-is.
@@ -1080,13 +1084,25 @@ const STATION = {
    new opens up. No countdown on screen, no skip, nothing lost by waiting. */
 const PROJECTS = [{
   id: "dock", label: "The old dock", station: "fishing",
-  home: { x: 0.18, y: 0.60 },
+  home: { x: 0.18, y: 0.60 }, marker: "dock",
   blurb: "Half-rotted and roped off at the shoreline. Fix it and cats can fish here — and there's room for a few more of them.",
   cost: { shells: 140, driftwood: 4 },
   buildMin: 270,                       // real minutes at a 2-cat cove; scales down with more cats
   unlock: "a fishing spot + room for more cats",
+  hint: "Midknight keeps an eye on the old dock. Tap it to see what it'd take.",
   done: "The dock holds. A cat is already sitting on the end of it, pretending it caught something.",
   next: "With the dock sound, the overgrown woodland path is what's next.",
+}, {
+  id: "woodland", label: "The woodland path", station: "garden",
+  requires: "dock",                    // opens once the dock is done
+  home: { x: 0.72, y: 0.52 }, marker: "brambles",
+  blurb: "Brambles have swallowed the path into the trees. Clear it and the wild catmint at the far end is yours — cats roll in it and come back buzzing.",
+  cost: { shells: 300, driftwood: 8 },
+  buildMin: 420,
+  unlock: "a catmint garden + more room in the cove",
+  hint: "The path into the trees is walkable now. Tap the brambles to see what clearing them takes.",
+  done: "The path's clear to the treeline. The catmint's grown back thick, and someone is already face-down in it.",
+  next: "Past the catmint there's a lean-to with a cold oven — the little bakery, when you're ready.",
 }];
 const PROJECT_BY_ID = Object.fromEntries(PROJECTS.map(p => [p.id, p]));
 function projectStage(id) { const p = G.projects && G.projects[id]; return p ? p.stage : "hidden"; }
@@ -1130,18 +1146,33 @@ function finishProject(id) {
   if (!p || p.stage === "done") return;
   p.stage = "done"; p.doneAt = Date.now();
   if (def.station) G.stations[def.station] = Math.max(1, G.stations[def.station] || 0);
+  const opened = syncProjectUnlocks();
   rebuildAttractors();
   logMoment("🎉", `${def.label} restored — ${def.done}`, "restoration");
   toast(`${def.label} is restored! Unlocked: ${def.unlock}.`, 7);
   spawnParticles(W / 2, H * 0.5, "twinkle", 22);
   sfx("buy"); syncHud(); save();
   if (def.next) setTimeout(() => toast(def.next, 6), 7200);
+  for (const nd of opened) logMoment("🌿", `A way through to ${nd.label.toLowerCase()} opened up.`, "restoration");
 }
 function tickProjects() {
   if (!G.projects) return;
   for (const id in G.projects) {
     if (G.projects[id].stage === "building" && projectProgress(id) >= 1) finishProject(id);
   }
+  if (syncProjectUnlocks().length) rebuildAttractors();
+}
+// a project with `requires:` opens itself once its prerequisite is restored.
+// Returns the newly-opened defs (so a caller can announce them).
+function syncProjectUnlocks() {
+  const opened = [];
+  if (G.projects) for (const def of PROJECTS) {
+    if (def.requires && !G.projects[def.id] && projectStage(def.requires) === "done") {
+      G.projects[def.id] = { stage: "open", paid: { shells: 0, driftwood: 0 } };
+      opened.push(def);
+    }
+  }
+  return opened;
 }
 function gainDriftwood(n, quiet) {
   if (!G.materials) G.materials = { driftwood: 0 };
@@ -1155,7 +1186,7 @@ function openProjectSheet(pid) {
   const def = PROJECT_BY_ID[pid], p = G.projects[pid];
   if (!def || !p) return;
   ensureAudio();
-  if (pid === "dock" && G.tips && !G.tips.includes("dock_seen")) G.tips.push("dock_seen");
+  if (G.tips && !G.tips.includes("proj_seen_" + pid)) G.tips.push("proj_seen_" + pid);
   if (p.stage === "building") {
     const prog = projectProgress(pid);
     const left = Math.max(1, Math.round(projBuildMin(def) * (1 - prog)));
@@ -2338,8 +2369,10 @@ const SHOP = [
     buy:()=>{ G.stations.bakery++; rebuildAttractors(); }, remove:()=>{ G.stations.bakery--; rebuildAttractors(); } },
   { key:"sunbeam", cat:"stations", type:"sunbeam", name:"Sunbeam mat", desc:"The comfiest spot in the cove — mood rockets, output ticks over gently. +2 capacity.",
     base:50, mul:1.8, get:()=>G.stations.sunbeam, buy:()=>{ G.stations.sunbeam++; rebuildAttractors(); }, remove:()=>{ G.stations.sunbeam--; rebuildAttractors(); } },
-  { key:"garden", cat:"stations", type:"garden", name:"Catmint garden", desc:"Cats roll in it and leave with the zoomies — a lasting output burst. +2 capacity.",
-    base:65, mul:1.9, get:()=>G.stations.garden, buy:()=>{ G.stations.garden++; rebuildAttractors(); }, remove:()=>{ G.stations.garden--; rebuildAttractors(); } },
+  { key:"garden", cat:"stations", type:"garden", soon:true, name:"Catmint garden",
+    desc:"Not sold any more — clear the overgrown woodland path and the wild catmint grows back. Any you already have still work.",
+    base:65, mul:1.9, get:()=>G.stations.garden, need:()=>"the woodland path",
+    buy:()=>{ G.stations.garden++; rebuildAttractors(); }, remove:()=>{ G.stations.garden--; rebuildAttractors(); } },
   { key:"comfort", cat:"upgrades", name:"Comfort upgrade", desc:"+22% output from every cat. Max level 5.",
     base:45, mul:2.2, get:()=>G.comfort, max:5, buy:()=>{ G.comfort++; } },
   { key:"charter", cat:"upgrades", name:"Cove Charter", desc:"A one-time expansion for a well-loved cove — room for up to 24 cats.",
@@ -2870,9 +2903,13 @@ function nextAction() {
   if (checkinAvailable())
     return { t: `A daily welcome is waiting in Today.`, go: "Open Today", act: () => togglePanel("today") };
 
-  // first look at the shore — the dock's there, you've never opened it
-  if (G.projects && G.projects.dock && G.projects.dock.stage === "open" && !G.tips.includes("dock_seen"))
-    return { t: `Midknight keeps an eye on the old dock. Tap it to see what it'd take.`, go: "The dock", act: () => openProjectSheet("dock") };
+  // a restoration you haven't looked at yet — one gentle breadcrumb per project
+  for (const def of PROJECTS) {
+    if (projectStage(def.id) !== "open" || !def.hint || G.tips.includes("proj_seen_" + def.id)) continue;
+    const n = projectNeed(def.id);
+    if (n.shells > 0 || n.driftwood > 0)
+      return { t: def.hint, go: "Show me", act: () => openProjectSheet(def.id) };
+  }
 
   // a trip is available and the cove can spare a cat
   if (advReady() && cats.filter(c => !c.mascot).length >= 2 && !G.tips.includes("explore_seen"))
@@ -4815,6 +4852,26 @@ function drawDecor(g, d) {
 function drawProjectMarker(g, pid) {
   const st = projectStage(pid), prog = projectProgress(pid);
   const t = performance.now() / 1000;
+  const def = PROJECT_BY_ID[pid];
+  if (def && def.marker === "brambles") drawBrambleScene(g, st, prog, t);
+  else drawDockScene(g, st, prog, t);
+  // hand-lettered sign
+  g.save(); g.translate(-30, -18); g.rotate(-0.08);
+  g.fillStyle = "#efe6cf"; roundRect(g, -20, -12, 40, 17, 2); g.fill();
+  g.strokeStyle = "rgba(74,53,36,0.4)"; g.lineWidth = 1; roundRect(g, -20, -12, 40, 17, 2); g.stroke();
+  g.fillStyle = "#7a5c38"; g.fillRect(-1.4, 4, 2.8, 12);
+  g.fillStyle = "#5b4634"; g.font = "700 7px 'Fraunces', Georgia, serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(st === "building" ? `${Math.round(prog * 100)}%` : "needs work", 0, -3.5);
+  g.textAlign = "left"; g.textBaseline = "alphabetic";
+  g.restore();
+  // a soft "tap me" pulse when it's still waiting on you
+  if (st === "open") {
+    const a = 0.16 + Math.sin(t * 2.4) * 0.1;
+    g.strokeStyle = `rgba(232,180,90,${a})`; g.lineWidth = 2;
+    g.beginPath(); g.ellipse(0, 0, 44 + Math.sin(t * 2.4) * 3, 26, 0, 0, 7); g.stroke();
+  }
+}
+function drawDockScene(g, st, prog, t) {
   // little pond
   g.fillStyle = "rgba(30,26,20,0.10)";
   g.beginPath(); g.ellipse(6, 12, 52, 17, 0, 0, 7); g.fill();
@@ -4825,7 +4882,6 @@ function drawProjectMarker(g, pid) {
   g.strokeStyle = "rgba(255,255,255,0.18)"; g.lineWidth = 1.1;
   for (let k = 0; k < 3; k++) { const ry = 4 + k * 5 + Math.sin(t * 0.7 + k) * 1.1;
     g.beginPath(); g.moveTo(-32, ry); g.bezierCurveTo(-8, ry - 2, 16, ry + 2, 42, ry); g.stroke(); }
-  // dock — planks going in as it builds; broken/gappy when just "open"
   const planks = st === "building" ? 3 + Math.round(prog * 4) : 2;
   g.fillStyle = "#9c7a4e";
   g.beginPath(); g.moveTo(-44, 4); g.lineTo(-44 + planks * 9, 4); g.lineTo(-44 + planks * 9, 12); g.lineTo(-44, 12); g.closePath(); g.fill();
@@ -4841,20 +4897,42 @@ function drawProjectMarker(g, pid) {
     for (const px of [-38, -4, 30]) { g.beginPath(); g.moveTo(px, 12); g.lineTo(px + 3, -20 - (px === -4 ? 6 : 0)); g.stroke(); }
     g.beginPath(); g.moveTo(-38, -12); g.lineTo(33, -18); g.stroke();
   }
-  // hand-lettered sign
-  g.save(); g.translate(-30, -18); g.rotate(-0.08);
-  g.fillStyle = "#efe6cf"; roundRect(g, -20, -12, 40, 17, 2); g.fill();
-  g.strokeStyle = "rgba(74,53,36,0.4)"; g.lineWidth = 1; roundRect(g, -20, -12, 40, 17, 2); g.stroke();
-  g.fillStyle = "#7a5c38"; g.fillRect(-1.4, 4, 2.8, 12);
-  g.fillStyle = "#5b4634"; g.font = "700 7px 'Fraunces', Georgia, serif"; g.textAlign = "center"; g.textBaseline = "middle";
-  g.fillText(st === "building" ? `${Math.round(prog * 100)}%` : "needs work", 0, -3.5);
-  g.textAlign = "left"; g.textBaseline = "alphabetic";
-  g.restore();
-  // a soft "tap me" pulse when it's still waiting on you
-  if (st === "open") {
-    const a = 0.16 + Math.sin(t * 2.4) * 0.1;
-    g.strokeStyle = `rgba(232,180,90,${a})`; g.lineWidth = 2;
-    g.beginPath(); g.ellipse(0, 0, 44 + Math.sin(t * 2.4) * 3, 26, 0, 0, 7); g.stroke();
+}
+// the woodland path: a bramble tangle across a dirt path, thinning as it clears
+function drawBrambleScene(g, st, prog, t) {
+  const clear = st === "building" ? prog : st === "done" ? 1 : 0;
+  g.fillStyle = "rgba(30,26,20,0.10)";
+  g.beginPath(); g.ellipse(2, 14, 46, 13, 0, 0, 7); g.fill();
+  // scrap of dirt path heading up into the trees
+  g.fillStyle = "#c6b087";
+  g.beginPath(); g.moveTo(-19, 15); g.lineTo(19, 15); g.lineTo(9, -18); g.lineTo(-5, -18); g.closePath(); g.fill();
+  g.fillStyle = "rgba(120,95,60,0.16)";
+  for (let i = 0; i < 4; i++) { const yy = 10 - i * 8; g.beginPath(); g.ellipse(2, yy, 8 - i * 1.4, 2.1, 0, 0, 7); g.fill(); }
+  // the tangle
+  const density = 1 - clear * 0.82;
+  const arcs = Math.max(2, Math.round(7 * density));
+  g.lineCap = "round";
+  for (let i = 0; i < arcs; i++) {
+    const rr = mulberry32(700 + i * 91);
+    const y0 = 12 - i * (26 / arcs), sway = Math.sin(t * 0.55 + i) * 1.5;
+    g.strokeStyle = i % 3 === 0 ? "#5b6a41" : "#463c2d";
+    g.lineWidth = 2.1;
+    g.beginPath();
+    g.moveTo(-33 + rr() * 6, y0);
+    g.bezierCurveTo(-12, y0 - 11 + sway, 12, y0 + 8 - sway, 33 - rr() * 6, y0 - 2);
+    g.stroke();
+    g.lineWidth = 1;
+    for (let k = -3; k <= 3; k += 2) { const px = k * 8, py = y0 + Math.sin(k + i) * 3; g.beginPath(); g.moveTo(px, py); g.lineTo(px + 2, py - 4); g.stroke(); }
+  }
+  for (let i = 0; i < Math.round(6 * density); i++) {
+    const rr = mulberry32(1200 + i * 57);
+    g.fillStyle = i % 2 ? "#7c9b5e" : "#7a2f3a";
+    g.beginPath(); g.arc(-26 + rr() * 52, -15 + rr() * 28, i % 2 ? 2.3 : 1.7, 0, 7); g.fill();
+  }
+  // cut stems raked to the side once the clearing's underway
+  if (clear > 0.12) {
+    g.strokeStyle = "#8a6a44"; g.lineWidth = 1.6;
+    for (const sx of [-13, -3, 7]) { g.beginPath(); g.moveTo(sx, 14); g.lineTo(sx, 14 - 6 * clear); g.stroke(); }
   }
 }
 function drawStation(g, kind, seed) {
@@ -6764,7 +6842,7 @@ function renderProjectCard() {
     el.innerHTML = `<div class="adv-top"><span class="adv-emoji">🛠️</span>
       <div><div class="adv-title">${esc(def.label)}</div>
       <div class="adv-sub">${ready ? "ready to begin" : `◈ ${paid.shells}/${def.cost.shells} · 🪵 ${paid.driftwood}/${def.cost.driftwood}`}</div></div></div>
-      <button class="btn primary" id="pj-card-btn">${ready ? "Begin the repair" : "Open the dock"}</button>`;
+      <button class="btn primary" id="pj-card-btn">${ready ? "Begin the work" : "See what it needs"}</button>`;
     document.getElementById("pj-card-btn").onclick = () => { closeAllPanels(); openProjectSheet(def.id); };
   }
 }
