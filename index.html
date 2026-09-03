@@ -62,6 +62,9 @@
     font-weight:600;font-variant-numeric:tabular-nums;
   }
   .pill .dot{width:1.15rem;height:1.15rem;border-radius:50%;background:var(--shell);display:grid;place-items:center;font-size:.7rem;color:#5b4327;}
+  #shellPill.pop{animation:shellPop .42s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes shellPop{0%{transform:scale(1);}30%{transform:scale(1.16);}60%{transform:scale(.97);}100%{transform:scale(1);}}
+  @media (prefers-reduced-motion:reduce){#shellPill.pop{animation:none;}}
   .pill .dotp{background:#8fb7d6;color:#274a63;}
   .pill.drift .dot{background:#d9c9a6;font-size:.72rem;}
   .pill.drift[hidden]{display:none;}
@@ -578,7 +581,7 @@
 <div id="app">
   <div id="hud">
     <div class="hud-group">
-      <div class="pill" data-tip="Shells — your everyday currency. Cats leave them; spend them coaxing cats and buying comforts."><span class="dot">◈</span><span id="shells">0</span></div>
+      <div class="pill" id="shellPill" data-tip="Shells — your everyday currency. Cats leave them; spend them coaxing cats and buying comforts."><span class="dot">◈</span><span id="shells">0</span></div>
       <div class="pill pearl" data-tip="Pearls — rare currency from the Catdex and daily goals. Saved for special things."><span class="dot dotp">✦</span><span id="pearls">0</span></div>
       <div class="pill drift" id="driftPill" hidden data-tip="Driftwood — washes up on the shore and comes home from trips. A building material for restoring the cove."><span class="dot">🪵</span><span id="driftwood">0</span></div>
       <div class="pill small" id="catPill" data-tip="Cats here / room you have. Buy comforts or repair the dock to make more room."><span id="catcount">0</span>/<span id="catcap">0</span> cats</div>
@@ -2258,9 +2261,9 @@ function collectToken(t, auto) {
   bumpGoal("shells", t.value);
   bumpGoal("collect", 1);
   syncHud();
-  spawnParticles(t.x, t.y, "spark", auto ? 4 : 8);
+  spawnParticles(t.x, t.y, "spark", auto ? 4 : 6);
   floatText(t.x, t.y - 10, "+" + t.value, "#e8b45a");
-  if (!auto) { sfx("collect"); fireTip("first_collect"); }
+  if (!auto) { flyShell(t.x, t.y); fireTip("first_collect"); }   // the shell arcs to the counter and chimes on arrival
 }
 
 /* ---------- particles & floaters ---------- */
@@ -2278,6 +2281,32 @@ function spawnParticles(x, y, kind, n) {
   }
 }
 function floatText(x, y, text, color) { floaters.push({ x, y, text, color, life: 0, ttl: 1.1 }); }
+
+/* ---------- collection juice: a collected shell arcs up to the HUD counter ---------- */
+const _reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+let flyFX = [];
+let _shellAnchor = { x: 46, y: 30 };
+let _collectStreak = 0, _lastCollectAt = 0;
+function refreshShellAnchor() {
+  try {
+    const p = document.getElementById("shellPill").getBoundingClientRect();
+    const cr = canvas.getBoundingClientRect();
+    if (p.width) _shellAnchor = { x: p.left - cr.left + p.width * 0.5, y: p.top - cr.top + p.height * 0.5 };
+  } catch (e) {}
+}
+function pulseShellPill() {
+  const el = document.getElementById("shellPill");
+  if (!el) return;
+  el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
+}
+function flyShell(x, y) {
+  const now = performance.now();
+  _collectStreak = (now - _lastCollectAt < 1600) ? Math.min(_collectStreak + 1, 12) : 0;
+  _lastCollectAt = now;
+  if (_reduceMotion) { pulseShellPill(); sfx("collect", null, { streak: _collectStreak }); return; }
+  flyFX.push({ sx: x, sy: y, x, y, t: 0, dur: 0.44, streak: _collectStreak,
+    cx: (x + _shellAnchor.x) / 2 + rand(-28, 28), cy: Math.min(y, _shellAnchor.y) - rand(28, 66) });
+}
 function updateFX(dt) {
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]; p.life += dt;
@@ -2289,6 +2318,14 @@ function updateFX(dt) {
   for (let i = floaters.length - 1; i >= 0; i--) {
     const f = floaters[i]; f.life += dt; f.y -= 26 * dt;
     if (f.life > f.ttl) floaters.splice(i, 1);
+  }
+  for (let i = flyFX.length - 1; i >= 0; i--) {
+    const s = flyFX[i]; s.t += dt;
+    const u = Math.min(1, s.t / s.dur), e = u * u * (3 - 2 * u);   // ease along a quadratic bezier to the counter
+    const k = 1 - e;
+    s.x = k * k * s.sx + 2 * k * e * s.cx + e * e * _shellAnchor.x;
+    s.y = k * k * s.sy + 2 * k * e * s.cy + e * e * _shellAnchor.y;
+    if (u >= 1) { flyFX.splice(i, 1); pulseShellPill(); sfx("collect", null, { streak: s.streak }); }
   }
 }
 
@@ -4352,9 +4389,12 @@ function purchaseChime() {
   lo.src.start(lo.when);
 }
 
-function sfx(kind, c) {
+function sfx(kind, c, opt) {
   if (kind === "pet") { catMeow("pet", c); }
-  else if (kind === "collect") { tone(940, 0.16, "sine", 0.07); tone(1400, 0.12, "sine", 0.035, 0.05); }
+  else if (kind === "collect") {
+    const up = Math.min((opt && opt.streak) || 0, 10) * 46;   // pitch climbs on a quick run of pickups
+    tone(940 + up, 0.16, "sine", 0.07); tone(1400 + up, 0.12, "sine", 0.035, 0.05);
+  }
   else if (kind === "buy") { purchaseChime(); }
   else if (kind === "coax") { catMeow("coax"); }
   else if (kind === "reveal") { [784,1046,1318].forEach((f,i)=>tone(f,0.22,"triangle",0.05,i*0.06)); catMeow("coax"); }
@@ -6435,6 +6475,18 @@ function drawFX(g) {
     g.textAlign = "center";
     g.fillText(f.text, f.x, f.y);
   }
+  // collected shells arcing to the counter
+  for (const s of flyFX) {
+    const u = Math.min(1, s.t / s.dur);
+    g.globalAlpha = 0.5 + 0.5 * (1 - u);
+    const rr = 6.5 * (1 - u * 0.45);
+    g.fillStyle = "rgba(232,180,90,0.32)";
+    g.beginPath(); g.arc(s.x, s.y, rr + 3.5, 0, 7); g.fill();
+    g.fillStyle = "#eab758";
+    g.beginPath(); g.arc(s.x, s.y, rr, 0, 7); g.fill();
+    g.fillStyle = "rgba(255,255,255,0.7)";
+    g.beginPath(); g.arc(s.x - rr * 0.3, s.y - rr * 0.3, rr * 0.34, 0, 7); g.fill();
+  }
   g.globalAlpha = 1;
   g.textAlign = "left";
 }
@@ -7701,6 +7753,7 @@ function resize() {
   const bw = Math.round(W * DPR), bh = Math.round(H * DPR);
   if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  refreshShellAnchor();
 }
 // wired to every way the viewport can change (iOS rotate, address bar, split view)
 let _lastW = 0, _lastH = 0, _relayoutT = 0;
@@ -7943,6 +7996,7 @@ checkDexMilestones();
 setTimeout(tickProjects, 3800);
 syncHud();
 requestAnimationFrame(frame);
+setTimeout(refreshShellAnchor, 400);   // pin the HUD-counter target once fonts/layout settle
 
 // resume a rainy-day session that was running when the tab closed
 if (G.rest && G.rest.on && (!G.rest.endsAt || Date.now() < G.rest.endsAt)) {
