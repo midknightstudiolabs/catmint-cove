@@ -1200,19 +1200,19 @@ function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // 
    settles to a tighter baseline so shells stay meaningful — a worthwhile
    purchase should always be a session or two away, never 100x over-funded.
    Applies everywhere (active drops, offline, rest) via ratePerSec(). */
-const WELCOME_SEC = 2400;   // ~40 min of active playtime
+const WELCOME_SEC = 2700;   // ~45 min of active playtime
 function welcomeBoost() {
   const t = G.allTimeSec || 0;
-  return t >= WELCOME_SEC ? 0 : 0.7 * (1 - t / WELCOME_SEC);   // +0.7 → 0 over the window
+  return t >= WELCOME_SEC ? 0 : 0.42 * (1 - t / WELCOME_SEC);   // +0.42 → 0 over the window
 }
 function boostActive() { return !!(G.boostUntil && Date.now() < G.boostUntil); }
 function earnMult() {
-  let m = 0.5 + welcomeBoost();       // baseline 0.5, up to ~1.2 for a fresh cove
+  let m = 0.46 + welcomeBoost();      // baseline 0.46, up to ~0.88 for a fresh cove — active-idle pace, not a firehose
   if (boostActive()) m *= 2;          // a purchased "fresh catnip" boost
   return m;
 }
-const TOKEN_CAP = 45;                 // a dropped token is a nice pickup, never a jackpot
-const ACC_CEIL  = 160;                // a cat can't hoard more than ~3-4 tokens' worth undropped
+const TOKEN_CAP = 40;                 // a dropped token is a nice pickup, never a jackpot
+const ACC_CEIL  = 150;                // a cat can't hoard more than ~3-4 tokens' worth undropped
 
 /* ---------- cat entity ---------- */
 const KITTEN_MS = 20 * 3600 * 1000;   // a cat is a kitten for its first ~20h, then an adult forever
@@ -1799,12 +1799,12 @@ function updateCat(c, dt) {
   //  jackpot; a backed-up cat just drops a bit more often to catch up)
   c.acc = Math.min(ACC_CEIL, c.acc + c.ratePerSec() * dt);
   c.dropTimer += dt;
-  if (c.dropInterval === undefined) c.dropInterval = rand(90, 150);
+  if (c.dropInterval === undefined) c.dropInterval = rand(105, 165);
   if (c.acc >= 3 && c.dropTimer > c.dropInterval) {
     const v = Math.min(TOKEN_CAP, Math.max(1, Math.round(c.acc)));
     c.acc -= v;
     c.dropTimer = 0;
-    c.dropInterval = c.acc > TOKEN_CAP * 1.5 ? rand(22, 40) : rand(90, 150);
+    c.dropInterval = c.acc > TOKEN_CAP * 1.5 ? rand(26, 46) : rand(105, 165);
     dropToken(c.x + rand(-10, 10), c.y - 6, v, tokenFlair(c));
   }
 
