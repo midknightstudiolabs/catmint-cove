@@ -811,7 +811,7 @@ const stage = document.getElementById("stage");
 // always fills the height; on a narrow screen it overflows the width and you pan.
 const W = 1150, H = 780;
 let displayScale = 1;   // css px per world unit
-let _worldOffX = 0, _overX = 0;   // wide screen: centre the cove, extend sky/ground past both sides
+let _worldOffX = 0, _worldOffY = 0, _overX = 0;   // FILL mode centres/crops the cove to cover the viewport; PAN mode leaves both 0
 
 /* ---------- trait model ---------- */
 // likes: which attractor the cat gravitates to. 'cats' = other cats, 'roam' = wander.
@@ -2486,7 +2486,7 @@ function refreshShellAnchor() {
     const cr = canvas.getBoundingClientRect();
     if (p.width) _shellAnchor = {
       x: (p.left - cr.left + p.width * 0.5) / displayScale - _worldOffX,
-      y: (p.top - cr.top + p.height * 0.5) / displayScale,
+      y: (p.top - cr.top + p.height * 0.5) / displayScale - _worldOffY,
     };
   } catch (e) {}
 }
@@ -2548,7 +2548,7 @@ function enterFocus(c) {
   const r = canvas.getBoundingClientRect();
   _frozenScroll = stage.scrollLeft; _frozenLeft = r.left; _frozenTop = r.top;
   _preCamX = _camX = (window.innerWidth  / 2 - r.left) / displayScale - _worldOffX;
-  _preCamY = _camY = (window.innerHeight / 2 - r.top) / displayScale;
+  _preCamY = _camY = (window.innerHeight / 2 - r.top) / displayScale - _worldOffY;
   _focus = c;
   stage.style.touchAction = "none";
   document.getElementById("app").classList.add("focusing");
@@ -2593,7 +2593,8 @@ function updateCamera(dt) {
 }
 function applyCamera() {
   if (_focusT <= 0) {
-    ctx.setTransform(DPR * displayScale, 0, 0, DPR * displayScale, _worldOffX * DPR * displayScale, 0);
+    ctx.setTransform(DPR * displayScale, 0, 0, DPR * displayScale,
+      _worldOffX * DPR * displayScale, _worldOffY * DPR * displayScale);
   } else {
     ctx.setTransform(DPR * _camScale, 0, 0, DPR * _camScale,
       (_camTx - _frozenLeft) * DPR, (_camTy - _frozenTop) * DPR);
@@ -2602,7 +2603,7 @@ function applyCamera() {
 function screenToWorld(cx, cy) {
   if (_focusT > 0) return { x: (cx - _camTx) / _camScale, y: (cy - _camTy) / _camScale };
   const r = canvas.getBoundingClientRect();
-  return { x: (cx - r.left) / displayScale - _worldOffX, y: (cy - r.top) / displayScale };
+  return { x: (cx - r.left) / displayScale - _worldOffX, y: (cy - r.top) / displayScale - _worldOffY };
 }
 function catAt(x, y, rad) {
   let bc = null, bd = (rad || 40) * (rad || 40);
@@ -2992,7 +2993,7 @@ function positionCard(c) {
   const cardW = cc.el.offsetWidth || 260, cardH = cc.el.offsetHeight || 180;
   const gap = 56;   // clearance so the heart burst + "+mood" over the cat's head stays visible
   const sx = r.left + (c.x + _worldOffX) * displayScale;   // world → screen (canvas rect tracks the pan)
-  const sy = r.top + c.y * displayScale;
+  const sy = r.top + (c.y + _worldOffY) * displayScale;
   let left = clamp(sx - cardW / 2, 8, window.innerWidth - cardW - 8);
   let top = sy - gap - cardH;
   if (top < 50) top = sy + gap;                   // not enough sky above → drop below
@@ -5139,9 +5140,11 @@ function renderRest(dt) {
   _rb.classList.toggle("ambient", restIdleT > 4 && restDim <= 0.35);
 
   const g = ctx;
-  g.setTransform(DPR * displayScale, 0, 0, DPR * displayScale, _worldOffX * DPR * displayScale, 0);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  g.setTransform(DPR * displayScale, 0, 0, DPR * displayScale,
+    _worldOffX * DPR * displayScale, _worldOffY * DPR * displayScale);
   g.save();
-  g.clearRect(-_worldOffX - _overX - 8, -8, W + (_worldOffX + _overX) * 2 + 16, H + 16);
   g.translate(Math.sin(restDrift) * 3, Math.cos(restDrift * 0.7) * 2);   // slow burn-in drift
 
   const R = restGrads();
@@ -8426,19 +8429,33 @@ function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   const aspect = W / H;
   const fvw = vw || 390, fvh = vh || 780;
-  // the canvas fills the viewport height, and at least its width. narrow screen →
-  // it overflows the width and you pan. wide screen → the cove is centred and the
-  // sky/ground extend past both sides so there's no letterbox.
-  displayScale = fvh / H;                      // cats a consistent size everywhere
-  const cssH = fvh, cssW = Math.max(fvw, fvh * aspect);
-  const viewW = cssW / displayScale;           // world units visible horizontally
-  _worldOffX = Math.max(0, (viewW - W) / 2);
-  _overX = _worldOffX + 6;
+  let cssW;
+  if (fvw / fvh < aspect * 0.78) {
+    // PAN: viewport clearly taller than the cove (portrait phone / tablet). Lock to
+    // height, overflow the width, drag to look around.
+    displayScale = fvh / H;
+    _worldOffX = 0; _worldOffY = 0;
+    cssW = fvh * aspect;
+  } else {
+    // FILL: desktop / tablet-landscape. Scale the cove to cover the whole viewport,
+    // centring the crop — never shave more than ~13% off the top+bottom so every
+    // cat stays in frame (they roam down to catFloor ≈ H-66); any leftover width
+    // on an ultrawide becomes sky/ground rather than a deeper crop.
+    displayScale = Math.max(fvw / W, fvh / H);
+    const minVisibleH = H * 0.87;
+    if (fvh / displayScale < minVisibleH) displayScale = fvh / minVisibleH;
+    _worldOffX = (fvw / displayScale - W) / 2;   // < 0 crops the sides, > 0 = margin
+    _worldOffY = (fvh / displayScale - H) / 2;   // <= 0 always (cover)
+    cssW = fvw;
+  }
+  const cssH = fvh;
+  _overX = Math.max(0, _worldOffX) + 6;
   canvas.style.width = Math.round(cssW) + "px";
   canvas.style.height = Math.round(cssH) + "px";
   const bw = Math.round(cssW * DPR), bh = Math.round(cssH * DPR);
   if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
-  ctx.setTransform(DPR * displayScale, 0, 0, DPR * displayScale, _worldOffX * DPR * displayScale, 0);
+  ctx.setTransform(DPR * displayScale, 0, 0, DPR * displayScale,
+    _worldOffX * DPR * displayScale, _worldOffY * DPR * displayScale);
   stage.scrollLeft = clamp(stage.scrollLeft, 0, Math.max(0, cssW - fvw));
   refreshShellAnchor();
 }
