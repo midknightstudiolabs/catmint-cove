@@ -579,6 +579,22 @@
     #hud .btn .ico{font-size:1rem;}
     #hud .pill.pearl.empty{display:none;}   /* on phones, the pearl pill shows only once you have some */
   }
+
+  /* portrait-locked. a phone held sideways gets a gentle nudge; tablets and
+     desktop in landscape are fine, so this only triggers on a short viewport. */
+  #rotate{
+    position:fixed;inset:0;z-index:2000;display:none;
+    flex-direction:column;align-items:center;justify-content:center;
+    gap:1.1rem;padding:2rem;text-align:center;
+    background:var(--panel);color:var(--ink-soft);
+    font-family:"Hanken Grotesk",-apple-system,sans-serif;
+  }
+  #rotate .glyph{font-size:2.8rem;line-height:1;animation:rotNudge 2.6s ease-in-out infinite;}
+  #rotate p{margin:0;max-width:15rem;font-size:.98rem;line-height:1.55;}
+  #rotate b{font-family:"Fraunces",Georgia,serif;font-weight:600;color:var(--ink);}
+  @keyframes rotNudge{0%,50%{transform:rotate(0)}70%,100%{transform:rotate(-90deg)}}
+  @media (prefers-reduced-motion:reduce){#rotate .glyph{animation:none;}}
+  @media (orientation:landscape) and (max-height:500px){ #rotate{display:flex;} }
 </style>
 
 <div id="app">
@@ -730,6 +746,11 @@
       <button class="btn" id="photoClose">Back to the cove</button>
     </div>
   </div>
+</div>
+
+<div id="rotate" aria-hidden="true">
+  <div class="glyph">📱</div>
+  <p><b>Catmint Cove</b> is played upright.<br>Turn your phone back and the cove's right there. 🐾</p>
 </div>
 
 <script>
@@ -8317,6 +8338,9 @@ window.addEventListener("resize", onViewportChange);
 window.addEventListener("orientationchange", onViewportChange);
 if (window.visualViewport) window.visualViewport.addEventListener("resize", onViewportChange);
 try { new ResizeObserver(onViewportChange).observe(document.getElementById("app")); } catch (e) {}
+// portrait-locked — best effort where the platform allows it (installed PWA /
+// Android). iOS Safari ignores this; the #rotate overlay covers that case.
+try { screen.orientation.lock("portrait").catch(() => {}); } catch (e) {}
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) { save(); Ads.onHide(); }
@@ -8403,7 +8427,7 @@ function maybePanHint() {
   if (!G || G.tips.includes("pan_seen") || restMode || _cold) return;
   if (stage.scrollWidth > stage.clientWidth + 8 && G.tutorialDone) {
     G.tips.push("pan_seen"); save();
-    toast("The cove's wider than your screen — drag to look around, or turn your phone sideways to see it all. 🐾", 7);
+    toast("The cove's wider than your screen — drag to look around. 🐾", 6);
   }
 }
 setTimeout(maybePanHint, 3500);
