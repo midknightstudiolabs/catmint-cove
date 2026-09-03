@@ -1134,7 +1134,7 @@ const PROJECTS = [{
   id: "dock", label: "The old dock", station: "fishing",
   home: { x: 0.18, y: 0.60 }, marker: "dock",
   blurb: "Half-rotted and roped off at the shoreline. Fix it and cats can fish here — and there's room for a few more of them.",
-  cost: { shells: 140, driftwood: 4 },
+  cost: { shells: 160, driftwood: 4 },
   buildMin: 270,                       // real minutes at a 2-cat cove; scales down with more cats
   unlock: "a fishing spot + room for more cats",
   hint: "Midknight keeps an eye on the old dock. Tap it to see what it'd take.",
@@ -1145,7 +1145,7 @@ const PROJECTS = [{
   requires: "dock",                    // opens once the dock is done
   home: { x: 0.72, y: 0.52 }, marker: "brambles",
   blurb: "Brambles have swallowed the path into the trees. Clear it and the wild catmint at the far end is yours — cats roll in it and come back buzzing.",
-  cost: { shells: 300, driftwood: 8 },
+  cost: { shells: 1400, driftwood: 10 },
   buildMin: 420,
   unlock: "a catmint garden + more room in the cove",
   hint: "The path into the trees is walkable now. Tap the brambles to see what clearing them takes.",
@@ -1656,11 +1656,13 @@ function checkDexMilestones() {
 }
 
 /* ---------- daily goals + streak ---------- */
+// goal shell rewards scale with the cove so they stay worth claiming as income grows
+function goalShells(mult) { return Math.round((30 + residentCount() * 9) * (mult || 1)); }
 const GOAL_POOL = [
-  { id:"pet",     text:n=>`Pet cats ${n} times`,       gen:()=>rpick([5,8,10]),  reward:{shells:18} },
-  { id:"shells",  text:n=>`Gather ${n} shells`,        gen:()=>rpick([40,60,90]),reward:{shells:15} },
-  { id:"coax",    text:()=>`Coax a new cat`,           gen:()=>1,               reward:{shells:20} },
-  { id:"collect", text:n=>`Collect ${n} drops`,        gen:()=>rpick([12,18,25]),reward:{shells:14} },
+  { id:"pet",     text:n=>`Pet cats ${n} times`,       gen:()=>rpick([5,8,10]),  reward:()=>({shells:goalShells(1)}) },
+  { id:"shells",  text:n=>`Gather ${n} shells`,        gen:()=>rpick([40,60,90]),reward:()=>({shells:goalShells(0.9)}) },
+  { id:"coax",    text:()=>`Coax a new cat`,           gen:()=>1,               reward:()=>({shells:goalShells(1.3)}) },
+  { id:"collect", text:n=>`Collect ${n} drops`,        gen:()=>rpick([12,18,25]),reward:()=>({shells:goalShells(0.9)}) },
   { id:"photo",   text:()=>`Take a photo of the cove`, gen:()=>1,               reward:{pearls:1} },
   { id:"discover",text:()=>`Discover a new coat`,      gen:()=>1,               reward:{pearls:2} },
 ];
@@ -1672,7 +1674,8 @@ function rollDailyGoals() {
   if (G.streakDay !== d - 1 && G.streakDay !== d) G.streak = 0;
   G.goalDay = d;
   const pool = [...GOAL_POOL].sort(() => Math.random() - 0.5).slice(0, 3);
-  G.goals = pool.map(g => ({ id:g.id, target:g.gen(), prog:0, done:false, claimed:false, reward:g.reward }));
+  G.goals = pool.map(g => ({ id:g.id, target:g.gen(), prog:0, done:false, claimed:false,
+    reward: (typeof g.reward === "function" ? g.reward() : g.reward) }));
 }
 function bumpGoal(id, amount) {
   if (!G.goals) return;
@@ -2936,8 +2939,12 @@ function renderShop() {
   }
 }
 
-/* ---------- coax ---------- */
-function coaxPrice() { return Math.round(10 * Math.pow(1.45, G.coax)); }
+/* ---------- coax ----------
+   Price scales with how full the cove already is, not with lifetime coaxes —
+   so rehoming a cat genuinely brings the next coax back down, and letting cats
+   wander in for free still nudges the price up (a fuller cove is harder to add
+   to). G.coax stays as a lifetime stat. */
+function coaxPrice() { return Math.round(12 * Math.pow(1.38, residentCount())); }
 function doCoax(free) {
   if (!free) { G.shells -= coaxPrice(); }
   G.coax++;
