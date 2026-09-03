@@ -6138,10 +6138,12 @@ function scheduleNextLabubu() {
   G.labubu.nextAt = Date.now() + rand(3, 7) * 3600e3;
 }
 function pickLabubuGift() {
+  // driftwood is the rare surprise — one piece, ~20%, and only while a project needs it
+  if (anyProjectOpen() && Math.random() < 0.2) return { driftwood: 1 };
+  // everything else is just a random handful of shells — mostly small, now and then a good haul
   const r = Math.random();
-  if (anyProjectOpen() && r < 0.62) return { driftwood: 1 + (Math.random() < 0.4 ? 1 : 0) };
-  if (r < 0.9) return { shells: Math.round(rand(12, 26)) };
-  return { shells: Math.round(rand(28, 44)) };
+  const shells = r < 0.68 ? rand(8, 22) : r < 0.93 ? rand(22, 40) : rand(40, 64);
+  return { shells: Math.round(shells) };
 }
 function labubuArrive() {
   if (labubuHere() || residentCount() < 1) return;
