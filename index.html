@@ -25,6 +25,7 @@
     --ground-2:#cfc8b0;
     --ink:#241f17;
     --ink-soft:#5b5343;
+    --ink-faint:#938a76;
     --panel:#f7f5ec;
     --panel-line:#ddd7c2;
     --accent:#356b4c;
@@ -487,16 +488,21 @@
   #app.resting #hint,#app.resting #toast{opacity:0;pointer-events:none;}
   @media(max-width:600px){ #hint{bottom:calc(3.95rem + env(safe-area-inset-bottom));font-size:.8rem;} }
   button.btn.primary.full{background:#c9b98f;color:#4a4230;}
-  /* ---- cold open: the hint pill carries Midknight's line + the cue on one band ---- */
-  #hint.cold{flex-direction:column;align-items:flex-start;gap:.15rem;text-align:left;
-    padding:.55rem .7rem;max-width:min(94vw,420px);
+  /* ---- cold open: a small speech card — Midknight's line + the cue ---- */
+  #hint.cold{flex-direction:column;align-items:stretch;gap:.3rem;text-align:left;
+    width:min(90vw,360px);max-width:none;padding:.7rem .85rem .62rem;border-radius:16px;
     bottom:calc(4rem + env(safe-area-inset-bottom));}
   @media(max-width:600px){ #hint.cold{bottom:calc(4.6rem + env(safe-area-inset-bottom));} }
-  #app.cold-open #toast{bottom:calc(8.4rem + env(safe-area-inset-bottom));}   /* the 2-line cold band is taller — keep toasts clear */
+  #app.cold-open #toast{bottom:calc(8.4rem + env(safe-area-inset-bottom));}   /* the taller card — keep toasts clear */
   #hint.cold #hintDot{display:none;}
-  #hint .cold-say{display:block;color:var(--ink-soft);font-style:italic;font-size:.82rem;line-height:1.32;}
-  #hint .cold-cue{display:block;font-weight:700;line-height:1.3;}
-  #hint.cold #hintGo{align-self:flex-end;margin-top:.15rem;}
+  #hint .cold-who{display:block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.6rem;
+    letter-spacing:.15em;text-transform:uppercase;color:var(--apricot);}
+  #hint .cold-say{display:block;color:var(--ink-soft);font-size:.82rem;line-height:1.4;margin-top:.12rem;}
+  #hint .cold-cue{display:block;font-weight:700;line-height:1.34;margin-top:.28rem;}
+  #hint.cold #hintGo{align-self:flex-start;margin-top:.2rem;}
+  #hint.cold #hintX{position:absolute;top:.42rem;right:.5rem;width:auto;height:auto;
+    padding:.12rem .38rem;border-radius:7px;background:transparent;color:var(--ink-faint);
+    font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
   .btn.cold-cue-pulse{animation:coldPulse 1.35s ease-in-out infinite;}
   @keyframes coldPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,178,75,0);}50%{box-shadow:0 0 0 6px rgba(224,178,75,.3);}}
   @media (prefers-reduced-motion:reduce){ .btn.cold-cue-pulse{animation:none;outline:2px solid var(--accent-bright);} }
@@ -2279,6 +2285,7 @@ function starGlyphs(n) {
 }
 let cardCat = null, cardTimer = 0;
 function showCatCard(c) {
+  if (_cold) return;                    // the cold open speaks for the cats itself — no card over Midknight's
   cardCat = c; cardTimer = 6;
   cc.name.textContent = c.name;
   const acc = (c.worn && c.worn.length) ? "  ·  " + wornList(c).map(k => ACC_LABEL[k] || k).join(", ") : "";
@@ -3251,11 +3258,12 @@ function coldTick() {
     _cold.shownKey = key;
     band.classList.add("cold");
     document.getElementById("hintText").innerHTML =
+      `<span class="cold-who">✦ Midknight</span>` +
       (step.say ? `<span class="cold-say">${esc(step.say)}</span>` : "") +
       `<span class="cold-cue">${esc(step.cue || "")}</span>`;
-    if (step.go) { go.hidden = false; go.textContent = "Open Shop"; go._act = step.go; }
+    if (step.go) { go.hidden = false; go.textContent = "Open the Shop"; go._act = step.go; }
     else go.hidden = true;
-    x.hidden = false; x.title = "Skip intro"; x._skip = true;
+    x.hidden = false; x.textContent = "Skip"; x.title = "Skip the intro"; x._skip = true;
     band.hidden = false;
   }
   return true;
@@ -3271,8 +3279,8 @@ function endColdOpen(skipped) {
   document.getElementById("shopBtn").classList.remove("cold-cue-pulse");
   const band = document.getElementById("hint");
   band.classList.remove("cold"); band.hidden = true;
-  document.getElementById("hintX")._skip = false;
-  document.getElementById("hintX").title = "Dismiss";
+  const xb = document.getElementById("hintX");
+  xb._skip = false; xb.title = "Dismiss"; xb.textContent = "✕";
   document.getElementById("hintText").textContent = "";
   G.tutorialDone = true;
   G.coldStep = COLD.length;
@@ -3397,6 +3405,7 @@ ads: ${!ADS_ENABLED ? "DISABLED (ad-free build)" : Ads.owned() ? "SUPPORTER (off
 let toastTimer = 0;
 const toastEl = document.getElementById("toast");
 function toast(msg, secs = 3.4) {
+  if (_cold) return;                    // the cold open owns the screen — nothing stacks on Midknight's card
   toastEl.textContent = msg;
   toastEl.classList.add("on");
   toastTimer = secs;
@@ -3412,6 +3421,8 @@ const TIPS = {
 function fireTip(key) {
   if (G.tips.includes(key)) return;
   G.tips.push(key);
+  // during the cold open Midknight's card is already saying this — don't stack a toast on it
+  if (_cold || !G.tutorialDone) return;
   if (TIPS[key]) toast(TIPS[key], 4.2);
 }
 
