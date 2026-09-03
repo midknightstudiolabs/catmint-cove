@@ -308,6 +308,12 @@
   .pick-dest b,.pick-cat b{display:block;font-size:.94rem;}
   .pick-dest i,.pick-cat i{display:block;font-style:normal;font-size:.78rem;color:var(--ink-soft);margin-top:.12rem;}
   .pick-dest em,.pick-cat em{display:block;font-style:normal;font-size:.74rem;color:var(--apricot);font-weight:600;margin-top:.18rem;}
+  .finds-card{margin-top:.9rem;padding-top:.7rem;border-top:1px solid var(--panel-line);}
+  .finds-h{font-size:.66rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:.45rem;}
+  .finds-row{display:flex;flex-wrap:wrap;gap:.4rem;}
+  .find-chip{display:inline-flex;align-items:center;gap:.2rem;background:#f3efe2;border:1px solid var(--panel-line);
+    border-radius:9px;padding:.26rem .44rem;font-size:1.02rem;line-height:1;cursor:pointer;}
+  .find-chip b{font-size:.68rem;font-weight:700;color:var(--ink-soft);}
   .moments-wrap{margin-top:1rem;padding-top:.6rem;border-top:1px solid var(--panel-line);}
   .moments-h{font-size:.66rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:.35rem;}
   .moment-row{display:flex;gap:.55rem;align-items:baseline;padding:.42rem 0;border-top:1px solid var(--panel-line);font-size:.84rem;}
@@ -639,6 +645,7 @@
     <div id="checkinCard"></div>
     <div id="projectCard"></div>
     <div id="advCard"></div>
+    <div id="findsCard"></div>
     <div class="streak"><span class="flame">🔥</span><b id="streakN">0</b><span class="muted" style="margin:0">day streak — finish all 3 goals to keep it</span></div>
     <div id="goalList"></div>
     <div class="moments-wrap">
@@ -3011,7 +3018,7 @@ function togglePanel(name) {
     if (name === "shop") renderShop();
     if (name === "dex") renderDex();
     if (name === "today") {
-      renderCheckinCard(); renderProjectCard(); renderAdventureCard(); renderGoals(); renderMoments();
+      renderCheckinCard(); renderProjectCard(); renderAdventureCard(); renderFindsCard(); renderGoals(); renderMoments();
       if (G.tips && !G.tips.includes("today_seen")) {
         G.tips.push("today_seen");
         toast("A little welcome each day, three small goals, your streak. Miss a day and nothing's lost.", 5);
@@ -3660,15 +3667,16 @@ function offlineArrivals(elapsed) {
     const dw = Math.min(5, Math.floor(awayH / 2) + (Math.random() < (awayH % 2) / 2 ? 1 : 0));
     if (dw > 0) { gainDriftwood(dw, true); setTimeout(() => toast(`${dw} piece${dw === 1 ? "" : "s"} of driftwood washed up while you were away. 🪵`, 5), 1900); }
   }
-  // Labubu may have swung by while you were out — one gift waiting, never a pile
+  // Labubu may have swung by while you were out — one drop waiting, never a pile
   if (G.labubu && G.labubu.nextAt && Date.now() >= G.labubu.nextAt && awayH >= 0.5 && residentCount() >= 1) {
     const gift = pickLabubuGift();
-    if (gift.driftwood) gainDriftwood(gift.driftwood, true); else G.shells += gift.shells;
+    let what;
+    if (gift.driftwood) { gainDriftwood(1, true); what = "a piece of driftwood"; }
+    else { grantLabubuFind(gift.find); what = gift.find.label; }
     G.labubu.visits = (G.labubu.visits || 0) + 1;
     scheduleNextLabubu();
-    const what = gift.driftwood ? `${gift.driftwood} driftwood 🪵` : `◈ ${gift.shells}`;
-    logMoment("✦", `Labubu came by while you were out — left ${what} by the sign.`, "visit");
-    setTimeout(() => toast(`Labubu stopped by while you were away — left ${what} by the sign.`, 5), 2600);
+    logMoment(gift.driftwood ? "🪵" : gift.find.emoji, `Labubu came by while you were out — left ${what} by the sign.`, "visit");
+    setTimeout(() => toast(`Labubu came by while you were away — left ${what} by the sign.`, 5), 2600);
   }
   if (awayH < 1.5 || residentCount() >= capacity()) return;
   const room = capacity() - residentCount();
@@ -6121,37 +6129,52 @@ function anyProjectOpen() { return PROJECTS.some(p => projectStage(p.id) === "op
 let driftTimer = rand(30, 70);
 
 /* ---------- Labubu — Midknight's sidekick, a recurring visitor ----------
-   Turns up ~10 min into the first session, then up to 2x a day at random,
-   3-7h apart. Pads around near Midknight for a couple of minutes, drops off
-   a little something (driftwood, or a few shells), then heads back out.
-   Never a resident: not in the Catdex, not counted toward capacity, never
-   saved into G.cats — his whole state is G.labubu. */
+   Turns up ~10 min into the first session, then daily for the first week or
+   so and gently less often after. Pads around near Midknight for a couple of
+   minutes, leaves a bit of junk by the sign (occasionally a driftwood, if a
+   project needs it), then heads back out. Never a resident: not in the
+   Catdex, not counted toward capacity, never saved into G.cats. */
+const LABUBU_FINDS = [
+  { id:"lb_cap",    emoji:"🧢", label:"a bottlecap" },
+  { id:"lb_cork",   emoji:"🍾", label:"a chewed cork" },
+  { id:"lb_sock",   emoji:"🧦", label:"a single sock, not yours" },
+  { id:"lb_pong",   emoji:"🏓", label:"half a ping-pong ball" },
+  { id:"lb_twig",   emoji:"🌿", label:"one perfect twig" },
+  { id:"lb_button", emoji:"⚪", label:"a coat button" },
+  { id:"lb_foil",   emoji:"✨", label:"a scrap of foil, much admired" },
+  { id:"lb_shell",  emoji:"🐚", label:"a cracked shell" },
+  { id:"lb_pom",    emoji:"🧶", label:"a pom-pom off someone's hat" },
+  { id:"lb_leaf",   emoji:"🍂", label:"a leaf shaped like a smaller leaf" },
+  { id:"lb_key",    emoji:"🔑", label:"a key to nothing here" },
+  { id:"lb_marble", emoji:"🔮", label:"a cloudy marble" },
+];
 function labubuHere() { return cats.some(c => c.visitor) || _departures.some(d => d.c && d.c.visitor); }
 function labubuDayCap() {
   const k = todayKey();
-  if (!G.labubu) return true;
-  if (G.labubu.dayKey !== k) return true;
-  return (G.labubu.dayCount || 0) < 2;
+  if (!G.labubu || G.labubu.dayKey !== k) return true;
+  const max = (G.labubu.visits || 0) < 7 ? 2 : 1;      // discovery week, then once a day
+  return (G.labubu.dayCount || 0) < max;
 }
 function scheduleNextLabubu() {
   if (!G.labubu) G.labubu = { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 };
-  G.labubu.nextAt = Date.now() + rand(3, 7) * 3600e3;
+  const gapH = (G.labubu.visits || 0) < 7 ? rand(3, 7) : rand(20, 40);   // ~2/day early, then every day-and-a-bit
+  G.labubu.nextAt = Date.now() + gapH * 3600e3;
 }
 function pickLabubuGift() {
-  // driftwood is the rare surprise — one piece, ~20%, and only while a project needs it
-  if (anyProjectOpen() && Math.random() < 0.2) return { driftwood: 1 };
-  // everything else is just a random handful of shells — mostly small, now and then a good haul
-  const r = Math.random();
-  const shells = r < 0.68 ? rand(8, 22) : r < 0.93 ? rand(22, 40) : rand(40, 64);
-  return { shells: Math.round(shells) };
+  if (anyProjectOpen() && Math.random() < 0.18) return { driftwood: 1 };   // the rare useful one
+  return { find: pick(LABUBU_FINDS) };                                     // otherwise, junk
+}
+function grantLabubuFind(find) {
+  if (!G.keepsakes) G.keepsakes = [];
+  G.keepsakes.unshift({ id: find.id, emoji: find.emoji, label: find.label, t: Date.now(), from: "labubu" });
+  if (G.keepsakes.length > 40) G.keepsakes.length = 40;
 }
 function labubuArrive() {
   if (labubuHere() || residentCount() < 1) return;
   const gift = pickLabubuGift();
-  const fromLeft = Math.random() < 0.5;
   const c = spawnCat({ coatKey: "labubu", name: "Labubu", visitor: true, star: 3,
     traits: ["cuddly", "curious"], worn: ["bell"], mood: 84,
-    x: fromLeft ? -40 : W + 40, y: rand(H * 0.6, H * 0.8) });
+    x: Math.random() < 0.5 ? -40 : W + 40, y: rand(H * 0.6, H * 0.8) });
   if (!c) return;
   c._leaveAt = Date.now() + rand(95, 155) * 1000;
   G.labubu.visits = (G.labubu.visits || 0) + 1;
@@ -6159,20 +6182,17 @@ function labubuArrive() {
   if (G.labubu.dayKey !== k) { G.labubu.dayKey = k; G.labubu.dayCount = 0; }
   G.labubu.dayCount = (G.labubu.dayCount || 0) + 1;
   scheduleNextLabubu();
-  // he trots in carrying it — drops it near the sign once he's on screen
+  // he drops whatever he's carrying by the sign a beat after he's on screen
   setTimeout(() => {
     if (!cats.includes(c)) return;
     const dx = clamp(c.x, 46, W * 0.55);
-    if (gift.driftwood) for (let i = 0; i < gift.driftwood; i++) dropToken(dx + rand(-14, 14), catFloor() - rand(24, 40), 0, "driftwood");
-    else dropToken(dx, c.y - 8, gift.shells, "");
-    floatText(c.x, c.y - 30, "🎁", "#c88fd0");
-  }, 2600);
-  logMoment("✦", gift.driftwood
-    ? `Labubu stopped by with ${gift.driftwood} piece${gift.driftwood === 1 ? "" : "s"} of driftwood.`
-    : `Labubu stopped by and dropped ◈ ${gift.shells} by the sign.`, "visit");
-  toast(gift.driftwood
-    ? "Labubu trotted in with driftwood in his mouth 🪵 — Midknight's little shadow."
-    : "Labubu trotted in — Midknight's little shadow.", 5);
+    if (gift.driftwood) { dropToken(dx + rand(-12, 12), catFloor() - rand(24, 40), 0, "driftwood"); }
+    else { grantLabubuFind(gift.find); floatText(dx, c.y - 26, gift.find.emoji, "#c88fd0"); if (panels.today && !panels.today.hidden) renderFindsCard(); }
+  }, 2400);
+  logMoment(gift.driftwood ? "🪵" : gift.find.emoji,
+    gift.driftwood ? "Labubu left a piece of driftwood by the sign." : `Labubu left ${gift.find.label} by the sign.`, "visit");
+  toast(gift.driftwood ? "Labubu wandered in — dropped a driftwood and lost interest."
+    : `Labubu wandered in and left ${gift.find.label}.`, 4.5);
   sfx("coax");
 }
 function labubuLeave(c) {
@@ -6181,7 +6201,7 @@ function labubuLeave(c) {
   const dir = c.x > W / 2 ? 1 : -1;
   c.state = "exploring"; c.stateDur = 1e6; c.vx = dir * 20; c.walkAmt = 0.4;
   _departures.push({ c, dir, life: 0 });
-  spawnParticles(c.x, c.y - 12, "twinkle", 5);
+  spawnParticles(c.x, c.y - 12, "twinkle", 4);
   logMoment("🐾", "Labubu headed back out on his rounds.", "visit");
   toast("Labubu slipped off after a while — back another day.", 4);
 }
@@ -6361,6 +6381,21 @@ function renderMoments() {
   el.innerHTML = m.slice(0, 40).map(x =>
     `<div class="moment-row"><span class="me">${esc(x.emoji || "·")}</span><span class="mt">${esc(x.text)}</span><span class="ma">${agoText(x.t)}</span></div>`
   ).join("");
+}
+// the little things the cats — and Labubu — have dragged in and left by the sign
+function renderFindsCard() {
+  const el = document.getElementById("findsCard");
+  if (!el) return;
+  const k = G.keepsakes || [];
+  if (!k.length) { el.innerHTML = ""; el.className = ""; return; }
+  const byId = new Map();
+  for (const it of k) { const e = byId.get(it.id); if (e) e.n++; else byId.set(it.id, { ...it, n: 1 }); }
+  const items = [...byId.values()].slice(0, 30);
+  el.className = "finds-card";
+  el.innerHTML = `<div class="finds-h">On the shelf by the sign</div><div class="finds-row">` +
+    items.map(it => `<span class="find-chip" data-lbl="${esc(it.label)}${it.n > 1 ? " · x" + it.n : ""}">${esc(it.emoji || "·")}${it.n > 1 ? `<b>${it.n}</b>` : ""}</span>`).join("") +
+    `</div>`;
+  el.querySelectorAll(".find-chip").forEach(ch => ch.onclick = () => toast(ch.getAttribute("data-lbl"), 3));
 }
 
 /* ---- daily check-in — a warm little welcome, one a day, 7-day loop ---- */
@@ -7251,7 +7286,7 @@ setInterval(() => {
   if (dedupeCats()) { syncHud(); save(); }   // self-heal if a duplicate ever slips in
   tickProjects();                        // a restoration that finished while you watched
   labubuTick();                          // Midknight's sidekick may be due for a visit
-  if (panels.today && !panels.today.hidden) { renderCheckinCard(); renderAdventureCard(); renderProjectCard(); }
+  if (panels.today && !panels.today.hidden) { renderCheckinCard(); renderAdventureCard(); renderProjectCard(); renderFindsCard(); }
   if (panels.shop && !panels.shop.hidden && (boostActive() || _wasBoosted)) renderShop();   // tick the boost countdown
   if (_wasBoosted && !boostActive()) toast("The catnip's worn off — earnings back to normal.", 4);
   _wasBoosted = boostActive();
