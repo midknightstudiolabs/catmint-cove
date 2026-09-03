@@ -1188,6 +1188,7 @@ function contributeProject(id) {        // pay whatever we can toward the cost, 
     rebuildAttractors();
   }
   syncHud(); save();
+  if (panels.today && !panels.today.hidden) renderProjectCard();
 }
 function finishProject(id) {
   const def = PROJECT_BY_ID[id], p = G.projects[id];
@@ -7501,7 +7502,7 @@ function renderProjectCard() {
       <div><div class="adv-title">${esc(def.label)}</div>
       <div class="adv-sub">${ready ? "ready to begin" : `◈ ${paid.shells}/${def.cost.shells} · 🪵 ${paid.driftwood}/${def.cost.driftwood}`}</div></div></div>
       <button class="btn primary" id="pj-card-btn">${ready ? "Begin the work" : "See what it needs"}</button>`;
-    document.getElementById("pj-card-btn").onclick = () => { closeAllPanels(); openProjectSheet(def.id); };
+    document.getElementById("pj-card-btn").onclick = () => openProjectSheet(def.id);   // modal sits over Today — closing it returns here
   }
 }
 function renderAdventureCard() {
