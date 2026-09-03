@@ -382,6 +382,7 @@
   .cc-pref .lk{color:var(--ink);}
   .cc-pref .qk{color:var(--heart);}
   .cc-pref .hidden-hint{color:var(--ink-faint);font-style:italic;}
+  .cc-pref .fr{color:var(--ink-soft);}
   .rehome{margin-top:.7rem;width:100%;background:none;border:1px solid var(--panel-line);border-radius:999px;
     padding:.4rem .7rem;font:inherit;font-size:.78rem;font-weight:600;color:var(--ink-soft);cursor:pointer;}
   .rehome:hover{background:#fff;color:var(--ink);}
@@ -998,7 +999,7 @@ function save() {
       name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
       mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood), worn:c.worn || [], owned:c.owned || [],
       bond:Math.round(c.bond || 0), bondSeen:c.bondSeen || 0, bondDay:c.bondDay || "",
-      pref:c.pref, quirk:c.quirk, quirkKnown:!!c.quirkKnown
+      pref:c.pref, quirk:c.quirk, quirkKnown:!!c.quirkKnown, friend:c.friend || null
     }));
     localStorage.setItem(SAVE_KEY, JSON.stringify(G));
   } catch (e) {}
@@ -1417,6 +1418,9 @@ class Cat {
     this.quirk = (o.quirk != null ? (o.quirk | 0) : (Math.random() * QUIRKS.length | 0));
     this.quirkKnown = o.quirkKnown ?? (bondLevel(this.bond) >= 2);
     this.favStation = (PREFS[this.pref] && PREFS[this.pref].station) || null;
+    // friendship — one mutual friend per cat, name only. formed slowly while two
+    // partnerless residents keep each other company. friendships only, no rivalries.
+    this.friend = o.friend || null;
     this.bob = Math.random() * 6;
     this.blink = rand(2, 6);
     this.tail = Math.random() * 6;
@@ -1537,7 +1541,7 @@ function restoreCats() {
         worn: s.worn, accessory: s.accessory, owned: s.owned,
         bornAt: s.bornAt ?? (Date.now() - KITTEN_MS * 3), mood:s.mood,
         bond: s.bond, bondSeen: s.bondSeen, bondDay: s.bondDay,
-        pref: s.pref, quirk: s.quirk, quirkKnown: s.quirkKnown,
+        pref: s.pref, quirk: s.quirk, quirkKnown: s.quirkKnown, friend: s.friend,
         x: rand(W*0.15,W*0.85), y: rand(H*0.42,H*0.82)
       }));
     }
@@ -1559,6 +1563,21 @@ function restoreCats() {
   }
   // make sure every non-mascot cat already in the cove counts as discovered
   for (const c of cats) if (!c.mascot && !c.visitor && !G.dex[c.coatKey]) G.dex[c.coatKey] = { star: c.star, count: 1 };
+  reconcileFriends();
+}
+// keep friendships mutual and real — drop a link whose other end is gone or
+// no longer points back (e.g. one cat rehomed, save hand-edited)
+function reconcileFriends() {
+  const byName = {};
+  for (const c of cats) if (!c.visitor) byName[c.name] = c;
+  // cats away on a trip still count as real residents — their link comes home with them
+  const advParty = G.adventure ? (G.adventure.party || (G.adventure.catData ? [G.adventure.catData] : [])) : [];
+  for (const d of advParty) if (d && d.name) byName[d.name] = byName[d.name] || d;
+  const backLink = nm => { const f = byName[nm]; return f ? f.friend : null; };
+  for (const c of cats) {
+    if (c.visitor || !c.friend) continue;
+    if (!byName[c.friend] || backLink(c.friend) !== c.name) c.friend = null;
+  }
 }
 // belt-and-braces: never keep two mascots or two cats of the same name
 function dedupeCats() {
@@ -1718,6 +1737,13 @@ function decide(c) {
     if (a) { c._arriveState = "playing"; c._arriveDur = rand(6, 12);
       return go(c, "seeking", 14, { x: a.x + rand(-12, 12), y: a.y + rand(-8, 8) }); }
     return go(c, "playing", rand(4, 8), null);
+  });
+
+  // a friend: seek them out on purpose, wherever they are in the cove
+  const pal = c.friend ? cats.find(o => o !== c && !o.visitor && !o._gone && o.name === c.friend) : null;
+  if (pal) add(6, () => {
+    c.partner = pal; const side = pal.x < c.x ? -1 : 1;
+    return go(c, "socializing", rand(16, 26), { x: pal.x + side * rand(26, 38), y: pal.y + rand(-8, 8) });
   });
 
   // company — strong pull for social traits, small chance for anyone
@@ -2089,6 +2115,15 @@ function updateCat(c, dt) {
     if (["eating", "playing", "sunbathing", "rolling", "baking", "sleeping"].includes(c.state) && Math.random() < 0.35)
       gainBond(c, 0.4, true);
     if (c.state === "socializing" && Math.random() < 0.25) gainBond(c, 0.3, true);
+    if (c.state === "socializing") {
+      const p = c.partner;
+      if (p && !p.visitor && c.friend === p.name && p.friend === c.name) {
+        c.mood = clamp(c.mood + 3, 0, 100); p.mood = clamp(p.mood + 3, 0, 100);
+        if (Math.random() < 0.3) { gainBond(c, 0.4, true); gainBond(p, 0.4, true); }
+      } else {
+        tryFormFriendship(c, p);
+      }
+    }
     // an exploring cat sometimes noses up a bit of driftwood along the shore
     if (c.state === "exploring" && anyProjectOpen() && Math.random() < 0.35 && !c.mascot) {
       dropToken(c.x, Math.max(c.y, catFloor() - 40), 0, "driftwood");
@@ -2298,6 +2333,33 @@ function onBondMilestone(c, lvl, quiet) {
   }
 }
 
+// two partnerless residents who keep each other company slowly become friends.
+// mutual, one friend each, permanent. friendships only — there are no rivalries.
+function tryFormFriendship(a, b) {
+  if (!a || !b || a === b || a.visitor || b.visitor || a._gone || b._gone) return;
+  if (a.friend || b.friend) return;
+  if (!cats.includes(a) || !cats.includes(b)) return;
+  // more likely once you've been bonding with both — settled cats form ties
+  const warmth = (bondLevel(a.bond) + bondLevel(b.bond)) / 8;   // 0..1
+  if (Math.random() > 0.03 + warmth * 0.05) return;
+  a.friend = b.name; b.friend = a.name;
+  a.mood = clamp(a.mood + 8, 0, 100); b.mood = clamp(b.mood + 8, 0, 100);
+  gainBond(a, 2, true); gainBond(b, 2, true);
+  spawnParticles((a.x + b.x) / 2, (a.y + b.y) / 2 - 26, "heart", 8);
+  logMoment("🐾", `${a.name} and ${b.name} have become friends — you'll see them together now.`, "bond");
+  toast(`${a.name} & ${b.name} are friends now. 🐾`, 4);
+  sfx("reveal");
+  if (cardCat === a) renderCatPref(a);
+  if (cardCat === b) renderCatPref(b);
+}
+// when a cat leaves the cove, free their friend
+function breakFriendship(c) {
+  if (!c || !c.friend) return;
+  const f = cats.find(x => !x.visitor && x.name === c.friend);
+  if (f && f.friend === c.name) f.friend = null;
+  c.friend = null;
+}
+
 /* ---------- cat card ---------- */
 const cc = {
   el: document.getElementById("catcard"),
@@ -2435,6 +2497,7 @@ cc.rehomeBtn.addEventListener("click", () => {
   miniCat(document.querySelector("#modal canvas"), c.coatKey, c.star);
   document.getElementById("rh-no").onclick = () => { cardTimer = 4; closeModal(); };
   document.getElementById("rh-yes").onclick = () => {
+    breakFriendship(c);
     const i = cats.indexOf(c);
     if (i >= 0) cats.splice(i, 1);
     G.shells += rw.shells; G.pearls += rw.pearls;
@@ -2486,7 +2549,10 @@ function renderCatPref(c) {
   const quirk = c.quirkKnown
     ? `<span class="qk">You've noticed: ${esc(c.name)} ${esc(catQuirkLine(c))}.</span>`
     : `<span class="hidden-hint">There's a habit of ${c.mascot ? "his" : esc(c.name) + "'s"} you haven't spotted yet — get closer.</span>`;
-  cc.prefEl.innerHTML = like + "<br>" + quirk;
+  const friend = c.friend
+    ? `<br><span class="fr">Friends with ${esc(c.friend)}.</span>`
+    : "";
+  cc.prefEl.innerHTML = like + "<br>" + quirk + friend;
 }
 function positionCard(c) {
   const r = canvas.getBoundingClientRect();
@@ -7069,7 +7135,9 @@ function drawBindle(g, c) {
 
 function snapshotCat(c) {
   return { name: c.name, traits: c.traits, coatKey: c.coatKey, markSeed: c.markSeed, star: c.star,
-    mascot: c.mascot, bornAt: c.bornAt, mood: Math.round(c.mood), worn: c.worn || [], owned: c.owned || [] };
+    mascot: c.mascot, bornAt: c.bornAt, mood: Math.round(c.mood), worn: c.worn || [], owned: c.owned || [],
+    bond: Math.round(c.bond || 0), bondSeen: c.bondSeen || 0, bondDay: c.bondDay || "",
+    pref: c.pref, quirk: c.quirk, quirkKnown: !!c.quirkKnown, friend: c.friend || null };
 }
 // names: a string or an array of 1-3 cat names
 function startAdventure(names, dest) {
@@ -7388,6 +7456,20 @@ window.__cove = {
     if (name != null && v != null) { const c = cats.find(x => x.name === name); if (c) { c.bond = clamp(+v, 0, 100); c.bondSeen = bondLevel(c.bond); if (cardCat === c) updateCatCard(); save(); } }
     else if (name != null) { const c = cats.find(x => x.name === name); if (c) gainBond(c, 10); }
     return cats.filter(x => !x.visitor).map(x => `${x.name}: ${Math.round(x.bond)} (${bondName(x.bond)})`); },
+  friends(a, b){
+    const res = cats.filter(c => !c.visitor);
+    if (a && b) {
+      const ca = res.find(x => x.name === a), cb = res.find(x => x.name === b);
+      if (!ca || !cb) return "name not found";
+      breakFriendship(ca); breakFriendship(cb);
+      ca.friend = cb.name; cb.friend = ca.name;
+      logMoment("🐾", `${ca.name} and ${cb.name} have become friends — you'll see them together now.`, "bond");
+      if (cardCat === ca) renderCatPref(ca); if (cardCat === cb) renderCatPref(cb);
+      save();
+    } else if (a === "clear") {
+      for (const c of res) c.friend = null; save();
+    }
+    return res.map(x => `${x.name}: ${x.friend ? "friends with " + x.friend : "—"}`); },
   labubu(cmd){
     if (cmd === "come") { G.labubu.nextAt = Date.now() - 1; G.labubu.dayKey = ""; labubuArrive(); }
     else if (cmd === "go") { const l = cats.find(c => c.visitor); if (l) labubuLeave(l); }
