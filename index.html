@@ -1721,7 +1721,7 @@ const STATE_LABEL = {
   arriving:"finding a spot", loafing:"loafing", sleeping:"fast asleep", eating:"at the food bowl",
   playing:"playing", socializing:"socializing", exploring:"exploring", knocking:"knocking things over",
   sulking:"sulking", being_pet:"being petted", seeking:"heading somewhere", grooming:"washing up",
-  scratching:"having a good scratch", stretching:"having a big stretch",
+  scratching:"having a good scratch", stretching:"having a big stretch", zooming:"got the zoomies",
   fishing:"fishing off the dock", baking:"helping at the bakery", sunbathing:"in the sunbeam", rolling:"rolling in the catmint",
 };
 
@@ -1802,6 +1802,13 @@ function decide(c) {
     c.partner = pal; const side = pal.x < c.x ? -1 : 1;
     return go(c, "socializing", rand(16, 26), { x: pal.x + side * rand(26, 38), y: pal.y + rand(-8, 8) });
   });
+
+  // the zoomies — a sudden sprint round the cove for no reason at all. more
+  // likely for the wild ones, at dawn/dusk, and if another cat's already at it.
+  if (!c.mascot) {
+    const zw = zoomWeight(c);
+    if (zw > 0) add(zw, () => go(c, "zooming", rand(2.4, 4.2), null));
+  }
 
   // company — strong pull for social traits, small chance for anyone
   const n = nearestCat(c);
@@ -1927,6 +1934,23 @@ function catMotion(c) {
   return c._motion;
 }
 
+// how likely this cat is to suddenly get the zoomies right now (a decide() weight)
+function zoomWeight(c) {
+  if (performance.now() < (c._zoomCD || 0)) return 0;
+  const has = t => c.traits && c.traits.includes(t);
+  if (has("lazy") || has("shy") || has("grumpy")) return c.isKitten ? 0.5 : 0;
+  let w = 0.5;
+  if (has("playful")) w += 1.4;
+  if (has("bold")) w += 1.0;
+  if (has("curious")) w += 0.7;
+  if (c.isKitten) w += 1.8;
+  w *= 0.4 + (c.mood / 100) * 1.0;                 // happy cats zoom, sad cats don't
+  const h = (typeof nowHours === "function") ? nowHours() : 12;
+  if ((h > 5 && h < 8) || (h > 18 && h < 21)) w *= 1.8;   // crepuscular — the 3am crazies, cove edition
+  if (cats.some(o => o !== c && o.state === "zooming")) w *= 2.4;   // contagion
+  return w;
+}
+
 function updateCat(c, dt) {
   c.stateT += dt;
   const _m = catMotion(c);
@@ -1960,7 +1984,7 @@ function updateCat(c, dt) {
   if (c.petBuff > 0) c.petBuff -= dt;
 
   /* -------- steering: velocity-based, damped, no teleporting -------- */
-  const travelling = ["arriving", "seeking", "exploring", "socializing", "knocking"].includes(c.state);
+  const travelling = ["arriving", "seeking", "exploring", "socializing", "knocking", "zooming"].includes(c.state);
   // "held" cats hold their chosen spot — they still push others away but aren't pushed themselves
   const HELD_STATES = ["being_pet", "sleeping", "eating", "baking", "sunbathing", "fishing", "grooming", "rolling", "scratching", "stretching"];
   const held = HELD_STATES.includes(c.state);
@@ -1969,12 +1993,14 @@ function updateCat(c, dt) {
   if (travelling) {
     const dx = c.tx - c.x, dy = c.ty - c.y;
     const dd = Math.hypot(dx, dy);
+    const zoomN = c.state === "zooming";
     if (dd > 1.5) {
-      const top = 46 * c.speedMul() * (c.state === "exploring" ? 0.8 : 1);
-      const slowR = 60;                                  // ease in over the last ~60px
+      const top = 46 * c.speedMul() * (c.state === "exploring" ? 0.8 : zoomN ? 3.6 : 1);
+      const slowR = zoomN ? 12 : 60;                     // zoomies don't ease in — flat out
       const want = dd < slowR ? Math.max(top * 0.18, top * (dd / slowR)) : top;
-      ax += ((dx / dd) * want - c.vx) * 6.5;             // steer toward the desired velocity
-      ay += ((dy / dd) * want - c.vy) * 6.5;
+      const gain = zoomN ? 12 : 6.5;
+      ax += ((dx / dd) * want - c.vx) * gain;            // steer toward the desired velocity
+      ay += ((dy / dd) * want - c.vy) * gain;
     }
   }
 
@@ -1983,7 +2009,7 @@ function updateCat(c, dt) {
   // on a small screen has them all endlessly micro-drifting ("sleeping cat is
   // moving"). Once a held cat has room it goes perfectly still.
   let crowded = false, hardStacked = false, crowdPush = 0;
-  if (c.state !== "being_pet") {
+  if (c.state !== "being_pet" && c.state !== "zooming") {
     let sx = 0, sy = 0, hits = 0;
     const R = held ? 34 : 52;
     for (const o of cats) {
@@ -2034,14 +2060,15 @@ function updateCat(c, dt) {
   // integrate + damp. a hard-stacked held cat loosens up briefly to slide clear;
   // otherwise held = clamped tight so it doesn't drift.
   c.vx += ax * dt; c.vy += ay * dt;
-  const damp = held ? (hardStacked ? 5 : 24) : shoving ? 4 : travelling ? 2.4 : 9;
+  const damp = c.state === "zooming" ? 1.1 : held ? (hardStacked ? 5 : 24) : shoving ? 4 : travelling ? 2.4 : 9;
   const dk = Math.min(1, damp * dt);
   c.vx -= c.vx * dk; c.vy -= c.vy * dk;
 
   // cap speed, and kill sub-pixel drift so idle cats are perfectly still
   // (but let a stacked cat keep its slow untangle crawl)
   let spd = Math.hypot(c.vx, c.vy);
-  if (spd > 62) { const s = 62 / spd; c.vx *= s; c.vy *= s; spd = 62; }
+  const spCap = c.state === "zooming" ? 165 : 62;
+  if (spd > spCap) { const s = spCap / spd; c.vx *= s; c.vy *= s; spd = spCap; }
   // held + not hard-stacked → dead still. idle non-held → still unless actively
   // shoving clear of a real overlap (a light edge-touch is allowed to settle).
   if (!travelling && spd < 3 && (held ? !hardStacked : !shoving)) { c.vx = 0; c.vy = 0; spd = 0; }
@@ -2198,6 +2225,26 @@ function updateCat(c, dt) {
     if (c.stateT > 0.7) decide(c);
     return;
   }
+  if (c.state === "zooming") {
+    // sprint to a random point, overshoot, skid, pick another — a few bursts then stop dead
+    if (c._zoomNext == null || c.stateT >= c._zoomNext || Math.hypot(c.tx - c.x, c.ty - c.y) < 22) {
+      if (c._zoomNext != null) { spawnParticles(c.x, c.y - 3, "dust", 5); c._zoomBurst = (c._zoomBurst || 0) + 1; }
+      // commit to a direction — bias away from the last one so it covers ground, not jitters
+      const away = Math.atan2(-(c.vy || 0), -(c.vx || 0));
+      const ang = (c._zoomBurst ? away + rand(-1.7, 1.7) : Math.random() * Math.PI * 2);
+      const dist = rand(200, 330);
+      c.tx = clamp(c.x + Math.cos(ang) * dist, 30, W - 30);
+      c.ty = clamp(c.y + Math.sin(ang) * dist * 0.55, H * 0.5, catFloor() - 10);
+      c._zoomNext = c.stateT + rand(0.7, 1.1);
+    }
+    if (c.stateT >= c.stateDur) {
+      c.vx *= 0.3; c.vy *= 0.3; c._zoomNext = null;
+      go(c, "grooming", rand(2.4, 4), null);          // stop dead, groom like nothing happened
+      c._zoomCD = performance.now() + rand(150, 340) * 1000;
+      if (!c.mascot && Math.random() < 0.35) floatText(c.x, c.y - 30, "!", "#e08a3c");
+    }
+    return;
+  }
   if (c.stateT >= c.stateDur) {
     // bond: a cat that just got what it wanted warms to you a little — the
     // reward for stocking the cove with the things they like (quiet, no toast)
@@ -2218,12 +2265,13 @@ function updateCat(c, dt) {
       dropToken(c.x, Math.max(c.y, catFloor() - 40), 0, "driftwood");
       floatText(c.x, c.y - 28, "found something", "#b9a074");
     }
-    // fresh from the catmint garden → a burst of zoomies (temporary output boost)
+    // fresh from the catmint garden → the zoomies, for real (+ a temporary output boost)
     if (c.state === "rolling") {
       c.zoomies = rand(45, 70);
       spawnParticles(c.x, c.y - 14, "leaf", 6);
       spawnParticles(c.x, c.y - 16, "spark", 4);
       if (!c.mascot && Math.random() < 0.5) floatText(c.x, c.y - 30, "zoomies!", "#7aa86a");
+      if (!c.mascot) { c._zoomBurst = 0; c._zoomNext = null; go(c, "zooming", rand(2.8, 4.6), null); return; }
     }
     // over-petting → sulk for prickly cats
     if (c.petCount > 2.4 && c.petAffinity() < 0.8 && c.state !== "sulking" && Math.random() < 0.7) {
@@ -6133,6 +6181,23 @@ function drawCat(g, c, isPhoto) {
   const purrFade = purring ? Math.min(1, purrAge < 250 ? purrAge / 250 : (1400 - purrAge) / 400) : 0;
   const purrBuzz = purring ? Math.sin(t * 74) * 0.4 * purrFade : 0;
 
+  // zoom streak — a couple of soft trailing arcs opposite the direction of travel
+  if (c.state === "zooming") {
+    const sp = Math.hypot(c.vx || 0, c.vy || 0);
+    if (sp > 40) {
+      const nx = -(c.vx || 0) / sp, ny = -(c.vy || 0) / sp;
+      g.save();
+      g.strokeStyle = "rgba(255,255,255,0.16)"; g.lineWidth = 2.5; g.lineCap = "round";
+      for (let k = 1; k <= 3; k++) {
+        g.beginPath();
+        g.moveTo(c.x + nx * 6 * k, c.y - 14 + ny * 6 * k);
+        g.lineTo(c.x + nx * (14 + 6 * k), c.y - 14 + ny * (14 + 6 * k));
+        g.stroke();
+      }
+      g.restore();
+    }
+  }
+
   g.save();
   g.translate(c.x + purrBuzz, c.y + bobY);
 
@@ -6177,9 +6242,10 @@ function drawCat(g, c, isPhoto) {
 
   if (tailMode !== "wrap") drawTail(g, P, coat, tailMode, wag);   // tails behind body when out
 
-  // ears (behind head) — a little flop on the bounce
-  drawEar(g, -1, P, coat, sulk, earFlop, kit);
-  drawEar(g, 1, P, coat, sulk, earFlop, kit);
+  // ears (behind head) — a little flop on the bounce; pinned back mid-zoom
+  const zoom = c.state === "zooming";
+  drawEar(g, -1, P, coat, sulk || zoom, earFlop, kit);
+  drawEar(g, 1, P, coat, sulk || zoom, earFlop, kit);
 
   // --- body + head as one silhouette ---
   g.beginPath(); catSil(g, P); g.fillStyle = coat.base; g.fill();
