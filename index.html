@@ -66,6 +66,16 @@
   .pill.drift[hidden]{display:none;}
   .pill.small{font-size:.82rem;padding:.35rem .7rem;color:var(--ink-soft);font-weight:600;}
   #catPill{cursor:pointer;user-select:none;-webkit-user-select:none;}
+  #hud [data-tip]{cursor:help;}
+  /* tap/hover explainer for the HUD pills */
+  #tipPop{position:fixed;z-index:60;max-width:min(80vw,264px);
+    background:var(--ink);color:#f4efe2;font-size:.78rem;font-weight:500;line-height:1.4;
+    padding:.5rem .68rem;border-radius:11px;box-shadow:var(--shadow);
+    pointer-events:none;animation:tipIn .15s ease both;}
+  #tipPop::after{content:"";position:absolute;top:-5px;left:var(--tip-arrow,50%);transform:translateX(-50%);
+    border:5px solid transparent;border-top:0;border-bottom-color:var(--ink);}
+  #tipPop[hidden]{display:none;}
+  @keyframes tipIn{from{opacity:0;transform:translateY(-4px);}}
   .badge{background:var(--accent);color:#fff;border-radius:999px;font-size:.72rem;font-weight:700;
     padding:.06rem .4rem;font-variant-numeric:tabular-nums;}
   .badge.alert{background:var(--apricot);}
@@ -531,11 +541,11 @@
 <div id="app">
   <div id="hud">
     <div class="hud-group">
-      <div class="pill"><span class="dot">◈</span><span id="shells">0</span></div>
-      <div class="pill pearl"><span class="dot dotp">✦</span><span id="pearls">0</span></div>
-      <div class="pill drift" id="driftPill" hidden><span class="dot">🪵</span><span id="driftwood">0</span></div>
-      <div class="pill small" id="catPill" title=""><span id="catcount">0</span>/<span id="catcap">0</span> cats</div>
-      <div class="pill small opens">day <span id="opens">1</span></div>
+      <div class="pill" data-tip="Shells — your everyday currency. Cats leave them; spend them coaxing cats and buying comforts."><span class="dot">◈</span><span id="shells">0</span></div>
+      <div class="pill pearl" data-tip="Pearls — rare currency from the Catdex and daily goals. Saved for special things."><span class="dot dotp">✦</span><span id="pearls">0</span></div>
+      <div class="pill drift" id="driftPill" hidden data-tip="Driftwood — washes up on the shore and comes home from trips. Used to repair the dock."><span class="dot">🪵</span><span id="driftwood">0</span></div>
+      <div class="pill small" id="catPill" data-tip="Cats here / room you have. Buy comforts or repair the dock to make more room."><span id="catcount">0</span>/<span id="catcap">0</span> cats</div>
+      <div class="pill small opens" data-tip="Days you've dropped by the cove.">day <span id="opens">1</span></div>
     </div>
     <div class="hud-group">
       <button class="pill title-pill" id="titlePill" title="Rename your cove">Catmint <b>Cove</b></button>
@@ -3664,6 +3674,52 @@ function askOwnerName(firstTime) {
   inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
 }
 document.getElementById("titlePill").addEventListener("click", () => askOwnerName(false));
+
+/* ---------- HUD explainers — hover on desktop, tap on touch ---------- */
+(function initHudTips() {
+  const tip = document.createElement("div");
+  tip.id = "tipPop"; tip.hidden = true;
+  document.getElementById("app").appendChild(tip);
+  const canHover = window.matchMedia && window.matchMedia("(hover:hover)").matches;
+  let hideT = 0, curEl = null;
+  function place(el) {
+    const msg = el.getAttribute("data-tip");
+    if (!msg) return;
+    curEl = el;
+    tip.textContent = msg;
+    tip.hidden = false;
+    tip.style.left = "0px"; tip.style.top = "-999px";   // measure off-screen first
+    const r = el.getBoundingClientRect();
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let x = r.left + r.width / 2 - tw / 2;
+    x = Math.max(8, Math.min(x, window.innerWidth - tw - 8));
+    let y = r.bottom + 9;
+    if (y + th > window.innerHeight - 8) y = r.top - th - 9;   // flip above if it would clip
+    tip.style.left = x + "px";
+    tip.style.top = y + "px";
+    tip.style.setProperty("--tip-arrow", (r.left + r.width / 2 - x) + "px");
+    clearTimeout(hideT);
+    hideT = setTimeout(hide, 3800);
+  }
+  function hide() { tip.hidden = true; curEl = null; clearTimeout(hideT); }
+  document.addEventListener("pointerdown", (e) => {
+    const el = e.target.closest("#hud [data-tip]");
+    if (el) { (curEl === el ? hide() : place(el)); return; }
+    if (!tip.hidden) hide();
+  }, true);
+  if (canHover) {
+    document.addEventListener("pointerover", (e) => {
+      const el = e.target.closest("#hud [data-tip]");
+      if (el && el !== curEl) place(el);
+    });
+    document.addEventListener("pointerout", (e) => {
+      const el = e.target.closest("#hud [data-tip]");
+      if (el && !e.relatedTarget?.closest?.("#hud [data-tip]")) hide();
+    });
+  }
+  window.addEventListener("scroll", hide, true);
+  window.addEventListener("resize", hide);
+})();
 
 /* ---------- audio (procedural) ---------- */
 let actx = null;
