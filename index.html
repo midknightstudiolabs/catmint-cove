@@ -6222,7 +6222,7 @@ function drawRaceBanner(g, x, finish) {
   // floating partway up it competing with the flag
   const label = finish ? "FINISH" : "START";
   g.font = "700 11px 'Hanken Grotesk',sans-serif"; g.textAlign = "center";
-  const halfW = g.measureText(label).width / 2 + 9, py = 591;
+  const halfW = g.measureText(label).width / 2 + 9, py = 624;   // clear of the pole's foot (606), not overlapping it
   g.fillStyle = finish ? "#2b5548" : "#d97a5f";
   roundRect(g, x - halfW, py - 9, halfW * 2, 18, 9); g.fill();
   g.fillStyle = "#fff";
@@ -6258,6 +6258,13 @@ function festCelebrateWinner(w) {
   spawnParticles(raceX(1) - 10, laneY(w.lane) - 16, "heart", 3);
   for (const s of festSpectators) if (Math.random() < 0.7) spawnParticles(s.x, s.y - 22, "heart", 1);
   [784, 1046, 1318].forEach((f, i) => tone(f, 0.24, "triangle", 0.11, i * 0.07));   // the same little "reveal" arpeggio, a touch louder to cut through the finish-line particles
+}
+// a soft closing note once the whole field's crossed — quieter than the win
+// fanfare and pitched down, so it reads as "that's everyone" rather than a
+// second celebration
+function festAllInChime(when = 0) {
+  tone(659.25, 0.22, "sine", 0.09, when);
+  tone(523.25, 0.34, "sine", 0.08, when + 0.11);
 }
 function showFestPodium() {
   const order = festRanking();
@@ -6332,6 +6339,7 @@ function renderFest(dt) {
       for (const r of raceCats) if (!r.done) { r.done = true; r.doneAt = raceT; }
       racePhase = "finish"; _festFinishAt = raceT;
       document.getElementById("festSkip").hidden = true;
+      festAllInChime();
     }
   } else {
     for (const r of raceCats) syncRacerCat(r, dt, true);
@@ -6361,6 +6369,7 @@ document.getElementById("festSkip").addEventListener("click", () => {
   festCelebrateWinner(order[0]);
   racePhase = "finish"; _festFinishAt = raceT;
   document.getElementById("festSkip").hidden = true;
+  festAllInChime(0.4);   // skip fires both cues at once — stagger so the win fanfare finishes first
 });
 
 /* ---------- rendering ---------- */
