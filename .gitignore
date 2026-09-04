@@ -7,6 +7,7 @@ midknight-bible.html
 v1-v2-sprite.html
 v2-cat-designs.html
 _iconpreview.html
+_iconforge.html
 
 # --- Capacitor / app build ---
 # Native projects are generated fresh in CI (`npx cap add …`) so they never

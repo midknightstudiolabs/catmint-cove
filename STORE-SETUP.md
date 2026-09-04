@@ -34,10 +34,11 @@ Windows should all succeed. A full Android build also needs Android Studio + JDK
 - **Bundle / package id:** `com.midknightstudiolabs.catmintcove` (already set in
   `capacitor.config.json` and both workflows — change it in all three if needed).
 - **App name:** `Catmint Cove`
-- **Icon / splash:** placeholders live in `assets/logo.svg` and `assets/splash.svg`.
-  Replace them with the real Midknight art (keep the same filenames — 1024×1024
-  and 2732×2732 equivalents, or SVG). `@capacitor/assets` regenerates every
-  density in CI.
+- **Icon / splash:** `assets/logo.png` (1024²), `assets/icon-foreground.png` +
+  `assets/icon-background.png` (Android adaptive layers), `assets/splash.png`
+  (2732²) — Midknight peeking over the cove wall, rendered from the game's own
+  drawCat art (see `_iconforge.html`, gitignored). `@capacitor/assets`
+  regenerates every density in CI. To revise, keep the same filenames.
 - **Orientation:** portrait-locked. Both build workflows patch the generated
   `AndroidManifest.xml` / `Info.plist` after `cap sync` (see the "Lock the app to
   portrait" steps). The web build enforces it too (`#rotate` overlay +
