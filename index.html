@@ -5886,18 +5886,52 @@ const LANE_H = 48;
 function laneY(i) { return 404 + i * LANE_H; }
 function raceX(p) { return 170 + clamp(p, 0, 1) * (RACE_W - 340); }
 
-// ---- the landing panel: pick a cat, then Start / Cancel — floats over the
-// still-running cove, same pattern #restPanel uses before you commit to Begin.
+// ---- entry: the wipe takes you TO the festival grounds first — the picker
+// only appears once you're actually there, so nothing bounces back to the
+// cove and forth while you're just choosing who runs. Only "Maybe later" /
+// "Back to the cove" ever wipes you back; "Race again" stays put and re-opens
+// the picker over the same grounds.
 function openFestPicker() {
   if (festMode || restMode || !cats.length) return;
   restClearUI(); closeAllPanels(); exitFocus();
   const roster = cats.filter(c => !c.visitor);
   if (!roster.length) { toast("No one's around to send to the festival right now."); return; }
   if (!roster.includes(festPickedCat)) festPickedCat = roster.find(c => c.mascot) || roster[0];
-  renderFestPickGrid(roster);
-  document.getElementById("fest").classList.add("on");
-  document.getElementById("app").classList.add("festing");
-  document.getElementById("festPanel").hidden = false;
+  raceCats = []; raceWinner = null; racePick = null; raceT = 0; racePhase = "picker"; _festG = null;
+  festIdleScene(roster);
+  document.getElementById("festResult").hidden = true;
+  document.getElementById("festPanel").hidden = true;   // shown once we've actually arrived
+  document.getElementById("festCountdown").hidden = true;
+  document.getElementById("festSkip").hidden = true;
+
+  const w = document.getElementById("festWipe");
+  document.getElementById("festWipeEmoji").textContent = pick(["🎪", "🎏", "🏵️"]);
+  document.getElementById("festWipeTitle").textContent = "The Cove Festival";
+  document.getElementById("festWipeSub").textContent = pick([
+    "Everyone's heading down to the track…",
+    "Bunting's up, kettle's on…",
+    "Something's happening by the field…",
+  ]);
+  w.classList.remove("out"); void w.offsetWidth; w.classList.add("in");
+  setTimeout(() => {
+    fitFestCanvas();
+    festMode = true;
+    document.getElementById("app").classList.add("festing");
+    document.getElementById("fest").classList.add("on");
+    document.getElementById("festBar").hidden = false;
+    renderFestPickGrid(roster);
+    document.getElementById("festPanel").hidden = false;
+  }, 560);
+  setTimeout(() => w.classList.add("out"), 1250);
+  setTimeout(() => w.classList.remove("in", "out"), 1850);
+}
+// a loose, ambient group standing around the grounds — shown while you're
+// just picking, before a field's been drawn for an actual heat
+function festIdleScene(roster) {
+  festSpectators = roster.slice(0, 6).map((c, i) => Object.assign(c, {
+    x: 280 + (i % 3) * 300 + rand(-14, 14), y: 356 + Math.floor(i / 3) * 46, face: 1,
+    state: "loafing", trotting: false, walkAmt: 0,
+  }));
 }
 function renderFestPickGrid(roster) {
   const grid = document.getElementById("festPickGrid");
@@ -5917,12 +5951,8 @@ function renderFestPickGrid(roster) {
     miniCat(cell.querySelector("canvas"), c.coatKey, c.star, "loafing", false, 1);
   }
 }
-function closeFestPicker() {
-  document.getElementById("festPanel").hidden = true;
-  document.getElementById("fest").classList.remove("on");
-  document.getElementById("app").classList.remove("festing");
-}
-// ---- Start tapped: wipe transition → build the field → countdown → run ----
+// ---- Start tapped: we're already on the grounds — no wipe, straight into
+// building the field + the countdown.
 function startFestRace() {
   document.getElementById("festPanel").hidden = true;
   const mk = cats.find(c => c.mascot);
@@ -5948,25 +5978,9 @@ function startFestRace() {
   const racing = new Set(field);
   festSpectators = cats.filter(c => !racing.has(c) && !c.visitor).slice(0, 3)
     .map((c, i) => Object.assign(c, { x: 300 + i * 380, y: 358, face: 1, state: "loafing", trotting: false, walkAmt: 0 }));
-  raceT = 0; racePhase = "countdown"; raceWinner = null; _festG = null;
+  raceT = 0; racePhase = "countdown"; raceWinner = null;
   document.getElementById("festResult").hidden = true;
-
-  const w = document.getElementById("festWipe");
-  document.getElementById("festWipeEmoji").textContent = pick(["🎪", "🎏", "🏵️"]);
-  document.getElementById("festWipeSub").textContent = pick([
-    "Everyone's heading down to the track…",
-    "Bunting's up, kettle's on…",
-    "Something's happening by the field…",
-  ]);
-  w.classList.remove("out"); void w.offsetWidth; w.classList.add("in");
-  setTimeout(() => {
-    fitFestCanvas();
-    festMode = true;
-    document.getElementById("festBar").hidden = false;
-    runFestCountdown();
-  }, 560);
-  setTimeout(() => w.classList.add("out"), 1250);
-  setTimeout(() => w.classList.remove("in", "out"), 1850);
+  runFestCountdown();
 }
 function runFestCountdown() {
   const el = document.getElementById("festCountdown"), num = document.getElementById("festCdNum");
@@ -5985,16 +5999,28 @@ function runFestCountdown() {
     }, 500);
   })();
 }
+// the only exit — wipes back to the cove the same way we arrived, so leaving
+// is one clean motion rather than a cut
 function closeFest() {
-  festMode = false;
-  document.getElementById("fest").classList.remove("on");
-  document.getElementById("app").classList.remove("festing");
-  document.getElementById("festBar").hidden = true;
+  document.getElementById("festPanel").hidden = true;
   document.getElementById("festResult").hidden = true;
   document.getElementById("festCountdown").hidden = true;
   document.getElementById("festSkip").hidden = true;
-  _festDPR = 0; resize();
-  for (const c of cats) { c.stateDur = 0; decide(c); }
+  const w = document.getElementById("festWipe");
+  document.getElementById("festWipeEmoji").textContent = "🐾";
+  document.getElementById("festWipeTitle").textContent = "Back to the cove";
+  document.getElementById("festWipeSub").textContent = "";
+  w.classList.remove("out"); void w.offsetWidth; w.classList.add("in");
+  setTimeout(() => {
+    festMode = false;
+    document.getElementById("fest").classList.remove("on");
+    document.getElementById("app").classList.remove("festing");
+    document.getElementById("festBar").hidden = true;
+    _festDPR = 0; resize();
+    for (const c of cats) { c.stateDur = 0; decide(c); }
+  }, 560);
+  setTimeout(() => w.classList.add("out"), 950);
+  setTimeout(() => w.classList.remove("in", "out"), 1550);
 }
 function syncRacerCat(r, dt, freeze) {
   const c = r.cat;
@@ -6137,14 +6163,16 @@ function renderFest(dt) {
 }
 document.getElementById("festBack").addEventListener("click", closeFest);
 document.getElementById("festClaim").addEventListener("click", closeFest);
-document.getElementById("festCancel").addEventListener("click", closeFestPicker);
+document.getElementById("festCancel").addEventListener("click", closeFest);
 document.getElementById("festStart").addEventListener("click", startFestRace);
+// stays on the grounds — reopens the picker in place, no wipe either direction
 document.getElementById("festAgain").addEventListener("click", () => {
   document.getElementById("festResult").hidden = true;
-  festMode = false; document.getElementById("festBar").hidden = true;
-  _festDPR = 0; resize();
-  for (const c of cats) { c.stateDur = 0; decide(c); }
-  openFestPicker();
+  raceCats = []; raceWinner = null; racePick = null; racePhase = "picker";
+  const roster = cats.filter(c => !c.visitor);
+  festIdleScene(roster);
+  renderFestPickGrid(roster);
+  document.getElementById("festPanel").hidden = false;
 });
 document.getElementById("festSkip").addEventListener("click", () => {
   if (racePhase !== "run") return;
