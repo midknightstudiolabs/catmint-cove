@@ -480,18 +480,19 @@
   #rest .rest-bar{pointer-events:auto;position:absolute;left:50%;
     bottom:max(.9rem, env(safe-area-inset-bottom));transform:translateX(-50%);
     width:min(88vw,360px);display:flex;align-items:center;gap:0;
-    background:rgba(14,12,18,.44);backdrop-filter:blur(6px);
-    border:1px solid rgba(255,255,255,.09);border-radius:999px;
-    color:rgba(255,255,255,.9);font-size:.8rem;font-variant-numeric:tabular-nums;
+    background:rgba(19,16,23,.82);backdrop-filter:blur(7px);
+    border:1px solid rgba(255,255,255,.14);border-radius:999px;
+    box-shadow:0 6px 20px rgba(0,0,0,.32);
+    color:rgba(255,255,255,.92);font-size:.8rem;font-variant-numeric:tabular-nums;
     padding:.34rem .35rem;transition:opacity .55s;}
-  #rest .rest-bar.ambient{opacity:.32;}
+  #rest .rest-bar.ambient{opacity:.5;}
   #rest .rest-bar.dim{opacity:0;pointer-events:none;}
   #rest .rb-back{display:flex;align-items:center;gap:.35rem;background:none;border:none;
     color:#fff;font:inherit;font-weight:600;font-size:.82rem;padding:.42rem .8rem;
     border-radius:999px;cursor:pointer;white-space:nowrap;}
   #rest .rb-back:hover{background:rgba(255,255,255,.12);}
   #rest .rb-back span{font-size:1.05rem;line-height:1;opacity:.75;}
-  #rest .rb-time{flex:1;text-align:center;color:rgba(255,255,255,.55);letter-spacing:.02em;white-space:nowrap;}
+  #rest .rb-time{flex:1;text-align:center;color:rgba(255,255,255,.68);letter-spacing:.02em;white-space:nowrap;}
   #rest .rb-fs{background:none;border:none;color:rgba(255,255,255,.6);font:inherit;
     padding:.42rem .6rem;border-radius:999px;cursor:pointer;}
   #rest .rb-fs:hover{background:rgba(255,255,255,.12);color:#fff;}
@@ -5291,10 +5292,15 @@ function restViewport() {
   const { vw, vh } = restViewportPx();
   const rd = _restDPR || DPR;
   const sc = Math.max((vw * rd) / W, (vh * rd) / H);            // cover the viewport
+  // a wide screen cover-crops the room top + bottom. The fireplace + nap pile
+  // live low, so spend the crop on sky: anchor the view a little below centre —
+  // but never far enough to reveal blank floor past the room's bottom edge.
+  const visH = (vh * rd) / sc;                                  // world-height on screen
+  const anchorY = visH < H ? Math.min(H * 0.555, H - visH / 2) : H / 2;
   return {
     sc,
     ox: (vw / 2) * rd - (W / 2) * sc,                           // dead-centre, independent of any pan scroll
-    oy: (vh / 2) * rd - (H / 2) * sc,
+    oy: (vh / 2) * rd - anchorY * sc,
     vwW: clamp((vw * rd) / sc, W * 0.45, W),                    // world-units the cabin sizes itself to
     vwVis: clamp((vw * rd) / sc, W * 0.30, W),                  // world-units actually on screen (no low floor — the nap pile honours this)
   };
@@ -5306,21 +5312,24 @@ function restLayout(vw) {
   const cramped = vis < W * 0.7;                                // portrait phone — the room is cropped to a centre strip
   const ww = clamp(vw * 0.66, W * 0.30, W * 0.44);
   const wx = cx - ww / 2, wy = H * 0.08, wh = clamp(ww * 0.92, H * 0.28, H * 0.40);
-  const hbase = H * 0.88;
   const hw = clamp(vw * 0.24, 96, 200), hh2 = clamp(H * 0.34, 130, 230);
-  const htop = hbase - hh2;
 
-  let hx, rugX, rugY, rugRx, rugRy, napX, napY, napSpread, napRowH;
+  let hbase, hx, rugX, rugY, rugRx, rugRy, napX, napY, napSpread, napRowH, napHalfW;
   if (!cramped) {
-    // desktop / tablet / landscape — the original layout, untouched
+    // desktop / tablet / landscape. A wide screen cover-crops the room top +
+    // bottom, so the floor composition sits a little higher than the raw art —
+    // the fireplace + rug clear the bottom edge / the rest bar.
+    hbase = H * 0.85;
     hx = cx - vw * 0.27;
     rugRx = W * 0.24; rugRy = H * 0.08;
-    rugX = cx + vw * 0.22; rugY = H * 0.76;
-    napX = cx + vw * 0.22; napY = H * 0.70; napSpread = W * 0.075; napRowH = H * 0.05;
+    rugX = cx + vw * 0.22; rugY = H * 0.72;
+    napX = cx + vw * 0.22; napY = H * 0.655; napSpread = W * 0.075; napRowH = H * 0.05;
+    napHalfW = rugRx * 0.82;
   } else {
     // phone — the room is cropped to a ~360-wide centre strip. Nudge the
     // fireplace off the left edge, then fit the rug + nap pile into whatever
     // strip is left of it, centred, so nothing is clipped by the screen edge.
+    hbase = H * 0.88;
     const visL = cx - vis / 2, visR = cx + vis / 2;
     hx = Math.max(cx - vw * 0.27, visL + hw / 2 + 6);
     const fireR = hx + hw / 2;                                  // right edge of the fireplace surround
@@ -5333,7 +5342,9 @@ function restLayout(vw) {
     rugY = H * 0.77;
     rugRx = Math.max(60, Math.min(vis * 0.30, napX - fireR - 6, visR - napX + 18));
     rugRy = H * 0.072;
+    napHalfW = Math.min(rugRx * 0.9, visR - napX - 34, napX - fireR - 10);   // pile stays on screen + off the fire
   }
+  const htop = hbase - hh2;
 
   return {
     wx, wy, ww, wh,
@@ -5341,7 +5352,7 @@ function restLayout(vw) {
     sillX: cx, sillY: wy + wh + 5,
     fireX: hx + hw * 0.5 + 14, fireY: hbase - 4,
     rugX, rugY, rugRx, rugRy,
-    napX, napY, napSpread, napRowH,
+    napX, napY, napSpread, napRowH, napHalfW,
     cramped,   // phone: the clock + mug table are off the visible strip, so they're skipped
   };
 }
@@ -5370,15 +5381,27 @@ function restSeatCats() {
     seat(sill, { x: L.sillX, y: L.sillY, face: rnd() < 0.5 ? -1 : 1, state: "loafing" });
   }
 
-  // everyone else: a shuffled nap pile on the rug
+  // everyone else: a shuffled nap pile on the rug. It grows WIDE, not tall — a
+  // big cove packs 25+ into the pile, and stacking them in 3 columns used to run
+  // the back rows off the bottom of the screen / behind the rest bar.
   const pile = others.filter(c => c !== sill);
   for (let i = pile.length - 1; i > 0; i--) { const j = (rnd() * (i + 1)) | 0; [pile[i], pile[j]] = [pile[j], pile[i]]; }
   const sp = L.napSpread, rh = L.napRowH || H * 0.05;
-  pile.forEach((c, i) => seat(c, {
-    x: L.napX + ((i % 3) - 1) * sp + (Math.floor(i / 3) % 2) * sp * 0.34,
-    y: L.napY + Math.floor(i / 3) * rh,
-    face: i % 2 ? 1 : -1, state: "sleeping",
-  }));
+  const halfW = Math.max(L.napHalfW || L.rugRx * 0.82, sp * 0.9);   // keep the pile on the rug + on screen
+  const colsMax = Math.max(3, Math.floor((halfW * 2) / sp) + 1);
+  const cols = clamp(Math.round(Math.sqrt(pile.length * 1.7)) || 1, 1, colsMax);
+  const rows = Math.max(1, Math.ceil(pile.length / cols));
+  const colStep = cols > 1 ? Math.min(sp, (halfW * 2) / (cols - 1)) : 0;
+  const rowStep = rows > 1 ? Math.min(rh, (H * (L.cramped ? 0.12 : 0.15)) / (rows - 1)) : 0;
+  const x0 = L.napX - colStep * (cols - 1) / 2;
+  pile.forEach((c, i) => {
+    const col = i % cols, row = (i / cols) | 0;
+    seat(c, {
+      x: x0 + col * colStep + (row % 2) * colStep * 0.28,
+      y: L.napY + row * rowStep,
+      face: i % 2 ? 1 : -1, state: "sleeping",
+    });
+  });
 }
 
 // the sim (and every timer that dismisses UI) is paused in rest mode, so wipe
