@@ -25,7 +25,11 @@ Everything that shapes the build is committed: `package.json`,
 | Node 20+ | nodejs.org | free | only needed if you want to build/preview locally |
 
 Local sanity check (optional): `npm ci && npm run build && npx cap sync` on
-Windows should all succeed. A full Android build also needs Android Studio + JDK 17.
+Windows should all succeed. A full Android build also needs Android Studio + JDK 21.
+
+**Toolchain (as of the Capacitor 8 upgrade):** Capacitor 8 · targets Android
+API 36 / min 24 · Gradle 8.14 · AGP 8.13 · **JDK 21** (the CI workflow pins it).
+API 36 clears Google Play's "must target a recent Android" gate.
 
 ---
 
