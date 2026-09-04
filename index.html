@@ -537,6 +537,56 @@
   .fest-bar .rb-back span{font-size:1.05rem;line-height:1;opacity:.75;}
   .fest-bar .rb-time{flex:1;text-align:center;color:rgba(255,255,255,.68);letter-spacing:.02em;white-space:nowrap;}
 
+  /* the landing panel — floats over the still-running cove, like #restPanel */
+  .fest-panel{pointer-events:auto;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    background:var(--panel);border:1px solid var(--panel-line);border-radius:22px;box-shadow:var(--shadow);
+    width:min(92vw,380px);max-height:88vh;overflow:auto;padding:1.4rem 1.3rem 1.1rem;text-align:center;}
+  .fest-panel[hidden]{display:none;}
+  .fest-panel .fp-art{font-size:2.4rem;margin:-.2rem 0 .3rem;}
+  .fest-panel h2{font-family:"Fraunces",serif;font-size:1.35rem;margin:0 0 .4rem;}
+  .fest-panel p{color:var(--ink-soft);font-size:.88rem;margin:0 0 1rem;line-height:1.5;}
+  .fp-grid{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin:0 0 1.1rem;}
+  .fp-cell{display:flex;flex-direction:column;align-items:center;gap:.15rem;width:74px;
+    background:#eef1e3;border:2px solid transparent;border-radius:14px;padding:.4rem .2rem .35rem;
+    cursor:pointer;font:inherit;}
+  .fp-cell canvas{width:56px;height:48px;}
+  .fp-cell .nm{font-size:.64rem;font-weight:600;color:var(--ink-soft);max-width:68px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;}
+  .fp-cell.picked{border-color:var(--accent);background:#fff;}
+  .fp-cell.picked .nm{color:var(--ink);}
+
+  /* 3-2-1 countdown */
+  .fest-countdown{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    pointer-events:none;z-index:70;}
+  .fest-countdown[hidden]{display:none;}
+  .fest-countdown span{font-family:"Fraunces",serif;font-size:6rem;color:#fff;
+    text-shadow:0 6px 24px rgba(0,0,0,.35);opacity:0;}
+  .fest-countdown span.pop{animation:festCdPop .7s ease-out;}
+  @keyframes festCdPop{0%{transform:scale(.4);opacity:0;}30%{transform:scale(1.15);opacity:1;}
+    70%{transform:scale(1);opacity:1;}100%{transform:scale(1);opacity:0;}}
+
+  /* the podium result card */
+  .fr-podium{display:flex;flex-direction:column;gap:.4rem;margin:.4rem 0 .7rem;text-align:left;}
+  .fr-podium .fr-row{display:flex;align-items:center;gap:.5rem;background:#eef1e3;border-radius:12px;
+    padding:.45rem .7rem;font-weight:600;font-size:.92rem;}
+  .fr-podium .medal{font-size:1.2rem;}
+  .fr-podium .pname{flex:1;}
+  .fr-podium .tag{font-size:.66rem;font-weight:700;color:#fff;background:var(--accent);
+    padding:.15rem .5rem;border-radius:999px;white-space:nowrap;}
+  .fr-podium .fr-row.mine{background:#fff;border:1px solid var(--accent);}
+  #festPickLine{font-weight:600;}
+  #festRestLine{color:var(--ink-faint);font-size:.82rem;}
+  #festRestLine:empty{display:none;}
+  .fr-btns{display:flex;gap:.5rem;margin-top:.3rem;}
+  .fr-btns .btn{flex:1;}
+
+  /* the escape hatch — this is a spectacle, not a wait you're locked into */
+  .fest-skip{position:absolute;top:.8rem;right:.8rem;z-index:66;pointer-events:auto;
+    background:rgba(17,14,21,.7);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.18);
+    border-radius:999px;font:inherit;font-size:.76rem;font-weight:600;padding:.4rem .8rem;cursor:pointer;}
+  .fest-skip:hover{background:rgba(17,14,21,.88);}
+  .fest-skip[hidden]{display:none;}
+
   /* ---- photo mode ---- */
   #photo{position:absolute;inset:0;z-index:60;background:rgba(24,21,15,.78);display:none;
     flex-direction:column;align-items:center;justify-content:center;gap:.9rem;padding:1.1rem;backdrop-filter:blur(3px);}
@@ -698,16 +748,32 @@
     </div>
   </div>
 
-  <!-- Cove Festival — visual prototype, not yet wired to real rewards -->
+  <!-- Cove Festival — a watch-and-cheer race. No shells staked; everyone who
+       enters gets a little something, your pick winning gets a bit more. -->
   <div id="fest">
+    <div class="fest-panel" id="festPanel" hidden>
+      <div class="fp-art">🎪</div>
+      <h2>The Cove Festival</h2>
+      <p>A race is forming down at the track. Send someone to represent the cove.</p>
+      <div class="fp-grid" id="festPickGrid"></div>
+      <button class="btn primary" id="festStart">Send them to race</button>
+      <button class="rest-cancel" id="festCancel">Maybe later</button>
+    </div>
+    <div class="fest-countdown" id="festCountdown" hidden><span id="festCdNum">3</span></div>
     <div class="fest-result" id="festResult" hidden>
       <div class="fr-card">
-        <div class="fr-emoji" id="festResultEmoji">🏆</div>
-        <h2 id="festWinner">—</h2>
-        <p id="festWinLine"></p>
-        <button class="btn primary" id="festClaim">Lovely</button>
+        <div class="fr-emoji">🏆</div>
+        <h2>The Cove Festival</h2>
+        <div class="fr-podium" id="festPodium"></div>
+        <p id="festPickLine"></p>
+        <p id="festRestLine"></p>
+        <div class="fr-btns">
+          <button class="btn primary" id="festAgain">Race again</button>
+          <button class="btn" id="festClaim">Back to the cove</button>
+        </div>
       </div>
     </div>
+    <button class="fest-skip" id="festSkip" hidden>Skip to the finish ›</button>
     <div class="fest-bar" id="festBar" hidden>
       <button class="rb-back" id="festBack"><span>‹</span> Back to the cove</button>
       <span class="rb-time" id="festTime">the cove festival</span>
@@ -4431,7 +4497,7 @@ document.getElementById("dev-name").addEventListener("click", () => askOwnerName
 document.getElementById("dev-shells").addEventListener("click", () => { G.shells += 500; syncHud(); });
 document.getElementById("dev-pearls").addEventListener("click", () => { G.pearls += 5; syncHud(); });
 document.getElementById("dev-cat").addEventListener("click", () => { spawnCat({ x: W * 0.5, y: H * 0.7 }); syncHud(); });
-document.getElementById("dev-fest").addEventListener("click", () => openFest());
+document.getElementById("dev-fest").addEventListener("click", () => openFestPicker());
 document.getElementById("dev-day").addEventListener("click", () => {
   G.opens++; G.streakDay = today() - 1; G.goalDay = 0; rollDailyGoals();
   for (const c of cats) { c.acc += aggregateRate() * 120; c.bornAt -= DAY_MS; }   // age the kittens too
@@ -5781,9 +5847,9 @@ function renderRest(dt) {
    real shell/pearl grants — this is a visual preview. Open it with the dev
    panel's "🎪 festival" button, or window.__cove.fest(). */
 let festMode = false, _festDPR = 0, _festG = null;
-const RACE_W = 1400, RACE_H = 640;
+const RACE_W = 1400, RACE_H = 640, MAX_RACE_T = 20;
 let raceCats = [], festSpectators = [], racePick = null, raceWinner = null;
-let raceT = 0, racePhase = "run", _festFinishAt = 0;
+let raceT = 0, racePhase = "run", _festFinishAt = 0, festPickedCat = null;
 
 function fitFestCanvas() {
   const { vw, vh } = restViewportPx();
@@ -5820,27 +5886,69 @@ const LANE_H = 48;
 function laneY(i) { return 404 + i * LANE_H; }
 function raceX(p) { return 170 + clamp(p, 0, 1) * (RACE_W - 340); }
 
-function openFest() {
+// ---- the landing panel: pick a cat, then Start / Cancel — floats over the
+// still-running cove, same pattern #restPanel uses before you commit to Begin.
+function openFestPicker() {
   if (festMode || restMode || !cats.length) return;
-  restClearUI(); closeAllPanels(); exitFocus();   // clear any open modal/panel/card first — same as entering rest
+  restClearUI(); closeAllPanels(); exitFocus();
+  const roster = cats.filter(c => !c.visitor);
+  if (!roster.length) { toast("No one's around to send to the festival right now."); return; }
+  if (!roster.includes(festPickedCat)) festPickedCat = roster.find(c => c.mascot) || roster[0];
+  renderFestPickGrid(roster);
+  document.getElementById("fest").classList.add("on");
+  document.getElementById("app").classList.add("festing");
+  document.getElementById("festPanel").hidden = false;
+}
+function renderFestPickGrid(roster) {
+  const grid = document.getElementById("festPickGrid");
+  grid.innerHTML = "";
+  for (const c of roster) {
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "fp-cell" + (c === festPickedCat ? " picked" : "");
+    cell.innerHTML = `<canvas width="56" height="48"></canvas><span class="nm"></span>`;
+    cell.querySelector(".nm").textContent = c.name;
+    cell.addEventListener("click", () => {
+      festPickedCat = c;
+      grid.querySelectorAll(".fp-cell").forEach(el => el.classList.remove("picked"));
+      cell.classList.add("picked");
+    });
+    grid.appendChild(cell);
+    miniCat(cell.querySelector("canvas"), c.coatKey, c.star, "loafing", false, 1);
+  }
+}
+function closeFestPicker() {
+  document.getElementById("festPanel").hidden = true;
+  document.getElementById("fest").classList.remove("on");
+  document.getElementById("app").classList.remove("festing");
+}
+// ---- Start tapped: wipe transition → build the field → countdown → run ----
+function startFestRace() {
+  document.getElementById("festPanel").hidden = true;
   const mk = cats.find(c => c.mascot);
-  const others = cats.filter(c => c !== mk && !c.visitor);
+  const others = cats.filter(c => c !== mk && c !== festPickedCat && !c.visitor);
   for (let i = others.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [others[i], others[j]] = [others[j], others[i]]; }
-  const field = mk ? [mk] : [];
+  const field = [];
+  if (festPickedCat) field.push(festPickedCat);
+  if (mk && mk !== festPickedCat) field.push(mk);
   for (const c of others) { if (field.length >= 4) break; field.push(c); }
   // a visiting guest fills a lane when the cove's small — the festival always has a full field
   while (field.length < 3) field.push(new Cat({ visitor: true }));
-  racePick = field[0] || null;
-  raceCats = field.slice(0, 5).map((c, i) => ({
-    cat: c, lane: i, pace: racePace(c) * rand(0.9, 1.1),
-    burst: (c.traits || []).some(t => t === "lazy" || t === "shy") && Math.random() < 0.35,
-    burstAt: rand(0.4, 0.75), progress: 0, done: false,
-  }));
+  racePick = festPickedCat || field[0];
+  raceCats = field.slice(0, 5).map((c, i) => {
+    const bias = (c.traits || []).some(t => ["bold", "playful", "curious"].includes(t)) ? 1.7
+      : (c.traits || []).some(t => ["lazy", "shy"].includes(t)) ? 0.55 : 1;
+    return {
+      cat: c, lane: i, base: racePace(c), burstBias: bias,
+      pace: 1, wobble: 1, wobbleAt: rand(0.3, 0.9), burstUntil: 0, nextBurstAt: rand(1, 2.2) / bias,
+      progress: 0, done: false, doneAt: 0,
+    };
+  });
   // spectators: a few cats not running, sat along the verge to watch
   const racing = new Set(field);
   festSpectators = cats.filter(c => !racing.has(c) && !c.visitor).slice(0, 3)
     .map((c, i) => Object.assign(c, { x: 300 + i * 380, y: 358, face: 1, state: "loafing", trotting: false, walkAmt: 0 }));
-  raceT = 0; racePhase = "run"; raceWinner = null; _festG = null;
+  raceT = 0; racePhase = "countdown"; raceWinner = null; _festG = null;
   document.getElementById("festResult").hidden = true;
 
   const w = document.getElementById("festWipe");
@@ -5854,12 +5962,28 @@ function openFest() {
   setTimeout(() => {
     fitFestCanvas();
     festMode = true;
-    document.getElementById("fest").classList.add("on");
-    document.getElementById("app").classList.add("festing");
     document.getElementById("festBar").hidden = false;
+    runFestCountdown();
   }, 560);
   setTimeout(() => w.classList.add("out"), 1250);
   setTimeout(() => w.classList.remove("in", "out"), 1850);
+}
+function runFestCountdown() {
+  const el = document.getElementById("festCountdown"), num = document.getElementById("festCdNum");
+  el.hidden = false;
+  const seq = ["3", "2", "1", "Go!"];
+  let i = 0;
+  (function step() {
+    num.textContent = seq[i];
+    num.classList.remove("pop"); void num.offsetWidth; num.classList.add("pop");
+    i++;
+    if (i < seq.length) setTimeout(step, 650);
+    else setTimeout(() => {
+      el.hidden = true;
+      racePhase = "run";
+      document.getElementById("festSkip").hidden = false;
+    }, 500);
+  })();
 }
 function closeFest() {
   festMode = false;
@@ -5867,6 +5991,8 @@ function closeFest() {
   document.getElementById("app").classList.remove("festing");
   document.getElementById("festBar").hidden = true;
   document.getElementById("festResult").hidden = true;
+  document.getElementById("festCountdown").hidden = true;
+  document.getElementById("festSkip").hidden = true;
   _festDPR = 0; resize();
   for (const c of cats) { c.stateDur = 0; decide(c); }
 }
@@ -5913,12 +6039,46 @@ function drawRaceBanner(g, x, finish) {
   g.save(); g.translate(x + 17, 381); g.rotate(0.05); g.fillText(finish ? "FINISH" : "START", 0, 3); g.restore();
   g.restore();
 }
-function showFestResult() {
-  document.getElementById("festWinner").textContent = raceWinner.cat.name + " wins!";
-  const picked = racePick && raceWinner.cat === racePick;
-  document.getElementById("festWinLine").textContent = picked
-    ? `${racePick.name} was your pick — nicely called. (+shells, a chance at a pearl)`
-    : `You were rooting for ${racePick ? racePick.name : "no one in particular"}. Everyone still gets a little something for showing up.`;
+// a short race, but not a flat sprint: pace wobbles (so the lead changes
+// hands) and each racer takes the occasional "zoomies" burst — biased by
+// trait, but never guaranteed, so nobody's a foregone conclusion
+function tickRacer(r, dt) {
+  if (r.done) return;
+  r.wobbleAt -= dt;
+  if (r.wobbleAt <= 0) { r.wobbleAt = rand(0.5, 1.1); r.wobble = rand(0.75, 1.2); }
+  r.nextBurstAt -= dt;
+  if (r.nextBurstAt <= 0 && r.burstUntil <= 0) {
+    r.nextBurstAt = rand(2.6, 4.6) / r.burstBias;
+    r.burstUntil = rand(0.7, 1.3);
+    spawnParticles(raceX(r.progress), laneY(r.lane) - 2, "dust", 4);
+    floatText(raceX(r.progress), laneY(r.lane) - 26, "zoomies!", "#e0873c");
+  }
+  const bursting = r.burstUntil > 0;
+  if (bursting) r.burstUntil -= dt;
+  r.pace = r.base * r.wobble * (bursting ? 2.15 : 1);
+  r.progress += r.pace * 0.1 * dt;
+  if (r.progress >= 1) { r.progress = 1; r.done = true; r.doneAt = raceT; }
+}
+function festRanking() { return [...raceCats].sort((a, b) => a.doneAt - b.doneAt || b.progress - a.progress); }
+function showFestPodium() {
+  const order = festRanking();
+  const medals = ["🥇", "🥈", "🥉"];
+  document.getElementById("festPodium").innerHTML = order.slice(0, 3).map((r, i) => {
+    const mine = r.cat === racePick;
+    return `<div class="fr-row${mine ? " mine" : ""}"><span class="medal">${medals[i]}</span>` +
+      `<span class="pname">${r.cat.name}</span>${mine ? '<span class="tag">your pick</span>' : ""}</div>`;
+  }).join("");
+  const place = order.findIndex(r => r.cat === racePick);
+  const pickLine = document.getElementById("festPickLine");
+  pickLine.textContent = place === 0 ? `${racePick.name} came in first — nicely called. (+shells, a chance at a pearl)`
+    : place === 1 ? `${racePick.name} placed 2nd — so close!`
+    : place === 2 ? `${racePick.name} placed 3rd — still made the podium.`
+    : `${racePick ? racePick.name : "Your pick"} didn't place this time. Everyone still gets a little something for showing up.`;
+  const rest = order.slice(3).map(r => r.cat.name);
+  document.getElementById("festRestLine").textContent = rest.length ? `${joinNice(rest)} ambled in eventually.` : "";
+  spawnParticles(raceX(1) - 10, laneY(order[0].lane) - 6, "spark", 12);
+  spawnParticles(raceX(1) - 10, laneY(order[0].lane) - 16, "heart", 5);
+  document.getElementById("festSkip").hidden = true;
   document.getElementById("festResult").hidden = false;
 }
 function renderFest(dt) {
@@ -5946,30 +6106,54 @@ function renderFest(dt) {
 
   for (const s of festSpectators) drawCat(g, s, false);
 
-  if (racePhase === "run") {
+  if (racePhase === "countdown") {
+    for (const r of raceCats) syncRacerCat(r, dt, true);
+  } else if (racePhase === "run") {
+    let allDone = true;
     for (const r of raceCats) {
-      if (!r.done) {
-        const boost = (raceT > r.burstAt && r.burst) ? 2.1 : 1;
-        r.progress += r.pace * 0.15 * dt * boost;
-        if (r.progress >= 1) { r.progress = 1; r.done = true; }
-      }
+      tickRacer(r, dt);
       syncRacerCat(r, dt);
+      if (!r.done) allDone = false;
     }
-    const winner = raceCats.find(r => r.done);
-    if (winner && !raceWinner) {
-      raceWinner = winner; racePhase = "finish"; _festFinishAt = raceT;
-      spawnParticles(raceX(1) - 10, laneY(winner.lane) - 6, "spark", 10);
-      spawnParticles(raceX(1) - 10, laneY(winner.lane) - 16, "heart", 4);
+    if (!raceWinner) {
+      const w = raceCats.find(r => r.done);
+      if (w) {
+        raceWinner = w;
+        spawnParticles(raceX(1) - 10, laneY(w.lane) - 6, "spark", 8);
+        spawnParticles(raceX(1) - 10, laneY(w.lane) - 16, "heart", 3);
+      }
+    }
+    if (allDone || raceT > MAX_RACE_T) {
+      for (const r of raceCats) if (!r.done) { r.done = true; r.doneAt = raceT; }
+      racePhase = "finish"; _festFinishAt = raceT;
+      document.getElementById("festSkip").hidden = true;
     }
   } else {
     for (const r of raceCats) syncRacerCat(r, dt, true);
-    if (racePhase === "finish" && raceT - _festFinishAt > 1.1) { racePhase = "done"; showFestResult(); }
+    if (racePhase === "finish" && raceT - _festFinishAt > 1.3) { racePhase = "podium"; showFestPodium(); }
   }
   for (const r of raceCats) drawCat(g, r.cat, false);
   if (particles.length) drawFX(g);
 }
 document.getElementById("festBack").addEventListener("click", closeFest);
 document.getElementById("festClaim").addEventListener("click", closeFest);
+document.getElementById("festCancel").addEventListener("click", closeFestPicker);
+document.getElementById("festStart").addEventListener("click", startFestRace);
+document.getElementById("festAgain").addEventListener("click", () => {
+  document.getElementById("festResult").hidden = true;
+  festMode = false; document.getElementById("festBar").hidden = true;
+  _festDPR = 0; resize();
+  for (const c of cats) { c.stateDur = 0; decide(c); }
+  openFestPicker();
+});
+document.getElementById("festSkip").addEventListener("click", () => {
+  if (racePhase !== "run") return;
+  const order = [...raceCats].sort((a, b) => b.progress - a.progress);
+  order.forEach((r, i) => { r.done = true; r.progress = Math.max(r.progress, 1 - i * 0.03); r.doneAt = raceT + i * 0.001; });
+  raceWinner = order[0];
+  racePhase = "finish"; _festFinishAt = raceT;
+  document.getElementById("festSkip").hidden = true;
+});
 
 /* ---------- rendering ---------- */
 let clouds = [];
@@ -9787,8 +9971,8 @@ window.__cove.focus = (name) => {
   if (c) { enterFocus(c); return "focusing " + c.name; }
   return "no such cat";
 };
-// Cove Festival prototype — opens the race preview (see openFest())
-window.__cove.fest = () => { openFest(); return { on: festMode, cats: raceCats.length }; };
+// Cove Festival — opens the picker panel (see openFestPicker())
+window.__cove.fest = () => { openFestPicker(); return { on: festMode, picking: !document.getElementById("festPanel").hidden }; };
 // perf: read the adaptive-detail state, or pin it (true/false) to preview the lite look
 window.__cove.perfLite = (v) => {
   if (v !== undefined) {
