@@ -805,6 +805,11 @@ let ADS_ENABLED = /(^|[?&])ads\b/.test(location.search);
 const DAY_MS = 86400000;
 const today = () => Math.floor(Date.now() / DAY_MS);
 let DPR = Math.min(window.devicePixelRatio || 1, 2);   // re-read on every resize (iPad zoom / display change)
+// adaptive resolution: dropped when the device can't hold 60fps even with the
+// per-cat lite detail (see _perfLite) — a struggling integrated GPU is usually
+// fill-rate bound on the full-screen sky/ground/vignette paints, which lite
+// mode doesn't touch. Restored once the device recovers. See frame().
+let _dprCap = 2;
 
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
@@ -4383,12 +4388,16 @@ function updateDev() {
   if (!devEl.classList.contains("on")) return;
   const sessSec = (performance.now() - sessionStart) / 1000;
   const avgMood = cats.length ? Math.round(cats.reduce((s,c)=>s+c.mood,0)/cats.length) : 0;
+  const fps = _frameEwma > 0 ? Math.round(1 / _frameEwma) : 0;
+  const avgFps = sessSec > 1 ? +(_frameCount / sessSec).toFixed(1) : 0;   // whole-session average, immune to one bad sample
   devStats.textContent =
 `SESSION ${fmtTime(sessSec)}   ·  D hides · R resets
 day ${G.opens}   cats ${cats.length}/${capacity()}   mood ${avgMood}
 shells ${Math.floor(G.shells)}   pearls ${G.pearls}   dex ${dexCount()}/${ROLLABLE.length}
 pets ${G.metrics.pets}  tokens ${G.metrics.tokens}  coaxed ${G.metrics.coaxed}  photos ${G.metrics.photos}
 streak ${G.streak}   rate ${aggregateRate().toFixed(2)}/s   played ${fmtTime(G.allTimeSec || 0)}
+fps ~${fps} (${(_frameEwma*1000).toFixed(1)}ms)  avg ${avgFps}  tier ${_perfTier}  canvas ${canvas.width}x${canvas.height}  dpr ${DPR.toFixed(2)}
+sim ${_profSim.toFixed(1)}  bg ${_profBg.toFixed(1)}  cats+grass ${_profCats.toFixed(1)}  fx ${_profFx.toFixed(1)}  hud ${_profHud.toFixed(1)}  (ms)
 ads: ${!ADS_ENABLED ? "DISABLED (ad-free build)" : Ads.owned() ? "SUPPORTER (off)" : (Date.now()-(G.firstSeen||0) < 48*3600e3 ? "grace" : "on")}  seen ${G.ads.seen}  today ${G.ads.dayCount}  born ${G.ads.born||"—"}  npa ${G.ads.npa?1:0}`;
 }
 
@@ -8125,6 +8134,7 @@ function simulate(dt) {
 }
 
 function renderScene(dt) {
+  const _pt0 = performance.now();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
@@ -8136,6 +8146,7 @@ function renderScene(dt) {
   drawDecorLayer(ctx);
   drawProps(ctx);
   for (const a of attractors) drawAttractor(ctx, a);
+  const _pt1 = performance.now();
   // interleave cats and grass tufts by y so nearer grass covers farther cats and
   // a cat in front is never hidden behind a blade
   const gt = performance.now() / 1000;
@@ -8167,6 +8178,7 @@ function renderScene(dt) {
       drawGrassTuft(ctx, it.f, gt, gnight, clamp(push, -7, 7));
     }
   }
+  const _pt2 = performance.now();
   drawDepartures(ctx);
   drawButterfly(ctx);
   drawBird(ctx);
@@ -8216,29 +8228,59 @@ function renderScene(dt) {
     ctx.restore();
   }
 
+  const _pt3 = performance.now();
   // hud bits — the card follows a moving cat every frame; the rest of the HUD is
   // just counters and doesn't need 60fps (its DOM writes, incl. innerHTML, add up)
   if (cardCat) { updateCatCard(); positionCard(cardCat); }
   const _now = performance.now();
   if (_now - _lastHudSync > 110) { _lastHudSync = _now; updateDev(); syncHud(); }
+  const _pt4 = performance.now();
+  // diagnostic phase timing (EWMA, ms) — read via __cove.perfLite() / the dev
+  // overlay. Cheap (a handful of performance.now() calls); left in permanently.
+  _profBg += ((_pt1 - _pt0) - _profBg) * 0.1;
+  _profCats += ((_pt2 - _pt1) - _profCats) * 0.1;
+  _profFx += ((_pt3 - _pt2) - _profFx) * 0.1;
+  _profHud += ((_pt4 - _pt3) - _profHud) * 0.1;
 }
+let _profBg = 0, _profCats = 0, _profFx = 0, _profHud = 0, _profSim = 0;
 let _lastHudSync = 0;
 
 let _paused = false;
 const SIM_DT = 1 / 60;            // physics runs at a fixed step so motion is framerate-independent
 let simAccum = 0;
 function frame(now) {
+  _frameCount++;   // real average fps over the whole session = _frameCount / sessSec — a cross-check
   let frameDt = (now - last) / 1000;
   last = now;
   if (frameDt > 0.25) frameDt = 0.25;      // tab was backgrounded — don't fast-forward
-  // adaptive detail — if the device is genuinely struggling, shed the
-  // cheap-to-lose extras (coat markings, star/purr auras, whiskers). Hysteresis
-  // so it doesn't flip frame to frame; a device that copes never trips it.
-  // Tracked in every mode — rest mode is where a full house bites hardest.
+  // adaptive perf — two tiers, each with its own non-overlapping hysteresis
+  // band so it settles instead of flapping. A device that copes never trips
+  // either. Tracked in every mode — rest mode is where a full house bites
+  // hardest, and the cove where a weak integrated GPU shows it (fill-rate on
+  // the full-screen sky/ground/vignette paints, not just per-cat drawing).
+  //   tier 0: full detail, full resolution
+  //   tier 1 (_perfLite): non-focused cats drop coat markings/whiskers/auras
+  //   tier 2: tier 1, plus the whole canvas renders at a lower density
   if (frameDt > 0 && frameDt < 0.25) {
     _frameEwma += (frameDt - _frameEwma) * 0.06;
-    if (!_perfLite && _frameEwma > 0.021) _perfLite = true;        // sustained < ~48 fps
-    else if (_perfLite && _frameEwma < 0.0166) _perfLite = false;  // recovered to ~60 fps
+    if (_perfTier < 1 && _frameEwma > 0.021) _perfTier = 1;         // sustained < ~48 fps
+    else if (_perfTier === 1 && _frameEwma < 0.0166) _perfTier = 0; // recovered to ~60 fps
+    else if (_perfTier === 1 && _frameEwma > 0.030) _perfTier = 2;  // lite alone isn't enough — still < ~33 fps
+    else if (_perfTier === 2 && _frameEwma < 0.024) _perfTier = 1;  // recovered to ~42 fps
+    _perfLite = _perfTier >= 1;
+    if (!restMode) {
+      // tier 2's cap must actually be BELOW the device's own ratio to do
+      // anything — 1.25 is a common Windows scale factor, so a flat cap can be
+      // a no-op there. 1.0 (native CSS-pixel density) is always a real cut
+      // unless the device is already <=1 (rare, and cheap to fill regardless).
+      // NOTE (2026-09-04): measured on real integrated-GPU hardware, cutting
+      // resolution here did NOT help (frame time was flat to slightly worse) —
+      // that machine's slowdown is CPU-bound, not fill-rate-bound. Left in
+      // (behind a high bar) for a genuinely fill-bound device; __cove.perfLite()
+      // still forces it for testing.
+      const wantCap = _perfTier >= 2 ? 1 : 2;
+      if (_dprCap !== wantCap) { _dprCap = wantCap; resize(); }
+    }
   }
   if (restMode) {
     // full 60fps while you're actually watching (the first ~26s — rain & fire
@@ -8253,14 +8295,16 @@ function frame(now) {
   if (!_paused) {
     simAccum += frameDt;
     let steps = 0;
+    const _simT0 = performance.now();
     while (simAccum >= SIM_DT && steps < 6) { simulate(SIM_DT); simAccum -= SIM_DT; steps++; }
+    _profSim += ((performance.now() - _simT0) - _profSim) * 0.1;
     if (steps === 6) simAccum = 0;          // fell behind; drop the backlog rather than spiral
     updateDayNight(frameDt);
     renderScene(frameDt);
   }
   requestAnimationFrame(frame);
 }
-let _frameEwma = 1 / 60, _perfLite = false;
+let _frameEwma = 1 / 60, _perfLite = false, _perfTier = 0, _frameCount = 0;
 
 /* ---------- helpers ---------- */
 function rand(a, b) { return a + Math.random() * (b - a); }
@@ -9207,7 +9251,7 @@ function resize() {
   } else {
     _resizeRetry = 0;
   }
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  DPR = Math.min(window.devicePixelRatio || 1, _dprCap);
   const aspect = W / H;
   const fvw = vw || 390, fvh = vh || 780;
   const _pan = fvw / fvh < aspect * 0.78;
@@ -9480,7 +9524,20 @@ window.__cove.focus = (name) => {
   return "no such cat";
 };
 // perf: read the adaptive-detail state, or pin it (true/false) to preview the lite look
-window.__cove.perfLite = (v) => { if (v !== undefined) _perfLite = !!v; return { perfLite: _perfLite, frameMs: +(_frameEwma * 1000).toFixed(2) }; };
+window.__cove.perfLite = (v) => {
+  if (v !== undefined) {
+    _perfTier = v === true ? 1 : v === false ? 0 : +v || 0;
+    _perfLite = _perfTier >= 1;
+    if (!restMode) { _dprCap = _perfTier >= 2 ? 1.25 : 2; resize(); }
+  }
+  const sessSec = (performance.now() - sessionStart) / 1000;
+  return {
+    perfTier: _perfTier, perfLite: _perfLite, dprCap: _dprCap, dpr: DPR,
+    frameMs: +(_frameEwma * 1000).toFixed(2), avgFps: sessSec > 1 ? +(_frameCount / sessSec).toFixed(1) : 0,
+    canvas: canvas.width + "x" + canvas.height,
+    phasesMs: { sim: +_profSim.toFixed(2), bg: +_profBg.toFixed(2), catsAndGrass: +_profCats.toFixed(2), fx: +_profFx.toFixed(2), hud: +_profHud.toFixed(2) },
+  };
+};
 Object.defineProperty(window.__cove, "cam", { get: () => ({
   focus: _focus && _focus.name, focusT: +_focusT.toFixed(3),
   camX: Math.round(_camX), camY: Math.round(_camY), camScale: +_camScale.toFixed(3),
