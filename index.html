@@ -2773,6 +2773,14 @@ function applyCamera() {
       (_camTx - _frozenLeft) * DPR, (_camTy - _frozenTop) * DPR);
   }
 }
+// world x-range currently on screen — used to cull off-screen cats/grass in
+// PAN mode (a portrait phone's cove is far wider than the viewport). During a
+// focus zoom the transform differs and the cast is tiny, so don't bother.
+function visibleWorldX() {
+  if (_focusT > 0 || !displayScale) return { l: -1e5, r: 1e5 };
+  const l = stage.scrollLeft / displayScale - _worldOffX;
+  return { l, r: l + (window.innerWidth || W) / displayScale };
+}
 function screenToWorld(cx, cy) {
   if (_focusT > 0) return { x: (cx - _camTx) / _camScale, y: (cy - _camTy) / _camScale };
   const r = canvas.getBoundingClientRect();
@@ -5890,6 +5898,7 @@ function initFlecks() {
 /* foreground meadow — grass tufts & the odd flower along the lower band, so tall
    screens read as "sitting in a meadow" instead of an empty strip of sand */
 let foreground = [];
+let _sceneLayer = [];   // reused each frame — the y-sorted cats+grass draw list
 function initForeground() {
   foreground = [];
   const hz = H * 0.40, floor = H - 6;
@@ -8082,9 +8091,12 @@ function renderScene(dt) {
   // a cat in front is never hidden behind a blade
   const gt = performance.now() / 1000;
   const gnight = window._sky ? 1 - window._sky.df : 0;
-  const layer = [];
-  for (const c of cats) layer.push({ y: c.y, c });
-  for (const f of foreground) layer.push({ y: f.y, f });
+  // only build/draw what's on screen — a portrait phone pans a cove much wider
+  // than the viewport, so up to a third of the cast can be scrolled out of view
+  const vx = visibleWorldX(), cullL = vx.l - 90, cullR = vx.r + 90;
+  const layer = _sceneLayer; layer.length = 0;
+  for (const c of cats) { if (c.state === "indoors" || (c.x >= cullL && c.x <= cullR)) layer.push({ y: c.y, c }); }
+  for (const f of foreground) { if (f.x >= cullL && f.x <= cullR) layer.push({ y: f.y, f }); }
   layer.sort((a, b) => a.y - b.y);
   for (const it of layer) {
     if (it.c) {
