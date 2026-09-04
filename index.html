@@ -1258,6 +1258,7 @@ function rebuildDecor() {
   for (let i = 0; i < G.decor.flowers; i++) wants.push({ type: "flowers", r: 28, seed: 5001 + i * 13, yBand: [lo + 60, hi - 16] });
   const pos = placeClear(wants, foot);
   wants.forEach((w, i) => decor.push({ type: w.type, seed: w.seed, x: pos[i].x, y: pos[i].y }));
+  decor.sort((a, b) => a.y - b.y);       // drawn in this order every frame — sort once here, not per frame
 }
 function rebuildAttractors() {
   rebuildDecor();                       // decor first so usable pieces have stable positions
@@ -1470,7 +1471,7 @@ function stationCount() { const s = G.stations || {}; return (s.fishing||0) + (s
 // the *feel*: past ~16 a small phone screen reads as a mosh pit, not a cozy cove.
 // A dedicated player can buy the Cove Charter (full Catdex + a steep price) to
 // push it to 24; "Find them a new home" on the cat card is the release valve.
-function maxCats() { return G.coveCharter ? 24 : 16; }
+function maxCats() { return G.coveCharter ? 30 : 16; }
 function capacity() { return Math.min(maxCats(), 4 + (G.bowls - 1) * 2 + G.toys + G.beds + (G.scratch || 0) + G.decor.cottage * 2 + stationCount() * 2); }
 // cats on an adventure are spliced out of `cats` but still belong to the cove —
 // count them so sending a party out doesn't free up slots for new arrivals that
@@ -5859,7 +5860,7 @@ function drawBackground(dt) {
   }
   ctx.fillStyle = _vignetteGrad; ctx.fillRect(0, 0, W, H);
 }
-let _vignetteGrad = null;
+let _vignetteGrad = null, _warmWash = null;
 // a couple of reusable soft radial gradients for the cat contact shadow, keyed
 // by a bucketed radius — canvas gradient creation is one of the costlier calls
 const _shadowGrads = new Map();
@@ -6647,7 +6648,7 @@ function drawStation(g, kind, seed) {
   }
 }
 function drawDecorLayer(g) {
-  for (const d of [...decor].sort((a, b) => a.y - b.y)) drawDecor(g, d);
+  for (const d of decor) drawDecor(g, d);   // kept y-sorted by rebuildDecor()
 }
 function drawFish(g, x, y, rot, col, sc) {
   g.save(); g.translate(x, y); g.rotate(rot); g.scale(sc, sc);
@@ -7226,6 +7227,9 @@ function tabbyMarks(g, c, P, coat) {
 function drawCat(g, c, isPhoto) {
   const t = performance.now() / 1000;
   const coat = c.coat;
+  // adaptive detail: on a struggling device, non-focused cats lose the extras
+  // (fine coat markings, whiskers, auras). The cat you're looking at keeps them.
+  const lite = _perfLite && !isPhoto && c !== cardCat && _focus !== c;
   const asleep = c.state === "sleeping";
   const sulk = c.state === "sulking";
   const pet = c.state === "being_pet";
@@ -7322,7 +7326,7 @@ function drawCat(g, c, isPhoto) {
   g.save();
   g.translate(c.x + purrBuzz, c.y + bobY);
 
-  if (purring) {
+  if (purring && !lite) {
     const rad = ag * (P.bw + 24);
     const a = (0.08 + Math.sin(t * 5.5) * 0.028) * purrFade;
     const pg = g.createRadialGradient(0, P.top * 0.5, 2, 0, P.top * 0.5, rad);
@@ -7385,8 +7389,12 @@ function drawCat(g, c, isPhoto) {
   g.fillStyle = silShadeGrad(g, silTop);
   g.beginPath(); g.rect(-P.bw - 4, silTop - 4, P.bw * 2 + 8, -silTop + 10); g.fill();
 
-  // pattern
-  if (coat.pattern === "mackerel") {
+  // pattern (the fine markings — tabby striping, calico patches, the smoke wash —
+  // are the first thing to go when the device is struggling; the C&S look keeps
+  // them subtle anyway)
+  if (lite && (coat.pattern === "mackerel" || coat.pattern === "smoke" || coat.pattern === "calico" || coat.pattern === "tortie")) {
+    // solid coat this frame
+  } else if (coat.pattern === "mackerel") {
     tabbyMarks(g, c, P, coat);
   } else if (coat.pattern === "points" || coat.pattern === "lynxpoint") {
     g.fillStyle = coat.point; g.globalAlpha = 0.88;
@@ -7394,7 +7402,7 @@ function drawCat(g, c, isPhoto) {
     g.globalAlpha = 0.5;
     g.beginPath(); g.ellipse(P.bw, 0, 8, 12, 0, 0, 7); g.fill();     // hip toward tail
     g.globalAlpha = 1;
-    if (coat.pattern === "lynxpoint") { g.globalAlpha = 0.4; tabbyMarks(g, c, P, coat); g.globalAlpha = 1; }
+    if (coat.pattern === "lynxpoint" && !lite) { g.globalAlpha = 0.4; tabbyMarks(g, c, P, coat); g.globalAlpha = 1; }
   } else if (coat.pattern === "smoke") {
     // dark on top, silver at the roots — a pale wash rising from the belly
     const sg = g.createLinearGradient(0, 2, 0, P.top);
@@ -7536,14 +7544,18 @@ function drawCat(g, c, isPhoto) {
     g.beginPath(); g.ellipse(nx - 0.6, ny + 4.6, 1.6, 1.1, 0.1, 0, 7); g.fill();
   }
 
-  // whiskers — a soft drooping fan, kept close to the muzzle so they don't streak into the sky
-  const wl = kit ? 7 : 11;
-  const lum = coatLum(coat.base);
-  g.strokeStyle = lum > 0.6 ? "rgba(120,110,98,0.42)" : "rgba(255,255,255,0.4)";
-  g.lineWidth = kit ? 0.8 : 1; g.lineCap = "round";
-  for (const dy of [-1, 0.6, 2.2]) {
-    g.beginPath(); g.moveTo(nx - 2, ny + dy * 0.4); g.quadraticCurveTo(nx - wl * 0.6, ny + dy * 0.3, nx - wl, ny + dy + 1.2); g.stroke();
-    g.beginPath(); g.moveTo(nx + 2, ny + dy * 0.4); g.quadraticCurveTo(nx + wl * 0.6, ny + dy * 0.3, nx + wl, ny + dy + 1.2); g.stroke();
+  // whiskers — a soft drooping fan, kept close to the muzzle so they don't streak into the sky.
+  // a sleeping cat has its face tucked and eyes shut — skip the fan (this is also the
+  // nap-pile case where a full house crowds the frame); also dropped in lite mode
+  if (!asleep && !lite) {
+    const wl = kit ? 7 : 11;
+    const lum = coatLum(coat.base);
+    g.strokeStyle = lum > 0.6 ? "rgba(120,110,98,0.42)" : "rgba(255,255,255,0.4)";
+    g.lineWidth = kit ? 0.8 : 1; g.lineCap = "round";
+    for (const dy of [-1, 0.6, 2.2]) {
+      g.beginPath(); g.moveTo(nx - 2, ny + dy * 0.4); g.quadraticCurveTo(nx - wl * 0.6, ny + dy * 0.3, nx - wl, ny + dy + 1.2); g.stroke();
+      g.beginPath(); g.moveTo(nx + 2, ny + dy * 0.4); g.quadraticCurveTo(nx + wl * 0.6, ny + dy * 0.3, nx + wl, ny + dy + 1.2); g.stroke();
+    }
   }
 
   // rosy cheeks — very faint on the V2 look; warmer when petted or a kitten
@@ -8104,7 +8116,7 @@ function renderScene(dt) {
       drawCat(ctx, it.c, false);
       if (it.c.state === "fishing" && it.c._station === "fishing" && it.c._fx) drawFishingRig(ctx, it.c);
       if (it.c.state === "baking" && it.c._station === "bakery" && it.c._fx) drawBakeryRig(ctx, it.c);
-      if (it.c.star >= 3) drawStarAura(ctx, it.c, dt);
+      if (it.c.star >= 3 && (!_perfLite || it.c === cardCat)) drawStarAura(ctx, it.c, dt);
     } else {
       // a nearby cat brushing past bends the blades away from it
       let push = 0;
@@ -8148,10 +8160,11 @@ function renderScene(dt) {
     ctx.fillStyle = `rgba(30,36,64,${n * 0.26})`;
     ctx.fillRect(0, 0, W, H);
     // a soft pool of warmth around the cove sign / centre so it never goes fully bleak
-    const warm = ctx.createRadialGradient(W*0.5, H*0.62, 20, W*0.5, H*0.62, Math.max(W,H)*0.55);
-    warm.addColorStop(0, `rgba(255,214,150,${n * 0.10})`);
-    warm.addColorStop(1, "rgba(255,214,150,0)");
-    ctx.fillStyle = warm; ctx.fillRect(0, 0, W, H);
+    if (!_warmWash) {
+      _warmWash = ctx.createRadialGradient(W*0.5, H*0.62, 20, W*0.5, H*0.62, Math.max(W,H)*0.55);
+      _warmWash.addColorStop(0, "rgba(255,214,150,1)"); _warmWash.addColorStop(1, "rgba(255,214,150,0)");
+    }
+    ctx.save(); ctx.globalAlpha = n * 0.10; ctx.fillStyle = _warmWash; ctx.fillRect(0, 0, W, H); ctx.restore();
   }
   ctx.restore();
 
@@ -8199,8 +8212,18 @@ function frame(now) {
     updateDayNight(frameDt);
     renderScene(frameDt);
   }
+  // adaptive detail — if the device is genuinely struggling (a full house on a
+  // low-end phone), shed the cheap-to-lose extras: coat markings, star/purr
+  // auras, whiskers. Hysteresis so it doesn't flip frame to frame; a device
+  // that copes never trips it, so nothing changes for most players.
+  if (frameDt > 0 && frameDt < 0.25) {
+    _frameEwma += (frameDt - _frameEwma) * 0.06;
+    if (!_perfLite && _frameEwma > 0.021) _perfLite = true;        // sustained < ~48 fps
+    else if (_perfLite && _frameEwma < 0.0166) _perfLite = false;  // recovered to ~60 fps
+  }
   requestAnimationFrame(frame);
 }
+let _frameEwma = 1 / 60, _perfLite = false;
 
 /* ---------- helpers ---------- */
 function rand(a, b) { return a + Math.random() * (b - a); }
@@ -9150,8 +9173,13 @@ function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   const aspect = W / H;
   const fvw = vw || 390, fvh = vh || 780;
+  const _pan = fvw / fvh < aspect * 0.78;
+  // a portrait phone pans a canvas ~3x wider than the screen — at DPR 2 that's a
+  // ~3.9 MP backing store to clear + paint every frame. Cap the density there;
+  // the cove art is soft cartoon shapes and 1.6x hides cleanly.
+  if (_pan) DPR = Math.min(DPR, 1.6);
   let cssW;
-  if (fvw / fvh < aspect * 0.78) {
+  if (_pan) {
     // PAN: viewport clearly taller than the cove (portrait phone / tablet). Lock to
     // height, overflow the width, drag to look around.
     displayScale = fvh / H;
@@ -9414,6 +9442,8 @@ window.__cove.focus = (name) => {
   if (c) { enterFocus(c); return "focusing " + c.name; }
   return "no such cat";
 };
+// perf: read the adaptive-detail state, or pin it (true/false) to preview the lite look
+window.__cove.perfLite = (v) => { if (v !== undefined) _perfLite = !!v; return { perfLite: _perfLite, frameMs: +(_frameEwma * 1000).toFixed(2) }; };
 Object.defineProperty(window.__cove, "cam", { get: () => ({
   focus: _focus && _focus.name, focusT: +_focusT.toFixed(3),
   camX: Math.round(_camX), camY: Math.round(_camY), camScale: +_camScale.toFixed(3),
