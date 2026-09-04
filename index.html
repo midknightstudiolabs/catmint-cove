@@ -749,6 +749,7 @@
       <button class="pill title-pill" id="titlePill" data-tip="Your cove's name. Tap to rename it.">Catmint <b>Cove</b></button>
       <button class="btn" id="helpBtn" data-tip="How the cove works — a quick guide to everything."><span class="ico">?</span></button>
       <button class="btn" id="restBtn" data-tip="Rainy-day rest — everyone naps inside with real rain. Tap any time, good to work or sleep to."><span class="ico">🌙</span></button>
+      <button class="btn" id="festBtn" data-tip="The Cove Festival — a friendly race down at the track. Tap any time."><span class="ico">🎪</span></button>
       <button class="btn" id="muteBtn" data-tip="Sounds — tap to mute or unmute."><span class="ico">🔊</span></button>
     </div>
   </div>
@@ -4470,6 +4471,7 @@ const GUIDE = [
   ["Today", "A welcome gift each day, three small goals, your streak. Miss a day and nothing's lost — there's no way to fall behind here."],
   ["Send a cat exploring", "Once a day, pick a trip and a cat. Postcards arrive while they're away; they come home with finds and a story. Midknight never leaves."],
   ["Rainy days", "Tap 🌙 any time — everyone pads inside, real rain plays. Leave it running while you work, or sleep to it."],
+  ["The Cove Festival", "Tap 🎪 any time — send a cat to race down at the track. No stakes: everyone who runs gets a little something, your pick winning gets a bit more."],
 ];
 function openGuide() {
   ensureAudio();
@@ -4485,6 +4487,7 @@ document.getElementById("focusBar").addEventListener("click", exitFocus);
 
 /* rest / rainy-day mode wiring */
 document.getElementById("restBtn").addEventListener("click", () => { if (!restMode) { syncRestPanelUI(); openRestPanel(); } });
+document.getElementById("festBtn").addEventListener("click", openFestPicker);   // openFestPicker() already no-ops mid-rest/mid-race
 document.getElementById("restRain").addEventListener("change", e => {
   restOpts.rain = e.target.checked;
   if (restBus && actx) restBus.gain.linearRampToValueAtTime(muted || !restOpts.rain ? 0.0001 : 0.9, actx.currentTime + 0.6);
