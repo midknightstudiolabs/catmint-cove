@@ -6025,10 +6025,18 @@ function startFestRace() {
       progress: 0, done: false, doneAt: 0,
     };
   });
-  // spectators: a few cats not running, sat along the verge to watch
+  // spectators: a crowd along the rail near the FINISH (not scattered mid-track,
+  // so the cheer-hop reads as "the crowd at the line," not a random mid-race
+  // jump). Always a proper-sized crowd — visiting guests fill in when the
+  // cove itself is too small to field one, same trick as the race lanes.
   const racing = new Set(field);
-  festSpectators = cats.filter(c => !racing.has(c) && !c.visitor).slice(0, 3)
-    .map((c, i) => Object.assign(c, { x: 300 + i * 380, y: 358, _festBaseY: 358, face: 1, state: "loafing", trotting: false, walkAmt: 0 }));
+  const SPECTATOR_COUNT = 5;
+  const spectatorCats = cats.filter(c => !racing.has(c) && !c.visitor).slice(0, SPECTATOR_COUNT);
+  while (spectatorCats.length < SPECTATOR_COUNT) spectatorCats.push(new Cat({ visitor: true }));
+  festSpectators = spectatorCats.map((c, i) => {
+    const x = 1000 + (i % 3) * 90, y = 356 + Math.floor(i / 3) * 46;
+    return Object.assign(c, { x, y, _festBaseY: y, face: 1, state: "loafing", trotting: false, walkAmt: 0 });
+  });
   raceT = 0; racePhase = "countdown"; raceWinner = null; festCheerUntil = 0;
   particles.length = 0; floaters.length = 0;   // last heat's zoomies text / confetti shouldn't bleed into this one
   document.getElementById("festResult").hidden = true;
