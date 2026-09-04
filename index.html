@@ -496,6 +496,47 @@
     padding:.42rem .6rem;border-radius:999px;cursor:pointer;}
   #rest .rb-fs:hover{background:rgba(255,255,255,.12);color:#fff;}
 
+  /* ---- cove festival (prototype) ---- */
+  #fest{position:absolute;inset:0;z-index:65;display:none;pointer-events:none;}
+  #fest.on{display:block;pointer-events:auto;}
+  #app.festing #hud,#app.festing #actions{opacity:0;pointer-events:none;transition:opacity .5s;}
+  #app.festing #toast,#app.festing #dev{opacity:0!important;pointer-events:none;}
+  #app.festing #stage{overflow:hidden;touch-action:none;}
+  #festWipe{position:fixed;inset:0;z-index:80;pointer-events:none;
+    background:linear-gradient(180deg,#e6b64d,#d97a5f 70%,#c96a52);
+    transform:translateY(100%);transition:transform .55s cubic-bezier(.65,0,.35,1);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+  #festWipe.in,#festWipe.out2{transform:translateY(0);}
+  #festWipe.out{transform:translateY(-100%);}
+  #festWipe .fw-bunting{position:absolute;left:0;right:0;height:30px;opacity:.85;
+    background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="34" height="30"><path d="M0 0 L34 0 L34 2 L17 24 L0 2 Z" fill="%23f4efe0"/></svg>');
+    background-repeat:repeat-x;background-size:34px 30px;}
+  #festWipe .fw-bunting.top{top:0;}
+  #festWipe .fw-bunting.bottom{bottom:0;transform:scaleY(-1);}
+  #festWipe .fw-emoji{font-size:2.6rem;margin-bottom:.3rem;}
+  #festWipe h2{font-family:"Fraunces",serif;font-size:1.7rem;color:#fff;margin:0;text-shadow:0 2px 10px rgba(0,0,0,.22);}
+  #festWipe p{color:rgba(255,255,255,.88);font-size:.92rem;margin:.35rem 0 0;}
+  .fest-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(20,16,12,.4);pointer-events:auto;}
+  .fest-result[hidden]{display:none;}
+  .fest-result .fr-card{background:var(--panel);border:1px solid var(--panel-line);border-radius:22px;
+    box-shadow:var(--shadow);width:min(90vw,340px);padding:1.5rem 1.4rem 1.2rem;text-align:center;}
+  .fest-result .fr-emoji{font-size:2.6rem;margin-bottom:.2rem;}
+  .fest-result h2{font-family:"Fraunces",serif;font-size:1.3rem;margin:0 0 .3rem;}
+  .fest-result p{color:var(--ink-soft);font-size:.9rem;margin:0 0 1.1rem;line-height:1.5;}
+  .fest-bar{pointer-events:auto;position:absolute;left:50%;bottom:max(.9rem, env(safe-area-inset-bottom));
+    transform:translateX(-50%);width:min(88vw,360px);display:flex;align-items:center;gap:0;
+    background:rgba(17,14,21,.9);border:1px solid rgba(255,255,255,.14);border-radius:999px;
+    box-shadow:0 6px 20px rgba(0,0,0,.34);color:rgba(255,255,255,.92);font-size:.8rem;
+    padding:.34rem .35rem;}
+  .fest-bar[hidden]{display:none;}
+  .fest-bar .rb-back{display:flex;align-items:center;gap:.35rem;background:none;border:none;
+    color:#fff;font:inherit;font-weight:600;font-size:.82rem;padding:.42rem .8rem;
+    border-radius:999px;cursor:pointer;white-space:nowrap;}
+  .fest-bar .rb-back:hover{background:rgba(255,255,255,.12);}
+  .fest-bar .rb-back span{font-size:1.05rem;line-height:1;opacity:.75;}
+  .fest-bar .rb-time{flex:1;text-align:center;color:rgba(255,255,255,.68);letter-spacing:.02em;white-space:nowrap;}
+
   /* ---- photo mode ---- */
   #photo{position:absolute;inset:0;z-index:60;background:rgba(24,21,15,.78);display:none;
     flex-direction:column;align-items:center;justify-content:center;gap:.9rem;padding:1.1rem;backdrop-filter:blur(3px);}
@@ -657,6 +698,29 @@
     </div>
   </div>
 
+  <!-- Cove Festival — visual prototype, not yet wired to real rewards -->
+  <div id="fest">
+    <div class="fest-result" id="festResult" hidden>
+      <div class="fr-card">
+        <div class="fr-emoji" id="festResultEmoji">🏆</div>
+        <h2 id="festWinner">—</h2>
+        <p id="festWinLine"></p>
+        <button class="btn primary" id="festClaim">Lovely</button>
+      </div>
+    </div>
+    <div class="fest-bar" id="festBar" hidden>
+      <button class="rb-back" id="festBack"><span>‹</span> Back to the cove</button>
+      <span class="rb-time" id="festTime">the cove festival</span>
+    </div>
+  </div>
+  <div id="festWipe">
+    <div class="fw-bunting top"></div>
+    <div class="fw-emoji" id="festWipeEmoji">🎪</div>
+    <h2 id="festWipeTitle">The Cove Festival</h2>
+    <p id="festWipeSub">Everyone's heading to the track…</p>
+    <div class="fw-bunting bottom"></div>
+  </div>
+
   <div id="hint" hidden><span id="hintDot">✦</span><span id="hintText"></span><button id="hintGo" hidden></button><button id="hintX" title="Dismiss">✕</button></div>
 
   <div id="actions">
@@ -674,6 +738,7 @@
       <button id="dev-shells">+500 ◈</button>
       <button id="dev-pearls">+5 ✦</button>
       <button id="dev-cat">+ cat</button>
+      <button id="dev-fest">🎪 festival</button>
       <button id="dev-day">skip a day</button>
       <button id="dev-name">name cove</button>
       <button id="dev-ad">show ad</button>
@@ -4366,6 +4431,7 @@ document.getElementById("dev-name").addEventListener("click", () => askOwnerName
 document.getElementById("dev-shells").addEventListener("click", () => { G.shells += 500; syncHud(); });
 document.getElementById("dev-pearls").addEventListener("click", () => { G.pearls += 5; syncHud(); });
 document.getElementById("dev-cat").addEventListener("click", () => { spawnCat({ x: W * 0.5, y: H * 0.7 }); syncHud(); });
+document.getElementById("dev-fest").addEventListener("click", () => openFest());
 document.getElementById("dev-day").addEventListener("click", () => {
   G.opens++; G.streakDay = today() - 1; G.goalDay = 0; rollDailyGoals();
   for (const c of cats) { c.acc += aggregateRate() * 120; c.bornAt -= DAY_MS; }   // age the kittens too
@@ -5707,6 +5773,203 @@ function renderRest(dt) {
   if (restDim > 0.01) { g.fillStyle = `rgba(6,8,16,${restDim * 0.62})`; g.fillRect(-6, -6, W + 12, H + 12); }
   g.restore();
 }
+
+/* ---------- Cove Festival (prototype) ----------
+   A watch-and-cheer race: entering costs nothing and nobody loses anything.
+   Everyone who runs gets a small payout; your pick winning gets a bit more —
+   same shape as a daily goal, not a wager. NOT yet wired to real triggers or
+   real shell/pearl grants — this is a visual preview. Open it with the dev
+   panel's "🎪 festival" button, or window.__cove.fest(). */
+let festMode = false, _festDPR = 0, _festG = null;
+const RACE_W = 1400, RACE_H = 640;
+let raceCats = [], festSpectators = [], racePick = null, raceWinner = null;
+let raceT = 0, racePhase = "run", _festFinishAt = 0;
+
+function fitFestCanvas() {
+  const { vw, vh } = restViewportPx();
+  const pan = (vw / vh) < (W / H) * 0.78;
+  let s = Math.min(DPR, pan ? 1.4 : 1.5);
+  if (vw * s > 1600) s *= 1600 / (vw * s);
+  _festDPR = s;
+  canvas.style.width = vw + "px"; canvas.style.height = vh + "px";
+  const bw = Math.round(vw * s), bh = Math.round(vh * s);
+  if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
+}
+function raceViewport() {
+  const { vw, vh } = restViewportPx();
+  const rd = _festDPR || DPR;
+  const sc = Math.min((vw * rd) / RACE_W, (vh * rd) / RACE_H);   // contain — the whole track always fits, no panning
+  return { sc, ox: (vw * rd - RACE_W * sc) / 2, oy: (vh * rd - RACE_H * sc) / 2 };
+}
+function buildFestGrads(g) {
+  const sky = g.createLinearGradient(0, 0, 0, 380);
+  sky.addColorStop(0, "#f6d98a"); sky.addColorStop(1, "#f0c477");
+  const track = g.createLinearGradient(0, 380, 0, RACE_H);
+  track.addColorStop(0, "#8fbf5c"); track.addColorStop(1, "#7ba64c");
+  return { sky, track, key: RACE_W + "x" + RACE_H };
+}
+// a trait's real `speed` stat (the same one that drives normal wandering)
+// sets its race pace too — a bold cat that's quick around the cove is quick
+// on the track; two traits compound but softened so no cat runs away with it
+function racePace(c) {
+  let m = 1;
+  for (const t of c.traits || []) { const T = TRAITS[t]; if (T) m *= T.speed; }
+  return Math.pow(m, 0.6);
+}
+const LANE_H = 48;
+function laneY(i) { return 404 + i * LANE_H; }
+function raceX(p) { return 170 + clamp(p, 0, 1) * (RACE_W - 340); }
+
+function openFest() {
+  if (festMode || restMode || !cats.length) return;
+  restClearUI(); closeAllPanels(); exitFocus();   // clear any open modal/panel/card first — same as entering rest
+  const mk = cats.find(c => c.mascot);
+  const others = cats.filter(c => c !== mk && !c.visitor);
+  for (let i = others.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [others[i], others[j]] = [others[j], others[i]]; }
+  const field = mk ? [mk] : [];
+  for (const c of others) { if (field.length >= 4) break; field.push(c); }
+  // a visiting guest fills a lane when the cove's small — the festival always has a full field
+  while (field.length < 3) field.push(new Cat({ visitor: true }));
+  racePick = field[0] || null;
+  raceCats = field.slice(0, 5).map((c, i) => ({
+    cat: c, lane: i, pace: racePace(c) * rand(0.9, 1.1),
+    burst: (c.traits || []).some(t => t === "lazy" || t === "shy") && Math.random() < 0.35,
+    burstAt: rand(0.4, 0.75), progress: 0, done: false,
+  }));
+  // spectators: a few cats not running, sat along the verge to watch
+  const racing = new Set(field);
+  festSpectators = cats.filter(c => !racing.has(c) && !c.visitor).slice(0, 3)
+    .map((c, i) => Object.assign(c, { x: 300 + i * 380, y: 358, face: 1, state: "loafing", trotting: false, walkAmt: 0 }));
+  raceT = 0; racePhase = "run"; raceWinner = null; _festG = null;
+  document.getElementById("festResult").hidden = true;
+
+  const w = document.getElementById("festWipe");
+  document.getElementById("festWipeEmoji").textContent = pick(["🎪", "🎏", "🏵️"]);
+  document.getElementById("festWipeSub").textContent = pick([
+    "Everyone's heading down to the track…",
+    "Bunting's up, kettle's on…",
+    "Something's happening by the field…",
+  ]);
+  w.classList.remove("out"); void w.offsetWidth; w.classList.add("in");
+  setTimeout(() => {
+    fitFestCanvas();
+    festMode = true;
+    document.getElementById("fest").classList.add("on");
+    document.getElementById("app").classList.add("festing");
+    document.getElementById("festBar").hidden = false;
+  }, 560);
+  setTimeout(() => w.classList.add("out"), 1250);
+  setTimeout(() => w.classList.remove("in", "out"), 1850);
+}
+function closeFest() {
+  festMode = false;
+  document.getElementById("fest").classList.remove("on");
+  document.getElementById("app").classList.remove("festing");
+  document.getElementById("festBar").hidden = true;
+  document.getElementById("festResult").hidden = true;
+  _festDPR = 0; resize();
+  for (const c of cats) { c.stateDur = 0; decide(c); }
+}
+function syncRacerCat(r, dt, freeze) {
+  const c = r.cat;
+  c.x = raceX(r.progress); c.y = laneY(r.lane); c.face = 1;
+  const _m = catMotion(c);
+  if (!freeze && !r.done) {
+    c.state = "exploring";
+    c.trotting = true;
+    c.walk += 40 * r.pace * dt * 0.34;
+    c.walkAmt = Math.min(1, (c.walkAmt || 0) + dt * 9);
+    c.tail += dt * 7 * _m.tailRate; c.bob += dt * 10;
+  } else {
+    if (r.done) c.state = "loafing";
+    c.walkAmt = Math.max(0, (c.walkAmt || 0) - dt * 4);
+    c.trotting = c.walkAmt > 0.05;
+    c.tail += dt * 3 * _m.tailRate; c.bob += dt * 3;
+  }
+  c.blink -= dt; if (c.blink < -0.12) c.blink = rand(2.4, 6.5) * _m.blinkEvery;
+}
+function drawBunting(g, x0, y, w, h, t) {
+  const n = Math.max(2, Math.round(w / 44));
+  const cols = ["#e0b24b", "#d97a5f", "#7ba64c", "#f4efe0"];
+  g.save();
+  g.strokeStyle = "rgba(60,45,30,0.5)"; g.lineWidth = 2;
+  g.beginPath();
+  for (let i = 0; i <= n; i++) { const x = x0 + i * (w / n), yy = y + Math.sin(t * 0.6 + i) * 1.6; if (i === 0) g.moveTo(x, yy); else g.lineTo(x, yy); }
+  g.stroke();
+  for (let i = 0; i < n; i++) {
+    const x = x0 + i * (w / n) + (w / n) / 2, yy = y + Math.sin(t * 0.6 + i) * 1.6;
+    g.fillStyle = cols[i % cols.length];
+    g.beginPath(); g.moveTo(x - 14, yy); g.lineTo(x + 14, yy); g.lineTo(x, yy + h * 0.7); g.closePath(); g.fill();
+  }
+  g.restore();
+}
+function drawRaceBanner(g, x, finish) {
+  g.save();
+  g.strokeStyle = "#6b4f3a"; g.lineWidth = 6; g.lineCap = "round";
+  g.beginPath(); g.moveTo(x, 358); g.lineTo(x, 608); g.stroke();
+  g.fillStyle = finish ? "#2b5548" : "#d97a5f";
+  g.beginPath(); g.moveTo(x, 366); g.lineTo(x + 48, 377); g.lineTo(x, 392); g.closePath(); g.fill();
+  g.fillStyle = "#fff"; g.font = "700 12px 'Hanken Grotesk',sans-serif"; g.textAlign = "center";
+  g.save(); g.translate(x + 17, 381); g.rotate(0.05); g.fillText(finish ? "FINISH" : "START", 0, 3); g.restore();
+  g.restore();
+}
+function showFestResult() {
+  document.getElementById("festWinner").textContent = raceWinner.cat.name + " wins!";
+  const picked = racePick && raceWinner.cat === racePick;
+  document.getElementById("festWinLine").textContent = picked
+    ? `${racePick.name} was your pick — nicely called. (+shells, a chance at a pearl)`
+    : `You were rooting for ${racePick ? racePick.name : "no one in particular"}. Everyone still gets a little something for showing up.`;
+  document.getElementById("festResult").hidden = false;
+}
+function renderFest(dt) {
+  raceT += dt;
+  const g = ctx;
+  { // a resize() elsewhere restores the full pannable canvas — put the fest canvas back
+    const px = restViewportPx();
+    if (Math.abs(canvas.width - Math.round(px.vw * (_festDPR || DPR))) > 2) { fitFestCanvas(); _festG = null; }
+  }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  const V = raceViewport();
+  g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
+
+  if (!_festG) _festG = buildFestGrads(g);
+  g.fillStyle = _festG.sky; g.fillRect(0, 0, RACE_W, 380);
+  g.fillStyle = _festG.track; g.fillRect(0, 380, RACE_W, RACE_H - 380);
+  drawBunting(g, 0, 26, RACE_W, 34, raceT);
+
+  g.strokeStyle = "rgba(255,255,255,0.4)"; g.lineWidth = 2; g.setLineDash([10, 10]);
+  for (let i = 1; i < 5; i++) { const y = laneY(i) - LANE_H / 2; g.beginPath(); g.moveTo(60, y); g.lineTo(RACE_W - 60, y); g.stroke(); }
+  g.setLineDash([]);
+  drawRaceBanner(g, 132, false);
+  drawRaceBanner(g, RACE_W - 132, true);
+
+  for (const s of festSpectators) drawCat(g, s, false);
+
+  if (racePhase === "run") {
+    for (const r of raceCats) {
+      if (!r.done) {
+        const boost = (raceT > r.burstAt && r.burst) ? 2.1 : 1;
+        r.progress += r.pace * 0.15 * dt * boost;
+        if (r.progress >= 1) { r.progress = 1; r.done = true; }
+      }
+      syncRacerCat(r, dt);
+    }
+    const winner = raceCats.find(r => r.done);
+    if (winner && !raceWinner) {
+      raceWinner = winner; racePhase = "finish"; _festFinishAt = raceT;
+      spawnParticles(raceX(1) - 10, laneY(winner.lane) - 6, "spark", 10);
+      spawnParticles(raceX(1) - 10, laneY(winner.lane) - 16, "heart", 4);
+    }
+  } else {
+    for (const r of raceCats) syncRacerCat(r, dt, true);
+    if (racePhase === "finish" && raceT - _festFinishAt > 1.1) { racePhase = "done"; showFestResult(); }
+  }
+  for (const r of raceCats) drawCat(g, r.cat, false);
+  if (particles.length) drawFX(g);
+}
+document.getElementById("festBack").addEventListener("click", closeFest);
+document.getElementById("festClaim").addEventListener("click", closeFest);
 
 /* ---------- rendering ---------- */
 let clouds = [];
@@ -8268,7 +8531,7 @@ function frame(now) {
     else if (_perfTier === 1 && _frameEwma > 0.030) _perfTier = 2;  // lite alone isn't enough — still < ~33 fps
     else if (_perfTier === 2 && _frameEwma < 0.024) _perfTier = 1;  // recovered to ~42 fps
     _perfLite = _perfTier >= 1;
-    if (!restMode) {
+    if (!restMode && !festMode) {
       // tier 2's cap must actually be BELOW the device's own ratio to do
       // anything — 1.25 is a common Windows scale factor, so a flat cap can be
       // a no-op there. 1.0 (native CSS-pixel density) is always a real cut
@@ -8282,6 +8545,7 @@ function frame(now) {
       if (_dprCap !== wantCap) { _dprCap = wantCap; resize(); }
     }
   }
+  if (festMode) { renderFest(frameDt); requestAnimationFrame(frame); return; }
   if (restMode) {
     // full 60fps while you're actually watching (the first ~26s — rain & fire
     // need it to look smooth), then drop to 15fps once it dims for burn-in.
@@ -9523,6 +9787,8 @@ window.__cove.focus = (name) => {
   if (c) { enterFocus(c); return "focusing " + c.name; }
   return "no such cat";
 };
+// Cove Festival prototype — opens the race preview (see openFest())
+window.__cove.fest = () => { openFest(); return { on: festMode, cats: raceCats.length }; };
 // perf: read the adaptive-detail state, or pin it (true/false) to preview the lite look
 window.__cove.perfLite = (v) => {
   if (v !== undefined) {
