@@ -694,9 +694,14 @@
     .verbadge{display:none;}
   }
   @media (max-width:460px){
-    #hud{gap:.3rem;padding-left:calc(.5rem + env(safe-area-inset-left));padding-right:calc(.5rem + env(safe-area-inset-right));}
-    #hud .hud-group{gap:.3rem;flex-wrap:nowrap;min-width:0;}   /* everything stays on one row */
-    #hud .hud-group:first-child{overflow:hidden;}
+    /* two rows instead of one squeezed row split to opposite edges: currency
+       pills get the full width on top, icon buttons get their own row below,
+       right-aligned. Each row now has room to breathe instead of clipping. */
+    #hud{gap:.35rem;flex-wrap:wrap;padding-left:calc(.5rem + env(safe-area-inset-left));padding-right:calc(.5rem + env(safe-area-inset-right));}
+    #hud .hud-group{gap:.3rem;flex-wrap:nowrap;min-width:0;}
+    #hud .hud-group:first-child{flex:1 1 100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    #hud .hud-group:first-child::-webkit-scrollbar{display:none;}
+    #hud .hud-group:last-child{flex:0 0 auto;margin-left:auto;}
     #hud .pill{padding:.35rem .55rem .35rem .42rem;font-size:.86rem;}
     #hud .pill.small{font-size:.72rem;padding:.3rem .5rem;}
     #hud .pill .dot{width:.95rem;height:.95rem;font-size:.62rem;}
@@ -5893,10 +5898,18 @@ let festMode = false, _festDPR = 0, _festG = null;
 const RACE_W = 1400, RACE_H = 640, MAX_RACE_T = 20;
 let raceCats = [], festSpectators = [], racePick = null, raceWinner = null;
 let raceT = 0, racePhase = "run", _festFinishAt = 0, festPickedCat = null, festCheerUntil = 0;
+let _festCamX = 150;   // camera centre in RACE-space, used only in portrait pan mode
 
+// portrait phone — the track's 2.2:1 shape has to shrink to a sliver to fit
+// contain-style, so instead it locks to height and pans, like the cove itself
+// does for its own pannable-world PAN mode
+function festIsPan() {
+  const { vw, vh } = restViewportPx();
+  return vh > vw;
+}
 function fitFestCanvas() {
   const { vw, vh } = restViewportPx();
-  const pan = (vw / vh) < (W / H) * 0.78;
+  const pan = festIsPan();
   let s = Math.min(DPR, pan ? 1.4 : 1.5);
   if (vw * s > 1600) s *= 1600 / (vw * s);
   _festDPR = s;
@@ -5907,8 +5920,20 @@ function fitFestCanvas() {
 function raceViewport() {
   const { vw, vh } = restViewportPx();
   const rd = _festDPR || DPR;
+  if (festIsPan()) {
+    const sc = (vh * rd) / RACE_H;   // lock to height, camera follows the race horizontally
+    return { sc, pan: true };
+  }
   const sc = Math.min((vw * rd) / RACE_W, (vh * rd) / RACE_H);   // contain — the whole track always fits, no panning
-  return { sc, ox: (vw * rd - RACE_W * sc) / 2, oy: (vh * rd - RACE_H * sc) / 2 };
+  return { sc, ox: (vw * rd - RACE_W * sc) / 2, oy: (vh * rd - RACE_H * sc) / 2, pan: false };
+}
+// where the camera should be heading: the pack's average position, so the
+// whole field stays onscreen together rather than picking one cat to chase
+function festCamTargetX() {
+  if (!raceCats.length) return raceX(0);
+  let sum = 0;
+  for (const r of raceCats) sum += raceX(r.progress);
+  return sum / raceCats.length;
 }
 function buildFestGrads(g) {
   const sky = g.createLinearGradient(0, 0, 0, 380);
@@ -5963,6 +5988,7 @@ function openFestPicker() {
   setTimeout(() => {
     fitFestCanvas();
     festMode = true;
+    _festCamX = raceX(0);   // frame the starting line, not wherever the last heat ended
     document.getElementById("app").classList.add("festing");
     document.getElementById("fest").classList.add("on");
     document.getElementById("festBar").hidden = false;
@@ -6046,6 +6072,7 @@ function startFestRace() {
     return Object.assign(c, { x, y, _festBaseY: y, face: 1, state: "loafing", trotting: false, walkAmt: 0 });
   });
   raceT = 0; racePhase = "countdown"; raceWinner = null; festCheerUntil = 0;
+  _festCamX = raceX(0);   // "Race again" reuses the grounds with no wipe — snap back to the line
   particles.length = 0; floaters.length = 0;   // last heat's zoomies text / confetti shouldn't bleed into this one
   document.getElementById("festResult").hidden = true;
   runFestCountdown();
@@ -6327,7 +6354,16 @@ function renderFest(dt) {
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, canvas.width, canvas.height);
   const V = raceViewport();
-  g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
+  if (V.pan) {
+    const { vw, vh } = restViewportPx();
+    const rd = _festDPR || DPR;
+    const visW = (vw * rd) / V.sc, half = Math.min(visW / 2, RACE_W / 2);
+    _festCamX += (festCamTargetX() - _festCamX) * Math.min(1, dt * 3);
+    const camX = clamp(_festCamX, half, RACE_W - half);
+    g.setTransform(V.sc, 0, 0, V.sc, (vw * rd) / 2 - camX * V.sc, 0);
+  } else {
+    g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
+  }
 
   if (!_festG) _festG = buildFestGrads(g);
   g.fillStyle = _festG.sky; g.fillRect(0, 0, RACE_W, 380);
