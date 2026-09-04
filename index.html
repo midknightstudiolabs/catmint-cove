@@ -6048,9 +6048,9 @@ function runFestCountdown() {
     ring.classList.remove("pop"); void ring.offsetWidth; ring.classList.add("pop");
     if (s.cls === "go") {
       flash.classList.remove("on"); void flash.offsetWidth; flash.classList.add("on");
-      tone(660, 0.14, "triangle", 0.09); tone(880, 0.24, "triangle", 0.08, 0.07);   // a little starting horn
+      tone(660, 0.16, "triangle", 0.16); tone(880, 0.26, "triangle", 0.14, 0.07);   // a little starting horn
     } else {
-      tone(s.freq, 0.13, "sine", 0.08);   // pitch climbs 3->2->1, building into Go!
+      tone(s.freq, 0.15, "square", 0.14);   // pitch climbs 3->2->1, building into Go! (square = more cut-through than sine)
     }
     i++;
     if (i < seq.length) setTimeout(step, 650);
@@ -6180,7 +6180,7 @@ function festCelebrateWinner(w) {
   spawnParticles(raceX(1) - 10, laneY(w.lane) - 6, "spark", 8);
   spawnParticles(raceX(1) - 10, laneY(w.lane) - 16, "heart", 3);
   for (const s of festSpectators) if (Math.random() < 0.7) spawnParticles(s.x, s.y - 22, "heart", 1);
-  [784, 1046, 1318].forEach((f, i) => tone(f, 0.22, "triangle", 0.06, i * 0.07));   // the same little "reveal" arpeggio
+  [784, 1046, 1318].forEach((f, i) => tone(f, 0.24, "triangle", 0.11, i * 0.07));   // the same little "reveal" arpeggio, a touch louder to cut through the finish-line particles
 }
 function showFestPodium() {
   const order = festRanking();
