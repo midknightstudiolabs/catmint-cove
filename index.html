@@ -6974,6 +6974,41 @@ function drawEye(g, ex, ey, mode, iris, wide, kit) {
     g.stroke();
   }
 }
+// Midknight's locked bible markings — the four that make him *him*. Drawn in the
+// face frame (tilts with the head), over the white muzzle, under the nose.
+// midknight-bible.html §02: freckle off to his left, black nose-bridge wedge
+// splitting the muzzle into two lobes, chin dot, mask point between the brows.
+function drawMidknightMarks(g, P, coat, kit) {
+  const R = P.hr, hx = P.hx, hy = P.hy, k = kit ? 0.86 : 1;
+  g.fillStyle = coat.base;
+  // mask point — the black dips to a soft point between the brows (the "concerned")
+  g.beginPath();
+  g.moveTo(hx - R * 0.42, hy - R * 0.32);
+  g.quadraticCurveTo(hx, hy - R * 0.18, hx + R * 0.42, hy - R * 0.32);
+  g.quadraticCurveTo(hx + R * 0.15, hy + R * 0.06, hx, hy + R * 0.20);
+  g.quadraticCurveTo(hx - R * 0.15, hy + R * 0.06, hx - R * 0.42, hy - R * 0.32);
+  g.closePath(); g.fill();
+  // nose-bridge wedge — runs from the mask point over the muzzle to the nose,
+  // slim waist so the white reads as two distinct lobes
+  g.beginPath();
+  g.moveTo(hx - R * 0.15, hy + R * 0.06);
+  g.quadraticCurveTo(hx, hy - R * 0.02, hx + R * 0.15, hy + R * 0.06);
+  g.quadraticCurveTo(hx + R * 0.085, hy + R * 0.30, hx + R * 0.10, hy + R * 0.46);
+  g.quadraticCurveTo(hx, hy + R * 0.52, hx - R * 0.10, hy + R * 0.46);
+  g.quadraticCurveTo(hx - R * 0.085, hy + R * 0.30, hx - R * 0.15, hy + R * 0.06);
+  g.closePath(); g.fill();
+  // forehead freckle — the single most identifying mark: white scatter OFF to his
+  // left, never centred (midknight-bible.html §02)
+  g.fillStyle = coatLum(coat.base) < 0.4 ? "#f2ede1" : "#3a332c";
+  g.beginPath(); g.ellipse(hx + R * 0.20, hy - R * 0.53, R * 0.11, R * 0.085, 0.32, 0, 7); g.fill();
+  g.globalAlpha = 0.65;
+  g.beginPath(); g.ellipse(hx + R * 0.32, hy - R * 0.44, R * 0.045, R * 0.038, 0, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(hx + R * 0.11, hy - R * 0.43, R * 0.03, R * 0.028, 0, 0, 7); g.fill();
+  g.globalAlpha = 1;
+  // chin dot — the "goatee", a round black patch on the white chin under the mouth
+  g.fillStyle = coat.base;
+  g.beginPath(); g.ellipse(hx - R * 0.03, hy + R * 0.78, R * 0.11, R * 0.09, 0, 0, 7); g.fill();
+}
 function drawTail(g, P, coat, mode, wag) {
   const pts = coat.pattern === "points" || coat.pattern === "lynxpoint" || coat.pattern === "van";
   g.fillStyle = pts ? coat.point : coat.base;
@@ -7308,8 +7343,9 @@ function drawCat(g, c, isPhoto) {
       g.beginPath(); g.ellipse(P.bw * 0.62, -2.5, 4.2, 4, 0, 0, 7); g.fill();
     }
     if (coat.white.includes("muzzle")) {
-      const mw = coat.snowMask ? 5.6 : 4.4, mh = coat.snowMask ? 4.2 : 3.4;   // Labubu's white muzzle is a bit fuller
-      g.beginPath(); g.ellipse(P.hx + 1, P.hy + P.hr * 0.5, mw, mh, 0, 0, 7); g.fill();
+      const mw = coat.snowMask ? 5.6 : coat.mascot ? 5.6 : 4.4;   // fuller for Labubu; fuller for Midknight so the wedge reads as two lobes
+      const mh = coat.snowMask ? 4.2 : coat.mascot ? 4.1 : 3.4;
+      g.beginPath(); g.ellipse(P.hx + (coat.mascot ? 0.3 : 1), P.hy + P.hr * 0.5, mw, mh, 0, 0, 7); g.fill();
     }
     if (coat.white.includes("blaze"))  {
       g.beginPath();
@@ -7368,6 +7404,8 @@ function drawCat(g, c, isPhoto) {
   const eDx = (kit ? 5.2 : 5.4);
   drawEye(g, P.hx - eDx, eyeY, eyeMode, coat.eye, playing, kit);
   drawEye(g, P.hx + eDx, eyeY, eyeMode, coat.eye, playing, kit);
+
+  if (coat.mascot && !asleep) drawMidknightMarks(g, P, coat, kit);   // freckle · wedge · chin dot · mask point
 
   // tiny nose + a soft simple mouth (Cats & Soup keeps this minimal)
   const nx = P.hx + 0.5, ny = P.hy + P.hr * 0.38;
