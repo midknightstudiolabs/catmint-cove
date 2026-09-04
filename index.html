@@ -507,20 +507,30 @@
   #app.festing #hud,#app.festing #actions{opacity:0;pointer-events:none;transition:opacity .5s;}
   #app.festing #toast,#app.festing #dev{opacity:0!important;pointer-events:none;}
   #app.festing #stage{overflow:hidden;touch-action:none;}
+  /* a curtain that rises to COVER, holds (the scene swaps underneath, hidden),
+     then drops back away the way it came to REVEAL — same gesture both
+     directions (arriving and leaving), so it reads as one clear "hide then
+     show" beat rather than a single sweep that carries on through and off the
+     far edge. Content gets its own settle so it doesn't just snap into view. */
   #festWipe{position:fixed;inset:0;z-index:80;pointer-events:none;
     background:linear-gradient(180deg,#e6b64d,#d97a5f 70%,#c96a52);
-    transform:translateY(100%);transition:transform .55s cubic-bezier(.65,0,.35,1);
+    transform:translateY(105%);transition:transform .5s cubic-bezier(.22,1,.36,1);
     display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
-  #festWipe.in,#festWipe.out2{transform:translateY(0);}
-  #festWipe.out{transform:translateY(-100%);}
+  #festWipe.in{transform:translateY(0);}
+  #festWipe.out{transform:translateY(105%);}
   #festWipe .fw-bunting{position:absolute;left:0;right:0;height:30px;opacity:.85;
     background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="34" height="30"><path d="M0 0 L34 0 L34 2 L17 24 L0 2 Z" fill="%23f4efe0"/></svg>');
     background-repeat:repeat-x;background-size:34px 30px;}
   #festWipe .fw-bunting.top{top:0;}
   #festWipe .fw-bunting.bottom{bottom:0;transform:scaleY(-1);}
-  #festWipe .fw-emoji{font-size:2.6rem;margin-bottom:.3rem;}
-  #festWipe h2{font-family:"Fraunces",serif;font-size:1.7rem;color:#fff;margin:0;text-shadow:0 2px 10px rgba(0,0,0,.22);}
-  #festWipe p{color:rgba(255,255,255,.88);font-size:.92rem;margin:.35rem 0 0;}
+  #festWipe .fw-emoji{font-size:2.6rem;margin-bottom:.3rem;transform:scale(.6);opacity:0;
+    transition:transform .4s .15s cubic-bezier(.34,1.4,.64,1),opacity .3s .15s;}
+  #festWipe h2{font-family:"Fraunces",serif;font-size:1.7rem;color:#fff;margin:0;
+    text-shadow:0 2px 10px rgba(0,0,0,.22);transform:translateY(8px);opacity:0;
+    transition:transform .35s .2s,opacity .35s .2s;}
+  #festWipe p{color:rgba(255,255,255,.88);font-size:.92rem;margin:.35rem 0 0;
+    transform:translateY(8px);opacity:0;transition:transform .35s .28s,opacity .35s .28s;}
+  #festWipe.in .fw-emoji,#festWipe.in h2,#festWipe.in p{transform:none;opacity:1;}
   .fest-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     background:rgba(20,16,12,.4);pointer-events:auto;}
   .fest-result[hidden]{display:none;}
@@ -5878,7 +5888,7 @@ function renderRest(dt) {
 let festMode = false, _festDPR = 0, _festG = null;
 const RACE_W = 1400, RACE_H = 640, MAX_RACE_T = 20;
 let raceCats = [], festSpectators = [], racePick = null, raceWinner = null;
-let raceT = 0, racePhase = "run", _festFinishAt = 0, festPickedCat = null;
+let raceT = 0, racePhase = "run", _festFinishAt = 0, festPickedCat = null, festCheerUntil = 0;
 
 function fitFestCanvas() {
   const { vw, vh } = restViewportPx();
@@ -5913,7 +5923,10 @@ function racePace(c) {
 }
 const LANE_H = 48;
 function laneY(i) { return 404 + i * LANE_H; }
-function raceX(p) { return 170 + clamp(p, 0, 1) * (RACE_W - 340); }
+// 150/1250 sit just clear of the start/finish poles (132 / RACE_W-132) so a
+// racer starts right at the start flag and crosses right at the finish flag,
+// not several body-widths short of (or past) either one
+function raceX(p) { return 150 + clamp(p, 0, 1) * 1100; }
 
 // ---- entry: the wipe takes you TO the festival grounds first — the picker
 // only appears once you're actually there, so nothing bounces back to the
@@ -5926,7 +5939,7 @@ function openFestPicker() {
   const roster = cats.filter(c => !c.visitor);
   if (!roster.length) { toast("No one's around to send to the festival right now."); return; }
   if (!roster.includes(festPickedCat)) festPickedCat = roster.find(c => c.mascot) || roster[0];
-  raceCats = []; raceWinner = null; racePick = null; raceT = 0; racePhase = "picker"; _festG = null;
+  raceCats = []; raceWinner = null; racePick = null; raceT = 0; racePhase = "picker"; _festG = null; festCheerUntil = 0;
   festIdleScene(roster);
   document.getElementById("festResult").hidden = true;
   document.getElementById("festPanel").hidden = true;   // shown once we've actually arrived
@@ -5957,10 +5970,13 @@ function openFestPicker() {
 // a loose, ambient group standing around the grounds — shown while you're
 // just picking, before a field's been drawn for an actual heat
 function festIdleScene(roster) {
-  festSpectators = roster.slice(0, 6).map((c, i) => Object.assign(c, {
-    x: 280 + (i % 3) * 300 + rand(-14, 14), y: 356 + Math.floor(i / 3) * 46, face: 1,
-    state: "loafing", trotting: false, walkAmt: 0,
-  }));
+  festSpectators = roster.slice(0, 6).map((c, i) => {
+    const y = 356 + Math.floor(i / 3) * 46;
+    return Object.assign(c, {
+      x: 280 + (i % 3) * 300 + rand(-14, 14), y, _festBaseY: y, face: 1,
+      state: "loafing", trotting: false, walkAmt: 0,
+    });
+  });
 }
 function renderFestPickGrid(roster) {
   const grid = document.getElementById("festPickGrid");
@@ -6006,8 +6022,9 @@ function startFestRace() {
   // spectators: a few cats not running, sat along the verge to watch
   const racing = new Set(field);
   festSpectators = cats.filter(c => !racing.has(c) && !c.visitor).slice(0, 3)
-    .map((c, i) => Object.assign(c, { x: 300 + i * 380, y: 358, face: 1, state: "loafing", trotting: false, walkAmt: 0 }));
-  raceT = 0; racePhase = "countdown"; raceWinner = null;
+    .map((c, i) => Object.assign(c, { x: 300 + i * 380, y: 358, _festBaseY: 358, face: 1, state: "loafing", trotting: false, walkAmt: 0 }));
+  raceT = 0; racePhase = "countdown"; raceWinner = null; festCheerUntil = 0;
+  particles.length = 0; floaters.length = 0;   // last heat's zoomies text / confetti shouldn't bleed into this one
   document.getElementById("festResult").hidden = true;
   runFestCountdown();
 }
@@ -6045,6 +6062,7 @@ function closeFest() {
   document.getElementById("festResult").hidden = true;
   document.getElementById("festCountdown").hidden = true;
   document.getElementById("festSkip").hidden = true;
+  particles.length = 0; floaters.length = 0;   // a live "zoomies!" or confetti spark shouldn't follow you back to the cove
   const w = document.getElementById("festWipe");
   document.getElementById("festWipeEmoji").textContent = "🐾";
   document.getElementById("festWipeTitle").textContent = "Back to the cove";
@@ -6094,14 +6112,32 @@ function drawBunting(g, x0, y, w, h, t) {
   }
   g.restore();
 }
+// start = a plain coloured pennant; finish = a small checkerboard (reads at a
+// glance, no word to cram into a 30px flag) — the label sits clear of the flag
+// underneath it instead of rotated and squeezed inside
 function drawRaceBanner(g, x, finish) {
   g.save();
-  g.strokeStyle = "#6b4f3a"; g.lineWidth = 6; g.lineCap = "round";
-  g.beginPath(); g.moveTo(x, 358); g.lineTo(x, 608); g.stroke();
-  g.fillStyle = finish ? "#2b5548" : "#d97a5f";
-  g.beginPath(); g.moveTo(x, 366); g.lineTo(x + 48, 377); g.lineTo(x, 392); g.closePath(); g.fill();
-  g.fillStyle = "#fff"; g.font = "700 12px 'Hanken Grotesk',sans-serif"; g.textAlign = "center";
-  g.save(); g.translate(x + 17, 381); g.rotate(0.05); g.fillText(finish ? "FINISH" : "START", 0, 3); g.restore();
+  g.strokeStyle = "#6b4f3a"; g.lineWidth = 7; g.lineCap = "round";
+  g.beginPath(); g.moveTo(x, 356); g.lineTo(x, 606); g.stroke();
+  g.fillStyle = "#5a4432"; g.beginPath(); g.arc(x, 356, 4, 0, 7); g.fill();
+  if (finish) {
+    const fw = 32, fh = 22, cell = 5.5;
+    g.save(); g.translate(x, 362);
+    g.fillStyle = "#fff"; g.fillRect(0, 0, fw, fh);
+    g.fillStyle = "#241b16";
+    for (let ry = 0; ry * cell < fh; ry++) for (let rx = 0; rx * cell < fw; rx++) {
+      if ((rx + ry) % 2 === 0) g.fillRect(rx * cell, ry * cell, cell + 0.5, cell + 0.5);
+    }
+    g.strokeStyle = "rgba(0,0,0,.35)"; g.lineWidth = 1; g.strokeRect(.5, .5, fw - 1, fh - 1);
+    g.restore();
+  } else {
+    g.fillStyle = "#d97a5f";
+    g.beginPath(); g.moveTo(x, 362); g.lineTo(x + 36, 373); g.lineTo(x, 384); g.closePath(); g.fill();
+  }
+  const label = finish ? "FINISH" : "START";
+  g.font = "700 12px 'Hanken Grotesk',sans-serif"; g.textAlign = "center";
+  g.fillStyle = "rgba(35,25,15,.4)"; g.fillText(label, x + 0.6, 402.6);
+  g.fillStyle = "#fff"; g.fillText(label, x, 402);
   g.restore();
 }
 // a short race, but not a flat sprint: pace wobbles (so the lead changes
@@ -6125,6 +6161,14 @@ function tickRacer(r, dt) {
   if (r.progress >= 1) { r.progress = 1; r.done = true; r.doneAt = raceT; }
 }
 function festRanking() { return [...raceCats].sort((a, b) => a.doneAt - b.doneAt || b.progress - a.progress); }
+// the winning moment — confetti at the line, a couple of seconds of crowd hop
+function festCelebrateWinner(w) {
+  raceWinner = w;
+  festCheerUntil = raceT + 2.4;
+  spawnParticles(raceX(1) - 10, laneY(w.lane) - 6, "spark", 8);
+  spawnParticles(raceX(1) - 10, laneY(w.lane) - 16, "heart", 3);
+  for (const s of festSpectators) if (Math.random() < 0.7) spawnParticles(s.x, s.y - 22, "heart", 1);
+}
 function showFestPodium() {
   const order = festRanking();
   const medals = ["🥇", "🥈", "🥉"];
@@ -6169,6 +6213,16 @@ function renderFest(dt) {
   drawRaceBanner(g, 132, false);
   drawRaceBanner(g, RACE_W - 132, true);
 
+  // the crowd hops for a couple of seconds once someone's crossed — staggered
+  // per-cat so it reads as a crowd, not one synced jump
+  if (raceT < festCheerUntil) {
+    for (let i = 0; i < festSpectators.length; i++) {
+      const s = festSpectators[i], base = s._festBaseY !== undefined ? s._festBaseY : s.y;
+      s.y = base - Math.max(0, Math.sin(raceT * 7 + i * 1.4)) * 9;
+    }
+  } else if (festCheerUntil > 0) {
+    for (const s of festSpectators) if (s._festBaseY !== undefined) s.y = s._festBaseY;
+  }
   for (const s of festSpectators) drawCat(g, s, false);
 
   if (racePhase === "countdown") {
@@ -6182,11 +6236,7 @@ function renderFest(dt) {
     }
     if (!raceWinner) {
       const w = raceCats.find(r => r.done);
-      if (w) {
-        raceWinner = w;
-        spawnParticles(raceX(1) - 10, laneY(w.lane) - 6, "spark", 8);
-        spawnParticles(raceX(1) - 10, laneY(w.lane) - 16, "heart", 3);
-      }
+      if (w) festCelebrateWinner(w);
     }
     if (allDone || raceT > MAX_RACE_T) {
       for (const r of raceCats) if (!r.done) { r.done = true; r.doneAt = raceT; }
@@ -6207,7 +6257,8 @@ document.getElementById("festStart").addEventListener("click", startFestRace);
 // stays on the grounds — reopens the picker in place, no wipe either direction
 document.getElementById("festAgain").addEventListener("click", () => {
   document.getElementById("festResult").hidden = true;
-  raceCats = []; raceWinner = null; racePick = null; racePhase = "picker";
+  raceCats = []; raceWinner = null; racePick = null; racePhase = "picker"; festCheerUntil = 0;
+  particles.length = 0; floaters.length = 0;   // last heat's zoomies text / confetti shouldn't bleed into this one
   const roster = cats.filter(c => !c.visitor);
   festIdleScene(roster);
   renderFestPickGrid(roster);
@@ -6217,7 +6268,7 @@ document.getElementById("festSkip").addEventListener("click", () => {
   if (racePhase !== "run") return;
   const order = [...raceCats].sort((a, b) => b.progress - a.progress);
   order.forEach((r, i) => { r.done = true; r.progress = Math.max(r.progress, 1 - i * 0.03); r.doneAt = raceT + i * 0.001; });
-  raceWinner = order[0];
+  festCelebrateWinner(order[0]);
   racePhase = "finish"; _festFinishAt = raceT;
   document.getElementById("festSkip").hidden = true;
 });
