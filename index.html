@@ -5935,6 +5935,7 @@ function raceX(p) { return 150 + clamp(p, 0, 1) * 1100; }
 // the picker over the same grounds.
 function openFestPicker() {
   if (festMode || restMode || !cats.length) return;
+  ensureAudio();   // a real tap — safe to unlock/start audio here, same as opening rest
   restClearUI(); closeAllPanels(); exitFocus();
   const roster = cats.filter(c => !c.visitor);
   if (!roster.length) { toast("No one's around to send to the festival right now."); return; }
@@ -6035,7 +6036,8 @@ function runFestCountdown() {
     ring = document.getElementById("festCdRing"), flash = document.getElementById("festFlash");
   flash.classList.remove("on");
   el.hidden = false;
-  const seq = [{ t: "3", cls: "n3" }, { t: "2", cls: "n2" }, { t: "1", cls: "n1" }, { t: "Go!", cls: "go" }];
+  const seq = [{ t: "3", cls: "n3", freq: 520 }, { t: "2", cls: "n2", freq: 585 },
+    { t: "1", cls: "n1", freq: 660 }, { t: "Go!", cls: "go" }];
   let i = 0;
   (function step() {
     if (mySeq !== _festCdSeq) return;   // superseded — abandon this chain rather than fight the new one
@@ -6044,7 +6046,12 @@ function runFestCountdown() {
     num.className = s.cls;
     num.classList.remove("pop"); void num.offsetWidth; num.classList.add("pop");
     ring.classList.remove("pop"); void ring.offsetWidth; ring.classList.add("pop");
-    if (s.cls === "go") { flash.classList.remove("on"); void flash.offsetWidth; flash.classList.add("on"); }
+    if (s.cls === "go") {
+      flash.classList.remove("on"); void flash.offsetWidth; flash.classList.add("on");
+      tone(660, 0.14, "triangle", 0.09); tone(880, 0.24, "triangle", 0.08, 0.07);   // a little starting horn
+    } else {
+      tone(s.freq, 0.13, "sine", 0.08);   // pitch climbs 3->2->1, building into Go!
+    }
     i++;
     if (i < seq.length) setTimeout(step, 650);
     else setTimeout(() => {
@@ -6173,6 +6180,7 @@ function festCelebrateWinner(w) {
   spawnParticles(raceX(1) - 10, laneY(w.lane) - 6, "spark", 8);
   spawnParticles(raceX(1) - 10, laneY(w.lane) - 16, "heart", 3);
   for (const s of festSpectators) if (Math.random() < 0.7) spawnParticles(s.x, s.y - 22, "heart", 1);
+  [784, 1046, 1318].forEach((f, i) => tone(f, 0.22, "triangle", 0.06, i * 0.07));   // the same little "reveal" arpeggio
 }
 function showFestPodium() {
   const order = festRanking();
