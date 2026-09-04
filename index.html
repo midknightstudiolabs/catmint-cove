@@ -480,9 +480,8 @@
   #rest .rest-bar{pointer-events:auto;position:absolute;left:50%;
     bottom:max(.9rem, env(safe-area-inset-bottom));transform:translateX(-50%);
     width:min(88vw,360px);display:flex;align-items:center;gap:0;
-    background:rgba(19,16,23,.82);backdrop-filter:blur(7px);
-    border:1px solid rgba(255,255,255,.14);border-radius:999px;
-    box-shadow:0 6px 20px rgba(0,0,0,.32);
+    background:rgba(17,14,21,.9);border:1px solid rgba(255,255,255,.14);border-radius:999px;
+    box-shadow:0 6px 20px rgba(0,0,0,.34);
     color:rgba(255,255,255,.92);font-size:.8rem;font-variant-numeric:tabular-nums;
     padding:.34rem .35rem;transition:opacity .55s;}
   #rest .rest-bar.ambient{opacity:.5;}
@@ -5145,6 +5144,7 @@ let _restVisW = W;  // world width actually on screen — the nap pile is kept i
 let _restDPR = 0;   // rest renders at a capped DPR onto a viewport-sized canvas (0 = not set / use full DPR)
 let rainBuffer = null, rainSrc = null, restBus = null, _wakeLock = null;
 let glassDrops = [], rainStreaks = [], _restOrder = [];
+let _restLiteCats = false, _restBarState = null;
 
 function initGlassDrops() {
   glassDrops = [];
@@ -5275,17 +5275,21 @@ function restViewportPx() {
     vh: Math.max(stage.clientHeight || 0, de.clientHeight || 0, window.innerHeight || 0) || 780,
   };
 }
-// portrait phones pan the cove on a canvas ~3x wider than the screen. Rest is a
-// fixed centred scene, so give it a canvas that's just the viewport, at a capped
-// DPR — far fewer pixels to paint each frame (rain + fire want 60fps). resize()
-// puts the full pannable canvas back on the way out.
+// Rest is a fixed, soft, mostly-static scene — cheap to render at a modest
+// resolution and let the browser upscale. Give it a canvas that's just the
+// viewport, at a capped density AND a capped absolute size, so a big or hi-dpi
+// monitor doesn't turn the per-frame full-screen gradient fills (wall, floor,
+// firelight, vignette) into the bottleneck on weak integrated graphics.
+// resize() restores the full pannable cove canvas on the way out.
 function fitRestCanvas() {
   const { vw, vh } = restViewportPx();
   const pan = (vw / vh) < (W / H) * 0.78;                       // matches resize()'s PAN test
-  _restDPR = pan ? Math.min(DPR, 1.5) : DPR;                    // only the panned (phone) case is oversized
+  let s = Math.min(DPR, pan ? 1.4 : 1.5);
+  if (vw * s > 1600) s *= 1600 / (vw * s);                      // and never more than ~1600px across
+  _restDPR = s;
   canvas.style.width = vw + "px";
   canvas.style.height = vh + "px";
-  const bw = Math.round(vw * _restDPR), bh = Math.round(vh * _restDPR);
+  const bw = Math.round(vw * s), bh = Math.round(vh * s);
   if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
 }
 function restViewport() {
@@ -5423,7 +5427,7 @@ function openRestPanel() {
   document.getElementById("app").classList.add("resting");
   restMode = true; restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
   try { stage.scrollLeft = 0; } catch (e) {}   // lock the pan — rest is a fixed centred scene
-  fitRestCanvas();                  // shrink the canvas to the viewport at a capped DPR (cheap to paint)
+  fitRestCanvas(); _restBarState = null;   // small canvas at a capped density (cheap to paint)
   { const _v = restViewport(); _restVWW = _v.vwW; _restVisW = _v.vwVis; }   // so restSeatCats/restLayout fit this screen
   restClearUI();
   restSeatCats();
@@ -5432,7 +5436,7 @@ function closeRestPanel() {
   restMode = false;
   document.getElementById("rest").classList.remove("on");
   document.getElementById("app").classList.remove("resting");
-  _restDPR = 0; resize();   // restore the pannable cove canvas (full DPR) + re-clamp the scroll
+  _restDPR = 0; _restLiteCats = false; resize();   // restore the pannable cove canvas (full DPR) + re-clamp the scroll
   for (const c of cats) { c.stateDur = 0; decide(c); }
 }
 function beginRest(resumed) {
@@ -5442,7 +5446,7 @@ function beginRest(resumed) {
   restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
   restMode = true;
   try { stage.scrollLeft = 0; } catch (e) {}   // lock the pan — rest is a fixed centred scene
-  fitRestCanvas();
+  fitRestCanvas(); _restBarState = null;
   { const _v = restViewport(); _restVWW = _v.vwW; _restVisW = _v.vwVis; }
   restClearUI();
   document.getElementById("rest").classList.add("on");
@@ -5483,7 +5487,7 @@ function endRest(auto) {
   document.getElementById("restBar").hidden = true;
   G.rest = null; save();
   try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
-  _restDPR = 0; resize();   // restore the pannable cove canvas (full DPR) + re-clamp the scroll
+  _restDPR = 0; _restLiteCats = false; resize();   // restore the pannable cove canvas (full DPR) + re-clamp the scroll
   rebuildAttractors();
   for (const c of cats) decide(c);
   syncHud();
@@ -5516,11 +5520,18 @@ function renderRest(dt) {
   updateGlassDrops(dt);
   const targetDim = restIdleT > 34 ? 0.6 : 0;
   restDim += (targetDim - restDim) * Math.min(1, dt * 0.9);
+  // a big cove's nap pile is a background mass of curled sleepers — draw them
+  // without the fine markings so a full house stays smooth on weak hardware
+  _restLiteCats = cats.length > 10;
   // the way-out bar: full for the first ~4s (or after any touch), then it recedes,
-  // then it's gone with the screensaver dim
-  const _rb = document.getElementById("restBar");
-  _rb.classList.toggle("dim", restDim > 0.35);
-  _rb.classList.toggle("ambient", restIdleT > 4 && restDim <= 0.35);
+  // then it's gone with the screensaver dim — only touch the DOM when it changes
+  const _rbState = restDim > 0.35 ? "dim" : (restIdleT > 4 ? "ambient" : "");
+  if (_rbState !== _restBarState) {
+    _restBarState = _rbState;
+    const _rb = document.getElementById("restBar");
+    _rb.classList.toggle("dim", _rbState === "dim");
+    _rb.classList.toggle("ambient", _rbState === "ambient");
+  }
 
   if (stage.scrollLeft) stage.scrollLeft = 0;   // hold the fixed scene dead-centre against any stray scroll
   const g = ctx;
@@ -7250,10 +7261,13 @@ function tabbyMarks(g, c, P, coat) {
 function drawCat(g, c, isPhoto) {
   const t = performance.now() / 1000;
   const coat = c.coat;
-  // adaptive detail: on a struggling device, non-focused cats lose the extras
-  // (fine coat markings, whiskers, auras). The cat you're looking at keeps them.
-  const lite = _perfLite && !isPhoto && c !== cardCat && _focus !== c;
   const asleep = c.state === "sleeping";
+  // adaptive detail: on a struggling device, non-focused cats lose the extras
+  // (fine coat markings, whiskers, auras). Also always for a curled sleeping cat
+  // in a big rest-mode nap pile — the markings are invisible there anyway and
+  // the pile is where a full house hits the frame budget hardest.
+  const lite = !isPhoto && c !== cardCat && _focus !== c
+    && (_perfLite || (asleep && _restLiteCats));
   const sulk = c.state === "sulking";
   const pet = c.state === "being_pet";
   const playing = c.state === "playing" || c.state === "knocking";
@@ -8217,6 +8231,15 @@ function frame(now) {
   let frameDt = (now - last) / 1000;
   last = now;
   if (frameDt > 0.25) frameDt = 0.25;      // tab was backgrounded — don't fast-forward
+  // adaptive detail — if the device is genuinely struggling, shed the
+  // cheap-to-lose extras (coat markings, star/purr auras, whiskers). Hysteresis
+  // so it doesn't flip frame to frame; a device that copes never trips it.
+  // Tracked in every mode — rest mode is where a full house bites hardest.
+  if (frameDt > 0 && frameDt < 0.25) {
+    _frameEwma += (frameDt - _frameEwma) * 0.06;
+    if (!_perfLite && _frameEwma > 0.021) _perfLite = true;        // sustained < ~48 fps
+    else if (_perfLite && _frameEwma < 0.0166) _perfLite = false;  // recovered to ~60 fps
+  }
   if (restMode) {
     // full 60fps while you're actually watching (the first ~26s — rain & fire
     // need it to look smooth), then drop to 15fps once it dims for burn-in.
@@ -8234,15 +8257,6 @@ function frame(now) {
     if (steps === 6) simAccum = 0;          // fell behind; drop the backlog rather than spiral
     updateDayNight(frameDt);
     renderScene(frameDt);
-  }
-  // adaptive detail — if the device is genuinely struggling (a full house on a
-  // low-end phone), shed the cheap-to-lose extras: coat markings, star/purr
-  // auras, whiskers. Hysteresis so it doesn't flip frame to frame; a device
-  // that copes never trips it, so nothing changes for most players.
-  if (frameDt > 0 && frameDt < 0.25) {
-    _frameEwma += (frameDt - _frameEwma) * 0.06;
-    if (!_perfLite && _frameEwma > 0.021) _perfLite = true;        // sustained < ~48 fps
-    else if (_perfLite && _frameEwma < 0.0166) _perfLite = false;  // recovered to ~60 fps
   }
   requestAnimationFrame(frame);
 }
