@@ -3921,7 +3921,8 @@ document.querySelectorAll("[data-close]").forEach(b =>
 // tap anywhere outside an open panel (the cove, the HUD) to dismiss it
 document.addEventListener("pointerdown", (e) => {
   if (!anyPanelOpen()) return;
-  if (e.target.closest("#shop, #dex, #today")) return;   // interacting with the panel itself
+  if (_vig || scrim.classList.contains("on")) return;    // a modal/vignette is up over the panel — it owns dismissal; tapping it must NOT collapse the panel underneath (e.g. a Catdex coat note)
+  if (e.target.closest("#shop, #dex, #today, #scrim")) return;   // interacting with the panel or a modal on top of it
   closeAllPanels();
   if (!e.target.closest("#actions")) e.stopPropagation(); // a dismiss tap — don't also pet a cat underneath
 }, true);
