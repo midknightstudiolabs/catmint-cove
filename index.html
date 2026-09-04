@@ -5130,9 +5130,11 @@ let restMode = false;
 let restOpts = { rain: true, fire: true, thunder: false, hours: 0 };
 let restStartedAt = 0, restEndsAt = 0;
 let restIdleT = 0, restDim = 0, restDrift = 0, _restFlash = 0, _restRainScroll = 0, _restTimerIv = 0, _restAcc = 0, _restG = null;
-let _restVWW = W;   // visible world width in rest mode — the cabin lays itself out to fit this (portrait phones show much less than W)
+let _restVWW = W;   // world width the rest cabin sizes itself to (portrait phones show much less than W)
+let _restVisW = W;  // world width actually on screen — the nap pile is kept inside this
+let _restDPR = 0;   // rest renders at a capped DPR onto a viewport-sized canvas (0 = not set / use full DPR)
 let rainBuffer = null, rainSrc = null, restBus = null, _wakeLock = null;
-let glassDrops = [], rainStreaks = [];
+let glassDrops = [], rainStreaks = [], _restOrder = [];
 
 function initGlassDrops() {
   glassDrops = [];
@@ -5148,7 +5150,7 @@ function initGlassDrops() {
 }
 // full-screen gradients cost an allocation each — build them once per size
 function restGrads() {
-  const key = W + "x" + H + ":" + Math.round(_restVWW);
+  const key = W + "x" + H + ":" + Math.round(_restVWW) + "/" + Math.round(_restVisW);
   if (_restG && _restG.key === key) return _restG;
   const g = ctx, L = restLayout();
   const wall = g.createLinearGradient(0, 0, 0, H * 0.58);
@@ -5256,40 +5258,82 @@ function releaseRestWakeLock() { try { _wakeLock && _wakeLock.release(); } catch
 // scroll is locked to 0 for the whole session (openRestPanel/beginRest + the
 // `#app.resting #stage{overflow:hidden}` rule), so the cabin sits dead-centre in
 // the viewport and never slides sideways with a stray pan gesture.
-function restViewport() {
+function restViewportPx() {
   const de = document.documentElement;
-  const vw = Math.max(stage.clientWidth || 0, de.clientWidth || 0, window.innerWidth || 0) || 390;
-  const vh = Math.max(stage.clientHeight || 0, de.clientHeight || 0, window.innerHeight || 0) || 780;
-  const sc = Math.max((vw * DPR) / W, (vh * DPR) / H);          // cover the viewport
+  return {
+    vw: Math.max(stage.clientWidth || 0, de.clientWidth || 0, window.innerWidth || 0) || 390,
+    vh: Math.max(stage.clientHeight || 0, de.clientHeight || 0, window.innerHeight || 0) || 780,
+  };
+}
+// portrait phones pan the cove on a canvas ~3x wider than the screen. Rest is a
+// fixed centred scene, so give it a canvas that's just the viewport, at a capped
+// DPR — far fewer pixels to paint each frame (rain + fire want 60fps). resize()
+// puts the full pannable canvas back on the way out.
+function fitRestCanvas() {
+  const { vw, vh } = restViewportPx();
+  const pan = (vw / vh) < (W / H) * 0.78;                       // matches resize()'s PAN test
+  _restDPR = pan ? Math.min(DPR, 1.5) : DPR;                    // only the panned (phone) case is oversized
+  canvas.style.width = vw + "px";
+  canvas.style.height = vh + "px";
+  const bw = Math.round(vw * _restDPR), bh = Math.round(vh * _restDPR);
+  if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
+}
+function restViewport() {
+  const { vw, vh } = restViewportPx();
+  const rd = _restDPR || DPR;
+  const sc = Math.max((vw * rd) / W, (vh * rd) / H);            // cover the viewport
   return {
     sc,
-    ox: (vw / 2) * DPR - (W / 2) * sc,                          // dead-centre, independent of any pan scroll
-    oy: (vh / 2) * DPR - (H / 2) * sc,
-    vwW: clamp((vw * DPR) / sc, W * 0.45, W),                   // world-units visible across (bounded so a bad read can't shrink the cabin)
+    ox: (vw / 2) * rd - (W / 2) * sc,                           // dead-centre, independent of any pan scroll
+    oy: (vh / 2) * rd - (H / 2) * sc,
+    vwW: clamp((vw * rd) / sc, W * 0.45, W),                    // world-units the cabin sizes itself to
+    vwVis: clamp((vw * rd) / sc, W * 0.30, W),                  // world-units actually on screen (no low floor — the nap pile honours this)
   };
 }
 function restLayout(vw) {
   vw = vw || _restVWW || W;
   const cx = W / 2;
+  const vis = _restVisW || vw;                                  // world-units actually on screen
+  const cramped = vis < W * 0.7;                                // portrait phone — the room is cropped to a centre strip
   const ww = clamp(vw * 0.66, W * 0.30, W * 0.44);
   const wx = cx - ww / 2, wy = H * 0.08, wh = clamp(ww * 0.92, H * 0.28, H * 0.40);
   const hbase = H * 0.88;
   const hw = clamp(vw * 0.24, 96, 200), hh2 = clamp(H * 0.34, 130, 230);
-  const htop = hbase - hh2, hx = cx - vw * 0.27;
-  // rug + nap pile — scale with the visible width and keep the rug clear of the
-  // fireplace (its radii used to be fixed W*0.24 so on a narrow phone the rug
-  // bled over the firebox)
-  const rugRx = clamp(vw * 0.24, W * 0.16, W * 0.30);
-  const rugRy = H * 0.075;
-  const rugX = Math.max(cx + vw * 0.18, hx + hw / 2 + rugRx + 14);   // fully right of the fireplace
-  const rugY = H * 0.76;
+  const htop = hbase - hh2;
+
+  let hx, rugX, rugY, rugRx, rugRy, napX, napY, napSpread, napRowH;
+  if (!cramped) {
+    // desktop / tablet / landscape — the original layout, untouched
+    hx = cx - vw * 0.27;
+    rugRx = W * 0.24; rugRy = H * 0.08;
+    rugX = cx + vw * 0.22; rugY = H * 0.76;
+    napX = cx + vw * 0.22; napY = H * 0.70; napSpread = W * 0.075; napRowH = H * 0.05;
+  } else {
+    // phone — the room is cropped to a ~360-wide centre strip. Nudge the
+    // fireplace off the left edge, then fit the rug + nap pile into whatever
+    // strip is left of it, centred, so nothing is clipped by the screen edge.
+    const visL = cx - vis / 2, visR = cx + vis / 2;
+    hx = Math.max(cx - vw * 0.27, visL + hw / 2 + 6);
+    const fireR = hx + hw / 2;                                  // right edge of the fireplace surround
+    napSpread = clamp(vis * 0.11, 30, 44);
+    napRowH = H * 0.036;
+    const halfPile = napSpread + 46;                            // pile half-width incl. a wide sleeping cat
+    napX = clamp((fireR + 14 + visR) / 2, fireR + 14 + halfPile, visR - halfPile);
+    napY = H * 0.70;
+    rugX = napX;
+    rugY = H * 0.77;
+    rugRx = Math.max(60, Math.min(vis * 0.30, napX - fireR - 6, visR - napX + 18));
+    rugRy = H * 0.072;
+  }
+
   return {
     wx, wy, ww, wh,
     hx, hw, hh2, htop, hbase,
     sillX: cx, sillY: wy + wh + 5,
     fireX: hx + hw * 0.5 + 14, fireY: hbase - 4,
     rugX, rugY, rugRx, rugRy,
-    napX: rugX, napY: rugY - H * 0.04,
+    napX, napY, napSpread, napRowH,
+    cramped,   // phone: the clock + mug table are off the visible strip, so they're skipped
   };
 }
 function restSeatCats() {
@@ -5320,9 +5364,10 @@ function restSeatCats() {
   // everyone else: a shuffled nap pile on the rug
   const pile = others.filter(c => c !== sill);
   for (let i = pile.length - 1; i > 0; i--) { const j = (rnd() * (i + 1)) | 0; [pile[i], pile[j]] = [pile[j], pile[i]]; }
+  const sp = L.napSpread, rh = L.napRowH || H * 0.05;
   pile.forEach((c, i) => seat(c, {
-    x: L.napX + ((i % 3) - 1) * W * 0.075 + (Math.floor(i / 3) % 2) * W * 0.035,
-    y: L.napY + Math.floor(i / 3) * H * 0.05,
+    x: L.napX + ((i % 3) - 1) * sp + (Math.floor(i / 3) % 2) * sp * 0.34,
+    y: L.napY + Math.floor(i / 3) * rh,
     face: i % 2 ? 1 : -1, state: "sleeping",
   }));
 }
@@ -5346,7 +5391,8 @@ function openRestPanel() {
   document.getElementById("app").classList.add("resting");
   restMode = true; restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
   try { stage.scrollLeft = 0; } catch (e) {}   // lock the pan — rest is a fixed centred scene
-  _restVWW = restViewport().vwW;   // so restSeatCats/restLayout place the cabin to fit this screen
+  fitRestCanvas();                  // shrink the canvas to the viewport at a capped DPR (cheap to paint)
+  { const _v = restViewport(); _restVWW = _v.vwW; _restVisW = _v.vwVis; }   // so restSeatCats/restLayout fit this screen
   restClearUI();
   restSeatCats();
 }
@@ -5354,7 +5400,7 @@ function closeRestPanel() {
   restMode = false;
   document.getElementById("rest").classList.remove("on");
   document.getElementById("app").classList.remove("resting");
-  resize();   // restore the pannable cove canvas + re-clamp the scroll
+  _restDPR = 0; resize();   // restore the pannable cove canvas (full DPR) + re-clamp the scroll
   for (const c of cats) { c.stateDur = 0; decide(c); }
 }
 function beginRest(resumed) {
@@ -5364,7 +5410,8 @@ function beginRest(resumed) {
   restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
   restMode = true;
   try { stage.scrollLeft = 0; } catch (e) {}   // lock the pan — rest is a fixed centred scene
-  _restVWW = restViewport().vwW;
+  fitRestCanvas();
+  { const _v = restViewport(); _restVWW = _v.vwW; _restVisW = _v.vwVis; }
   restClearUI();
   document.getElementById("rest").classList.add("on");
   document.getElementById("app").classList.add("resting");
@@ -5404,7 +5451,7 @@ function endRest(auto) {
   document.getElementById("restBar").hidden = true;
   G.rest = null; save();
   try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
-  resize();   // restore the pannable cove canvas + re-clamp the scroll
+  _restDPR = 0; resize();   // restore the pannable cove canvas (full DPR) + re-clamp the scroll
   rebuildAttractors();
   for (const c of cats) decide(c);
   syncHud();
@@ -5445,10 +5492,16 @@ function renderRest(dt) {
 
   if (stage.scrollLeft) stage.scrollLeft = 0;   // hold the fixed scene dead-centre against any stray scroll
   const g = ctx;
+  { // a resize() elsewhere (viewport event) restores the full pannable canvas — put the small rest canvas back
+    const px = restViewportPx();
+    if (Math.abs(canvas.width - Math.round(px.vw * (_restDPR || DPR))) > 2) { fitRestCanvas(); _restG = null; }
+  }
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, canvas.width, canvas.height);
   const V = restViewport();
-  if (Math.abs(V.vwW - _restVWW) > 2) { _restVWW = V.vwW; _restG = null; }   // viewport changed → re-lay-out the cabin
+  if (Math.abs(V.vwW - _restVWW) > 2 || Math.abs(V.vwVis - _restVisW) > 2) {   // viewport changed → re-lay-out the cabin
+    _restVWW = V.vwW; _restVisW = V.vwVis; _restG = null;
+  }
   g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
   g.save();
   g.translate(Math.sin(restDrift) * 3, Math.cos(restDrift * 0.7) * 2);   // slow burn-in drift
@@ -5506,7 +5559,8 @@ function renderRest(dt) {
   g.moveTo(wx, wy + wh / 2); g.lineTo(wx + ww, wy + wh / 2); g.stroke();
   g.fillStyle = "#5a4636"; g.fillRect(wx - 12, wy + wh + 2, ww + 24, 7);   // sill
 
-  // --- wall clock (real local time)
+  // --- wall clock (real local time) — off the visible strip on a phone, so skip it there
+  if (!L.cramped) {
   const clkX = W * 0.85, clkY = H * 0.19, cr = clamp(Math.min(W, H) * 0.05, 16, 34);
   g.fillStyle = "#e9e0cc"; g.beginPath(); g.arc(clkX, clkY, cr, 0, 7); g.fill();
   g.strokeStyle = "#5b4634"; g.lineWidth = 2.5; g.stroke();
@@ -5518,6 +5572,7 @@ function renderRest(dt) {
   g.strokeStyle = "rgba(180,90,70,0.9)"; g.lineWidth = 1;
   const sAng = (nowd.getSeconds() + (pn % 1000) / 1000) / 60 * 7;
   g.beginPath(); g.moveTo(clkX, clkY); g.lineTo(clkX + Math.sin(sAng) * cr * 0.82, clkY - Math.cos(sAng) * cr * 0.82); g.stroke();
+  }
 
   // --- fireplace (bottom-left) — stone surround, a short wide firebox opening, tall flames
   const { hx, hw, htop, hbase } = L;
@@ -5572,9 +5627,10 @@ function renderRest(dt) {
     }
   }
 
-  // --- a rug, and a low table with a steaming mug
+  // --- a rug, and a low table with a steaming mug (the table is off-strip on a phone)
   g.fillStyle = "rgba(150,88,78,0.28)"; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx, L.rugRy, 0, 0, 7); g.fill();
   g.strokeStyle = "rgba(120,68,60,0.35)"; g.lineWidth = 2; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx * 0.84, L.rugRy * 0.82, 0, 0, 7); g.stroke();
+  if (!L.cramped) {
   const tbx = W * 0.9, tby = H * 0.66;
   g.fillStyle = "#6b4f3a"; roundRect(g, tbx - 20, tby, 40, 7, 2); g.fill();
   g.fillStyle = "#5a3f2e"; g.fillRect(tbx - 16, tby + 7, 4, 15); g.fillRect(tbx + 12, tby + 7, 4, 15);
@@ -5585,9 +5641,13 @@ function renderRest(dt) {
     for (let i = 0; i < 2; i++) { const s = (pn / 650 + i * 3) % 6; g.beginPath();
       g.moveTo(tbx - 2 + i * 4, tby - 11); g.quadraticCurveTo(tbx - 6 + i * 4 + Math.sin(s) * 4, tby - 19 - s * 2, tbx - 2 + i * 4, tby - 28 - s * 3); g.stroke(); }
   }
+  }
 
   // --- the cats, back-to-front (windowsill / fireside / nap pile)
-  for (const c of [...cats].sort((a, b) => a.y - b.y)) drawCat(g, c, false);
+  _restOrder.length = 0;
+  for (const c of cats) _restOrder.push(c);
+  _restOrder.sort((a, b) => a.y - b.y);
+  for (const c of _restOrder) drawCat(g, c, false);
   if (particles.length) drawFX(g);
 
   // --- vignette + idle dim (cached vignette)
@@ -9114,6 +9174,7 @@ let _lastViewBottom = 780, _relayoutT = 0;
 function onViewportChange() {
   _resizeRetry = 0;                   // a real viewport event — let resize() retry from scratch if needed
   resize();                          // keep the canvas backing store matched to the box — immediately
+  if (restMode) fitRestCanvas();     // ...but rest wants its own small canvas, not the pannable one
   clearTimeout(_relayoutT);
   _relayoutT = setTimeout(() => {
     // W/H are fixed, so a resize is usually just a rescale — but the FILL-mode
