@@ -475,6 +475,7 @@
   #rest .rest-bar[hidden]{display:none;}
   #app.resting #hud,#app.resting #actions{opacity:0;pointer-events:none;transition:opacity .5s;}
   #app.resting #toast,#app.resting #dev{opacity:0!important;pointer-events:none;}
+  #app.resting #stage{overflow:hidden;touch-action:none;}   /* rest is a fixed scene — no panning it sideways */
   /* the way out: one slim bar at the bottom edge, below every cat */
   #rest .rest-bar{pointer-events:auto;position:absolute;left:50%;
     bottom:max(.9rem, env(safe-area-inset-bottom));transform:translateX(-50%);
@@ -5251,18 +5252,20 @@ async function requestRestWakeLock() {
 }
 function releaseRestWakeLock() { try { _wakeLock && _wakeLock.release(); } catch (e) {} _wakeLock = null; }
 
-// rest is a fixed full-screen scene, NOT the pannable world. Cover the *visible*
-// viewport (not the wide PAN canvas) so the cabin fills the screen edge to edge.
+// rest is a FIXED, CENTRED full-screen scene — not the pannable world. The pan
+// scroll is locked to 0 for the whole session (openRestPanel/beginRest + the
+// `#app.resting #stage{overflow:hidden}` rule), so the cabin sits dead-centre in
+// the viewport and never slides sideways with a stray pan gesture.
 function restViewport() {
   const de = document.documentElement;
   const vw = Math.max(stage.clientWidth || 0, de.clientWidth || 0, window.innerWidth || 0) || 390;
   const vh = Math.max(stage.clientHeight || 0, de.clientHeight || 0, window.innerHeight || 0) || 780;
-  const sc = Math.max((vw * DPR) / W, (vh * DPR) / H);          // cover
+  const sc = Math.max((vw * DPR) / W, (vh * DPR) / H);          // cover the viewport
   return {
     sc,
-    ox: (stage.scrollLeft + vw / 2) * DPR - (W / 2) * sc,       // centre the cabin on what's visible
+    ox: (vw / 2) * DPR - (W / 2) * sc,                          // dead-centre, independent of any pan scroll
     oy: (vh / 2) * DPR - (H / 2) * sc,
-    vwW: clamp((vw * DPR) / sc, W * 0.45, W),                   // world-units visible across (bounded so a bad read can't make the cabin tiny)
+    vwW: clamp((vw * DPR) / sc, W * 0.45, W),                   // world-units visible across (bounded so a bad read can't shrink the cabin)
   };
 }
 function restLayout(vw) {
@@ -5334,6 +5337,7 @@ function openRestPanel() {
   document.getElementById("rest").classList.add("on");
   document.getElementById("app").classList.add("resting");
   restMode = true; restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
+  try { stage.scrollLeft = 0; } catch (e) {}   // lock the pan — rest is a fixed centred scene
   _restVWW = restViewport().vwW;   // so restSeatCats/restLayout place the cabin to fit this screen
   restClearUI();
   restSeatCats();
@@ -5342,6 +5346,7 @@ function closeRestPanel() {
   restMode = false;
   document.getElementById("rest").classList.remove("on");
   document.getElementById("app").classList.remove("resting");
+  resize();   // restore the pannable cove canvas + re-clamp the scroll
   for (const c of cats) { c.stateDur = 0; decide(c); }
 }
 function beginRest(resumed) {
@@ -5350,6 +5355,7 @@ function beginRest(resumed) {
   if (!resumed) { restStartedAt = Date.now(); restEndsAt = restOpts.hours > 0 ? restStartedAt + restOpts.hours * 3600e3 : 0; }
   restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
   restMode = true;
+  try { stage.scrollLeft = 0; } catch (e) {}   // lock the pan — rest is a fixed centred scene
   _restVWW = restViewport().vwW;
   restClearUI();
   document.getElementById("rest").classList.add("on");
@@ -5390,6 +5396,7 @@ function endRest(auto) {
   document.getElementById("restBar").hidden = true;
   G.rest = null; save();
   try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+  resize();   // restore the pannable cove canvas + re-clamp the scroll
   rebuildAttractors();
   for (const c of cats) decide(c);
   syncHud();
@@ -5428,6 +5435,7 @@ function renderRest(dt) {
   _rb.classList.toggle("dim", restDim > 0.35);
   _rb.classList.toggle("ambient", restIdleT > 4 && restDim <= 0.35);
 
+  if (stage.scrollLeft) stage.scrollLeft = 0;   // hold the fixed scene dead-centre against any stray scroll
   const g = ctx;
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, canvas.width, canvas.height);
