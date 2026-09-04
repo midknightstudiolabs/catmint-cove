@@ -6277,6 +6277,16 @@ function festAllInChime(when = 0) {
   tone(659.25, 0.22, "sine", 0.09, when);
   tone(523.25, 0.34, "sine", 0.08, when + 0.11);
 }
+// everyone who races gets a small goalShells()-sized payout; your pick
+// winning gets a real bump plus a rare shot at a pearl (same odds shape as
+// the adventure pearl roll) — matches what the podium copy already promises
+function festReward(place) {
+  const base = goalShells(0.4);
+  if (place === 0) return { shells: Math.round(base * 2.75), pearls: Math.random() < 0.08 ? 1 : 0 };
+  if (place === 1) return { shells: Math.round(base * 1.6) };
+  if (place === 2) return { shells: Math.round(base * 1.25) };
+  return { shells: base };
+}
 function showFestPodium() {
   const order = festRanking();
   const medals = ["🥇", "🥈", "🥉"];
@@ -6293,6 +6303,7 @@ function showFestPodium() {
     : `${racePick ? racePick.name : "Your pick"} didn't place this time. Everyone still gets a little something for showing up.`;
   const rest = order.slice(3).map(r => r.cat.name);
   document.getElementById("festRestLine").textContent = rest.length ? `${joinNice(rest)} ambled in eventually.` : "";
+  if (racePick) { grantReward(festReward(place), racePick); syncHud(); }
   spawnParticles(raceX(1) - 10, laneY(order[0].lane) - 6, "spark", 12);
   spawnParticles(raceX(1) - 10, laneY(order[0].lane) - 16, "heart", 5);
   document.getElementById("festSkip").hidden = true;
