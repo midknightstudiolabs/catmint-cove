@@ -6134,10 +6134,15 @@ function drawRaceBanner(g, x, finish) {
     g.fillStyle = "#d97a5f";
     g.beginPath(); g.moveTo(x, 362); g.lineTo(x + 36, 373); g.lineTo(x, 384); g.closePath(); g.fill();
   }
+  // the label reads as a little sign at the FOOT of the pole, not text
+  // floating partway up it competing with the flag
   const label = finish ? "FINISH" : "START";
-  g.font = "700 12px 'Hanken Grotesk',sans-serif"; g.textAlign = "center";
-  g.fillStyle = "rgba(35,25,15,.4)"; g.fillText(label, x + 0.6, 402.6);
-  g.fillStyle = "#fff"; g.fillText(label, x, 402);
+  g.font = "700 11px 'Hanken Grotesk',sans-serif"; g.textAlign = "center";
+  const halfW = g.measureText(label).width / 2 + 9, py = 591;
+  g.fillStyle = finish ? "#2b5548" : "#d97a5f";
+  roundRect(g, x - halfW, py - 9, halfW * 2, 18, 9); g.fill();
+  g.fillStyle = "#fff";
+  g.fillText(label, x, py + 4);
   g.restore();
 }
 // a short race, but not a flat sprint: pace wobbles (so the lead changes
