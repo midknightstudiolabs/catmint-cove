@@ -5276,12 +5276,20 @@ function restLayout(vw) {
   const hbase = H * 0.88;
   const hw = clamp(vw * 0.24, 96, 200), hh2 = clamp(H * 0.34, 130, 230);
   const htop = hbase - hh2, hx = cx - vw * 0.27;
+  // rug + nap pile — scale with the visible width and keep the rug clear of the
+  // fireplace (its radii used to be fixed W*0.24 so on a narrow phone the rug
+  // bled over the firebox)
+  const rugRx = clamp(vw * 0.24, W * 0.16, W * 0.30);
+  const rugRy = H * 0.075;
+  const rugX = Math.max(cx + vw * 0.18, hx + hw / 2 + rugRx + 14);   // fully right of the fireplace
+  const rugY = H * 0.76;
   return {
     wx, wy, ww, wh,
     hx, hw, hh2, htop, hbase,
     sillX: cx, sillY: wy + wh + 5,
     fireX: hx + hw * 0.5 + 14, fireY: hbase - 4,
-    napX: cx + vw * 0.22, napY: H * 0.70,
+    rugX, rugY, rugRx, rugRy,
+    napX: rugX, napY: rugY - H * 0.04,
   };
 }
 function restSeatCats() {
@@ -5565,8 +5573,8 @@ function renderRest(dt) {
   }
 
   // --- a rug, and a low table with a steaming mug
-  g.fillStyle = "rgba(150,88,78,0.28)"; g.beginPath(); g.ellipse(L.napX, L.napY + H * 0.06, W * 0.24, H * 0.08, 0, 0, 7); g.fill();
-  g.strokeStyle = "rgba(120,68,60,0.35)"; g.lineWidth = 2; g.beginPath(); g.ellipse(L.napX, L.napY + H * 0.06, W * 0.2, H * 0.065, 0, 0, 7); g.stroke();
+  g.fillStyle = "rgba(150,88,78,0.28)"; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx, L.rugRy, 0, 0, 7); g.fill();
+  g.strokeStyle = "rgba(120,68,60,0.35)"; g.lineWidth = 2; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx * 0.84, L.rugRy * 0.82, 0, 0, 7); g.stroke();
   const tbx = W * 0.9, tby = H * 0.66;
   g.fillStyle = "#6b4f3a"; roundRect(g, tbx - 20, tby, 40, 7, 2); g.fill();
   g.fillStyle = "#5a3f2e"; g.fillRect(tbx - 16, tby + 7, 4, 15); g.fillRect(tbx + 12, tby + 7, 4, 15);
