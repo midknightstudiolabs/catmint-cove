@@ -5128,6 +5128,7 @@ let restMode = false;
 let restOpts = { rain: true, fire: true, thunder: false, hours: 0 };
 let restStartedAt = 0, restEndsAt = 0;
 let restIdleT = 0, restDim = 0, restDrift = 0, _restFlash = 0, _restRainScroll = 0, _restTimerIv = 0, _restAcc = 0, _restG = null;
+let _restVWW = W;   // visible world width in rest mode — the cabin lays itself out to fit this (portrait phones show much less than W)
 let rainBuffer = null, rainSrc = null, restBus = null, _wakeLock = null;
 let glassDrops = [], rainStreaks = [];
 
@@ -5145,7 +5146,7 @@ function initGlassDrops() {
 }
 // full-screen gradients cost an allocation each — build them once per size
 function restGrads() {
-  const key = W + "x" + H;
+  const key = W + "x" + H + ":" + Math.round(_restVWW);
   if (_restG && _restG.key === key) return _restG;
   const g = ctx, L = restLayout();
   const wall = g.createLinearGradient(0, 0, 0, H * 0.58);
@@ -5249,17 +5250,34 @@ async function requestRestWakeLock() {
 }
 function releaseRestWakeLock() { try { _wakeLock && _wakeLock.release(); } catch (e) {} _wakeLock = null; }
 
-function restLayout() {
-  const wx = W * 0.31, wy = H * 0.08, ww = W * 0.38, wh = H * 0.34;
+// rest is a fixed full-screen scene, NOT the pannable world. Cover the *visible*
+// viewport (not the wide PAN canvas) so the cabin fills the screen edge to edge.
+function restViewport() {
+  const de = document.documentElement;
+  const vw = Math.max(stage.clientWidth || 0, de.clientWidth || 0, window.innerWidth || 0) || 390;
+  const vh = Math.max(stage.clientHeight || 0, de.clientHeight || 0, window.innerHeight || 0) || 780;
+  const sc = Math.max((vw * DPR) / W, (vh * DPR) / H);          // cover
+  return {
+    sc,
+    ox: (stage.scrollLeft + vw / 2) * DPR - (W / 2) * sc,       // centre the cabin on what's visible
+    oy: (vh / 2) * DPR - (H / 2) * sc,
+    vwW: clamp((vw * DPR) / sc, W * 0.45, W),                   // world-units visible across (bounded so a bad read can't make the cabin tiny)
+  };
+}
+function restLayout(vw) {
+  vw = vw || _restVWW || W;
+  const cx = W / 2;
+  const ww = clamp(vw * 0.66, W * 0.30, W * 0.44);
+  const wx = cx - ww / 2, wy = H * 0.08, wh = clamp(ww * 0.92, H * 0.28, H * 0.40);
   const hbase = H * 0.88;
-  const hw = clamp(W * 0.24, 110, 210), hh2 = clamp(H * 0.34, 130, 230);
-  const htop = hbase - hh2, hx = W * 0.15;
+  const hw = clamp(vw * 0.24, 96, 200), hh2 = clamp(H * 0.34, 130, 230);
+  const htop = hbase - hh2, hx = cx - vw * 0.27;
   return {
     wx, wy, ww, wh,
     hx, hw, hh2, htop, hbase,
-    sillX: wx + ww * 0.5, sillY: wy + wh + 5,
-    fireX: hx + hw * 0.5 + 22, fireY: hbase - 4,
-    napX: W * 0.64, napY: H * 0.70,
+    sillX: cx, sillY: wy + wh + 5,
+    fireX: hx + hw * 0.5 + 14, fireY: hbase - 4,
+    napX: cx + vw * 0.22, napY: H * 0.70,
   };
 }
 function restSeatCats() {
@@ -5315,6 +5333,7 @@ function openRestPanel() {
   document.getElementById("rest").classList.add("on");
   document.getElementById("app").classList.add("resting");
   restMode = true; restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
+  _restVWW = restViewport().vwW;   // so restSeatCats/restLayout place the cabin to fit this screen
   restClearUI();
   restSeatCats();
 }
@@ -5330,6 +5349,7 @@ function beginRest(resumed) {
   if (!resumed) { restStartedAt = Date.now(); restEndsAt = restOpts.hours > 0 ? restStartedAt + restOpts.hours * 3600e3 : 0; }
   restIdleT = 0; restDim = 0; _restAcc = 0; _restG = null;
   restMode = true;
+  _restVWW = restViewport().vwW;
   restClearUI();
   document.getElementById("rest").classList.add("on");
   document.getElementById("app").classList.add("resting");
@@ -5410,8 +5430,9 @@ function renderRest(dt) {
   const g = ctx;
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, canvas.width, canvas.height);
-  g.setTransform(DPR * displayScale, 0, 0, DPR * displayScale,
-    _worldOffX * DPR * displayScale, _worldOffY * DPR * displayScale);
+  const V = restViewport();
+  if (Math.abs(V.vwW - _restVWW) > 2) { _restVWW = V.vwW; _restG = null; }   // viewport changed → re-lay-out the cabin
+  g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
   g.save();
   g.translate(Math.sin(restDrift) * 3, Math.cos(restDrift * 0.7) * 2);   // slow burn-in drift
 
