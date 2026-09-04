@@ -472,6 +472,11 @@
   #rest .rest-timer button.on{background:var(--accent);color:#fff;border-color:transparent;}
   #rest .rest-cancel{background:none;border:none;color:var(--ink-soft);font:inherit;font-weight:600;font-size:.82rem;
     cursor:pointer;margin-top:.7rem;text-decoration:underline;}
+  /* button.btn is display:flex, which shrinks to its content width — inside a
+     text-align:center panel that leaves it flush against the left padding
+     instead of centred (text-align only centres inline content, not a block
+     box). margin:auto centres the box itself regardless of its own display. */
+  #rest .rest-panel > .btn{margin:0 auto;}
   #rest .rest-bar[hidden]{display:none;}
   #app.resting #hud,#app.resting #actions{opacity:0;pointer-events:none;transition:opacity .5s;}
   #app.resting #toast,#app.resting #dev{opacity:0!important;pointer-events:none;}
@@ -542,6 +547,7 @@
     background:var(--panel);border:1px solid var(--panel-line);border-radius:22px;box-shadow:var(--shadow);
     width:min(92vw,380px);max-height:88vh;overflow:auto;padding:1.4rem 1.3rem 1.1rem;text-align:center;}
   .fest-panel[hidden]{display:none;}
+  .fest-panel > .btn{margin:0 auto;}   /* .btn is display:flex — centre the box itself, not just its text */
   .fest-panel .fp-art{font-size:2.4rem;margin:-.2rem 0 .3rem;}
   .fest-panel h2{font-family:"Fraunces",serif;font-size:1.35rem;margin:0 0 .4rem;}
   .fest-panel p{color:var(--ink-soft);font-size:.88rem;margin:0 0 1rem;line-height:1.5;}
@@ -769,7 +775,7 @@
         <p id="festRestLine"></p>
         <div class="fr-btns">
           <button class="btn primary" id="festAgain">Race again</button>
-          <button class="btn" id="festClaim">Back to the cove</button>
+          <button class="btn" id="festClaim">Back to cove</button>
         </div>
       </div>
     </div>
