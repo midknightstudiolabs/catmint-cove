@@ -6499,14 +6499,19 @@ function showFestPodium() {
   const cols = document.querySelectorAll("#festPodium .fr-pod-col");
   display.forEach((r, i) => miniCat(cols[i].querySelector("canvas"), r.cat.coatKey, r.cat.star, "loafing", false, 1));
   const place = order.findIndex(r => r.cat === racePick);
+  // roll the reward once, up front — reused for both the line below and the
+  // actual grant, so what's printed always matches what's paid (in
+  // particular the pearl chance mustn't get rolled twice)
+  const rw = racePick ? festReward(place) : null;
+  const rwLine = rw ? `+${rw.shells} ◈${rw.pearls ? " and a pearl ✦" : ""}` : "";
   const pickLine = document.getElementById("festPickLine");
-  pickLine.textContent = place === 0 ? `${racePick.name} came in first — nicely called. (+shells, a chance at a pearl)`
-    : place === 1 ? `${racePick.name} placed 2nd — so close!`
-    : place === 2 ? `${racePick.name} placed 3rd — still made the podium.`
-    : `${racePick ? racePick.name : "Your pick"} didn't place this time. Everyone still gets a little something for showing up.`;
+  pickLine.textContent = place === 0 ? `${racePick.name} came in first — nicely called. ${rwLine}`
+    : place === 1 ? `${racePick.name} placed 2nd — so close! ${rwLine}`
+    : place === 2 ? `${racePick.name} placed 3rd — still made the podium. ${rwLine}`
+    : `${racePick ? racePick.name : "Your pick"} didn't place this time. Everyone still gets a little something for showing up. ${rwLine}`;
   const rest = order.slice(3).map(r => r.cat.name);
   document.getElementById("festRestLine").textContent = rest.length ? `${joinNice(rest)} ambled in eventually.` : "";
-  if (racePick) { grantReward(festReward(place), racePick); syncHud(); }
+  if (racePick && rw) { grantReward(rw, racePick); syncHud(); }
   spawnParticles(raceX(1) - 10, laneY(order[0].lane) - 6, "spark", 12);
   spawnParticles(raceX(1) - 10, laneY(order[0].lane) - 16, "heart", 5);
   document.getElementById("festSkip").hidden = true;
