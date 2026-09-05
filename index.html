@@ -1929,7 +1929,7 @@ class Cat {
   }
   starMul() { return 1 + (this.star - 1) * 0.3; }             // ★1 x1  →  ★4 x1.9
   ratePerSec() {
-    let s = 0.55 * earnMult() * this.traitRate() * comfortMult() * this.moodMul() * this.starMul();
+    let s = 0.28 * earnMult() * this.traitRate() * comfortMult() * this.moodMul() * this.starMul();   // v3: ~half the v2 faucet — care items are a real sink now
     s *= 0.5 + this.growth * 0.5;                 // kittens are still learning — half output, ramping up
     if (this.state === "eating" || this.state === "playing") s *= 1.3;
     if (this.state === "sleeping") s *= 0.8;      // napping in a bed: less output, but mood recovers
@@ -2092,9 +2092,9 @@ function dedupeCats() {
 /* ---------- Catdex: the collection spine ---------- */
 // pearl rewards as the field guide fills. the last one lands on the rollable total
 // (Visitors don't count toward completion); reward ramps as coats get rarer.
-const DEX_MILESTONES = [
-  { at: 4, pearls: 3 }, { at: 8, pearls: 5 }, { at: 12, pearls: 8 },
-  { at: 16, pearls: 12 }, { at: ROLLABLE.length, pearls: 25 },
+const DEX_MILESTONES = [   // v3: ~halved — pearls are scarcer now
+  { at: 4, pearls: 2 }, { at: 8, pearls: 3 }, { at: 12, pearls: 4 },
+  { at: 16, pearls: 6 }, { at: ROLLABLE.length, pearls: 13 },
 ];
 function dexCount() { return dexInPool(); }                     // coats met that count toward completion
 function dexSpecialCount() { return Object.keys(G.dex).filter(k => (COAT_BY_KEY[k] || {}).tier === "special").length; }
@@ -2138,14 +2138,14 @@ function checkDexMilestones() {
 
 /* ---------- daily goals + streak ---------- */
 // goal shell rewards scale with the cove so they stay worth claiming as income grows
-function goalShells(mult) { return Math.round((30 + residentCount() * 9) * (mult || 1)); }
+function goalShells(mult) { return Math.round((15 + residentCount() * 4.5) * (mult || 1)); }   // v3: halved with the passive faucet so goals/festival keep their relative weight
 const GOAL_POOL = [
   { id:"pet",     text:n=>`Pet cats ${n} times`,       gen:()=>rpick([5,8,10]),  reward:()=>({shells:goalShells(1)}) },
   { id:"shells",  text:n=>`Gather ${n} shells`,        gen:()=>rpick([40,60,90]),reward:()=>({shells:goalShells(0.9)}) },
   { id:"coax",    text:()=>`Coax a new cat`,           gen:()=>1,               reward:()=>({shells:goalShells(1.3)}) },
   { id:"collect", text:n=>`Collect ${n} drops`,        gen:()=>rpick([12,18,25]),reward:()=>({shells:goalShells(0.9)}) },
   { id:"photo",   text:()=>`Take a photo of the cove`, gen:()=>1,               reward:{pearls:1} },
-  { id:"discover",text:()=>`Discover a new coat`,      gen:()=>1,               reward:{pearls:2} },
+  { id:"discover",text:()=>`Discover a new coat`,      gen:()=>1,               reward:{pearls:1} },
 ];
 function rpick(a){ return a[(Math.random()*a.length)|0]; }
 function rollDailyGoals() {
@@ -2702,7 +2702,7 @@ function updateCat(c, dt) {
       if (fx.t > 1.6) {
         fx.p = "cast"; fx.t = 0;
         c.mood = clamp(c.mood + 6, 8, 100);
-        dropToken(c.x + rand(-8, 8), c.y - 6, (rand(5, 12) | 0), "fish");
+        dropToken(c.x + rand(-8, 8), c.y - 6, (rand(3, 7) | 0), "fish");   // v3: ~half
         spawnParticles(c.x, c.y - 16, "heart", 3);
       }
     }
@@ -2729,7 +2729,7 @@ function updateCat(c, dt) {
       if (fx.t > 1.7) {
         fx.p = "knead"; fx.t = 0; fx.n = (fx.n || 0) + 1;
         c.mood = clamp(c.mood + 6, 8, 100);
-        dropToken(c.x + rand(-8, 8), c.y - 4, (rand(4, 10) | 0) || 1, "shell");
+        dropToken(c.x + rand(-8, 8), c.y - 4, (rand(2, 5) | 0) || 1, "shell");   // v3: ~half
         spawnParticles(c.x, c.y - 16, "heart", 3);
         sfx("eat");
       }
@@ -9363,14 +9363,14 @@ function renderFindsCard() {
 }
 
 /* ---- daily check-in — a warm little welcome, one a day, 7-day loop ---- */
-const CHECKIN_REWARDS = [
-  { shells: 40 },
-  { shells: 60 },
+const CHECKIN_REWARDS = [   // v3: ~halved with the rest of the economy
+  { shells: 20 },
+  { shells: 30 },
+  { pearls: 1 },
+  { shells: 50, keepsake: { id: "welcomebasket", emoji: "🧺", label: "a welcome-back basket" } },
+  { shells: 45 },
   { pearls: 2 },
-  { shells: 100, keepsake: { id: "welcomebasket", emoji: "🧺", label: "a welcome-back basket" } },
-  { shells: 90 },
-  { pearls: 3 },
-  { shells: 160, pearls: 2 },
+  { shells: 80, pearls: 1 },
 ];
 function rewardBits(r) {
   const b = [];
@@ -9772,7 +9772,7 @@ function advLoot(cat, dest, tier) {
   const rm = T.rareMul;
   // shells: a per-hour stipend, always below the ~1,000-1,500/hr a cat earns at
   // home — the trip is a bonus for the hours you're away, not a better job
-  const perHr = { fishing: 160, meadow: 180, forest: 200, market: 240, island: 280, peak: 320 }[dest] || 200;
+  const perHr = { fishing: 80, meadow: 90, forest: 100, market: 120, island: 140, peak: 160 }[dest] || 100;   // v3: ~half, in step with the home rate
   const reward = { shells: Math.round(perHr * hrs * rand(0.82, 1.2)) };
   const lines = [];
   const keepPool = {
@@ -9790,7 +9790,7 @@ function advLoot(cat, dest, tier) {
   const keepP = clamp(0.42 + 0.12 * (rm - 1), 0, 0.9);
   if (rnd() < keepP || has("climber")) { reward.keepsake = pick(keepPool); lines.push(`brought back ${reward.keepsake.label}`); }
   if (has("glutton")) { reward.keepsake = { emoji: "📖", label: `a recipe from the ${dest === "island" ? "island" : "trail"}` }; lines.push("came back with a new recipe"); }
-  if (has("climber")) { reward.shells += Math.round(40 * hrs); lines.push("got somewhere the others couldn't and pocketed the difference"); }
+  if (has("climber")) { reward.shells += Math.round(20 * hrs); lines.push("got somewhere the others couldn't and pocketed the difference"); }
   if (has("playful") && !(cat.worn && cat.worn.length)) {
     const f = pick(["bow", "bandana", "flower", "scarf"]);
     cat.worn = normalizeWorn([...(cat.worn || []), f]);
@@ -9801,7 +9801,7 @@ function advLoot(cat, dest, tier) {
   const highDest = dest === "island" || dest === "peak";
   const pearlP = Math.min(0.7, ({ island: 0.10, peak: 0.12, market: 0.05 }[dest] || 0.035) * rm);
   if (rnd() < pearlP) {
-    reward.pearls = highDest ? (tier === "night" ? 3 : 2) : 1;
+    reward.pearls = highDest && tier === "night" ? 2 : 1;   // v3: ~half
     lines.push(reward.pearls === 1 ? "turned up a pearl" : `turned up ${reward.pearls} pearls`);
   }
   let mapP = ({ fishing: 0.02, meadow: 0.03, forest: 0.045, market: 0.06, island: 0.09, peak: 0.11 }[dest] || 0.04) * rm;
@@ -9809,7 +9809,7 @@ function advLoot(cat, dest, tier) {
   mapP = Math.min(0.45, mapP);
   if ((G.mapPieces || 0) >= MAP_TOTAL) mapP = 0;
   if (rnd() < mapP) { reward.mapPiece = true; lines.push("found a piece of a torn map"); }
-  if (has("grumpy") && rnd() < 0.15) { const j = Math.round(120 * hrs); reward.shells += j; lines.push("came back furious and inexplicably rich"); }
+  if (has("grumpy") && rnd() < 0.15) { const j = Math.round(60 * hrs); reward.shells += j; lines.push("came back furious and inexplicably rich"); }
   if (has("cuddly") && rnd() < 0.5) { reward.mood = 18; lines.push("mostly just missed everyone"); }
   if (has("chatty")) lines.push("will not stop talking about something it saw");
   if (!has("bold") && !has("shy") && rnd() < 0.18) {
