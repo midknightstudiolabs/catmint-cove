@@ -4733,6 +4733,7 @@ let toastTimer = 0;
 const toastEl = document.getElementById("toast");
 function toast(msg, secs = 3.4) {
   if (_cold) return;                    // the cold open owns the screen — nothing stacks on Midknight's card
+  if (festMode || restMode) return;     // an instance (festival, rest) owns the screen — cove nudges wait until you're back
   toastEl.textContent = msg;
   toastEl.classList.add("on");
   toastTimer = secs;
