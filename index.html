@@ -3038,7 +3038,23 @@ function handleTap(x, y) {
     if (d.type === "project" && dist2(x, y, d.x, d.y - 6) < 48 * 48) { hideCatCard(); openProjectSheet(d.pid); return; }
   }
 
+  // Midknight's cairn, if there's one standing (or still being built)
+  if (tapCairn(x, y)) return;
+
   hideCatCard();
+}
+function tapCairn(x, y) {
+  const cn = G && G.cairn;
+  if (!cn || cn.tidied) return false;
+  const n = cn.stage >= 4 ? 3 : (cn.size | 0);
+  if (n <= 0) return false;
+  const { sx, gy } = cairnPos(W, H);
+  if (dist2(x, y, sx, gy - 14) > 32 * 32) return false;
+  hideCatCard();
+  toast(cn.stage >= 4
+    ? "Midknight's cairn — a little monument to everything worth carrying home. Labubu's finds, and a few of his own."
+    : "Midknight's still rearranging this — Labubu's odds and ends, stacked just so.", 5.5);
+  return true;
 }
 function petCat(c) {
   if (c.state === "sulking") { toast(`${c.name} is sulking. Give it a minute.`); showCatCard(c); return; }
@@ -7555,16 +7571,22 @@ function drawBakeryRig(g, c) {
   }
 }
 
-// a little carved sign near the entrance — "<Owner>’s Cove"
-function drawCoveSign(g, W, H) {
+// shared with drawCairn() so the cairn can sit relative to the sign's actual
+// (name-dependent) width instead of a fixed guess
+function coveSignMetrics(g) {
   const label = coveName().toUpperCase();
-  const x = clamp(W * 0.12, 70, W - 70), y = H * 0.42;
-  g.save();
-  g.translate(x, y);
   g.font = "700 11px 'Fraunces', Georgia, serif";
   let fs = 11, bw = g.measureText(label).width + 20;
   if (bw > 150) { fs = 9; g.font = "700 9px 'Fraunces', Georgia, serif"; bw = g.measureText(label).width + 18; }
   bw = Math.max(bw, 64);
+  return { label, fs, bw };
+}
+// a little carved sign near the entrance — "<Owner>’s Cove"
+function drawCoveSign(g, W, H) {
+  const x = clamp(W * 0.12, 70, W - 70), y = H * 0.42;
+  const { label, fs, bw } = coveSignMetrics(g);
+  g.save();
+  g.translate(x, y);
   // soft shadow
   g.fillStyle = "rgba(36,31,23,0.10)";
   g.beginPath(); g.ellipse(0, 24, bw * 0.5, 5, 0, 0, 7); g.fill();
@@ -8807,13 +8829,23 @@ function offerCairnChoice() {
     done();
   };
 }
+// its own rough footprint (widest stone to widest stone, see the stones[]
+// list below) — used both to place it and to size its tap target
+const CAIRN_W = 30, CAIRN_LEFT = 16;
+// beside the sign now, not in front of it: anchored off the sign's actual
+// (name-dependent) right edge, leaning in by only ~5% of its own width for
+// a touch of drama rather than sitting on top of the engraved text
+function cairnPos(W, H) {
+  const signX = clamp(W * 0.12, 70, W - 70);
+  const { bw } = coveSignMetrics(ctx);
+  return { sx: signX + bw / 2 + CAIRN_LEFT - CAIRN_W * 0.05, gy: H * 0.42 + 24 };
+}
 function drawCairn(g, W, H) {
   const cn = G && G.cairn;
   if (!cn || cn.tidied) return;
   const n = cn.stage >= 4 ? 3 : (cn.size | 0);
   if (n <= 0) return;
-  const sx = clamp(W * 0.12, 70, W - 70) + 24;   // just right of the sign
-  const gy = H * 0.42 + 24;                        // at the foot of the posts
+  const { sx, gy } = cairnPos(W, H);
   g.save();
   g.translate(sx, gy);
   g.fillStyle = "rgba(36,31,23,0.14)";
