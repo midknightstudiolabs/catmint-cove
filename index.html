@@ -1555,8 +1555,8 @@ function rebuildAttractors() {
     if (d.type === "cottage") obstacles.push({ x: d.x, y: d.y - 12, rx: 28, ry: 22 });
     // the fishing pond is drawn at station-local (64, 24), ~92×34 — cover it, and
     // let the angler through (fishing cats are exempt below, so this can be big)
-    if (d.type === "station" && d.station === "fishing") obstacles.push({ x: d.x + 66, y: d.y + 24, rx: 86, ry: 33, water: true });
-    if (d.type === "project" && d.pid === "dock")        obstacles.push({ x: d.x + 10, y: d.y + 10, rx: 50, ry: 17, water: true });
+    if (d.type === "station" && d.station === "fishing") obstacles.push({ x: d.x + 64, y: d.y + 28, rx: 94, ry: 36, water: true });
+    if (d.type === "project" && d.pid === "dock")        obstacles.push({ x: d.x + 6,  y: d.y + 11, rx: 55, ry: 19, water: true });
   }
   // food / toy / bed — placed clear of decor, stations, water and each other
   const avoid = decor.map(d => ({ x: d.x, y: d.y, r: d.type === "cottage" ? 46 : d.type === "station" || d.type === "project" ? 44 : d.type === "tree" ? 38 : 24 }))
@@ -2535,9 +2535,13 @@ function updateCat(c, dt) {
   // wade into open water. one ellipse per obstacle; a passing / loafing cat gets
   // shoved out and, if travelling, steered around toward its target.
   const angler = c._station === "fishing" || c._pendStation === "fishing" || c._arriveState === "fishing";
-  if (!held && c.state !== "arriving") {
+  {
     for (const o of obstacles) {
-      if (o.water && angler) continue;                    // the angler works from the dock
+      // solids: a napping or walking-in cat is left alone (naps against a tree,
+      // walks in past the cottage). water: nobody wades in — not while arriving,
+      // not while asleep — only a cat actually fishing here is exempt.
+      if (o.water) { if (angler) continue; }
+      else if (held || c.state === "arriving") continue;
       const margin = 15 / Math.min(o.rx, o.ry);           // ~a cat's half-width, in normalised units
       const nx = (c.x - o.x) / o.rx, ny = (c.y - o.y) / o.ry, nd = Math.hypot(nx, ny);
       if (nd < 1 + margin) {
@@ -2574,6 +2578,22 @@ function updateCat(c, dt) {
 
   c.x += c.vx * dt; c.y += c.vy * dt;
 
+  // water is a hard no — pop out to the edge every frame no matter the state
+  // (asleep, walking in, whatever). only a cat actually fishing here is exempt.
+  if (!angler) for (const o of obstacles) {
+    if (!o.water) continue;
+    let nx = (c.x - o.x) / o.rx, ny = (c.y - o.y) / o.ry;
+    const nd = Math.hypot(nx, ny);
+    if (nd < 1) {
+      if (nd < 0.001) { nx = 0; ny = -1; }                // dead centre → push straight out toward land
+      else { nx /= nd; ny /= nd; }
+      c.x = o.x + nx * o.rx;
+      c.y = o.y + ny * o.ry;
+      const into = c.vx * (c.x - o.x) + c.vy * (c.y - o.y);
+      if (into < 0) { c.vx *= 0.25; c.vy *= 0.25; }
+    }
+  }
+
   // stay in bounds without vibrating against the wall (let newcomers walk in from off-screen)
   if (c.state !== "arriving") {
     const minX = 18, maxX = W - 18, minY = H * 0.5, maxY = catFloor();
@@ -2581,15 +2601,15 @@ function updateCat(c, dt) {
     else if (c.x > maxX) { c.x = maxX; if (c.vx > 0) c.vx = 0; }
     if (c.y < minY) { c.y = minY; if (c.vy < 0) c.vy = 0; }
     else if (c.y > maxY) { c.y = maxY; if (c.vy > 0) c.vy = 0; }
-    // never end a step inside an obstacle — pop out to its edge
+    // never end a step inside a solid — pop out to its edge
     if (!held) for (const o of obstacles) {
-      if (o.water && angler) continue;
+      if (o.water) continue;
       const nx = (c.x - o.x) / o.rx, ny = (c.y - o.y) / o.ry, nd = Math.hypot(nx, ny);
       if (nd < 1 && nd > 0.001) {
         c.x = o.x + (nx / nd) * o.rx;
         c.y = o.y + (ny / nd) * o.ry;
         const into = c.vx * (c.x - o.x) + c.vy * (c.y - o.y);    // heading further in
-        if (into < 0) { c.vx *= o.water ? 0.25 : 0.15; c.vy *= o.water ? 0.25 : 0.15; }
+        if (into < 0) { c.vx *= 0.15; c.vy *= 0.15; }
       }
     }
   }
@@ -10275,7 +10295,9 @@ function onViewportChange() {
 }
 window.__cove = {
   get G(){return G}, get cats(){return cats}, get tokens(){return fieldTokens},
-  get attractors(){return attractors}, get rate(){return aggregateRate()},
+  get attractors(){return attractors}, get obstacles(){return obstacles}, get decor(){return decor},
+  get world(){return {W, H, catFloor: catFloor()}},
+  get rate(){return aggregateRate()},
   get dex(){return G.dex}, get goals(){return G.goals}, get revealQ(){return revealQueue},
   giveCat(coatKey, star, celeb){ if (celeb) delete G.dex[coatKey];
     const c = spawnCat({ coatKey, star, _celeb: !!celeb, x: rand(W*0.3,W*0.7), y: rand(H*0.6,H*0.8) }); syncHud(); return c && c.name; },
