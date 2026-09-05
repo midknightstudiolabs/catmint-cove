@@ -55,6 +55,7 @@
   }
   .hud-group{display:flex;gap:.55rem;align-items:center;pointer-events:auto;min-width:0;flex-wrap:wrap;}
   #hud .hud-group:last-child{flex-wrap:nowrap;flex-shrink:0;}   /* the buttons stay on one row */
+  .pill-stack{display:contents;}   /* on phones this becomes a real column — see the narrow breakpoint */
   .pill{
     display:flex;align-items:center;gap:.45rem;
     background:var(--panel);border:1px solid var(--panel-line);border-radius:999px;
@@ -694,16 +695,18 @@
     .verbadge{display:none;}
   }
   @media (max-width:460px){
-    /* two rows instead of one squeezed row split to opposite edges: currency
-       pills get the full width on top, icon buttons get their own row below,
-       right-aligned. Each row now has room to breathe instead of clipping. */
-    #hud{gap:.35rem;flex-wrap:wrap;padding-left:calc(.5rem + env(safe-area-inset-left));padding-right:calc(.5rem + env(safe-area-inset-right));}
+    /* back to one row on each side — the cat-count pill (one of the widest,
+       and the one you check least often) drops into a small second line
+       tucked under the shells pill instead, freeing enough width that
+       everything else fits on a single row again without clipping. */
+    #hud{gap:.3rem;padding-left:calc(.5rem + env(safe-area-inset-left));padding-right:calc(.5rem + env(safe-area-inset-right));}
     #hud .hud-group{gap:.3rem;flex-wrap:nowrap;min-width:0;}
-    #hud .hud-group:first-child{flex:1 1 100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    #hud .hud-group:first-child{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
     #hud .hud-group:first-child::-webkit-scrollbar{display:none;}
-    #hud .hud-group:last-child{flex:0 0 auto;margin-left:auto;}
+    .pill-stack{display:flex;flex-direction:column;gap:.2rem;align-items:flex-start;flex-shrink:0;}
     #hud .pill{padding:.35rem .55rem .35rem .42rem;font-size:.86rem;}
     #hud .pill.small{font-size:.72rem;padding:.3rem .5rem;}
+    #hud .pill-stack .pill.small{font-size:.62rem;padding:.16rem .4rem;}
     #hud .pill .dot{width:.95rem;height:.95rem;font-size:.62rem;}
     #hud button.btn{padding:.4rem .5rem;}
     #hud .btn .ico{font-size:1rem;}
@@ -744,10 +747,12 @@
 <div id="app">
   <div id="hud">
     <div class="hud-group">
-      <div class="pill" id="shellPill" data-tip="Shells — your everyday currency. Cats leave them; spend them coaxing cats and buying comforts."><span class="dot">◈</span><span id="shells">0</span></div>
+      <div class="pill-stack">
+        <div class="pill" id="shellPill" data-tip="Shells — your everyday currency. Cats leave them; spend them coaxing cats and buying comforts."><span class="dot">◈</span><span id="shells">0</span></div>
+        <div class="pill small" id="catPill" data-tip="Cats here / room you have. Buy comforts or repair the dock to make more room."><span id="catcount">0</span>/<span id="catcap">0</span> cats</div>
+      </div>
       <div class="pill pearl" data-tip="Pearls — rare currency from the Catdex and daily goals. Saved for special things."><span class="dot dotp">✦</span><span id="pearls">0</span></div>
       <div class="pill drift" id="driftPill" hidden data-tip="Driftwood — washes up on the shore and comes home from trips. A building material for restoring the cove."><span class="dot">🪵</span><span id="driftwood">0</span></div>
-      <div class="pill small" id="catPill" data-tip="Cats here / room you have. Buy comforts or repair the dock to make more room."><span id="catcount">0</span>/<span id="catcap">0</span> cats</div>
       <div class="pill small opens" data-tip="Days you've dropped by the cove.">day <span id="opens">1</span></div>
     </div>
     <div class="hud-group">
@@ -6071,6 +6076,10 @@ function startFestRace() {
     const y = Math.min(376, SPEC_Y0 - row * SPEC_DY + rand(-9, 9));
     return Object.assign(c, { x, y, _festBaseY: y, face: 1, state: "loafing", trotting: false, walkAmt: 0 });
   });
+  // draw order = depth order: back rows (smaller y) painted first so the
+  // front row (closest to the rail, largest y) properly overlaps them,
+  // instead of the reverse
+  festSpectators.sort((a, b) => a.y - b.y);
   raceT = 0; racePhase = "countdown"; raceWinner = null; festCheerUntil = 0;
   _festCamX = raceX(0);   // "Race again" reuses the grounds with no wipe — snap back to the line
   particles.length = 0; floaters.length = 0;   // last heat's zoomies text / confetti shouldn't bleed into this one
