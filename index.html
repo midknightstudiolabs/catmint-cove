@@ -8832,13 +8832,15 @@ function offerCairnChoice() {
 // its own rough footprint (widest stone to widest stone, see the stones[]
 // list below) — used both to place it and to size its tap target
 const CAIRN_W = 30, CAIRN_LEFT = 16;
-// beside the sign now, not in front of it: anchored off the sign's actual
-// (name-dependent) right edge, leaning in by only ~5% of its own width for
-// a touch of drama rather than sitting on top of the engraved text
+// beside the sign, leaning against its right post rather than floating next
+// to blank board — a cairn piled against a post is a real, grounded image,
+// and the post (only ~4.5px wide, drawn in drawCoveSign as
+// bw/2-8.5..bw/2-4) all but disappears behind the stack at the overlap,
+// which reads as more deliberate than an arbitrary sliver of board overlap
 function cairnPos(W, H) {
   const signX = clamp(W * 0.12, 70, W - 70);
   const { bw } = coveSignMetrics(ctx);
-  return { sx: signX + bw / 2 + CAIRN_LEFT - CAIRN_W * 0.05, gy: H * 0.42 + 24 };
+  return { sx: signX + bw / 2 + 10, gy: H * 0.42 + 24 };
 }
 function drawCairn(g, W, H) {
   const cn = G && G.cairn;
