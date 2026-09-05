@@ -641,14 +641,24 @@
   @keyframes festFlash{0%{opacity:.8;}100%{opacity:0;}}
 
   /* the podium result card */
-  .fr-podium{display:flex;flex-direction:column;gap:.4rem;margin:.4rem 0 .7rem;text-align:left;}
-  .fr-podium .fr-row{display:flex;align-items:center;gap:.5rem;background:#eef1e3;border-radius:12px;
-    padding:.45rem .7rem;font-weight:600;font-size:.92rem;}
-  .fr-podium .medal{font-size:1.2rem;}
-  .fr-podium .pname{flex:1;}
-  .fr-podium .tag{font-size:.66rem;font-weight:700;color:#fff;background:var(--accent);
-    padding:.15rem .5rem;border-radius:999px;white-space:nowrap;}
-  .fr-podium .fr-row.mine{background:#fff;border:1px solid var(--accent);}
+  /* the podium itself — three cats hopping in place on numbered blocks,
+     right inside the result card instead of out in the field where the
+     card would've just covered it */
+  .fr-podium{display:flex;align-items:flex-end;justify-content:center;gap:.5rem;margin:.6rem 0 .8rem;}
+  .fr-pod-col{display:flex;flex-direction:column;align-items:center;gap:.15rem;width:5.4rem;min-width:0;}
+  .fr-pod-col canvas{display:block;animation:frHop 1s ease-in-out infinite;}
+  .fr-pod-col.rank2 canvas{animation-delay:.12s;}
+  .fr-pod-col.rank3 canvas{animation-delay:.24s;}
+  @keyframes frHop{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+  .fr-pod-name{font-weight:700;font-size:.78rem;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;}
+  .fr-pod-name.mine{color:var(--accent);}
+  .fr-pod-block{width:100%;border-radius:8px 8px 3px 3px;display:flex;align-items:flex-start;
+    justify-content:center;padding-top:.25rem;font-family:"Fraunces",serif;font-weight:700;
+    font-size:1rem;color:rgba(60,44,30,.55);}
+  .fr-pod-block.gold{height:2.6rem;background:#e8b64a;}
+  .fr-pod-block.silver{height:1.8rem;background:#c7ccd6;}
+  .fr-pod-block.bronze{height:1.2rem;background:#c98a52;}
   #festPickLine{font-weight:600;}
   #festRestLine{color:var(--ink-faint);font-size:.82rem;}
   #festRestLine:empty{display:none;}
@@ -5184,7 +5194,7 @@ function loadSfx() {
     } catch (e) { /* stays missing → synth fallback */ }
   });
 }
-function playSample(pool, { vol = 1, rate = 1, jitter = 0.06 } = {}) {
+function playSample(pool, { vol = 1, rate = 1, jitter = 0.06, when = 0 } = {}) {
   if (muted || !actx) return false;
   const list = (SFX_FILES[pool] || []).filter(u => _sfxBuf[u]);
   if (!list.length) return false;
@@ -5197,7 +5207,7 @@ function playSample(pool, { vol = 1, rate = 1, jitter = 0.06 } = {}) {
   const g = actx.createGain();
   g.gain.value = vol * (0.86 + Math.random() * 0.28);
   src.connect(g); g.connect(actx.destination);
-  try { src.start(); } catch (e) { return false; }
+  try { src.start(actx.currentTime + when); } catch (e) { return false; }
   return true;
 }
 let _lastMeowAt = 0;
@@ -6019,7 +6029,7 @@ function festUnlocked() { return G.opens >= 7; }
 let festMode = false, _festDPR = 0, _festG = null;
 const RACE_W = 1400, RACE_H = 640, MAX_RACE_T = 20;
 let raceCats = [], festSpectators = [], racePick = null, raceWinner = null;
-let raceT = 0, racePhase = "run", _festFinishAt = 0, _festCeremonyAt = 0, festPickedCat = null, festCheerUntil = 0;
+let raceT = 0, racePhase = "run", _festFinishAt = 0, festPickedCat = null, festCheerUntil = 0;
 let _festCamX = 150;   // camera centre in RACE-space, used only in portrait pan mode
 
 // portrait phone — the track's 2.2:1 shape has to shrink to a sliver to fit
@@ -6419,7 +6429,7 @@ function tickRacer(r, dt) {
   if (bursting) r.burstUntil -= dt;
   r.pace = r.base * r.wobble * (bursting ? 2.15 : 1);
   r.progress += r.pace * 0.1 * dt;
-  if (r.progress >= 1) { r.progress = 1; r.done = true; r.doneAt = raceT; raceFinishMeow(r); }
+  if (r.progress >= 1) { r.progress = 1; r.done = true; r.doneAt = raceT; }
 }
 function festRanking() { return [...raceCats].sort((a, b) => a.doneAt - b.doneAt || b.progress - a.progress); }
 // the winning moment — confetti at the line, a couple of seconds of crowd hop
@@ -6440,50 +6450,11 @@ function festKeepCheering(r) {
   for (const s of festSpectators) if (Math.random() < 0.4) spawnParticles(s.x, s.y - 22, "heart", 1);
 }
 // a real little meow as each cat crosses — character over tension; this is
-// a fair, not a photo finish
-function raceFinishMeow(r) {
-  playSample("meow", { vol: 0.5, rate: rand(0.92, 1.18) });
-}
-// a real 1-2-3 podium — mid-track, clear of both the finish-line stragglers
-// and the spectator crowd, so it becomes its own little ceremony rather than
-// just a text list. Standing on grade, so 1st visibly stands tallest.
-const PODIUM_GROUND_Y = 374, PODIUM_CX = RACE_W / 2;
-const PODIUM_SPOTS = [
-  { dx: 0, h: 50 },     // 1st — centre, tallest
-  { dx: -80, h: 34 },   // 2nd — left
-  { dx: 80, h: 22 },    // 3rd — right
-];
-function festPodiumPos(place) {
-  const s = PODIUM_SPOTS[place];
-  return { x: PODIUM_CX + s.dx, y: PODIUM_GROUND_Y - s.h, blockH: s.h };
-}
-function drawPodiumBlocks(g) {
-  const cols = ["#e8b64a", "#c7ccd6", "#c98a52"];
-  for (let i = 0; i < 3; i++) {
-    const { x, blockH } = festPodiumPos(i), w = 58;
-    g.fillStyle = "rgba(36,31,23,0.15)";
-    g.beginPath(); g.ellipse(x, PODIUM_GROUND_Y + 4, w * 0.55, 6, 0, 0, 7); g.fill();
-    g.fillStyle = cols[i];
-    roundRect(g, x - w / 2, PODIUM_GROUND_Y - blockH, w, blockH, 6); g.fill();
-    g.fillStyle = "rgba(255,255,255,0.28)";
-    roundRect(g, x - w / 2, PODIUM_GROUND_Y - blockH, w, blockH * 0.35, 6); g.fill();
-    g.fillStyle = "rgba(60,44,30,0.55)";
-    g.textAlign = "center"; g.font = "700 20px 'Fraunces', Georgia, serif";
-    g.fillText(String(i + 1), x, PODIUM_GROUND_Y - blockH / 2 + 7);
-  }
-}
-// the winner's cats hop in place on their blocks rather than freezing —
-// same little joy as the crowd's cheer-hop
-function syncPodiumCat(r, dt, place) {
-  const c = r.cat, pos = festPodiumPos(place);
-  const hop = Math.max(0, Math.sin(raceT * 5 + place * 1.3)) * 10;
-  c.x = pos.x; c.y = pos.y - hop; c.face = 1;
-  const _m = catMotion(c);
-  c.state = "loafing";
-  c.walkAmt = Math.max(0, (c.walkAmt || 0) - dt * 4);
-  c.trotting = false;
-  c.tail += dt * 5 * _m.tailRate; c.bob += dt * 6;
-  c.blink -= dt; if (c.blink < -0.12) c.blink = rand(2.4, 6.5) * _m.blinkEvery;
+// a fair, not a photo finish. `when` staggers same-frame finishers (real
+// Web Audio scheduling, not setTimeout) so simultaneous arrivals don't all
+// hit the exact same sample instant and glitch into one overlapping mess.
+function raceFinishMeow(r, when = 0) {
+  playSample("meow", { vol: 0.5, rate: rand(0.92, 1.18), when });
 }
 // a soft closing note once the whole field's crossed — quieter than the win
 // fanfare and pitched down, so it reads as "that's everyone" rather than a
@@ -6504,12 +6475,24 @@ function festReward(place) {
 }
 function showFestPodium() {
   const order = festRanking();
-  const medals = ["🥇", "🥈", "🥉"];
-  document.getElementById("festPodium").innerHTML = order.slice(0, 3).map((r, i) => {
+  // classic podium arrangement — 2nd/1st/3rd left to right, 1st tallest —
+  // right inside the card, hopping in place, instead of out in the field
+  // where the card would just cover it
+  const top3 = order.slice(0, 3);
+  const blockClass = ["gold", "silver", "bronze"];
+  const display = [top3[1], top3[0], top3[2]];
+  const displayPlace = [1, 0, 2];
+  document.getElementById("festPodium").innerHTML = display.map((r, i) => {
+    const place = displayPlace[i];
     const mine = r.cat === racePick;
-    return `<div class="fr-row${mine ? " mine" : ""}"><span class="medal">${medals[i]}</span>` +
-      `<span class="pname">${r.cat.name}</span>${mine ? '<span class="tag">your pick</span>' : ""}</div>`;
+    return `<div class="fr-pod-col rank${place + 1}">
+      <canvas width="46" height="40"></canvas>
+      <div class="fr-pod-name${mine ? " mine" : ""}">${esc(r.cat.name)}</div>
+      <div class="fr-pod-block ${blockClass[place]}">${place + 1}</div>
+    </div>`;
   }).join("");
+  const cols = document.querySelectorAll("#festPodium .fr-pod-col");
+  display.forEach((r, i) => miniCat(cols[i].querySelector("canvas"), r.cat.coatKey, r.cat.star, "loafing", false, 1));
   const place = order.findIndex(r => r.cat === racePick);
   const pickLine = document.getElementById("festPickLine");
   pickLine.textContent = place === 0 ? `${racePick.name} came in first — nicely called. (+shells, a chance at a pearl)`
@@ -6571,39 +6554,30 @@ function renderFest(dt) {
   if (racePhase === "countdown") {
     for (const r of raceCats) syncRacerCat(r, dt, true);
   } else if (racePhase === "run") {
-    let allDone = true;
+    let allDone = true, finishesThisFrame = 0;
     for (const r of raceCats) {
       const wasDone = r.done;
       tickRacer(r, dt);
       syncRacerCat(r, dt);
       if (!r.done) { allDone = false; continue; }
       if (wasDone) continue;   // already reacted to this one on an earlier frame
+      raceFinishMeow(r, finishesThisFrame++ * 0.1);   // staggered — same-instant finishes used to glitch into one overlapping meow
       if (!raceWinner) festCelebrateWinner(r); else festKeepCheering(r);
     }
     if (allDone || raceT > MAX_RACE_T) {
       for (const r of raceCats) if (!r.done) {
-        r.done = true; r.doneAt = raceT; raceFinishMeow(r);
+        r.done = true; r.doneAt = raceT;
+        raceFinishMeow(r, finishesThisFrame++ * 0.1);
         if (!raceWinner) festCelebrateWinner(r); else festKeepCheering(r);
       }
       racePhase = "finish"; _festFinishAt = raceT;
       document.getElementById("festSkip").hidden = true;
-      festAllInChime();
+      festAllInChime(finishesThisFrame * 0.1);
     }
-  } else if (racePhase === "ceremony" || racePhase === "podium") {
-    // the 1-2-3 hop onto the podium plays out on its own first, unobstructed —
-    // the result card only comes up once there's actually something to see
-    // behind it, instead of covering the ceremony the instant it starts
-    const order = festRanking();
-    for (const r of raceCats) {
-      const place = order.indexOf(r);
-      if (place >= 0 && place < 3) syncPodiumCat(r, dt, place); else syncRacerCat(r, dt, true);
-    }
-    if (racePhase === "ceremony" && raceT - _festCeremonyAt > 1.3) { racePhase = "podium"; showFestPodium(); }
   } else {
     for (const r of raceCats) syncRacerCat(r, dt, true);
-    if (racePhase === "finish" && raceT - _festFinishAt > 1.3) { racePhase = "ceremony"; _festCeremonyAt = raceT; }
+    if (racePhase === "finish" && raceT - _festFinishAt > 1.3) { racePhase = "podium"; showFestPodium(); }
   }
-  if (racePhase === "ceremony" || racePhase === "podium") drawPodiumBlocks(g);
   for (const r of raceCats) drawCat(g, r.cat, false);
   if (particles.length) drawFX(g);
 }
@@ -6626,7 +6600,7 @@ document.getElementById("festSkip").addEventListener("click", () => {
   const order = [...raceCats].sort((a, b) => b.progress - a.progress);
   order.forEach((r, i) => { r.done = true; r.progress = Math.max(r.progress, 1 - i * 0.03); r.doneAt = raceT + i * 0.001; });
   festCelebrateWinner(order[0]);
-  order.forEach((r, i) => setTimeout(() => raceFinishMeow(r), i * 110));
+  order.forEach((r, i) => raceFinishMeow(r, i * 0.1));
   for (let i = 1; i < order.length; i++) festKeepCheering(order[i]);
   racePhase = "finish"; _festFinishAt = raceT;
   document.getElementById("festSkip").hidden = true;
