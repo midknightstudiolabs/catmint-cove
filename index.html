@@ -55,10 +55,13 @@
   }
   .hud-group{display:flex;gap:.55rem;align-items:center;pointer-events:auto;min-width:0;flex-wrap:wrap;}
   #hud .hud-group:last-child{flex-wrap:nowrap;flex-shrink:0;}   /* the buttons stay on one row */
-  /* an invisible forced line-break — inert (0-size, hidden) everywhere except
-     the narrow-phone breakpoint below, where it pushes cat-count/day onto
-     their own row without touching the shells/pearls/driftwood row above it */
-  .hud-break{flex-basis:100%;width:0;height:0;display:none;}
+  /* each .hud-row is its own non-splitting unit (shells/pearls/driftwood
+     never break apart from each other; same for cat-count/day) — the
+     hud-group they sit in wraps the SECOND row below the first only once
+     both no longer fit side by side, at whatever width that turns out to be */
+  .hud-row{display:flex;align-items:center;gap:.55rem;flex-wrap:nowrap;min-width:0;}
+  #hud .hud-group:first-child .hud-row:first-child{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  #hud .hud-group:first-child .hud-row:first-child::-webkit-scrollbar{display:none;}
   .pill{
     display:flex;align-items:center;gap:.45rem;
     background:var(--panel);border:1px solid var(--panel-line);border-radius:999px;
@@ -698,14 +701,12 @@
     .verbadge{display:none;}
   }
   @media (max-width:460px){
-    /* row 1: shells/pearls/driftwood, lined up together. row 2 (forced by
-       .hud-break): cat-count + day. Same pill/font sizing throughout —
-       nothing here gets its own smaller variant. */
+    /* row 1 (shells/pearls/driftwood) and row 2 (cat-count/day) stack
+       automatically once they no longer fit side by side — see .hud-row
+       above. Same pill/font sizing throughout, just tighter gaps/padding. */
     #hud{gap:.3rem;padding-left:calc(.5rem + env(safe-area-inset-left));padding-right:calc(.5rem + env(safe-area-inset-right));}
-    #hud .hud-group{gap:.3rem;flex-wrap:wrap;min-width:0;}
-    #hud .hud-group:first-child{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
-    #hud .hud-group:first-child::-webkit-scrollbar{display:none;}
-    .hud-break{display:block;}
+    #hud .hud-group{gap:.3rem;min-width:0;}
+    #hud .hud-row{gap:.3rem;}
     #hud .pill.small.opens{display:flex;}   /* the day pill: hidden <560px normally, but it has a home in row 2 here */
     #hud .pill{padding:.35rem .55rem .35rem .42rem;font-size:.86rem;}
     #hud .pill.small{font-size:.72rem;padding:.3rem .5rem;}
@@ -749,12 +750,15 @@
 <div id="app">
   <div id="hud">
     <div class="hud-group">
-      <div class="pill" id="shellPill" data-tip="Shells — your everyday currency. Cats leave them; spend them coaxing cats and buying comforts."><span class="dot">◈</span><span id="shells">0</span></div>
-      <div class="pill pearl" data-tip="Pearls — rare currency from the Catdex and daily goals. Saved for special things."><span class="dot dotp">✦</span><span id="pearls">0</span></div>
-      <div class="pill drift" id="driftPill" hidden data-tip="Driftwood — washes up on the shore and comes home from trips. A building material for restoring the cove."><span class="dot">🪵</span><span id="driftwood">0</span></div>
-      <div class="hud-break"></div>
-      <div class="pill small" id="catPill" data-tip="Cats here / room you have. Buy comforts or repair the dock to make more room."><span id="catcount">0</span>/<span id="catcap">0</span> cats</div>
-      <div class="pill small opens" data-tip="Days you've dropped by the cove.">day <span id="opens">1</span></div>
+      <div class="hud-row">
+        <div class="pill" id="shellPill" data-tip="Shells — your everyday currency. Cats leave them; spend them coaxing cats and buying comforts."><span class="dot">◈</span><span id="shells">0</span></div>
+        <div class="pill pearl" data-tip="Pearls — rare currency from the Catdex and daily goals. Saved for special things."><span class="dot dotp">✦</span><span id="pearls">0</span></div>
+        <div class="pill drift" id="driftPill" hidden data-tip="Driftwood — washes up on the shore and comes home from trips. A building material for restoring the cove."><span class="dot">🪵</span><span id="driftwood">0</span></div>
+      </div>
+      <div class="hud-row">
+        <div class="pill small" id="catPill" data-tip="Cats here / room you have. Buy comforts or repair the dock to make more room."><span id="catcount">0</span>/<span id="catcap">0</span> cats</div>
+        <div class="pill small opens" data-tip="Days you've dropped by the cove.">day <span id="opens">1</span></div>
+      </div>
     </div>
     <div class="hud-group">
       <button class="pill title-pill" id="titlePill" data-tip="Your cove's name. Tap to rename it.">Catmint <b>Cove</b></button>
