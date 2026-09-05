@@ -117,22 +117,25 @@
   .btn .ico{font-size:1.05rem;line-height:1;}
 
   /* ---- title screen — the first thing anyone sees ----
-     exit is a clean scene switch, not a crossfade: the card's own content
-     drops out fast (nothing lingers) while the whole panel rises away like
-     a curtain, and the cove only appears once it's mostly gone. */
+     exit is an iris-open, not a crossfade or a slide: the card's own content
+     drops out fast (nothing lingers), then the whole panel closes down to a
+     point centered on the emblem — the cove blooms open through the hole —
+     with a soft gleam of light right as it clears. --tx/--ty are set from JS
+     to the emblem's actual on-screen position at click time. */
   #titleScreen{
     position:fixed;inset:0;z-index:200;
     display:flex;align-items:center;justify-content:center;
     background:linear-gradient(180deg,#cfe6d3 0%,#e6efdd 55%,#f4f2e7 100%);
-    transition:transform .8s cubic-bezier(.65,0,.35,1);
-    will-change:transform;
+    clip-path:circle(150% at 50% 50%);
+    transition:clip-path .9s cubic-bezier(.61,0,.36,1);
+    will-change:clip-path;
   }
-  #titleScreen.out{transform:translateY(-100%);pointer-events:none;}
+  #titleScreen.out{clip-path:circle(0% at var(--tx,50%) var(--ty,42%));pointer-events:none;}
   #titleScreen[hidden]{display:none;}   /* the ID rule above otherwise outranks the UA [hidden] default */
   .ts-card{text-align:center;max-width:min(88vw,360px);padding:0 1rem;
     animation:tsIn 1.1s cubic-bezier(.16,1,.3,1) both;
-    transition:opacity .3s ease, transform .3s ease;}
-  #titleScreen.out .ts-card{opacity:0;transform:scale(.94);}
+    transition:opacity .25s ease, transform .25s ease;}
+  #titleScreen.out .ts-card{opacity:0;transform:scale(.9);}
   @keyframes tsIn{from{opacity:0;transform:translateY(10px);}}
   .ts-emblem{font-size:2.4rem;margin-bottom:.3rem;
     animation:tsBreathe 3.6s ease-in-out infinite;}
@@ -142,6 +145,15 @@
   .ts-card h1 b{color:var(--accent-bright);font-style:italic;font-weight:700;}
   .ts-sub{font-size:.92rem;line-height:1.5;color:var(--ink-soft);margin:0 0 1.4rem;}
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
+
+  /* the gleam that flashes through the iris the instant it fully closes */
+  #tsFlash{
+    position:fixed;inset:0;z-index:199;pointer-events:none;opacity:0;
+    background:radial-gradient(circle at var(--tx,50%) var(--ty,42%),
+      rgba(255,252,240,.95), rgba(255,252,240,0) 34%);
+  }
+  #tsFlash.show{animation:tsFlashPulse .7s ease-out both;}
+  @keyframes tsFlashPulse{0%{opacity:0;}40%{opacity:1;}100%{opacity:0;}}
 
   /* ---- bottom action bar ---- */
   #actions{
@@ -805,6 +817,7 @@
       <button class="btn primary" id="ts-go">Begin</button>
     </div>
   </div>
+  <div id="tsFlash"></div>
   <div id="hud">
     <div class="hud-group">
       <div class="hud-row">
@@ -10516,11 +10529,18 @@ if (G.rest && G.rest.on) {
   tsGo.textContent = G.tutorialDone ? "Continue" : "Begin";
   tsGo.onclick = () => {
     const el = document.getElementById("titleScreen");
+    const flash = document.getElementById("tsFlash");
+    const r = document.querySelector(".ts-emblem").getBoundingClientRect();
+    const tx = (r.left + r.width / 2) + "px", ty = (r.top + r.height / 2) + "px";
+    el.style.setProperty("--tx", tx); el.style.setProperty("--ty", ty);
+    flash.style.setProperty("--tx", tx); flash.style.setProperty("--ty", ty);
     ensureAudio();
     el.classList.add("out");
-    setTimeout(() => { el.hidden = true; }, 820);
-    setTimeout(runBootFlow, 650);   // the curtain's nearly clear of the screen — reveal what's next now, not mid-slide
-    setTimeout(runPostTitleNudges, 650);
+    setTimeout(() => flash.classList.add("show"), 520);     // right as the iris finishes closing
+    setTimeout(() => flash.classList.remove("show"), 1250);
+    setTimeout(() => { el.hidden = true; }, 920);
+    setTimeout(runBootFlow, 700);   // the iris is nearly closed — reveal what's next now, not mid-close
+    setTimeout(runPostTitleNudges, 700);
   };
 }
 
