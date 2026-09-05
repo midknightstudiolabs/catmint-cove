@@ -186,6 +186,27 @@ sense once the game around it is the v3 game.
   ~50% economy cut, accept/deny arrivals. Feature backlog above. Building
   starts with Bucket 1.
 
+## Build progress (2026-09-06)
+
+- [x] **Pond bug** (`5d…` / commit "Fix cats walking through / sleeping in
+  the pond") — water is a hard per-frame pop-out for every state now.
+- [x] **Economy −50%** — passive rate 0.55→0.28, goalShells halved, Catdex
+  pearls halved, check-in / fishing / adventure payouts halved.
+- [x] **Accept / deny arrivals** — ambient free-arrival timer shows a card
+  (portrait, name, coat, trait) with Welcome / Not right now. Coax + scripted
+  + offline arrivals still auto-join.
+- [x] **Care layer** — food store + refill, per-cat hunger/thirst, drinking
+  at any pond, sickness + medicine, the ~40h leave clock, offline handling,
+  HUD 🍚 stat. Tuned so a stocked cove + a pond is a light background task.
+- [ ] Autumn / seasonal effect — **blocked on the user** (renders fine here;
+  need specifics on what's wrong).
+- [ ] Decor cat-preview — **blocked on the user** (need to know exactly what
+  "show the selected cat picture" means).
+- [ ] Inventory (pack away / re-place all decor).
+- [ ] Loading-screen cat wave (mock first).
+- [ ] Premium cosmetic decor — glowing collar / rainbow trail / wings (mock
+  the effects first). Needs a hard-currency / IAP surface.
+
 ## Decisions log
 
 _(to be filled in as we work through the above)_
