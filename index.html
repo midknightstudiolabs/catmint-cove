@@ -2009,6 +2009,54 @@ function scriptArrival() {
   if (c) logMoment("🐾", `${c.name} wandered in — ${TRAITS[t0].label.toLowerCase()}.`, "arrival");
   return c;
 }
+
+/* ---------- v3: a cat at the edge of the cove — welcome them in, or not.
+   only the ambient free-arrival timer routes through here; coaxed cats,
+   scripted intro cats and offline arrivals still join automatically. ---------- */
+let _pendingArrival = null;
+function offerArrival() {
+  if (_pendingArrival || (scrim && scrim.classList.contains("on"))) { visitorTimer = rand(50, 130); return; }
+  if (residentCount() >= capacity()) { visitorTimer = rand(160, 320); return; }
+  const c = new Cat({
+    bornAt: Date.now() - KITTEN_MS * (Math.random() < 0.4 ? rand(0.15, 0.9) : 3),
+    x: (Math.random() < 0.5 ? -40 : W + 40), y: catFloor() - rand(18, 56), mood: 58,
+  });
+  _pendingArrival = c;
+  const kitten = c.growth < 1;
+  const td = TRAITS[c.traits[0]];
+  openModal(`<div class="reveal">
+    <div class="kicker">At the edge of the cove</div>
+    <canvas width="200" height="188"></canvas>
+    <h2>${esc(c.name)}</h2>
+    <p class="sub">${kitten ? "A " + c.coat.name + " kitten" : "A " + c.coat.name}, watching from the long grass.${td ? " " + td.desc : ""}</p>
+    <div class="row">
+      <button class="btn primary" id="arr-yes">Welcome them in</button>
+      <button class="btn" id="arr-no">Not right now</button>
+    </div>
+  </div>`);
+  miniCat(document.querySelector("#modal canvas"), c.coatKey, c.star, "loafing", false, 2.4);
+  sfx("coax");
+  document.getElementById("arr-yes").onclick = acceptArrival;
+  document.getElementById("arr-no").onclick = declineArrival;
+}
+function acceptArrival() {
+  const c = _pendingArrival; _pendingArrival = null; closeModal();
+  if (!c) return;
+  setTimeout(() => {
+    cats.push(c);
+    G.metrics.catsAllTime++;
+    go(c, "arriving", rand(5, 9), { x: rand(W * 0.28, W * 0.72), y: rand(H * 0.6, catFloor() - 22) });
+    registerInDex(c, true);
+    logMoment("🐾", `${c.name} settled in — a ${c.coat.name}.`, "arrival");
+    syncHud(); save();
+  }, 130);
+  visitorTimer = nextVisitorGap();
+}
+function declineArrival() {
+  const c = _pendingArrival; _pendingArrival = null; closeModal();
+  if (c) logMoment("🐾", `A ${c.coat.name} looked in at the edge of the cove, then wandered back off.`, "arrival");
+  visitorTimer = rand(140, 300);   // another will be along, a little later
+}
 function spawnCat(o) {
   if (residentCount() >= capacity() && !o) return null;
   const c = new Cat(o || {});
@@ -9088,10 +9136,7 @@ function simulate(dt) {
   updateCamera(dt);
   if (G.tutorialDone) {                 // hold the world still during the cold open
     visitorTimer -= dt;
-    if (visitorTimer <= 0) {
-      visitorTimer = nextVisitorGap();
-      if (residentCount() < capacity()) { spawnCat(); toast("A cat wandered into the cove."); }
-    }
+    if (visitorTimer <= 0) offerArrival();   // sets its own next visitorTimer (welcome / decline / retry)
   }
   // driftwood washes up along the shore while a project still needs it
   if (G.tutorialDone && anyProjectOpen()) {
@@ -10363,6 +10408,7 @@ window.__cove = {
     if (cmd === "next") { if (G.checkin) G.checkin.lastKey = ""; syncHud(); return "available again (day kept)"; }
     return { ...G.checkin, available: checkinAvailable(), todayReward: CHECKIN_REWARDS[(G.checkin && G.checkin.day || 0) % 7] };
   },
+  arrival(){ visitorTimer = 0.001; return "a cat will show up at the edge on the next sim tick"; },
   wywa(id){
     const e = id ? WYWA_EVENTS.find(x => x.id === id) : wPick(WYWA_EVENTS);
     if (!e) return "no such beat. ids: " + WYWA_EVENTS.map(x => x.id).join(", ");
