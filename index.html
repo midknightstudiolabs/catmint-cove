@@ -6309,13 +6309,18 @@ function stopFestAudio(keepGen) {
   setTimeout(() => { try { src && src.disconnect(); } catch (e) {} try { bus && bus.disconnect(); } catch (e) {} }, 1600);
   if (ambience && !keepGen) rampParam(ambience.master.gain, muted ? 0 : AMB_MASTER, 1.4);
 }
-// a bright, bouncy little calliope loop — an original cheerful major-key phrase
-// (not any specific tune), triangle-wave melody over a soft "oom" bass. Sparse
-// enough to sit under the crowd murmur rather than nag.
+// a bright, bouncy calliope tune — original melody (a generic major-scale
+// carnival arpeggio shape, not transcribed from any specific piece) with a
+// steady oom-pah bass alternating tonic/dominant, the way an actual fairground
+// band would play. Loops back-to-back with only a short breath between
+// passes instead of a long silent gap, so the grounds feel properly lively
+// rather than getting an occasional sparse jingle.
 const FEST_TUNE = [
-  { d: 0, len: 0.5, bass: 0 }, { d: 4, len: 0.5 }, { d: 7, len: 0.5 }, { d: 4, len: 0.5 },
-  { d: 5, len: 0.5, bass: 5 }, { d: 9, len: 0.5 }, { d: 7, len: 0.5 }, { d: 4, len: 1.0 },
-];
+  { d: 0, bass: 0 }, { d: 4 }, { d: 7, bass: 7 }, { d: 4 },
+  { d: 5, bass: 0 }, { d: 9 }, { d: 7, bass: 7 }, { d: 4 },
+  { d: 2, bass: 0 }, { d: 5 }, { d: 9, bass: 7 }, { d: 5 },
+  { d: 7, bass: 0 }, { d: 4 }, { d: 2, bass: 7 }, { d: 0, len: 1.0 },
+].map(n => ({ len: 0.5, ...n }));
 function scheduleFestMelody() {
   if (!festBus) return;
   const root = 523.25;   // C5 — bright calliope register
@@ -6334,7 +6339,7 @@ function scheduleFestMelody() {
       const bo = actx.createOscillator(), bg = actx.createGain();
       bo.type = "sine"; bo.frequency.value = (root / 4) * Math.pow(2, note.bass / 12);
       bg.gain.setValueAtTime(0, t);
-      bg.gain.linearRampToValueAtTime(muted ? 0 : 0.05, t + 0.03);
+      bg.gain.linearRampToValueAtTime(muted ? 0 : 0.055, t + 0.03);
       bg.gain.exponentialRampToValueAtTime(0.0006, t + note.len * 0.8);
       bo.connect(bg); bg.connect(festBus);
       bo.start(t); bo.stop(t + note.len * 0.85);
@@ -6342,7 +6347,7 @@ function scheduleFestMelody() {
     beatT += note.len * 0.46;
     _festMelodyBeat++;
   }
-  setTimeout(scheduleFestMelody, (beatT + 1.6 + Math.random() * 1.4) * 1000);
+  setTimeout(scheduleFestMelody, (beatT + 0.35 + Math.random() * 0.3) * 1000);
 }
 
 function syncRacerCat(r, dt, freeze) {
