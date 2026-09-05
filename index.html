@@ -74,6 +74,8 @@
   @media (prefers-reduced-motion:reduce){#shellPill.pop{animation:none;}}
   .pill .dotp{background:#8fb7d6;color:#274a63;}
   .pill.drift .dot{background:#d9c9a6;font-size:.72rem;}
+  .pill .dotcat{background:#d7b98c;}
+  .pill .dotday{background:#bcd4e6;}
   .pill.drift[hidden]{display:none;}
   .pill.small{font-size:.82rem;padding:.35rem .7rem;color:var(--ink-soft);font-weight:600;}
   #catPill{cursor:pointer;user-select:none;-webkit-user-select:none;}
@@ -831,8 +833,8 @@
         <div class="pill drift" id="driftPill" hidden data-tip="Driftwood — washes up on the shore and comes home from trips. A building material for restoring the cove."><span class="dot">🪵</span><span id="driftwood">0</span></div>
       </div>
       <div class="hud-row">
-        <div class="pill small" id="catPill" data-tip="Cats here / room you have. Buy comforts or repair the dock to make more room."><span id="catcount">0</span>/<span id="catcap">0</span> cats</div>
-        <div class="pill small opens" data-tip="Days you've dropped by the cove.">day <span id="opens">1</span></div>
+        <div class="pill small" id="catPill" data-tip="Cats here / room you have. Buy comforts or repair the dock to make more room."><span class="dot dotcat">🐾</span><span id="catcount">0</span>/<span id="catcap">0</span></div>
+        <div class="pill small opens" data-tip="Days you've dropped by the cove."><span class="dot dotday">☀️</span><span id="opens">1</span></div>
       </div>
     </div>
     <div class="hud-group">
