@@ -116,20 +116,30 @@
   button.btn:disabled{opacity:.45;cursor:not-allowed;}
   .btn .ico{font-size:1.05rem;line-height:1;}
 
-  /* ---- title screen — the first thing anyone sees ---- */
+  /* ---- title screen — the first thing anyone sees ----
+     exit is a clean scene switch, not a crossfade: the card's own content
+     drops out fast (nothing lingers) while the whole panel rises away like
+     a curtain, and the cove only appears once it's mostly gone. */
   #titleScreen{
     position:fixed;inset:0;z-index:200;
     display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(var(--sky-top),var(--sky-bot));
-    transition:opacity .5s ease;
+    background:linear-gradient(180deg,#cfe6d3 0%,#e6efdd 55%,#f4f2e7 100%);
+    transition:transform .8s cubic-bezier(.65,0,.35,1);
+    will-change:transform;
   }
-  #titleScreen.out{opacity:0;pointer-events:none;}
+  #titleScreen.out{transform:translateY(-100%);pointer-events:none;}
+  #titleScreen[hidden]{display:none;}   /* the ID rule above otherwise outranks the UA [hidden] default */
   .ts-card{text-align:center;max-width:min(88vw,360px);padding:0 1rem;
-    animation:tsIn .6s cubic-bezier(.16,1,.3,1) both;}
+    animation:tsIn 1.1s cubic-bezier(.16,1,.3,1) both;
+    transition:opacity .3s ease, transform .3s ease;}
+  #titleScreen.out .ts-card{opacity:0;transform:scale(.94);}
   @keyframes tsIn{from{opacity:0;transform:translateY(10px);}}
-  .ts-emblem{font-size:2.4rem;margin-bottom:.3rem;}
+  .ts-emblem{font-size:2.4rem;margin-bottom:.3rem;
+    animation:tsBreathe 3.6s ease-in-out infinite;}
+  @keyframes tsBreathe{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
   .ts-card h1{font-family:"Fraunces",Georgia,serif;font-weight:700;
     font-size:clamp(1.7rem,7vw,2.3rem);margin:0 0 .5rem;color:var(--ink);}
+  .ts-card h1 b{color:var(--accent-bright);font-style:italic;font-weight:700;}
   .ts-sub{font-size:.92rem;line-height:1.5;color:var(--ink-soft);margin:0 0 1.4rem;}
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
 
@@ -780,7 +790,7 @@
   <div id="titleScreen">
     <div class="ts-card">
       <div class="ts-emblem">🐾</div>
-      <h1>Catmint Cove</h1>
+      <h1>Catmint <b>Cove</b></h1>
       <p class="ts-sub">A cozy corner of the world where cats come to be looked after.</p>
       <button class="btn primary" id="ts-go">Begin</button>
     </div>
@@ -10450,8 +10460,8 @@ if (G.rest && G.rest.on) {
     const el = document.getElementById("titleScreen");
     ensureAudio();
     el.classList.add("out");
-    setTimeout(() => { el.hidden = true; }, 520);
-    setTimeout(runBootFlow, 150);
+    setTimeout(() => { el.hidden = true; }, 820);
+    setTimeout(runBootFlow, 650);   // the curtain's nearly clear of the screen — reveal what's next now, not mid-slide
   };
 }
 
