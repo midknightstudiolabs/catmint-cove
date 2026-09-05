@@ -85,7 +85,10 @@
     text-shadow:-1px -1px 0 rgba(20,16,10,.5),1px -1px 0 rgba(20,16,10,.5),
       -1px 1px 0 rgba(20,16,10,.5),1px 1px 0 rgba(20,16,10,.5),0 2px 4px rgba(20,16,10,.35);}
   .hud-stat .ico{font-size:.95rem;filter:drop-shadow(0 1px 2px rgba(20,16,10,.5));}
-  #catPill{cursor:pointer;user-select:none;-webkit-user-select:none;}
+  .hud-stat.warn{color:#ffd98a;}
+  .hud-stat.crit{color:#ff9d7c;animation:hudPulse 1.4s ease-in-out infinite;}
+  @keyframes hudPulse{0%,100%{opacity:1;}50%{opacity:.55;}}
+  #catPill,#foodStat{cursor:pointer;user-select:none;-webkit-user-select:none;}
   #hud [data-tip]{cursor:help;}
   /* tap/hover explainer for the HUD pills */
   #tipPop{position:fixed;z-index:60;max-width:min(80vw,264px);
@@ -841,6 +844,7 @@
       </div>
       <div class="hud-stats">
         <div class="hud-stat" id="catPill" data-tip="Cats here / room you have. Buy comforts or repair the dock to make more room."><span class="ico">🐾</span><span id="catcount">0</span>/<span id="catcap">0</span></div>
+        <div class="hud-stat" id="foodStat" data-tip="Food in the bowls. Tap a bowl to refill. Empty bowls mean hungry cats."><span class="ico">🍚</span><span id="foodlevel">0</span></div>
         <div class="hud-stat opens" data-tip="Days you've dropped by the cove."><span class="ico">☀️</span><span id="opens">1</span></div>
       </div>
     </div>
@@ -1309,6 +1313,7 @@ function newGame() {
     comfort: 0,            // 0..5 global production tiers
     coax: 0,               // times coaxed (price scaling)
     bowls: 1, toys: 0, beds: 0, scratch: 0,
+    food: 30,              // v3: cove-wide food store (servings). cats eat it down; refill for shells. empty → hunger climbs
     decor: { tree: 0, cottage: 0, flowers: 0 },
     stations: { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 },   // activity stations cats "work"
     trinkets: 0,           // (legacy) kept for save back-compat — accessories are per-cat now (c.owned)
@@ -1369,6 +1374,7 @@ function load() {
     if (!G.stations) G.stations = { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 };
     if (G.trinkets === undefined) G.trinkets = 0;
     if (G.scratch === undefined) G.scratch = 0;
+    if (typeof G.food !== "number") G.food = 30;   // v3 care layer
     if (G.coveCharter === undefined) G.coveCharter = false;
     // field-guide expansion: a cove that had the original 11 keeps its Charter access
     if (G.dexGrandfathered === undefined) G.dexGrandfathered = ORIGINAL_11.every(k => G.dex && G.dex[k]);
@@ -1782,6 +1788,19 @@ function earnMult() {
 const TOKEN_CAP = 40;                 // a dropped token is a nice pickup, never a jackpot
 const ACC_CEIL  = 150;                // a cat can't hoard more than ~3-4 tokens' worth undropped
 
+/* ---- v3 care layer: hunger / thirst / sickness ---- */
+const HUNGER_RATE = 0.014;            // per real sim-second: a cat gets peckish over ~30-40 min of play
+const THIRST_RATE = 0.02;
+const EAT_DRAIN   = 3.6;              // per sec while at the bowl (state lasts ~12-20s)
+const DRINK_DRAIN = 7.0;              // per sec while drinking (state ~5-8s)
+const FOOD_MAX    = 56;               // servings the cove-wide store holds
+const SICK_HUNGER = 88, SICK_THIRST = 90;   // sustained above this → a chance of falling ill
+const SICK_CHANCE_PER_MIN = 0.14;    // while starving/parched
+const LEAVE_AFTER_MS = 40 * 3600 * 1000;    // ~40h sick-and-untreated (or starving) → the cat leaves
+function foodBagCost(){ return Math.round(12 + residentCount() * 4); }   // a "sack of kibble"
+const FOOD_BAG = 22;
+function anyWaterSource(){ return obstacles.some(o => o.water); }
+
 /* ---------- bonds — how well you know each cat ---------- */
 const BOND_LEVELS = [
   { at: 0,  name: "New here" },
@@ -1876,6 +1895,9 @@ class Cat {
     this.ty = rand(H * 0.55, H * 0.82);
     this.vx = 0; this.vy = 0;              // velocity — movement is integrated, never teleported
     this.mood = o.mood ?? 60;
+    this.hunger = clamp(o.hunger ?? 15, 0, 100);   // v3: 0 = fed, 100 = starving. rises slowly, drops when the cat eats
+    this.thirst = clamp(o.thirst ?? 10, 0, 100);   // v3: same shape; falls at a water source (any pond)
+    this.sick = o.sick || null;                    // v3: { since } once ill from sustained neglect. medicine clears it.
     this.state = "arriving";
     this.stateT = 0;
     this.stateDur = 3;
@@ -1938,6 +1960,9 @@ class Cat {
     if (this._station && STATION[this._station]) s *= STATION[this._station].rate;   // working a station
     if (this.zoomies > 0) s *= 1.45;              // fresh from the catmint garden
     if (this.petBuff > 0) s *= 1.5;
+    if (this.sick) s *= 0.15;                     // v3: a sick cat barely produces
+    else { const need = Math.max(this.hunger || 0, this.thirst || 0);
+      if (need > 60) s *= clamp(1 - (need - 60) * 0.02, 0.3, 1); }   // hungry/thirsty → tapers off
     return s;
   }
 }
@@ -2057,6 +2082,76 @@ function declineArrival() {
   if (c) logMoment("🐾", `A ${c.coat.name} looked in at the edge of the cove, then wandered back off.`, "arrival");
   visitorTimer = rand(140, 300);   // another will be along, a little later
 }
+
+/* ---------- v3 care: refill the food store, treat a sick cat ---------- */
+function openFoodRefill() {
+  ensureAudio();
+  const cost = foodBagCost(), pct = Math.round((G.food / FOOD_MAX) * 100);
+  const full = G.food >= FOOD_MAX;
+  const afford = G.shells >= cost;
+  openModal(`<div class="reveal">
+    <div class="kicker">The food bowls</div>
+    <h2>${G.food <= 0 ? "Empty" : G.food < FOOD_MAX * 0.3 ? "Running low" : "Food store"}</h2>
+    <p class="sub">${G.food} of ${FOOD_MAX} servings left${pct <= 0 ? " — the cats can't eat." : "."}<br>
+      A sack of kibble tops it up by ${FOOD_BAG}.</p>
+    <div class="row">
+      <button class="btn primary" id="food-buy" ${full || !afford ? "disabled" : ""}>${full ? "Full" : "◈ " + cost + " — refill"}</button>
+      <button class="btn" id="food-close">Close</button>
+    </div>
+  </div>`);
+  document.getElementById("food-buy").onclick = () => {
+    if (G.shells < cost || G.food >= FOOD_MAX) return;
+    G.shells -= cost; G.food = Math.min(FOOD_MAX, G.food + FOOD_BAG);
+    sfx("buy"); syncHud(); save(); closeModal();
+    toast("Food bowls topped up.", 3);
+  };
+  document.getElementById("food-close").onclick = closeModal;
+}
+function sickCats() { return cats.filter(c => c.sick && !c.visitor); }
+function medicineCost() { return 30 + residentCount() * 4; }
+function openMedicine(pref) {
+  ensureAudio();
+  const sick = sickCats();
+  if (!sick.length) { toast("Nobody's unwell right now.", 3); return; }
+  const cost = medicineCost(), afford = G.shells >= cost;
+  const target = pref && sick.includes(pref) ? pref : sick[0];
+  openModal(`<div class="reveal">
+    <div class="kicker">Not well</div>
+    <canvas width="200" height="188"></canvas>
+    <h2>${esc(target.name)}</h2>
+    <p class="sub">${sick.length > 1 ? sick.length + " cats are unwell. " : ""}A dose of medicine sets ${sick.length > 1 ? "each of them" : "them"} right over the next while.</p>
+    <div class="row">
+      <button class="btn primary" id="med-buy" ${afford ? "" : "disabled"}>◈ ${cost}${sick.length > 1 ? " each — treat all" : " — treat"}</button>
+      <button class="btn" id="med-close">Not now</button>
+    </div>
+  </div>`);
+  miniCat(document.querySelector("#modal canvas"), target.coatKey, target.star, "loafing", false, 2.4);
+  document.getElementById("med-buy").onclick = () => {
+    const list = sickCats(), total = cost * list.length;
+    if (G.shells < total) { toast(`Need ◈ ${total} to treat ${list.length}.`, 3); return; }
+    G.shells -= total;
+    for (const c of list) { c.sick = null; c._neglectSince = 0; c.hunger = Math.min(c.hunger, 55); c.thirst = Math.min(c.thirst, 55); c.mood = Math.max(c.mood, 45); }
+    sfx("buy"); spawnParticles(W / 2, H * 0.5, "twinkle", 12); syncHud(); save(); closeModal();
+    logMoment("💊", list.length === 1 ? `${list[0].name} took their medicine — on the mend now.` : `${list.length} cats treated — all on the mend.`, "care");
+    toast(list.length === 1 ? `${list[0].name} is on the mend.` : "Everyone's been treated.", 4);
+  };
+  document.getElementById("med-close").onclick = closeModal;
+}
+// v3: a cat that's been sick-and-untreated or starving too long gives up and
+// leaves. stays in the Catdex; you can coax that coat again, not that cat.
+function neglectLeave(c) {
+  if (c._leaving || c.mascot) return;
+  c._leaving = true; c._gone = true;
+  breakFriendship(c);
+  const dir = c.x > W / 2 ? 1 : -1;
+  c.sick = null;
+  c.state = "exploring"; c.stateDur = 1e6; c.vx = dir * 20; c.walkAmt = 0.4;
+  _departures.push({ c, dir, life: 0 });
+  logMoment("💔", `${c.name} left the cove — it hadn't been looked after in too long.`, "care");
+  toast(`${c.name} has left the cove.`, 6);
+  sfx("grumpy");
+  setTimeout(() => { rebuildAttractors(); syncHud(); save(); }, 200);
+}
 function spawnCat(o) {
   if (residentCount() >= capacity() && !o) return null;
   const c = new Cat(o || {});
@@ -2074,6 +2169,7 @@ function restoreCats() {
         mascot: s.mascot || s.coatKey === "midknight" || s.name === "Midknight",
         worn: s.worn, accessory: s.accessory, owned: s.owned,
         bornAt: s.bornAt ?? (Date.now() - KITTEN_MS * 3), mood:s.mood,
+        hunger: s.hunger, thirst: s.thirst, sick: s.sick,
         bond: s.bond, bondSeen: s.bondSeen, bondDay: s.bondDay,
         pref: s.pref, quirk: s.quirk, quirkKnown: s.quirkKnown, friend: s.friend,
         title: s.title, gaveKeepsake: s.gaveKeepsake,
@@ -2221,7 +2317,7 @@ function goalDef(id) { return GOAL_POOL.find(g => g.id === id); }
 
 /* ---------- personality state machine ---------- */
 const STATE_LABEL = {
-  arriving:"finding a spot", loafing:"loafing", sleeping:"fast asleep", eating:"at the food bowl",
+  arriving:"finding a spot", loafing:"loafing", sleeping:"fast asleep", eating:"at the food bowl", drinking:"having a drink",
   playing:"playing", socializing:"socializing", exploring:"exploring", knocking:"knocking things over",
   sulking:"sulking", being_pet:"being petted", seeking:"heading somewhere", grooming:"washing up",
   scratching:"having a good scratch", stretching:"having a big stretch", zooming:"got the zoomies", chasing:"on the hunt",
@@ -2245,6 +2341,21 @@ function nearestCat(c) {
     if (d < bd) { bd = d; best = o; }
   }
   return best ? { cat: best, d: Math.sqrt(bd) } : null;
+}
+// v3: nearest drinkable water — returns an edge point (ex,ey) just outside the
+// pond ellipse, on the side facing the cat, where it stands to drink.
+function nearestWater(c) {
+  let best = null, bd = 1e9;
+  for (const o of obstacles) {
+    if (!o.water) continue;
+    const d = dist2(c.x, c.y, o.x, o.y);
+    if (d < bd) { bd = d; best = o; }
+  }
+  if (!best) return null;
+  let nx = (c.x - best.x) / best.rx, ny = (c.y - best.y) / best.ry;
+  const nd = Math.hypot(nx, ny) || 1;
+  nx /= nd; ny /= nd;
+  return { ex: best.x + nx * best.rx * 1.06, ey: best.y + ny * best.ry * 1.06 };
 }
 
 function decide(c) {
@@ -2336,14 +2447,26 @@ function decide(c) {
     { type:"cottage", state:"sleeping", dur:() => rand(28, 48), want:"bed"  },
     { type:"tree",    state:Math.random() < 0.5 ? "sleeping" : "loafing", dur:() => rand(16, 30), want:"roam" },
   ]) {
+    if (cf.type === "food" && G.food <= 0) continue;   // v3: empty bowls draw no one
     const a = nearestAttractor(c, cf.type);
     if (!a) continue;
     const wanted = likes.includes(cf.want);
     const prefBump = (PREFS[c.pref] && PREFS[c.pref].want === cf.want) ? 3 : 0;   // their own favourite thing
-    add((wanted ? 4.5 : cf.type === "food" || cf.type === "toy" ? 2.4 : 1.7) + prefBump, () => {
+    // v3: a hungry cat heads for the bowl over almost anything else
+    const hungerBump = cf.type === "food" ? clamp((c.hunger - 35) * 0.16, 0, 12) : 0;
+    add((wanted ? 4.5 : cf.type === "food" || cf.type === "toy" ? 2.4 : 1.7) + prefBump + hungerBump, () => {
       c._arriveState = cf.state;
       c._arriveDur = cf.dur();
       return go(c, "seeking", 16, { x: a.x + rand(-14, 14), y: a.y + rand(-8, 8) });
+    });
+  }
+
+  // v3: thirsty → go and drink at the nearest pond edge (any water zone)
+  {
+    const water = c.thirst > 28 ? nearestWater(c) : null;
+    if (water) add(clamp((c.thirst - 18) * 0.42, 0.6, 42), () => {   // a really thirsty cat commits to the walk
+      c._arriveState = "drinking"; c._arriveDur = rand(4, 7);
+      return go(c, "seeking", 32, { x: water.ex, y: water.ey });
     });
   }
 
@@ -2536,7 +2659,7 @@ function updateCat(c, dt) {
   /* -------- steering: velocity-based, damped, no teleporting -------- */
   const travelling = ["arriving", "seeking", "exploring", "socializing", "knocking", "zooming", "chasing"].includes(c.state);
   // "held" cats hold their chosen spot — they still push others away but aren't pushed themselves
-  const HELD_STATES = ["being_pet", "sleeping", "eating", "baking", "sunbathing", "fishing", "grooming", "rolling", "scratching", "stretching", "indoors"];
+  const HELD_STATES = ["being_pet", "sleeping", "eating", "drinking", "baking", "sunbathing", "fishing", "grooming", "rolling", "scratching", "stretching", "indoors"];
   const held = HELD_STATES.includes(c.state);
   let ax = 0, ay = 0;
 
@@ -2684,6 +2807,40 @@ function updateCat(c, dt) {
   else if (c.state === "loafing") target = 64 + flowerMood() * 0.5;
   else if (c.state === "sulking") target = 30;
   else if (c._station && STATION[c._station]) target = STATION[c._station].mood;
+
+  // v3: hunger & thirst climb; eating / drinking bring them down. a hungry,
+  // thirsty or sick cat can't feel good however nice the cove is — cap the target.
+  if (!c.visitor) {
+    const eating = c.state === "eating", drinking = c.state === "drinking";
+    // a cat only actually eats (and uses a serving) when it's hungry enough to
+    // bother — a not-hungry cat at the bowl is just there for the vibes
+    const reallyEating = eating && G.food > 0 && (c._ate || c.hunger > 26);
+    if (reallyEating && !c._ate) { c._ate = 1; G.food = Math.max(0, G.food - 1); }
+    if (!eating) c._ate = 0;
+    c.hunger = clamp(c.hunger + (reallyEating ? -EAT_DRAIN : HUNGER_RATE) * dt, 0, 100);
+    c.thirst = clamp(c.thirst + (drinking ? -DRINK_DRAIN : THIRST_RATE) * dt, 0, 100);
+    // sickness roll while genuinely neglected
+    if (!c.sick && (c.hunger > SICK_HUNGER || c.thirst > SICK_THIRST) &&
+        Math.random() < SICK_CHANCE_PER_MIN * (dt / 60)) {
+      c.sick = { since: Date.now() };
+      logMoment("🤒", `${c.name} has come down with something — there's medicine in the Shop.`, "care");
+      toast(`${c.name} isn't well. Tap them, or the Shop, for medicine.`, 5);
+    }
+    const need = Math.max(c.hunger, c.thirst);
+    if (c.sick) target = Math.min(target, 22);
+    else if (need > 55) target = Math.min(target, 78 - (need - 55) * 0.9);
+
+    // the leave clock: sick-and-untreated, or truly starving, for long enough → the
+    // cat gives up on the cove and leaves. clears the moment things improve.
+    const critical = c.sick || c.hunger >= 98 || c.thirst >= 98;
+    if (critical) {
+      if (!c._neglectSince) c._neglectSince = Date.now();
+      else if (!c.mascot && Date.now() - c._neglectSince > LEAVE_AFTER_MS) neglectLeave(c);
+    } else if (c._neglectSince && need < 80 && !c.sick) {
+      c._neglectSince = 0;
+    }
+  }
+
   const moodSpeed = (target > c.mood ? 3.2 : 1.4) * dt;
   c.mood += (target - c.mood) * Math.min(1, moodSpeed);
   c.mood = clamp(c.mood, 8, 100);
@@ -2831,6 +2988,8 @@ function updateCat(c, dt) {
       let arr = c._arriveState || "loafing";
       if (arr === "scratching" && !nearestAttractor(c, "scratch")) arr = "loafing";
       if (arr === "indoors" && !(G.decor && G.decor.cottage > 0)) arr = "loafing";
+      if (arr === "drinking" && !anyWaterSource()) arr = "loafing";
+      if (arr === "eating" && G.food <= 0) arr = "loafing";   // ran dry mid-approach
       go(c, arr, c._arriveDur || 8, null);
       c._arriveState = null;                      // consumed — don't let it linger
       c._station = c._pendStation || null;
@@ -2839,7 +2998,7 @@ function updateCat(c, dt) {
       if (c.state === "indoors") { c.x = c._cotX; c.y = c._cotY - 1; c.vx = 0; c.vy = 0; c.face = -1; }
       if (c._station === "garden") spawnParticles(c.x, c.y - 10, "leaf", 5);
     }
-    else if (c.stateT > 14) { c._pendStation = null; decide(c); }
+    else if (c.stateT > (c._arriveState === "drinking" ? 32 : 14)) { c._pendStation = null; decide(c); }   // the pond can be a long walk
     return;
   }
   if (c.state === "indoors") {
@@ -3191,11 +3350,20 @@ function handleTap(x, y) {
 
   // cats
   const bc = catAt(x, y, 40);
-  if (bc) { hidePropCard(); petCat(bc); showCatCard(bc); return; }
+  if (bc) {
+    hidePropCard();
+    if (bc.sick) { openMedicine(bc); return; }   // v3: a sick cat needs medicine, not a pat
+    petCat(bc); showCatCard(bc); return;
+  }
 
   // a restoration project marker
   for (const d of decor) {
     if (d.type === "project" && dist2(x, y, d.x, d.y - 6) < 48 * 48) { hideCatCard(); hidePropCard(); openProjectSheet(d.pid); return; }
+  }
+
+  // v3: tap a food bowl to refill the cove's food store
+  for (const a of attractors) {
+    if (a.type === "food" && dist2(x, y, a.x, a.y - 2) < 30 * 30) { hideCatCard(); hidePropCard(); openFoodRefill(); return; }
   }
 
   // Midknight's cairn, if there's one standing (or still being built)
@@ -4183,6 +4351,13 @@ function syncHud() {
   document.getElementById("pearls").closest(".pill").classList.toggle("empty", !(G.pearls > 0));
   elCatCount.textContent = residentCount();
   elCatCap.textContent = capacity();
+  const fl = document.getElementById("foodlevel");
+  if (fl) {
+    fl.textContent = Math.round(G.food || 0);
+    const fs = document.getElementById("foodStat");
+    fs.classList.toggle("warn", G.food > 0 && G.food <= FOOD_MAX * 0.25);
+    fs.classList.toggle("crit", (G.food || 0) <= 0);
+  }
   document.getElementById("opens").textContent = G.opens;
   document.getElementById("coaxCost").textContent = coaxPrice();
   const cb = document.getElementById("coaxBtn");
@@ -4713,6 +4888,7 @@ function openGuide() {
 }
 document.getElementById("helpBtn").addEventListener("click", openGuide);
 document.getElementById("focusBar").addEventListener("click", exitFocus);
+document.getElementById("foodStat").addEventListener("click", openFoodRefill);   // v3: refill food from the HUD too
 
 /* rest / rainy-day mode wiring */
 document.getElementById("restBtn").addEventListener("click", () => { if (!restMode) { syncRestPanelUI(); openRestPanel(); } });
@@ -5081,9 +5257,51 @@ function offlineEarnings(elapsed, then) {
     done();
   };
 }
+// v3: while you were away — food ran down, hunger/thirst crept up, and a cove
+// left far too long without care can lose a cat.
+function offlineCare(elapsed) {
+  if (elapsed < 120 || !cats.length) return;
+  const eaters = Math.max(1, cats.filter(c => !c.visitor).length);
+  const consume = eaters / 1400;                        // servings/sec across the cove
+  const foodSecs = G.food / consume;                    // how long the store lasted
+  const starveSecs = Math.max(0, elapsed - foodSecs);
+  G.food = Math.max(0, G.food - consume * elapsed);
+  const watered = anyWaterSource();
+  const left = [];
+  for (const c of cats) {
+    if (c.visitor) continue;
+    const fed = Math.min(elapsed, foodSecs);
+    c.hunger = clamp(c.hunger - fed * 0.02 + starveSecs * HUNGER_RATE * 0.5, 0, 100);
+    c.thirst = watered ? clamp(c.thirst - elapsed * 0.012, 0, 100)
+                       : clamp(c.thirst + elapsed * THIRST_RATE * 0.5, 0, 100);
+    const need = Math.max(c.hunger, c.thirst);
+    if (!c.sick && need > 92 && Math.random() < clamp(starveSecs / 5400, 0, 0.75))
+      c.sick = { since: Date.now() - Math.min(starveSecs, 36000) * 1000 };
+    const criticalMs = c.sick ? (Date.now() - (c.sick.since || Date.now()))
+                      : (need >= 99 ? starveSecs * 1000 : 0);
+    if (!c.mascot && criticalMs > LEAVE_AFTER_MS) left.push(c);
+    if (need > 80 && !c.sick && !c._neglectSince) c._neglectSince = Date.now() - Math.min(starveSecs, 36000) * 1000;
+  }
+  // at most two actually leave on any one return — the rest are on their last legs
+  const leaving = left.slice(0, 2), warned = left.slice(2);
+  for (const c of leaving) {
+    breakFriendship(c);
+    const i = cats.indexOf(c); if (i >= 0) cats.splice(i, 1);
+  }
+  if (leaving.length) {
+    const nm = leaving.map(c => c.name);
+    setTimeout(() => {
+      logMoment("💔", `${joinNice(nm)} left while you were away — the cove had gone too long without care.`, "care");
+      toast(`${joinNice(nm)} ${nm.length === 1 ? "has" : "have"} left the cove.`, 8);
+    }, 2400);
+    rebuildAttractors();
+  }
+  if (warned.length) setTimeout(() => toast(`${joinNice(warned.map(c => c.name))} ${warned.length === 1 ? "is" : "are"} not doing well at all — they need you now.`, 8), 5200);
+}
 // coming back: arrivals, then a NARRATIVE beat, then the earnings summary, then `then`
 function checkOffline(then) {
   const elapsed = (Date.now() - (G.lastSeen || Date.now())) / 1000;
+  offlineCare(elapsed);
   offlineArrivals(elapsed);
   syncHud();
   const earningsThen = () => offlineEarnings(elapsed, () => { try { then && then(elapsed); } catch (e) {} });
@@ -9955,7 +10173,10 @@ function drawBindle(g, c) {
 
 function snapshotCat(c) {
   return { name: c.name, traits: c.traits, coatKey: c.coatKey, markSeed: c.markSeed, star: c.star,
-    mascot: c.mascot, bornAt: c.bornAt, mood: Math.round(c.mood), worn: c.worn || [], owned: c.owned || [],
+    mascot: c.mascot, bornAt: c.bornAt, mood: Math.round(c.mood),
+    hunger: Math.round(c.hunger || 0), thirst: Math.round(c.thirst || 0),
+    sick: c.sick ? { since: c.sick.since } : null,
+    worn: c.worn || [], owned: c.owned || [],
     bond: Math.round(c.bond || 0), bondSeen: c.bondSeen || 0, bondDay: c.bondDay || "",
     pref: c.pref, quirk: c.quirk, quirkKnown: !!c.quirkKnown, friend: c.friend || null,
     title: c.title || null, gaveKeepsake: !!c.gaveKeepsake };
@@ -10409,6 +10630,16 @@ window.__cove = {
     return { ...G.checkin, available: checkinAvailable(), todayReward: CHECKIN_REWARDS[(G.checkin && G.checkin.day || 0) % 7] };
   },
   arrival(){ visitorTimer = 0.001; return "a cat will show up at the edge on the next sim tick"; },
+  care(cmd, v){
+    if (cmd === "food") { G.food = clamp(v ?? FOOD_MAX, 0, FOOD_MAX); syncHud(); return G.food; }
+    if (cmd === "starve") { G.food = 0; for (const c of cats) if (!c.visitor) { c.hunger = 100; c.thirst = 100; } syncHud(); return "everyone's starving"; }
+    if (cmd === "sick") { const c = cats.find(x => !x.visitor && !x.sick); if (c) { c.sick = { since: Date.now() }; syncHud(); return c.name + " is sick"; } return "no well cat to sicken"; }
+    if (cmd === "heal") { for (const c of cats) { c.sick = null; c._neglectSince = 0; c.hunger = 10; c.thirst = 10; } syncHud(); return "all well"; }
+    if (cmd === "refill") { openFoodRefill(); return "opened"; }
+    if (cmd === "medicine") { openMedicine(); return "opened"; }
+    return { food: G.food + "/" + FOOD_MAX, water: anyWaterSource(),
+      cats: cats.filter(c => !c.visitor).map(c => ({ n: c.name, hunger: Math.round(c.hunger), thirst: Math.round(c.thirst), sick: !!c.sick })) };
+  },
   wywa(id){
     const e = id ? WYWA_EVENTS.find(x => x.id === id) : wPick(WYWA_EVENTS);
     if (!e) return "no such beat. ids: " + WYWA_EVENTS.map(x => x.id).join(", ");
