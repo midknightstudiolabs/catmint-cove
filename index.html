@@ -74,10 +74,17 @@
   @media (prefers-reduced-motion:reduce){#shellPill.pop{animation:none;}}
   .pill .dotp{background:#8fb7d6;color:#274a63;}
   .pill.drift .dot{background:#d9c9a6;font-size:.72rem;}
-  .pill .dotcat{background:#d7b98c;}
-  .pill .dotday{background:#bcd4e6;}
   .pill.drift[hidden]{display:none;}
-  .pill.small{font-size:.82rem;padding:.35rem .7rem;color:var(--ink-soft);font-weight:600;}
+  /* row 2 (cat-count / day) — ambient status, not currency, so unlike the
+     pills above it these sit straight on the sky: no chip, just an outline
+     shadow (4 offset + one soft blur) so light text holds up against every
+     sky color in the day/night cycle, from midnight navy to midday blue. */
+  .hud-stats{display:flex;gap:.85rem;padding:.15rem .1rem 0;}
+  .hud-stat{display:flex;align-items:center;gap:.3rem;font-size:.86rem;font-weight:700;
+    color:#f7f3e6;font-variant-numeric:tabular-nums;
+    text-shadow:-1px -1px 0 rgba(20,16,10,.5),1px -1px 0 rgba(20,16,10,.5),
+      -1px 1px 0 rgba(20,16,10,.5),1px 1px 0 rgba(20,16,10,.5),0 2px 4px rgba(20,16,10,.35);}
+  .hud-stat .ico{font-size:.95rem;filter:drop-shadow(0 1px 2px rgba(20,16,10,.5));}
   #catPill{cursor:pointer;user-select:none;-webkit-user-select:none;}
   #hud [data-tip]{cursor:help;}
   /* tap/hover explainer for the HUD pills */
@@ -760,19 +767,19 @@
 
   @media (max-width:560px){
     .title-pill{display:none;}
-    .pill.small.opens{display:none;}
+    .hud-stat.opens{display:none;}
     .verbadge{display:none;}
   }
   @media (max-width:460px){
-    /* row 1 (shells/pearls/driftwood) and row 2 (cat-count/day) stack
-       automatically once they no longer fit side by side — see .hud-row
-       above. Same pill/font sizing throughout, just tighter gaps/padding. */
+    /* row 1 (.hud-row: shells/pearls/driftwood) and row 2 (.hud-stats:
+       cat-count/day) stack automatically once they no longer fit side by
+       side. Same pill/font sizing throughout, just tighter gaps/padding. */
     #hud{gap:.3rem;padding-left:calc(.5rem + env(safe-area-inset-left));padding-right:calc(.5rem + env(safe-area-inset-right));}
     #hud .hud-group{gap:.3rem;min-width:0;}
     #hud .hud-row{gap:.3rem;}
-    #hud .pill.small.opens{display:flex;}   /* the day pill: hidden <560px normally, but it has a home in row 2 here */
+    #hud .hud-stat.opens{display:flex;}   /* the day stat: hidden <560px normally, but it has a home in row 2 here */
     #hud .pill{padding:.35rem .55rem .35rem .42rem;font-size:.86rem;}
-    #hud .pill.small{font-size:.72rem;padding:.3rem .5rem;}
+    #hud .hud-stat{font-size:.76rem;}
     #hud .pill .dot{width:.95rem;height:.95rem;font-size:.62rem;}
     #hud button.btn{padding:.4rem .5rem;}
     #hud .btn .ico{font-size:1rem;}
@@ -832,9 +839,9 @@
         <div class="pill pearl" data-tip="Pearls — rare currency from the Catdex and daily goals. Saved for special things."><span class="dot dotp">✦</span><span id="pearls">0</span></div>
         <div class="pill drift" id="driftPill" hidden data-tip="Driftwood — washes up on the shore and comes home from trips. A building material for restoring the cove."><span class="dot">🪵</span><span id="driftwood">0</span></div>
       </div>
-      <div class="hud-row">
-        <div class="pill small" id="catPill" data-tip="Cats here / room you have. Buy comforts or repair the dock to make more room."><span class="dot dotcat">🐾</span><span id="catcount">0</span>/<span id="catcap">0</span></div>
-        <div class="pill small opens" data-tip="Days you've dropped by the cove."><span class="dot dotday">☀️</span><span id="opens">1</span></div>
+      <div class="hud-stats">
+        <div class="hud-stat" id="catPill" data-tip="Cats here / room you have. Buy comforts or repair the dock to make more room."><span class="ico">🐾</span><span id="catcount">0</span>/<span id="catcap">0</span></div>
+        <div class="hud-stat opens" data-tip="Days you've dropped by the cove."><span class="ico">☀️</span><span id="opens">1</span></div>
       </div>
     </div>
     <div class="hud-group">
