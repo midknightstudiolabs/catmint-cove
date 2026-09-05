@@ -646,7 +646,7 @@
      card would've just covered it */
   .fr-podium{display:flex;align-items:flex-end;justify-content:center;gap:.3rem;margin:.9rem 0 .8rem;}
   .fr-pod-col{display:flex;flex-direction:column;align-items:center;gap:.15rem;width:4.4rem;min-width:0;flex-shrink:0;}
-  .fr-pod-col canvas{display:block;width:2.4rem;height:2.1rem;animation:frHop 1s ease-in-out infinite;}
+  .fr-pod-col canvas{display:block;width:2.45rem;height:2.1rem;animation:frHop 1s ease-in-out infinite;}
   .fr-pod-col.rank2 canvas{animation-delay:.12s;}
   .fr-pod-col.rank3 canvas{animation-delay:.24s;}
   @keyframes frHop{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
@@ -6491,7 +6491,7 @@ function showFestPodium() {
     const place = displayPlace[i];
     const mine = r.cat === racePick;
     return `<div class="fr-pod-col rank${place + 1}">
-      <canvas width="46" height="40"></canvas>
+      <canvas width="56" height="48"></canvas>
       <div class="fr-pod-name${mine ? " mine" : ""}">${esc(r.cat.name)}</div>
       <div class="fr-pod-block ${blockClass[place]}">${place + 1}</div>
     </div>`;
