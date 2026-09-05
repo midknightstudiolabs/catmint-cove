@@ -1,11 +1,18 @@
-# Catmint Cove — Phase 1 prototype
+# Catmint Cove
+
+> **Versioning note (2026-09-06):** the milestone previously labelled "V3 —
+> the return-visit layer" is now considered part of **V2** — v2 development
+> closed with that build. Tag `v2` points at it; the earlier Sept-2
+> vertical-slice point is kept as `v2-slice`; a frozen archive is in
+> [`releases/v2/`](releases/v2/). **V3 is a from-scratch rethink of the whole
+> design** — see [`V3-RETHINK.md`](V3-RETHINK.md).
 
 ## Play
 
 | | | |
 |---|---|---|
-| **V3 — beta** (share this) | https://midknightstudiolabs.github.io/catmint-cove/ | the clean build for testers — no dev tools |
-| **V3 — dev** (keep this) | https://midknightstudiolabs.github.io/catmint-cove/dev/ | same game + the dev panel, `D`/`R` keys, `v3 · dev` badge |
+| **V2 — beta** (share this) | https://midknightstudiolabs.github.io/catmint-cove/ | the clean build for testers — no dev tools |
+| **V2 — dev** (keep this) | https://midknightstudiolabs.github.io/catmint-cove/dev/ | same game + the dev panel, `D`/`R` keys |
 | **V1** (original prototype, frozen) | https://midknightstudiolabs.github.io/catmint-cove/v1/ | the first greybox — tag `v1`, 2026-08-31 |
 
 All live and permanent. V2 ships from `index.html` at the repo root; `/dev/` is a
@@ -36,10 +43,12 @@ git tag ios-v2.0.1     && git push origin ios-v2.0.1        # → TestFlight
 `npm run build` assembles `www/` from `index.html`; `npm run sync` runs Capacitor.
 Native `android/` and `ios/` folders are generated fresh in CI, never committed.
 
-## V3 — the return-visit layer
+## V2 — the return-visit layer
 
-The engagement pass. See the design doc ("Something Happened While You Were Away").
-Ships MVP steps 1–3; Friendship/Memories, Butterfly Catch and Weekly Events are next.
+The engagement pass (previously labelled "V3"). See the design doc ("Something
+Happened While You Were Away"). Ships MVP steps 1–3; Friendship/Memories,
+Butterfly Catch and Weekly Events were the planned next steps before the v3
+rethink.
 
 - [x] **Vignette engine** — one shared runner for short scripted moments (text +
       emoji prop + choices + weighted outcome). WYWA beats and adventure results
@@ -100,7 +109,7 @@ Ships MVP steps 1–3; Friendship/Memories, Butterfly Catch and Weekly Events ar
 - [ ] Butterfly Catch — one 40s optional mini-game — next
 - [ ] Weekly rotating events (template) — next
 
-## V2 roadmap
+## V2 — vertical slice (look & feel)
 
 - [x] Midknight mascot + chunky-loaf cat art, deadpan gold eyes
 - [x] Procedural happy-meow SFX (pet / coax / buy / reveal)
