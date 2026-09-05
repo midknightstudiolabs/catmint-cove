@@ -811,7 +811,7 @@
       <button class="pill title-pill" id="titlePill" data-tip="Your cove's name. Tap to rename it.">Catmint <b>Cove</b></button>
       <button class="btn" id="helpBtn" data-tip="How the cove works — a quick guide to everything."><span class="ico">?</span></button>
       <button class="btn" id="restBtn" data-tip="Rainy-day rest — everyone naps inside with real rain. Tap any time, good to work or sleep to."><span class="ico">🌙</span></button>
-      <button class="btn" id="festBtn" data-tip="The Cove Festival — a friendly race down at the track. Tap any time."><span class="ico">🎪</span></button>
+      <button class="btn" id="festBtn" hidden data-tip="The Cove Festival — a friendly race down at the track. Tap any time."><span class="ico">🎪</span></button>
       <button class="btn" id="muteBtn" data-tip="Sounds — tap to mute or unmute."><span class="ico">🔊</span></button>
     </div>
   </div>
@@ -4095,6 +4095,7 @@ function syncHud() {
     if (cbc) cbc.style.display = full ? "none" : "";
   }
   document.getElementById("dexBadge").textContent = dexCount() + "";
+  document.getElementById("festBtn").hidden = !festUnlocked();
   const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
   const advBack = anyAdvBack();
   const projReady = PROJECTS.some(p => { if (projectStage(p.id) !== "open") return false; const n = projectNeed(p.id); return n.shells === 0 && n.driftwood === 0; });
@@ -4598,8 +4599,9 @@ const GUIDE = [
 function openGuide() {
   ensureAudio();
   const card = tutEl.querySelector(".card");
+  const rows = GUIDE.filter(([h]) => h !== "The Cove Festival" || festUnlocked());   // not a spoiler before it exists
   card.innerHTML = `<h2 style="margin:.1rem 0 .2rem">How the cove works</h2>
-    <div class="guide-list">${GUIDE.map(([h, b]) => `<div class="guide-row"><b>${esc(h)}</b><p>${esc(b)}</p></div>`).join("")}</div>
+    <div class="guide-list">${rows.map(([h, b]) => `<div class="guide-row"><b>${esc(h)}</b><p>${esc(b)}</p></div>`).join("")}</div>
     <div class="row"><button class="btn primary" id="guideOk">Got it</button></div>`;
   tutEl.classList.add("on");
   document.getElementById("guideOk").onclick = () => tutEl.classList.remove("on");
@@ -6005,12 +6007,15 @@ function renderRest(dt) {
   g.restore();
 }
 
-/* ---------- Cove Festival (prototype) ----------
+/* ---------- Cove Festival ----------
    A watch-and-cheer race: entering costs nothing and nobody loses anything.
    Everyone who runs gets a small payout; your pick winning gets a bit more —
-   same shape as a daily goal, not a wager. NOT yet wired to real triggers or
-   real shell/pearl grants — this is a visual preview. Open it with the dev
-   panel's "🎪 festival" button, or window.__cove.fest(). */
+   same shape as a daily goal, not a wager. Unlocks on day 7 (see
+   festUnlocked()/the day 5-6 teasers below) so it arrives as something the
+   cove builds up to rather than a button that's just always been there.
+   The dev panel's "🎪 festival" button / window.__cove.fest() bypass the
+   lock, same as they bypass everything else, for testing. */
+function festUnlocked() { return G.opens >= 7; }
 let festMode = false, _festDPR = 0, _festG = null;
 const RACE_W = 1400, RACE_H = 640, MAX_RACE_T = 20;
 let raceCats = [], festSpectators = [], racePick = null, raceWinner = null;
@@ -10462,23 +10467,45 @@ if (G.rest && G.rest.on) {
     el.classList.add("out");
     setTimeout(() => { el.hidden = true; }, 820);
     setTimeout(runBootFlow, 650);   // the curtain's nearly clear of the screen — reveal what's next now, not mid-slide
+    setTimeout(runPostTitleNudges, 650);
   };
 }
 
-// one-time nudges, now that the cold open is behind you
-if (G.tutorialDone && !G.tips.includes("welcome")) {
-  G.tips.push("welcome");
-  setTimeout(() => toast("Tap a cat to pet it. Tap the glowing shells to collect.", 5), 900);
+// one-time nudges — timers start once the title screen's actually gone, not
+// from script-load, or a short-delay toast could fire while it still covers
+// the screen and never be seen
+function runPostTitleNudges() {
+  if (G.tutorialDone && !G.tips.includes("welcome")) {
+    G.tips.push("welcome");
+    setTimeout(() => toast("Tap a cat to pet it. Tap the glowing shells to collect.", 5), 900);
+  }
+  if (G.tutorialDone && G.opens >= 2 && !G.tips.includes("rain_seen")) {
+    G.tips.push("rain_seen");
+    setTimeout(() => toast("Tap 🌙 any time for a rainy-day rest — everyone naps inside with real rain. Good to work or sleep to.", 6), 2400);
+  }
+  // the Cove Festival arrives as something the cove builds up to, not a
+  // button that was just always there — two teaser beats, then the unlock
+  if (G.tutorialDone && G.opens >= 5 && !G.tips.includes("fest_teaser1")) {
+    G.tips.push("fest_teaser1");
+    logMoment("🎏", "Bunting's gone up down by the field — something's being planned.", "tale");
+    setTimeout(() => toast("Bunting's gone up down by the field. Something's being planned…", 5.5), 1800);
+  }
+  if (G.tutorialDone && G.opens >= 6 && !G.tips.includes("fest_teaser2")) {
+    G.tips.push("fest_teaser2");
+    logMoment("🎪", "A track's being marked out by the field. Whatever it's for, it's close now.", "tale");
+    setTimeout(() => toast("A track's being marked out by the field. Whatever it's for, it's close now.", 5.5), 4000);
+  }
+  if (G.tutorialDone && festUnlocked() && !G.tips.includes("fest_unlocked")) {
+    G.tips.push("fest_unlocked");
+    logMoment("🎉", "The Cove Festival is ready — a little race down at the track, everyone welcome.", "tale");
+    setTimeout(() => toast("The Cove Festival is ready. Tap 🎪 any time to send someone to race.", 6.5), 6200);
+  }
+  // one-time notice for testers whose shells were reset for the rebalance
+  if (_econJustReset) {
+    setTimeout(() => toast("Shells got a fresh start for the economy rebalance — your cove and cats are all still here. 🐚", 7), 1400);
+  }
 }
-if (G.tutorialDone && G.opens >= 2 && !G.tips.includes("rain_seen")) {
-  G.tips.push("rain_seen");
-  setTimeout(() => toast("Tap 🌙 any time for a rainy-day rest — everyone naps inside with real rain. Good to work or sleep to.", 6), 2400);
-}
-
-// one-time notice for testers whose shells were reset for the rebalance
-if (_econJustReset) {
-  setTimeout(() => toast("Shells got a fresh start for the economy rebalance — your cove and cats are all still here. 🐚", 7), 1400);
-}
+if (G.rest && G.rest.on) runPostTitleNudges();   // no title beat on this path — safe to start right away
 
 // one-time: the cove is wider than the screen → tell them they can look around
 function maybePanHint() {
