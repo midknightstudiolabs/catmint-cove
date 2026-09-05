@@ -53,88 +53,138 @@ characters you have a real, deepening relationship with, in a place that lives
 whether or not you're watching.** That's exactly where the north star already
 points.
 
-## The north star still holds
+---
 
-> "A cozy corner of the world where cats come to be looked after — and you
-> slowly make it theirs."
+# DIRECTION LOCKED (2026-09-06)
 
-Plus the calm rule: no fail state, no timer, time is weather, absence is
-neutral, cats never leave, fun and compulsion aren't a tradeoff.
+The rethink above was premised on protecting the calm rule. **The user chose
+a different path:** keep V2, drop the calm goal, add a real care layer, and
+monetize cosmetics. This section supersedes the four-visions analysis.
 
-Nothing in the rethink should break this. If anything, V2's idle-retention kit
-(streaks that reset, daily goals, a weekly event) sits in slight tension with
-"absence is neutral" and is worth questioning.
+## Decisions
 
-## Four possible visions for V3
+1. **V3 is additive to V2** — a refactor + expansion on the existing
+   `index.html`, not a hard reset. Built systems stay.
+2. **The calm rule is dropped.** No longer "no fail state / no timer / absence
+   is neutral." The game gains a **care layer with real neglect
+   consequences.**
+3. **Neglect floor: a cat can leave if neglected long enough.** Recoverable up
+   to a point (feed it, treat it, it stays), then it's a genuine loss. A real
+   fail state, Tamagotchi-style. Cats do **not** die and sickness is never
+   permanent — the loss is a cat *leaving*, not worse.
+4. **Cosmetic monetization is in scope** — premium decor with visual effects
+   (glowing collar, rainbow-back with effect, little wings), sold for real
+   money or a hard currency.
+5. **The economy tightens** — pearl + shell drops cut ~50%, and care items
+   (food, medicine) are new sinks, so the numbers matter and neglect has bite.
+6. **New cats are opt-in** — an arrival is an accept/deny choice, not
+   automatic. (You choose who joins the cove and take on their care.)
+7. **Community feedback folds in as it comes** — build now, adjust from
+   Discord reaction; no gate.
 
-### A. Radical simplification — the cozy purist
-Cut back toward Neko Atsume tightness: cats visit, you tend + photo + collect,
-everything else goes (stations, adventures, festival, prestige, most of the
-economy). Risk: gives up the depth that could differentiate it; competes
-directly with an entrenched incumbent on its own turf.
+## What this makes the game
 
-### B. The relationship game *(recommended core)*
-The game *is* your deepening relationship with specific cats. Strip the
-idle-number spine and the RPG-adventure scaffolding. Keep the cove, the cats,
-day/night, the return-visit story engine, and photo. Build **individual-cat
-relationships done really well**: the cat remembers shared history, references
-it, has moods and preferences you learn over weeks, gives you things that mean
-something. Progression = knowing your cats, not growing a number.
-Risk: less-proven design, weaker obsessive-check-in hooks, a big cut of built
-content.
+Less "a place that carries on without you," more **"a cove full of cats that
+need you."** The pull is now care-loop tension (keep everyone fed, watered,
+well, happy) layered on top of the V2 collection + cozy-decor + return-visit
+systems. Closer to a warmer, prettier *Neko Atsume × Tamagotchi × 
+decorate-your-space* than the ambient-diary direction that was on the table.
 
-### C. The living diary
-Lean all the way into "the cove carries on without you." The game generates a
-gentle ongoing story — WYWA, Moments, postcards, seasonal change — and you're
-a caretaker checking in on a life that continues. Scrapbook / journal framing;
-the artifact you build is a record, not a base. Pairs naturally with B.
+**This obsoletes a lot of public copy.** README, `PROJECT-BRIEF.md`,
+`PROJECT-SUMMARY.md`, both marketing sites, and the drafted store listing all
+lead with "no fail state / time is weather / cats never leave." All of that
+needs a rewrite once V3's shape is proven. Hold the marketing rewrite until
+the care loop is playtested — don't ship copy for a design that might still
+move.
 
-### D. The restoration game
-"Make it yours" as the literal spine. The cove is a weeks-long rebuilding
-project (dock, bakery, garden, lighthouse…); cats are the population and the
-reward, not the mechanic. A cozy, slow town-builder with cats.
-Risk: shifts the emotional weight from cats to construction.
+---
 
-### E. Keep the scope, tighten the tissue
-The systems are fine, they just don't talk to each other. V3 makes them one
-coherent whole. Lowest disruption — but "re-examine the whole design" asks for
-more than this.
+# V3 feature backlog
 
-## Recommendation
+From the user's list (2026-09-06), bucketed and ordered.
 
-**A B + C hybrid: the relationship & living-diary game.** It's the version
-that matches the stated soul, occupies market territory nobody owns, and turns
-the *unbuilt* moat into the whole point instead of a bolt-on.
+## Bucket 1 — bugs & quick fixes (independent, do first)
 
-Concretely, V3 would:
-- **Keep:** the cove + restoration spine (D as texture, not the whole game),
-  cats + coats + traits, day/night + audio, the vignette/return-visit engine,
-  Photo, Rest mode.
-- **Deepen:** individual cats — memory, mood, preference, a relationship arc
-  that plays out over real weeks; the cove as a record of that history.
-- **Demote to optional texture:** adventures, festival, stations — they can
-  exist, but nothing load-bearing depends on them.
-- **Question hard:** streaks, daily goals, the prestige loop, the whole
-  idle-number economy. If "absence is neutral" is real, most of these are
-  fighting it.
-- **Design the share loop in from the start:** every relationship beat should
-  produce something a player *wants* to post.
+- **Cats walk into / sleep in the pond.** Pathfinding + rest-spot placement
+  don't treat the pond as blocked. Add the pond footprint to the
+  no-walk / no-sleep zones (like station footprints in `placeClear()`).
+- **Autumn (and other seasonal) effects are broken.** Investigate the seasonal
+  effect system — leaves / palette shift / whatever autumn does — and fix.
+- **Decor placement doesn't show the selected cat preview.** Placing an
+  accessory (ribbon etc.) shows which cat it's going on; placing decor
+  doesn't. Add the same selected-cat preview to the decor flow for
+  consistency.
 
-## Open decisions for the user
+## Bucket 2 — economy & arrivals (small, self-contained)
 
-1. **Which vision** (A / B / C / D / E / a different one)?
-2. **How much of V2 is a hard reset vs. a refactor?** Willing to cut built
-   systems, or is V3 additive on top of V2?
-3. **Idle or not?** Keep passive shell/pearl income and number-go-up, or drop
-   it for a relationship-only progression?
-4. **Retention model** — if streaks/daily-goals go, what brings people back?
-   (Candidate: the cats themselves generate reasons — a cat's been waiting to
-   show you something, the cove changed, a story beat is ready.)
-5. **Monetization** — ad-free + one IAP is thin. A cosmetic economy (cove
-   decor, themes, cat outfits) can fund a cozy game without breaking calm.
-   In scope for V3?
-6. **Session shape** — short frequent check-ins (idle) vs. lingering visits
-   (cozy) vs. leave-it-running ambient (Rest). Which is the intended default?
+- **Cut pearl + shell drops ~50%.** One pass over `festReward`, token values,
+  goal/checkin rewards, adventure hauls. Retune so care items feel meaningful
+  without being punishing.
+- **Accept / deny new cats.** An arrival (free visitor or coax) surfaces a
+  small card — name, coat, a trait hint — with Accept / Not now. Denied cats
+  just don't join (maybe drift back off). Affects `scriptArrival`, the coax
+  flow, and offline arrivals.
+
+## Bucket 3 — the care layer (the big new pillar; build incrementally)
+
+Order matters — each step needs the one before it.
+
+1. **Food has a life.** A food bowl holds N servings / a freshness timer. You
+   refill it (costs shells). Empty bowl = cats can't eat = hunger rises.
+2. **Water.** If the pond / dock is restored, cats drink from it (free, always
+   available). No water source = thirst rises. (Gives the restoration spine a
+   care payoff — a reason to fix the dock beyond capacity.)
+3. **Hunger & thirst meters** per cat. Rise over time, fall when the cat eats
+   / drinks. High hunger or thirst → mood down, output down, a visible "needs
+   something" state.
+4. **Health bar & sickness.** Sustained hunger/thirst → a chance the cat gets
+   sick. Sick = health bar drops, output near zero, a sick visual + sound.
+   **Buy medicine** (shells, a real sink) → treat → recovers over time.
+5. **The leave condition.** A cat that's been sick + untreated, or starving,
+   for long enough (days, with clear warnings) → it leaves the cove. Kept in
+   the Catdex; a Moments entry; recoverable only by re-coaxing that coat, not
+   that individual. This is the fail state — telegraph it hard.
+
+## Bucket 4 — inventory / decor management
+
+- **An inventory.** "Pack away everything" → all placed decor + comforts +
+  stations go into an inventory. Re-place them manually one at a time (drag /
+  tap-to-place). Lets a player redecorate from scratch. Extends the existing
+  per-item "remove" (which already refunds 40%) into a full store-and-replace
+  system with no refund penalty — it's *yours*, you're just moving it.
+
+## Bucket 5 — cosmetic monetization
+
+- **Premium decor with effects.** A premium shop tab (hard currency or direct
+  IAP). Items: **glowing collar** (soft pulsing light on the cat), **rainbow
+  back-trail** (a rainbow arc + particle effect that follows the cat),
+  **little wings** (animated flutter). Each is a `drawAccessory` extension +
+  an effect layer in the render loop. **Mock the effects first** (per the
+  standing preview-before-build preference) — glow / rainbow / wings are
+  judgment calls on how much sparkle fits the tone.
+- Needs: a hard-currency or IAP structure beyond the single $4.99 pack; a
+  premium shop surface; "owned" tracking that survives reinstall (ties into
+  the not-yet-built cloud save).
+
+## Bucket 6 — polish
+
+- **Loading-screen cats.** A row of cats lining up and jumping in a wave (like
+  a stadium wave). Replaces / augments the current title screen. Mock it
+  first.
+
+## Proposed build order
+
+Bucket 1 → Bucket 2 → Bucket 3 (steps 1–5 in order) → Bucket 4 → Bucket 6
+→ Bucket 5. Care layer before monetization: the cosmetic shop only makes
+sense once the game around it is the v3 game.
+
+## Decisions log
+
+- **2026-09-06** — Renumbered v2 (see memory / README). Opened this rethink.
+- **2026-09-06** — Direction locked: additive to V2, calm rule dropped,
+  neglect can cost you a cat (it leaves; no death), cosmetic monetization in,
+  ~50% economy cut, accept/deny arrivals. Feature backlog above. Building
+  starts with Bucket 1.
 
 ## Decisions log
 
