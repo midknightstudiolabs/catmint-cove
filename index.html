@@ -393,6 +393,14 @@
   #catcard:not([hidden]){animation:cardIn .18s ease both;}
   #catcard.leaving{opacity:0;transform:translateY(5px);pointer-events:none;}
   @keyframes cardIn{from{opacity:0;transform:translateY(5px);}}
+
+  /* ---- prop card (the cairn's "what is this") ---- */
+  .propcard{width:min(74vw,220px);padding:.7rem .85rem .78rem;pointer-events:none;
+    transition:opacity .16s ease, transform .16s ease;}
+  .propcard:not([hidden]){animation:cardIn .18s ease both;}
+  .propcard.leaving{opacity:0;transform:translateY(5px);}
+  .propcard h3{font-family:"Fraunces",serif;font-weight:700;font-size:.92rem;margin:0 0 .22rem;}
+  .propcard p{font-size:.8rem;color:var(--ink-soft);line-height:1.42;margin:0;}
   #shop:not([hidden]),#dex:not([hidden]),#today:not([hidden]){animation:sheetIn .16s ease both;}
   @keyframes sheetIn{from{opacity:0;}}
   #catcard h2{font-size:1.02rem;margin-bottom:.1rem;}
@@ -922,6 +930,14 @@
     <div class="cc-pref" id="cc-pref"></div>
     <div class="cc-dress" id="cc-dress"></div>
     <button class="rehome" id="cc-rehome" hidden>Find them a new home →</button>
+  </div>
+
+  <!-- prop card — a small floating "what is this" bubble for tappable scene
+       decorations (the cairn, and anywhere else that wants one later),
+       same visual family as the cat card but lighter: just a title + line -->
+  <div class="sheet propcard" id="propCard" hidden>
+    <h3 id="pc-title">—</h3>
+    <p id="pc-desc"></p>
   </div>
 
   <!-- offline / reward modal -->
@@ -3027,21 +3043,21 @@ function handleTap(x, y) {
     const d = dist2(x, y, t.x, t.y);
     if (d < bd) { bd = d; bt = t; }
   }
-  if (bt) { collectToken(bt); return; }
+  if (bt) { hidePropCard(); collectToken(bt); return; }
 
   // cats
   const bc = catAt(x, y, 40);
-  if (bc) { petCat(bc); showCatCard(bc); return; }
+  if (bc) { hidePropCard(); petCat(bc); showCatCard(bc); return; }
 
   // a restoration project marker
   for (const d of decor) {
-    if (d.type === "project" && dist2(x, y, d.x, d.y - 6) < 48 * 48) { hideCatCard(); openProjectSheet(d.pid); return; }
+    if (d.type === "project" && dist2(x, y, d.x, d.y - 6) < 48 * 48) { hideCatCard(); hidePropCard(); openProjectSheet(d.pid); return; }
   }
 
   // Midknight's cairn, if there's one standing (or still being built)
   if (tapCairn(x, y)) return;
 
-  hideCatCard();
+  hideCatCard(); hidePropCard();
 }
 function tapCairn(x, y) {
   const cn = G && G.cairn;
@@ -3051,9 +3067,9 @@ function tapCairn(x, y) {
   const { sx, gy } = cairnPos(W, H);
   if (dist2(x, y, sx, gy - 14) > 32 * 32) return false;
   hideCatCard();
-  toast(cn.stage >= 4
-    ? "Midknight's cairn — a little monument to everything worth carrying home. Labubu's finds, and a few of his own."
-    : "Midknight's still rearranging this — Labubu's odds and ends, stacked just so.", 5.5);
+  showPropCard("Midknight's cairn", cn.stage >= 4
+    ? "A little monument to everything worth carrying home — Labubu's finds, and a few of his own."
+    : "Midknight's still rearranging this — Labubu's odds and ends, stacked just so.", sx, gy);
   return true;
 }
 function petCat(c) {
@@ -3418,6 +3434,42 @@ function hideCatCard(instant) {
   if (instant || el.hidden) { el.hidden = true; el.classList.remove("leaving"); return; }
   el.classList.add("leaving");
   el._hideT = setTimeout(() => { el.hidden = true; el.classList.remove("leaving"); }, 180);
+}
+
+// a small floating "what is this" bubble for tappable scene decorations —
+// same idea as the cat card (world position → screen, floats above with a
+// gap, drops below if there's no room), just lighter: title + one line.
+let propCardTimer = 0;
+function showPropCard(title, desc, wx, wy) {
+  const el = document.getElementById("propCard");
+  document.getElementById("pc-title").textContent = title;
+  document.getElementById("pc-desc").textContent = desc;
+  clearTimeout(el._hideT); el.classList.remove("leaving");
+  el.hidden = false;
+  positionPropCard(wx, wy);
+  propCardTimer = 5;
+}
+function hidePropCard(instant) {
+  const el = document.getElementById("propCard");
+  clearTimeout(el._hideT);
+  propCardTimer = 0;
+  if (instant || el.hidden) { el.hidden = true; el.classList.remove("leaving"); return; }
+  el.classList.add("leaving");
+  el._hideT = setTimeout(() => { el.hidden = true; el.classList.remove("leaving"); }, 180);
+}
+function positionPropCard(wx, wy) {
+  const el = document.getElementById("propCard");
+  const r = canvas.getBoundingClientRect();
+  const cardW = el.offsetWidth || 220, cardH = el.offsetHeight || 90;
+  const gap = 34;
+  const sx = r.left + (wx + _worldOffX) * displayScale;
+  const sy = r.top + (wy + _worldOffY) * displayScale;
+  let left = clamp(sx - cardW / 2, 8, window.innerWidth - cardW - 8);
+  let top = sy - gap - cardH;
+  if (top < 50) top = sy + gap;
+  top = clamp(top, 50, window.innerHeight - cardH - 76);
+  el.style.left = left + "px";
+  el.style.top = top + "px";
 }
 
 /* ---------- shop ---------- */
@@ -4117,7 +4169,7 @@ function togglePanel(name) {
   const wasOpen = !panels[name].hidden;
   closeAllPanels();
   if (!wasOpen) {
-    hideCatCard(); hideToast();            // clear anything floating over the cove before the panel comes up
+    hideCatCard(); hideToast(); hidePropCard();   // clear anything floating over the cove before the panel comes up
     panels[name].hidden = false;
     if (name === "shop") renderShop();
     if (name === "dex") renderDex();
@@ -8908,6 +8960,7 @@ function simulate(dt) {
   updateWeather(dt);
   if (toastTimer > 0) { toastTimer -= dt; if (toastTimer <= 0) toastEl.classList.remove("on"); }
   if (cardTimer > 0) { cardTimer -= dt; if (cardTimer <= 0) hideCatCard(); }
+  if (propCardTimer > 0) { propCardTimer -= dt; if (propCardTimer <= 0) hidePropCard(); }
   if (shakeAmt > 0) shakeAmt = Math.max(0, shakeAmt - dt * 26);
 }
 
