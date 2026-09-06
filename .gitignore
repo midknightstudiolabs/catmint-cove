@@ -22,3 +22,6 @@ ios/
 *.p12
 google-services.json
 GoogleService-Info.plist
+
+# local design mockups — never commit
+_mockup-*.html
