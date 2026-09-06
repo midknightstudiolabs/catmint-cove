@@ -198,14 +198,20 @@ sense once the game around it is the v3 game.
 - [x] **Care layer** — food store + refill, per-cat hunger/thirst, drinking
   at any pond, sickness + medicine, the ~40h leave clock, offline handling,
   HUD 🍚 stat. Tuned so a stocked cove + a pond is a light background task.
-- [ ] Autumn / seasonal effect — **blocked on the user** (renders fine here;
-  need specifics on what's wrong).
-- [ ] Decor cat-preview — **blocked on the user** (need to know exactly what
-  "show the selected cat picture" means).
-- [ ] Inventory (pack away / re-place all decor).
+- [x] **Autumn / seasonal effect** — was "hit or miss" because weather only
+  spawned during the cove's daytime (clock is real-time-anchored). Now shows
+  at any hour, dims to a 0.55 alpha floor at night.
+- [x] **Premium cosmetics** — glow collar (✦8, static light), little wings
+  (✦12, speed-scaled flap), rainbow trail (✦10, fading ribbon). Bought with
+  pearls; a $2.99 Sparkle Pack is the planned optional real-money unlock,
+  not built yet.
+- [x] **Dress-up screen rebuilt** — two-pane (live cat + rack), tap-to-try,
+  Save commits (shells + pearls), Take it all off, ‹ Name › switcher. This
+  answered the "show the selected cat picture when adding decor" ask.
+- [ ] Inventory (pack away / re-place all cove decor + comforts).
 - [ ] Loading-screen cat wave (mock first).
-- [ ] Premium cosmetic decor — glowing collar / rainbow trail / wings (mock
-  the effects first). Needs a hard-currency / IAP surface.
+- [ ] Sparkle Pack IAP ($2.99, unlocks all effects) — after the pearl
+  economy is playtested.
 
 ## Decisions log
 
