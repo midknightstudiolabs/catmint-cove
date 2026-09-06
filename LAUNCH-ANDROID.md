@@ -25,14 +25,15 @@ Legend for IDs used throughout:
 
 ---
 
-## 1. Signing key  **[you]** · ~10 min
+## 1. Signing key  **[you]** · ✅ DONE 2026-09-06
 
-Follow **`STORE-SETUP.md` §3**:
-1. `keytool -genkey -v -keystore catmint-upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000`
-2. **Back the `.jks` up somewhere offline.** Losing it = you can never update the app.
-3. Repo → Settings → Secrets and variables → Actions → add:
-   `ANDROID_KEYSTORE_BASE64` (=`base64 -w0 catmint-upload.jks`),
-   `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (=`upload`), `ANDROID_KEY_PASSWORD`.
+Made in Android Studio (Build → Generate Signed App Bundle → Create new keystore).
+- File: `catmint-upload.jks` on Google Drive (`G:\My Drive\…\Catmint Cove\keys\`),
+  PKCS12 format, **alias `key0`**, store password == key password.
+- 4 repo secrets set: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+  `ANDROID_KEY_ALIAS` (=`key0`), `ANDROID_KEY_PASSWORD`.
+- ⚠️ **Still owed:** a second offline backup of the `.jks` (password manager) —
+  Google Drive is currently the only copy. Lose it = can never update the app.
 
 > Claude never generates or handles this key.
 
@@ -87,15 +88,18 @@ Follow **`STORE-SETUP.md` §3**:
 
 ## 4. First build  **[CI]** · ~8 min
 
-> **✅ Done 2026-09-06 (unsigned).** Run `34032346099` was green — `BUILD
-> SUCCESSFUL`, RevenueCat's Android SDK compiles clean on Capacitor 8 / AGP 8.13
-> / JDK 21, portrait lock + version stamp work, 9.8 MB `.aab`. (First run failed
-> on a Node-20 pin — Capacitor 8 CLI needs ≥22; fixed in `1ebaa24`.) **Re-run
-> this after the keystore's in (step 1) for the real signed bundle.**
+> **✅ SIGNED BUILD GREEN — 2026-09-06.** Run `34036136390` →
+> **`catmint-cove-1.0.4.aab`** (9.7 MB, signed, uploadable to Play). Everything
+> passed: native gen, RevenueCat compile (Capacitor 8 / AGP 8.13 / JDK 21),
+> portrait lock, version stamp, signing.
+> Gotchas hit along the way (all fixed): (a) workflow pinned Node 20, Capacitor 8
+> CLI needs ≥22 — bumped in `1ebaa24`; (b) the Android Studio keystore's alias
+> was the default **`key0`**, not `upload` — so the **`ANDROID_KEY_ALIAS` secret
+> is `key0`**. Keystore lives on the dev's Google Drive (PKCS12 format, store
+> pw == key pw).
 
-You can run this **before** step 1 to check the app compiles (RevenueCat +
-Capacitor 8) — with no keystore it emits an **unsigned** `.aab` you can't upload,
-but a green run confirms the pipeline. Do it again after step 1 for the real one.
+Later builds: `git tag android-v1.0.5 && git push --tags` (or Actions → Run
+workflow with a track). Version code = the run number (always increases).
 
 1. GitHub → Actions → **Android build** → *Run workflow* → `track = none` → Run.
 2. When it's green, download the artifact:
