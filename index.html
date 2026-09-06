@@ -8483,39 +8483,9 @@ function drawAccessory(g, kind, P, coat, kit) {
     g.beginPath(); g.arc(hx, hy, hr * 0.98, Math.PI * 0.16, Math.PI * 0.84); g.stroke();
     g.fillStyle = "#fff6d8";
     g.beginPath(); g.arc(hx, y + 1.5, kit ? 2 : 2.6, 0, 7); g.fill();
-  } else if (kind === "wings") {
-    // v3 premium — angel wings sweeping up-and-back from the shoulders. idle
-    // flap is slow; quickens with P._wingRate (set from cat speed).
-    const t = performance.now() / 1000;
-    const flap = Math.sin(t * (P._wingRate || 3)) * 0.5 + 0.5;    // 0..1
-    const by = P.top * 0.32 - 2, root = P.bw * 0.66, sc = kit ? 1.05 : 1.35;
-    for (const s of [-1, 1]) {
-      g.save();
-      g.translate(s * root, by);
-      g.rotate(s * (-0.4 + flap * 0.35));
-      g.scale(s * sc, sc);
-      // soft outer glow
-      g.fillStyle = "rgba(255,255,255,0.18)";
-      g.beginPath(); g.ellipse(5, -9, 10, 15, -0.3, 0, 7); g.fill();
-      // wing body — a scalloped up-swept feather fan
-      g.fillStyle = "#fbf9ff";
-      g.strokeStyle = "rgba(188,168,216,0.8)"; g.lineWidth = 0.9;
-      g.beginPath();
-      g.moveTo(0, 4);
-      g.quadraticCurveTo(2, -6, 1.5, -16);
-      g.quadraticCurveTo(6, -12, 6.5, -20);
-      g.quadraticCurveTo(10, -13, 11, -19);
-      g.quadraticCurveTo(13, -9, 12, -1);
-      g.quadraticCurveTo(7, 2, 0, 4);
-      g.closePath(); g.fill(); g.stroke();
-      // two feather-lines for detail
-      g.strokeStyle = "rgba(200,182,224,0.55)";
-      g.beginPath(); g.moveTo(3, 1); g.quadraticCurveTo(5, -8, 4, -15); g.stroke();
-      g.beginPath(); g.moveTo(7, 0); g.quadraticCurveTo(9, -7, 8.5, -13); g.stroke();
-      g.restore();
-    }
   }
-  // "rainbow" (aura slot) is drawn in the scene trail pass, not here — no-op
+  // "wings" is drawn behind the body (drawWings, before catSil) and "rainbow"
+  // in the scene trail pass — both no-op here
   g.restore();
 }
 function drawEye(g, ex, ey, mode, iris, wide, kit) {
@@ -8598,6 +8568,36 @@ function drawMidknightMarks(g, P, coat, kit) {
   // chin dot — the "goatee", a bold round black patch on the white chin under the mouth
   g.fillStyle = coat.base;
   g.beginPath(); g.ellipse(hx - R * 0.03, hy + R * 0.86, R * 0.16, R * 0.13, 0, 0, 7); g.fill();
+}
+// v3 premium — angel wings, drawn BEHIND the body so a sitting/loafing cat
+// shows two soft feathered arcs rising from its back. flap is a small idle
+// tilt; quicker when the cat's moving (rate passed in).
+function drawWings(g, P, rate, kit) {
+  const t = performance.now() / 1000;
+  const flap = Math.sin(t * (rate || 3)) * 0.5 + 0.5;   // 0..1
+  const by = P.top + 8, root = P.bw * 0.46, sc = (kit ? 1.05 : 1.45);
+  for (const s of [-1, 1]) {
+    g.save();
+    g.translate(s * root, by);
+    g.rotate(s * (-0.32 - flap * 0.26));
+    g.scale(s * sc, sc);
+    g.fillStyle = "#fbf9ff";
+    g.strokeStyle = "rgba(190,170,220,0.75)"; g.lineWidth = 0.9;
+    // an upswept feather fan — three scalloped tips down the trailing edge
+    g.beginPath();
+    g.moveTo(0, 6);
+    g.quadraticCurveTo(1.5, -6, 1, -19);
+    g.quadraticCurveTo(5, -15, 6, -24);
+    g.quadraticCurveTo(9.5, -16, 10.5, -22);
+    g.quadraticCurveTo(12.5, -12, 11, -3);
+    g.quadraticCurveTo(6, 2, 0, 6);
+    g.closePath(); g.fill(); g.stroke();
+    // soft feather lines
+    g.strokeStyle = "rgba(198,180,224,0.5)";
+    g.beginPath(); g.moveTo(3, 2); g.quadraticCurveTo(4.5, -8, 3.5, -17); g.stroke();
+    g.beginPath(); g.moveTo(6.5, 0); g.quadraticCurveTo(8, -8, 7.5, -15); g.stroke();
+    g.restore();
+  }
 }
 function drawTail(g, P, coat, mode, wag) {
   const pts = coat.pattern === "points" || coat.pattern === "lynxpoint" || coat.pattern === "van";
@@ -8851,6 +8851,10 @@ function drawCat(g, c, isPhoto) {
 
   if (tailMode !== "wrap") drawTail(g, P, coat, tailMode, wag);   // tails behind body when out
 
+  // v3 premium wings — behind the body so a sitting cat shows angelic arcs
+  if (c.worn && c.worn.includes("wings"))
+    drawWings(g, P, c.state === "zooming" ? 13 : (c.trotting ? 6 : 3), kit);
+
   // ears (behind head) — a little flop on the bounce; pinned back mid-zoom
   const zoom = c.state === "zooming";
   drawEar(g, -1, P, coat, sulk || zoom, earFlop, kit);
@@ -9053,10 +9057,7 @@ function drawCat(g, c, isPhoto) {
 
   g.restore(); // face tilt
 
-  if (c.worn && c.worn.length) {
-    P._wingRate = c.state === "zooming" ? 13 : (c.trotting ? 6 : 3);   // wings flap faster on the move
-    for (const k of wornList(c)) drawAccessory(g, k, P, coat, kit);
-  }
+  if (c.worn && c.worn.length) for (const k of wornList(c)) drawAccessory(g, k, P, coat, kit);
 
   // grooming: a rotation of moves — face wash, ear wipe, chest, the hind-leg airplane
   if (grooming) {
