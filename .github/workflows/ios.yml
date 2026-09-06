@@ -33,9 +33,18 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-15   # Xcode 16 — Capacitor 8 iOS needs it
+    runs-on: macos-26   # Apple requires the iOS 26 SDK (Xcode 26) for App Store uploads
     steps:
       - uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: |
+          ls -d /Applications/Xcode_26*.app 2>/dev/null || ls -d /Applications/Xcode*.app
+          DEV="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)/Contents/Developer"
+          if [ ! -d "$DEV" ]; then DEV="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer"; fi
+          sudo xcode-select -s "$DEV"
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i "iphoneos" || true
 
       - uses: actions/setup-node@v4
         with:
@@ -77,7 +86,10 @@ jobs:
           P=ios/App/App/Info.plist
           plutil -replace UISupportedInterfaceOrientations -json '["UIInterfaceOrientationPortrait"]' "$P"
           plutil -replace 'UISupportedInterfaceOrientations~ipad' -json '["UIInterfaceOrientationPortrait","UIInterfaceOrientationPortraitUpsideDown"]' "$P"
-          plutil -p "$P" | grep -A3 Orientation
+          # a portrait-only app that runs on iPad must opt out of multitasking or
+          # Apple's validator demands all four orientations
+          plutil -replace UIRequiresFullScreen -bool true "$P"
+          plutil -p "$P" | grep -A3 -iE 'Orientation|FullScreen'
 
       # Capacitor 8's `cap add ios` scaffolds a Swift Package Manager project
       # (ios-spm-template) — App.xcodeproj + CapApp-SPM/, no Podfile, no
