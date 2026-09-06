@@ -20,8 +20,9 @@ live on the web, pre-launch (not yet on the stores).
 - Live: https://midknightstudiolabs.github.io/catmint-cove/
 - Repo: github.com/midknightstudiolabs/catmint-cove
 - Bundle id: com.midknightstudiolabs.catmintcove
-- Price model: free, ad-free at launch, one optional IAP ($4.99 Cozy
-  Supporter Pack)
+- Price model: free, ad-free at launch, three optional **cosmetic-only** IAPs
+  — Welcome Pack $0.99 · Sparkle Pack $2.99 · Founding Covekeeper $4.99
+  (never pay-to-win — see `MONETIZATION.md`)
 
 **Elevator line:** "A cozy corner of the world where cats come to be looked
 after — and you slowly make it theirs."
@@ -119,11 +120,15 @@ come later — AdMob can't approve serving until the app is published, so any
 "ad-supported" language is premature. App collects nothing.
 
 ## Roadmap status
-Phase 1 (prototype) + Phase 2 (vertical slice) essentially done. **Phase 3
-(soft launch) is next** — needs store accounts, keystore, a first manual .aab,
-Google's 12-testers × 14-days closed-testing period, real IAP + AdMob,
-analytics, cloud save. Phase 4 = post-launch content (Friendship + Memories,
-a Butterfly Catch mini-game, weekly events, Catdex depth).
+Phase 1 (prototype) + Phase 2 (vertical slice) done. **Phase 3 (Google Play
+soft launch) is in progress** — see `LAUNCH-ANDROID.md`. RevenueCat billing is
+wired (real Google Play Billing, not simulated, once the SDK key is pasted);
+privacy policy, Data Safety + content-rating answers, and store-listing fields
+are drafted. Left for the developer: the upload keystore, Play Console app +
+products, the RevenueCat project, then Google's 12-testers × 14-days
+closed-testing period. AdMob, iOS, analytics, cloud save come after. Phase 4 =
+post-launch content (Friendship + Memories, a Butterfly Catch mini-game, weekly
+events, Catdex depth).
 
 ## Brand
 Midknight Studio Labs — midknightstudiolabs.com (Blogspot). Catmint Cove has

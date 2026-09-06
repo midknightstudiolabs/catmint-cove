@@ -202,6 +202,11 @@ sense once the game around it is the v3 game.
 - [x] **Care layer** — food store + refill, per-cat hunger/thirst, drinking
   at any pond, sickness + medicine, the leave clock, offline handling,
   HUD 🍚 stat. Tuned so a stocked cove + a pond is a light background task.
+  - **Food rebalance** (commit `6c3536f`, 2026-09-06) — was `eaters/1400`/sec
+    offline (~15× too fast, emptied in hours). Now a flat `FOOD_PER_CAT_DAY = 4`;
+    `foodDaysLeft()` drives the HUD estimate ("7d"/"15h") + the offline drain,
+    so the shown estimate is exact. `openFoodRefill()` → **1 day / 3 days /
+    1 week** bulk buttons; larder stocks up to 14 days.
 - [x] **Care legibility** (commit `af238e4`, 2026-09-06) — the care layer was
   a hidden cliff; now it reads. `c.health` is a **buffer** (drains only under
   real strain, refills when comfy, 0 → sick) replacing the old RNG sick roll.

@@ -87,12 +87,19 @@ Follow **`STORE-SETUP.md` §3**:
 
 ## 4. First build  **[CI]** · ~8 min
 
+You can run this **before** step 1 to check the app compiles (RevenueCat +
+Capacitor 8) — with no keystore it emits an **unsigned** `.aab` you can't upload,
+but a green run confirms the pipeline. Do it again after step 1 for the real one.
+
 1. GitHub → Actions → **Android build** → *Run workflow* → `track = none` → Run.
-2. When it's green, download the artifact **`catmint-cove-1.0.0.aab`**.
-   - If the run fails at *"Stamp the version"* with a `versionCode`/`versionName`
-     error, the Capacitor 8 template changed the `build.gradle` format — fix the
-     two `sed` lines in `android.yml` and re-run. (There's a guard that catches it.)
-3. This proves the whole pipeline: keystore secrets, portrait lock, signing.
+2. When it's green, download the artifact:
+   - keystore set → **`catmint-cove-1.0.<run>.aab`** (signed, uploadable)
+   - no keystore yet → **`catmint-cove-1.0.<run>-UNSIGNED.aab`** (compile check only)
+   - If it fails at *"Stamp the version"* with a `versionCode`/`versionName`
+     error, the Capacitor 8 template changed `build.gradle` — fix the two `sed`
+     lines in `android.yml` and re-run (a guard catches it).
+3. This proves the whole pipeline: native gen, portrait lock, version stamp,
+   the RevenueCat plugin build, and (with the keystore) signing.
 
 ---
 
