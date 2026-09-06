@@ -1,6 +1,6 @@
 {
   "name": "catmint-cove",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Catmint Cove — a cozy-idle cat sanctuary. Web game + Capacitor wrapper for the app stores.",
   "type": "module",
@@ -24,7 +24,8 @@
     "@capacitor/ios": "^8.5.1",
     "@capacitor/share": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.2",
-    "@capacitor/status-bar": "^8.0.3"
+    "@capacitor/status-bar": "^8.0.3",
+    "@revenuecat/purchases-capacitor": "^13.5.0"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",

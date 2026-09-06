@@ -4696,7 +4696,7 @@ function shopPackRow() {
        <span class="owned">Owned</span>`
     : `<div class="txt"><div class="name">Founding Covekeeper</div>
          <div class="desc">A founder's plaque + ribbon · ${ADS_ENABLED ? "ad-free forever · " : ""}supports the studio · no gameplay perks</div></div>
-       <button class="btn primary">${SUPPORTER_PRICE}</button>`;
+       <button class="btn primary">${IAP_PRODUCTS.founding_covekeeper.price}</button>`;
   const pb = pack.querySelector("button");
   if (pb) pb.addEventListener("click", () => showPackOffer(false));
   return pack;
@@ -6156,10 +6156,11 @@ function completePurchase(productId) {
 async function restorePurchases() {
   let queried = false;
   try {
-    // NATIVE: const info = await Purchases.restorePurchases();  // RevenueCat
-    //         const ids = Object.keys(info.entitlements.active);
-    //         reconcileEntitlements(ids, true);  queried = true;
-    queried = false;   // simulated build: nothing to query, fall through to the cache
+    if (nativeIap()) {
+      const ids = await window.CoveNative.iap.restore();   // RevenueCat customerInfo.allPurchasedProductIdentifiers
+      reconcileEntitlements(ids || [], true);
+      queried = true;
+    }
   } catch (e) { queried = false; }
   applyEntitlements(); saveIap(); save(); syncHud();   // cache stands regardless
   const any = Object.values((G.iap && G.iap.owned) || {}).some(Boolean);
@@ -6168,9 +6169,34 @@ async function restorePurchases() {
            : "Nothing to restore.", 4);
   return any;
 }
+// true when the native billing bridge (RevenueCat) is present and configured
+function nativeIap() { return !!(window.CoveNative && window.CoveNative.iap && window.CoveNative.iap.available); }
+// Run the store purchase for `productId`. Real Google Play billing through the
+// native bridge when it's there; a confirm() stand-in on plain web. Resolves
+// true when the game should now grant the product.
+async function runPurchase(productId, label, priceStr) {
+  if (nativeIap()) {
+    let r;
+    try { r = await window.CoveNative.iap.buy(productId); }
+    catch (e) { r = { ok: false, reason: "failed" }; }
+    if (r && r.ok) return true;
+    if (r && r.reason && r.reason !== "cancelled") {
+      toast(r.reason === "unavailable" ? "That's not available right now — try again shortly."
+          : r.reason === "notallowed" ? "Purchases are turned off on this device."
+          : "The purchase didn't go through — you weren't charged.", 4);
+    }
+    return false;
+  }
+  return confirm(`Confirm purchase — ${label}, ${priceStr}?\n(simulated: no charge)`);
+}
+// footer line for the offer modals — honest in both the app and the web build
+function billingNote(lead) {
+  return `${lead || "Purely cosmetic"} — no effect on your cove, your cats or your progress. `
+    + (nativeIap() ? "Tied to your Google account, so it carries across devices."
+                   : "(Simulated in this web build.)");
+}
 
-/* ---------- Founding Covekeeper ($4.99 — simulated) — cosmetic + support only ---------- */
-const SUPPORTER_PRICE = "$4.99";
+/* ---------- Founding Covekeeper — cosmetic + support only ---------- */
 function grantSupporter() {                 // name kept — everything calls it
   completePurchase("founding_covekeeper");
   G.ads.pending = false;
@@ -6197,15 +6223,15 @@ function showPackOffer(soft) {
       <li>Supports Midknight Studio Labs</li>
     </ul>
     <div class="row">
-      <button class="btn primary" id="pk-buy">Get it — ${SUPPORTER_PRICE}</button>
+      <button class="btn primary" id="pk-buy">Get it — ${IAP_PRODUCTS.founding_covekeeper.price}</button>
       <button class="btn" id="pk-no">Maybe later</button>
     </div>
     <button class="linkbtn" id="pk-restore" style="margin-top:.6rem">Already bought it? Restore purchase</button>
-    <p class="sub" style="margin:.5rem 0 0;font-size:.76rem;">Purely cosmetic + support — no effect on your cove, your cats or your progress. Simulated in this build; the real one uses App Store / Google Play billing, tied to your account so it carries across devices.</p>
+    <p class="sub" style="margin:.5rem 0 0;font-size:.76rem;">${billingNote("Purely cosmetic + support")}</p>
   </div>`);
-  document.getElementById("pk-buy").onclick = () => {
+  document.getElementById("pk-buy").onclick = async () => {
     closeModal();
-    if (!confirm(`Confirm purchase — Founding Covekeeper, ${SUPPORTER_PRICE}?\n(simulated: no charge)`)) return;
+    if (!(await runPurchase("founding_covekeeper", "Founding Covekeeper", IAP_PRODUCTS.founding_covekeeper.price))) return;
     grantSupporter();
   };
   document.getElementById("pk-no").onclick = closeModal;
@@ -6241,11 +6267,11 @@ function showSparkleOffer() {
       <button class="btn" id="sp-no">Maybe later</button>
     </div>
     <button class="linkbtn" id="sp-restore" style="margin-top:.6rem">Already bought it? Restore purchase</button>
-    <p class="sub" style="margin:.5rem 0 0;font-size:.76rem;">Purely cosmetic — no effect on your cove, your cats or your progress. Simulated in this build; the real one uses App Store / Google Play billing, tied to your account so it carries across devices.</p>
+    <p class="sub" style="margin:.5rem 0 0;font-size:.76rem;">${billingNote()}</p>
   </div>`);
-  document.getElementById("sp-buy").onclick = () => {
+  document.getElementById("sp-buy").onclick = async () => {
     closeModal();
-    if (!confirm(`Confirm purchase — Sparkle Pack, ${price}?\n(simulated: no charge)`)) return;
+    if (!(await runPurchase("sparkle_pack", "Sparkle Pack", IAP_PRODUCTS.sparkle_pack.price))) return;
     completePurchase("sparkle_pack");
     logMoment("✨", "The Sparkle Pack — the whole cove can shine now.", "care");
     toast("Sparkle Pack unlocked — glow, wings and rainbow are in the dress-up rack.", 5);
@@ -6286,11 +6312,11 @@ function showWelcomeOffer(soft) {
       <button class="btn" id="wp-no">Maybe later</button>
     </div>
     <button class="linkbtn" id="wp-restore" style="margin-top:.6rem">Already bought it? Restore purchase</button>
-    <p class="sub" style="margin:.5rem 0 0;font-size:.76rem;">Purely cosmetic — no effect on your cove, your cats or your progress. Simulated in this build; the real one uses App Store / Google Play billing, tied to your account so it carries across devices.</p>
+    <p class="sub" style="margin:.5rem 0 0;font-size:.76rem;">${billingNote()}</p>
   </div>`);
-  document.getElementById("wp-buy").onclick = () => {
+  document.getElementById("wp-buy").onclick = async () => {
     closeModal();
-    if (!confirm(`Confirm purchase — Welcome Pack, ${price}?\n(simulated: no charge)`)) return;
+    if (!(await runPurchase("welcome_pack", "Welcome Pack", IAP_PRODUCTS.welcome_pack.price))) return;
     completePurchase("welcome_pack");
     G.welcomeOffered = true;
     logMoment("🐾", "The Welcome Pack — a welcome paw's been carved by the sign.", "care");
@@ -12470,10 +12496,19 @@ load();
 restoreCats();
 loadEntitlements();                    // pull purchases from the dedicated iapStore — runs whatever load() did
 applyEntitlements();                   // re-derive perks from the cached entitlements immediately
-// NATIVE: also fire a silent store query here and on every resume, then call
-// reconcileEntitlements(ids, true) — that's what makes a reinstall / new device
-// recover a purchase. It only ADDS, so a slow network never revokes a perk.
-//   Purchases.getCustomerInfo().then(i => reconcileEntitlements(Object.keys(i.entitlements.active), true)).catch(()=>{});
+// Hooks the native billing bridge (scripts/capacitor-bridge.js) calls back into.
+// __coveReconcile: union-only, fail-open — a store query result never revokes a
+// cached perk. __covePrices: fold the device's localized store prices into the
+// offer modals + shop. Both no-op safely on plain web.
+window.__coveReconcile = (ids) => { try { reconcileEntitlements(ids || [], true); } catch (e) {} };
+window.__covePrices = (m) => {
+  let any = false;
+  for (const k in (m || {})) if (IAP_PRODUCTS[k] && m[k]) { IAP_PRODUCTS[k].price = m[k]; any = true; }
+  if (any && panels.shop && !panels.shop.hidden) { try { renderShop(); } catch (e) {} }
+};
+// authoritative store query on launch (and on every resume, from the bridge) —
+// what lets a reinstall / new device recover a purchase.
+try { if (nativeIap()) window.CoveNative.iap.sync().then(ids => reconcileEntitlements(ids || [], true)).catch(() => {}); } catch (e) {}
 visitorTimer = nextVisitorGap();      // now that G is loaded, time the next free arrival properly
 rebuildAttractors();
 initDayClock();

@@ -6,6 +6,8 @@
   if (!Cap || !Cap.isNativePlatform || !Cap.isNativePlatform()) return;   // web build → do nothing
   var P = Cap.Plugins || {};
 
+  window.CoveNative = window.CoveNative || {};
+
   /* ---- status bar: let the WebView draw under it; the HUD already uses safe-area insets ---- */
   try {
     if (P.StatusBar) {
@@ -62,20 +64,120 @@
   } catch (e) {}
 
   /* ---- photo: save to the gallery / open the share sheet instead of an <a download> ---- */
-  window.CoveNative = {
-    savePhoto: function (dataUrl) {
-      var base64 = String(dataUrl).replace(/^data:image\/\w+;base64,/, "");
-      var name = "catmint-cove-" + Date.now() + ".png";
-      try {
-        if (P.Filesystem && P.Share) {
-          P.Filesystem.writeFile({ path: name, data: base64, directory: "CACHE" }).then(function (res) {
-            return P.Share.share({ title: "Catmint Cove", text: "My cove 🐾", url: res.uri });
-          }).catch(function () {});
-          return true;
-        }
-        if (P.Share) { P.Share.share({ title: "Catmint Cove", text: "My cove 🐾", url: dataUrl }).catch(function () {}); return true; }
-      } catch (e) {}
-      return false;
-    },
+  window.CoveNative.savePhoto = function (dataUrl) {
+    var base64 = String(dataUrl).replace(/^data:image\/\w+;base64,/, "");
+    var name = "catmint-cove-" + Date.now() + ".png";
+    try {
+      if (P.Filesystem && P.Share) {
+        P.Filesystem.writeFile({ path: name, data: base64, directory: "CACHE" }).then(function (res) {
+          return P.Share.share({ title: "Catmint Cove", text: "My cove 🐾", url: res.uri });
+        }).catch(function () {});
+        return true;
+      }
+      if (P.Share) { P.Share.share({ title: "Catmint Cove", text: "My cove 🐾", url: dataUrl }).catch(function () {}); return true; }
+    } catch (e) {}
+    return false;
   };
+
+  /* ---- in-app purchases via RevenueCat ---------------------------------------
+   * PASTE YOUR KEY BELOW. From the RevenueCat dashboard:
+   *   Project → API keys → the *public* app-specific key for the Google Play app
+   *   (starts with "goog_"). It is a CLIENT key — safe to commit to a public repo.
+   * While it is "", the game falls back to its built-in simulated purchase flow,
+   * so the app still runs; it just can't take real money yet.
+   *
+   * The three product ids below MUST match the managed in-app products you create
+   * in Play Console (Monetize → Products → In-app products), and the game's own
+   * IAP_PRODUCTS keys. RevenueCat "entitlements" are not required — we read
+   * customerInfo.allPurchasedProductIdentifiers directly.
+   * ------------------------------------------------------------------------- */
+  var REVENUECAT_ANDROID_KEY = "";
+  var COVE_PRODUCTS = ["welcome_pack", "founding_covekeeper", "sparkle_pack"];
+
+  (function initIAP() {
+    var RC = P.Purchases;
+    if (!RC || !REVENUECAT_ANDROID_KEY) return;   // no plugin / no key → game simulates purchases
+
+    try { RC.configure({ apiKey: REVENUECAT_ANDROID_KEY }); }
+    catch (e) { return; }
+
+    var products = null;   // { <productId>: PurchasesStoreProduct }
+
+    function ownedFrom(info) {
+      var ids = (info && info.allPurchasedProductIdentifiers) || [];
+      var out = [];
+      for (var i = 0; i < ids.length; i++) if (COVE_PRODUCTS.indexOf(ids[i]) !== -1) out.push(ids[i]);
+      return out;
+    }
+    function push(info) {
+      try {
+        if (info && typeof window.__coveReconcile === "function") window.__coveReconcile(ownedFrom(info));
+      } catch (e) {}
+      try {
+        if (products && typeof window.__covePrices === "function") {
+          var m = {};
+          for (var k in products) if (products[k] && products[k].priceString) m[k] = products[k].priceString;
+          if (Object.keys(m).length) window.__covePrices(m);
+        }
+      } catch (e) {}
+    }
+
+    // catalogue — needed to purchase, and gives us localized price strings
+    RC.getProducts({ productIdentifiers: COVE_PRODUCTS, type: "NON_SUBSCRIPTION" })
+      .then(function (res) {
+        products = {};
+        (res && res.products || []).forEach(function (p) { products[p.identifier] = p; });
+        push(null);
+      })
+      .catch(function () {});
+
+    function sync() {
+      return RC.getCustomerInfo().then(function (r) {
+        var info = r && r.customerInfo;
+        push(info);
+        return ownedFrom(info);
+      });
+    }
+
+    // authoritative refresh: launch, every resume, and whenever RC pushes an update
+    try { RC.addCustomerInfoUpdateListener(function (info) { push(info); }); } catch (e) {}
+    try { P.App && P.App.addListener("resume", function () { sync().catch(function () {}); }); } catch (e) {}
+    sync().catch(function () {});
+
+    function purchase(prod, productId) {
+      return RC.purchaseStoreProduct({ product: prod }).then(
+        function (r) { try { push(r && r.customerInfo); } catch (e) {} return { ok: true, productId: productId }; },
+        function (e) {
+          var cancelled = !!(e && (e.userCancelled === true || String(e.code) === "1"));
+          var notAllowed = !!(e && String(e.code) === "PURCHASES_ERROR_CODE_PURCHASE_NOT_ALLOWED_ERROR");
+          return { ok: false, reason: cancelled ? "cancelled" : notAllowed ? "notallowed" : "failed" };
+        }
+      );
+    }
+
+    window.CoveNative.iap = {
+      available: true,
+      buy: function (productId) {
+        var prod = products && products[productId];
+        if (prod) return purchase(prod, productId);
+        // catalogue not ready / missing that id — fetch just this one, then buy
+        return RC.getProducts({ productIdentifiers: [productId], type: "NON_SUBSCRIPTION" })
+          .then(function (res) {
+            var p = (res && res.products || [])[0];
+            if (!p) return { ok: false, reason: "unavailable" };
+            if (products) products[productId] = p;
+            return purchase(p, productId);
+          })
+          .catch(function () { return { ok: false, reason: "unavailable" }; });
+      },
+      restore: function () {
+        return RC.restorePurchases().then(function (r) {
+          var info = r && r.customerInfo;
+          push(info);
+          return ownedFrom(info);
+        });
+      },
+      sync: sync,
+    };
+  })();
 })();
