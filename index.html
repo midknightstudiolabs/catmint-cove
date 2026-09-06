@@ -1214,6 +1214,13 @@ let DPR = Math.min(window.devicePixelRatio || 1, 2);   // re-read on every resiz
 // mode doesn't touch. Restored once the device recovers. See frame().
 let _dprCap = 2;
 
+// last-resort net: log anything that slips past a local try/catch (event
+// handlers, timers, async). The render loop has its own catch in frame().
+try {
+  addEventListener("error", (e) => { try { console.error("[uncaught]", e.message, e.filename + ":" + e.lineno); } catch (_) {} });
+  addEventListener("unhandledrejection", (e) => { try { console.error("[unhandled promise]", e.reason); } catch (_) {} });
+} catch (_) {}
+
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
 const stage = document.getElementById("stage");
@@ -2445,8 +2452,16 @@ function checkVetReturns() {
 }
 // v3: a cat that's been sick-and-untreated or starving too long gives up and
 // leaves. stays in the Catdex; you can coax that coat again, not that cat.
+let _neglectLeftAt = [];   // real timestamps of recent neglect departures — a hard blast-radius cap
 function neglectLeave(c) {
   if (c._leaving || c.mascot) return;
+  const now = Date.now();
+  _neglectLeftAt = _neglectLeftAt.filter(t => now - t < 90 * 60 * 1000);   // 90-min rolling window
+  if (_neglectLeftAt.length >= 2) {                                        // never more than 2 close together, however the clocks landed
+    c._leaveSince = now;                                                   // fresh full window — it can still go on a later session if still neglected
+    return;
+  }
+  _neglectLeftAt.push(now);
   c._leaving = true; c._gone = true;
   breakFriendship(c);
   const dir = c.x > W / 2 ? 1 : -1;
@@ -6149,11 +6164,18 @@ function offlineCare(elapsed) {
     const i = cats.indexOf(c); if (i >= 0) cats.splice(i, 1);
   }
   if (leaving.length) {
+    for (let i = 0; i < leaving.length; i++) _neglectLeftAt.push(now);   // count against the live blast-radius cap too
     const nm = leaving.map(c => c.name);
     setTimeout(() => {
       logMoment("💔", `${joinNice(nm)} moved on while you were away — the cove had gone too long without care.`, "care");
     }, 2400);
     rebuildAttractors();
+  }
+  // everyone still here gets a fresh, visible window before the live sim can act —
+  // so a long absence never means "opened the game, half the cove was already gone"
+  for (const c of cats) {
+    if (c.visitor || !c._leaveSince) continue;
+    c._leaveSince = Math.max(c._leaveSince, now - LEAVE_AFTER_MS * 0.4);
   }
 
   // build the return roster
@@ -10627,7 +10649,20 @@ let _lastHudSync = 0;
 let _paused = false;
 const SIM_DT = 1 / 60;            // physics runs at a fixed step so motion is framerate-independent
 let simAccum = 0;
+// the loop is wrapped so ONE bad frame is a dropped frame, never a frozen game.
+// (there is no global error handler otherwise — an uncaught throw in simulate /
+// renderScene would stop requestAnimationFrame and the whole cove would lock up.)
+let _frameErrs = 0, _frameErrAt = 0;
 function frame(now) {
+  try { frameBody(now); _frameErrs = 0; }
+  catch (e) {
+    _frameErrs++;
+    if (performance.now() - _frameErrAt > 3000) { try { console.error("[frame]", e); } catch (_) {} _frameErrAt = performance.now(); }
+    if (_frameErrs === 40) { try { toast("Something hiccuped — reload the page if the cove looks stuck.", 7); } catch (_) {} }
+  }
+  requestAnimationFrame(frame);
+}
+function frameBody(now) {
   _frameCount++;   // real average fps over the whole session = _frameCount / sessSec — a cross-check
   let frameDt = (now - last) / 1000;
   last = now;
@@ -10661,7 +10696,7 @@ function frame(now) {
       if (_dprCap !== wantCap) { _dprCap = wantCap; resize(); }
     }
   }
-  if (festMode) { renderFest(frameDt); requestAnimationFrame(frame); return; }
+  if (festMode) { renderFest(frameDt); return; }
   if (restMode) {
     // full 60fps while you're actually watching (the first ~26s — rain & fire
     // need it to look smooth), then drop to 15fps once it dims for burn-in.
@@ -10669,7 +10704,6 @@ function frame(now) {
     _restAcc += frameDt;
     const step = restDim > 0.5 ? 1 / 15 : 1 / 60;
     if (_restAcc >= step) { renderRest(_restAcc); _restAcc = 0; }
-    requestAnimationFrame(frame);
     return;
   }
   if (!_paused) {
@@ -10682,7 +10716,6 @@ function frame(now) {
     updateDayNight(frameDt);
     renderScene(frameDt);
   }
-  requestAnimationFrame(frame);
 }
 let _frameEwma = 1 / 60, _perfLite = false, _perfTier = 0, _frameCount = 0;
 
