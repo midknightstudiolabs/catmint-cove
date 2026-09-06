@@ -237,15 +237,21 @@ sense once the game around it is the v3 game.
 - [x] **Dress-up screen rebuilt** — two-pane (live cat + rack), tap-to-try,
   Save commits (shells + pearls), Take it all off, ‹ Name › switcher. This
   answered the "show the selected cat picture when adding decor" ask.
-- [~] **Inventory / manual placement** — first cut done (commit `64d6048`):
-  the 5 cosmetic **point props** (lantern, birdbath, rowboat, windmill,
-  stepping stones) are now buy-to-place + move + pack-away, via
-  `G.cosmetics.propPos` / `propBoxed` and a lightweight placement mode (ghost,
-  validity ring, no sim pause). Deliberately scoped away from comforts /
-  stations / trees — those still auto-arrange (count-based). Extending to
-  comforts is the bigger follow-up: it means an instance-position refactor +
-  a migration, and it touches pathing/attractors/capacity. Span props
-  (bunting, lantern string) stay anchored to the sign.
+- [x] **Inventory / manual placement** — props first (commit `64d6048`), then
+  extended to the **cottage / shade tree / flower patch** (commit `e09c0f6`):
+  - Props: the 5 cosmetic point props are buy-to-place + move + pack-away via
+    `G.cosmetics.propPos` / `propBoxed`.
+  - Decor: `G.cosmetics.decorPos["<type>:<index>"]` per-instance override read
+    by `rebuildDecor()`; absent = the seed-based auto-layout, so **no
+    migration** and existing coves are unchanged until moved. `rebuildAttractors()`
+    re-derives pathing on every move; a cat napping in a moved cottage wakes
+    and wanders out.
+  - One **"Arrange the cove"** mode (Shop → Decor) with handle rings on every
+    movable piece, plus **long-press dead-centre** on a piece in the world to
+    grab it. `validDecorSpot()` rejects water / sign / stations / overlaps.
+  - Still auto-arranged (deliberate): bowls / toys / beds / scratchers, the 4
+    stations, restoration projects. Span props (bunting, lantern string) stay
+    anchored to the sign.
 - [ ] Loading-screen cat wave (mock first).
 - [ ] Sparkle Pack IAP ($2.99, unlocks all effects) — after the pearl
   economy is playtested.

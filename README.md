@@ -10,8 +10,9 @@
 > this build; a frozen archive is in [`releases/v3/`](releases/v3/).
 > V2 (the return-visit layer) is frozen at tag `v2` / [`releases/v2/`](releases/v2/);
 > the earlier Sept-2 vertical slice is `v2-slice`.
-> Still open in V3: an inventory (pack away / re-place decor), the
-> loading-screen cat wave, and the $2.99 Sparkle Pack IAP.
+> Still open in V3: the loading-screen cat wave, and real store billing for
+> the IAPs (currently simulated). Done: "Arrange the cove" — move the cottage,
+> trees, flowers and props (long-press in the world, or Shop → Decor).
 
 ## Play
 

@@ -24,8 +24,10 @@
   group}`), `ACC_SLOTS`, `c.worn` / `c.owned`, `equipAccessory` /
   `buyAccessory`, and the two-pane dress-up screen. Adding accessories is
   content work. ✅ matches "do not hardcode accessories individually".
-- **Placeable cosmetic props** — buy → placement mode, move, pack away
-  (`G.cosmetics.propPos` / `propBoxed`). Cove-decoration foundation.
+- **Placeable cosmetic props + decor** — buy → placement mode, move, pack away
+  (`G.cosmetics.propPos` / `propBoxed`); the cottage / trees / flower patches
+  are movable too (`G.cosmetics.decorPos`), via an "Arrange the cove" mode and
+  long-press. Solid cove-decoration foundation for paid decor packs.
 - **Ad-free launch** — `ADS_ENABLED = false`, simulated `Ads` layer only.
 
 **Conflicts with this doc — resolved:**
