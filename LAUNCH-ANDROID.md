@@ -87,6 +87,12 @@ Follow **`STORE-SETUP.md` §3**:
 
 ## 4. First build  **[CI]** · ~8 min
 
+> **✅ Done 2026-09-06 (unsigned).** Run `34032346099` was green — `BUILD
+> SUCCESSFUL`, RevenueCat's Android SDK compiles clean on Capacitor 8 / AGP 8.13
+> / JDK 21, portrait lock + version stamp work, 9.8 MB `.aab`. (First run failed
+> on a Node-20 pin — Capacitor 8 CLI needs ≥22; fixed in `1ebaa24`.) **Re-run
+> this after the keystore's in (step 1) for the real signed bundle.**
+
 You can run this **before** step 1 to check the app compiles (RevenueCat +
 Capacitor 8) — with no keystore it emits an **unsigned** `.aab` you can't upload,
 but a green run confirms the pipeline. Do it again after step 1 for the real one.
