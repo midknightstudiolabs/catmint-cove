@@ -168,6 +168,8 @@
   .ts-card h1 b{color:var(--accent-bright);font-style:italic;font-weight:700;}
   .ts-sub{font-size:.92rem;line-height:1.5;color:var(--ink-soft);margin:0 0 1.4rem;}
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
+  .ts-hint{display:none;margin:.9rem 0 0;font-size:.78rem;color:var(--ink-soft);opacity:.75;}
+  #app.panning .ts-hint{display:block;}
 
   /* ---- bottom action bar ---- */
   #actions{
@@ -322,6 +324,7 @@
   .shop-item.pack{background:linear-gradient(180deg,#fff8ec,#fdeeceff);border-radius:14px;padding:.75rem;margin:.35rem 0;border-top:none;}
   .shop-item.pack .name{color:var(--apricot);}
   .shop-item.pack .owned{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent-bright);}
+  .shop-item.pack.keepsake{border:1.5px solid var(--apricot);box-shadow:0 2px 12px rgba(216,138,60,.16);}
   .shop-item.prestige{background:linear-gradient(180deg,#f0f4ea,#e7efe0);border-radius:14px;padding:.75rem;margin:.35rem 0;border-top:none;}
   .shop-item.prestige .name{color:var(--accent);}
   .shop-item.boostcard{background:linear-gradient(180deg,#fff6e6,#f6ecd6);border-radius:14px;padding:.7rem .8rem;margin:.35rem 0;border-top:none;}
@@ -948,6 +951,7 @@
       <h1>Catmint <b>Cove</b></h1>
       <p class="ts-sub">Cats wander in needing someone. Look after them, and the cove slowly becomes theirs.</p>
       <button class="btn primary" id="ts-go">Begin</button>
+      <p class="ts-hint">Cosier on a tablet 🐾</p>
     </div>
   </div>
   <div id="hud">
@@ -1243,6 +1247,7 @@ const W = 1150, H = 780;
 let displayScale = 1;   // css px per world unit
 let _worldOffX = 0, _worldOffY = 0, _overX = 0;   // FILL mode centres/crops the cove to cover the viewport; PAN mode leaves both 0
 let _viewBottomY = 780, _narrowUI = false;        // world-y at the bottom of the viewport, and whether the mobile tab bar is up
+let _panning = false;                             // true when the cove is wider than the screen (you drag to see it all — a bigger screen shows the lot)
 
 /* ---------- trait model ---------- */
 // likes: which attractor the cat gravitates to. 'cats' = other cats, 'roam' = wander.
@@ -1512,7 +1517,7 @@ function newGame() {
   return {
     v: 9,
     tutorialDone: false,
-    welcomeOffered: false,   // the one-time Welcome Pack nudge has been shown
+    welcomeShows: 0,         // times the Welcome Pack has been auto-offered (max 2; then only in the Shop)
     coldStep: 0,          // cold-open progress (0..COLD.length) — resumes if interrupted
     midknightSeeded: false,
     shells: 25,
@@ -1583,6 +1588,7 @@ function load() {
     if (G.scratch === undefined) G.scratch = 0;
     if (typeof G.food !== "number") G.food = 30;   // v3 care layer
     if (!Array.isArray(G.vet)) G.vet = [];          // v3 care: cats away at the vet
+    if (G.welcomeShows == null) G.welcomeShows = G.welcomeOffered ? 2 : 0;   // renamed 2026-09-06 (was a one-time bool)
     if (G.coveCharter === undefined) G.coveCharter = false;
     // field-guide expansion: a cove that had the original 11 keeps its Charter access
     if (G.dexGrandfathered === undefined) G.dexGrandfathered = ORIGINAL_11.every(k => G.dex && G.dex[k]);
@@ -4754,12 +4760,13 @@ function shopPackRow() {
 }
 // the Welcome Pack — a small first-purchase row. Shows once the player's a
 // little invested (or as a thank-you once owned); stays hidden before that.
-function shopWelcomeRow() {
+// `keepsake` = the pinned, highlighted treatment (top of the Decor tab).
+function shopWelcomeRow(keepsake) {
   const owned = iapOwns("welcome_pack");
   const engaged = G.tutorialDone && G.metrics && G.metrics.photos > 0 && residentCount() >= 2;
   if (!owned && !engaged) return null;
   const row = document.createElement("div");
-  row.className = "shop-item pack";
+  row.className = "shop-item pack" + (keepsake ? " keepsake" : "");
   row.innerHTML = owned
     ? `<div class="txt"><div class="name">🐾 Welcome Pack</div>
          <div class="desc">The amber ribbon's in the dress-up rack · welcome paw's by the sign · thank you 🧡</div></div>
@@ -4870,6 +4877,8 @@ function drawAccPreview(cv, key, coat) {
 
 function renderShopDecor(list) {
   const cm = G.cosmetics;
+  const wp = shopWelcomeRow(true);   // the welcome paw is decor — pin the pack up top, highlighted
+  if (wp) list.appendChild(wp);
   const decorCount = (G.decor.cottage || 0) + (G.decor.tree || 0) + (G.decor.flowers || 0);
   const propCount = DECOR_PROPS.filter(p => p.movable && cm.props[p.id] && !propBoxed(p.id)).length;
   if (decorCount + propCount > 0) {
@@ -6355,9 +6364,11 @@ function showWelcomeOffer(soft) {
     return;
   }
   openModal(`<div class="reveal">
-    <div class="kicker">${soft ? "Settling in?" : "🐾 Welcome Pack"}</div>
+    <div class="kicker">${soft ? "🐾 From Midknight" : "🐾 Welcome Pack"}</div>
     <h2>Welcome Pack</h2>
-    <p class="sub" style="margin:.1rem 0 .7rem">A little something for making the cove feel like home.</p>
+    <p class="sub" style="margin:.1rem 0 .7rem">${soft
+      ? "The things Midknight left by the sign. He looks after this place; now there's a bit of it that's yours to keep."
+      : "A little something for making the cove feel like home."}</p>
     <ul class="packperks">
       <li>An <b>amber ribbon</b> — for every cat, now and later</li>
       <li>A carved <b>welcome paw</b> by the cove sign</li>
@@ -6373,26 +6384,37 @@ function showWelcomeOffer(soft) {
     closeModal();
     if (!(await runPurchase("welcome_pack", "Welcome Pack", IAP_PRODUCTS.welcome_pack.price))) return;
     completePurchase("welcome_pack");
-    G.welcomeOffered = true;
+    G.welcomeShows = 2;
     logMoment("🐾", "The Welcome Pack — a welcome paw's been carved by the sign.", "care");
     toast("Welcome Pack unlocked — the amber ribbon's in the dress-up rack.", 5);
     if (panels.shop && !panels.shop.hidden) renderShop();
   };
-  document.getElementById("wp-no").onclick = () => { G.welcomeOffered = true; save(); closeModal(); };
+  document.getElementById("wp-no").onclick = () => { G._wpPutOffDay = G.opens || 1; save(); closeModal(); };
   document.getElementById("wp-restore").onclick = async () => { const ok = await restorePurchases(); if (ok) { closeModal(); if (panels.shop && !panels.shop.hidden) renderShop(); } };
 }
-// offer the Welcome Pack once, only after some genuine engagement — the
-// tutorial's done, a photo's been framed, and there are a couple of residents.
+// Midknight passes you the Welcome Pack once you're a little settled — tutorial
+// done, a photo framed, a couple of residents. Auto-offered at most twice: the
+// first as a Midknight moment, then once more ~3 days after a "maybe later".
+// Always browsable in the Shop regardless (shopWelcomeRow).
 function maybeOfferWelcome() {
-  if (G.welcomeOffered || iapOwns("welcome_pack")) return;
+  if (iapOwns("welcome_pack") || (G.welcomeShows || 0) >= 2) return;
   if (!G.tutorialDone) return;
   if (!(G.metrics && G.metrics.photos > 0)) return;
   if (residentCount() < 2) return;
+  if ((G.welcomeShows || 0) === 1 && (G.opens || 1) < (G._wpPutOffDay || 0) + 3) return;
   const busy = () => (scrim && scrim.classList.contains("on"))
     || (tutEl && tutEl.classList.contains("on")) || !!_cold || restMode;
   if (busy()) return;
-  G.welcomeOffered = true; save();
-  setTimeout(() => { try { if (!busy()) showWelcomeOffer(true); } catch (e) {} }, 1400);
+  const first = !(G.welcomeShows || 0);
+  G.welcomeShows = (G.welcomeShows || 0) + 1; save();
+  if (first) logMoment("🐾", "Midknight left something by the sign — an old amber ribbon, a carved bit of stone. “Was going to throw these out,” he says. He was not going to throw these out.", "tale");
+  setTimeout(() => {
+    try {
+      if (busy()) return;
+      if (first) toast("Midknight left something by the sign for you. 🐾", 5);
+      setTimeout(() => { try { if (!busy()) showWelcomeOffer(true); } catch (e) {} }, first ? 2800 : 400);
+    } catch (e) {}
+  }, 1400);
 }
 
 /* ---------- offline earnings ---------- */
@@ -7609,12 +7631,12 @@ function renderRest(dt) {
 /* ---------- Cove Festival ----------
    A watch-and-cheer race: entering costs nothing and nobody loses anything.
    Everyone who runs gets a small payout; your pick winning gets a bit more —
-   same shape as a daily goal, not a wager. Unlocks on day 7 (see
-   festUnlocked()/the day 5-6 teasers below) so it arrives as something the
-   cove builds up to rather than a button that's just always been there.
-   The dev panel's "🎪 festival" button / window.__cove.fest() bypass the
-   lock, same as they bypass everything else, for testing. */
-function festUnlocked() { return G.opens >= 7; }
+   same shape as a daily goal, not a wager. Unlocks on day 5 (see
+   festUnlocked()/the day 2-4 teasers in runPostTitleNudges) so it arrives as
+   something the cove builds up to rather than a button that's just always
+   been there. The dev panel's "🎪 festival" button / window.__cove.fest()
+   bypass the lock, same as they bypass everything else, for testing. */
+function festUnlocked() { return G.opens >= 5; }
 let festMode = false, _festDPR = 0, _festG = null;
 const RACE_W = 1400, RACE_H = 640, MAX_RACE_T = 20;
 let raceCats = [], festSpectators = [], racePick = null, raceWinner = null;
@@ -12221,6 +12243,8 @@ function resize() {
   const aspect = W / H;
   const fvw = vw || 390, fvh = vh || 780;
   const _pan = fvw / fvh < aspect * 0.78;
+  _panning = _pan;
+  try { document.getElementById("app").classList.toggle("panning", _pan); } catch (e) {}
   // a portrait phone pans a canvas ~3x wider than the screen — at DPR 2 that's a
   // ~3.9 MP backing store to clear + paint every frame. Cap the density there;
   // the cove art is soft cartoon shapes and 1.6x hides cleanly.
@@ -12619,14 +12643,26 @@ function runPostTitleNudges() {
     G.tips.push("rain_seen");
     setTimeout(() => toast("Tap 🌙 any time for a rainy-day rest — everyone naps inside with real rain. Good to work or sleep to.", 6), 2400);
   }
+  // a one-time nudge for players who are panning to see their cove — a bigger
+  // screen shows the whole thing, and that's when just-watching-cats really lands
+  if (G.tutorialDone && G.opens >= 3 && _panning && !G.tips.includes("bigscreen")) {
+    G.tips.push("bigscreen");
+    setTimeout(() => toast("The cove opens right up on a tablet or bigger screen — more of it in one view, more cats to just sit and watch. 🐾", 7), 3000);
+  }
   // the Cove Festival arrives as something the cove builds up to, not a
-  // button that was just always there — two teaser beats, then the unlock
-  if (G.tutorialDone && G.opens >= 5 && !G.tips.includes("fest_teaser1")) {
+  // button that was just always there — three teaser beats (day 2/3/4), then
+  // the unlock on day 5
+  if (G.tutorialDone && G.opens >= 2 && !G.tips.includes("fest_teaser0")) {
+    G.tips.push("fest_teaser0");
+    logMoment("📏", "Someone's been down at the field with a measuring string. Midknight watched a while, then lost interest.", "tale");
+    setTimeout(() => toast("Someone's been down at the field with a measuring string…", 5.5), 5000);
+  }
+  if (G.tutorialDone && G.opens >= 3 && !G.tips.includes("fest_teaser1")) {
     G.tips.push("fest_teaser1");
     logMoment("🎏", "Bunting's gone up down by the field — something's being planned.", "tale");
     setTimeout(() => toast("Bunting's gone up down by the field. Something's being planned…", 5.5), 1800);
   }
-  if (G.tutorialDone && G.opens >= 6 && !G.tips.includes("fest_teaser2")) {
+  if (G.tutorialDone && G.opens >= 4 && !G.tips.includes("fest_teaser2")) {
     G.tips.push("fest_teaser2");
     logMoment("🎪", "A track's being marked out by the field. Whatever it's for, it's close now.", "tale");
     setTimeout(() => toast("A track's being marked out by the field. Whatever it's for, it's close now.", 5.5), 4000);
