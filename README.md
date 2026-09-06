@@ -1,30 +1,36 @@
 # Catmint Cove
 
-> **Versioning note (2026-09-06):** the milestone previously labelled "V3 —
-> the return-visit layer" is now considered part of **V2** — v2 development
-> closed with that build. Tag `v2` points at it; the earlier Sept-2
-> vertical-slice point is kept as `v2-slice`; a frozen archive is in
-> [`releases/v2/`](releases/v2/). **V3 is a from-scratch rethink of the whole
-> design** — see [`V3-RETHINK.md`](V3-RETHINK.md).
+> **Versioning note (updated 2026-09-06):** **V3 ships from the repo root now.**
+> The rethink (see [`V3-RETHINK.md`](V3-RETHINK.md)) landed as an *additive*
+> update to V2, not a from-scratch rebuild — the calm rule was dropped for a
+> real care layer (hunger / thirst / a wellbeing buffer / sickness / a
+> telegraphed "a cat can leave" fail state), the economy tightened ~50%,
+> arrivals became accept/deny, cosmetic monetization came in, and every cat
+> reads its own state in the world and on a cove roster. Tag `v3` points at
+> this build; a frozen archive is in [`releases/v3/`](releases/v3/).
+> V2 (the return-visit layer) is frozen at tag `v2` / [`releases/v2/`](releases/v2/);
+> the earlier Sept-2 vertical slice is `v2-slice`.
+> Still open in V3: an inventory (pack away / re-place decor), the
+> loading-screen cat wave, and the $2.99 Sparkle Pack IAP.
 
 ## Play
 
 | | | |
 |---|---|---|
-| **V2 — beta** (share this) | https://midknightstudiolabs.github.io/catmint-cove/ | the clean build for testers — no dev tools |
-| **V2 — dev** (keep this) | https://midknightstudiolabs.github.io/catmint-cove/dev/ | same game + the dev panel, `D`/`R` keys |
+| **V3 — beta** (share this) | https://midknightstudiolabs.github.io/catmint-cove/ | the clean build for testers — no dev tools |
+| **V3 — dev** (keep this) | https://midknightstudiolabs.github.io/catmint-cove/dev/ | same game + the dev panel, `D`/`R` keys |
 | **V1** (original prototype, frozen) | https://midknightstudiolabs.github.io/catmint-cove/v1/ | the first greybox — tag `v1`, 2026-08-31 |
 
-All live and permanent. V2 ships from `index.html` at the repo root; `/dev/` is a
+All live and permanent. V3 ships from `index.html` at the repo root; `/dev/` is a
 one-line redirect to `/?dev` (single source of truth — the `DEV_BUILD` flag reads
 the URL). The **beta build has no dev access at all** — no dev panel, and the `R`
 key won't wipe a tester's save. In the **dev build** the panel opens on load with
 live stats + **RESET GAME**, or tap the cats-count pill 5× / press `D`.
 V1 is a copy of the frozen [`releases/v1/`](releases/v1/) snapshot. GitHub Pages
 redeploys ~1 min after a push to `main`. **The current build uses save
-`catmintCove.save.v9` and does NOT migrate older coves** — v9 is a clean break
-for the Phase A/B overhaul (rebalanced economy, restoration projects), so every
-existing cove starts fresh on this deploy. Pre-v9 blobs are cleared on load.
+`catmintCove.save.v9`** — V3 extends it in place (a returning V2 cove keeps its
+cats and picks up the care layer: full food store, cats start fed and well).
+Pre-v9 blobs are cleared on load.
 
 A playable greybox of the cozy-idle cat game concept. One self-contained HTML file,
 no build step, no dependencies.

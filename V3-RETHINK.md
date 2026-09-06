@@ -1,9 +1,13 @@
 # V3 — rethinking the whole design
 
-> Started 2026-09-06. A step back to re-examine the fundamentals before adding
-> anything: what the game *is*, whether the current systems earn their place,
-> and what V3 should be. V2 is frozen (`releases/v2/`, tag `v2`) as the restore
-> point. This is a living doc — it captures the rethink as it develops.
+> Started 2026-09-06. A step back to re-examine the fundamentals — then the
+> direction that shipped: keep V2, drop the calm rule, add a real care layer,
+> monetize cosmetics. **V3 was cut 2026-09-06** (tag `v3`, `releases/v3/`) with
+> the care layer, its legibility pass, treatment choices, the −50% economy,
+> accept/deny arrivals, the effect cosmetics + rebuilt dress-up, and the pond /
+> weather fixes all shipped. Still open: an inventory, the loading-screen cat
+> wave, the $2.99 Sparkle Pack IAP. V2 stays frozen (`releases/v2/`, tag `v2`)
+> as the restore point. This doc keeps the decision log.
 
 ---
 
