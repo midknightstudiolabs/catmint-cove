@@ -5098,9 +5098,14 @@ function renderShop() {
   list.insertAdjacentHTML("beforeend", `<p class="muted">${tab.intro}</p>`);
 
   if (shopTab === "featured") {
-    const wr = shopWelcomeRow();  if (wr) list.appendChild(wr);   // $0.99 → $2.99 → $4.99
-    const sr = shopSparkleRow();  if (sr) list.appendChild(sr);
-    list.appendChild(shopPackRow());
+    // ONE contextual pack — the next keepsake you don't own yet, never a wall of
+    // price tags. Each pack is still fully browsable where its content lives.
+    let packRow = null;
+    if (!iapOwns("welcome_pack"))            packRow = shopWelcomeRow();
+    else if (!iapOwns("sparkle_pack"))       packRow = shopSparkleRow();
+    else if (!iapOwns("founding_covekeeper")) packRow = shopPackRow();
+    // all three owned → no pack row; the shop's about the cove now
+    if (packRow) list.appendChild(packRow);
     list.appendChild(shopBoostRow());
     const rec = SHOP.find(i => i.cat === "comforts" && !i.soon && i.get() === 0) || SHOP.find(i => i.cat === "stations" && !i.soon && i.get() === 0);
     if (rec) { list.appendChild(shopHead("Suggested next")); list.appendChild(shopItemRow(rec)); }
