@@ -250,16 +250,44 @@
   .shop-tabs button.on{color:var(--accent);border-bottom-color:var(--accent);}
   #shopList{flex:1 1 auto;overflow-y:auto;padding:.2rem 1.15rem 1.4rem;-webkit-overflow-scrolling:touch;}
   #shopList > .muted{margin:.7rem 0 .2rem;}
-  .dress-cats{display:flex;gap:.35rem;flex-wrap:wrap;margin:.5rem 0 .1rem;}
-  .dress-cats button{font:inherit;font-size:.76rem;font-weight:600;padding:.32rem .6rem;border-radius:999px;
-    border:1px solid var(--panel-line);background:#eef1e3;color:var(--ink-soft);cursor:pointer;}
-  .dress-cats button.on{background:var(--accent);border-color:var(--accent);color:#fff;}
-  .dress-now{font-size:.82rem;color:var(--ink-soft);margin:.55rem 0 .2rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
-  .dress-now b{color:var(--ink);}
-  .shop-item.dress-item{gap:.7rem;}
-  .dress-prev{flex:0 0 auto;width:46px;height:46px;background:#eef1e3;border:1px solid var(--panel-line);border-radius:12px;}
-  .shop-item.dress-item.worn{background:#eaf3ea;border-radius:12px;}
-  .shop-item.dress-item.worn .name{color:var(--accent);}
+  #shopList.dressmode{overflow:hidden;padding:0;display:flex;}
+  /* v3 dress-up: live cat left, rack right (stacks on a narrow sheet) */
+  .dp{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;width:100%;}
+  @media(min-width:560px){.dp{flex-direction:row;}}
+  .dp-stage{display:flex;flex-direction:column;align-items:center;gap:.5rem;
+    padding:.9rem 1rem;border-bottom:1px solid var(--panel-line);flex:0 0 auto;}
+  @media(min-width:560px){.dp-stage{border-bottom:0;border-right:1px solid var(--panel-line);width:44%;justify-content:center;}}
+  .dp-switch{display:flex;align-items:center;gap:.5rem;}
+  .dp-switch button{width:1.8rem;height:1.8rem;border-radius:50%;border:1px solid var(--panel-line);
+    background:#eef1e3;color:var(--ink-soft);font-size:.9rem;cursor:pointer;}
+  .dp-switch button:disabled{opacity:.4;}
+  .dp-switch .who{font-family:"Fraunces",serif;font-weight:600;font-size:1rem;min-width:5rem;text-align:center;}
+  .dp-platform{width:100%;max-width:14rem;aspect-ratio:1/.94;border-radius:14px;
+    background:radial-gradient(120% 90% at 50% 14%, #ece2c9, #d6c9a8);position:relative;overflow:hidden;}
+  .dp-platform::after{content:"";position:absolute;left:14%;right:14%;bottom:10%;height:11%;
+    background:radial-gradient(closest-side, rgba(36,31,23,.16), transparent);border-radius:50%;}
+  .dp-cat{position:absolute;inset:0;width:100%;height:100%;}
+  .dp-wearing{font-size:.76rem;color:var(--ink-faint);font-style:italic;font-family:"Fraunces",serif;
+    text-align:center;min-height:1.1em;}
+  .dp-actions{display:flex;gap:.5rem;width:100%;max-width:14rem;}
+  .dp-actions .btn{flex:1;font-size:.84rem;padding:.5rem .6rem;}
+  .dp-actions .btn:last-child{flex:0 0 auto;color:var(--ink-soft);}
+  .dp-rack{flex:1 1 auto;overflow-y:auto;padding:.7rem 1rem 1.2rem;-webkit-overflow-scrolling:touch;}
+  .dp-rack h4{font-size:.66rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--ink-faint);margin:1rem 0 .5rem;}
+  .dp-rack h4:first-child{margin-top:0;}
+  .dp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(4.6rem,1fr));gap:.45rem;}
+  .dp-acc{border:1px solid var(--panel-line);border-radius:11px;background:#eef1e3;
+    padding:.5rem .35rem;text-align:center;cursor:pointer;display:flex;flex-direction:column;gap:.2rem;
+    transition:border-color .12s,background .12s;}
+  .dp-acc .dp-nm{font-size:.68rem;font-weight:600;color:var(--ink-soft);line-height:1.15;}
+  .dp-acc .dp-cost{font-size:.62rem;font-weight:700;color:var(--ink-faint);}
+  .dp-acc.owned .dp-cost{color:var(--accent-bright);}
+  .dp-acc.on{border-color:var(--accent);background:#e3efe3;}
+  .dp-acc.on .dp-nm{color:var(--accent);}
+  .dp-acc.premium{border-color:#d6bfe6;}
+  .dp-acc.premium .dp-cost{color:#9a7bc9;}
+  .dp-acc.premium.on{border-color:#9a7bc9;background:#efe7f5;}
   .shop-item{
     display:flex;gap:.8rem;align-items:center;justify-content:space-between;
     padding:.75rem 0;border-top:1px solid var(--panel-line);
@@ -3893,7 +3921,7 @@ let shopTab = "featured";
 let shopDressCat = null;
 function openShopDress(cat) {
   shopTab = "dress";
-  if (cat && !cat.mascot) shopDressCat = cat;
+  if (cat && !cat.mascot && cat !== shopDressCat) { shopDressCat = cat; _dressWorn = null; }
   if (panels.shop.hidden) togglePanel("shop");
   else { hideCatCard(); hideToast(); renderShop(); document.getElementById("shopList").scrollTop = 0; }
 }
@@ -4057,46 +4085,117 @@ function renderShopDecor(list) {
     toast(`A ${p.name.toLowerCase()} for the cove.`, 4);
   });
 }
+/* ---- v3: the dress-up screen — live cat on the left, the rack on the right,
+   try a whole look, then Save. nothing's charged until you save. ---- */
+let _dressWorn = null, _dressRAF = 0;
+function dressTryChanged(c) {
+  const cur = (c.worn || []).slice().sort().join();
+  return (_dressWorn || []).slice().sort().join() !== cur;
+}
+function dressNewItems(c) {   // items tried on that the cat doesn't own yet
+  return (_dressWorn || []).filter(k => !accOwned(c, k)).map(k => ACC_BY_KEY[k]).filter(Boolean);
+}
+function stopDressLoop() { if (_dressRAF) { cancelAnimationFrame(_dressRAF); _dressRAF = 0; } }
 function renderShopDress(list) {
   const cs = cats.filter(c => !c.mascot && !c.visitor);
-  if (!cs.length) { list.insertAdjacentHTML("beforeend", `<p class="muted">Coax a cat first — then you can dress them up here.</p>`); return; }
+  stopDressLoop();
+  if (!cs.length) {
+    list.classList.remove("dressmode");
+    list.insertAdjacentHTML("beforeend", `<p class="muted">Coax a cat first — then you can dress them up here.</p>`);
+    return;
+  }
   if (!shopDressCat || !cs.includes(shopDressCat)) shopDressCat = cs[0];
   const c = shopDressCat;
+  const ci = cs.indexOf(c);
+  if (!_dressWorn) _dressWorn = (c.worn || []).slice();
+  list.classList.add("dressmode");
 
-  const bar = document.createElement("div");
-  bar.innerHTML =
-    `<div class="dress-cats">` + cs.map((x, i) =>
-      `<button data-ci="${i}" class="${x === c ? "on" : ""}">${x.name}</button>`).join("") + `</div>` +
-    `<div class="dress-now">Wearing: <b>${c.worn && c.worn.length ? wornList(c).map(k => ACC_BY_KEY[k].label).join(", ") : "nothing"}</b>` +
-      (c.worn && c.worn.length ? ` <button class="btn small" data-buy="">take it all off</button>` : ``) + `</div>`;
-  bar.querySelectorAll(".dress-cats button").forEach(b => b.onclick = () => {
-    shopDressCat = cs[+b.dataset.ci]; renderShop(); list.scrollTop = 0;
-  });
-  list.appendChild(bar);
+  const groups = [...new Set(ACCESSORIES.map(a => a.group))];
+  const rackHTML = groups.map(grp => {
+    const items = ACCESSORIES.filter(a => a.group === grp);
+    return `<h4>${grp === "Sparkle" ? "✦ Sparkle" : grp}</h4><div class="dp-grid">` + items.map(a => {
+      const owned = accOwned(c, a.key), on = _dressWorn.includes(a.key);
+      const cost = a.pearls ? `✦ ${a.pearls}` : `◈ ${a.price}`;
+      return `<button class="dp-acc${on ? " on" : ""}${a.premium ? " premium" : ""}${owned ? " owned" : ""}" data-acc="${a.key}" title="${esc(a.blurb)}">
+        <span class="dp-nm">${a.label}</span>
+        <span class="dp-cost">${owned ? "yours" : cost}</span>
+      </button>`;
+    }).join("") + `</div>`;
+  }).join("");
 
-  for (const grp of [...new Set(ACCESSORIES.map(a => a.group))]) {
-    list.appendChild(shopHead(grp));
-    for (const a of ACCESSORIES.filter(x => x.group === grp)) {
-      const owned = accOwned(c, a.key), worn = catWears(c, a.key);
-      const row = document.createElement("div");
-      row.className = "shop-item dress-item" + (worn ? " worn" : "");
-      row.innerHTML =
-        `<canvas class="dress-prev" width="46" height="46"></canvas>
-         <div class="txt"><div class="name">${a.label}</div>
-           <div class="desc">${worn ? "Worn now" : owned ? "In " + c.name + "'s wardrobe" : a.blurb}</div></div>
-         <button class="btn primary" data-buy="${a.key}">${worn ? "take off" : owned ? "wear" : "◈ " + a.price}</button>`;
-      drawAccPreview(row.querySelector("canvas"), a.key, c.coat);
-      list.appendChild(row);
+  list.innerHTML = `<div class="dp">
+    <div class="dp-stage">
+      <div class="dp-switch">
+        <button data-nav="-1" aria-label="previous cat"${cs.length < 2 ? " disabled" : ""}>‹</button>
+        <span class="who">${esc(c.name)}</span>
+        <button data-nav="1" aria-label="next cat"${cs.length < 2 ? " disabled" : ""}>›</button>
+      </div>
+      <div class="dp-platform"><canvas class="dp-cat" width="300" height="280"></canvas></div>
+      <div class="dp-wearing" id="dp-wearing"></div>
+      <div class="dp-actions">
+        <button class="btn primary" id="dp-save">Save the look</button>
+        <button class="btn" id="dp-clear">Take it all off</button>
+      </div>
+    </div>
+    <div class="dp-rack">${rackHTML}</div>
+  </div>`;
+
+  const cv = list.querySelector(".dp-cat");
+  const wearingEl = list.querySelector("#dp-wearing");
+  const saveBtn = list.querySelector("#dp-save");
+  function refresh() {
+    _dressWorn = normalizeWorn(_dressWorn);
+    list.querySelectorAll(".dp-acc").forEach(b => b.classList.toggle("on", _dressWorn.includes(b.dataset.acc)));
+    const names = wornList({ worn: _dressWorn }).map(k => ACC_BY_KEY[k].label);
+    wearingEl.textContent = names.length ? "Trying: " + names.join(", ") : "Nothing on yet";
+    const news = dressNewItems(c);
+    const cS = news.reduce((s, a) => s + (a.price || 0), 0);
+    const cP = news.reduce((s, a) => s + (a.pearls || 0), 0);
+    if (!dressTryChanged(c)) { saveBtn.textContent = "Saved"; saveBtn.disabled = true; }
+    else if (!news.length) { saveBtn.textContent = "Save the look"; saveBtn.disabled = false; }
+    else {
+      const bits = [cS ? `◈ ${cS}` : "", cP ? `✦ ${cP}` : ""].filter(Boolean).join("  ");
+      saveBtn.textContent = `Save · ${bits}`;
+      saveBtn.disabled = (cS > Math.floor(G.shells)) || (cP > (G.pearls || 0));
     }
   }
-  list.querySelectorAll("[data-buy]").forEach(b => b.onclick = () => {
-    const k = b.dataset.buy;
-    if (k === "") equipAccessory(c, null);
-    else if (catWears(c, k)) equipAccessory(c, k);      // "take off"
-    else if (!buyAccessory(c, k)) return;
-    if (cardCat === c) { renderWardrobe(c); cardTimer = 8; }
-    renderShop();
+  refresh();
+  (function loop() {
+    if (list.classList.contains("dressmode") && !panels.shop.hidden) {
+      dressPreview(cv, c, _dressWorn);
+      _dressRAF = requestAnimationFrame(loop);
+    } else _dressRAF = 0;
+  })();
+
+  list.querySelector(".dp-rack").addEventListener("click", e => {
+    const b = e.target.closest(".dp-acc"); if (!b) return;
+    const k = b.dataset.acc, slot = accSlot(k);
+    if (_dressWorn.includes(k)) _dressWorn = _dressWorn.filter(x => x !== k);
+    else _dressWorn = _dressWorn.filter(x => accSlot(x) !== slot).concat(k);
+    ensureAudio(); tone(523.25, 0.05, "sine", 0.03);
+    refresh();
   });
+  list.querySelector("#dp-clear").onclick = () => { _dressWorn = []; ensureAudio(); tone(440, 0.06, "sine", 0.03); refresh(); };
+  list.querySelectorAll("[data-nav]").forEach(b => b.onclick = () => {
+    const n = cs.length, next = cs[(ci + (+b.dataset.nav) + n) % n];
+    shopDressCat = next; _dressWorn = null; renderShop();
+  });
+  saveBtn.onclick = () => {
+    const news = dressNewItems(c);
+    const cS = news.reduce((s, a) => s + (a.price || 0), 0);
+    const cP = news.reduce((s, a) => s + (a.pearls || 0), 0);
+    if (cS > Math.floor(G.shells)) { toast(`Need ◈ ${cS} for the new pieces.`, 3); return; }
+    if (cP > (G.pearls || 0)) { toast(`Need ✦ ${cP} for the sparkle pieces.`, 3); return; }
+    G.shells -= cS; G.pearls -= cP;
+    for (const a of news) (c.owned || (c.owned = [])).push(a.key);
+    c.worn = normalizeWorn(_dressWorn);
+    if (news.length) { sfx("buy"); spawnParticles(c.x, c.y - 20, "twinkle", news.some(a => a.premium) ? 14 : 9);
+      logMoment(news.some(a => a.premium) ? "✨" : "🎀", `${c.name} got a new look.`); fireTip("first_buy"); }
+    else { ensureAudio(); tone(659.25, 0.08, "sine", 0.035); spawnParticles(c.x, c.y - 20, "twinkle", 5); }
+    if (cardCat === c) { renderWardrobe(c); cardTimer = 8; }
+    syncHud(); save();
+    refresh();
+  };
 }
 
 function renderShop() {
@@ -4106,6 +4205,7 @@ function renderShop() {
   tabsEl.innerHTML = SHOP_TABS.map(t => `<button data-tab="${t.id}" class="${t.id === shopTab ? "on" : ""}">${t.label}</button>`).join("");
   tabsEl.querySelectorAll("button").forEach(b => b.onclick = () => { shopTab = b.dataset.tab; renderShop(); list.scrollTop = 0; });
 
+  if (shopTab !== "dress") { list.classList.remove("dressmode"); stopDressLoop(); _dressWorn = null; }
   list.innerHTML = "";
   const tab = SHOP_TABS.find(t => t.id === shopTab);
   list.insertAdjacentHTML("beforeend", `<p class="muted">${tab.intro}</p>`);
@@ -4503,7 +4603,7 @@ const panels = {
   today: document.getElementById("today"),
 };
 function anyPanelOpen() { for (const k in panels) if (!panels[k].hidden) return true; return false; }
-function closeAllPanels() { for (const k in panels) panels[k].hidden = true; }
+function closeAllPanels() { for (const k in panels) panels[k].hidden = true; stopDressLoop(); _dressWorn = null; }
 function togglePanel(name) {
   ensureAudio();
   exitFocus();
@@ -4604,6 +4704,38 @@ function miniCat(canvasEl, coatKey, star, state, silhouette, scale) {
     g.fillRect(0, 0, canvasEl.width, canvasEl.height);
     g.restore();
   }
+}
+// v3: the big live cat on the dress-up stage — real cat's coat/star/markings,
+// wearing whatever's currently tried on (not yet saved)
+function dressPreview(canvasEl, c, tryWorn) {
+  const g = canvasEl.getContext("2d");
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvasEl.width, canvasEl.height);
+  const fake = new Cat({ coatKey: c.coatKey, star: c.star, markSeed: c.markSeed,
+    mascot: c.mascot, bornAt: c.bornAt, x: 0, y: 0 });
+  fake.state = "loafing"; fake.blink = 3; fake.bob = 0.6; fake.tail = 0.3; fake.trotting = false;
+  fake.worn = normalizeWorn(tryWorn || []);
+  // static rainbow hint behind the cat if that effect's tried on
+  if (fake.worn.includes("rainbow")) {
+    g.save();
+    g.translate(canvasEl.width / 2, canvasEl.height * 0.62);
+    g.lineCap = "round"; g.lineWidth = canvasEl.width * 0.02;
+    for (let i = 0; i < 5; i++) {
+      g.strokeStyle = _RAINBOW[i]; g.globalAlpha = 0.5;
+      const y = (i - 2) * canvasEl.width * 0.028;
+      g.beginPath();
+      g.moveTo(canvasEl.width * 0.06, y + canvasEl.width * 0.04);
+      g.quadraticCurveTo(canvasEl.width * 0.32, y - canvasEl.width * 0.02, canvasEl.width * 0.5, y);
+      g.stroke();
+    }
+    g.restore();
+  }
+  g.save();
+  g.translate(canvasEl.width / 2, canvasEl.height - 8);
+  const s = Math.min(canvasEl.width, canvasEl.height) / 70;
+  g.scale(s, s);
+  drawCat(g, fake, false);
+  g.restore();
 }
 function renderDex() {
   const met = dexCount(), total = ROLLABLE.length;
@@ -8356,11 +8488,11 @@ function drawAccessory(g, kind, P, coat, kit) {
     // flap is slow; quickens with P._wingRate (set from cat speed).
     const t = performance.now() / 1000;
     const flap = Math.sin(t * (P._wingRate || 3)) * 0.5 + 0.5;    // 0..1
-    const by = P.top * 0.6, root = P.bw * 0.42, sc = kit ? 1.15 : 1.55;
+    const by = P.top * 0.32 - 2, root = P.bw * 0.66, sc = kit ? 1.05 : 1.35;
     for (const s of [-1, 1]) {
       g.save();
       g.translate(s * root, by);
-      g.rotate(s * (-0.7 + flap * 0.4));
+      g.rotate(s * (-0.4 + flap * 0.35));
       g.scale(s * sc, sc);
       // soft outer glow
       g.fillStyle = "rgba(255,255,255,0.18)";
