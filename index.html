@@ -353,6 +353,15 @@
   .modal .packperks{list-style:none;padding:0;margin:.1rem 0 1rem;font-size:.9rem;color:var(--ink-soft);text-align:left;}
   .modal .packperks li{padding:.16rem 0 .16rem 1.3rem;position:relative;}
   .modal .packperks li::before{content:"✓";position:absolute;left:0;color:var(--accent-bright);font-weight:700;}
+  .modal .food-tiers{display:flex;flex-direction:column;gap:.45rem;margin:.2rem 0 1rem;}
+  .modal .food-tier{display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+    font:inherit;text-align:left;padding:.6rem .9rem;border-radius:12px;cursor:pointer;
+    border:1px solid var(--panel-line);background:#f3ede0;color:var(--ink-soft);}
+  .modal .food-tier b{font-size:.95rem;color:var(--ink);}
+  .modal .food-tier span{font-size:.8rem;}
+  .modal .food-tier.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .modal .food-tier.primary b,.modal .food-tier.primary span{color:#fff;}
+  .modal .food-tier:disabled{opacity:.5;cursor:default;}
   .btn.rewarded{background:#f3ede0;border-color:var(--panel-line);}
   button.btn.primary.wantcoax{opacity:.72;}
 
@@ -2013,7 +2022,8 @@ const HUNGER_RATE = 0.014;            // per real sim-second: a cat gets peckish
 const THIRST_RATE = 0.02;
 const EAT_DRAIN   = 3.6;              // per sec while at the bowl (state lasts ~12-20s)
 const DRINK_DRAIN = 7.0;              // per sec while drinking (state ~5-8s)
-const FOOD_MAX    = 56;               // servings the cove-wide store holds
+const FOOD_PER_CAT_DAY = 4;           // servings a resident eats across a real day — the steady rate the estimate + offline use
+const FOOD_STOCK_DAYS  = 14;          // you can stock the larder up to this many days ahead, no further
 // health is a BUFFER, not a dice roll — it drains only while a cat is genuinely
 // hungry or thirsty, and refills while both are comfortable. hits 0 → sick.
 const HUNGER_HI   = 72, THIRST_HI = 76;     // above this, health starts to slip
@@ -2023,8 +2033,35 @@ const HEALTH_REGEN = 0.05;           // per sim-sec while comfortable — bounce
 const SICK_FLOOR   = 6;              // a sick cat's health can't climb past this until treated
 const LEAVE_GRACE_MS = 24 * 3600 * 1000;    // sick / starving THIS long before the 🎒 leave warning goes up
 const LEAVE_AFTER_MS = 24 * 3600 * 1000;    // ...then this long more, warning up, before the cat actually leaves
-function foodBagCost(){ return Math.round(12 + residentCount() * 4); }   // a "sack of kibble"
-const FOOD_BAG = 22;
+// --- food store: a steady daily burn, so "when does it run out" is knowable ---
+function foodEaters()  { return Math.max(1, cats.reduce((n, c) => n + (c.visitor ? 0 : 1), 0)); }
+function foodPerDay()  { return foodEaters() * FOOD_PER_CAT_DAY; }        // servings/day for the current cove
+function foodPerSec()  { return foodPerDay() / 86400; }
+function foodDaysLeft(){ return (G.food || 0) / foodPerDay(); }
+function foodStockCap(){ return foodPerDay() * FOOD_STOCK_DAYS; }
+// "≈ 2 days", "≈ 14 hours", "the bowls are empty"
+function foodLeftText() {
+  const d = foodDaysLeft();
+  if (d <= 0) return "the bowls are empty";
+  if (d < 1)  { const h = Math.max(1, Math.round(d * 24)); return `≈ ${h} hour${h === 1 ? "" : "s"} of food left`; }
+  const days = Math.floor(d), hrs = Math.round((d - days) * 24);
+  return `≈ ${days} day${days === 1 ? "" : "s"}${hrs ? ` ${hrs} hr${hrs === 1 ? "" : "s"}` : ""} of food left`;
+}
+function foodServingCost(){ return (12 + residentCount() * 4) / 22; }     // per serving — matches the old sack's rate
+// a bulk buy sized to feed the current cove for `days`
+function foodBulk(days) {
+  const servings = Math.max(1, Math.ceil(foodPerDay() * days));
+  const disc = days >= 7 ? 0.8 : days >= 3 ? 0.88 : 1;                    // stock up, save a little
+  return { days, servings, cost: Math.max(1, Math.round(servings * foodServingCost() * disc)) };
+}
+function buyFood(days) {
+  const b = foodBulk(days);
+  if (G.shells < b.cost || (G.food || 0) >= foodStockCap()) return false;
+  G.shells -= b.cost;
+  G.food = Math.min(foodStockCap(), (G.food || 0) + b.servings);
+  sfx("buy"); syncHud(); save();
+  return true;
+}
 function anyWaterSource(){ return obstacles.some(o => o.water); }
 // ways to treat a sick cat, beyond plain medicine
 function medicineCost(){ return 30 + residentCount() * 4; }             // gradual, treat-all
@@ -2323,25 +2360,31 @@ function declineArrival() {
 /* ---------- v3 care: refill the food store, treat a sick cat ---------- */
 function openFoodRefill() {
   ensureAudio();
-  const cost = foodBagCost(), pct = Math.round((G.food / FOOD_MAX) * 100);
-  const full = G.food >= FOOD_MAX;
-  const afford = G.shells >= cost;
-  openModal(`<div class="reveal">
-    <div class="kicker">The food bowls</div>
-    <h2>${G.food <= 0 ? "Empty" : G.food < FOOD_MAX * 0.3 ? "Running low" : "Food store"}</h2>
-    <p class="sub">${G.food} of ${FOOD_MAX} servings left${pct <= 0 ? " — the cats can't eat." : "."}<br>
-      A sack of kibble tops it up by ${FOOD_BAG}.</p>
-    <div class="row">
-      <button class="btn primary" id="food-buy" ${full || !afford ? "disabled" : ""}>${full ? "Full" : "◈ " + cost + " — refill"}</button>
-      <button class="btn" id="food-close">Close</button>
-    </div>
-  </div>`);
-  document.getElementById("food-buy").onclick = () => {
-    if (G.shells < cost || G.food >= FOOD_MAX) return;
-    G.shells -= cost; G.food = Math.min(FOOD_MAX, G.food + FOOD_BAG);
-    sfx("buy"); syncHud(); save(); closeModal();
-    toast("Food bowls topped up.", 3);
+  const stocked = (G.food || 0) >= foodStockCap() - foodPerDay() * 0.5;   // basically full
+  const tiers = [
+    { days: 1, label: "1 day" },
+    { days: 3, label: "3 days" },
+    { days: 7, label: "1 week" },
+  ].map(t => ({ ...t, ...foodBulk(t.days) }));
+  const row = (t) => {
+    const afford = G.shells >= t.cost;
+    return `<button class="btn food-tier${afford && !stocked ? " primary" : ""}" data-days="${t.days}" ${(!afford || stocked) ? "disabled" : ""}>
+      <b>${t.label}</b><span>${t.servings} servings · ◈ ${t.cost}</span></button>`;
   };
+  openModal(`<div class="reveal">
+    <div class="kicker">The food store</div>
+    <h2>${G.food <= 0 ? "Empty" : foodDaysLeft() < 1 ? "Running low" : "Food store"}</h2>
+    <p class="sub">${Math.round(G.food || 0)} servings in the larder — <b>${foodLeftText()}</b>
+      for ${foodEaters()} cat${foodEaters() === 1 ? "" : "s"} (about ${foodPerDay()} a day).${stocked ? "<br>The larder's about as full as it gets." : ""}</p>
+    <div class="food-tiers">${tiers.map(row).join("")}</div>
+    <div class="row"><button class="btn" id="food-close">Close</button></div>
+  </div>`);
+  document.querySelectorAll("#modal .food-tier").forEach(b => b.onclick = () => {
+    const d = +b.dataset.days;
+    if (!buyFood(d)) return;
+    closeModal();
+    toast(foodDaysLeft() >= 1 ? `Larder stocked — ${foodLeftText().replace("≈ ", "")}.` : "Bowls topped up.", 3);
+  });
   document.getElementById("food-close").onclick = closeModal;
 }
 function sickCats() { return cats.filter(c => c.sick && !c.visitor); }
@@ -2470,6 +2513,7 @@ function checkVetReturns() {
 // v3: a cat that's been sick-and-untreated or starving too long gives up and
 // leaves. stays in the Catdex; you can coax that coat again, not that cat.
 let _neglectLeftAt = [];   // real timestamps of recent neglect departures — a hard blast-radius cap
+let _foodLowWarned = false; // one-shot "food's getting low" toast, re-arms once the larder's comfortable again
 function neglectLeave(c) {
   if (c._leaving || c.mascot) return;
   const now = Date.now();
@@ -3180,7 +3224,14 @@ function updateCat(c, dt) {
     // a cat only actually eats (and uses a serving) when it's hungry enough to
     // bother — a not-hungry cat at the bowl is just there for the vibes
     const reallyEating = eating && G.food > 0 && (c._ate || c.hunger > 26);
-    if (reallyEating && !c._ate) { c._ate = 1; G.food = Math.max(0, G.food - 1); }
+    if (reallyEating && !c._ate) {
+      c._ate = 1; G.food = Math.max(0, G.food - 1);
+      // one-shot heads-up as the larder crosses below a day's worth
+      if (G.tutorialDone && foodDaysLeft() < 1 && !_foodLowWarned) {
+        _foodLowWarned = true;
+        toast(`The food store's getting low — ${foodLeftText().replace("≈ ", "about ")}. Tap 🍚 to stock up.`, 6);
+      } else if (foodDaysLeft() >= 1.2) _foodLowWarned = false;
+    }
     if (!eating) c._ate = 0;
     c.hunger = clamp(c.hunger + (reallyEating ? -EAT_DRAIN : HUNGER_RATE) * dt, 0, 100);
     c.thirst = clamp(c.thirst + (drinking ? -DRINK_DRAIN : THIRST_RATE) * dt, 0, 100);
@@ -4148,7 +4199,7 @@ function renderCatCare(c) {
     cc.treat.hidden = false;
     cc.treat.onclick = () => { hideCatCard(true); openMedicine(c); };
   } else if (need === "hungry" && G.food <= 0) {
-    cc.treat.textContent = `Refill the bowls · ◈ ${foodBagCost()}`;
+    cc.treat.textContent = `Stock the food store`;
     cc.treat.hidden = false;
     cc.treat.onclick = () => { hideCatCard(true); openFoodRefill(); };
   }
@@ -4571,11 +4622,11 @@ function showWywaReport(onDone) {
   fillRoster(collapseRows(rep.rows));
   const foot = document.getElementById("roster-foot");
   const finish = () => { const d = _reportDone; _reportDone = null; closeRoster(); _wywaReport = null; d && d(); };
-  if (rep.foodEmpty && G.shells >= foodBagCost()) {
-    foot.innerHTML = `<button id="rp-fix" class="primary">Refill the bowls · ◈ ${foodBagCost()}</button><button id="rp-later">Later</button>`;
+  if (rep.foodEmpty && G.shells >= foodBulk(3).cost) {
+    const b = foodBulk(3);
+    foot.innerHTML = `<button id="rp-fix" class="primary">Restock 3 days · ◈ ${b.cost}</button><button id="rp-later">Later</button>`;
     document.getElementById("rp-fix").onclick = () => {
-      G.shells -= foodBagCost(); G.food = Math.min(FOOD_MAX, G.food + FOOD_BAG);
-      sfx("buy"); syncHud(); save(); finish();
+      buyFood(3); finish();
     };
     document.getElementById("rp-later").onclick = finish;
   } else {
@@ -5239,10 +5290,14 @@ function syncHud() {
   elCatCap.textContent = capacity();
   const fl = document.getElementById("foodlevel");
   if (fl) {
-    fl.textContent = Math.round(G.food || 0);
+    const dleft = foodDaysLeft();
+    fl.textContent = (G.food || 0) <= 0 ? "0" : dleft >= 1 ? `${Math.floor(dleft)}d` : `${Math.max(1, Math.round(dleft * 24))}h`;
     const fs = document.getElementById("foodStat");
-    fs.classList.toggle("warn", G.food > 0 && G.food <= FOOD_MAX * 0.25);
+    fs.classList.toggle("warn", (G.food || 0) > 0 && dleft < 1);
     fs.classList.toggle("crit", (G.food || 0) <= 0);
+    fs.dataset.tip = (G.food || 0) <= 0
+      ? "The food store is empty — the cats can't eat. Tap to stock up."
+      : `${Math.round(G.food)} servings · ${foodLeftText()}. Tap to stock up.`;
   }
   document.getElementById("opens").textContent = G.opens;
   document.getElementById("coaxCost").textContent = coaxPrice();
@@ -6406,9 +6461,8 @@ let _wywaReport = null;
 function offlineCare(elapsed) {
   _wywaReport = null;
   if (elapsed < 120 || !cats.length) return;
-  const eaters = Math.max(1, cats.filter(c => !c.visitor).length);
-  const consume = eaters / 1400;                        // servings/sec across the cove
-  const foodSecs = G.food / consume;                    // how long the store lasted
+  const consume = foodPerSec();                         // servings/sec — the same steady rate the "days left" estimate shows
+  const foodSecs = (G.food || 0) / consume;             // how long the store lasted
   const starveSecs = Math.max(0, elapsed - foodSecs);
   G.food = Math.max(0, G.food - consume * elapsed);
   const watered = anyWaterSource();
@@ -12294,7 +12348,7 @@ window.__cove = {
   arrival(){ visitorTimer = 0.001; return "a cat will show up at the edge on the next sim tick"; },
   weather(){ return { theme: G.cosmetics && G.cosmetics.theme, kind: (DECOR_THEMES[G.cosmetics && G.cosmetics.theme] || {}).weather, particles: _weatherP.length, sky: window._sky ? +window._sky.df.toFixed(2) : null }; },
   care(cmd, v){
-    if (cmd === "food") { G.food = clamp(v ?? FOOD_MAX, 0, FOOD_MAX); syncHud(); return G.food; }
+    if (cmd === "food") { G.food = clamp(v ?? foodStockCap(), 0, foodStockCap() * 2); syncHud(); return `${Math.round(G.food)} servings · ${foodLeftText()}`; }
     if (cmd === "starve") { G.food = 0; for (const c of cats) if (!c.visitor && !c.mascot) { c.hunger = 100; c.thirst = 100; c.health = 4; } syncHud(); return "everyone's starving"; }
     if (cmd === "sick") { const c = cats.find(x => !x.visitor && !x.mascot && !x.sick); if (c) { c.sick = { since: Date.now() }; c.health = SICK_FLOOR; c._need = "sick"; c._ill = true; syncHud(); return c.name + " is sick"; } return "no well cat to sicken"; }
     if (cmd === "leave") { const c = cats.find(x => !x.visitor && !x.mascot); if (c) { c.sick = { since: Date.now() - LEAVE_GRACE_MS - 1000 }; c.health = SICK_FLOOR; c._criticalSince = Date.now() - LEAVE_GRACE_MS - 1000; c._leaveSince = Date.now(); c._need = "leave"; c._ill = true; syncHud(); return c.name + " is on the leave clock"; } return "no cat"; }
@@ -12307,7 +12361,7 @@ window.__cove = {
     if (cmd === "groom") { const c = cats.find(x => !x.visitor && !x.mascot); if (c) { c.health = Math.min(c.health ?? 100, 45); openGroom(c); return "opened for " + c.name; } return "no cat"; }
     if (cmd === "vet") { const c = cats.find(x => !x.visitor && !x.mascot); if (c) { sendToVet(c); return c.name + " -> vet"; } return "no cat"; }
     if (cmd === "vetback") { for (const v of (G.vet || [])) v.endsAt = Date.now() - 1000; checkVetReturns(); return "vet emptied"; }
-    return { food: G.food + "/" + FOOD_MAX, water: anyWaterSource(), atVet: (G.vet || []).map(v => v.data.name),
+    return { food: `${Math.round(G.food)} (${foodLeftText()}, ${foodPerDay()}/day)`, water: anyWaterSource(), atVet: (G.vet || []).map(v => v.data.name),
       cats: cats.filter(c => !c.visitor).map(c => ({ n: c.name, hunger: Math.round(c.hunger), thirst: Math.round(c.thirst), health: Math.round(c.health ?? 100), need: c._need || null, sick: !!c.sick })) };
   },
   wywa(id){
