@@ -2813,16 +2813,21 @@ function updateCat(c, dt) {
     }
   }
 
-  // v3: rainbow-trail cosmetic — record a fading breadcrumb while the cat moves
+  // v3: rainbow-trail cosmetic — lay down a breadcrumb while the cat's on the
+  // move; each point fades over ~1.5s so the ribbon streams out and dissolves
   if (c.worn && c.worn.includes("rainbow")) {
     const tr = c._trail || (c._trail = []);
-    if (spd > 8) {
+    if (spd > 4) {
       const last = tr[tr.length - 1];
-      if (!last || Math.hypot(c.x - last.x, c.y - last.y) > 6) tr.push({ x: c.x, y: c.y - 6, life: 1 });
+      if (!last || Math.hypot(c.x - last.x, c.y - last.y) > 4) tr.push({ x: c.x, y: c.y - 8, life: 1 });
+      if (spd > 90 && Math.random() < dt * 8) spawnParticles(c.x + rand(-6, 6), c.y - 8, "twinkle", 1);
     }
-    for (let i = tr.length - 1; i >= 0; i--) { tr[i].life -= dt * 1.3; if (tr[i].life <= 0) tr.splice(i, 1); }
-    if (tr.length > 40) tr.splice(0, tr.length - 40);
-  } else if (c._trail) c._trail = null;
+    for (let i = tr.length - 1; i >= 0; i--) { tr[i].life -= dt * 0.68; if (tr[i].life <= 0) tr.splice(i, 1); }
+    if (tr.length > 80) tr.splice(0, tr.length - 80);
+  } else if (c._trail && c._trail.length) {                 // cosmetic removed — let the last of it fade
+    for (let i = c._trail.length - 1; i >= 0; i--) { c._trail[i].life -= dt * 1.6; if (c._trail[i].life <= 0) c._trail.splice(i, 1); }
+    if (!c._trail.length) c._trail = null;
+  }
 
   // gait + facing driven by smoothed velocity. the bar to "stepping" sits just
   // above the dead-stop threshold (with hysteresis) so ANY real movement shows
@@ -9254,25 +9259,34 @@ function drawToken(g, tk) {
   g.restore();
 }
 
-// v3: the rainbow-trail cosmetic — a fading 5-band ribbon behind moving cats
+// v3: the rainbow-trail cosmetic — a 6-band ribbon that follows the cat's
+// path, offset perpendicular to the direction of travel, each segment fading
+// with the age of its points so it streams out and dissolves behind them.
 const _RAINBOW = ["#e0655f", "#e6a94e", "#e8cf5a", "#7bb56a", "#5f9fd0", "#9a7bc9"];
+const _RB_GAP = 2.1;
 function drawTrails(g) {
   for (const c of cats) {
     const tr = c._trail;
     if (!tr || tr.length < 2) continue;
     g.save();
     g.lineCap = "round"; g.lineJoin = "round";
-    for (let band = 0; band < 5; band++) {
-      g.beginPath();
-      for (let i = 0; i < tr.length; i++) {
-        const p = tr[i], off = (band - 2) * 3;
-        if (i === 0) g.moveTo(p.x, p.y + off);
-        else g.lineTo(p.x, p.y + off);
+    for (let i = 1; i < tr.length; i++) {
+      const a = tr[i - 1], b = tr[i];
+      let dx = b.x - a.x, dy = b.y - a.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const px = -dy / d, py = dx / d;                 // unit perpendicular
+      const life = (a.life + b.life) * 0.5;
+      const w = 1.4 + 1.4 * life;                      // fatter near the cat (fresh), thinner at the tail
+      g.globalAlpha = 0.6 * life;
+      g.lineWidth = w;
+      for (let band = 0; band < _RAINBOW.length; band++) {
+        const o = (band - (_RAINBOW.length - 1) / 2) * _RB_GAP;
+        g.strokeStyle = _RAINBOW[band];
+        g.beginPath();
+        g.moveTo(a.x + px * o, a.y + py * o);
+        g.lineTo(b.x + px * o, b.y + py * o);
+        g.stroke();
       }
-      g.strokeStyle = _RAINBOW[band];
-      g.globalAlpha = 0.5 * (tr[tr.length - 1].life);
-      g.lineWidth = 3;
-      g.stroke();
     }
     g.restore();
   }
