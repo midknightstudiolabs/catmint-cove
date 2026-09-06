@@ -229,7 +229,7 @@ Cats can wear a collar / bandana / bow / flower / flower-crown / bell / specs
 / hat, drawn on canvas. ~24% of arrivals wear one; ★4 cats get a crown;
 Midknight has a signature bell collar. **Photo mode** frames the current
 scene (sky, foreground meadow, cats, accessories) with a caption + the cove's
-name as a watermark, and can also record a short animated clip.
+name as a watermark.
 
 ### The Midknight cairn (Phase C payoff)
 

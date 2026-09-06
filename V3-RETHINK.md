@@ -21,7 +21,7 @@ Two years of concept compressed into ~6 weeks of one `index.html`. V2 is
 - Day/night cycle + procedural ambient audio + real cat voices
 - Restoration projects (the run-down cove → yours)
 - Activity stations (fishing / bakery / sunbeam / garden)
-- Accessories + Photo mode + clip capture
+- Accessories + Photo mode
 - Rest mode (the rainy-day cabin companion)
 - The return-visit layer: vignette engine, While You Were Away, Moments,
   Cat Adventures + postcards, daily check-in / goals / streak

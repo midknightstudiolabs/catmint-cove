@@ -128,7 +128,7 @@ rethink.
       local time (so a night-owl still sees dawn within a session). `DAY_CYCLE_MIN`
 - [x] Activity stations — fishing dock, bakery, sunbeam mat, catmint garden
 - [x] Canvas accessories — collar / bandana / bow / flower crown
-- [x] Photo → short animated clip capture (MediaRecorder webm)
+- [x] Photo mode — frames the scene with a caption + cove-name watermark
 - [x] Tall-screen scene layout pass (foreground meadow)
 - [x] Calmer ASMR meow synth (now the fallback)
 - [x] Real recorded cat voices — `sfx/` MP3s (meow ×5, kitten ×2, grumpy ×2, a

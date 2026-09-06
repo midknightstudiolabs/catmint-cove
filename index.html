@@ -1156,7 +1156,6 @@
     <p class="hint" id="photoHint">Screenshot this to share it — in the shipped game this is a one-tap export with an install link.</p>
     <div class="row" style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;">
       <button class="btn primary" id="photoSave"><span class="ico">💾</span> Save photo</button>
-      <button class="btn" id="photoClip"><span class="ico">🎬</span> Record 4s clip</button>
       <button class="btn" id="photoClose">Back to the cove</button>
     </div>
   </div>
@@ -5015,55 +5014,6 @@ function photoHintFail() {
   document.getElementById("photoHint").textContent = "Download blocked here — screenshot the frame to share it.";
 }
 
-/* ---- record a short animated clip of the framed scene (MediaRecorder → webm) ---- */
-let clipRec = null;
-function recordClip() {
-  const hintEl = document.getElementById("photoHint");
-  const btn = document.getElementById("photoClip");
-  if (clipRec) return;
-  if (typeof MediaRecorder === "undefined" || !pc.captureStream) {
-    hintEl.textContent = "Clip recording isn't supported in this browser — the still photo still works."; return;
-  }
-  let mime = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm", "video/mp4"]
-    .find(m => { try { return MediaRecorder.isTypeSupported(m); } catch (e) { return false; } }) || "";
-  let rec, stream;
-  try {
-    stream = pc.captureStream(30);
-    rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
-  } catch (e) { hintEl.textContent = "Clip recording couldn't start — the still photo still works."; return; }
-  const chunks = [];
-  rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
-  rec.onstop = () => {
-    clipRec = null;
-    btn.textContent = "🎬 Record 4s clip";
-    stream.getTracks().forEach(t => t.stop());
-    const blob = new Blob(chunks, { type: mime || "video/webm" });
-    try {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = "catmint-cove-clip.webm";
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 6000);
-      hintEl.textContent = "Clip saved. (If nothing downloaded, screen-record the frame instead.)";
-    } catch (e) { hintEl.textContent = "Clip made, but the download was blocked here — screen-record instead."; }
-    G.metrics.photos += 1; bumpGoal("photo", 1); save();
-  };
-  clipRec = rec;
-  rec.start();
-  sfx("photo");
-  const t0 = performance.now();
-  (function pump() {
-    composePhoto();
-    const elapsed = performance.now() - t0;
-    if (clipRec && elapsed < 4000) {
-      btn.textContent = "● recording " + Math.ceil((4000 - elapsed) / 1000) + "s";
-      requestAnimationFrame(pump);
-    } else if (clipRec) {
-      try { clipRec.stop(); } catch (e) { clipRec = null; }
-    }
-  })();
-}
-document.getElementById("photoClip").addEventListener("click", recordClip);
 
 /* ---------- HUD ---------- */
 const elShells = document.getElementById("shells");

@@ -69,7 +69,7 @@ cove-name watermark to share.
   waiting (14 beats, ~70% comic / 30% warmth, never a loss). Feeds a
   "Moments" log.
 - **Restoration projects, activity stations** (fishing/bakery/sunbeam/garden),
-  **accessories, photo mode** (+ short animated clip capture).
+  **accessories, photo mode**.
 
 ## World & characters
 - **The cove:** a run-down coastal cove with a weathered "CATMINT COVE"
