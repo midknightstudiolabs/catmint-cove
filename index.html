@@ -1528,7 +1528,7 @@ function newGame() {
     tips: [],
     metrics: { pets:0, tokens:0, photos:0, catsAllTime:0, coaxed:0, dryStreak:0 },
     dex: { midknight: { star: 0, count: 1 } },   // coatKey -> { star: bestStar, count: timesSeen } — Midknight's always in the guide
-    cosmetics: { theme: "default", themes: { default: true }, props: {}, propPos: {}, propBoxed: {} },   // renewable decor: atmosphere theme + owned props (+ player positions / packed-away)
+    cosmetics: { theme: "default", themes: { default: true }, props: {}, propPos: {}, propBoxed: {}, decorPos: {} },   // renewable decor: atmosphere theme + owned props (+ player positions / packed-away) + player-placed cottages/trees/flowers
     dexRewards: [],         // claimed Catdex milestone thresholds
     goals: null, goalDay: 0,
     streak: 0, streakDay: 0,
@@ -1584,6 +1584,7 @@ function load() {
     if (!G.cosmetics.props || typeof G.cosmetics.props !== "object") G.cosmetics.props = {};
     if (!G.cosmetics.propPos || typeof G.cosmetics.propPos !== "object") G.cosmetics.propPos = {};    // v3: player-set prop positions
     if (!G.cosmetics.propBoxed || typeof G.cosmetics.propBoxed !== "object") G.cosmetics.propBoxed = {};
+    if (!G.cosmetics.decorPos || typeof G.cosmetics.decorPos !== "object") G.cosmetics.decorPos = {};  // player-set cottage/tree/flower positions, keyed "type:index"
     if (!DECOR_THEMES[G.cosmetics.theme] || !G.cosmetics.themes[G.cosmetics.theme]) G.cosmetics.theme = "default";
     G.ads = Object.assign(newAdsState(), G.ads || {});
     // entitlements are loaded UNCONDITIONALLY by loadEntitlements() in the boot
@@ -1748,11 +1749,24 @@ function rebuildDecor() {
   }
   const lo = H * 0.46, hi = catFloor();
   const wants = [];
-  for (let i = 0; i < G.decor.cottage; i++) wants.push({ type: "cottage", r: 48, seed: 7001 + i * 13, yBand: [lo + 30, hi - 54] });
-  for (let i = 0; i < G.decor.tree; i++)    wants.push({ type: "tree",    r: 42, seed: 9001 + i * 13, yBand: [lo,      hi - 40] });
-  for (let i = 0; i < G.decor.flowers; i++) wants.push({ type: "flowers", r: 28, seed: 5001 + i * 13, yBand: [lo + 60, hi - 16] });
-  const pos = placeClear(wants, foot);
-  wants.forEach((w, i) => decor.push({ type: w.type, seed: w.seed, x: pos[i].x, y: pos[i].y }));
+  for (let i = 0; i < G.decor.cottage; i++) wants.push({ type: "cottage", idx: i, r: 48, seed: 7001 + i * 13, yBand: [lo + 30, hi - 54] });
+  for (let i = 0; i < G.decor.tree; i++)    wants.push({ type: "tree",    idx: i, r: 42, seed: 9001 + i * 13, yBand: [lo,      hi - 40] });
+  for (let i = 0; i < G.decor.flowers; i++) wants.push({ type: "flowers", idx: i, r: 28, seed: 5001 + i * 13, yBand: [lo + 60, hi - 16] });
+  // a player-placed piece (G.cosmetics.decorPos["type:idx"]) keeps its spot; the
+  // rest auto-place around them, avoiding their footprints. absent → all auto,
+  // so an existing cove is untouched until something is moved.
+  const dpos = (G.cosmetics && G.cosmetics.decorPos) || {};
+  const auto = [];
+  for (const w of wants) {
+    w.dkey = w.type + ":" + w.idx;
+    const f = dpos[w.dkey];
+    if (f && Number.isFinite(f.x) && Number.isFinite(f.y)) {
+      decor.push({ type: w.type, seed: w.seed, x: f.x, y: f.y, dkey: w.dkey });
+      foot.push({ x: f.x, y: f.y, r: w.r * 0.9 });
+    } else auto.push(w);
+  }
+  const pos = placeClear(auto, foot);
+  auto.forEach((w, i) => decor.push({ type: w.type, seed: w.seed, x: pos[i].x, y: pos[i].y, dkey: w.dkey }));
   decor.sort((a, b) => a.y - b.y);       // drawn in this order every frame — sort once here, not per frame
 }
 function rebuildAttractors() {
@@ -3599,7 +3613,7 @@ function focusEligible(c) {
   return c && !_cold && !restMode && !anyPanelOpen() && cats.includes(c);
 }
 function enterFocus(c) {
-  if (_placing) cancelPlacing();
+  if (_placing || _arranging) exitPlacement();
   if (!focusEligible(c) || _focus === c) return;
   hideCatCard(true);
   const r = canvas.getBoundingClientRect();
@@ -3681,39 +3695,143 @@ function catAt(x, y, rad) {
 // press-and-hold on a cat opens the focus camera.
 let _tpX = null, _tpY = null, _tpScroll = 0, _tpMoved = false;
 let _lpTimer = 0, _lpFired = false;
-/* ---------- prop placement — position a bought decoration ---------- */
-let _placing = null;        // { id, from } while positioning a movable prop
+/* ---------- placement — position a movable prop OR a cottage / tree / flowers ----------
+   _placing = { kind:"prop"|"decor", key, label, r, from }
+   "prop"  key = the DECOR_PROPS id;  "decor" key = "<type>:<index>" into G.cosmetics.decorPos
+   _arranging: a whole-cove rearrange session — after a drop we stay in it until "Done". */
+let _placing = null;
 let _placeGhost = null;     // { x, y } world pos the ghost follows
-function startPlacing(id) {
-  const p = PROP_BY_ID[id]; if (!p || !p.movable) return;
-  closeAllPanels();
-  const cur = propPos(id);
-  _placing = { id, from: propBoxed(id) ? null : { ...(G.cosmetics.propPos && G.cosmetics.propPos[id] || {}) } };
-  _placeGhost = { x: cur.x, y: clamp(cur.y, H * 0.62 + 20, catFloor() - 20) };
-  document.getElementById("placeBarTxt").innerHTML = `Placing the <b>${p.name.toLowerCase()}</b> — drag it, or tap a spot`;
+let _arranging = false;
+const DECOR_LABEL = { cottage: "cottage", tree: "tree", flowers: "flower patch" };
+const DECOR_CLEAR = { cottage: 40, tree: 30, flowers: 22 };   // how much open space each needs
+function _beginPlace(spec) {
+  if (!_arranging) closeAllPanels();
+  _placing = spec;
+  const start = spec._start || { x: W * 0.5, y: catFloor() - 60 };
+  _placeGhost = { x: start.x, y: clamp(start.y, H * 0.62 + 20, catFloor() - 20) };
+  document.getElementById("placeBarTxt").innerHTML = `Moving the <b>${spec.label}</b> — drag it, or tap a spot`;
   document.getElementById("placeBar").hidden = false;
+  document.getElementById("placeBarCancel").textContent = _arranging ? "Back" : "Cancel";
+}
+function startPlacing(id) {   // a prop, from the shop row / straight after buying
+  const p = PROP_BY_ID[id]; if (!p || !p.movable) return;
+  const cur = propPos(id);
+  _beginPlace({ kind: "prop", key: id, label: p.name.toLowerCase(), r: 30,
+    from: propBoxed(id) ? null : { ...(G.cosmetics.propPos && G.cosmetics.propPos[id] || {}) },
+    _start: { x: cur.x, y: cur.y } });
   toast(`Drag the ${p.name.toLowerCase()} where you'd like it.`, 3);
+}
+function startPlacingDecor(d) {   // a decor entry from `decor` (has .dkey, .type, .x, .y)
+  if (!d || !d.dkey || !DECOR_LABEL[d.type]) return;
+  _beginPlace({ kind: "decor", key: d.dkey, dtype: d.type, label: DECOR_LABEL[d.type],
+    r: DECOR_CLEAR[d.type] || 30,
+    from: { ...((G.cosmetics.decorPos && G.cosmetics.decorPos[d.dkey]) || { x: d.x, y: d.y }) },
+    _start: { x: d.x, y: d.y } });
+}
+function _placeOK(x, y) {
+  return _placing && _placing.kind === "decor"
+    ? validDecorSpot(x, y, _placing.dtype, _placing.key)
+    : validPropSpot(x, y);
 }
 function finishPlacing() {
   if (!_placing) return;
-  const { id } = _placing;
-  if (!validPropSpot(_placeGhost.x, _placeGhost.y)) { toast("That spot won't work — try the open grass.", 3); return; }
-  G.cosmetics.propPos = G.cosmetics.propPos || {};
-  G.cosmetics.propPos[id] = { x: Math.round(_placeGhost.x), y: Math.round(_placeGhost.y) };
-  if (G.cosmetics.propBoxed) delete G.cosmetics.propBoxed[id];
+  const { kind, key } = _placing;
+  if (!_placeOK(_placeGhost.x, _placeGhost.y)) { toast("That spot won't work — try the open grass.", 3); return; }
+  const spot = { x: Math.round(_placeGhost.x), y: Math.round(_placeGhost.y) };
+  if (kind === "prop") {
+    G.cosmetics.propPos = G.cosmetics.propPos || {};
+    G.cosmetics.propPos[key] = spot;
+    if (G.cosmetics.propBoxed) delete G.cosmetics.propBoxed[key];
+  } else {
+    G.cosmetics.decorPos = G.cosmetics.decorPos || {};
+    G.cosmetics.decorPos[key] = spot;
+    rebuildAttractors();                 // re-derive obstacles / nap + work spots
+    if (_placing.dtype === "cottage") {  // a cat napping in the cottage that just moved: wake it, let it wander out
+      for (const c of cats) if (c.state === "indoors") {
+        c.state = "loafing"; c.stateT = 0; c.stateDur = rand(2, 5);
+        c._arriveState = null; c._cotX = null; c._cotY = null; c.tx = c.x; c.ty = c.y;
+      }
+    }
+  }
   _placing = null; _placeGhost = null;
-  document.getElementById("placeBar").hidden = true;
-  sfx("buy"); spawnParticles(G.cosmetics.propPos[id].x, G.cosmetics.propPos[id].y, "dust", 6);
+  sfx("buy"); spawnParticles(spot.x, spot.y, "dust", 6);
   syncHud(); save();
-  toast(`Set. Move it again any time from the Shop's Decor tab.`, 3);
+  if (_arranging) { document.getElementById("placeBarTxt").innerHTML = `Arranging your cove — drag anything, then <b>Done</b>`; }
+  else { document.getElementById("placeBar").hidden = true; toast(`Set. Move it again any time — press and hold it, or use the Shop's Decor tab.`, 4); }
 }
 function cancelPlacing() {
-  if (!_placing) return;
-  const { id, from } = _placing;
-  if (from && from.x != null) { G.cosmetics.propPos = G.cosmetics.propPos || {}; G.cosmetics.propPos[id] = { x: from.x, y: from.y }; }
+  if (!_placing) { if (_arranging) endArrange(); return; }
+  const { kind, key, from } = _placing;
+  if (from && from.x != null) {
+    if (kind === "prop") { G.cosmetics.propPos = G.cosmetics.propPos || {}; G.cosmetics.propPos[key] = { x: from.x, y: from.y }; }
+    else { G.cosmetics.decorPos = G.cosmetics.decorPos || {}; G.cosmetics.decorPos[key] = { x: from.x, y: from.y }; rebuildAttractors(); }
+  }
   _placing = null; _placeGhost = null;
+  if (_arranging) { document.getElementById("placeBarTxt").innerHTML = `Arranging your cove — drag anything, then <b>Done</b>`; }
+  else document.getElementById("placeBar").hidden = true;
+  save();
+}
+function startArrange() {
+  closeAllPanels();
+  _arranging = true; _placing = null; _placeGhost = null;
+  document.getElementById("placeBarTxt").innerHTML = `Arranging your cove — drag anything, then <b>Done</b>`;
+  document.getElementById("placeBarCancel").textContent = "Back";
+  document.getElementById("placeBarDone").textContent = "Done";
+  document.getElementById("placeBar").hidden = false;
+  toast("Drag the cottage, trees, flowers or any decoration. Tap Done when it's just so.", 5);
+}
+function endArrange() {
+  _arranging = false; _placing = null; _placeGhost = null;
+  document.getElementById("placeBarCancel").textContent = "Cancel";
+  document.getElementById("placeBarDone").textContent = "Set here";
   document.getElementById("placeBar").hidden = true;
   save();
+}
+// hard stop — a panel opened / focus started / rest mode. revert any in-progress
+// drag, drop out of arrange mode entirely.
+function exitPlacement() {
+  if (_placing) {
+    const { kind, key, from } = _placing;
+    if (from && from.x != null) {
+      if (kind === "prop") { G.cosmetics.propPos = G.cosmetics.propPos || {}; G.cosmetics.propPos[key] = { x: from.x, y: from.y }; }
+      else { G.cosmetics.decorPos = G.cosmetics.decorPos || {}; G.cosmetics.decorPos[key] = { x: from.x, y: from.y }; rebuildAttractors(); }
+    }
+  }
+  _placing = null; _placeGhost = null; _arranging = false;
+  const pb = document.getElementById("placeBar"); if (pb) pb.hidden = true;
+  document.getElementById("placeBarCancel").textContent = "Cancel";
+  document.getElementById("placeBarDone").textContent = "Set here";
+}
+// after selling a cottage/tree/flower patch, forget any player position for the
+// now-removed instances (indices at or past the new count)
+function dropDecorPos(type, newCount) {
+  const dp = G.cosmetics && G.cosmetics.decorPos; if (!dp) return;
+  for (const k of Object.keys(dp)) {
+    const m = k.match(/^(\w+):(\d+)$/);
+    if (m && m[1] === type && +m[2] >= newCount) delete dp[k];
+  }
+}
+// the movable object under a world point. `tight` (long-press, where cats may be
+// milling around the piece) checks only the object's core so a dead-centre press
+// still grabs the cottage; the arrange-mode tap uses the full generous radius.
+function movableAt(x, y, tight) {
+  const f = tight ? 0.78 : 1;
+  for (const d of decor) {
+    if (!DECOR_LABEL[d.type]) continue;
+    if (Math.hypot(x - d.x, y - (d.y - 8)) < ((DECOR_CLEAR[d.type] || 26) + 6) * f) return { kind: "decor", d };
+  }
+  if (G.cosmetics && G.cosmetics.props) for (const p of DECOR_PROPS) {
+    if (!p.movable || !G.cosmetics.props[p.id] || propBoxed(p.id)) continue;
+    const pos = propPos(p.id);
+    if (Math.hypot(x - pos.x, y - (pos.y - 6)) < 26 * f) return { kind: "prop", id: p.id };
+  }
+  return null;
+}
+function grabMovable(hit) {
+  if (!hit) return false;
+  if (hit.kind === "decor") startPlacingDecor(hit.d);
+  else startPlacing(hit.id);
+  return true;
 }
 function boxProp(id) {
   const p = PROP_BY_ID[id]; if (!p) return;
@@ -3724,7 +3842,7 @@ function boxProp(id) {
   save(); renderShop();
   toast(`Packed the ${p.name.toLowerCase()} away — place it again any time.`, 3);
 }
-document.getElementById("placeBarDone").onclick = finishPlacing;
+document.getElementById("placeBarDone").onclick = () => { if (_placing) finishPlacing(); else if (_arranging) endArrange(); };
 document.getElementById("placeBarCancel").onclick = cancelPlacing;
 
 canvas.addEventListener("pointerdown", (e) => {
@@ -3732,11 +3850,18 @@ canvas.addEventListener("pointerdown", (e) => {
   if (_placing) { _placeGhost = screenToWorld(e.clientX, e.clientY); _tpX = e.clientX; _tpY = e.clientY; _tpMoved = false; return; }
   _tpX = e.clientX; _tpY = e.clientY; _tpScroll = stage.scrollLeft; _tpMoved = false; _lpFired = false;
   clearTimeout(_lpTimer);
-  if (!_focus) _lpTimer = setTimeout(() => {
+  if (!_focus && !_arranging) _lpTimer = setTimeout(() => {
     if (_tpX == null || _tpMoved) return;
     const w = screenToWorld(_tpX, _tpY);
+    const buzz = () => { try { if (navigator.userActivation ? navigator.userActivation.hasBeenActive : true) navigator.vibrate && navigator.vibrate(11); } catch (_) {} };
+    // press dead-centre on a decoration → pick it straight up, even with cats milling around it
+    const canGrab = G && G.tutorialDone && !anyPanelOpen();
+    if (canGrab) {
+      const m = movableAt(w.x, w.y, true);
+      if (m) { grabMovable(m); _lpFired = true; buzz(); return; }
+    }
     const c = catAt(w.x, w.y, 46);
-    if (c) { enterFocus(c); _lpFired = true; try { if (navigator.userActivation ? navigator.userActivation.hasBeenActive : true) navigator.vibrate && navigator.vibrate(11); } catch (_) {} }
+    if (c) { enterFocus(c); _lpFired = true; buzz(); return; }
   }, 430);
 });
 canvas.addEventListener("pointermove", (e) => {
@@ -3746,8 +3871,12 @@ canvas.addEventListener("pointermove", (e) => {
 canvas.addEventListener("pointerup", (e) => {
   if (_placing) {
     _placeGhost = screenToWorld(e.clientX, e.clientY);
+    const draggedOut = _tpMoved;
     _tpX = _tpY = null;
-    if (!_tpMoved && !validPropSpot(_placeGhost.x, _placeGhost.y)) { toast("Tap the open grass to set it there.", 2); return; }
+    // a long-press just picked this up on THIS gesture — hold it, let the next tap set it down
+    if (_lpFired && !draggedOut) { _lpFired = false; return; }
+    _lpFired = false;
+    if (!draggedOut && !_placeOK(_placeGhost.x, _placeGhost.y)) { toast("Tap the open grass to set it there.", 2); return; }
     finishPlacing();
     return;
   }
@@ -3759,6 +3888,11 @@ canvas.addEventListener("pointerup", (e) => {
   if (_lpFired) { _lpFired = false; return; }        // the hold already acted
   if (_tpMoved || panned || !near) return;
   const w = screenToWorld(e.clientX, e.clientY);
+  if (_arranging) {                                  // in a rearrange session — a tap picks the piece up
+    const m = movableAt(w.x, w.y);
+    if (m) grabMovable(m);
+    return;
+  }
   if (_focus) {
     if (catAt(w.x, w.y, 62) === _focus) petCat(_focus);   // still pettable up close
     else exitFocus();                                     // tap the surrounds → step back
@@ -4478,11 +4612,11 @@ const SHOP = [
   { key:"scratch", cat:"comforts", type:"scratch", name:"Scratch pad", desc:"Cats stop by for a good scratch — sharpens the claws, lifts the mood, and they always stretch after. +1 capacity.",
     base:20, mul:1.6, get:()=>G.scratch, buy:()=>{ G.scratch++; rebuildAttractors(); }, remove:()=>{ G.scratch--; rebuildAttractors(); } },
   { key:"tree", cat:"comforts", type:"tree", name:"Shade tree", desc:"Cats doze in the shade. Lifts the whole cove's mood.",
-    base:30, mul:1.7, get:()=>G.decor.tree, buy:()=>{ G.decor.tree++; rebuildAttractors(); }, remove:()=>{ G.decor.tree--; rebuildAttractors(); } },
+    base:30, mul:1.7, get:()=>G.decor.tree, buy:()=>{ G.decor.tree++; rebuildAttractors(); }, remove:()=>{ G.decor.tree--; dropDecorPos("tree", G.decor.tree); rebuildAttractors(); } },
   { key:"cottage", cat:"comforts", type:"cottage", name:"Cat cottage", desc:"A little house cats curl up inside to sleep. +2 capacity.",
-    base:55, mul:1.8, get:()=>G.decor.cottage, buy:()=>{ G.decor.cottage++; rebuildAttractors(); }, remove:()=>{ G.decor.cottage--; rebuildAttractors(); } },
+    base:55, mul:1.8, get:()=>G.decor.cottage, buy:()=>{ G.decor.cottage++; rebuildAttractors(); }, remove:()=>{ G.decor.cottage--; dropDecorPos("cottage", G.decor.cottage); rebuildAttractors(); } },
   { key:"flowers", cat:"comforts", type:"flowers", name:"Flower patch", desc:"Just pretty. Raises everyone's baseline mood a little.",
-    base:14, mul:1.5, get:()=>G.decor.flowers, buy:()=>{ G.decor.flowers++; rebuildAttractors(); }, remove:()=>{ G.decor.flowers--; rebuildAttractors(); } },
+    base:14, mul:1.5, get:()=>G.decor.flowers, buy:()=>{ G.decor.flowers++; rebuildAttractors(); }, remove:()=>{ G.decor.flowers--; dropDecorPos("flowers", G.decor.flowers); rebuildAttractors(); } },
   { key:"fishing", cat:"stations", name:"Fishing dock", desc:"Not for sale — repair the old dock down at the shore. Tap it in the cove.",
     base:0, mul:1, max:1, get:()=>projectDone("dock") ? 1 : 0,
     need:()=> projectDone("dock") ? null : "Repair the dock — tap it at the shore" },
@@ -4685,6 +4819,17 @@ function drawAccPreview(cv, key, coat) {
 
 function renderShopDecor(list) {
   const cm = G.cosmetics;
+  const decorCount = (G.decor.cottage || 0) + (G.decor.tree || 0) + (G.decor.flowers || 0);
+  const propCount = DECOR_PROPS.filter(p => p.movable && cm.props[p.id] && !propBoxed(p.id)).length;
+  if (decorCount + propCount > 0) {
+    const row = document.createElement("div");
+    row.className = "shop-item";
+    row.innerHTML = `<div class="txt"><div class="name">Arrange the cove</div>
+      <div class="desc">Move the cottage, trees, flowers and decorations wherever you like — or just press and hold one in the cove.</div></div>
+      <div class="shop-actions"><button class="btn primary" id="arrange-go">Arrange</button></div>`;
+    list.appendChild(row);
+    row.querySelector("#arrange-go").onclick = () => startArrange();
+  }
   list.appendChild(shopHead("Atmosphere theme"));
   for (const key of Object.keys(DECOR_THEMES)) {
     const th = DECOR_THEMES[key];
@@ -4958,7 +5103,7 @@ document.getElementById("photoSave").addEventListener("click", savePhoto);
 
 function openPhoto() {
   ensureAudio();
-  if (_placing) cancelPlacing();
+  if (_placing || _arranging) exitPlacement();
   composePhoto();
   photoEl.classList.add("on");
   sfx("photo");
@@ -5227,7 +5372,7 @@ function closeAllPanels() { for (const k in panels) panels[k].hidden = true; sto
 function togglePanel(name) {
   ensureAudio();
   exitFocus();
-  if (_placing) cancelPlacing();
+  if (_placing || _arranging) exitPlacement();
   const wasOpen = !panels[name].hidden;
   closeAllPanels();
   if (!wasOpen) {
@@ -7100,7 +7245,7 @@ function restClearUI() {
 }
 function openRestPanel() {
   ensureAudio(); loadRainLoop(); initGlassDrops();
-  if (_placing) cancelPlacing();
+  if (_placing || _arranging) exitPlacement();
   exitFocus(); _focusT = 0; _wasFocusing = false;
   stage.style.touchAction = ""; document.getElementById("app").classList.remove("focusing");
   document.getElementById("restPanel").hidden = false;
@@ -7460,7 +7605,7 @@ function raceX(p) { return 150 + clamp(p, 0, 1) * 1100; }
 // the picker over the same grounds.
 function openFestPicker() {
   if (festMode || restMode || !cats.length) return;
-  if (_placing) cancelPlacing();
+  if (_placing || _arranging) exitPlacement();
   ensureAudio();   // a real tap — safe to unlock/start audio here, same as opening rest
   restClearUI(); closeAllPanels(); exitFocus();
   const roster = cats.filter(c => !c.visitor);
@@ -8048,6 +8193,22 @@ function validPropSpot(x, y) {
   for (const d of decor) if ((d.type === "station" || d.type === "project") && Math.hypot(x - d.x, y - d.y) < 54) return false;
   return true;
 }
+// a cottage / tree / flower patch can sit here: on the grass, clear of water,
+// the sign, stations/projects, and not on top of another piece of decor.
+// `exceptKey` is the dkey of the piece being moved, so it doesn't block itself.
+function validDecorSpot(x, y, dtype, exceptKey) {
+  const clr = DECOR_CLEAR[dtype] || 30;
+  if (x < 40 + clr * 0.4 || x > W - (40 + clr * 0.4)) return false;
+  if (y < H * 0.50 || y > catFloor() - 8) return false;
+  for (const o of obstacles) if (o.water && Math.hypot((x - o.x) / (o.rx + clr), (y - o.y) / (o.ry + clr * 0.7)) < 1) return false;
+  if (x < W * 0.30 && y < H * 0.56) return false;                       // the cove sign corner
+  for (const d of decor) {
+    if (d.dkey && d.dkey === exceptKey) continue;
+    if (d.type === "station" || d.type === "project") { if (Math.hypot(x - d.x, y - d.y) < 52 + clr * 0.3) return false; continue; }
+    if (DECOR_LABEL[d.type]) { if (Math.hypot(x - d.x, y - d.y) < clr + (DECOR_CLEAR[d.type] || 30) - 10) return false; }
+  }
+  return true;
+}
 const SKIES = [
   { h: 0,  top:"#1b2540", mid:"#283152", bot:"#3a3a52", ground:"#585462", light:"#2a3d66", df:0    },
   { h: 5,  top:"#3a3a63", mid:"#6a5679", bot:"#bd8b76", ground:"#8d8177", light:"#c99f7d", df:0.14 },
@@ -8613,28 +8774,50 @@ function drawProps(g) {
   const night = window._sky ? 1 - window._sky.df : 0;
   g.save();
   g._nightGlow = night;                       // stashed so lanterns know to light up
+  const placingProp = _placing && _placing.kind === "prop" ? _placing.key : null;
   for (const p of DECOR_PROPS) {
     if (!G.cosmetics.props[p.id]) continue;
-    if (p.movable && (propBoxed(p.id) || (_placing && _placing.id === p.id))) continue;  // boxed / being placed → drawn elsewhere
+    if (p.movable && (propBoxed(p.id) || placingProp === p.id)) continue;  // boxed / being placed → drawn elsewhere
     try {
       if (p.movable) { const pos = propPos(p.id); p.render(g, t, pos.x, pos.y, pos.s); }
       else p.draw(g, t);
     } catch (e) {}
   }
-  // the prop currently being positioned: a ghost at the pointer + a validity ring
-  if (_placing) {
-    const p = PROP_BY_ID[_placing.id], gh = _placeGhost;
-    if (p && gh) {
-      const ok = validPropSpot(gh.x, gh.y);
-      g.save();
-      g.strokeStyle = ok ? "rgba(90,160,106,.95)" : "rgba(201,80,63,.95)";
-      g.lineWidth = 3; g.setLineDash(ok ? [] : [8, 6]);
-      g.beginPath(); g.ellipse(gh.x, gh.y, 34, 15, 0, 0, 7); g.stroke();
-      g.setLineDash([]);
-      g.globalAlpha = ok ? 0.92 : 0.5;
-      try { p.render(g, t, gh.x, gh.y, p.place.s); } catch (e) {}
+  // arrange mode — a soft handle ring on everything you can drag
+  if (_arranging && !_placing) {
+    g.save();
+    g.setLineDash([5, 4]); g.lineWidth = 1.6; g.strokeStyle = "rgba(53,107,76,.85)";
+    const ring = (x, y, r) => {
+      g.beginPath(); g.ellipse(x, y - 6, r, r * 0.5, 0, 0, 7); g.stroke();
+      g.save(); g.setLineDash([]); g.fillStyle = "#356b4c";
+      g.beginPath(); g.arc(x + r * 0.7, y - 6 - r * 0.35, 5, 0, 7); g.fill();
+      g.strokeStyle = "#fff"; g.lineWidth = 1.3;
+      g.beginPath(); g.moveTo(x + r * 0.7 - 2.3, y - 6 - r * 0.35); g.lineTo(x + r * 0.7 + 2.3, y - 6 - r * 0.35);
+      g.moveTo(x + r * 0.7, y - 6 - r * 0.35 - 2.3); g.lineTo(x + r * 0.7, y - 6 - r * 0.35 + 2.3); g.stroke();
       g.restore();
+    };
+    for (const d of decor) if (DECOR_LABEL[d.type]) ring(d.x, d.y, (DECOR_CLEAR[d.type] || 26) + 4);
+    for (const p of DECOR_PROPS) {
+      if (!p.movable || !G.cosmetics.props[p.id] || propBoxed(p.id)) continue;
+      const pos = propPos(p.id); ring(pos.x, pos.y, 22);
     }
+    g.restore();
+  }
+  // the piece currently being positioned: a ghost at the pointer + a validity ring
+  if (_placing && _placeGhost) {
+    const gh = _placeGhost, ok = _placeOK(gh.x, gh.y);
+    g.save();
+    g.strokeStyle = ok ? "rgba(90,160,106,.95)" : "rgba(201,80,63,.95)";
+    g.lineWidth = 3; g.setLineDash(ok ? [] : [8, 6]);
+    const ghR = _placing.kind === "decor" ? (DECOR_CLEAR[_placing.dtype] || 30) + 6 : 34;
+    g.beginPath(); g.ellipse(gh.x, gh.y, ghR, ghR * 0.45, 0, 0, 7); g.stroke();
+    g.setLineDash([]);
+    g.globalAlpha = ok ? 0.94 : 0.5;
+    try {
+      if (_placing.kind === "prop") { const p = PROP_BY_ID[_placing.key]; if (p) p.render(g, t, gh.x, gh.y, p.place.s); }
+      else drawDecor(g, { type: _placing.dtype, seed: 7001, x: gh.x, y: gh.y });
+    } catch (e) {}
+    g.restore();
   }
   g.restore();
 }
@@ -9016,7 +9199,8 @@ function drawStation(g, kind, seed) {
   }
 }
 function drawDecorLayer(g) {
-  for (const d of decor) drawDecor(g, d);   // kept y-sorted by rebuildDecor()
+  const skip = _placing && _placing.kind === "decor" ? _placing.key : null;
+  for (const d of decor) { if (skip && d.dkey === skip) continue; drawDecor(g, d); }   // kept y-sorted by rebuildDecor()
 }
 function drawFish(g, x, y, rot, col, sc) {
   g.save(); g.translate(x, y); g.rotate(rot); g.scale(sc, sc);
