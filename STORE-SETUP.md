@@ -160,43 +160,49 @@ and paste the whole file into `PLAY_SERVICE_ACCOUNT_JSON`.
    key — use Play App Signing, it's the default).
    - Get that first `.aab`: run the **Android build** workflow (Actions tab ▸
      *Run workflow*, track = `none`), download the artifact, upload it manually.
-2. After that, every release is: `git tag android-v2.0.1 && git push --tags`
+2. After that, every release is: `git tag android-v1.0.1 && git push --tags`
    (or run the workflow with a track picked). New Play requirement: a new
    personal developer account must run **12 testers × 14 days** of closed
    testing before Production unlocks — start that clock early.
 
 ---
 
-## 4. iOS — GitHub secrets
+## 4. iOS — GitHub secrets  *(no Mac needed)*
 
-More moving parts. On developer.apple.com and App Store Connect:
+`ios.yml` uses an **App Store Connect API key** for both code signing
+(`xcodebuild -allowProvisioningUpdates` — Apple's servers create + manage the
+distribution cert and provisioning profile) and the TestFlight upload. No `.p12`,
+no Keychain, no manual profile. All setup is in the browser.
 
-1. **Certificates ▸ +** → *Apple Distribution* certificate. Download it, open it
-   (adds to Keychain on a Mac) — or create it with Fastlane `match`. Export as
-   `.p12` **with a password**.
-2. **Identifiers ▸ +** → App ID `com.midknightstudiolabs.catmintcove`.
-3. **Profiles ▸ +** → *App Store* provisioning profile for that App ID + the
-   distribution cert. Note its exact **name**. Download the `.mobileprovision`.
-4. App Store Connect ▸ **My Apps ▸ +** → create the app record (same bundle id).
-5. Apple ID ▸ **App-Specific Passwords** → generate one for uploads.
+1. **appstoreconnect.apple.com ▸ Users and Access ▸ Integrations ▸ App Store
+   Connect API ▸ Team Keys ▸ +**. Name it `ci`, access **App Manager**, Generate.
+   - Download the **`AuthKey_XXXXXXXXXX.p8`** (one time only — save it).
+   - Note the **Key ID** (the `XXXXXXXXXX`) and the **Issuer ID** (top of the page).
+2. **developer.apple.com ▸ Certificates, IDs & Profiles ▸ Identifiers ▸ +** →
+   App ID, bundle id `com.midknightstudiolabs.catmintcove`, enable **In-App
+   Purchase**. *(That's the only portal step — no cert, no profile.)*
+3. **appstoreconnect.apple.com ▸ Apps ▸ +** → create the app record (same bundle
+   id, primary language, SKU e.g. `catmintcove`).
+4. **Team ID:** developer.apple.com ▸ Membership details → the 10-char Team ID.
 
-Repo secrets:
+Repo secrets (**Settings ▸ Secrets and variables ▸ Actions**):
 
 | secret | value |
 |---|---|
-| `IOS_DIST_CERT_P12` | `base64 -i dist.p12` |
-| `IOS_DIST_CERT_PASSWORD` | the `.p12` password |
-| `IOS_PROVISIONING_PROFILE` | `base64 -i profile.mobileprovision` |
-| `IOS_PROFILE_NAME` | the profile's exact name |
-| `IOS_TEAM_ID` | 10-char Team ID (top-right of the Apple dev site) |
-| `APPLE_ID` | your Apple account email |
-| `APPLE_APP_SPECIFIC_PASSWORD` | from step 5 |
+| `ASC_KEY_ID` | the API key's Key ID (10 chars) |
+| `ASC_ISSUER_ID` | the API key's Issuer ID (a UUID) |
+| `ASC_KEY_P8_BASE64` | `base64 -w0 AuthKey_XXXX.p8` (macOS: `base64 -i`) — one line |
+| `IOS_TEAM_ID` | 10-char Apple Developer Team ID |
+
+Until these exist the workflow still runs a **simulator compile check** and stops
+before signing.
 
 ### First iOS release
 
-`git tag ios-v2.0.1 && git push --tags` (or run the **iOS build** workflow).
-It archives on a macOS runner and uploads to **TestFlight**. From TestFlight you
-add testers, then submit for App Store review (1–3 days; first apps sometimes
+`git tag ios-v1.0.1 && git push --tags` (or run the **iOS build** workflow).
+It archives on a GitHub macOS runner and uploads to **TestFlight**. From TestFlight
+you add testers (your own iPhone/iPad works), then submit for App Store review
+(1–3 days; first apps sometimes
 longer). If you'd rather avoid the cert dance, `fastlane match` automates it —
 add a `Matchfile` and swap the cert/profile steps for `fastlane match appstore`.
 
@@ -284,10 +290,10 @@ The launch build ships **ad-free** (`ADS_ENABLED = false`).
 
 ```bash
 # Android
-git tag android-v2.0.1 && git push origin android-v2.0.1
+git tag android-v1.0.1 && git push origin android-v1.0.1
 
 # iOS
-git tag ios-v2.0.1 && git push origin ios-v2.0.1
+git tag ios-v1.0.1 && git push origin ios-v1.0.1
 
 # or: Actions tab ▸ pick the workflow ▸ Run workflow
 ```

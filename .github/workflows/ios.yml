@@ -1,8 +1,20 @@
 name: iOS build (TestFlight)
 
 # Manual trigger, or push a tag like  ios-v1.0.0
-# Requires the Apple secrets listed in STORE-SETUP.md. Until those exist this
-# workflow will fail at "Import signing certificate" — that's expected.
+#
+# No Mac needed. This runs on a GitHub-hosted macOS runner and uses an
+# App Store Connect API key for BOTH code signing (xcodebuild manages the
+# cert + provisioning profile automatically) and the TestFlight upload — so
+# there is no .p12 / Keychain / manual profile dance.
+#
+# Secrets (see STORE-SETUP.md §4):
+#   ASC_KEY_ID          - the App Store Connect API key's Key ID
+#   ASC_ISSUER_ID       - the API key's Issuer ID
+#   ASC_KEY_P8_BASE64   - base64 of the AuthKey_XXXX.p8 file
+#   IOS_TEAM_ID         - 10-char Apple Developer Team ID
+# Until those exist the workflow still runs — it does a simulator compile
+# check and stops before signing.
+
 on:
   workflow_dispatch:
   push:
@@ -30,15 +42,28 @@ jobs:
         id: ver
         run: |
           NAME="${GITHUB_REF_NAME#ios-v}"
-          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="2.0.$GITHUB_RUN_NUMBER"; fi
+          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="1.0.$GITHUB_RUN_NUMBER"; fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "build=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
+
+      - name: Have we got the App Store Connect key?
+        id: keys
+        env:
+          K: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: |
+          if [ -n "$K" ] && [ -n "${{ secrets.IOS_TEAM_ID }}" ]; then
+            echo "have=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No ASC_KEY_P8_BASE64 / IOS_TEAM_ID — simulator compile check only. Add the App Store Connect key secrets (STORE-SETUP.md §4) to archive + upload to TestFlight."
+          fi
 
       - run: npm ci
       - run: npm run build
 
       - name: Generate the native project
         run: |
+          rm -rf ios
           npx cap add ios
           npx @capacitor/assets generate --ios
           npx cap sync ios
@@ -50,47 +75,73 @@ jobs:
           plutil -replace 'UISupportedInterfaceOrientations~ipad' -json '["UIInterfaceOrientationPortrait","UIInterfaceOrientationPortraitUpsideDown"]' "$P"
           plutil -p "$P" | grep -A3 Orientation
 
-      - name: Import signing certificate
-        uses: apple-actions/import-codesign-certs@v3
-        with:
-          p12-file-base64: ${{ secrets.IOS_DIST_CERT_P12 }}
-          p12-password: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
-
-      - name: Install provisioning profile
-        run: |
-          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          echo "${{ secrets.IOS_PROVISIONING_PROFILE }}" | base64 --decode > "$HOME/Library/MobileDevice/Provisioning Profiles/catmintcove.mobileprovision"
-
       - name: CocoaPods
         run: cd ios/App && pod install
 
+      # --- no signing key: just prove it compiles, then stop -------------------
+      - name: Simulator compile check
+        if: ${{ steps.keys.outputs.have != 'true' }}
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO clean build
+
+      # --- with the ASC key: archive with automatic signing, export, upload ---
+      - name: App Store Connect API key
+        if: ${{ steps.keys.outputs.have == 'true' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/asc" "$HOME/.appstoreconnect/private_keys"
+          P8="AuthKey_${{ secrets.ASC_KEY_ID }}.p8"
+          echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/asc/$P8"
+          cp "$RUNNER_TEMP/asc/$P8" "$HOME/.appstoreconnect/private_keys/$P8"   # where xcrun altool looks
+
       - name: Archive
+        if: ${{ steps.keys.outputs.have == 'true' }}
         run: |
           cd ios/App
           xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -destination "generic/platform=iOS" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey_${{ secrets.ASC_KEY_ID }}.p8" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
             clean archive \
             DEVELOPMENT_TEAM="${{ secrets.IOS_TEAM_ID }}" \
-            CODE_SIGN_STYLE=Manual \
-            PROVISIONING_PROFILE_SPECIFIER="${{ secrets.IOS_PROFILE_NAME }}" \
+            CODE_SIGN_STYLE=Automatic \
             MARKETING_VERSION="${{ steps.ver.outputs.name }}" \
             CURRENT_PROJECT_VERSION="${{ steps.ver.outputs.build }}"
 
       - name: Export .ipa
+        if: ${{ steps.keys.outputs.have == 'true' }}
         run: |
-          sed -e "s/__TEAM_ID__/${{ secrets.IOS_TEAM_ID }}/" -e "s/__PROFILE_NAME__/${{ secrets.IOS_PROFILE_NAME }}/" \
-            ci/ExportOptions.plist > "$RUNNER_TEMP/ExportOptions.plist"
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${{ secrets.IOS_TEAM_ID }}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+          </dict></plist>
+          EOF
+          cd ios/App
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" \
-            -exportPath "$RUNNER_TEMP/export" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+            -exportPath "$RUNNER_TEMP/export" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey_${{ secrets.ASC_KEY_ID }}.p8" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
 
       - name: Upload to TestFlight
+        if: ${{ steps.keys.outputs.have == 'true' }}
         run: |
           xcrun altool --upload-app -f "$RUNNER_TEMP"/export/*.ipa -t ios \
-            -u "${{ secrets.APPLE_ID }}" -p "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}"
+            --apiKey "${{ secrets.ASC_KEY_ID }}" --apiIssuer "${{ secrets.ASC_ISSUER_ID }}"
 
       - name: Keep the .ipa as an artifact
-        if: always()
+        if: ${{ always() && steps.keys.outputs.have == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: catmint-cove-${{ steps.ver.outputs.name }}.ipa

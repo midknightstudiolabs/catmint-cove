@@ -80,25 +80,30 @@
   };
 
   /* ---- in-app purchases via RevenueCat ---------------------------------------
-   * PASTE YOUR KEY BELOW. From the RevenueCat dashboard:
-   *   Project → API keys → the *public* app-specific key for the Google Play app
-   *   (starts with "goog_"). It is a CLIENT key — safe to commit to a public repo.
-   * While it is "", the game falls back to its built-in simulated purchase flow,
-   * so the app still runs; it just can't take real money yet.
+   * PASTE YOUR KEYS BELOW. From the RevenueCat dashboard → Project → API keys:
+   *   - the *public* key for the Google Play app  (starts with "goog_")
+   *   - the *public* key for the App Store app    (starts with "appl_")
+   * These are CLIENT keys — safe to commit to a public repo.
+   * While a platform's key is "", the game falls back to its built-in simulated
+   * purchase flow on that platform, so the app still runs.
    *
-   * The three product ids below MUST match the managed in-app products you create
-   * in Play Console (Monetize → Products → In-app products), and the game's own
+   * The three product ids below MUST match the products you create in Play
+   * Console (Monetize → Products → One-time products) AND App Store Connect
+   * (Features → In-App Purchases, non-consumable), and the game's own
    * IAP_PRODUCTS keys. RevenueCat "entitlements" are not required — we read
    * customerInfo.allPurchasedProductIdentifiers directly.
    * ------------------------------------------------------------------------- */
   var REVENUECAT_ANDROID_KEY = "";
+  var REVENUECAT_IOS_KEY = "";
   var COVE_PRODUCTS = ["welcome_pack", "founding_covekeeper", "sparkle_pack"];
 
   (function initIAP() {
     var RC = P.Purchases;
-    if (!RC || !REVENUECAT_ANDROID_KEY) return;   // no plugin / no key → game simulates purchases
+    var plat = (Cap.getPlatform && Cap.getPlatform()) || "";
+    var RC_KEY = plat === "ios" ? REVENUECAT_IOS_KEY : REVENUECAT_ANDROID_KEY;
+    if (!RC || !RC_KEY) return;   // no plugin / no key for this platform → game simulates purchases
 
-    try { RC.configure({ apiKey: REVENUECAT_ANDROID_KEY }); }
+    try { RC.configure({ apiKey: RC_KEY }); }
     catch (e) { return; }
 
     var products = null;   // { <productId>: PurchasesStoreProduct }
