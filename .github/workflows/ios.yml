@@ -105,20 +105,21 @@ jobs:
           echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/asc/$P8"
           cp "$RUNNER_TEMP/asc/$P8" "$HOME/.appstoreconnect/private_keys/$P8"   # where xcrun altool looks
 
-      - name: Archive
+      # Archive WITHOUT signing. Automatic signing during `archive` provisions an
+      # "iOS App Development" profile (which needs registered devices — CI has
+      # none). The App Store distribution cert + profile are created and applied
+      # in the Export step below, from the ExportOptions method.
+      - name: Archive (unsigned)
         if: ${{ steps.keys.outputs.have == 'true' }}
         run: |
           cd ios/App
           xcodebuild -project App.xcodeproj -scheme App -configuration Release \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -destination "generic/platform=iOS" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey_${{ secrets.ASC_KEY_ID }}.p8" \
-            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
-            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
+            -skipPackagePluginValidation \
             clean archive \
+            CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="${{ secrets.IOS_TEAM_ID }}" \
-            CODE_SIGN_STYLE=Automatic \
             MARKETING_VERSION="${{ steps.ver.outputs.name }}" \
             CURRENT_PROJECT_VERSION="${{ steps.ver.outputs.build }}"
 
