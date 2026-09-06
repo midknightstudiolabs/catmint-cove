@@ -202,9 +202,10 @@ sense once the game around it is the v3 game.
   spawned during the cove's daytime (clock is real-time-anchored). Now shows
   at any hour, dims to a 0.55 alpha floor at night.
 - [x] **Premium cosmetics** — glow collar (✦8, static light), little wings
-  (✦12, speed-scaled flap), rainbow trail (✦10, fading ribbon). Bought with
-  pearls; a $2.99 Sparkle Pack is the planned optional real-money unlock,
-  not built yet.
+  (✦12, speed-scaled flap, sits behind the body), rainbow trail (✦10, a
+  *light* effect: screen-blended colour bloom + hot near-white core, glows
+  at night, streams off the cat as it runs). Bought with pearls; a $2.99
+  Sparkle Pack is the planned optional real-money unlock, not built yet.
 - [x] **Dress-up screen rebuilt** — two-pane (live cat + rack), tap-to-try,
   Save commits (shells + pearls), Take it all off, ‹ Name › switcher. This
   answered the "show the selected cat picture when adding decor" ask.
