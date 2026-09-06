@@ -291,6 +291,11 @@
   .dp-acc.premium{border-color:#d6bfe6;}
   .dp-acc.premium .dp-cost{color:#9a7bc9;}
   .dp-acc.premium.on{border-color:#9a7bc9;background:#efe7f5;}
+  .dp-acc.locked{opacity:.72;border-style:dashed;}
+  .dp-acc.locked .dp-cost{color:#9a7bc9;}
+  .dp-getpack{font:inherit;font-size:.62rem;font-weight:700;letter-spacing:0;text-transform:none;
+    cursor:pointer;border:0;border-radius:999px;padding:.2rem .55rem;margin-left:.5rem;
+    background:#9a7bc9;color:#fff;vertical-align:middle;}
   .shop-item{
     display:flex;gap:.8rem;align-items:center;justify-content:space-between;
     padding:.75rem 0;border-top:1px solid var(--panel-line);
@@ -4033,16 +4038,17 @@ const ACCESSORIES = [
   { key:"sunhat",      label:"Sun hat",      price:30,  slot:"head", group:"Hats",     blurb:"A woven straw hat pushed back off the face." },
   { key:"partyhat",    label:"Party hat",    price:20,  slot:"head", group:"Hats",     blurb:"Because every day could be a birthday." },
   { key:"crown",       label:"Crown",        price:120, slot:"head", group:"Regalia",  blurb:"For the cove's most distinguished loaf." },
-  // v3 premium — bought with pearls (✦), not shells. effects, not just trims.
-  { key:"glowcollar",  label:"Glow collar",  pearls:8,  slot:"neck", group:"Sparkle", premium:true, blurb:"A collar with a soft, steady light. Comes into its own at night and in Rest mode." },
-  { key:"wings",       label:"Little wings", pearls:12, slot:"back", group:"Sparkle", premium:true, blurb:"Small feathered wings that flutter on the cat's back — a slow flap at rest, faster on the zoomies." },
-  { key:"rainbow",     label:"Rainbow trail",pearls:10, slot:"aura", group:"Sparkle", premium:true, blurb:"A ribbon of colour that streams behind the cat as it moves and fades when it settles." },
+  // v3 effect cosmetics — the Sparkle Pack IAP unlocks all three for the whole
+  // cove (present and future cats). No currency path — see MONETIZATION.md.
+  { key:"glowcollar",  label:"Glow collar",  iap:"sparkle_pack", slot:"neck", group:"Sparkle", premium:true, blurb:"A collar with a soft, steady light. Comes into its own at night and in Rest mode." },
+  { key:"wings",       label:"Little wings", iap:"sparkle_pack", slot:"back", group:"Sparkle", premium:true, blurb:"Small feathered wings that flutter on the cat's back — a slow flap at rest, faster on the zoomies." },
+  { key:"rainbow",     label:"Rainbow trail",iap:"sparkle_pack", slot:"aura", group:"Sparkle", premium:true, blurb:"A ribbon of colour that streams behind the cat as it moves and fades when it settles." },
 ];
 const ACC_BY_KEY = Object.fromEntries(ACCESSORIES.map(a => [a.key, a]));
 const ACC_LABEL  = Object.fromEntries(ACCESSORIES.map(a => [a.key, a.label.toLowerCase()]));
 const ACC_SLOTS  = ["aura", "back", "neck", "ear", "face", "head"];   // also the draw order (aura/back behind, head on top)
 const ACC_SLOT_LABEL = { aura:"Aura", back:"Back", neck:"Neck", ear:"Ear", face:"Face", head:"Hat" };
-function accCost(a) { return a && a.pearls ? { pearls: a.pearls } : { shells: (a && a.price) || 0 }; }
+function accCost(a) { return a && a.iap ? { iap: a.iap } : a && a.pearls ? { pearls: a.pearls } : { shells: (a && a.price) || 0 }; }
 function accSlot(key) { return (ACC_BY_KEY[key] || {}).slot; }
 function catWears(c, key) { return !!(c && c.worn && c.worn.includes(key)); }
 function wornList(c) {   // in draw / display order
@@ -4058,7 +4064,12 @@ function normalizeWorn(list) {   // at most one item per slot, valid keys only
   return out;
 }
 
-function accOwned(c, key) { return !key || !!(c && c.owned && c.owned.includes(key)); }
+function accOwned(c, key) {
+  if (!key) return true;
+  const a = ACC_BY_KEY[key];
+  if (a && a.iap) return iapOwns(a.iap);                    // the Sparkle Pack owns it for every cat, derived — never materialised into c.owned
+  return !!(c && c.owned && c.owned.includes(key));
+}
 function equipAccessory(c, key, forceOn) {
   if (!c) return;
   if (!Array.isArray(c.worn)) c.worn = [];
@@ -4076,6 +4087,7 @@ function equipAccessory(c, key, forceOn) {
 function buyAccessory(c, key) {                   // buy + wear; returns true on success
   const a = ACC_BY_KEY[key]; if (!a || !c) return false;
   if (accOwned(c, key)) { equipAccessory(c, key, true); return true; }
+  if (a.iap) { showSparkleOffer(); return false; }   // effect cosmetics only come from the pack
   if (a.pearls) {
     if ((G.pearls || 0) < a.pearls) { toast(`${a.label} is ✦${a.pearls} — earn a few more pearls from the Catdex or daily goals.`); return false; }
     G.pearls -= a.pearls;
@@ -4098,7 +4110,8 @@ function renderWardrobe(c) {
   cc.dress.hidden = false;
   const worn = new Set(c.worn || []);
   const bySlot = {};
-  for (const k of (c.owned || [])) { const a = ACC_BY_KEY[k]; if (a) (bySlot[a.slot] = bySlot[a.slot] || []).push(k); }
+  const ownedKeys = [...(c.owned || []), ...ACCESSORIES.filter(a => a.iap && accOwned(c, a.key)).map(a => a.key)];
+  for (const k of ownedKeys) { const a = ACC_BY_KEY[k]; if (a && !(bySlot[a.slot] || []).includes(k)) (bySlot[a.slot] = bySlot[a.slot] || []).push(k); }
   const slots = ACC_SLOTS.filter(s => bySlot[s]);
   let html = `<div class="dl">Dress up</div>`;
   if (!slots.length) {
@@ -4700,8 +4713,8 @@ function dressTryChanged(c) {
   const cur = (c.worn || []).slice().sort().join();
   return (_dressWorn || []).slice().sort().join() !== cur;
 }
-function dressNewItems(c) {   // items tried on that the cat doesn't own yet
-  return (_dressWorn || []).filter(k => !accOwned(c, k)).map(k => ACC_BY_KEY[k]).filter(Boolean);
+function dressNewItems(c) {   // items tried on that the cat doesn't own yet (never IAP — those come from the pack)
+  return (_dressWorn || []).filter(k => !accOwned(c, k)).map(k => ACC_BY_KEY[k]).filter(a => a && !a.iap);
 }
 function stopDressLoop() { if (_dressRAF) { cancelAnimationFrame(_dressRAF); _dressRAF = 0; } }
 function renderShopDress(list) {
@@ -4718,13 +4731,18 @@ function renderShopDress(list) {
   if (!_dressWorn) _dressWorn = (c.worn || []).slice();
   list.classList.add("dressmode");
 
+  const sparkleOwned = iapOwns("sparkle_pack");
   const groups = [...new Set(ACCESSORIES.map(a => a.group))];
   const rackHTML = groups.map(grp => {
     const items = ACCESSORIES.filter(a => a.group === grp);
-    return `<h4>${grp === "Sparkle" ? "✦ Sparkle" : grp}</h4><div class="dp-grid">` + items.map(a => {
+    const head = grp === "Sparkle"
+      ? `<h4>✦ Sparkle${sparkleOwned ? "" : ` <button class="dp-getpack" data-getpack="1">Sparkle Pack · ${IAP_PRODUCTS.sparkle_pack.price}</button>`}</h4>`
+      : `<h4>${grp}</h4>`;
+    return head + `<div class="dp-grid">` + items.map(a => {
       const owned = accOwned(c, a.key), on = _dressWorn.includes(a.key);
-      const cost = a.pearls ? `✦ ${a.pearls}` : `◈ ${a.price}`;
-      return `<button class="dp-acc${on ? " on" : ""}${a.premium ? " premium" : ""}${owned ? " owned" : ""}" data-acc="${a.key}" title="${esc(a.blurb)}">
+      const locked = !!a.iap && !owned;
+      const cost = locked ? "🔒" : a.pearls ? `✦ ${a.pearls}` : `◈ ${a.price}`;
+      return `<button class="dp-acc${on ? " on" : ""}${a.premium ? " premium" : ""}${owned ? " owned" : ""}${locked ? " locked" : ""}" data-acc="${a.key}" title="${esc(a.blurb)}">
         <span class="dp-nm">${a.label}</span>
         <span class="dp-cost">${owned ? "yours" : cost}</span>
       </button>`;
@@ -4776,8 +4794,10 @@ function renderShopDress(list) {
   })();
 
   list.querySelector(".dp-rack").addEventListener("click", e => {
+    if (e.target.closest("[data-getpack]")) { showSparkleOffer(); return; }
     const b = e.target.closest(".dp-acc"); if (!b) return;
-    const k = b.dataset.acc, slot = accSlot(k);
+    const k = b.dataset.acc, slot = accSlot(k), a = ACC_BY_KEY[k];
+    if (a && a.iap && !accOwned(c, k)) { showSparkleOffer(); return; }   // locked — the pack, not a toggle
     if (_dressWorn.includes(k)) _dressWorn = _dressWorn.filter(x => x !== k);
     else _dressWorn = _dressWorn.filter(x => accSlot(x) !== slot).concat(k);
     ensureAudio(); tone(523.25, 0.05, "sine", 0.03);
@@ -5910,12 +5930,13 @@ function applyEntitlements() {
       if (mid.owned && !mid.owned.includes("bow")) mid.owned.push("bow");
     }
   }
-  if (iapOwns("sparkle_pack")) {      // the effect cosmetics become owned for every resident
-    for (const c of cats) {
-      if (c.visitor) continue;
-      c.owned = c.owned || [];
-      for (const k of ["glowcollar", "wings", "rainbow"]) if (!c.owned.includes(k)) c.owned.push(k);
-    }
+  // the Sparkle Pack's effect cosmetics (glow/wings/rainbow) are owned by
+  // derivation in accOwned() whenever `sparkle_pack` is owned — nothing to
+  // materialise here, so it covers every present and future cat automatically.
+  // If the pack isn't owned, make sure no cat is still wearing one.
+  if (!iapOwns("sparkle_pack")) {
+    const fx = ["glowcollar", "wings", "rainbow"];
+    for (const c of cats) if (c.worn && c.worn.some(k => fx.includes(k))) c.worn = c.worn.filter(k => !fx.includes(k));
   }
 }
 // call after a store purchase is CONFIRMED + acknowledged (real build: inside the
@@ -5991,6 +6012,46 @@ function showPackOffer(soft) {
     const ok = await restorePurchases();
     if (ok) closeModal();
   };
+}
+// the Sparkle Pack — the only way to get the glow collar / little wings /
+// rainbow trail. One purchase, all three, every cat present and future.
+function showSparkleOffer() {
+  ensureAudio();
+  const price = IAP_PRODUCTS.sparkle_pack.price;
+  if (iapOwns("sparkle_pack")) {
+    openModal(`<div class="reveal"><div class="kicker">✦ Sparkle Pack</div>
+      <h2>It's yours 🧡</h2>
+      <p class="sub">The glow collar, little wings and rainbow trail are unlocked for every cat in the cove. Dress them up from the Shop.</p>
+      <div class="row"><button class="btn primary" id="sp-close">Back to the cove</button></div></div>`);
+    document.getElementById("sp-close").onclick = closeModal;
+    return;
+  }
+  openModal(`<div class="reveal">
+    <div class="kicker">✦ Sparkle Pack</div>
+    <h2>Sparkle Pack</h2>
+    <ul class="packperks">
+      <li><b>Glow collar</b> — a soft, steady light, lovely at night</li>
+      <li><b>Little wings</b> — feathered, they flutter on the cat's back</li>
+      <li><b>Rainbow trail</b> — a ribbon of colour that streams as the cat runs</li>
+      <li>All three, for every cat — now and any that wander in later</li>
+    </ul>
+    <div class="row">
+      <button class="btn primary" id="sp-buy">Get it — ${price}</button>
+      <button class="btn" id="sp-no">Maybe later</button>
+    </div>
+    <button class="linkbtn" id="sp-restore" style="margin-top:.6rem">Already bought it? Restore purchase</button>
+    <p class="sub" style="margin:.5rem 0 0;font-size:.76rem;">Purely cosmetic — no effect on your cove, your cats or your progress. Simulated in this build; the real one uses App Store / Google Play billing, tied to your account so it carries across devices.</p>
+  </div>`);
+  document.getElementById("sp-buy").onclick = () => {
+    closeModal();
+    if (!confirm(`Confirm purchase — Sparkle Pack, ${price}?\n(simulated: no charge)`)) return;
+    completePurchase("sparkle_pack");
+    logMoment("✨", "The Sparkle Pack — the whole cove can shine now.", "care");
+    toast("Sparkle Pack unlocked — glow, wings and rainbow are in the dress-up rack.", 5);
+    if (panels.shop && !panels.shop.hidden) renderShop();
+  };
+  document.getElementById("sp-no").onclick = closeModal;
+  document.getElementById("sp-restore").onclick = async () => { const ok = await restorePurchases(); if (ok) { closeModal(); if (panels.shop && !panels.shop.hidden) renderShop(); } };
 }
 
 /* ---------- offline earnings ---------- */

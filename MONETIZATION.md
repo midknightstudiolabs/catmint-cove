@@ -33,11 +33,11 @@
   earnings.** Pay-to-progress. → rework into **Founding Covekeeper** (cosmetic
   + future ad-removal only).
 - ❌ **The same pack grants ✦50 pearls.** No soft currency in packs. → drop it.
-- ⚠️ **Effect cosmetics (glow collar / wings / rainbow trail) are bought with
-  pearls.** Pearls are earned via Catdex + goals. This isn't "selling pearls",
-  but it does route cosmetics through a grind currency. Decision needed:
-  keep as a soft-currency earn, or move to a real-money **Sparkle Pack** /
-  the accessory-collection model below.
+- ✅ **RESOLVED — effect cosmetics are Sparkle Pack only** (commit `9c9c61b`).
+  Glow collar / little wings / rainbow trail lost their pearl price;
+  `sparkle_pack` ($2.99) is the sole path. Owned-by-derivation for every cat
+  once the pack is bought; stripped + re-locked if it isn't. `showSparkleOffer()`
+  + a "Sparkle Pack · $2.99" button in the dress-up ✦ Sparkle header.
 - ⚠️ **Shop is called "Shop"** with tabs Featured / Comforts / Stations /
   Dress-up / Decor / Upgrades. → reframe as **The Tideline Shop**; add
   **Accessories** and **Photos** categories.
