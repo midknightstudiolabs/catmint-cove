@@ -41,6 +41,16 @@
   `sparkle_pack` ($2.99) is the sole path. Owned-by-derivation for every cat
   once the pack is bought; stripped + re-locked if it isn't. `showSparkleOffer()`
   + a "Sparkle Pack · $2.99" button in the dress-up ✦ Sparkle header.
+- ✅ **Welcome Pack — built at $0.99** (per direction; overrides the "$2.99, no
+  $0.99 offer initially" line below). Contents pared to two cosmetics: an
+  **amber ribbon** (neck accessory, `iap:"welcome_pack"`, group "Welcome",
+  owned-by-derivation for every cat) and a carved **welcome paw** stone by the
+  cove sign (`drawCoveSign`, left of the board, gated on `iapOwns`). No photo
+  frame (dropped per direction). `showWelcomeOffer()`, a generic
+  `showIapOffer(id)` router, a generalized pack-group header in the dress-up
+  rack (Sparkle + Welcome), a Featured-tab row, and `maybeOfferWelcome()` —
+  fires once after tutorial done + ≥1 framed photo + ≥2 residents
+  (`G.welcomeOffered`). Purely cosmetic.
 - ⚠️ **Shop is called "Shop"** with tabs Featured / Comforts / Stations /
   Dress-up / Decor / Upgrades. → reframe as **The Tideline Shop**; add
   **Accessories** and **Photos** categories.
@@ -48,7 +58,7 @@
   reverse-DNS (`com.midknightstudiolabs.catmintcove.*`).
 
 **Not built at all:**
-- Welcome Pack, Accessory Pack #1
+- Accessory Pack #1
 - The "Tideline Shop" reframe (still "Shop")
 - Photo-frame system (Founding Covekeeper drops its frame; deferred)
 - Seasonal cosmetic collections
@@ -106,23 +116,23 @@ hat"* — not *"I need to buy this or I'm falling behind."*
 
 ## Monetization V1 — build the system now, small catalog
 
-### 1. Midknight's Welcome Pack — $2.99
+### 1. Welcome Pack — $0.99  *(BUILT — priced $0.99 per direction, contents pared)*
 
 Convert an emotionally engaged free player into their first purchase. All
 cosmetic — no Shells / Pearls / Driftwood / boosts.
 
-- Amber Ribbon (cat accessory)
-- Little Cove Sign (Cove decoration)
-- Moon & Paw Photo Frame
-- Welcome Paw collectible / badge
+- **Amber ribbon** (neck accessory — `iap:"welcome_pack"`, group "Welcome",
+  owned-by-derivation for every cat present and future)
+- **Welcome paw** — a carved stone with an amber paw print, tucked by the cove
+  sign (`drawCoveSign`, left of the board, gated on `iapOwns`)
+- ~~Little Cove Sign~~ / ~~Moon & Paw Photo Frame~~ — dropped (no frame/decor-
+  prop system for this; the welcome paw covers the "world marker" role)
 
-Copy: *"Midknight left a few things by the sign. He says they weren't for
-you."*
-
-**Trigger** (not on first open): meet Midknight → attract another cat → name
-the Cove → interact with the world → take first photo → *then* the Welcome
-Pack becomes available. The player understands and cares about the world
-before being asked to buy.
+**Trigger** — `maybeOfferWelcome()`: tutorial done + ≥1 framed photo + ≥2
+residents, offered once (`G.welcomeOffered`), hooked from the photo-save path
+and `afterReturn`. Also surfaced as a Featured-tab Shop row and a locked
+"Welcome" group in the dress-up rack. The player understands and cares about
+the world before being asked to buy.
 
 ### 2. Accessory Pack #1 — $2.99 · "The Very Important Cat Collection"
 

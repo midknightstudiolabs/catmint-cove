@@ -61,24 +61,31 @@ Both stores need these before you can submit — none of it is code:
   - **App Store subtitle** (30 char max): `A cozy cat sanctuary`
   - **Play short description** (80 char max):
     `A cozy corner where cats come to be looked after — and you make it theirs.`
-  - **Full description** (both stores) — ⚠️ **DRAFT, pre-V3, do not submit as-is.**
-    V3 added a care layer + a leave condition, so "no timer and no fail state"
-    is no longer true. Reposition once the care loop is playtested (a warmer
-    *Neko Atsume × light Tamagotchi × decorate-your-space*, not "absence is
-    neutral"). Old draft kept for reference:
-    > Catmint Cove is a calm place. Cats wander in, and you look after them —
-    > a warm spot in the sun, a bowl by the door, a scratch behind the ears.
+  - **Full description** (both stores) — V3 draft, tweak freely. Positioning:
+    a warmer *Neko Atsume × a light touch of Tamagotchi × decorate-your-space*.
+    Cats need looking after and a badly-neglected one *can* wander off (it stays
+    in your field guide — nothing is ever lost for good), but the register is
+    still calm: a telegraphed warning every time, no timer on the screen, no
+    punishment for a day away.
+    > Catmint Cove is a quiet place. Cats wander in needing someone — a warm
+    > spot in the sun, a full bowl, fresh water, a scratch behind the ears — and
+    > you look after them.
     >
-    > There is no timer and no fail state. Time is weather here, not a countdown.
-    > Leave for a day and nothing is lost; come back and the cove has carried on
-    > without you. Every cat has its own way of being a cat — a lazy one loafs,
-    > a bold one gets the zoomies, a shy one watches from the long grass — and
-    > the more time you spend together, the more you notice.
+    > Keep them fed and comfortable and they settle in and make the cove home.
+    > Let things slide too long and a cat might pad off down the shore — you'll
+    > always get a clear warning first, and it's still waiting in your field
+    > guide if you want to coax it back. A day away costs you nothing: the cove
+    > carries on without you and tells you what happened when you return.
+    >
+    > Every cat has its own way of being a cat — a lazy one loafs, a bold one
+    > gets the zoomies, a shy one watches from the long grass — and the more
+    > time you spend together, the more you notice.
     >
     > Slowly you make the place theirs: mend the old dock, plant the catmint,
-    > light the little bakery oven. Send a few cats off exploring and read the
-    > postcards they send home. Fill the field guide. Sit with one cat a while
-    > and just watch it groom.
+    > light the little bakery oven, nudge a bed into the corner it wants to be
+    > in. Send a few cats off exploring and read the postcards they send home.
+    > Fill the field guide. Frame a photo. Sit with one cat a while and just
+    > watch it groom.
     >
     > A cozy corner of the world where cats come to be looked after — and you
     > slowly make it theirs.
@@ -178,9 +185,9 @@ Pack IAP **simulated**. Before turning either on:
 - **IAP**: add `@revenuecat/purchases-capacitor` (recommended — it handles
   receipt validation, the entitlement layer, restore, and cross-platform "does
   this user own X" as one call; free under ~$2.5k/mo) or
-  `@capacitor-community/in-app-purchases`. Products: `founding_covekeeper`
-  ($4.99) and `sparkle_pack` ($2.99) — **both non-consumable**, created in both
-  consoles.
+  `@capacitor-community/in-app-purchases`. Products: `welcome_pack` ($0.99),
+  `founding_covekeeper` ($4.99) and `sparkle_pack` ($2.99) — **all
+  non-consumable**, created in both consoles.
 
   **The purchase-persistence contract (scaffolded + tested in `index.html`)** —
   a store purchase lives on the player's Apple/Google account, so an app
@@ -200,7 +207,8 @@ Pack IAP **simulated**. Before turning either on:
     (fail-open: a wrongly-revoked perk is a support ticket; a wrongly-kept
     cosmetic flag costs nothing).
   - `applyEntitlements()` re-derives every perk (ads-off, Midknight's founder
-    ribbon, the sign plaque, the Sparkle effect cosmetics) from `owned`.
+    ribbon, the sign plaque, the welcome paw + amber ribbon, the Sparkle effect
+    cosmetics) from `owned`.
     Idempotent. `G.ads.supporter` is the ad-free mirror it writes. **No
     gameplay perks** — see `MONETIZATION.md`.
   - After a confirmed purchase call `completePurchase(productId)` **and

@@ -153,6 +153,9 @@ rethink.
       replaced the old Cozy Supporter Pack + its 2×-offline / ✦50 perks.
 - [x] **Sparkle Pack $2.99** — unlocks the glow collar / little wings /
       rainbow trail effect cosmetics for the whole cove. Cosmetic only.
+- [x] **Welcome Pack $0.99** — an amber ribbon for every cat + a carved
+      welcome paw by the cove sign. Offered once after the tutorial + a first
+      framed photo + 2 residents. Cosmetic only.
 
 ### Monetization notes — launch ad-free, ads on later
 

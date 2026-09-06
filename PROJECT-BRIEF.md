@@ -375,13 +375,14 @@ pass [AdMob's app-readiness review](https://support.google.com/admob/answer/1056
 (needs a *published* app + matching store IDs + verified payments), then flip
 ads on — `ADS_ENABLED` becomes a remote-config flag, no re-submission needed.
 
-- **Founding Covekeeper — $4.99** · **Sparkle Pack — $2.99** (one-time IAPs,
-  simulated for now). Both **cosmetic + support only — never pay-to-win**
-  (see `MONETIZATION.md`, the canonical strategy). Founding Covekeeper: a
+- **Welcome Pack — $0.99** · **Founding Covekeeper — $4.99** · **Sparkle Pack
+  — $2.99** (one-time IAPs, simulated for now). All **cosmetic + support only
+  — never pay-to-win** (see `MONETIZATION.md`, the canonical strategy).
+  Welcome Pack: an amber ribbon for every cat + a carved welcome paw by the
+  sign, offered once the player's a little invested. Founding Covekeeper: a
   founder's plaque by the cove sign, Midknight's founder ribbon, ad-free
   forever. Sparkle Pack: the glow / wings / rainbow effect cosmetics for the
-  whole cove. Planned next: a Welcome Pack ($2.99) and an Accessory
-  Collection ($2.99).
+  whole cove. Planned next: an Accessory Collection ($2.99).
 - **Ads, when eventually on:** Google AdMob. Rewarded-first (double offline
   earnings, coax a cat for free) + **one light** session-boundary
   interstitial — 48h new-player grace, ≤3/day, ≥4min apart, never for

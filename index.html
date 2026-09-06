@@ -937,7 +937,7 @@
     <div class="ts-card">
       <div class="ts-emblem">🐾</div>
       <h1>Catmint <b>Cove</b></h1>
-      <p class="ts-sub">A cozy corner of the world where cats come to be looked after.</p>
+      <p class="ts-sub">Cats wander in needing someone. Look after them, and the cove slowly becomes theirs.</p>
       <button class="btn primary" id="ts-go">Begin</button>
     </div>
   </div>
@@ -1439,6 +1439,7 @@ let G = null;
 //      `iap.grants`. NATIVE: key them off the store transaction id.
 // applyEntitlements() re-derives every perk from `owned` and is idempotent.
 const IAP_PRODUCTS = {
+  welcome_pack:        { price: "$0.99", label: "Welcome Pack",        type: "non-consumable" },   // small first-purchase: an amber ribbon + a welcome paw by the sign
   founding_covekeeper: { price: "$4.99", label: "Founding Covekeeper", type: "non-consumable" },   // cosmetic + support; NO gameplay advantage
   sparkle_pack:        { price: "$2.99", label: "Sparkle Pack",        type: "non-consumable" },   // unlocks the effect cosmetics for the whole cove
 };
@@ -1502,6 +1503,7 @@ function newGame() {
   return {
     v: 9,
     tutorialDone: false,
+    welcomeOffered: false,   // the one-time Welcome Pack nudge has been shown
     coldStep: 0,          // cold-open progress (0..COLD.length) — resumes if interrupted
     midknightSeeded: false,
     shells: 25,
@@ -4035,6 +4037,9 @@ const ACCESSORIES = [
   { key:"sunhat",      label:"Sun hat",      price:30,  slot:"head", group:"Hats",     blurb:"A woven straw hat pushed back off the face." },
   { key:"partyhat",    label:"Party hat",    price:20,  slot:"head", group:"Hats",     blurb:"Because every day could be a birthday." },
   { key:"crown",       label:"Crown",        price:120, slot:"head", group:"Regalia",  blurb:"For the cove's most distinguished loaf." },
+  // Welcome Pack IAP ($0.99) — a small first purchase. One accessory, unlocked
+  // for the whole cove, plus a carved "welcome paw" that appears by the sign.
+  { key:"amberribbon", label:"Amber ribbon", iap:"welcome_pack", slot:"neck", group:"Welcome", premium:true, blurb:"A soft amber ribbon knotted at the neck — the colour of late afternoon light on the cove." },
   // v3 effect cosmetics — the Sparkle Pack IAP unlocks all three for the whole
   // cove (present and future cats). No currency path — see MONETIZATION.md.
   { key:"glowcollar",  label:"Glow collar",  iap:"sparkle_pack", slot:"neck", group:"Sparkle", premium:true, blurb:"A collar with a soft, steady light. Comes into its own at night and in Rest mode." },
@@ -4084,7 +4089,7 @@ function equipAccessory(c, key, forceOn) {
 function buyAccessory(c, key) {                   // buy + wear; returns true on success
   const a = ACC_BY_KEY[key]; if (!a || !c) return false;
   if (accOwned(c, key)) { equipAccessory(c, key, true); return true; }
-  if (a.iap) { showSparkleOffer(); return false; }   // effect cosmetics only come from the pack
+  if (a.iap) { showIapOffer(a.iap); return false; }   // premium cosmetics only come from their pack
   if (a.pearls) {
     if ((G.pearls || 0) < a.pearls) { toast(`${a.label} is ✦${a.pearls} — earn a few more pearls from the Catdex or daily goals.`); return false; }
     G.pearls -= a.pearls;
@@ -4552,6 +4557,25 @@ function shopPackRow() {
   if (pb) pb.addEventListener("click", () => showPackOffer(false));
   return pack;
 }
+// the Welcome Pack — a small first-purchase row. Shows once the player's a
+// little invested (or as a thank-you once owned); stays hidden before that.
+function shopWelcomeRow() {
+  const owned = iapOwns("welcome_pack");
+  const engaged = G.tutorialDone && G.metrics && G.metrics.photos > 0 && residentCount() >= 2;
+  if (!owned && !engaged) return null;
+  const row = document.createElement("div");
+  row.className = "shop-item pack";
+  row.innerHTML = owned
+    ? `<div class="txt"><div class="name">🐾 Welcome Pack</div>
+         <div class="desc">The amber ribbon's in the dress-up rack · welcome paw's by the sign · thank you 🧡</div></div>
+       <span class="owned">Owned</span>`
+    : `<div class="txt"><div class="name">🐾 Welcome Pack</div>
+         <div class="desc">An amber ribbon for every cat + a carved welcome paw by the sign · purely cosmetic</div></div>
+       <button class="btn primary">${IAP_PRODUCTS.welcome_pack.price}</button>`;
+  const b = row.querySelector("button");
+  if (b) b.addEventListener("click", () => showWelcomeOffer(false));
+  return row;
+}
 function shopBoostRow() {
   const bc = document.createElement("div");
   bc.className = "shop-item boostcard";
@@ -4728,12 +4752,16 @@ function renderShopDress(list) {
   if (!_dressWorn) _dressWorn = (c.worn || []).slice();
   list.classList.add("dressmode");
 
-  const sparkleOwned = iapOwns("sparkle_pack");
+  const PACK_GROUP = {   // groups whose items are all unlocked by one IAP
+    Sparkle: { id: "sparkle_pack", icon: "✦" },
+    Welcome: { id: "welcome_pack", icon: "🐾" },
+  };
   const groups = [...new Set(ACCESSORIES.map(a => a.group))];
   const rackHTML = groups.map(grp => {
     const items = ACCESSORIES.filter(a => a.group === grp);
-    const head = grp === "Sparkle"
-      ? `<h4>✦ Sparkle${sparkleOwned ? "" : ` <button class="dp-getpack" data-getpack="1">Sparkle Pack · ${IAP_PRODUCTS.sparkle_pack.price}</button>`}</h4>`
+    const pk = PACK_GROUP[grp];
+    const head = pk
+      ? `<h4>${pk.icon} ${grp}${iapOwns(pk.id) ? "" : ` <button class="dp-getpack" data-getpack="${pk.id}">${IAP_PRODUCTS[pk.id].label} · ${IAP_PRODUCTS[pk.id].price}</button>`}</h4>`
       : `<h4>${grp}</h4>`;
     return head + `<div class="dp-grid">` + items.map(a => {
       const owned = accOwned(c, a.key), on = _dressWorn.includes(a.key);
@@ -4791,10 +4819,11 @@ function renderShopDress(list) {
   })();
 
   list.querySelector(".dp-rack").addEventListener("click", e => {
-    if (e.target.closest("[data-getpack]")) { showSparkleOffer(); return; }
+    const gp = e.target.closest("[data-getpack]");
+    if (gp) { showIapOffer(gp.dataset.getpack); return; }
     const b = e.target.closest(".dp-acc"); if (!b) return;
     const k = b.dataset.acc, slot = accSlot(k), a = ACC_BY_KEY[k];
-    if (a && a.iap && !accOwned(c, k)) { showSparkleOffer(); return; }   // locked — the pack, not a toggle
+    if (a && a.iap && !accOwned(c, k)) { showIapOffer(a.iap); return; }   // locked — the pack, not a toggle
     if (_dressWorn.includes(k)) _dressWorn = _dressWorn.filter(x => x !== k);
     else _dressWorn = _dressWorn.filter(x => accSlot(x) !== slot).concat(k);
     ensureAudio(); tone(523.25, 0.05, "sine", 0.03);
@@ -4837,6 +4866,8 @@ function renderShop() {
 
   if (shopTab === "featured") {
     list.appendChild(shopPackRow());
+    const wr = shopWelcomeRow();
+    if (wr) list.appendChild(wr);
     list.appendChild(shopBoostRow());
     const rec = SHOP.find(i => i.cat === "comforts" && !i.soon && i.get() === 0) || SHOP.find(i => i.cat === "stations" && !i.soon && i.get() === 0);
     if (rec) { list.appendChild(shopHead("Suggested next")); list.appendChild(shopItemRow(rec)); }
@@ -5026,6 +5057,7 @@ function savePhoto() {
     }, "image/png");
   } catch (e) { photoHintFail(); }
   sfx("collect");
+  try { maybeOfferWelcome(); } catch (e) {}
 }
 function photoHintFail() {
   document.getElementById("photoHint").textContent = "Download blocked here — screenshot the frame to share it.";
@@ -5936,6 +5968,12 @@ function applyEntitlements() {
     const fx = ["glowcollar", "wings", "rainbow"];
     for (const c of cats) if (c.worn && c.worn.some(k => fx.includes(k))) c.worn = c.worn.filter(k => !fx.includes(k));
   }
+  // Welcome Pack — the amber ribbon is owned by derivation while `welcome_pack`
+  // is owned (accOwned), and a carved welcome paw shows by the sign (drawCoveSign).
+  // Nothing to materialise; just make sure no cat wears the ribbon if it's not owned.
+  if (!iapOwns("welcome_pack")) {
+    for (const c of cats) if (c.worn && c.worn.includes("amberribbon")) c.worn = c.worn.filter(k => k !== "amberribbon");
+  }
 }
 // call after a store purchase is CONFIRMED + acknowledged (real build: inside the
 // billing plugin's success callback). the native build should also, right here,
@@ -6051,6 +6089,65 @@ function showSparkleOffer() {
   };
   document.getElementById("sp-no").onclick = closeModal;
   document.getElementById("sp-restore").onclick = async () => { const ok = await restorePurchases(); if (ok) { closeModal(); if (panels.shop && !panels.shop.hidden) renderShop(); } };
+}
+// route a premium accessory's `iap` id to the right offer modal
+function showIapOffer(id) {
+  if (id === "welcome_pack") return showWelcomeOffer();
+  if (id === "founding_covekeeper") return showPackOffer(false);
+  return showSparkleOffer();
+}
+// the Welcome Pack — a small first purchase ($0.99). One amber ribbon, unlocked
+// for every cat, plus a carved "welcome paw" marker by the cove sign.
+function showWelcomeOffer(soft) {
+  ensureAudio();
+  const price = IAP_PRODUCTS.welcome_pack.price;
+  if (iapOwns("welcome_pack")) {
+    openModal(`<div class="reveal"><div class="kicker">🐾 Welcome Pack</div>
+      <h2>It's yours 🧡</h2>
+      <p class="sub">The amber ribbon is unlocked for every cat, and your welcome paw is carved by the sign. Dress a cat up from the Shop.</p>
+      <div class="row"><button class="btn primary" id="wp-close">Back to the cove</button></div></div>`);
+    document.getElementById("wp-close").onclick = closeModal;
+    return;
+  }
+  openModal(`<div class="reveal">
+    <div class="kicker">${soft ? "Settling in?" : "🐾 Welcome Pack"}</div>
+    <h2>Welcome Pack</h2>
+    <p class="sub" style="margin:.1rem 0 .7rem">A little something for making the cove feel like home.</p>
+    <ul class="packperks">
+      <li>An <b>amber ribbon</b> — for every cat, now and later</li>
+      <li>A carved <b>welcome paw</b> by the cove sign</li>
+    </ul>
+    <div class="row">
+      <button class="btn primary" id="wp-buy">Get it — ${price}</button>
+      <button class="btn" id="wp-no">Maybe later</button>
+    </div>
+    <button class="linkbtn" id="wp-restore" style="margin-top:.6rem">Already bought it? Restore purchase</button>
+    <p class="sub" style="margin:.5rem 0 0;font-size:.76rem;">Purely cosmetic — no effect on your cove, your cats or your progress. Simulated in this build; the real one uses App Store / Google Play billing, tied to your account so it carries across devices.</p>
+  </div>`);
+  document.getElementById("wp-buy").onclick = () => {
+    closeModal();
+    if (!confirm(`Confirm purchase — Welcome Pack, ${price}?\n(simulated: no charge)`)) return;
+    completePurchase("welcome_pack");
+    G.welcomeOffered = true;
+    logMoment("🐾", "The Welcome Pack — a welcome paw's been carved by the sign.", "care");
+    toast("Welcome Pack unlocked — the amber ribbon's in the dress-up rack.", 5);
+    if (panels.shop && !panels.shop.hidden) renderShop();
+  };
+  document.getElementById("wp-no").onclick = () => { G.welcomeOffered = true; save(); closeModal(); };
+  document.getElementById("wp-restore").onclick = async () => { const ok = await restorePurchases(); if (ok) { closeModal(); if (panels.shop && !panels.shop.hidden) renderShop(); } };
+}
+// offer the Welcome Pack once, only after some genuine engagement — the
+// tutorial's done, a photo's been framed, and there are a couple of residents.
+function maybeOfferWelcome() {
+  if (G.welcomeOffered || iapOwns("welcome_pack")) return;
+  if (!G.tutorialDone) return;
+  if (!(G.metrics && G.metrics.photos > 0)) return;
+  if (residentCount() < 2) return;
+  const busy = () => (scrim && scrim.classList.contains("on"))
+    || (tutEl && tutEl.classList.contains("on")) || !!_cold || restMode;
+  if (busy()) return;
+  G.welcomeOffered = true; save();
+  setTimeout(() => { try { if (!busy()) showWelcomeOffer(true); } catch (e) {} }, 1400);
 }
 
 /* ---------- offline earnings ---------- */
@@ -9088,6 +9185,25 @@ function drawCoveSign(g, W, H) {
     g.fillText("· 2026 ·", 0, py + 15.5);
     g.restore();
   }
+  // Welcome Pack — a small carved stone with a paw print, tucked at the foot of
+  // the left post. Low-key; it just says "someone made this place a home".
+  if (typeof iapOwns === "function" && iapOwns("welcome_pack")) {
+    g.save();
+    g.translate(-bw / 2 - 16, 20);
+    g.fillStyle = "rgba(36,31,23,0.12)"; g.beginPath(); g.ellipse(0, 5, 12, 3.5, 0, 0, 7); g.fill();
+    const grad = g.createLinearGradient(0, -9, 0, 5);
+    grad.addColorStop(0, "#d9cbb2"); grad.addColorStop(1, "#b7a684");
+    g.fillStyle = grad;
+    g.beginPath(); roundRect(g, -11, -9, 22, 14, 5); g.fill();
+    g.strokeStyle = "rgba(74,53,36,0.30)"; g.lineWidth = 1;
+    g.beginPath(); roundRect(g, -11, -9, 22, 14, 5); g.stroke();
+    // carved amber paw
+    g.fillStyle = "#c98a3c";
+    g.beginPath(); g.ellipse(0, 0.5, 3, 2.6, 0, 0, 7); g.fill();
+    for (let i = -1; i <= 1; i++) { g.beginPath(); g.ellipse(i * 2.6, -3.4, 1.05, 1.35, 0, 0, 7); g.fill(); }
+    g.beginPath(); g.ellipse(-3.6, -1.4, 1, 1.2, 0, 0, 7); g.ellipse(3.6, -1.4, 1, 1.2, 0, 0, 7); g.fill();
+    g.restore();
+  }
   g.textAlign = "left"; g.textBaseline = "alphabetic";
   g.restore();
 }
@@ -9210,6 +9326,23 @@ function drawAccessory(g, kind, P, coat, kit) {
     g.moveTo(bx, by); g.lineTo(bx + 6, by - 4); g.lineTo(bx + 6, by + 4); g.closePath();
     g.fill();
     g.fillStyle = "#d06f96"; g.beginPath(); g.arc(bx, by, 2, 0, 7); g.fill();
+  } else if (kind === "amberribbon") {
+    // a soft amber ribbon around the neck, tied off at the side with two tails
+    const y = hy + hr * 0.82;
+    g.strokeStyle = "#d99a44"; g.lineWidth = kit ? 2.6 : 3.2;
+    g.beginPath(); g.arc(hx, hy, hr * 0.98, Math.PI * 0.16, Math.PI * 0.84); g.stroke();
+    const kx = hx + hr * 0.5, ky = y - 1;
+    g.fillStyle = "#e8b45a";
+    g.beginPath();
+    g.moveTo(kx, ky); g.lineTo(kx - 5, ky - 3.4); g.lineTo(kx - 5, ky + 3.4); g.closePath();
+    g.moveTo(kx, ky); g.lineTo(kx + 5, ky - 3.4); g.lineTo(kx + 5, ky + 3.4); g.closePath();
+    g.fill();
+    g.strokeStyle = "#d99a44"; g.lineWidth = 1.6; g.lineCap = "round";
+    g.beginPath();
+    g.moveTo(kx - 1.5, ky + 1.5); g.lineTo(kx - 3.5, ky + 6.5);
+    g.moveTo(kx + 1.5, ky + 1.5); g.lineTo(kx + 3.8, ky + 6);
+    g.stroke();
+    g.fillStyle = "#c98a3c"; g.beginPath(); g.arc(kx, ky, 1.7, 0, 7); g.fill();
   } else if (kind === "flower") {
     const fx = hx + hr * 0.72, fy = hy - hr * 0.58;
     g.fillStyle = "#e8d06a";
@@ -11679,6 +11812,7 @@ function afterReturn(awaySec) {
   if (checkinAvailable() && G.tutorialDone) {
     setTimeout(() => { if (checkinAvailable()) toast("A daily welcome is waiting in Today. 📅", 5); }, 700);
   }
+  setTimeout(() => { try { maybeOfferWelcome(); } catch (e) {} }, 4200);
 }
 
 /* ---------- boot ---------- */
@@ -11929,6 +12063,7 @@ window.__cove = {
   },
   iap(cmd, id){
     if (cmd === "buy") { completePurchase(id || "founding_covekeeper"); return "owned: " + Object.keys(G.iap.owned).filter(k => G.iap.owned[k]).join(", "); }
+    if (cmd === "offer") return showIapOffer(id || "welcome_pack");
     if (cmd === "restore") return restorePurchases();
     if (cmd === "reconcile") { return reconcileEntitlements(Array.isArray(id) ? id : (id ? [id] : []), true); }
     if (cmd === "clearlocal") { G.iap.owned = {}; G.ads.supporter = false; G.ads.perm2x = false; saveIap(); applyEntitlements(); save(); return "owned-cache wiped (grants ledger kept) — a real restore re-fills owned from the store"; }
