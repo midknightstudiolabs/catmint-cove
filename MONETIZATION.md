@@ -162,8 +162,8 @@ Cosmetic + support only — no 2× offline, no pearls.
 - **Hero mask** — a dark domino eye mask for any cat
 - ~~Founder's Cove Sign~~ — folded into the plaque
 - ~~Founder's Photo Frame~~ — dropped (no frame system yet)
-- (Still true, but no longer surfaced as a perk: if ads are ever introduced,
-  supporters stay ad-free. The offer copy leads with backing the developer.)
+- **Ad-free forever** (stated plainly, without the "if ads are ever added"
+  hedge — supporters stay ad-free whatever happens later)
 - Goes straight to the developer — no publisher, no investors
 
 Copy: *"Catmint Cove is made by one person at Midknight Studio Labs. This is the
