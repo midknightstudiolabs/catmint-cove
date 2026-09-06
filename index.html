@@ -904,6 +904,21 @@
     cursor:pointer;opacity:0;pointer-events:none;transition:opacity .3s ease .12s;
   }
   #app.focusing #focusBar{opacity:.9;pointer-events:auto;}
+  /* prop placement — a bar while you're positioning a decoration */
+  #placeBar{
+    position:absolute;left:50%;transform:translateX(-50%);
+    bottom:max(1.1rem,calc(env(safe-area-inset-bottom) + .5rem));
+    z-index:23;display:flex;align-items:center;gap:.6rem;
+    padding:.5rem .6rem .5rem 1rem;border-radius:999px;
+    background:rgba(24,21,15,.62);color:#f3efe4;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+    font:600 .82rem/1.2 "Hanken Grotesk",-apple-system,sans-serif;
+    box-shadow:var(--shadow);max-width:92vw;
+  }
+  #placeBar[hidden]{display:none;}
+  #placeBar b{color:#fff;}
+  #placeBar button{flex:0 0 auto;font:inherit;font-weight:700;font-size:.78rem;cursor:pointer;border:0;
+    border-radius:999px;padding:.4rem .8rem;background:rgba(247,245,236,.94);color:var(--ink-soft);}
+  #placeBar button.ok{background:var(--accent-bright);color:#fff;}
 </style>
 
 <div id="app">
@@ -1147,6 +1162,11 @@
   </div>
 
   <div id="focusBar">‹&nbsp; step back</div>
+  <div id="placeBar" hidden>
+    <span id="placeBarTxt">Tap where it should go</span>
+    <button id="placeBarCancel">Cancel</button>
+    <button id="placeBarDone" class="ok">Set here</button>
+  </div>
 </div>
 
 <div id="rotate" aria-hidden="true">
@@ -1498,7 +1518,7 @@ function newGame() {
     tips: [],
     metrics: { pets:0, tokens:0, photos:0, catsAllTime:0, coaxed:0, dryStreak:0 },
     dex: { midknight: { star: 0, count: 1 } },   // coatKey -> { star: bestStar, count: timesSeen } — Midknight's always in the guide
-    cosmetics: { theme: "default", themes: { default: true }, props: {} },   // renewable decor: atmosphere theme + owned props
+    cosmetics: { theme: "default", themes: { default: true }, props: {}, propPos: {}, propBoxed: {} },   // renewable decor: atmosphere theme + owned props (+ player positions / packed-away)
     dexRewards: [],         // claimed Catdex milestone thresholds
     goals: null, goalDay: 0,
     streak: 0, streakDay: 0,
@@ -1552,6 +1572,8 @@ function load() {
     if (!G.cosmetics.themes || typeof G.cosmetics.themes !== "object") G.cosmetics.themes = { default: true };
     G.cosmetics.themes.default = true;
     if (!G.cosmetics.props || typeof G.cosmetics.props !== "object") G.cosmetics.props = {};
+    if (!G.cosmetics.propPos || typeof G.cosmetics.propPos !== "object") G.cosmetics.propPos = {};    // v3: player-set prop positions
+    if (!G.cosmetics.propBoxed || typeof G.cosmetics.propBoxed !== "object") G.cosmetics.propBoxed = {};
     if (!DECOR_THEMES[G.cosmetics.theme] || !G.cosmetics.themes[G.cosmetics.theme]) G.cosmetics.theme = "default";
     G.ads = Object.assign(newAdsState(), G.ads || {});
     // entitlements are loaded UNCONDITIONALLY by loadEntitlements() in the boot
@@ -3559,6 +3581,7 @@ function focusEligible(c) {
   return c && !_cold && !restMode && !anyPanelOpen() && cats.includes(c);
 }
 function enterFocus(c) {
+  if (_placing) cancelPlacing();
   if (!focusEligible(c) || _focus === c) return;
   hideCatCard(true);
   const r = canvas.getBoundingClientRect();
@@ -3640,8 +3663,55 @@ function catAt(x, y, rad) {
 // press-and-hold on a cat opens the focus camera.
 let _tpX = null, _tpY = null, _tpScroll = 0, _tpMoved = false;
 let _lpTimer = 0, _lpFired = false;
+/* ---------- prop placement — position a bought decoration ---------- */
+let _placing = null;        // { id, from } while positioning a movable prop
+let _placeGhost = null;     // { x, y } world pos the ghost follows
+function startPlacing(id) {
+  const p = PROP_BY_ID[id]; if (!p || !p.movable) return;
+  closeAllPanels();
+  const cur = propPos(id);
+  _placing = { id, from: propBoxed(id) ? null : { ...(G.cosmetics.propPos && G.cosmetics.propPos[id] || {}) } };
+  _placeGhost = { x: cur.x, y: clamp(cur.y, H * 0.62 + 20, catFloor() - 20) };
+  document.getElementById("placeBarTxt").innerHTML = `Placing the <b>${p.name.toLowerCase()}</b> — drag it, or tap a spot`;
+  document.getElementById("placeBar").hidden = false;
+  toast(`Drag the ${p.name.toLowerCase()} where you'd like it.`, 3);
+}
+function finishPlacing() {
+  if (!_placing) return;
+  const { id } = _placing;
+  if (!validPropSpot(_placeGhost.x, _placeGhost.y)) { toast("That spot won't work — try the open grass.", 3); return; }
+  G.cosmetics.propPos = G.cosmetics.propPos || {};
+  G.cosmetics.propPos[id] = { x: Math.round(_placeGhost.x), y: Math.round(_placeGhost.y) };
+  if (G.cosmetics.propBoxed) delete G.cosmetics.propBoxed[id];
+  _placing = null; _placeGhost = null;
+  document.getElementById("placeBar").hidden = true;
+  sfx("buy"); spawnParticles(G.cosmetics.propPos[id].x, G.cosmetics.propPos[id].y, "dust", 6);
+  syncHud(); save();
+  toast(`Set. Move it again any time from the Shop's Decor tab.`, 3);
+}
+function cancelPlacing() {
+  if (!_placing) return;
+  const { id, from } = _placing;
+  if (from && from.x != null) { G.cosmetics.propPos = G.cosmetics.propPos || {}; G.cosmetics.propPos[id] = { x: from.x, y: from.y }; }
+  _placing = null; _placeGhost = null;
+  document.getElementById("placeBar").hidden = true;
+  save();
+}
+function boxProp(id) {
+  const p = PROP_BY_ID[id]; if (!p) return;
+  G.cosmetics.propBoxed = G.cosmetics.propBoxed || {};
+  G.cosmetics.propBoxed[id] = true;
+  tone(392, 0.1, "sine", 0.05); tone(294, 0.14, "sine", 0.04, 0.06);
+  spawnParticles(propPos(id).x, propPos(id).y, "dust", 6);
+  save(); renderShop();
+  toast(`Packed the ${p.name.toLowerCase()} away — place it again any time.`, 3);
+}
+document.getElementById("placeBarDone").onclick = finishPlacing;
+document.getElementById("placeBarCancel").onclick = cancelPlacing;
+
 canvas.addEventListener("pointerdown", (e) => {
   ensureAudio();
+  if (_placing) { _placeGhost = screenToWorld(e.clientX, e.clientY); _tpX = e.clientX; _tpY = e.clientY; _tpMoved = false; return; }
   _tpX = e.clientX; _tpY = e.clientY; _tpScroll = stage.scrollLeft; _tpMoved = false; _lpFired = false;
   clearTimeout(_lpTimer);
   if (!_focus) _lpTimer = setTimeout(() => {
@@ -3652,9 +3722,17 @@ canvas.addEventListener("pointerdown", (e) => {
   }, 430);
 });
 canvas.addEventListener("pointermove", (e) => {
+  if (_placing) { if (_tpX != null) { _placeGhost = screenToWorld(e.clientX, e.clientY); if (Math.hypot(e.clientX - _tpX, e.clientY - _tpY) > 6) _tpMoved = true; } return; }
   if (_tpX != null && Math.hypot(e.clientX - _tpX, e.clientY - _tpY) > 9) { _tpMoved = true; clearTimeout(_lpTimer); }
 });
 canvas.addEventListener("pointerup", (e) => {
+  if (_placing) {
+    _placeGhost = screenToWorld(e.clientX, e.clientY);
+    _tpX = _tpY = null;
+    if (!_tpMoved && !validPropSpot(_placeGhost.x, _placeGhost.y)) { toast("Tap the open grass to set it there.", 2); return; }
+    finishPlacing();
+    return;
+  }
   clearTimeout(_lpTimer);
   if (_tpX == null) return;
   const panned = Math.abs(stage.scrollLeft - _tpScroll) > 4;
@@ -4567,13 +4645,19 @@ function renderShopDecor(list) {
   for (const p of DECOR_PROPS) {
     const owned = !!cm.props[p.id];
     const afford = G.shells >= p.price;
+    const boxed = owned && propBoxed(p.id);
     const row = document.createElement("div");
     row.className = "shop-item";
-    const action = owned ? `<span class="owned">In the cove</span>`
-      : `<button class="btn primary" data-buy-prop="${p.id}" ${afford ? "" : "disabled"}>◈ ${p.price.toLocaleString()}</button>`;
-    row.innerHTML = `<div class="txt"><div class="name">${p.name}</div><div class="desc">${p.blurb}</div></div><div class="shop-actions">${action}</div>`;
+    let action;
+    if (!owned) action = `<button class="btn primary" data-buy-prop="${p.id}" ${afford ? "" : "disabled"}>◈ ${p.price.toLocaleString()}</button>`;
+    else if (!p.movable) action = `<span class="owned">In the cove</span>`;
+    else if (boxed) action = `<button class="btn primary" data-place-prop="${p.id}">Place it</button>`;
+    else action = `<button class="btn tiny" data-box-prop="${p.id}" title="Pack it away">📦</button><button class="btn tiny" data-move-prop="${p.id}">Move</button>`;
+    row.innerHTML = `<div class="txt"><div class="name">${p.name}</div><div class="desc">${boxed ? "Packed away — tap Place it to set it down." : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
     list.appendChild(row);
   }
+  list.querySelectorAll("[data-move-prop],[data-place-prop]").forEach(b => b.onclick = () => startPlacing(b.dataset.moveProp || b.dataset.placeProp));
+  list.querySelectorAll("[data-box-prop]").forEach(b => b.onclick = () => boxProp(b.dataset.boxProp));
   list.querySelectorAll("[data-set]").forEach(b => b.onclick = () => {
     cm.theme = b.dataset.set; sfx("buy"); _todCache = null; _skyGrad = null; save(); renderShop();
     toast(`The cove takes on its ${DECOR_THEMES[cm.theme].name.toLowerCase()} look.`, 4);
@@ -4590,8 +4674,9 @@ function renderShopDecor(list) {
     const id = b.dataset.buyProp, p = DECOR_PROPS.find(x => x.id === id);
     if (G.shells < p.price) return;
     G.shells -= p.price; cm.props[id] = true;
-    sfx("buy"); spawnParticles(W / 2, H * 0.5, "spark", 10); syncHud(); save(); renderShop();
-    toast(`A ${p.name.toLowerCase()} for the cove.`, 4);
+    sfx("buy"); syncHud(); save();
+    if (p.movable) { startPlacing(id); }                 // straight into placement mode
+    else { spawnParticles(W / 2, H * 0.5, "spark", 10); renderShop(); toast(`A ${p.name.toLowerCase()} for the cove.`, 4); }
   });
 }
 /* ---- v3: the dress-up screen — live cat on the left, the rack on the right,
@@ -4800,6 +4885,7 @@ document.getElementById("photoSave").addEventListener("click", savePhoto);
 
 function openPhoto() {
   ensureAudio();
+  if (_placing) cancelPlacing();
   composePhoto();
   photoEl.classList.add("on");
   sfx("photo");
@@ -5116,6 +5202,7 @@ function closeAllPanels() { for (const k in panels) panels[k].hidden = true; sto
 function togglePanel(name) {
   ensureAudio();
   exitFocus();
+  if (_placing) cancelPlacing();
   const wasOpen = !panels[name].hidden;
   closeAllPanels();
   if (!wasOpen) {
@@ -6866,6 +6953,7 @@ function restClearUI() {
 }
 function openRestPanel() {
   ensureAudio(); loadRainLoop(); initGlassDrops();
+  if (_placing) cancelPlacing();
   exitFocus(); _focusT = 0; _wasFocusing = false;
   stage.style.touchAction = ""; document.getElementById("app").classList.remove("focusing");
   document.getElementById("restPanel").hidden = false;
@@ -7225,6 +7313,7 @@ function raceX(p) { return 150 + clamp(p, 0, 1) * 1100; }
 // the picker over the same grounds.
 function openFestPicker() {
   if (festMode || restMode || !cats.length) return;
+  if (_placing) cancelPlacing();
   ensureAudio();   // a real tap — safe to unlock/start audio here, same as opening rest
   restClearUI(); closeAllPanels(); exitFocus();
   const roster = cats.filter(c => !c.visitor);
@@ -7776,22 +7865,42 @@ const DECOR_THEMES = {
 };
 // decorative props — cosmetic only, no collision, auto-placed. Each: a draw fn
 // (world coords baked in) + a shell price + a deadpan line.
+// `movable` props store an optional position in G.cosmetics.propPos[id]; absent →
+// the `place` default (so an existing cove looks identical until you move something).
+// `render(g,t,x,y,s)` draws at a given anchor. The two "span" props (bunting,
+// lantern string) hang between the fixed sign posts and stay put.
 const DECOR_PROPS = [
   { id:"stones",   name:"Stepping stones", price: 1500, blurb:"Flat stones in a lazy curve. Purely for the look.",
-    draw(g,t){ propStones(g, W*0.50, H*0.94, 1.2); } },
-  { id:"bunting",  name:"Bunting",         price: 1800, blurb:"Triangle flags across the posts. Cats bat the low corners.",
+    movable:true, place:{ x:W*0.50, y:H*0.94, s:1.2 }, render(g,t,x,y,s){ propStones(g, x, y, s); } },
+  { id:"bunting",  name:"Bunting",         price: 1800, blurb:"Triangle flags across the sign posts.",
     draw(g,t){ propBunting(g, W*0.085, H*0.395, W*0.235, H*0.31); } },
   { id:"lantern",  name:"Garden lantern",  price: 2200, blurb:"A standing post lantern. Pools warm light after dark.",
-    draw(g,t){ propLantern(g, W*0.76, H*0.90, 1.25, t); } },
+    movable:true, place:{ x:W*0.76, y:H*0.90, s:1.25 }, render(g,t,x,y,s){ propLantern(g, x, y, s, t); } },
   { id:"birdbath", name:"Birdbath",        price: 2400, blurb:"A shallow basin on a pedestal. The water catches the light.",
-    draw(g,t){ propBirdbath(g, W*0.63, H*0.85, 1.15, t); } },
+    movable:true, place:{ x:W*0.63, y:H*0.85, s:1.15 }, render(g,t,x,y,s){ propBirdbath(g, x, y, s, t); } },
   { id:"lanterns", name:"Lantern string",  price: 3000, blurb:"Warm bulbs slung from the sign post. Flicker faintly at dusk.",
     draw(g,t){ propLanterns(g, W*0.11+34, H*0.40-6, W*0.44, H*0.44, t); } },
   { id:"rowboat",  name:"Rowboat",         price: 5500, blurb:"Beached by the shore. Someone's asleep in it more often than not.",
-    draw(g,t){ propRowboat(g, W*0.075, H*0.90, 1.1); } },
+    movable:true, place:{ x:W*0.075, y:H*0.90, s:1.1 }, render(g,t,x,y,s){ propRowboat(g, x, y, s); } },
   { id:"windmill", name:"Pole windmill",   price: 8000, blurb:"A little pole windmill. The sails turn on their own.",
-    draw(g,t){ propWindmill(g, W*0.91, H*0.60, 1.25, t); } },
+    movable:true, place:{ x:W*0.91, y:H*0.60, s:1.25 }, render(g,t,x,y,s){ propWindmill(g, x, y, s, t); } },
 ];
+const PROP_BY_ID = Object.fromEntries(DECOR_PROPS.map(p => [p.id, p]));
+function propPos(id) {
+  const p = PROP_BY_ID[id]; if (!p) return { x: 0, y: 0, s: 1 };
+  const o = G.cosmetics && G.cosmetics.propPos && G.cosmetics.propPos[id];
+  return o ? { x: o.x, y: o.y, s: p.place.s } : { x: p.place.x, y: p.place.y, s: p.place.s };
+}
+function propBoxed(id) { return !!(G.cosmetics && G.cosmetics.propBoxed && G.cosmetics.propBoxed[id]); }
+// a prop can sit here: on the grass band, clear of the pond, the sign, and stations/projects
+function validPropSpot(x, y) {
+  if (x < 44 || x > W - 44) return false;
+  if (y < H * 0.62 + 6 || y > catFloor() - 6) return false;
+  for (const o of obstacles) if (o.water && Math.hypot((x - o.x) / (o.rx + 20), (y - o.y) / (o.ry + 14)) < 1) return false;
+  if (x < W * 0.30 && y < H * 0.56) return false;                       // the cove sign corner
+  for (const d of decor) if ((d.type === "station" || d.type === "project") && Math.hypot(x - d.x, y - d.y) < 54) return false;
+  return true;
+}
 const SKIES = [
   { h: 0,  top:"#1b2540", mid:"#283152", bot:"#3a3a52", ground:"#585462", light:"#2a3d66", df:0    },
   { h: 5,  top:"#3a3a63", mid:"#6a5679", bot:"#bd8b76", ground:"#8d8177", light:"#c99f7d", df:0.14 },
@@ -8357,7 +8466,29 @@ function drawProps(g) {
   const night = window._sky ? 1 - window._sky.df : 0;
   g.save();
   g._nightGlow = night;                       // stashed so lanterns know to light up
-  for (const p of DECOR_PROPS) if (G.cosmetics.props[p.id]) { try { p.draw(g, t); } catch (e) {} }
+  for (const p of DECOR_PROPS) {
+    if (!G.cosmetics.props[p.id]) continue;
+    if (p.movable && (propBoxed(p.id) || (_placing && _placing.id === p.id))) continue;  // boxed / being placed → drawn elsewhere
+    try {
+      if (p.movable) { const pos = propPos(p.id); p.render(g, t, pos.x, pos.y, pos.s); }
+      else p.draw(g, t);
+    } catch (e) {}
+  }
+  // the prop currently being positioned: a ghost at the pointer + a validity ring
+  if (_placing) {
+    const p = PROP_BY_ID[_placing.id], gh = _placeGhost;
+    if (p && gh) {
+      const ok = validPropSpot(gh.x, gh.y);
+      g.save();
+      g.strokeStyle = ok ? "rgba(90,160,106,.95)" : "rgba(201,80,63,.95)";
+      g.lineWidth = 3; g.setLineDash(ok ? [] : [8, 6]);
+      g.beginPath(); g.ellipse(gh.x, gh.y, 34, 15, 0, 0, 7); g.stroke();
+      g.setLineDash([]);
+      g.globalAlpha = ok ? 0.92 : 0.5;
+      try { p.render(g, t, gh.x, gh.y, p.place.s); } catch (e) {}
+      g.restore();
+    }
+  }
   g.restore();
 }
 function propStones(g, x, y, s) {
