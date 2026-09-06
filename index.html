@@ -4722,19 +4722,28 @@ function dressPreview(canvasEl, c, tryWorn) {
     mascot: c.mascot, bornAt: c.bornAt, x: 0, y: 0 });
   fake.state = "loafing"; fake.blink = 3; fake.bob = 0.6; fake.tail = 0.3; fake.trotting = false;
   fake.worn = normalizeWorn(tryWorn || []);
-  // static rainbow hint behind the cat if that effect's tried on
+  // glowing rainbow hint streaming off behind the cat if that effect's tried on
   if (fake.worn.includes("rainbow")) {
     g.save();
-    g.translate(canvasEl.width / 2, canvasEl.height * 0.62);
-    g.lineCap = "round"; g.lineWidth = canvasEl.width * 0.02;
-    for (let i = 0; i < 5; i++) {
-      g.strokeStyle = _RAINBOW[i]; g.globalAlpha = 0.5;
-      const y = (i - 2) * canvasEl.width * 0.028;
-      g.beginPath();
-      g.moveTo(canvasEl.width * 0.06, y + canvasEl.width * 0.04);
-      g.quadraticCurveTo(canvasEl.width * 0.32, y - canvasEl.width * 0.02, canvasEl.width * 0.5, y);
-      g.stroke();
-    }
+    g.translate(canvasEl.width / 2, canvasEl.height * 0.66);
+    g.lineCap = "round"; g.lineJoin = "round";
+    const W = canvasEl.width;
+    const stroke = (cols, a, lw, blend) => {
+      g.globalCompositeOperation = blend;
+      for (let i = 0; i < cols.length; i++) {
+        const y = (i - (cols.length - 1) / 2) * W * 0.019;
+        g.strokeStyle = cols[i];
+        g.globalAlpha = a; g.lineWidth = lw;
+        g.beginPath();
+        g.moveTo(-W * 0.44, y + W * 0.05);
+        g.quadraticCurveTo(-W * 0.16, y - W * 0.02, W * 0.04, y);
+        g.stroke();
+      }
+    };
+    stroke(_RAINBOW, 0.16, W * 0.055, "screen");   // soft bloom
+    stroke(_RAINBOW, 0.4, W * 0.016, "screen");    // coloured band
+    stroke(_RAINBOW, 0.55, W * 0.006, "source-over"); // thin hue core
+    stroke(_RAINBOW_HOT, 0.6, W * 0.004, "lighter"); // hot centre
     g.restore();
   }
   g.save();
@@ -9261,47 +9270,71 @@ function drawToken(g, tk) {
   g.restore();
 }
 
-// v3: the rainbow-trail cosmetic — a 6-band ribbon that follows the cat's
-// path, offset perpendicular to the direction of travel, each segment fading
-// with the age of its points so it streams out and dissolves behind them.
-const _RAINBOW = ["#ec5f5a", "#f0993f", "#f0d24e", "#69b45f", "#4f9ad6", "#9a6fcf"];
-const _RB_GAP = 3.1;
+// v3: the rainbow-trail cosmetic — a band of LIGHT that streams off the cat.
+// drawn with "screen" blend so it glows over the ground and really lights up
+// at night; each band is a soft halo + a brighter core, fading with point age.
+const _RAINBOW = ["#ff5a63", "#ff9e42", "#ffe14d", "#5fd77a", "#4bb5f5", "#a67cf0"];
+// hot near-white version of each band for the emissive core pass
+const _RAINBOW_HOT = ["#ffc9cc", "#ffd9b3", "#fff4c2", "#c7f2cf", "#c2e6fb", "#e0d2fa"];
+const _RB_GAP = 2.4;
+// three additive passes, no opaque paint: a broad soft bloom, a coloured
+// mid band, and a thin hot near-white core — so the trail reads as a streak
+// of rainbow LIGHT rather than a painted ribbon.
+const _TRAIL_PASSES = [
+  // soft coloured bloom that glows as light (lights the scene at night)
+  { blend: "screen",     w: 16, wl: 12, a: 0.13, spread: 1.2, hot: false },
+  { blend: "screen",     w: 5,  wl: 7,  a: 0.32, spread: 1.0, hot: false },
+  // a thin, only-half-opaque rainbow core so the hues still read on the
+  // bright daytime ground without turning into a painted ribbon
+  { blend: "source-over", w: 1.4, wl: 2.2, a: 0.6, spread: 0.85, hot: false },
+  // a hot near-white centre line — the "light" of it
+  { blend: "lighter",    w: 0.8, wl: 1.6, a: 0.5, spread: 0.25, hot: true },
+];
 function drawTrails(g) {
   const t = performance.now() / 1000;
+  const N = _RAINBOW.length;
   for (const c of cats) {
-    // always-on shimmer arc under a rainbow cat, so you see it's equipped even
-    // when it's sitting still
-    if (c.worn && c.worn.includes("rainbow")) {
-      g.save();
-      g.globalAlpha = 0.4 + Math.sin(t * 2 + c.x * 0.01) * 0.1;
-      g.lineCap = "round";
-      for (let band = 0; band < _RAINBOW.length; band++) {
-        g.strokeStyle = _RAINBOW[band]; g.lineWidth = 3;
-        g.beginPath();
-        g.ellipse(c.x, c.y - 2, 20 - band * 1.1, 7 - band * 0.3, 0, Math.PI * 0.92, Math.PI * 2.08);
-        g.stroke();
-      }
-      g.restore();
-    }
+    if (!(c.worn && c.worn.includes("rainbow"))) continue;
     const tr = c._trail;
-    if (!tr || tr.length < 2) continue;
     g.save();
     g.lineCap = "round"; g.lineJoin = "round";
-    for (let i = 1; i < tr.length; i++) {
-      const a = tr[i - 1], b = tr[i];
-      const dx = b.x - a.x, dy = b.y - a.y;
-      const d = Math.hypot(dx, dy) || 1;
-      const px = -dy / d, py = dx / d;                 // unit perpendicular
-      const life = (a.life + b.life) * 0.5;
-      g.globalAlpha = 0.85 * life;
-      g.lineWidth = 2.2 + 2.6 * life;                  // fat and bright near the cat, thin and faint at the tail
-      for (let band = 0; band < _RAINBOW.length; band++) {
-        const o = (band - (_RAINBOW.length - 1) / 2) * _RB_GAP;
-        g.strokeStyle = _RAINBOW[band];
-        g.beginPath();
-        g.moveTo(a.x + px * o, a.y + py * o);
-        g.lineTo(b.x + px * o, b.y + py * o);
-        g.stroke();
+    g.globalCompositeOperation = "screen";
+
+    // idle shimmer: a faint breathing pool of coloured light under the cat so
+    // the effect still reads while it's sitting still
+    const breathe = 0.5 + 0.5 * Math.sin(t * 2 + c.x * 0.02);
+    for (let band = 0; band < N; band++) {
+      g.strokeStyle = _RAINBOW[band];
+      g.globalAlpha = 0.09 + 0.05 * breathe;
+      g.lineWidth = 13 - band * 1.6;
+      g.beginPath();
+      g.ellipse(c.x, c.y - 1, 19 - band * 1.05, 6.2 - band * 0.28, 0, 0, Math.PI * 2);
+      g.stroke();
+    }
+
+    if (tr && tr.length >= 2) {
+      for (const p of _TRAIL_PASSES) {
+        g.globalCompositeOperation = p.blend;
+        const cols = p.hot ? _RAINBOW_HOT : _RAINBOW;
+        for (let i = 1; i < tr.length; i++) {
+          const a = tr[i - 1], b = tr[i];
+          const life = (a.life + b.life) * 0.5;
+          if (life <= 0.03) continue;
+          const fade = life * life;          // tail dims fast
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.hypot(dx, dy) || 1;
+          const px = -dy / d, py = dx / d;
+          for (let band = 0; band < N; band++) {
+            const o = (band - (N - 1) / 2) * _RB_GAP * p.spread;
+            g.strokeStyle = cols[band];
+            g.globalAlpha = p.a * fade;
+            g.lineWidth = p.w + p.wl * fade;
+            g.beginPath();
+            g.moveTo(a.x + px * o, a.y + py * o);
+            g.lineTo(b.x + px * o, b.y + py * o);
+            g.stroke();
+          }
+        }
       }
     }
     g.restore();
