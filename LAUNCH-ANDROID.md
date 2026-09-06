@@ -39,7 +39,20 @@ Made in Android Studio (Build → Generate Signed App Bundle → Create new keys
 
 ---
 
-## 2. Play Console — create the app + products  **[you]** · ~30 min
+## 2. Play Console — create the app + products  **[you]** · ✅ DONE 2026-09-06
+
+App "Catmint Cove" exists (`com.midknightstudiolabs.catmintcove`). Merchant
+payments profile submitted (Individual, "Midknight Studio Labs" display name).
+Account group "Midknight Studio" created (15% service fee). Android developer
+verification: package already auto-registered. 3 one-time products created +
+**Active** (`welcome_pack` $0.99 / `sparkle_pack` $2.99 / `founding_covekeeper`
+$4.99), each purchase option id `buy`, type Buy. Build `1.0.4` uploaded to
+Internal testing → **Play App Signing registered**. `1.0.5` (with billing) is
+the next upload.
+
+<details><summary>original checklist</summary>
+
+### ~30 min
 
 1. **Create app** → name `Catmint Cove`, game, free, default language en-US.
    Accept the developer program policies + US export laws declaration.
@@ -63,26 +76,29 @@ Made in Android Studio (Build → Generate Signed App Bundle → Create new keys
    **View app information**, **View financial data**, and **Manage orders and
    subscriptions** — RevenueCat's minimum.
 
+> Note: Play Console's "Setup → API access" page was **not present** on this
+> account — created the service account straight in Google Cloud Console
+> (console.cloud.google.com → project `catmint-cove` → enable "Google Play
+> Android Developer API" → IAM → Service Accounts → create + JSON key), then
+> invited its email in Play Console → Users and permissions with the financial
+> permissions.
+
+</details>
+
 ---
 
-## 3. RevenueCat  **[you]** · ~20 min
+## 3. RevenueCat  **[you]** · ✅ DONE 2026-09-06
 
-1. **Create a Project** (e.g. "Catmint Cove").
-2. **Add an app** → platform **Google Play** → package
-   `com.midknightstudiolabs.catmintcove`.
-3. Upload the **Play service-account JSON** from step 2.3 (Project settings →
-   your Play app → Service Account credentials). Wait for it to say connected.
-4. **Products** → add the 3 product ids exactly: `welcome_pack`, `sparkle_pack`,
-   `founding_covekeeper`. *(Entitlements and Offerings are optional — the game
-   reads `customerInfo.allPurchasedProductIdentifiers` directly — but adding an
-   "Offering" with all 3 is good practice.)*
-5. **Project settings → API keys** → copy the **public Google API key** (starts
-   with `goog_`).
-6. **[you, in the repo]** open `scripts/capacitor-bridge.js`, set
-   `var REVENUECAT_ANDROID_KEY = "goog_..."`, commit + push. *(It's a client key —
-   safe in a public repo.)*
-   Until this is done, the app builds and runs but uses the simulated purchase
-   flow — it cannot take real money.
+- Project "Catmint Cove"; Google Play app added.
+- Service account (`revenuecat@catmint-cove.iam.gserviceaccount.com`, made in
+  Google Cloud since Play Console's "API access" page was missing) — granted
+  *View financial data* + *Manage orders and subscriptions* in Play → Users and
+  permissions → **"Valid credentials"** after ~1h propagation.
+- 3 products imported from Play, all **Published**. Entitlements/offerings left
+  unattached (code reads `allPurchasedProductIdentifiers`).
+- Google developer notifications (Pub/Sub) **skipped** — optional, post-launch.
+- **`goog_` public SDK key wired into `scripts/capacitor-bridge.js`** (commit
+  `bfc022a`) → real Google Play Billing live in build `1.0.5`.
 
 ---
 
