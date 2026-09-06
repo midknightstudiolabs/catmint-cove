@@ -147,14 +147,17 @@ rethink.
       rewarded (double offline earnings, coax a cat for free) + one *light*
       session-boundary interstitial (48h grace · ≤3/day · none in Rest mode /
       for supporters) + a one-time neutral age gate for ad treatment.
-- [x] **Cozy Supporter Pack $4.99** (simulated purchase) — permanent 2× offline,
-      ✦50, a ribbon for Midknight. Removes ads too, once ads are on. Works
-      independently of the ad flag.
+- [x] **Founding Covekeeper $4.99** (simulated purchase) — a founder's plaque
+      by the cove sign, a founder's ribbon for Midknight, ad-free forever if
+      ads are ever added. **No gameplay advantage** (see `MONETIZATION.md`);
+      replaced the old Cozy Supporter Pack + its 2×-offline / ✦50 perks.
+- [x] **Sparkle Pack $2.99** — unlocks the glow collar / little wings /
+      rainbow trail effect cosmetics for the whole cove. Cosmetic only.
 
 ### Monetization notes — launch ad-free, ads on later
 
 `ADS_ENABLED` (top of the script) is **false**. The launch build ships **ad-free
-with the Supporter Pack IAP only** — no interstitials, no rewarded prompts, no
+with cosmetic IAPs only** (`MONETIZATION.md`: never pay-to-win) — no interstitials, no rewarded prompts, no
 age gate. This is deliberate: get a clean retention baseline, let the store
 listing age and pass [AdMob's app-readiness review](https://support.google.com/admob/answer/10564477)
 (which needs a *published* app + matching store IDs + verified payments), then

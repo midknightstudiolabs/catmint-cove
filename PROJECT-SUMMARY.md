@@ -107,8 +107,11 @@ stores, no Mac needed. Portrait-locked. Cloud save (Play Games / Game Center)
 is planned, not in yet.
 
 ## Monetization
-Launches **ad-free** — the only IAP is the $4.99 Cozy Supporter Pack
-(permanent 2× offline, ✦50, a Midknight ribbon, removes ads once they exist).
+See `MONETIZATION.md` — **free-to-play, never pay-to-win**; sell attachment /
+expression / ownership, not advantage. Launches **ad-free**. Cosmetic IAPs:
+**Founding Covekeeper $4.99** (a founder's plaque by the sign, Midknight's
+founder ribbon, ad-free forever) and **Sparkle Pack $2.99** (the glow / wings
+/ rainbow effect cosmetics). Planned: Welcome Pack + Accessory Collection.
 Ads (Google AdMob, rewarded-first + one light session-boundary interstitial)
 come later — AdMob can't approve serving until the app is published, so any
 "ad-supported" language is premature. App collects nothing.

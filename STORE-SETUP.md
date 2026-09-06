@@ -178,7 +178,7 @@ Pack IAP **simulated**. Before turning either on:
 - **IAP**: add `@revenuecat/purchases-capacitor` (recommended — it handles
   receipt validation, the entitlement layer, restore, and cross-platform "does
   this user own X" as one call; free under ~$2.5k/mo) or
-  `@capacitor-community/in-app-purchases`. Products: `cozy_supporter`
+  `@capacitor-community/in-app-purchases`. Products: `founding_covekeeper`
   ($4.99) and `sparkle_pack` ($2.99) — **both non-consumable**, created in both
   consoles.
 
@@ -199,16 +199,18 @@ Pack IAP **simulated**. Before turning either on:
     adds** — a slow / offline / failed query never revokes a cached perk
     (fail-open: a wrongly-revoked perk is a support ticket; a wrongly-kept
     cosmetic flag costs nothing).
-  - `applyEntitlements()` re-derives every perk (ads-off, 2× offline,
-    Midknight's ribbon, the Sparkle cosmetics) from `owned`. Idempotent. The
-    legacy `G.ads.supporter` / `perm2x` are just mirrors it writes.
+  - `applyEntitlements()` re-derives every perk (ads-off, Midknight's founder
+    ribbon, the sign plaque, the Sparkle effect cosmetics) from `owned`.
+    Idempotent. `G.ads.supporter` is the ad-free mirror it writes. **No
+    gameplay perks** — see `MONETIZATION.md`.
   - After a confirmed purchase call `completePurchase(productId)` **and
     acknowledge/finish the transaction in the same callback** — Google Play
     auto-refunds an unacknowledged purchase after 3 days.
-  - One-time rewards (the ✦50) go through `grantOnce(key, fn)`, ledgered in
-    `iapStore`. NATIVE: key it off the store **transaction id**, and cloud-back
-    the ledger, so a fresh reinstall neither re-grants nor loses it.
-    **Simplest of all: drop the ✦50, keep the pack purely entitlement-based.**
+  - `grantOnce(key, fn)` (ledgered in `iapStore`) is there for any future
+    one-time reward. NATIVE: key it off the store **transaction id**, and
+    cloud-back the ledger so a fresh reinstall neither re-grants nor loses it.
+    Both current packs are pure entitlement (no consumable rewards) so nothing
+    routes through it yet.
   - `restorePurchases()` (fail-open, `try/catch`) + the "Restore purchases"
     button (pack modal *and* the Back-up sheet — Apple requires a
     no-purchase-needed path) already exist; fill in the one billing call.
@@ -222,7 +224,7 @@ Pack IAP **simulated**. Before turning either on:
   | buy → **app update** (new binary, data kept) | perk holds | buy, reload |
   | buy → **save format bumps** (`save.vN` rejected) | perk holds | set save `v` to a bad number, reload |
   | buy → airplane mode → reopen | perk holds (from cache) | — device only |
-  | buy → uninstall → reinstall → tap **Restore** | perk returns | `wipestore` then `reconcile ["cozy_supporter"]` |
+  | buy → uninstall → reinstall → tap **Restore** | perk returns | `wipestore` then `reconcile ["founding_covekeeper"]` |
   | buy → **new device**, same store account → Restore | perk returns | as above |
   | own perk → launch with billing **offline/erroring** | perk **not** revoked | `reconcile []` → still owned |
   | buy on Android, open on iOS | perk does **not** cross (separate stores — expected) | — |

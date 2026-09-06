@@ -28,12 +28,15 @@
   (`G.cosmetics.propPos` / `propBoxed`). Cove-decoration foundation.
 - **Ad-free launch** — `ADS_ENABLED = false`, simulated `Ads` layer only.
 
-**Conflicts with this doc — must change:**
-- ❌ **Cozy Supporter Pack ($4.99) sells `perm2x` = permanent 2× offline
-  earnings.** Pay-to-progress. → rework into **Founding Covekeeper** (cosmetic
-  + future ad-removal only).
-- ❌ **The same pack grants ✦50 pearls.** No soft currency in packs. → drop it.
-- ✅ **RESOLVED — effect cosmetics are Sparkle Pack only** (commit `9c9c61b`).
+**Conflicts with this doc — resolved:**
+- ✅ **Cozy Supporter Pack → Founding Covekeeper** (commit `3914187`). Dropped
+  the permanent 2× offline earnings **and** the ✦50 pearl grant. Contents now:
+  a **Founder's plaque** by the cove sign ("FOUNDING COVEKEEPER · 2026" on a
+  little brass post — `drawCoveSign`, gated on `iapOwns`), Midknight's founder
+  ribbon, ad-free forever, "supports the studio". No photo frame (dropped per
+  direction). Entitlement key `cozy_supporter` → `founding_covekeeper` with a
+  load-time migration.
+- ✅ **Effect cosmetics are Sparkle Pack only** (commit `9c9c61b`).
   Glow collar / little wings / rainbow trail lost their pearl price;
   `sparkle_pack` ($2.99) is the sole path. Owned-by-derivation for every cat
   once the pack is bought; stripped + re-locked if it isn't. `showSparkleOffer()`
@@ -45,11 +48,13 @@
   reverse-DNS (`com.midknightstudiolabs.catmintcove.*`).
 
 **Not built at all:**
-- Welcome Pack, Founding Covekeeper (as specced), Accessory Pack #1
-- Photo-frame system
+- Welcome Pack, Accessory Pack #1
+- The "Tideline Shop" reframe (still "Shop")
+- Photo-frame system (Founding Covekeeper drops its frame; deferred)
 - Seasonal cosmetic collections
 - Monetization analytics events
 - Membership (deliberately later), physical merch (later)
+- Product ID → reverse-DNS migration (store-side, at billing integration)
 
 ---
 
@@ -131,15 +136,15 @@ Copy: *"Five accessories. Zero practical benefits."*
 `cat.accessory.head` / `cat.accessory.neck`. Adding future accessories =
 content work, not engineering. (This mostly exists — see status block.)
 
-### 3. Founding Covekeeper Pack — $4.99  *(replaces Cozy Supporter Pack)*
+### 3. Founding Covekeeper Pack — $4.99  *(replaces Cozy Supporter Pack — BUILT, commit `3914187`)*
 
-Remove the 2× offline earnings — it violates no-pay-to-win. Cosmetic +
-support only.
+Cosmetic + support only — no 2× offline, no pearls.
 
-- Founding Covekeeper 2026 badge
-- Founder's Midknight Ribbon
-- Founder's Cove Sign
-- Founder's Photo Frame
+- **Founder's plaque** by the cove sign ("FOUNDING COVEKEEPER · 2026") — the
+  "cool signate" for a supporter of the game
+- Founder's ribbon for Midknight
+- ~~Founder's Cove Sign~~ — folded into the plaque
+- ~~Founder's Photo Frame~~ — dropped (no frame system yet)
 - Permanent future ad removal (if ads are ever introduced)
 - Supports Midknight Studio Labs
 
