@@ -2824,8 +2824,8 @@ function updateCat(c, dt) {
       if (!last || Math.hypot(c.x - last.x, c.y - last.y) > 3.5) tr.push({ x: c.x, y: c.y - 8, life: 1 });
       if (spd > 70 && Math.random() < dt * 10) spawnParticles(c.x + rand(-7, 7), c.y - 8, "twinkle", 1);
     }
-    for (let i = tr.length - 1; i >= 0; i--) { tr[i].life -= dt * 0.4; if (tr[i].life <= 0) tr.splice(i, 1); }
-    if (tr.length > 120) tr.splice(0, tr.length - 120);
+    for (let i = tr.length - 1; i >= 0; i--) { tr[i].life -= dt * 0.55; if (tr[i].life <= 0) tr.splice(i, 1); }
+    if (tr.length > 90) tr.splice(0, tr.length - 90);
   } else if (c._trail && c._trail.length) {                 // cosmetic removed — let the last of it fade
     for (let i = c._trail.length - 1; i >= 0; i--) { c._trail[i].life -= dt * 1.6; if (c._trail[i].life <= 0) c._trail.splice(i, 1); }
     if (!c._trail.length) c._trail = null;
@@ -4740,10 +4740,9 @@ function dressPreview(canvasEl, c, tryWorn) {
         g.stroke();
       }
     };
-    stroke(_RAINBOW, 0.16, W * 0.055, "screen");   // soft bloom
-    stroke(_RAINBOW, 0.4, W * 0.016, "screen");    // coloured band
-    stroke(_RAINBOW, 0.55, W * 0.006, "source-over"); // thin hue core
-    stroke(_RAINBOW_HOT, 0.6, W * 0.004, "lighter"); // hot centre
+    stroke(_RAINBOW, 0.1, W * 0.03, "screen");       // gentle halo
+    stroke(_RAINBOW, 0.72, W * 0.007, "source-over"); // crisp rainbow band
+    stroke(_RAINBOW_HOT, 0.22, W * 0.003, "lighter"); // whisper of white
     g.restore();
   }
   g.save();
@@ -9276,19 +9275,17 @@ function drawToken(g, tk) {
 const _RAINBOW = ["#ff5a63", "#ff9e42", "#ffe14d", "#5fd77a", "#4bb5f5", "#a67cf0"];
 // hot near-white version of each band for the emissive core pass
 const _RAINBOW_HOT = ["#ffc9cc", "#ffd9b3", "#fff4c2", "#c7f2cf", "#c2e6fb", "#e0d2fa"];
-const _RB_GAP = 2.4;
-// three additive passes, no opaque paint: a broad soft bloom, a coloured
-// mid band, and a thin hot near-white core — so the trail reads as a streak
-// of rainbow LIGHT rather than a painted ribbon.
+const _RB_GAP = 1.9;
+// subtle but iconic: ONE gentle glow halo + a crisp thin rainbow band (the
+// recognisable bit) + a whisper of white down the centre. Restrained — a
+// ribbon of light that follows the cat, not a floodlight.
 const _TRAIL_PASSES = [
-  // soft coloured bloom that glows as light (lights the scene at night)
-  { blend: "screen",     w: 16, wl: 12, a: 0.13, spread: 1.2, hot: false },
-  { blend: "screen",     w: 5,  wl: 7,  a: 0.32, spread: 1.0, hot: false },
-  // a thin, only-half-opaque rainbow core so the hues still read on the
-  // bright daytime ground without turning into a painted ribbon
-  { blend: "source-over", w: 1.4, wl: 2.2, a: 0.6, spread: 0.85, hot: false },
-  // a hot near-white centre line — the "light" of it
-  { blend: "lighter",    w: 0.8, wl: 1.6, a: 0.5, spread: 0.25, hot: true },
+  // gentle halo — a soft glow, deliberately narrow and faint
+  { blend: "screen",      w: 5,   wl: 4.5, a: 0.085, spread: 1.4, hot: false },
+  // the crisp rainbow band — this is the icon; keep it clean and thin
+  { blend: "source-over", w: 1.2, wl: 1.8, a: 0.72,  spread: 1.0, hot: false },
+  // a whisper of white down the middle so it still catches the light
+  { blend: "lighter",     w: 0.4, wl: 0.9, a: 0.2,   spread: 0.3, hot: true },
 ];
 function drawTrails(g) {
   const t = performance.now() / 1000;
@@ -9300,15 +9297,15 @@ function drawTrails(g) {
     g.lineCap = "round"; g.lineJoin = "round";
     g.globalCompositeOperation = "screen";
 
-    // idle shimmer: a faint breathing pool of coloured light under the cat so
-    // the effect still reads while it's sitting still
+    // idle shimmer: a small, faint breathing glow under the cat so the effect
+    // still reads while it's sitting still — kept very subtle
     const breathe = 0.5 + 0.5 * Math.sin(t * 2 + c.x * 0.02);
     for (let band = 0; band < N; band++) {
       g.strokeStyle = _RAINBOW[band];
-      g.globalAlpha = 0.09 + 0.05 * breathe;
-      g.lineWidth = 13 - band * 1.6;
+      g.globalAlpha = 0.045 + 0.03 * breathe;
+      g.lineWidth = 7 - band * 0.85;
       g.beginPath();
-      g.ellipse(c.x, c.y - 1, 19 - band * 1.05, 6.2 - band * 0.28, 0, 0, Math.PI * 2);
+      g.ellipse(c.x, c.y - 1, 13 - band * 0.75, 4.3 - band * 0.2, 0, 0, Math.PI * 2);
       g.stroke();
     }
 
