@@ -237,7 +237,15 @@ sense once the game around it is the v3 game.
 - [x] **Dress-up screen rebuilt** — two-pane (live cat + rack), tap-to-try,
   Save commits (shells + pearls), Take it all off, ‹ Name › switcher. This
   answered the "show the selected cat picture when adding decor" ask.
-- [ ] Inventory (pack away / re-place all cove decor + comforts).
+- [~] **Inventory / manual placement** — first cut done (commit `64d6048`):
+  the 5 cosmetic **point props** (lantern, birdbath, rowboat, windmill,
+  stepping stones) are now buy-to-place + move + pack-away, via
+  `G.cosmetics.propPos` / `propBoxed` and a lightweight placement mode (ghost,
+  validity ring, no sim pause). Deliberately scoped away from comforts /
+  stations / trees — those still auto-arrange (count-based). Extending to
+  comforts is the bigger follow-up: it means an instance-position refactor +
+  a migration, and it touches pathing/attractors/capacity. Span props
+  (bunting, lantern string) stay anchored to the sign.
 - [ ] Loading-screen cat wave (mock first).
 - [ ] Sparkle Pack IAP ($2.99, unlocks all effects) — after the pearl
   economy is playtested.
