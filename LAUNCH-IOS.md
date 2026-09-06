@@ -24,6 +24,21 @@ Legend for IDs used throughout:
 - [you, have it] **Apple Developer Program** membership — enrolled + active (confirmed 2026-09-07).
 - [you, done] RevenueCat account + project "Catmint Cove" (already has the Google Play app + 3 products).
 
+### Progress (2026-09-07)
+
+- [x] 1. Paid Apps agreement accepted (bank + W-8BEN submitted — may show "Pending" briefly)
+- [x] 2. App ID `com.midknightstudiolabs.catmintcove` + In-App Purchase capability
+- [x] 3. App record created (SKU `catmintcove`)
+- [x] 4. 3 non-consumable IAPs created in App Store Connect (Missing Metadata — screenshots deferred to submission)
+- [x] 5. ASC API **Team key** `ci`/`L88KLJJN5M` (App Manager) + `.p8` saved
+- [x] 6. Team ID noted
+- [x] 7. RevenueCat App Store app: In-App Purchase Key (`SubscriptionKey_4ZU6CPFPL4`) wired; 3 products created (`welcome_pack`/`sparkle_pack`/`founding_covekeeper`). "Could not check" store status = the optional ASC-API connection, non-blocking.
+- [x] 8. `REVENUECAT_IOS_KEY = appl_NOnpzwbRdsrmoSDdowFOZQntdxp` in the bridge (commit `0b9b122`); 4 GitHub secrets set (`ASC_KEY_ID` `ASC_ISSUER_ID` `ASC_KEY_P8_BASE64` `IOS_TEAM_ID`).
+- [ ] `ios.yml` signing run — in progress (run 3)
+- [ ] 9. TestFlight smoke test
+- [ ] 10. Store listing + App Privacy + rating
+- [ ] 11. Submit
+
 ---
 
 ## 1. Paid Applications Agreement + bank/tax  **[you]** · ~15 min · ⬜
