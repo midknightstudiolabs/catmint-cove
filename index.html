@@ -4754,7 +4754,7 @@ function shopPackRow() {
          <div class="desc">Your plaque's by the sign${ADS_ENABLED ? " · ads off" : ""} · thank you 🧡</div></div>
        <span class="owned">Owned</span>`
     : `<div class="txt"><div class="name">Founding Covekeeper</div>
-         <div class="desc">Back the one-person studio behind the Cove · a limited 2026 founder's plaque, ribbon, halo &amp; hero mask · ${ADS_ENABLED ? "ad-free forever · " : ""}no gameplay perks</div></div>
+         <div class="desc">Back the one-person studio behind the Cove · a limited 2026 founder's plaque, ribbon, halo &amp; hero mask${ADS_ENABLED ? " · ad-free forever" : ""}</div></div>
        <button class="btn primary">${IAP_PRODUCTS.founding_covekeeper.price}</button>`;
   const pb = pack.querySelector("button");
   if (pb) pb.addEventListener("click", () => showPackOffer(false));
@@ -6326,7 +6326,7 @@ function showPackOffer(soft) {
       <li>A <b>2026 Founding Covekeeper plaque</b> by the cove sign — engraved with the year, a limited edition for the founding period</li>
       <li>A <b>founder's ribbon</b> for Midknight</li>
       <li>A glowing <b>halo</b> &amp; a <b>hero mask</b> for any cat — now and always</li>
-      <li>Ad-free forever, if ads are ever added</li>
+      ${ADS_ENABLED ? "<li>Ad-free forever</li>" : ""}
       <li>It goes straight to the developer — <b>no publisher, no investors</b></li>
     </ul>
     <div class="row">
