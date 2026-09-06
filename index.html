@@ -519,6 +519,8 @@
     position:relative;width:100%;text-align:left;background:none;border-left:0;border-right:0;border-top:0;font:inherit;cursor:pointer;}
   .rrow:last-child{border-bottom:0;}
   .rrow.sev-gone{background:linear-gradient(90deg,rgba(150,150,150,.12),transparent 55%);opacity:.75;cursor:default;}
+  .rrow.sev-away{opacity:.72;cursor:default;}
+  .rrow.sev-away .redge{background:#7fb0c4;}
   .rrow.sev-4{background:linear-gradient(90deg,rgba(201,80,63,.11),transparent 55%);}
   .rrow.sev-3{background:linear-gradient(90deg,rgba(196,106,134,.11),transparent 55%);}
   .rrow .redge{position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;}
@@ -578,6 +580,14 @@
   .modal p{color:var(--ink-soft);margin:0 0 1rem;font-size:.92rem;}
   .modal .big{font-family:"Fraunces",serif;font-size:2.2rem;color:var(--accent-bright);font-variant-numeric:tabular-nums;}
   .modal .row{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-top:.4rem;}
+  /* stacked "how to help" options — a title + a line of detail each */
+  .care-opts{display:flex;flex-direction:column;gap:.5rem;margin:.2rem 0 .1rem;text-align:left;}
+  .care-opts button{width:100%;flex-direction:column;align-items:flex-start;gap:.12rem;
+    border-radius:14px;padding:.58rem .8rem;box-shadow:none;}
+  .care-opts button b{font-weight:700;font-size:.9rem;}
+  .care-opts button small{font-weight:500;color:var(--ink-soft);font-size:.73rem;line-height:1.32;}
+  .care-opts button:disabled small{color:var(--ink-faint);}
+  .care-opts button.primary small{color:rgba(255,255,255,.82);}
 
   /* ---- tutorial ---- */
   #tut{position:absolute;inset:0;z-index:70;background:rgba(28,24,16,.55);
@@ -1468,6 +1478,7 @@ function load() {
     if (G.trinkets === undefined) G.trinkets = 0;
     if (G.scratch === undefined) G.scratch = 0;
     if (typeof G.food !== "number") G.food = 30;   // v3 care layer
+    if (!Array.isArray(G.vet)) G.vet = [];          // v3 care: cats away at the vet
     if (G.coveCharter === undefined) G.coveCharter = false;
     // field-guide expansion: a cove that had the original 11 keeps its Charter access
     if (G.dexGrandfathered === undefined) G.dexGrandfathered = ORIGINAL_11.every(k => G.dex && G.dex[k]);
@@ -1861,7 +1872,7 @@ function capacity() { return Math.min(maxCats(), 4 + (G.bowls - 1) * 2 + G.toys 
 // cats on an adventure are spliced out of `cats` but still belong to the cove —
 // count them so sending a party out doesn't free up slots for new arrivals that
 // would then overflow capacity when the party comes home. (Labubu never counts.)
-function residentCount() { return cats.reduce((n, c) => n + (c.visitor ? 0 : 1), 0) + (typeof G !== "undefined" && G ? catsAway() : 0); }
+function residentCount() { return cats.reduce((n, c) => n + (c.visitor ? 0 : 1), 0) + (typeof G !== "undefined" && G ? catsAway() + catsAtVet() : 0); }
 function comfortMult() { return 1 + G.comfort * 0.22; }
 function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // ambient mood lift
 
@@ -1902,6 +1913,14 @@ const LEAVE_AFTER_MS = 24 * 3600 * 1000;    // ...then this long more, warning u
 function foodBagCost(){ return Math.round(12 + residentCount() * 4); }   // a "sack of kibble"
 const FOOD_BAG = 22;
 function anyWaterSource(){ return obstacles.some(o => o.water); }
+// ways to treat a sick cat, beyond plain medicine
+function medicineCost(){ return 30 + residentCount() * 4; }             // gradual, treat-all
+function shotCost(){ return Math.round(medicineCost() * 2.4); }         // instant, one cat
+const VET_COST = 6;                                                     // a nominal fee — the real cost is the away time
+const VET_MINS = 150;                                                   // ~2.5h at the vet, then home right as rain
+function groomCost(){ return 10 + Math.round(residentCount() * 1.2); }  // a spa day for a run-down (not sick) cat
+function vetVisits(){ return Array.isArray(G.vet) ? G.vet : (G.vet = []); }
+function catsAtVet(){ return (typeof G !== "undefined" && G && Array.isArray(G.vet)) ? G.vet.length : 0; }
 
 /* ---------- bonds — how well you know each cat ---------- */
 const BOND_LEVELS = [
@@ -2213,35 +2232,127 @@ function openFoodRefill() {
   document.getElementById("food-close").onclick = closeModal;
 }
 function sickCats() { return cats.filter(c => c.sick && !c.visitor); }
-function medicineCost() { return 30 + residentCount() * 4; }
+function clearSick(c, healTo) {
+  c.sick = null; c._criticalSince = 0; c._leaveSince = 0; c._need = null; c._ill = false;
+  c.health = Math.max(c.health || 0, healTo);
+  c.hunger = Math.min(c.hunger, 55); c.thirst = Math.min(c.thirst, 55);
+  c.mood = Math.max(c.mood, healTo >= 90 ? 58 : 45);
+}
 function openMedicine(pref) {
   ensureAudio();
   const sick = sickCats();
   if (!sick.length) { toast("Nobody's unwell right now.", 3); return; }
-  const cost = medicineCost(), afford = G.shells >= cost;
   const target = pref && sick.includes(pref) ? pref : sick[0];
+  const multi = sick.length > 1;
+  const med = medicineCost(), shot = shotCost();
+  const backWhen = whenText(Date.now() + VET_MINS * 60000);
   openModal(`<div class="reveal">
     <div class="kicker">Not well</div>
     <canvas width="200" height="188"></canvas>
     <h2>${esc(target.name)}</h2>
-    <p class="sub">${sick.length > 1 ? sick.length + " cats are unwell. " : ""}A dose of medicine sets ${sick.length > 1 ? "each of them" : "them"} right over the next while.</p>
-    <div class="row">
-      <button class="btn primary" id="med-buy" ${afford ? "" : "disabled"}>◈ ${cost}${sick.length > 1 ? " each — treat all" : " — treat"}</button>
-      <button class="btn" id="med-close">Not now</button>
+    <p class="sub">${multi ? sick.length + " cats are unwell. " : ""}A few ways to help.</p>
+    <div class="care-opts">
+      <button class="btn primary" id="med-buy" ${G.shells >= med ? "" : "disabled"}>
+        <b>Medicine${multi ? " for all" : ""}</b><small>◈ ${med}${multi ? " each" : ""} · picks up over the next while</small></button>
+      <button class="btn" id="med-shot" ${G.shells >= shot ? "" : "disabled"}>
+        <b>A shot from the vet kit</b><small>◈ ${shot} · ${esc(target.name)} only · better on the spot</small></button>
+      ${target.mascot ? "" : `<button class="btn" id="med-vet">
+        <b>Take ${esc(target.name)} to the vet</b><small>◈ ${VET_COST} · away ${backWhen} · home right as rain</small></button>`}
     </div>
+    <div class="row"><button class="btn" id="med-close">Not now</button></div>
   </div>`);
   miniCat(document.querySelector("#modal canvas"), target.coatKey, target.star, "loafing", false, 2.4);
   document.getElementById("med-buy").onclick = () => {
-    const list = sickCats(), total = cost * list.length;
+    const list = sickCats(), total = med * list.length;
     if (G.shells < total) { toast(`Need ◈ ${total} to treat ${list.length}.`, 3); return; }
     G.shells -= total;
-    for (const c of list) { c.sick = null; c._criticalSince = 0; c._leaveSince = 0; c._need = null; c._ill = false;
-      c.health = Math.max(c.health || 0, 55); c.hunger = Math.min(c.hunger, 55); c.thirst = Math.min(c.thirst, 55); c.mood = Math.max(c.mood, 45); }
+    for (const c of list) clearSick(c, 55);
     sfx("buy"); spawnParticles(W / 2, H * 0.5, "twinkle", 12); syncHud(); save(); closeModal();
     logMoment("💊", list.length === 1 ? `${list[0].name} took their medicine — on the mend now.` : `${list.length} cats treated — all on the mend.`, "care");
     toast(list.length === 1 ? `${list[0].name} is on the mend.` : "Everyone's been treated.", 4);
   };
+  document.getElementById("med-shot").onclick = () => {
+    if (G.shells < shot) { toast(`Need ◈ ${shot} for the shot.`, 3); return; }
+    G.shells -= shot; clearSick(target, 100);
+    sfx("buy"); spawnParticles(target.x, target.y - 14, "twinkle", 15); syncHud(); save(); closeModal();
+    logMoment("💉", `${target.name} had a shot from the vet kit — right as rain.`, "care");
+    toast(`${target.name} is right as rain.`, 4);
+  };
+  const vetBtn = document.getElementById("med-vet");
+  if (vetBtn) vetBtn.onclick = () => {
+    if (G.shells < VET_COST) { toast(`Need ◈ ${VET_COST} for the vet.`, 3); return; }
+    G.shells -= VET_COST; sfx("coax"); closeModal();
+    sendToVet(target);
+  };
   document.getElementById("med-close").onclick = closeModal;
+}
+// preventive care: a spa day tops a run-down (not sick) cat back up
+function openGroom(pref) {
+  ensureAudio();
+  const c = pref || cats.find(x => !x.visitor && !x.mascot && !x.sick && (x.health ?? 100) < 62);
+  if (!c) { toast("Everyone's in good shape.", 3); return; }
+  const cost = groomCost(), afford = G.shells >= cost;
+  openModal(`<div class="reveal">
+    <div class="kicker">A spa day</div>
+    <canvas width="200" height="188"></canvas>
+    <h2>${esc(c.name)}</h2>
+    <p class="sub">A brush, a warm towel, a proper fuss. ${esc(c.name)} comes out shining — wellbeing and mood back up, and a little closer to you.</p>
+    <div class="row">
+      <button class="btn primary" id="grm-buy" ${afford ? "" : "disabled"}>◈ ${cost} — book it</button>
+      <button class="btn" id="grm-close">Not now</button>
+    </div>
+  </div>`);
+  miniCat(document.querySelector("#modal canvas"), c.coatKey, c.star, "grooming", false, 2.4);
+  document.getElementById("grm-buy").onclick = () => {
+    if (G.shells < cost) return;
+    G.shells -= cost;
+    c.health = Math.max(c.health ?? 100, 92);
+    c.mood = clamp(c.mood + 10, 8, 100);
+    c._need = null; c._ill = c.health < 32;
+    gainBond(c, 2, true);
+    sfx("buy"); spawnParticles(c.x, c.y - 14, "twinkle", 12); syncHud(); save(); closeModal();
+    logMoment("🧖", `${c.name} had a spa day — looking very pleased about it.`, "care");
+    toast(`${c.name} is looking after themselves.`, 4);
+  };
+  document.getElementById("grm-close").onclick = closeModal;
+}
+// send a cat off to the vet — spliced from the cove for a couple of hours,
+// returns fully well. modelled on the adventure send-off / return.
+function sendToVet(c) {
+  if (!c || c.mascot || c.visitor) return;
+  if (typeof cardCat !== "undefined" && cardCat === c) hideCatCard(true);
+  const data = snapshotCat(c);
+  data.hunger = Math.round(c.hunger || 0); data.thirst = Math.round(c.thirst || 0);
+  const i = cats.indexOf(c); if (i >= 0) cats.splice(i, 1);
+  const now = Date.now(), endsAt = now + VET_MINS * 60000;
+  vetVisits().push({ name: data.name, data, startedAt: now, endsAt });
+  const dir = c.x > W / 2 ? 1 : -1;
+  c.state = "exploring"; c.vx = dir * 22; c.vy = 0; c.walkAmt = 0.4; c.stateDur = 1e6;
+  _departures.push({ c, dir, life: 0, vet: true });
+  spawnParticles(c.x, c.y - 12, "twinkle", 5);
+  logMoment("🚑", `${data.name} went off to the vet — back ${whenText(endsAt)}.`, "care");
+  toast(`${data.name} is off to the vet — home ${whenText(endsAt)}.`, 5);
+  save(); syncHud(); rebuildAttractors();
+}
+function checkVetReturns() {
+  const list = (G && Array.isArray(G.vet)) ? G.vet : null;
+  if (!list || !list.length) return;
+  const due = list.filter(v => Date.now() >= v.endsAt);
+  for (const v of due) {
+    list.splice(list.indexOf(v), 1);
+    if (cats.some(x => x.name === v.name)) continue;
+    const d = v.data || {};
+    const c = new Cat({ ...d, x: -34, y: rand(H * 0.55, H * 0.8),
+      health: 100, sick: null, _criticalSince: 0, _leaveSince: 0,
+      hunger: Math.min(d.hunger ?? 18, 28), thirst: Math.min(d.thirst ?? 14, 24),
+      mood: Math.max(d.mood ?? 60, 64) });
+    c.state = "arriving"; c.tx = clamp(rand(W * 0.3, W * 0.7), 40, W - 40); c.ty = c.y; c.face = 1;
+    cats.push(c);
+    spawnParticles(c.x + 20, c.y - 12, "twinkle", 7);
+    logMoment("💚", `${c.name} is home from the vet — right as rain.`, "care");
+    toast(`${c.name} is home from the vet, all better.`, 4);
+  }
+  if (due.length) { if (typeof reconcileFriends === "function") reconcileFriends(); rebuildAttractors(); syncHud(); save(); }
 }
 // v3: a cat that's been sick-and-untreated or starving too long gives up and
 // leaves. stays in the Catdex; you can coax that coat again, not that cat.
@@ -2317,6 +2428,7 @@ function reconcileFriends() {
   // cats away on a trip still count as real residents — their link comes home with them
   for (const a of (G.adventures || []))
     for (const d of (a.party || (a.catData ? [a.catData] : []))) if (d && d.name) byName[d.name] = byName[d.name] || d;
+  for (const v of (G.vet || [])) if (v && v.data && v.data.name) byName[v.data.name] = byName[v.data.name] || v.data;
   const backLink = nm => { const f = byName[nm]; return f ? f.friend : null; };
   for (const c of cats) {
     if (c.visitor || !c.friend) continue;
@@ -3712,7 +3824,18 @@ function renderCatCare(c) {
   cc.wellpct.textContent = h + "%";
   cc.well.parentElement.className = "moodbar well " + wellClass(h);
   const need = catNeed(c);
-  if (!need) return;
+  if (!need) {
+    // preventive care — a spa day for a cat whose wellbeing has slipped but isn't ill
+    if (h < 62) {
+      cc.cause.className = "cc-cause";
+      cc.cause.innerHTML = `A little run down — not ill, just not their best. A spa day sets ${c.name} right up.`;
+      cc.cause.hidden = false;
+      cc.treat.textContent = `A spa day for ${c.name} · ◈ ${groomCost()}`;
+      cc.treat.hidden = false;
+      cc.treat.onclick = () => { hideCatCard(true); openGroom(c); };
+    }
+    return;
+  }
   const days = c._leaveSince ? Math.max(1, Math.round((LEAVE_AFTER_MS - (Date.now() - c._leaveSince)) / 3600e3 / 24 * 10) / 10) : 0;
   const txt = {
     leave: `${c.name} has been unwell too long. <b>If nothing changes they'll leave in about ${days < 1 ? "a day" : days + " day" + (days >= 2 ? "s" : "")}.</b> Medicine puts this right.`,
@@ -4034,6 +4157,11 @@ function liveRosterRows() {
     rows.push({ name: c.name, coatKey: c.coatKey, star: c.star, need: need || "ok", sev,
       mood: Math.round(c.mood), health: Math.round(c.health ?? 100), line });
   }
+  for (const v of (G.vet || [])) {
+    const d = v.data || {};
+    rows.push({ name: d.name, coatKey: d.coatKey, star: d.star, need: "vet", sev: 1.5, away: true,
+      mood: 0, health: 0, line: `At the vet — home ${whenText(v.endsAt)}.` });
+  }
   rows.sort((a, b) => b.sev - a.sev || b.health - a.health);
   return rows;
 }
@@ -4041,11 +4169,13 @@ function catPrefShort(c) {
   try { return `Loves ${catPrefLine(c)}.`; } catch (e) { return "Settled in nicely."; }
 }
 function rosterRowEl(r) {
-  const b = document.createElement(r.need === "gone" ? "div" : "button");
-  b.className = "rrow sev-" + (r.need === "gone" ? "gone" : r.sev);
+  const passive = r.need === "gone" || r.away;
+  const b = document.createElement(passive ? "div" : "button");
+  b.className = "rrow sev-" + (r.need === "gone" ? "gone" : r.away ? "away" : r.sev);
   const meta = NEED_META[r.need];
   const badge = meta ? `<span class="rbadge" title="${meta.word}">${meta.emoji}</span>`
-    : r.need === "gone" ? `<span class="rbadge">🎒</span>` : "";
+    : r.need === "gone" ? `<span class="rbadge">🎒</span>`
+    : r.need === "vet" ? `<span class="rbadge">🚑</span>` : "";
   const wc = wellClass(r.health);
   b.innerHTML =
     `<span class="redge"></span>` +
@@ -4053,7 +4183,7 @@ function rosterRowEl(r) {
     `<span class="rmeat">` +
       `<span class="rnm">${esc(r.name)} ${badge}</span>` +
       `<span class="rline">${r.line}</span>` +
-      (r.need === "gone" ? "" :
+      (passive ? "" :
       `<span class="rbars">` +
         `<span class="rb"><span class="rk">mood</span><span class="moodbar"><i style="width:${r.mood}%"></i></span></span>` +
         `<span class="rb"><span class="rk">wellbeing</span><span class="moodbar well ${wc}"><i style="width:${r.health}%"></i></span></span>` +
@@ -4061,7 +4191,7 @@ function rosterRowEl(r) {
     `</span>`;
   const cv = b.querySelector("canvas");
   if (cv) miniCat(cv, r.coatKey, r.star || 1, "loafing", false, 0.62);
-  if (r.need !== "gone") b.onclick = () => { closeRoster(); jumpToCat(catBySlug(r.name)); };
+  if (!passive) b.onclick = () => { closeRoster(); jumpToCat(catBySlug(r.name)); };
   return b;
 }
 function fillRoster(rows) {
@@ -4099,9 +4229,12 @@ function openRoster() {
   hideCatCard(true);
   const rows = liveRosterRows();
   const needy = rows.filter(r => r.sev >= 2).length;
+  const vet = rows.filter(r => r.away).length;
   document.getElementById("roster-title").textContent = "The cove";
   document.getElementById("roster-sub").textContent =
-    `${rows.length} cat${rows.length === 1 ? "" : "s"}` + (needy ? ` · ${needy} need${needy === 1 ? "s" : ""} something` : " · everyone's well");
+    `${rows.length} cat${rows.length === 1 ? "" : "s"}`
+    + (needy ? ` · ${needy} need${needy === 1 ? "s" : ""} something` : vet ? "" : " · everyone's well")
+    + (vet ? ` · ${vet} at the vet` : "");
   fillRoster(rows);
   const foot = document.getElementById("roster-foot");
   foot.innerHTML = `<button id="roster-close">Close</button>`;
@@ -5841,6 +5974,7 @@ function offlineCare(elapsed) {
 // coming back: arrivals, then a NARRATIVE beat, then the earnings summary, then `then`
 function checkOffline(then) {
   const elapsed = (Date.now() - (G.lastSeen || Date.now())) / 1000;
+  checkVetReturns();          // anyone whose vet stay ended while away is home first
   offlineCare(elapsed);
   offlineArrivals(elapsed);
   syncHud();
@@ -10079,6 +10213,7 @@ function drawCairn(g, W, H) {
   g.restore();
 }
 
+let _vetT = 0;   // throttle for checkVetReturns
 function simulate(dt) {
   updateCamera(dt);
   if (G.tutorialDone) {                 // hold the world still during the cold open
@@ -10096,6 +10231,8 @@ function simulate(dt) {
   for (const c of cats) updateCat(c, dt);
   if (cats.some(c => c._gone)) cats = cats.filter(c => !c._gone);   // a departed visitor lives on only in _departures
   updateDepartures(dt);
+  _vetT = (_vetT || 0) + dt;                       // cats come home from the vet on their own
+  if (_vetT > 4) { _vetT = 0; checkVetReturns(); }
   updateTokens(dt);
   updateFX(dt);
   updateButterfly(dt);
@@ -10886,7 +11023,7 @@ function drawDepartures(g) {
     g.save();
     g.globalAlpha = d.life > 6 ? Math.max(0, (11 - d.life) / 5) : 1;
     drawCat(g, d.c, false);
-    drawBindle(g, d.c);
+    if (!d.vet) drawBindle(g, d.c);   // a vet trip isn't a leaving — no bindle
     g.restore();
   }
 }
@@ -11376,7 +11513,10 @@ window.__cove = {
     if (cmd === "report") { offlineCare(Math.max(v || 0, 3) * 3600); if (_wywaReport) showWywaReport(() => {}); return _wywaReport ? "shown" : "nothing to report"; }
     if (cmd === "refill") { openFoodRefill(); return "opened"; }
     if (cmd === "medicine") { openMedicine(); return "opened"; }
-    return { food: G.food + "/" + FOOD_MAX, water: anyWaterSource(),
+    if (cmd === "groom") { const c = cats.find(x => !x.visitor && !x.mascot); if (c) { c.health = Math.min(c.health ?? 100, 45); openGroom(c); return "opened for " + c.name; } return "no cat"; }
+    if (cmd === "vet") { const c = cats.find(x => !x.visitor && !x.mascot); if (c) { sendToVet(c); return c.name + " -> vet"; } return "no cat"; }
+    if (cmd === "vetback") { for (const v of (G.vet || [])) v.endsAt = Date.now() - 1000; checkVetReturns(); return "vet emptied"; }
+    return { food: G.food + "/" + FOOD_MAX, water: anyWaterSource(), atVet: (G.vet || []).map(v => v.data.name),
       cats: cats.filter(c => !c.visitor).map(c => ({ n: c.name, hunger: Math.round(c.hunger), thirst: Math.round(c.thirst), health: Math.round(c.health ?? 100), need: c._need || null, sick: !!c.sick })) };
   },
   wywa(id){
