@@ -1390,19 +1390,70 @@ const NAMES = ["Biscuit","Miso","Pixel","Tofu","Clover","Waffle","Sardine","Pebb
 let G = null;
 
 // --- IAP entitlements ------------------------------------------------------
-// A store purchase lives on the player's Apple / Google account, NOT in this
-// local save. `G.iap.owned` is only a CACHE of what the store last told us —
-// the native build MUST re-query the billing plugin on every launch and on a
-// "Restore purchases" tap and overwrite it, so an app update / reinstall / new
-// device never loses a purchase. One-time rewards (the ✦50 pearls) are ledgered
-// in `G.iap.grants` so a restore can't double-grant them and cloud save can
-// carry them. `applyEntitlements()` re-derives every perk from `owned` and is
-// safe to run any number of times.
+// A store purchase lives on the player's Apple / Google account. `G.iap.owned`
+// is only a CACHE of what the store last told us. Bulletproofing (avoid the
+// "I bought it and lost it after an update" ticket):
+//   1. The cache lives in ITS OWN store (`iapStore`, key IAP_STORE_KEY), NOT in
+//      the game save — a future SAVE_KEY bump / migration can never drop it.
+//      NATIVE: swap iapStore's two localStorage lines for @capacitor/preferences
+//      (an iOS App Group) — WKWebView localStorage can be evicted under storage
+//      pressure, and a lost entitlement is a support ticket.
+//   2. The native build calls reconcileEntitlements() on EVERY launch and on a
+//      "Restore purchases" tap with the product ids the billing plugin reports.
+//   3. FAIL-OPEN: a failed / offline store query never revokes a cached perk.
+//      The cache only ever gains entitlements from the store, never loses them
+//      (a refund is rare; a wrongly-revoked perk is a complaint, a wrongly-kept
+//      cosmetic flag costs nothing).
+//   4. One-time rewards (the ✦50) go through grantOnce(), ledgered in
+//      `iap.grants`. NATIVE: key them off the store transaction id.
+// applyEntitlements() re-derives every perk from `owned` and is idempotent.
 const IAP_PRODUCTS = {
   cozy_supporter: { price: "$4.99", label: "Cozy Supporter Pack", type: "non-consumable" },
   sparkle_pack:   { price: "$2.99", label: "Sparkle Pack",        type: "non-consumable" },   // planned — unlocks the effect cosmetics
 };
 function newIapState() { return { owned: {}, grants: {} }; }
+const IAP_STORE_KEY = "catmintCove.iap.v1";
+const iapStore = {
+  load() {
+    try {
+      const raw = localStorage.getItem(IAP_STORE_KEY);
+      if (raw) { const s = JSON.parse(raw); if (s && typeof s === "object") return { owned: s.owned || {}, grants: s.grants || {} }; }
+    } catch (e) {}
+    return newIapState();
+  },
+  save(state) {
+    try { localStorage.setItem(IAP_STORE_KEY, JSON.stringify({ owned: (state && state.owned) || {}, grants: (state && state.grants) || {} })); } catch (e) {}
+  },
+};
+function saveIap() { if (typeof G !== "undefined" && G && G.iap) iapStore.save(G.iap); }
+// Load entitlements into G.iap — called from boot UNCONDITIONALLY, after load(),
+// so a rejected / missing / future-version game save (which makes load() bail to
+// newGame()) can never drop a purchase. Prefers the dedicated iapStore, then
+// folds in a redundant copy from the game save and any legacy simulated flag.
+function loadEntitlements() {
+  const iap = iapStore.load();
+  const legacy = (G && G.iap && typeof G.iap === "object") ? G.iap : null;
+  if (legacy && legacy.owned) for (const k in legacy.owned) if (legacy.owned[k]) iap.owned[k] = true;
+  if (legacy && legacy.grants) for (const k in legacy.grants) if (!iap.grants[k]) iap.grants[k] = legacy.grants[k];
+  if (G && G.ads && G.ads.supporter && !iap.owned.cozy_supporter) {   // a pre-iap simulated Supporter purchase
+    iap.owned.cozy_supporter = true;
+    if (!iap.grants["cozy_supporter.pearls"]) iap.grants["cozy_supporter.pearls"] = -1;
+  }
+  G.iap = iap;
+  iapStore.save(G.iap);
+}
+// THE native integration point. `ownedIds` = product ids the billing plugin
+// reports as owned (from getPurchases / customerInfo). `authoritative` is true
+// only when that query definitely succeeded. We NEVER remove — union only —
+// so a bad network never costs a paying player their perk.
+function reconcileEntitlements(ownedIds, authoritative) {
+  if (!G.iap) G.iap = newIapState();
+  let changed = false;
+  for (const id of (ownedIds || [])) if (!G.iap.owned[id]) { G.iap.owned[id] = true; changed = true; }
+  applyEntitlements();
+  if (changed) { saveIap(); save(); syncHud(); }
+  return { owned: { ...G.iap.owned }, authoritative: !!authoritative };
+}
 function newAdsState() {
   return {
     supporter: false,      // MIRROR of iap.owned.cozy_supporter — re-derived by applyEntitlements(), never the source of truth
@@ -1503,14 +1554,8 @@ function load() {
     if (!G.cosmetics.props || typeof G.cosmetics.props !== "object") G.cosmetics.props = {};
     if (!DECOR_THEMES[G.cosmetics.theme] || !G.cosmetics.themes[G.cosmetics.theme]) G.cosmetics.theme = "default";
     G.ads = Object.assign(newAdsState(), G.ads || {});
-    if (!G.iap || typeof G.iap !== "object") G.iap = newIapState();
-    if (!G.iap.owned) G.iap.owned = {};
-    if (!G.iap.grants) G.iap.grants = {};
-    // migrate a pre-iap simulated Supporter purchase so an update doesn't drop it
-    if (G.ads.supporter && !G.iap.owned.cozy_supporter) {
-      G.iap.owned.cozy_supporter = true;
-      if (!G.iap.grants["cozy_supporter.pearls"]) G.iap.grants["cozy_supporter.pearls"] = -1;  // they already had the pearls
-    }
+    // entitlements are loaded UNCONDITIONALLY by loadEntitlements() in the boot
+    // sequence (not here) so a rejected / future-version save can't drop a purchase.
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
     if (typeof G.coldStep !== "number") G.coldStep = G.tutorialDone ? 99 : 0;
     if (G.midknightSeeded === undefined) G.midknightSeeded = false;
@@ -5595,7 +5640,7 @@ document.getElementById("dev-ad").addEventListener("click", () => {
 });
 document.getElementById("dev-super").addEventListener("click", () => {
   if (iapOwns("cozy_supporter")) {
-    G.iap.owned.cozy_supporter = false; applyEntitlements(); save(); toast("Supporter OFF");
+    G.iap.owned.cozy_supporter = false; saveIap(); applyEntitlements(); save(); toast("Supporter OFF");
   } else grantSupporter();
 });
 document.getElementById("dev-adreset").addEventListener("click", () => {
@@ -5786,18 +5831,17 @@ function askAgeGate(then) {
 
 /* ---------- IAP entitlements — see the note by newIapState() ---------- */
 function iapOwns(id) { return !!(G && G.iap && G.iap.owned && G.iap.owned[id]); }
-// run `fn` only the first time ever for `key`; ledgered in the save so a restore
+// run `fn` only the first time ever for `key`; ledgered in iapStore so a restore
 // can't repeat it. NATIVE: key off the store transaction id
-// (`grantOnce("cozy_supporter.pearls." + txId, …)`) so it's safe even against a
-// naive restore, and mirror `G.iap.grants` into cloud save so a fresh reinstall
-// on a new device doesn't re-grant OR lose the one-time reward. Simplest of all:
-// keep the Supporter Pack purely entitlement-based (no ✦ grant) — then there's
-// nothing to ledger. See STORE-SETUP.md §5.
+// (`grantOnce("cozy_supporter.pearls." + txId, …)`), and mirror the ledger into
+// cloud save so a fresh reinstall doesn't re-grant OR lose it. Simplest of all:
+// keep the Supporter Pack purely entitlement-based (no ✦ grant). See STORE-SETUP §5.
 function grantOnce(key, fn) {
   if (!G.iap.grants) G.iap.grants = {};
   if (G.iap.grants[key]) return false;
   G.iap.grants[key] = Date.now();
   try { fn(); } catch (e) {}
+  saveIap();
   return true;
 }
 // re-derive every purchased perk from what's owned. idempotent — safe on every launch.
@@ -5829,18 +5873,26 @@ function applyEntitlements() {
 function completePurchase(productId) {
   if (!G.iap) G.iap = newIapState();
   G.iap.owned[productId] = true;
+  saveIap();                          // persist to the dedicated store FIRST
   applyEntitlements();
   save(); syncHud(); sfx("buy");
   spawnParticles(W / 2, H * 0.5, "twinkle", 16);
 }
-// Apple REQUIRES a restore path reachable without a purchase attempt. real build:
-// query the billing plugin for owned products and overwrite G.iap.owned from it.
+// Apple REQUIRES a restore path reachable without a purchase attempt. Also run
+// this silently on every launch. FAIL-OPEN: never revoke on a failed query.
 async function restorePurchases() {
-  // TODO(native): const owned = await Billing.getOwnedProducts();
-  //               G.iap.owned = Object.fromEntries(owned.map(p => [p.productId, true]));
-  applyEntitlements(); save(); syncHud();
+  let queried = false;
+  try {
+    // NATIVE: const info = await Purchases.restorePurchases();  // RevenueCat
+    //         const ids = Object.keys(info.entitlements.active);
+    //         reconcileEntitlements(ids, true);  queried = true;
+    queried = false;   // simulated build: nothing to query, fall through to the cache
+  } catch (e) { queried = false; }
+  applyEntitlements(); saveIap(); save(); syncHud();   // cache stands regardless
   const any = Object.values((G.iap && G.iap.owned) || {}).some(Boolean);
-  toast(any ? "Purchases restored to this device." : "No purchases found on your store account.", 4);
+  toast(any ? "Purchases restored to this device."
+           : queried ? "No purchases found on your store account."
+           : "Nothing to restore.", 4);
   return any;
 }
 
@@ -11685,9 +11737,11 @@ window.__cove = {
   iap(cmd, id){
     if (cmd === "buy") { completePurchase(id || "cozy_supporter"); return "owned: " + Object.keys(G.iap.owned).filter(k => G.iap.owned[k]).join(", "); }
     if (cmd === "restore") return restorePurchases();
-    if (cmd === "clearlocal") { G.iap.owned = {}; G.ads.supporter = false; G.ads.perm2x = false; applyEntitlements(); save(); return "owned-cache wiped (grants ledger kept) — a real restore re-fills owned from the store"; }
-    if (cmd === "apply") { applyEntitlements(); save(); return "entitlements re-applied"; }
-    return { products: IAP_PRODUCTS, owned: G.iap.owned, grants: G.iap.grants };
+    if (cmd === "reconcile") { return reconcileEntitlements(Array.isArray(id) ? id : (id ? [id] : []), true); }
+    if (cmd === "clearlocal") { G.iap.owned = {}; G.ads.supporter = false; G.ads.perm2x = false; saveIap(); applyEntitlements(); save(); return "owned-cache wiped (grants ledger kept) — a real restore re-fills owned from the store"; }
+    if (cmd === "wipestore") { try { localStorage.removeItem(IAP_STORE_KEY); } catch(e){} G.iap = newIapState(); G.ads.supporter = false; G.ads.perm2x = false; applyEntitlements(); save(); return "iapStore wiped entirely — simulates a reinstall with no cloud/store; restore/reconcile must re-fill it"; }
+    if (cmd === "apply") { applyEntitlements(); saveIap(); save(); return "entitlements re-applied"; }
+    return { products: IAP_PRODUCTS, owned: G.iap.owned, grants: G.iap.grants, storeKey: IAP_STORE_KEY };
   },
   // big labelled sheet drawn straight to the canvas for close inspection
   sheet(scale = 2.7, state = "loafing"){
@@ -11782,7 +11836,12 @@ resize();
 _lastViewBottom = _viewBottomY;
 load();
 restoreCats();
-applyEntitlements();                   // re-derive Supporter / Sparkle perks from what the store account owns
+loadEntitlements();                    // pull purchases from the dedicated iapStore — runs whatever load() did
+applyEntitlements();                   // re-derive perks from the cached entitlements immediately
+// NATIVE: also fire a silent store query here and on every resume, then call
+// reconcileEntitlements(ids, true) — that's what makes a reinstall / new device
+// recover a purchase. It only ADDS, so a slow network never revokes a perk.
+//   Purchases.getCustomerInfo().then(i => reconcileEntitlements(Object.keys(i.entitlements.active), true)).catch(()=>{});
 visitorTimer = nextVisitorGap();      // now that G is loaded, time the next free arrival properly
 rebuildAttractors();
 initDayClock();

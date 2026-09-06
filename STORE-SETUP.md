@@ -182,33 +182,57 @@ Pack IAP **simulated**. Before turning either on:
   ($4.99) and `sparkle_pack` ($2.99) — **both non-consumable**, created in both
   consoles.
 
-  **The purchase-persistence contract (already scaffolded in `index.html`):**
-  a store purchase lives on the player's Apple/Google account, never in the
-  local save — so an app update, a reinstall, or a new device must not lose it.
-  - `G.iap.owned` is only a **cache**. On every launch and on the "Restore
-    purchases" tap, call `restorePurchases()` → query the billing plugin for
-    owned products → overwrite `G.iap.owned` → `applyEntitlements()`.
+  **The purchase-persistence contract (scaffolded + tested in `index.html`)** —
+  a store purchase lives on the player's Apple/Google account, so an app
+  update, a reinstall, or a new device must never lose it:
+  - **Entitlements live in their own store** (`iapStore`, key
+    `catmintCove.iap.v1`) — **not** the game save. `loadEntitlements()` runs
+    it on boot *unconditionally*, so a rejected or future-version game save
+    (which makes `load()` bail to `newGame()`) can't drop a purchase. A
+    redundant copy also rides in the game save and is folded back on load.
+    **NATIVE: swap `iapStore`'s two `localStorage` lines for
+    `@capacitor/preferences`** (an iOS App Group) — WKWebView `localStorage`
+    can be evicted under storage pressure.
+  - `G.iap.owned` is a **cache**. On every launch and every resume, and on the
+    "Restore purchases" tap, run a billing query and pass the owned product
+    ids to **`reconcileEntitlements(ids, authoritative)`**. It **only ever
+    adds** — a slow / offline / failed query never revokes a cached perk
+    (fail-open: a wrongly-revoked perk is a support ticket; a wrongly-kept
+    cosmetic flag costs nothing).
   - `applyEntitlements()` re-derives every perk (ads-off, 2× offline,
-    Midknight's ribbon, the Sparkle cosmetics) from `owned`. It is idempotent —
-    run it as often as you like. The legacy `G.ads.supporter` / `perm2x` are
-    now just mirrors it writes.
+    Midknight's ribbon, the Sparkle cosmetics) from `owned`. Idempotent. The
+    legacy `G.ads.supporter` / `perm2x` are just mirrors it writes.
   - After a confirmed purchase call `completePurchase(productId)` **and
     acknowledge/finish the transaction in the same callback** — Google Play
     auto-refunds an unacknowledged purchase after 3 days.
-  - One-time rewards (the ✦50 in the Supporter Pack) go through
-    `grantOnce(key, fn)`, ledgered in `G.iap.grants` (in the save). NATIVE:
-    key it off the store **transaction id** so a naive restore can't repeat it,
-    and mirror `G.iap.grants` into cloud save so a fresh reinstall neither
-    re-grants nor loses it. **Simplest fix: drop the ✦50 and keep the Supporter
-    Pack purely entitlement-based** — then there's nothing to ledger.
-  - `restorePurchases()` and the "Restore purchases" affordance (in the pack
-    modal and the Back-up sheet) already exist — just fill in the billing call.
-  - `__cove.iap("buy"|"restore"|"clearlocal"|"apply")` exercises the flow in
-    the simulated build.
+  - One-time rewards (the ✦50) go through `grantOnce(key, fn)`, ledgered in
+    `iapStore`. NATIVE: key it off the store **transaction id**, and cloud-back
+    the ledger, so a fresh reinstall neither re-grants nor loses it.
+    **Simplest of all: drop the ✦50, keep the pack purely entitlement-based.**
+  - `restorePurchases()` (fail-open, `try/catch`) + the "Restore purchases"
+    button (pack modal *and* the Back-up sheet — Apple requires a
+    no-purchase-needed path) already exist; fill in the one billing call.
+
+  **Pre-launch IAP test matrix** (`__cove.iap(...)` simulates most; do the
+  real ones on a device with a sandbox / license-test account):
+
+  | scenario | expected | sim command |
+  |---|---|---|
+  | buy → force-close → reopen | perk holds | buy, reload |
+  | buy → **app update** (new binary, data kept) | perk holds | buy, reload |
+  | buy → **save format bumps** (`save.vN` rejected) | perk holds | set save `v` to a bad number, reload |
+  | buy → airplane mode → reopen | perk holds (from cache) | — device only |
+  | buy → uninstall → reinstall → tap **Restore** | perk returns | `wipestore` then `reconcile ["cozy_supporter"]` |
+  | buy → **new device**, same store account → Restore | perk returns | as above |
+  | own perk → launch with billing **offline/erroring** | perk **not** revoked | `reconcile []` → still owned |
+  | buy on Android, open on iOS | perk does **not** cross (separate stores — expected) | — |
+  | double-tap Restore / buy | no double-grant, no crash | `buy` twice |
+  | refund a non-consumable | perk may linger until next authoritative reconcile — acceptable | — |
 - **Cloud save**: `@capacitor-firebase/*` is overkill — use Google Play Games
   *Saved Games* + Apple Game Center saved games. The `saveCode()` export in the
-  Today sheet is the interim. When it lands, put `G.iap.grants` in it so the
-  one-time-reward ledger survives a reinstall.
+  Today sheet is the interim. When it lands, put the `iapStore` blob
+  (`{owned, grants}`) in it too so the one-time-reward ledger survives a
+  reinstall — the entitlements themselves still come from the store.
 
 > ⚠️ **Before submitting:** the store description + keywords in §2 are a
 > pre-V3 draft (flagged there too) — reposition around the care loop, not
