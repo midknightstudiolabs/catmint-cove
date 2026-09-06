@@ -155,8 +155,8 @@ content work, not engineering. (This mostly exists — see status block.)
 
 Cosmetic + support only — no 2× offline, no pearls.
 
-- **Founder's plaque** by the cove sign ("FOUNDING COVEKEEPER · 2026") — the
-  "cool signate" for a supporter of the game
+- **Founder's plaque** by the cove sign ("FOUNDING COVEKEEPER · 2026") — dated,
+  a limited edition offered only during the founding period
 - Founder's ribbon for Midknight
 - **Halo** — a glowing gold ring for any cat, a touch brighter after dark
 - **Hero mask** — a dark domino eye mask for any cat
@@ -165,7 +165,9 @@ Cosmetic + support only — no 2× offline, no pearls.
 - Permanent future ad removal (if ads are ever introduced)
 - Supports Midknight Studio Labs
 
-Copy: *"You were here when the Cove was still finding its paws."*
+Copy: *"Catmint Cove is made by one person at Midknight Studio Labs. This is the
+way to back it — and the dated 2026 plaque is only offered while the Cove is
+still new."*  ·  *"It goes straight to the developer — no publisher, no investors."*
 
 Feels like *"I supported this little indie game when it started"*, not *"I
 bought a progression booster."* The founder cosmetics can become unavailable

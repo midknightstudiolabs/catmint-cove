@@ -4754,7 +4754,7 @@ function shopPackRow() {
          <div class="desc">Your plaque's by the sign${ADS_ENABLED ? " · ads off" : ""} · thank you 🧡</div></div>
        <span class="owned">Owned</span>`
     : `<div class="txt"><div class="name">Founding Covekeeper</div>
-         <div class="desc">A founder's plaque, ribbon, halo &amp; hero mask · ${ADS_ENABLED ? "ad-free forever · " : ""}supports the studio · no gameplay perks</div></div>
+         <div class="desc">Back the one-person studio behind the Cove · a limited 2026 founder's plaque, ribbon, halo &amp; hero mask · ${ADS_ENABLED ? "ad-free forever · " : ""}no gameplay perks</div></div>
        <button class="btn primary">${IAP_PRODUCTS.founding_covekeeper.price}</button>`;
   const pb = pack.querySelector("button");
   if (pb) pb.addEventListener("click", () => showPackOffer(false));
@@ -6321,20 +6321,20 @@ function showPackOffer(soft) {
   openModal(`<div class="reveal">
     <div class="kicker">${soft ? "Enjoying the cove?" : "Founding Covekeeper"}</div>
     <h2>Founding Covekeeper</h2>
-    <p class="sub" style="margin:.1rem 0 .7rem">You were here when the Cove was still finding its paws.</p>
+    <p class="sub" style="margin:.1rem 0 .7rem">Catmint Cove is made by one person at Midknight Studio Labs. This is the way to back it — and the dated 2026 plaque is only offered while the Cove is still new.</p>
     <ul class="packperks">
-      <li>A <b>Founding Covekeeper plaque</b> by the cove sign — 2026</li>
+      <li>A <b>2026 Founding Covekeeper plaque</b> by the cove sign — engraved with the year, a limited edition for the founding period</li>
       <li>A <b>founder's ribbon</b> for Midknight</li>
-      <li>A glowing <b>halo</b> &amp; a <b>hero's mask</b> — for any cat, now and later</li>
+      <li>A glowing <b>halo</b> &amp; a <b>hero mask</b> for any cat — now and always</li>
       <li>Ad-free forever, if ads are ever added</li>
-      <li>Supports Midknight Studio Labs</li>
+      <li>It goes straight to the developer — <b>no publisher, no investors</b></li>
     </ul>
     <div class="row">
       <button class="btn primary" id="pk-buy">Get it — ${IAP_PRODUCTS.founding_covekeeper.price}</button>
       <button class="btn" id="pk-no">Maybe later</button>
     </div>
     <button class="linkbtn" id="pk-restore" style="margin-top:.6rem">Already bought it? Restore purchase</button>
-    <p class="sub" style="margin:.5rem 0 0;font-size:.76rem;">${billingNote("Purely cosmetic + support")}</p>
+    <p class="sub" style="margin:.5rem 0 0;font-size:.76rem;">${billingNote("Purely cosmetic — a way to support the developer")}</p>
   </div>`);
   document.getElementById("pk-buy").onclick = async () => {
     closeModal();
