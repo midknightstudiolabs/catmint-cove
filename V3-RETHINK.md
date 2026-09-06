@@ -196,8 +196,25 @@ sense once the game around it is the v3 game.
   (portrait, name, coat, trait) with Welcome / Not right now. Coax + scripted
   + offline arrivals still auto-join.
 - [x] **Care layer** — food store + refill, per-cat hunger/thirst, drinking
-  at any pond, sickness + medicine, the ~40h leave clock, offline handling,
+  at any pond, sickness + medicine, the leave clock, offline handling,
   HUD 🍚 stat. Tuned so a stocked cove + a pond is a light background task.
+- [x] **Care legibility** (commit `af238e4`, 2026-09-06) — the care layer was
+  a hidden cliff; now it reads. `c.health` is a **buffer** (drains only under
+  real strain, refills when comfy, 0 → sick) replacing the old RNG sick roll.
+  Cat card gains a **wellbeing bar** (green/amber/rose) + a plain cause line +
+  a one-tap Treat/Refill button. **In-world status badges** 🍽 💧 🤒 🎒 float
+  over needy cats (🎒 pulses); sick cats desaturate + sit low + green wisp +
+  one sad meow. **Leave clock surfaced**: 24h critical → 🎒 warning + card
+  countdown → 24h more → leaves (quiet Moment + Catdex keepsake line, no
+  full-screen). **Cove roster** (tap the 🐾 HUD stat) — every cat worst-first,
+  tap a row to jump to it. **"While you were away"** = that roster in report
+  mode, shown on return when anyone's unwell / a cat left, collapses to
+  "+N more unwell", one-tap Refill footer. Care state now **actually persists
+  in `save()`** (it never did before — the inline serializer skipped it).
+  Decisions: sick glow is green (not amber); warning ~1 day + a long silent
+  grace before it; a cat leaving is quiet not full-screen; card word is
+  "wellbeing"; badges always-on while the need is active (no in-game zoom to
+  gate on).
 - [x] **Autumn / seasonal effect** — was "hit or miss" because weather only
   spawned during the cove's daytime (clock is real-time-anchored). Now shows
   at any hour, dims to a 0.55 alpha floor at night.
