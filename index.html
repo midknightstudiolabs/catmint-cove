@@ -4754,7 +4754,7 @@ function shopPackRow() {
          <div class="desc">Your plaque's by the sign${ADS_ENABLED ? " · ads off" : ""} · thank you 🧡</div></div>
        <span class="owned">Owned</span>`
     : `<div class="txt"><div class="name">Founding Covekeeper</div>
-         <div class="desc">A founder's plaque + ribbon · ${ADS_ENABLED ? "ad-free forever · " : ""}supports the studio · no gameplay perks</div></div>
+         <div class="desc">A founder's plaque, ribbon, halo &amp; hero mask · ${ADS_ENABLED ? "ad-free forever · " : ""}supports the studio · no gameplay perks</div></div>
        <button class="btn primary">${IAP_PRODUCTS.founding_covekeeper.price}</button>`;
   const pb = pack.querySelector("button");
   if (pb) pb.addEventListener("click", () => showPackOffer(false));
@@ -4779,8 +4779,8 @@ function shopWelcomeRow(keepsake) {
   if (b) b.addEventListener("click", () => showWelcomeOffer(false));
   return row;
 }
-// the Sparkle Pack — the glow/wings/rainbow cosmetics. Pins highlighted to the
-// top of the Dress-up tab, and shows plain in Featured.
+// the Sparkle Pack — the glow/wings/rainbow cosmetics. Pinned highlighted to the
+// top of the Decor tab (its contents are also in the dress-up rack header).
 function shopSparkleRow(keepsake) {
   const owned = iapOwns("sparkle_pack");
   if (!owned && !(G.tutorialDone && residentCount() >= 2)) return null;
@@ -4898,6 +4898,8 @@ function renderShopDecor(list) {
   const cm = G.cosmetics;
   const wp = shopWelcomeRow(true);   // the welcome paw is decor — pin the pack up top, highlighted
   if (wp) list.appendChild(wp);
+  const sp = shopSparkleRow(true);   // the Sparkle Pack's home tab — glow/wings/rainbow for the whole cove
+  if (sp) list.appendChild(sp);
   const decorCount = (G.decor.cottage || 0) + (G.decor.tree || 0) + (G.decor.flowers || 0);
   const propCount = DECOR_PROPS.filter(p => p.movable && cm.props[p.id] && !propBoxed(p.id)).length;
   if (decorCount + propCount > 0) {
@@ -5101,14 +5103,13 @@ function renderShop() {
   list.insertAdjacentHTML("beforeend", `<p class="muted">${tab.intro}</p>`);
 
   if (shopTab === "featured") {
-    // ONE contextual pack — the next keepsake you don't own yet, never a wall of
-    // price tags. Each pack is still fully browsable where its content lives.
-    let packRow = null;
-    if (!iapOwns("welcome_pack"))            packRow = shopWelcomeRow();
-    else if (!iapOwns("sparkle_pack"))       packRow = shopSparkleRow();
-    else if (!iapOwns("founding_covekeeper")) packRow = shopPackRow();
-    // all three owned → no pack row; the shop's about the cove now
-    if (packRow) list.appendChild(packRow);
+    // the two "support the cove" keepsakes live here — Welcome, then Founding
+    // Covekeeper. The Sparkle Pack isn't a support tier; it's browsable in the
+    // Decor tab + the dress-up rack, not here.
+    const wpRow = !iapOwns("welcome_pack") && shopWelcomeRow();
+    if (wpRow) list.appendChild(wpRow);
+    const fcRow = !iapOwns("founding_covekeeper") && shopPackRow();
+    if (fcRow) list.appendChild(fcRow);
     list.appendChild(shopBoostRow());
     const rec = SHOP.find(i => i.cat === "comforts" && !i.soon && i.get() === 0) || SHOP.find(i => i.cat === "stations" && !i.soon && i.get() === 0);
     if (rec) { list.appendChild(shopHead("Suggested next")); list.appendChild(shopItemRow(rec)); }
