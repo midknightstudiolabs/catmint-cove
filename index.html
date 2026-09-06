@@ -12595,9 +12595,14 @@ window.addEventListener("resize", onViewportChange);
 window.addEventListener("orientationchange", onViewportChange);
 if (window.visualViewport) window.visualViewport.addEventListener("resize", onViewportChange);
 try { new ResizeObserver(onViewportChange).observe(document.getElementById("app")); } catch (e) {}
-// portrait-locked — best effort where the platform allows it (installed PWA /
-// Android). iOS Safari ignores this; the #rotate overlay covers that case.
-try { screen.orientation.lock("portrait").catch(() => {}); } catch (e) {}
+// Portrait lock is for phones only — a tablet (or desktop PWA) is happy in
+// landscape and the render code already has a wide-viewport path. Best effort
+// where the platform allows it (installed PWA / Android); iOS ignores it and
+// the native Info.plist decides (iPhone portrait-only, iPad free rotation).
+try {
+  if (Math.min(window.innerWidth, window.innerHeight) < 600)
+    screen.orientation.lock("portrait").catch(() => {});
+} catch (e) {}
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) { save(); Ads.onHide(); }
