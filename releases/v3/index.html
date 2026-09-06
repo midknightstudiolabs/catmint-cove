@@ -1439,8 +1439,8 @@ let G = null;
 //      `iap.grants`. NATIVE: key them off the store transaction id.
 // applyEntitlements() re-derives every perk from `owned` and is idempotent.
 const IAP_PRODUCTS = {
-  cozy_supporter: { price: "$4.99", label: "Cozy Supporter Pack", type: "non-consumable" },
-  sparkle_pack:   { price: "$2.99", label: "Sparkle Pack",        type: "non-consumable" },   // planned — unlocks the effect cosmetics
+  founding_covekeeper: { price: "$4.99", label: "Founding Covekeeper", type: "non-consumable" },   // cosmetic + support; NO gameplay advantage
+  sparkle_pack:        { price: "$2.99", label: "Sparkle Pack",        type: "non-consumable" },   // unlocks the effect cosmetics for the whole cove
 };
 function newIapState() { return { owned: {}, grants: {} }; }
 const IAP_STORE_KEY = "catmintCove.iap.v1";
@@ -1466,10 +1466,8 @@ function loadEntitlements() {
   const legacy = (G && G.iap && typeof G.iap === "object") ? G.iap : null;
   if (legacy && legacy.owned) for (const k in legacy.owned) if (legacy.owned[k]) iap.owned[k] = true;
   if (legacy && legacy.grants) for (const k in legacy.grants) if (!iap.grants[k]) iap.grants[k] = legacy.grants[k];
-  if (G && G.ads && G.ads.supporter && !iap.owned.cozy_supporter) {   // a pre-iap simulated Supporter purchase
-    iap.owned.cozy_supporter = true;
-    if (!iap.grants["cozy_supporter.pearls"]) iap.grants["cozy_supporter.pearls"] = -1;
-  }
+  if (iap.owned.cozy_supporter && !iap.owned.founding_covekeeper) iap.owned.founding_covekeeper = true;   // renamed 2026-09-06
+  if (G && G.ads && G.ads.supporter && !iap.owned.founding_covekeeper) iap.owned.founding_covekeeper = true;   // a pre-iap simulated purchase
   G.iap = iap;
   iapStore.save(G.iap);
 }
@@ -1487,8 +1485,7 @@ function reconcileEntitlements(ownedIds, authoritative) {
 }
 function newAdsState() {
   return {
-    supporter: false,      // MIRROR of iap.owned.cozy_supporter — re-derived by applyEntitlements(), never the source of truth
-    perm2x: false,         // Supporter perk: offline earnings always doubled
+    supporter: false,      // MIRROR of iap.owned.founding_covekeeper — the ad-free flag; re-derived by applyEntitlements(), never the source of truth
     born: null,            // birth year from the one-time age gate
     npa: true,             // non-personalized ads (default until we know an adult is playing)
     asked: false,          // age gate shown yet?
@@ -4545,11 +4542,11 @@ function shopPackRow() {
   const pack = document.createElement("div");
   pack.className = "shop-item pack";
   pack.innerHTML = Ads.owned()
-    ? `<div class="txt"><div class="name">Cozy Supporter Pack</div>
-         <div class="desc">${ADS_ENABLED ? "Ads off · " : ""}offline earnings permanently 2× · thank you 🧡</div></div>
+    ? `<div class="txt"><div class="name">Founding Covekeeper</div>
+         <div class="desc">Your plaque's by the sign${ADS_ENABLED ? " · ads off" : ""} · thank you 🧡</div></div>
        <span class="owned">Owned</span>`
-    : `<div class="txt"><div class="name">Cozy Supporter Pack</div>
-         <div class="desc">${ADS_ENABLED ? "No ads ever · " : ""}permanent 2× offline earnings · ✦50 · a ribbon for Midknight</div></div>
+    : `<div class="txt"><div class="name">Founding Covekeeper</div>
+         <div class="desc">A founder's plaque + ribbon · ${ADS_ENABLED ? "ad-free forever · " : ""}supports the studio · no gameplay perks</div></div>
        <button class="btn primary">${SUPPORTER_PRICE}</button>`;
   const pb = pack.querySelector("button");
   if (pb) pb.addEventListener("click", () => showPackOffer(false));
@@ -5711,8 +5708,8 @@ document.getElementById("dev-ad").addEventListener("click", () => {
   Ads.interstitial("dev");
 });
 document.getElementById("dev-super").addEventListener("click", () => {
-  if (iapOwns("cozy_supporter")) {
-    G.iap.owned.cozy_supporter = false; saveIap(); applyEntitlements(); save(); toast("Supporter OFF");
+  if (iapOwns("founding_covekeeper")) {
+    G.iap.owned.founding_covekeeper = false; delete G.iap.owned.cozy_supporter; saveIap(); applyEntitlements(); save(); toast("Founding Covekeeper OFF");
   } else grantSupporter();
 });
 document.getElementById("dev-adreset").addEventListener("click", () => {
@@ -5905,7 +5902,7 @@ function askAgeGate(then) {
 function iapOwns(id) { return !!(G && G.iap && G.iap.owned && G.iap.owned[id]); }
 // run `fn` only the first time ever for `key`; ledgered in iapStore so a restore
 // can't repeat it. NATIVE: key off the store transaction id
-// (`grantOnce("cozy_supporter.pearls." + txId, …)`), and mirror the ledger into
+// (`grantOnce("<product>.<reward>." + txId, …)`), and mirror the ledger into
 // cloud save so a fresh reinstall doesn't re-grant OR lose it. Simplest of all:
 // keep the Supporter Pack purely entitlement-based (no ✦ grant). See STORE-SETUP §5.
 function grantOnce(key, fn) {
@@ -5919,13 +5916,14 @@ function grantOnce(key, fn) {
 // re-derive every purchased perk from what's owned. idempotent — safe on every launch.
 function applyEntitlements() {
   if (!G.iap) G.iap = newIapState();
-  const sup = iapOwns("cozy_supporter");
-  G.ads.supporter = sup;              // legacy mirrors — everything downstream still reads these
-  G.ads.perm2x = sup;
+  // Founding Covekeeper — cosmetic + support ONLY (no 2× offline, no pearls):
+  // the ad-free flag, a founder's ribbon for Midknight, and the plaque by the
+  // sign (drawn in drawCoveSign, gated on iapOwns).
+  const sup = iapOwns("founding_covekeeper");
+  G.ads.supporter = sup;              // the ad-free mirror everything downstream reads
   if (sup) {
-    grantOnce("cozy_supporter.pearls", () => { G.pearls = (G.pearls || 0) + 50; });
     const mid = cats.find(c => c.mascot);
-    if (mid) {                        // Midknight's supporter ribbon (replaces his bell)
+    if (mid) {                        // Midknight's founder's ribbon (replaces his bell)
       mid.worn = normalizeWorn([...(mid.worn || []).filter(k => accSlot(k) !== "neck"), "bow"]);
       if (mid.owned && !mid.owned.includes("bow")) mid.owned.push("bow");
     }
@@ -5969,42 +5967,43 @@ async function restorePurchases() {
   return any;
 }
 
-/* ---------- Cozy Supporter Pack ($4.99 — simulated purchase) ---------- */
+/* ---------- Founding Covekeeper ($4.99 — simulated) — cosmetic + support only ---------- */
 const SUPPORTER_PRICE = "$4.99";
-function grantSupporter() {
-  completePurchase("cozy_supporter");
+function grantSupporter() {                 // name kept — everything calls it
+  completePurchase("founding_covekeeper");
   G.ads.pending = false;
   save();
-  toast(`Thank you for supporting the cove 🧡  ${ADS_ENABLED ? "Ads off · " : ""}✦50 · permanent 2× offline`);
+  toast(`Thank you for being a Founding Covekeeper 🧡  Your plaque is up by the sign.`);
 }
 function showPackOffer(soft) {
   if (Ads.owned()) {
-    openModal(`<div class="reveal"><div class="kicker">Cozy Supporter</div>
-      <h2>You're a supporter 🧡</h2>
-      <p class="sub">${ADS_ENABLED ? "Ads are off, offline earnings are permanently doubled" : "Offline earnings are permanently doubled"}, and Midknight's wearing his ribbon. Thank you.</p>
+    openModal(`<div class="reveal"><div class="kicker">Founding Covekeeper</div>
+      <h2>You were here first 🧡</h2>
+      <p class="sub">Your plaque stands by the cove sign, Midknight's wearing his founder's ribbon${ADS_ENABLED ? ", and the cove stays ad-free" : ""}. Thank you for backing the studio.</p>
       <div class="row"><button class="btn primary" id="pk-close">Back to the cove</button></div></div>`);
     document.getElementById("pk-close").onclick = closeModal;
     return;
   }
   openModal(`<div class="reveal">
-    <div class="kicker">${soft ? "Enjoying the cove?" : "Cozy Supporter Pack"}</div>
-    <h2>Cozy Supporter Pack</h2>
+    <div class="kicker">${soft ? "Enjoying the cove?" : "Founding Covekeeper"}</div>
+    <h2>Founding Covekeeper</h2>
+    <p class="sub" style="margin:.1rem 0 .7rem">You were here when the Cove was still finding its paws.</p>
     <ul class="packperks">
-      ${ADS_ENABLED ? "<li>No more ads — ever (rewarded videos stay optional)</li>" : ""}
-      <li>Offline earnings permanently doubled</li>
-      <li>✦ 50 pearls</li>
-      <li>A ribbon for Midknight + a supporter mark on your cove</li>
+      <li>A <b>Founding Covekeeper plaque</b> by the cove sign — 2026</li>
+      <li>A <b>founder's ribbon</b> for Midknight</li>
+      <li>Ad-free forever, if ads are ever added</li>
+      <li>Supports Midknight Studio Labs</li>
     </ul>
     <div class="row">
       <button class="btn primary" id="pk-buy">Get it — ${SUPPORTER_PRICE}</button>
       <button class="btn" id="pk-no">Maybe later</button>
     </div>
     <button class="linkbtn" id="pk-restore" style="margin-top:.6rem">Already bought it? Restore purchase</button>
-    <p class="sub" style="margin:.5rem 0 0;font-size:.76rem;">Simulated purchase in this build — real build uses Google Play / App Store billing. A purchase is tied to your store account, so it carries across updates and reinstalls.</p>
+    <p class="sub" style="margin:.5rem 0 0;font-size:.76rem;">Purely cosmetic + support — no effect on your cove, your cats or your progress. Simulated in this build; the real one uses App Store / Google Play billing, tied to your account so it carries across devices.</p>
   </div>`);
   document.getElementById("pk-buy").onclick = () => {
     closeModal();
-    if (!confirm(`Confirm purchase — Cozy Supporter Pack, ${SUPPORTER_PRICE}?\n(simulated: no charge)`)) return;
+    if (!confirm(`Confirm purchase — Founding Covekeeper, ${SUPPORTER_PRICE}?\n(simulated: no charge)`)) return;
     grantSupporter();
   };
   document.getElementById("pk-no").onclick = closeModal;
@@ -6093,13 +6092,12 @@ function offlineEarnings(elapsed, then) {
   let base = Math.floor(G.ratePerSec * capped * 0.18); // the cove ticks over — it doesn't grind for you
   base = Math.max(0, Math.min(base, 280 + cats.length * 260));   // soft cap: a return is 1-2 nice purchases, not a windfall
   if (base <= 0) return done();
-  const perm2x = !!(G.ads && G.ads.perm2x);          // Supporter Pack perk
-  const earned = perm2x ? base * 2 : base;
-  const canWatch = ADS_ENABLED && !perm2x && Ads.rewardReady("offline2x");
+  const earned = base;                                // no paid multiplier — see MONETIZATION.md
+  const canWatch = ADS_ENABLED && Ads.rewardReady("offline2x");   // an OPTIONAL rewarded ad, only if ads are ever enabled
   openModal(`
     <div class="big">◈ ${earned}</div>
     <h2>Your cats were busy</h2>
-    <p>${cats.length} cat${cats.length===1?"":"s"} kept ${coveName()} running while you were away${elapsed>3600?` (${fmtTime(elapsed)})`:""}.${perm2x?" <b>Supporter 2× applied.</b>":""}</p>
+    <p>${cats.length} cat${cats.length===1?"":"s"} kept ${coveName()} running while you were away${elapsed>3600?` (${fmtTime(elapsed)})`:""}.</p>
     <div class="row">
       <button class="btn primary" id="m-take">Collect</button>
       ${canWatch ? `<button class="btn rewarded" id="m-2x"><span class="ico">▶</span> Double it &nbsp;<small style="opacity:.6">ad</small></button>` : ""}
@@ -9070,6 +9068,26 @@ function drawCoveSign(g, W, H) {
     g.fillStyle = "#7a5c38"; g.textAlign = "center"; g.textBaseline = "middle";
     g.fillText(tag, 0, 10.5);
   }
+  // Founding Covekeeper — a small brass plaque on its own post, just right of the sign
+  if (typeof iapOwns === "function" && iapOwns("founding_covekeeper")) {
+    g.save();
+    g.translate(bw / 2 + 20, 0);
+    g.fillStyle = "rgba(36,31,23,0.10)"; g.beginPath(); g.ellipse(0, 25, 14, 4, 0, 0, 7); g.fill();
+    g.fillStyle = "#8a6a4a"; g.fillRect(-2, -2, 4, 27);                 // post
+    const pw = 40, ph = 19, py = -20;
+    const grad = g.createLinearGradient(0, py, 0, py + ph);
+    grad.addColorStop(0, "#e0c684"); grad.addColorStop(1, "#b6984c");
+    g.fillStyle = grad; roundRect(g, -pw / 2, py, pw, ph, 2.5); g.fill();
+    g.strokeStyle = "rgba(74,53,36,0.45)"; g.lineWidth = 1; roundRect(g, -pw / 2, py, pw, ph, 2.5); g.stroke();
+    g.fillStyle = "rgba(255,255,255,0.28)"; roundRect(g, -pw / 2, py, pw, 5, 2.5); g.fill();
+    g.fillStyle = "#5a4527"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.font = "700 5.4px 'Fraunces', Georgia, serif";
+    g.fillText("FOUNDING", 0, py + 5.5);
+    g.fillText("COVEKEEPER", 0, py + 10.5);
+    g.font = "700 4.4px 'Fraunces', Georgia, serif"; g.fillStyle = "#7a5c38";
+    g.fillText("· 2026 ·", 0, py + 15.5);
+    g.restore();
+  }
   g.textAlign = "left"; g.textBaseline = "alphabetic";
   g.restore();
 }
@@ -11910,7 +11928,7 @@ window.__cove = {
     return { enabled: ADS_ENABLED, ...G.ads, inGrace: (G.firstSeen||0) > 0 && Date.now() - G.firstSeen < 48*3600e3, owned: Ads.owned() };
   },
   iap(cmd, id){
-    if (cmd === "buy") { completePurchase(id || "cozy_supporter"); return "owned: " + Object.keys(G.iap.owned).filter(k => G.iap.owned[k]).join(", "); }
+    if (cmd === "buy") { completePurchase(id || "founding_covekeeper"); return "owned: " + Object.keys(G.iap.owned).filter(k => G.iap.owned[k]).join(", "); }
     if (cmd === "restore") return restorePurchases();
     if (cmd === "reconcile") { return reconcileEntitlements(Array.isArray(id) ? id : (id ? [id] : []), true); }
     if (cmd === "clearlocal") { G.iap.owned = {}; G.ads.supporter = false; G.ads.perm2x = false; saveIap(); applyEntitlements(); save(); return "owned-cache wiped (grants ledger kept) — a real restore re-fills owned from the store"; }
