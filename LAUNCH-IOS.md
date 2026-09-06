@@ -161,8 +161,8 @@ RevenueCat project **Catmint Cove** already exists with the Google Play app.
   Apps agreement (step 1) isn't ready, or `IOS_TEAM_ID` is wrong.
 - **`altool … Unable to authenticate`** — `ASC_KEY_ID` / `ASC_ISSUER_ID`
   mismatch, or the `ci` key lacks App Manager.
-- **CocoaPods / `pod install`** — Capacitor 8 + RevenueCat pods; a transient
-  CDN failure, just re-run.
+- **Swift Package resolution** — Capacitor 8 uses SPM (no CocoaPods). A
+  transient network failure resolving packages → just re-run.
 - **asset generation** — `@capacitor/assets` flattens `assets/icon-foreground.png`
   over `assets/icon-background.png` for the iOS icon (no alpha). If it complains,
   add a flat `assets/icon.png` (1024×1024, opaque).

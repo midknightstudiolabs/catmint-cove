@@ -7,6 +7,10 @@ name: iOS build (TestFlight)
 # cert + provisioning profile automatically) and the TestFlight upload — so
 # there is no .p12 / Keychain / manual profile dance.
 #
+# Capacitor 8 scaffolds a Swift Package Manager iOS project (App.xcodeproj +
+# CapApp-SPM/, no Podfile / no .xcworkspace) — hence -project, not -workspace,
+# and no `pod install`.
+#
 # Secrets (see STORE-SETUP.md §4):
 #   ASC_KEY_ID          - the App Store Connect API key's Key ID
 #   ASC_ISSUER_ID       - the API key's Issuer ID
@@ -75,15 +79,20 @@ jobs:
           plutil -replace 'UISupportedInterfaceOrientations~ipad' -json '["UIInterfaceOrientationPortrait","UIInterfaceOrientationPortraitUpsideDown"]' "$P"
           plutil -p "$P" | grep -A3 Orientation
 
-      - name: CocoaPods
-        run: cd ios/App && pod install
+      # Capacitor 8's `cap add ios` scaffolds a Swift Package Manager project
+      # (ios-spm-template) — App.xcodeproj + CapApp-SPM/, no Podfile, no
+      # .xcworkspace. So: no `pod install`, and xcodebuild targets -project.
+      - name: Resolve Swift packages
+        run: |
+          cd ios/App
+          xcodebuild -resolvePackageDependencies -project App.xcodeproj -scheme App
 
       # --- no signing key: just prove it compiles, then stop -------------------
       - name: Simulator compile check
         if: ${{ steps.keys.outputs.have != 'true' }}
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO clean build
 
@@ -100,7 +109,7 @@ jobs:
         if: ${{ steps.keys.outputs.have == 'true' }}
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -destination "generic/platform=iOS" \
             -allowProvisioningUpdates \
