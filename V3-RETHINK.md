@@ -215,6 +215,13 @@ sense once the game around it is the v3 game.
   grace before it; a cat leaving is quiet not full-screen; card word is
   "wellbeing"; badges always-on while the need is active (no in-game zoom to
   gate on).
+- [x] **Treatment choices** (commit `f43c9bc`, 2026-09-06) — the medicine
+  modal offers three routes: **medicine** (gradual, treat-all), **a shot from
+  the vet kit** (~2.4× cost, one cat, instant full heal), **take them to the
+  vet** (nominal fee, the cat's away ~2.5h real time, comes home fully well —
+  trade its presence for money). Plus a **spa day** on the cat card for a
+  run-down-but-not-sick cat: cheap, tops up wellbeing + mood + a little bond.
+  Preventive care.
 - [x] **Autumn / seasonal effect** — was "hit or miss" because weather only
   spawned during the cove's daytime (clock is real-time-anchored). Now shows
   at any hour, dims to a 0.55 alpha floor at night.
