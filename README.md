@@ -212,7 +212,12 @@ and **grow into adults over ~20 h of real time** (`KITTEN_MS`), with a little
 "grew up!" celebration. Starter cats are already grown. The dev "skip a day"
 button ages them for testing; the cat card shows "kitten (Xh old)" / "adult".
 
-There is **no fail state** — the "calm rule" from the design doc. Cats never leave.
+**V3 changed this.** Through V2 there was no fail state — the "calm rule": cats
+never left, absence was neutral. V3 adds a **care layer**: cats have hunger,
+thirst and a wellbeing buffer, can fall sick, and — if neglected for days,
+with a heavily telegraphed 🎒 warning first — **a cat can leave the cove**
+(kept in the Catdex; it does not die). The pull is now care-loop tension on
+top of the collection + cozy-decor + return-visit systems.
 
 ## The engagement layer (fun + compulsion, together)
 

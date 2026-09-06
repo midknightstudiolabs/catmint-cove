@@ -61,7 +61,11 @@ Both stores need these before you can submit — none of it is code:
   - **App Store subtitle** (30 char max): `A cozy cat sanctuary`
   - **Play short description** (80 char max):
     `A cozy corner where cats come to be looked after — and you make it theirs.`
-  - **Full description** (both stores):
+  - **Full description** (both stores) — ⚠️ **DRAFT, pre-V3, do not submit as-is.**
+    V3 added a care layer + a leave condition, so "no timer and no fail state"
+    is no longer true. Reposition once the care loop is playtested (a warmer
+    *Neko Atsume × light Tamagotchi × decorate-your-space*, not "absence is
+    neutral"). Old draft kept for reference:
     > Catmint Cove is a calm place. Cats wander in, and you look after them —
     > a warm spot in the sun, a bowl by the door, a scratch behind the ears.
     >
@@ -206,10 +210,9 @@ Pack IAP **simulated**. Before turning either on:
   Today sheet is the interim. When it lands, put `G.iap.grants` in it so the
   one-time-reward ledger survives a reinstall.
 
-> ⚠️ **Store copy above is stale.** The full description still says "no timer
-> and no fail state / time is weather / cats never leave" — V3 added a real
-> care layer with a telegraphed leave condition. Rewrite the description +
-> keywords once the care loop is playtested (see `V3-RETHINK.md`).
+> ⚠️ **Before submitting:** the store description + keywords in §2 are a
+> pre-V3 draft (flagged there too) — reposition around the care loop, not
+> "absence is neutral", once it's playtested. See `V3-RETHINK.md`.
 
 ---
 

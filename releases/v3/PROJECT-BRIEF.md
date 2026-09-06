@@ -1,5 +1,18 @@
 # Catmint Cove — Project Brief
 
+> ⚠️ **Superseded in part by V3 (2026-09-06).** This brief describes the game
+> through V2, when the **"calm rule"** held: no fail state, no timer, cats
+> never leave, absence is neutral. **V3 dropped the calm rule** — the game now
+> has a care layer (hunger / thirst / a wellbeing buffer / sickness with three
+> treatment routes) and, after a heavily telegraphed 🎒 warning, **a
+> neglected cat can leave the cove** (kept in the Catdex; no death). New cats
+> are accept/deny, the economy tightened ~50%, and cosmetic monetization is in
+> (effect cosmetics + a planned $2.99 Sparkle Pack). §2 "the calm rule", the
+> taglines, and the store copy below all need repositioning — hold the
+> rewrite until the care loop is playtested. See `V3-RETHINK.md` and
+> `releases/v3/NOTES.md`. Everything else here (art, characters, tech,
+> return-visit layer, restoration, studio) still stands.
+>
 > A single-source context document for writing further documentation (store
 > listings, press kit, wiki, marketing copy, FAQ, support articles, pitch
 > decks). Everything here is drawn from the live build, the design docs, and

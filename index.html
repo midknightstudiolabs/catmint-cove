@@ -10526,10 +10526,11 @@ function fmtTime(s) {
 }
 
 /* =========================================================================
-   v3 — the return-visit layer
+   the return-visit layer (shipped as "V3" before the v2/v3 renumber; it's V2)
    A shared "vignette" runner, a Moments log, "While You Were Away" beats,
-   and Cat Adventures. See the engagement design doc. No fail states: nothing
-   here ever removes a cat, a currency, or an item.
+   and Cat Adventures. See the engagement design doc. This layer itself never
+   removes a cat, a currency, or an item — the only losses in the game come
+   from the separate v3 care layer (sustained neglect → a cat leaves).
    ========================================================================= */
 
 const MAP_TOTAL = 4;   // torn-map pieces that make a whole map

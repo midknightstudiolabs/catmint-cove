@@ -3,6 +3,13 @@
 > Condensed companion to `PROJECT-BRIEF.md`. Paste this into an AI chat as
 > context for writing docs. It's a summary — verify specific numbers against
 > the live build before putting them in public copy.
+>
+> ⚠️ **V3 (2026-09-06) dropped the "calm rule" below.** The game now has a
+> care layer (hunger / thirst / wellbeing / sickness + medicine, a shot, or the
+> vet) and a neglected cat *can* leave the cove after a telegraphed warning
+> (kept in the Catdex, no death). Arrivals are accept/deny, the economy is
+> ~50% tighter, cosmetic monetization is in. The "no fail state / cats never
+> leave" lines here are obsolete — see `V3-RETHINK.md`.
 
 **What it is:** A cozy-idle cat-sanctuary mobile game (Android + iOS, wrapped
 from a web build with Capacitor; also free in-browser). Genre: cozy idle /
