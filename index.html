@@ -4758,13 +4758,12 @@ function shopPackRow() {
   if (pb) pb.addEventListener("click", () => showPackOffer(false));
   return pack;
 }
-// the Welcome Pack — a small first-purchase row. Shows once the player's a
-// little invested (or as a thank-you once owned); stays hidden before that.
-// `keepsake` = the pinned, highlighted treatment (top of the Decor tab).
+// the Welcome Pack — a small first-purchase row (the welcome paw is decor, so
+// it also pins to the top of the Decor tab). Shows once you're a little settled
+// or already own it. `keepsake` = the pinned, highlighted treatment.
 function shopWelcomeRow(keepsake) {
   const owned = iapOwns("welcome_pack");
-  const engaged = G.tutorialDone && G.metrics && G.metrics.photos > 0 && residentCount() >= 2;
-  if (!owned && !engaged) return null;
+  if (!owned && !(G.tutorialDone && residentCount() >= 2)) return null;
   const row = document.createElement("div");
   row.className = "shop-item pack" + (keepsake ? " keepsake" : "");
   row.innerHTML = owned
@@ -4776,6 +4775,24 @@ function shopWelcomeRow(keepsake) {
        <button class="btn primary">${IAP_PRODUCTS.welcome_pack.price}</button>`;
   const b = row.querySelector("button");
   if (b) b.addEventListener("click", () => showWelcomeOffer(false));
+  return row;
+}
+// the Sparkle Pack — the glow/wings/rainbow cosmetics. Pins highlighted to the
+// top of the Dress-up tab, and shows plain in Featured.
+function shopSparkleRow(keepsake) {
+  const owned = iapOwns("sparkle_pack");
+  if (!owned && !(G.tutorialDone && residentCount() >= 2)) return null;
+  const row = document.createElement("div");
+  row.className = "shop-item pack" + (keepsake ? " keepsake" : "");
+  row.innerHTML = owned
+    ? `<div class="txt"><div class="name">✦ Sparkle Pack</div>
+         <div class="desc">Glow collar, little wings & rainbow trail — unlocked for every cat · thank you 🧡</div></div>
+       <span class="owned">Owned</span>`
+    : `<div class="txt"><div class="name">✦ Sparkle Pack</div>
+         <div class="desc">Glow collar, little wings & rainbow trail — for every cat, now and later · purely cosmetic</div></div>
+       <button class="btn primary">${IAP_PRODUCTS.sparkle_pack.price}</button>`;
+  const b = row.querySelector("button");
+  if (b) b.addEventListener("click", () => showSparkleOffer());
   return row;
 }
 function shopBoostRow() {
@@ -5081,9 +5098,9 @@ function renderShop() {
   list.insertAdjacentHTML("beforeend", `<p class="muted">${tab.intro}</p>`);
 
   if (shopTab === "featured") {
+    const wr = shopWelcomeRow();  if (wr) list.appendChild(wr);   // $0.99 → $2.99 → $4.99
+    const sr = shopSparkleRow();  if (sr) list.appendChild(sr);
     list.appendChild(shopPackRow());
-    const wr = shopWelcomeRow();
-    if (wr) list.appendChild(wr);
     list.appendChild(shopBoostRow());
     const rec = SHOP.find(i => i.cat === "comforts" && !i.soon && i.get() === 0) || SHOP.find(i => i.cat === "stations" && !i.soon && i.get() === 0);
     if (rec) { list.appendChild(shopHead("Suggested next")); list.appendChild(shopItemRow(rec)); }
