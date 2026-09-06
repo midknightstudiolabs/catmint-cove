@@ -2785,6 +2785,17 @@ function updateCat(c, dt) {
     }
   }
 
+  // v3: rainbow-trail cosmetic — record a fading breadcrumb while the cat moves
+  if (c.worn && c.worn.includes("rainbow")) {
+    const tr = c._trail || (c._trail = []);
+    if (spd > 8) {
+      const last = tr[tr.length - 1];
+      if (!last || Math.hypot(c.x - last.x, c.y - last.y) > 6) tr.push({ x: c.x, y: c.y - 6, life: 1 });
+    }
+    for (let i = tr.length - 1; i >= 0; i--) { tr[i].life -= dt * 1.3; if (tr[i].life <= 0) tr.splice(i, 1); }
+    if (tr.length > 40) tr.splice(0, tr.length - 40);
+  } else if (c._trail) c._trail = null;
+
   // gait + facing driven by smoothed velocity. the bar to "stepping" sits just
   // above the dead-stop threshold (with hysteresis) so ANY real movement shows
   // legs — a slow final approach or a nudge from a neighbour never glides.
@@ -3548,11 +3559,16 @@ const ACCESSORIES = [
   { key:"sunhat",      label:"Sun hat",      price:30,  slot:"head", group:"Hats",     blurb:"A woven straw hat pushed back off the face." },
   { key:"partyhat",    label:"Party hat",    price:20,  slot:"head", group:"Hats",     blurb:"Because every day could be a birthday." },
   { key:"crown",       label:"Crown",        price:120, slot:"head", group:"Regalia",  blurb:"For the cove's most distinguished loaf." },
+  // v3 premium — bought with pearls (✦), not shells. effects, not just trims.
+  { key:"glowcollar",  label:"Glow collar",  pearls:8,  slot:"neck", group:"Sparkle", premium:true, blurb:"A collar with a soft, steady light. Comes into its own at night and in Rest mode." },
+  { key:"wings",       label:"Little wings", pearls:12, slot:"back", group:"Sparkle", premium:true, blurb:"Small feathered wings that flutter on the cat's back — a slow flap at rest, faster on the zoomies." },
+  { key:"rainbow",     label:"Rainbow trail",pearls:10, slot:"aura", group:"Sparkle", premium:true, blurb:"A ribbon of colour that streams behind the cat as it moves and fades when it settles." },
 ];
 const ACC_BY_KEY = Object.fromEntries(ACCESSORIES.map(a => [a.key, a]));
 const ACC_LABEL  = Object.fromEntries(ACCESSORIES.map(a => [a.key, a.label.toLowerCase()]));
-const ACC_SLOTS  = ["neck", "ear", "face", "head"];   // also the draw order (head on top)
-const ACC_SLOT_LABEL = { neck:"Neck", ear:"Ear", face:"Face", head:"Hat" };
+const ACC_SLOTS  = ["aura", "back", "neck", "ear", "face", "head"];   // also the draw order (aura/back behind, head on top)
+const ACC_SLOT_LABEL = { aura:"Aura", back:"Back", neck:"Neck", ear:"Ear", face:"Face", head:"Hat" };
+function accCost(a) { return a && a.pearls ? { pearls: a.pearls } : { shells: (a && a.price) || 0 }; }
 function accSlot(key) { return (ACC_BY_KEY[key] || {}).slot; }
 function catWears(c, key) { return !!(c && c.worn && c.worn.includes(key)); }
 function wornList(c) {   // in draw / display order
@@ -3586,13 +3602,18 @@ function equipAccessory(c, key, forceOn) {
 function buyAccessory(c, key) {                   // buy + wear; returns true on success
   const a = ACC_BY_KEY[key]; if (!a || !c) return false;
   if (accOwned(c, key)) { equipAccessory(c, key, true); return true; }
-  if (G.shells < a.price) { toast(`${a.label} is ◈${a.price} — not quite enough shells yet.`); return false; }
-  G.shells -= a.price;
+  if (a.pearls) {
+    if ((G.pearls || 0) < a.pearls) { toast(`${a.label} is ✦${a.pearls} — earn a few more pearls from the Catdex or daily goals.`); return false; }
+    G.pearls -= a.pearls;
+  } else {
+    if (G.shells < a.price) { toast(`${a.label} is ◈${a.price} — not quite enough shells yet.`); return false; }
+    G.shells -= a.price;
+  }
   (c.owned || (c.owned = [])).push(key);
   equipAccessory(c, key, true);
   sfx("buy");
-  spawnParticles(c.x, c.y - 20, "twinkle", 9);
-  logMoment("🎀", `${c.name} got ${/^[aeiou]/i.test(a.label) ? "an" : "a"} ${a.label.toLowerCase()}.`);
+  spawnParticles(c.x, c.y - 20, a.premium ? "twinkle" : "twinkle", a.premium ? 14 : 9);
+  logMoment(a.premium ? "✨" : "🎀", `${c.name} got ${/^[aeiou]/i.test(a.label) ? "an" : "a"} ${a.label.toLowerCase()}.`);
   fireTip("first_buy");
   syncHud(); save();
   return true;
@@ -8314,7 +8335,55 @@ function drawAccessory(g, kind, P, coat, kit) {
         g.beginPath(); g.arc(fx + Math.cos(a) * hr * 0.11, fy + Math.sin(a) * hr * 0.11, hr * 0.08, 0, 7); g.fill(); }
       g.fillStyle = "#e79a3c"; g.beginPath(); g.arc(fx, fy, hr * 0.06, 0, 7); g.fill();
     }
+  } else if (kind === "glowcollar") {
+    // v3 premium — a steady soft light at the neck (no pulse) + a warm collar
+    const y = hy + hr * 0.82;
+    g.save();
+    g.globalCompositeOperation = "lighter";     // actually adds light, not a yellow film
+    const rg = g.createRadialGradient(hx, y, 0, hx, y, hr * 1.9);
+    rg.addColorStop(0, "rgba(255,208,120,0.6)");
+    rg.addColorStop(0.45, "rgba(255,196,96,0.24)");
+    rg.addColorStop(1, "rgba(255,196,96,0)");
+    g.fillStyle = rg;
+    g.beginPath(); g.arc(hx, y, hr * 1.9, 0, 7); g.fill();
+    g.restore();
+    g.strokeStyle = "#f7dc95"; g.lineWidth = kit ? 2.8 : 3.4;
+    g.beginPath(); g.arc(hx, hy, hr * 0.98, Math.PI * 0.16, Math.PI * 0.84); g.stroke();
+    g.fillStyle = "#fff6d8";
+    g.beginPath(); g.arc(hx, y + 1.5, kit ? 2 : 2.6, 0, 7); g.fill();
+  } else if (kind === "wings") {
+    // v3 premium — angel wings sweeping up-and-back from the shoulders. idle
+    // flap is slow; quickens with P._wingRate (set from cat speed).
+    const t = performance.now() / 1000;
+    const flap = Math.sin(t * (P._wingRate || 3)) * 0.5 + 0.5;    // 0..1
+    const by = P.top * 0.6, root = P.bw * 0.42, sc = kit ? 1.15 : 1.55;
+    for (const s of [-1, 1]) {
+      g.save();
+      g.translate(s * root, by);
+      g.rotate(s * (-0.7 + flap * 0.4));
+      g.scale(s * sc, sc);
+      // soft outer glow
+      g.fillStyle = "rgba(255,255,255,0.18)";
+      g.beginPath(); g.ellipse(5, -9, 10, 15, -0.3, 0, 7); g.fill();
+      // wing body — a scalloped up-swept feather fan
+      g.fillStyle = "#fbf9ff";
+      g.strokeStyle = "rgba(188,168,216,0.8)"; g.lineWidth = 0.9;
+      g.beginPath();
+      g.moveTo(0, 4);
+      g.quadraticCurveTo(2, -6, 1.5, -16);
+      g.quadraticCurveTo(6, -12, 6.5, -20);
+      g.quadraticCurveTo(10, -13, 11, -19);
+      g.quadraticCurveTo(13, -9, 12, -1);
+      g.quadraticCurveTo(7, 2, 0, 4);
+      g.closePath(); g.fill(); g.stroke();
+      // two feather-lines for detail
+      g.strokeStyle = "rgba(200,182,224,0.55)";
+      g.beginPath(); g.moveTo(3, 1); g.quadraticCurveTo(5, -8, 4, -15); g.stroke();
+      g.beginPath(); g.moveTo(7, 0); g.quadraticCurveTo(9, -7, 8.5, -13); g.stroke();
+      g.restore();
+    }
   }
+  // "rainbow" (aura slot) is drawn in the scene trail pass, not here — no-op
   g.restore();
 }
 function drawEye(g, ex, ey, mode, iris, wide, kit) {
@@ -8852,7 +8921,10 @@ function drawCat(g, c, isPhoto) {
 
   g.restore(); // face tilt
 
-  if (c.worn && c.worn.length) for (const k of wornList(c)) drawAccessory(g, k, P, coat, kit);
+  if (c.worn && c.worn.length) {
+    P._wingRate = c.state === "zooming" ? 13 : (c.trotting ? 6 : 3);   // wings flap faster on the move
+    for (const k of wornList(c)) drawAccessory(g, k, P, coat, kit);
+  }
 
   // grooming: a rotation of moves — face wash, ear wipe, chest, the hind-leg airplane
   if (grooming) {
@@ -9049,6 +9121,29 @@ function drawToken(g, tk) {
   g.restore();
 }
 
+// v3: the rainbow-trail cosmetic — a fading 5-band ribbon behind moving cats
+const _RAINBOW = ["#e0655f", "#e6a94e", "#e8cf5a", "#7bb56a", "#5f9fd0", "#9a7bc9"];
+function drawTrails(g) {
+  for (const c of cats) {
+    const tr = c._trail;
+    if (!tr || tr.length < 2) continue;
+    g.save();
+    g.lineCap = "round"; g.lineJoin = "round";
+    for (let band = 0; band < 5; band++) {
+      g.beginPath();
+      for (let i = 0; i < tr.length; i++) {
+        const p = tr[i], off = (band - 2) * 3;
+        if (i === 0) g.moveTo(p.x, p.y + off);
+        else g.lineTo(p.x, p.y + off);
+      }
+      g.strokeStyle = _RAINBOW[band];
+      g.globalAlpha = 0.5 * (tr[tr.length - 1].life);
+      g.lineWidth = 3;
+      g.stroke();
+    }
+    g.restore();
+  }
+}
 function drawStarAura(g, c, dt) {
   const col = STAR_COL[c.star];
   c.sparkT = (c.sparkT || 0) + dt;
@@ -9394,6 +9489,7 @@ function renderScene(dt) {
   drawDecorLayer(ctx);
   drawProps(ctx);
   for (const a of attractors) drawAttractor(ctx, a);
+  drawTrails(ctx);   // v3: rainbow-trail cosmetic — behind the cats
   const _pt1 = performance.now();
   // interleave cats and grass tufts by y so nearer grass covers farther cats and
   // a cat in front is never hidden behind a blade
