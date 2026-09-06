@@ -207,7 +207,7 @@ Pack IAP **simulated**. Before turning either on:
     (fail-open: a wrongly-revoked perk is a support ticket; a wrongly-kept
     cosmetic flag costs nothing).
   - `applyEntitlements()` re-derives every perk (ads-off, Midknight's founder
-    ribbon, the sign plaque, the welcome paw + amber ribbon, the Sparkle effect
+    ribbon, the sign plaque, the welcome paw-prints + amber ribbon, the Sparkle effect
     cosmetics) from `owned`.
     Idempotent. `G.ads.supporter` is the ad-free mirror it writes. **No
     gameplay perks** — see `MONETIZATION.md`.

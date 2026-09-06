@@ -32,10 +32,12 @@
 - ✅ **Cozy Supporter Pack → Founding Covekeeper** (commit `3914187`). Dropped
   the permanent 2× offline earnings **and** the ✦50 pearl grant. Contents now:
   a **Founder's plaque** by the cove sign ("FOUNDING COVEKEEPER · 2026" on a
-  little brass post — `drawCoveSign`, gated on `iapOwns`), Midknight's founder
-  ribbon, ad-free forever, "supports the studio". No photo frame (dropped per
-  direction). Entitlement key `cozy_supporter` → `founding_covekeeper` with a
-  load-time migration.
+  little brass post — `drawCoveSign`, gated on `iapOwns`), Midknight's
+  **founder's ribbon** — a dedicated amber bow at the throat (`founderribbon`,
+  a `hidden:true` accessory `applyEntitlements` pins on the mascot only; was
+  the stock pink `bow` tie until 2026-09-06), ad-free forever, "supports the
+  studio". No photo frame (dropped per direction). Entitlement key
+  `cozy_supporter` → `founding_covekeeper` with a load-time migration.
 - ✅ **Effect cosmetics are Sparkle Pack only** (commit `9c9c61b`).
   Glow collar / little wings / rainbow trail lost their pearl price;
   `sparkle_pack` ($2.99) is the sole path. Owned-by-derivation for every cat
@@ -44,9 +46,10 @@
 - ✅ **Welcome Pack — built at $0.99** (per direction; overrides the "$2.99, no
   $0.99 offer initially" line below). Contents pared to two cosmetics: an
   **amber ribbon** (neck accessory, `iap:"welcome_pack"`, group "Welcome",
-  owned-by-derivation for every cat) and a carved **welcome paw** stone by the
-  cove sign (`drawCoveSign`, left of the board, gated on `iapOwns`). No photo
-  frame (dropped per direction). `showWelcomeOffer()`, a generic
+  owned-by-derivation for every cat) and a **trail of amber paw prints** in
+  front of the cove sign (`drawCoveSign`, gated on `iapOwns` — was a single
+  stone tucked off the left edge where nobody saw it; moved into view
+  2026-09-06). No photo frame (dropped per direction). `showWelcomeOffer()`, a generic
   `showIapOffer(id)` router, a generalized pack-group header in the dress-up
   rack (Sparkle + Welcome), a Featured-tab row, and `maybeOfferWelcome()` —
   fires once after tutorial done + ≥1 framed photo + ≥2 residents
@@ -123,8 +126,8 @@ cosmetic — no Shells / Pearls / Driftwood / boosts.
 
 - **Amber ribbon** (neck accessory — `iap:"welcome_pack"`, group "Welcome",
   owned-by-derivation for every cat present and future)
-- **Welcome paw** — a carved stone with an amber paw print, tucked by the cove
-  sign (`drawCoveSign`, left of the board, gated on `iapOwns`)
+- **Welcome paw** — a trail of amber paw prints pressed into the earth in front
+  of the cove sign (`drawCoveSign`, gated on `iapOwns`)
 - ~~Little Cove Sign~~ / ~~Moon & Paw Photo Frame~~ — dropped (no frame/decor-
   prop system for this; the welcome paw covers the "world marker" role)
 

@@ -4040,6 +4040,10 @@ const ACCESSORIES = [
   // Welcome Pack IAP ($0.99) — a small first purchase. One accessory, unlocked
   // for the whole cove, plus a carved "welcome paw" that appears by the sign.
   { key:"amberribbon", label:"Amber ribbon", iap:"welcome_pack", slot:"neck", group:"Welcome", premium:true, blurb:"A soft amber ribbon knotted at the neck — the colour of late afternoon light on the cove." },
+  // Founding Covekeeper — Midknight's founder's ribbon. `hidden` keeps it out of
+  // the dress-up rack / every cat's wardrobe; applyEntitlements pins it on the
+  // mascot only. Owned-by-derivation like the packs above.
+  { key:"founderribbon", label:"Founder's ribbon", iap:"founding_covekeeper", slot:"neck", group:"Founder", premium:true, hidden:true, blurb:"Midknight's — an amber ribbon for the cove's first keeper." },
   // v3 effect cosmetics — the Sparkle Pack IAP unlocks all three for the whole
   // cove (present and future cats). No currency path — see MONETIZATION.md.
   { key:"glowcollar",  label:"Glow collar",  iap:"sparkle_pack", slot:"neck", group:"Sparkle", premium:true, blurb:"A collar with a soft, steady light. Comes into its own at night and in Rest mode." },
@@ -4112,7 +4116,7 @@ function renderWardrobe(c) {
   cc.dress.hidden = false;
   const worn = new Set(c.worn || []);
   const bySlot = {};
-  const ownedKeys = [...(c.owned || []), ...ACCESSORIES.filter(a => a.iap && accOwned(c, a.key)).map(a => a.key)];
+  const ownedKeys = [...(c.owned || []), ...ACCESSORIES.filter(a => a.iap && !a.hidden && accOwned(c, a.key)).map(a => a.key)];
   for (const k of ownedKeys) { const a = ACC_BY_KEY[k]; if (a && !(bySlot[a.slot] || []).includes(k)) (bySlot[a.slot] = bySlot[a.slot] || []).push(k); }
   const slots = ACC_SLOTS.filter(s => bySlot[s]);
   let html = `<div class="dl">Dress up</div>`;
@@ -4756,9 +4760,10 @@ function renderShopDress(list) {
     Sparkle: { id: "sparkle_pack", icon: "✦" },
     Welcome: { id: "welcome_pack", icon: "🐾" },
   };
-  const groups = [...new Set(ACCESSORIES.map(a => a.group))];
+  const rackAcc = ACCESSORIES.filter(a => !a.hidden);   // `hidden` items are auto-equipped only (e.g. the founder's ribbon)
+  const groups = [...new Set(rackAcc.map(a => a.group))];
   const rackHTML = groups.map(grp => {
-    const items = ACCESSORIES.filter(a => a.group === grp);
+    const items = rackAcc.filter(a => a.group === grp);
     const pk = PACK_GROUP[grp];
     const head = pk
       ? `<h4>${pk.icon} ${grp}${iapOwns(pk.id) ? "" : ` <button class="dp-getpack" data-getpack="${pk.id}">${IAP_PRODUCTS[pk.id].label} · ${IAP_PRODUCTS[pk.id].price}</button>`}</h4>`
@@ -5953,12 +5958,20 @@ function applyEntitlements() {
   // sign (drawn in drawCoveSign, gated on iapOwns).
   const sup = iapOwns("founding_covekeeper");
   G.ads.supporter = sup;              // the ad-free mirror everything downstream reads
-  if (sup) {
-    const mid = cats.find(c => c.mascot);
-    if (mid) {                        // Midknight's founder's ribbon (replaces his bell)
-      mid.worn = normalizeWorn([...(mid.worn || []).filter(k => accSlot(k) !== "neck"), "bow"]);
-      if (mid.owned && !mid.owned.includes("bow")) mid.owned.push("bow");
+  const mid = cats.find(c => c.mascot);
+  if (mid) {
+    if (sup) {                        // Midknight's founder's ribbon (replaces his bell)
+      if (!(mid.worn || []).includes("founderribbon"))
+        mid.worn = normalizeWorn([...(mid.worn || []).filter(k => accSlot(k) !== "neck"), "founderribbon"]);
+    } else if ((mid.worn || []).includes("founderribbon")) {
+      // pack gone (refund / restore-miss) — put his bell back
+      mid.worn = normalizeWorn([...mid.worn.filter(k => k !== "founderribbon"), "bell"]);
     }
+  }
+  // stray founder ribbon on anyone else (or on the mascot when unowned) — clear it
+  for (const c of cats) {
+    if (c.worn && c.worn.includes("founderribbon") && !(c.mascot && sup))
+      c.worn = c.worn.filter(k => k !== "founderribbon");
   }
   // the Sparkle Pack's effect cosmetics (glow/wings/rainbow) are owned by
   // derivation in accOwned() whenever `sparkle_pack` is owned — nothing to
@@ -9185,23 +9198,22 @@ function drawCoveSign(g, W, H) {
     g.fillText("· 2026 ·", 0, py + 15.5);
     g.restore();
   }
-  // Welcome Pack — a small carved stone with a paw print, tucked at the foot of
-  // the left post. Low-key; it just says "someone made this place a home".
+  // Welcome Pack — a little trail of amber paw prints pressed into the earth in
+  // FRONT of the sign (kept on the near/left side so it clears the founder
+  // plaque post on the right). Reads as "someone padded in and stayed."
   if (typeof iapOwns === "function" && iapOwns("welcome_pack")) {
     g.save();
-    g.translate(-bw / 2 - 16, 20);
-    g.fillStyle = "rgba(36,31,23,0.12)"; g.beginPath(); g.ellipse(0, 5, 12, 3.5, 0, 0, 7); g.fill();
-    const grad = g.createLinearGradient(0, -9, 0, 5);
-    grad.addColorStop(0, "#d9cbb2"); grad.addColorStop(1, "#b7a684");
-    g.fillStyle = grad;
-    g.beginPath(); roundRect(g, -11, -9, 22, 14, 5); g.fill();
-    g.strokeStyle = "rgba(74,53,36,0.30)"; g.lineWidth = 1;
-    g.beginPath(); roundRect(g, -11, -9, 22, 14, 5); g.stroke();
-    // carved amber paw
-    g.fillStyle = "#c98a3c";
-    g.beginPath(); g.ellipse(0, 0.5, 3, 2.6, 0, 0, 7); g.fill();
-    for (let i = -1; i <= 1; i++) { g.beginPath(); g.ellipse(i * 2.6, -3.4, 1.05, 1.35, 0, 0, 7); g.fill(); }
-    g.beginPath(); g.ellipse(-3.6, -1.4, 1, 1.2, 0, 0, 7); g.ellipse(3.6, -1.4, 1, 1.2, 0, 0, 7); g.fill();
+    g.translate(-6, 24);
+    const prints = [[-14, 6, -0.5], [-2, 12, -0.32], [11, 6, -0.18]];
+    for (const [px, py, pa] of prints) {
+      g.save();
+      g.translate(px, py); g.rotate(pa); g.scale(1.15, 1.15);
+      g.fillStyle = "rgba(150,95,40,0.82)";
+      g.beginPath(); g.ellipse(0, 1.3, 2.7, 2.3, 0, 0, 7); g.fill();               // pad
+      for (let i = -1; i <= 1; i++) { g.beginPath(); g.ellipse(i * 2.3, -2.6, 0.95, 1.25, 0, 0, 7); g.fill(); }
+      g.beginPath(); g.ellipse(-3.1, -0.5, 0.85, 1.05, 0, 0, 7); g.ellipse(3.1, -0.5, 0.85, 1.05, 0, 0, 7); g.fill();
+      g.restore();
+    }
     g.restore();
   }
   g.textAlign = "left"; g.textBaseline = "alphabetic";
@@ -9327,22 +9339,49 @@ function drawAccessory(g, kind, P, coat, kit) {
     g.fill();
     g.fillStyle = "#d06f96"; g.beginPath(); g.arc(bx, by, 2, 0, 7); g.fill();
   } else if (kind === "amberribbon") {
-    // a soft amber ribbon around the neck, tied off at the side with two tails
+    // a warm amber ribbon around the neck, tied off at the side with two tails
     const y = hy + hr * 0.82;
-    g.strokeStyle = "#d99a44"; g.lineWidth = kit ? 2.6 : 3.2;
-    g.beginPath(); g.arc(hx, hy, hr * 0.98, Math.PI * 0.16, Math.PI * 0.84); g.stroke();
+    g.strokeStyle = "#cf8526"; g.lineWidth = kit ? 3 : 3.8;
+    g.beginPath(); g.arc(hx, hy, hr * 0.98, Math.PI * 0.14, Math.PI * 0.86); g.stroke();
     const kx = hx + hr * 0.5, ky = y - 1;
-    g.fillStyle = "#e8b45a";
+    g.fillStyle = "#eeb751";
     g.beginPath();
-    g.moveTo(kx, ky); g.lineTo(kx - 5, ky - 3.4); g.lineTo(kx - 5, ky + 3.4); g.closePath();
-    g.moveTo(kx, ky); g.lineTo(kx + 5, ky - 3.4); g.lineTo(kx + 5, ky + 3.4); g.closePath();
+    g.moveTo(kx, ky); g.lineTo(kx - 5.6, ky - 3.8); g.lineTo(kx - 5.6, ky + 3.8); g.closePath();
+    g.moveTo(kx, ky); g.lineTo(kx + 5.6, ky - 3.8); g.lineTo(kx + 5.6, ky + 3.8); g.closePath();
     g.fill();
-    g.strokeStyle = "#d99a44"; g.lineWidth = 1.6; g.lineCap = "round";
+    g.strokeStyle = "#cf8526"; g.lineWidth = 1.8; g.lineCap = "round";
     g.beginPath();
-    g.moveTo(kx - 1.5, ky + 1.5); g.lineTo(kx - 3.5, ky + 6.5);
-    g.moveTo(kx + 1.5, ky + 1.5); g.lineTo(kx + 3.8, ky + 6);
+    g.moveTo(kx - 1.6, ky + 1.6); g.lineTo(kx - 3.8, ky + 7);
+    g.moveTo(kx + 1.6, ky + 1.6); g.lineTo(kx + 4, ky + 6.5);
     g.stroke();
-    g.fillStyle = "#c98a3c"; g.beginPath(); g.arc(kx, ky, 1.7, 0, 7); g.fill();
+    g.fillStyle = "#b9741f"; g.beginPath(); g.arc(kx, ky, 1.9, 0, 7); g.fill();
+  } else if (kind === "founderribbon") {
+    // Midknight's founder's ribbon — a centred amber bow at the throat with two
+    // hanging tails and a small brass button. Distinct from the pink bow-tie:
+    // amber, centred, a touch larger, tailed.
+    const y = hy + hr * 0.86, s = kit ? 0.82 : 1;
+    g.strokeStyle = "#c07d22"; g.lineWidth = kit ? 2.4 : 3;
+    g.beginPath(); g.arc(hx, hy, hr * 0.98, Math.PI * 0.16, Math.PI * 0.84); g.stroke();
+    // tails
+    g.fillStyle = "#d99a3e";
+    g.beginPath();
+    g.moveTo(hx - 1.5 * s, y); g.lineTo(hx - 5 * s, y + 9 * s); g.lineTo(hx - 0.5 * s, y + 7 * s); g.closePath();
+    g.moveTo(hx + 1.5 * s, y); g.lineTo(hx + 5 * s, y + 9 * s); g.lineTo(hx + 0.5 * s, y + 7 * s); g.closePath();
+    g.fill();
+    // bow loops
+    g.fillStyle = "#eeb751";
+    g.beginPath();
+    g.moveTo(hx, y); g.lineTo(hx - 8 * s, y - 5 * s); g.lineTo(hx - 8 * s, y + 5 * s); g.closePath();
+    g.moveTo(hx, y); g.lineTo(hx + 8 * s, y - 5 * s); g.lineTo(hx + 8 * s, y + 5 * s); g.closePath();
+    g.fill();
+    g.strokeStyle = "#c07d22"; g.lineWidth = 1; g.lineJoin = "round";
+    g.beginPath();
+    g.moveTo(hx, y); g.lineTo(hx - 8 * s, y - 5 * s); g.lineTo(hx - 8 * s, y + 5 * s); g.closePath();
+    g.moveTo(hx, y); g.lineTo(hx + 8 * s, y - 5 * s); g.lineTo(hx + 8 * s, y + 5 * s); g.closePath();
+    g.stroke();
+    // brass knot button
+    g.fillStyle = "#c98a3c"; g.beginPath(); g.arc(hx, y, 2.4 * s, 0, 7); g.fill();
+    g.fillStyle = "#f0d38a"; g.beginPath(); g.arc(hx - 0.7 * s, y - 0.7 * s, 1 * s, 0, 7); g.fill();
   } else if (kind === "flower") {
     const fx = hx + hr * 0.72, fy = hy - hr * 0.58;
     g.fillStyle = "#e8d06a";

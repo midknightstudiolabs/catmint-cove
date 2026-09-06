@@ -378,8 +378,8 @@ ads on — `ADS_ENABLED` becomes a remote-config flag, no re-submission needed.
 - **Welcome Pack — $0.99** · **Founding Covekeeper — $4.99** · **Sparkle Pack
   — $2.99** (one-time IAPs, simulated for now). All **cosmetic + support only
   — never pay-to-win** (see `MONETIZATION.md`, the canonical strategy).
-  Welcome Pack: an amber ribbon for every cat + a carved welcome paw by the
-  sign, offered once the player's a little invested. Founding Covekeeper: a
+  Welcome Pack: an amber ribbon for every cat + a trail of amber paw prints
+  by the sign, offered once the player's a little invested. Founding Covekeeper: a
   founder's plaque by the cove sign, Midknight's founder ribbon, ad-free
   forever. Sparkle Pack: the glow / wings / rainbow effect cosmetics for the
   whole cove. Planned next: an Accessory Collection ($2.99).
