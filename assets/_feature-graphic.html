@@ -1,0 +1,224 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>Catmint Cove — feature graphic forge</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@500;600&display=swap">
+<style>
+  body{margin:0;background:#2a2723;color:#e8e3d6;font:14px/1.5 "Hanken Grotesk",system-ui,sans-serif;padding:24px;display:flex;flex-direction:column;gap:16px;align-items:flex-start}
+  h1{font:600 16px "Hanken Grotesk";margin:0;letter-spacing:.04em;text-transform:uppercase;color:#b7ae9c}
+  canvas{border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.4);max-width:100%}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  button{font:600 13px "Hanken Grotesk";cursor:pointer;border:0;border-radius:999px;padding:.55rem 1.1rem;background:#356b4c;color:#fff}
+  button.ghost{background:#413c34;color:#e8e3d6}
+  label{display:flex;gap:.4rem;align-items:center;font-size:13px}
+  .note{max-width:1024px;color:#9a9284;font-size:13px}
+</style></head><body>
+<h1>Catmint Cove — Google Play feature graphic (1024 × 500)</h1>
+<p class="note">Google Play requires a 1024×500 PNG/JPG. Pick a time of day, then
+<b>Download PNG</b> → upload it in Play Console → Store listing → Graphics.
+The scene is drawn from the game's own palette. Safe zone: keep judging by the
+lighter dashed box — Play may crop the edges on some surfaces.</p>
+
+<div class="row">
+  <label><input type="radio" name="tod" value="dusk" checked> Dusk</label>
+  <label><input type="radio" name="tod" value="day"> Day</label>
+  <label><input type="radio" name="tod" value="night"> Night</label>
+  <label><input type="checkbox" id="safe" checked> show safe zone</label>
+  <label><input type="checkbox" id="scale2"> render @2× (2048×1000)</label>
+</div>
+<div class="row">
+  <button id="dl">Download PNG</button>
+  <button class="ghost" id="dljpg">Download JPG</button>
+</div>
+
+<canvas id="c" width="1024" height="500" style="width:1024px"></canvas>
+
+<script>
+const cv = document.getElementById("c");
+let SC = 1;
+
+const PALS = {
+  day:   { skyTop:"#8fc4d8", skyMid:"#cfe0d6", skyBot:"#f2e6cf", ground:"#d8d2bd", grass:"#7fae5c", grassDk:"#5f8f44", ink:"#241f17", accent:"#356b4c", gold:"#e8b45a", moon:null,   glowA:0 },
+  dusk:  { skyTop:"#3a3a63", skyMid:"#b46c5c", skyBot:"#e1a25a", ground:"#9b8a72", grass:"#6f9668", grassDk:"#54744f", ink:"#221c14", accent:"#f3efe2", gold:"#ffce6b", moon:"#ffe6b0", glowA:.22 },
+  night: { skyTop:"#161d33", skyMid:"#28325a", skyBot:"#3f4a70", ground:"#4a4657", grass:"#4b6a55", grassDk:"#3a4f43", ink:"#f3efe2", accent:"#f3efe2", gold:"#ffd98a", moon:"#f2eecb", glowA:.30 },
+};
+
+function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+
+// a plump loaf-cat silhouette with a catchlight eye — reads at any size
+function loaf(g, x, y, s, col, faceCol, look) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.fillStyle = "rgba(20,16,10,.16)"; g.beginPath(); g.ellipse(0, 34, 40, 8, 0, 0, 7); g.fill();
+  g.fillStyle = col;
+  g.beginPath();
+  g.moveTo(-38, 30);
+  g.bezierCurveTo(-44, -6, -30, -30, 0, -30);
+  g.bezierCurveTo(30, -30, 44, -6, 38, 30);
+  g.closePath(); g.fill();
+  // ears
+  g.beginPath();
+  g.moveTo(-26, -22); g.lineTo(-14, -40); g.lineTo(-6, -22); g.closePath();
+  g.moveTo(26, -22); g.lineTo(14, -40); g.lineTo(6, -22); g.closePath();
+  g.fill();
+  // face patch
+  if (faceCol) { g.fillStyle = faceCol; g.beginPath(); g.ellipse(0, 12, 15, 17, 0, 0, 7); g.fill(); }
+  // eyes — gold with a catchlight
+  const ex = 9, ey = -4;
+  g.fillStyle = "#e8b45a";
+  g.beginPath(); g.ellipse(-ex, ey, 3.6, 4.4, 0, 0, 7); g.ellipse(ex, ey, 3.6, 4.4, 0, 0, 7); g.fill();
+  g.fillStyle = "#1b1620";
+  g.beginPath(); g.ellipse(-ex + (look||0), ey + 1, 1.7, 3, 0, 0, 7); g.ellipse(ex + (look||0), ey + 1, 1.7, 3, 0, 0, 7); g.fill();
+  g.fillStyle = "rgba(255,255,255,.9)";
+  g.beginPath(); g.arc(-ex - 1, ey - 1.4, .9, 0, 7); g.arc(ex - 1, ey - 1.4, .9, 0, 7); g.fill();
+  // blush
+  g.fillStyle = "rgba(214,104,138,.28)";
+  g.beginPath(); g.ellipse(-15, 6, 5, 3.5, 0, 0, 7); g.ellipse(15, 6, 5, 3.5, 0, 0, 7); g.fill();
+  g.restore();
+}
+
+function draw() {
+  const P = PALS[[...document.querySelectorAll('input[name=tod]')].find(r=>r.checked).value];
+  const W = 1024, H = 500;
+  const g = cv.getContext("2d");
+  g.save(); g.scale(SC, SC);
+  g.clearRect(0, 0, W, H);
+
+  // sky
+  const sky = g.createLinearGradient(0, 0, 0, H * 0.72);
+  sky.addColorStop(0, P.skyTop); sky.addColorStop(0.55, P.skyMid); sky.addColorStop(1, P.skyBot);
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+
+  // moon (crescent, the brand motif) / sun
+  const mx = W * 0.30, my = H * 0.28;
+  if (P.moon) {
+    g.save();
+    g.shadowColor = P.moon; g.shadowBlur = 34;
+    g.fillStyle = P.moon; g.beginPath(); g.arc(mx, my, 30, 0, 7); g.fill();
+    g.shadowBlur = 0;
+    g.fillStyle = P.skyTop; g.beginPath(); g.arc(mx + 13, my - 6, 27, 0, 7); g.fill();   // bite it into a crescent
+    g.restore();
+  } else {
+    g.save(); g.shadowColor = "rgba(255,240,200,.8)"; g.shadowBlur = 30;
+    g.fillStyle = "rgba(255,250,235,.95)"; g.beginPath(); g.arc(W * 0.84, H * 0.24, 26, 0, 7); g.fill();
+    g.restore();
+  }
+  // stars at night
+  if (P.moon) {
+    g.fillStyle = "rgba(255,255,255,.7)";
+    for (let i = 0; i < 40; i++) { const sx = (i * 137.5) % W, sy = ((i * 51.3) % (H * 0.5)); g.globalAlpha = 0.3 + (i % 4) * 0.17; g.fillRect(sx, sy, 1.6, 1.6); }
+    g.globalAlpha = 1;
+  }
+
+  // soft clouds
+  g.fillStyle = "rgba(255,255,255,.16)";
+  for (const [cx, cy, s] of [[180, 110, 1], [430, 70, 0.7], [W - 120, 130, 0.8]]) {
+    g.beginPath(); g.ellipse(cx, cy, 60 * s, 20 * s, 0, 0, 7); g.ellipse(cx + 40 * s, cy + 4, 44 * s, 16 * s, 0, 0, 7); g.fill();
+  }
+
+  // ground
+  const gr = g.createLinearGradient(0, H * 0.62, 0, H);
+  gr.addColorStop(0, P.ground); gr.addColorStop(1, shade(P.ground, -14));
+  g.fillStyle = gr;
+  g.beginPath(); g.moveTo(0, H * 0.66); g.quadraticCurveTo(W * 0.5, H * 0.60, W, H * 0.66); g.lineTo(W, H); g.lineTo(0, H); g.closePath(); g.fill();
+
+  // tidal pond
+  g.fillStyle = P.moon ? "rgba(120,150,190,.55)" : "#7fb2cf";
+  g.beginPath(); g.ellipse(W * 0.20, H * 0.86, 130, 34, 0, 0, 7); g.fill();
+  g.strokeStyle = "rgba(255,255,255,.28)"; g.lineWidth = 2;
+  g.beginPath(); g.ellipse(W * 0.20, H * 0.83, 90, 16, 0, Math.PI * 1.05, Math.PI * 1.95); g.stroke();
+
+  // the cove sign
+  g.save(); g.translate(W * 0.115, H * 0.60);
+  g.fillStyle = "#8a6a4a"; g.fillRect(-34, -4, 5, 46); g.fillRect(30, -4, 5, 46);
+  g.fillStyle = "#c69a6c"; rr(g, -40, -30, 80, 30, 5); g.fill();
+  g.strokeStyle = "rgba(74,53,36,.4)"; g.lineWidth = 1.5; rr(g, -40, -30, 80, 30, 5); g.stroke();
+  g.fillStyle = "#4a3524"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.font = "700 12px Fraunces, Georgia, serif"; g.fillText("CATMINT COVE", 0, -15);
+  g.restore();
+
+  // a little tree, back-right
+  g.save(); g.translate(W * 0.90, H * 0.66);
+  g.fillStyle = "#7d5a3c"; g.fillRect(-4, -6, 8, 30);
+  g.fillStyle = P.grassDk; g.beginPath(); g.ellipse(-8, -18, 22, 19, 0, 0, 7); g.fill();
+  g.fillStyle = P.grass; g.beginPath(); g.ellipse(6, -24, 24, 21, 0, 0, 7); g.ellipse(0, -14, 20, 16, 0, 0, 7); g.fill();
+  g.restore();
+
+  // the cast — a cozy huddle, kept to the right half so it clears the wordmark
+  loaf(g, W * 0.60, H * 0.80, 1.3, P.moon ? "#3a3a44" : "#2b2732", "#f2efe6", 1);       // tuxedo (Midknight-ish)
+  loaf(g, W * 0.73, H * 0.86, 1.1, "#c8853f", "#f4ead9", -1);                            // ginger
+  loaf(g, W * 0.50, H * 0.88, 0.98, "#9aa2ac", "#eef0f2", 0);                            // grey
+  loaf(g, W * 0.82, H * 0.79, 0.82, "#e4ddc9", null, 1);                                 // cream, snoozing far
+  loaf(g, W * 0.66, H * 0.93, 0.8, "#4a4650", "#dfe0e2", 0);                             // little black
+
+  // grass tufts along the front
+  g.strokeStyle = P.grassDk; g.lineWidth = 3; g.lineCap = "round";
+  for (let i = 0; i < 26; i++) {
+    const bx = 20 + i * 40 + ((i * 53) % 17), by = H - 6 - ((i * 31) % 10);
+    for (let b = -1; b <= 1; b++) { g.beginPath(); g.moveTo(bx, by); g.quadraticCurveTo(bx + b * 4, by - 14, bx + b * 8, by - 20); g.stroke(); }
+  }
+
+  // emissive warmth low-left at dusk/night, so the wordmark sits in a pool of light
+  if (P.glowA > 0) {
+    const rg = g.createRadialGradient(W * 0.16, H * 0.78, 0, W * 0.16, H * 0.78, 300);
+    rg.addColorStop(0, `rgba(255,206,120,${P.glowA})`); rg.addColorStop(1, "rgba(255,206,120,0)");
+    g.globalCompositeOperation = "screen"; g.fillStyle = rg; g.fillRect(0, 0, W, H);
+    g.globalCompositeOperation = "source-over";
+  }
+
+  // wordmark, lower-left, inside the safe zone
+  const wx = 64, wy = H - 118;
+  g.textAlign = "left"; g.textBaseline = "alphabetic";
+  g.save();
+  g.shadowColor = "rgba(0,0,0,.28)"; g.shadowBlur = 12; g.shadowOffsetY = 2;
+  g.fillStyle = P.accent;
+  g.font = "600 52px Fraunces, Georgia, serif";
+  g.fillText("Catmint", wx, wy);
+  g.font = "700 52px Fraunces, Georgia, serif";
+  g.fillText("Cove", wx + 4, wy + 50);
+  g.restore();
+  g.fillStyle = P.moon ? "rgba(243,239,226,.9)" : "rgba(36,31,23,.78)";
+  g.font = "500 16px 'Hanken Grotesk', sans-serif";
+  g.fillText("A COZY CAT SANCTUARY", wx + 3, wy + 76);
+  // paw mark, to the right of "Cove"
+  g.fillStyle = P.gold;
+  const px = wx + 210, py = wy + 34;
+  g.beginPath(); g.ellipse(px, py + 4, 9, 8, 0, 0, 7); g.fill();
+  for (let i = -1; i <= 1; i++) { g.beginPath(); g.ellipse(px + i * 8, py - 8, 3.4, 4.4, 0, 0, 7); g.fill(); }
+  g.beginPath(); g.ellipse(px - 11, py - 2, 3, 4, 0, 0, 7); g.ellipse(px + 11, py - 2, 3, 4, 0, 0, 7); g.fill();
+
+  // safe zone guide (not exported)
+  if (document.getElementById("safe").checked) {
+    g.strokeStyle = "rgba(255,255,255,.6)"; g.setLineDash([8, 6]); g.lineWidth = 1.5;
+    g.strokeRect(W * 0.05, H * 0.08, W * 0.9, H * 0.84);
+    g.setLineDash([]);
+  }
+  g.restore();
+}
+
+function shade(hex, d) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.max(0, Math.min(255, (n >> 16) + d)), gg = Math.max(0, Math.min(255, ((n >> 8) & 255) + d)), b = Math.max(0, Math.min(255, (n & 255) + d));
+  return `rgb(${r},${gg},${b})`;
+}
+
+function exportImg(type) {
+  const want2x = document.getElementById("scale2").checked;
+  SC = want2x ? 2 : 1;
+  cv.width = 1024 * SC; cv.height = 500 * SC;
+  const wasSafe = document.getElementById("safe").checked;
+  document.getElementById("safe").checked = false;
+  draw();
+  document.getElementById("safe").checked = wasSafe;
+  const url = cv.toDataURL(type === "jpg" ? "image/jpeg" : "image/png", 0.92);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "catmint-cove-feature-graphic" + (want2x ? "@2x" : "") + (type === "jpg" ? ".jpg" : ".png");
+  document.body.appendChild(a); a.click(); a.remove();
+  SC = 1; cv.width = 1024; cv.height = 500; draw();
+}
+
+document.querySelectorAll('input').forEach(i => i.addEventListener('change', () => { SC = 1; cv.width = 1024; cv.height = 500; draw(); }));
+document.getElementById("dl").onclick = () => exportImg("png");
+document.getElementById("dljpg").onclick = () => exportImg("jpg");
+document.fonts.ready.then(draw);
+setTimeout(draw, 400);
+</script>
+</body></html>

@@ -10,9 +10,12 @@
 > this build; a frozen archive is in [`releases/v3/`](releases/v3/).
 > V2 (the return-visit layer) is frozen at tag `v2` / [`releases/v2/`](releases/v2/);
 > the earlier Sept-2 vertical slice is `v2-slice`.
-> Still open in V3: the loading-screen cat wave, and real store billing for
-> the IAPs (currently simulated). Done: "Arrange the cove" — move the cottage,
-> trees, flowers and props (long-press in the world, or Shop → Decor).
+> **Google Play launch prep is underway** — see [`LAUNCH-ANDROID.md`](LAUNCH-ANDROID.md).
+> RevenueCat billing is wired (paste the SDK key to go live); privacy policy,
+> data-safety + content-rating answers, and the store-listing fields are all
+> drafted. Still open: the loading-screen cat wave.
+> Done this pass: "Arrange the cove" (move the cottage/trees/flowers/props),
+> accessory catalogue expansion, the Welcome Pack.
 
 ## Play
 

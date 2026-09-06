@@ -91,11 +91,39 @@ Both stores need these before you can submit — none of it is code:
     > slowly make it theirs.
   - **Keywords** (App Store, 100 char): `cat,cats,cozy,idle,relax,calm,pet,animal,collector,sanctuary,kitten,chill,wholesome`
   - **Category:** Games ▸ Simulation (or Casual)
-- **Privacy policy URL** — required. Put a page on `midknightstudiolabs.com`.
-- Content rating questionnaire (IARC for Play, Apple's own for the App Store)
-- Data safety form (Play) / privacy nutrition labels (App Store). This build
-  stores everything **locally on device** and (with ads off) collects nothing —
-  keep it that way until AdMob goes in, then revisit.
+- **Privacy policy URL** — required. Publish `privacy.html` (repo root) as a
+  Blogspot page on `midknightstudiolabs.com`; text of record is `PRIVACY.md`.
+- Content rating questionnaire (IARC for Play, Apple's own for the App Store) —
+  Play answers drafted in **`LAUNCH-ANDROID.md` Appendix A** (expected: all-ages).
+- Data safety form (Play) / privacy nutrition labels (App Store) — Play answers
+  in **`LAUNCH-ANDROID.md` Appendix B**. The app itself stores everything
+  **locally on device** and collects nothing; **Google Play Billing + RevenueCat**
+  process purchase history to deliver the cosmetic IAPs — that's the only
+  declaration. Revisit when AdMob goes in.
+
+### Google Play — the specific fields
+
+| field | value |
+|---|---|
+| App name | `Catmint Cove` (≤30) |
+| Short description | *(the ≤80-char line above)* |
+| Full description | *(the block above — already V3-accurate, ≤4000)* |
+| App category | Simulation |
+| Tags | cats, casual, relaxing, idle |
+| Contact email | `carlosgotiong@gmail.com` |
+| App icon | 512×512 from `assets/logo.png` |
+| Feature graphic | **1024×500** — `assets/store/feature-graphic.png` (from `assets/_feature-graphic.html`) |
+| Phone screenshots | 2–8 portrait — `assets/store/*.png` |
+| Contains ads | **No** |
+| In-app purchases | **Yes**, `$0.99–$4.99` |
+| App access | All functionality available without login |
+| Target audience | **13+**, not "designed for families" |
+
+> **Labubu stays out of every store surface.** The visitor cat named "Labubu" is
+> an in-game easter-egg only — never in the title, short/full description,
+> keywords, feature graphic, screenshots, or promo text. (It's the developer's
+> real cat's name; the name also belongs to a Pop Mart trademark, so it must not
+> appear in anything marketing-facing.)
 
 ---
 
@@ -174,20 +202,21 @@ add a `Matchfile` and swap the cert/profile steps for `fastlane match appstore`.
 
 ---
 
-## 5. Still to wire before these earn money
+## 5. IAP + ads status
 
-The launch build ships **ad-free** (`ADS_ENABLED = false`) with the Supporter
-Pack IAP **simulated**. Before turning either on:
+The launch build ships **ad-free** (`ADS_ENABLED = false`).
 
-- **AdMob**: create the account (needs the app published first), add
+- **IAP — WIRED** (`@revenuecat/purchases-capacitor`, commit `7ac5329`).
+  `scripts/capacitor-bridge.js` exposes `window.CoveNative.iap`; the game's three
+  buy handlers call it on device and fall back to the simulated `confirm()` on
+  web. Products `welcome_pack` ($0.99) / `sparkle_pack` ($2.99) /
+  `founding_covekeeper` ($4.99) — **all non-consumable**. **To go live:** create
+  the products in Play Console + RevenueCat and paste the public `goog_` SDK key
+  into `REVENUECAT_ANDROID_KEY` in the bridge — full steps in **`LAUNCH-ANDROID.md`
+  §2–3**. Until the key is set the app uses the simulated flow (no real charges).
+- **AdMob — later**: create the account (needs the app published first), add
   `@capacitor-community/admob`, put the app IDs in the native config, add the
-  UMP consent SDK + iOS ATT. Flip `ADS_ENABLED` (make it a remote-config flag).
-- **IAP**: add `@revenuecat/purchases-capacitor` (recommended — it handles
-  receipt validation, the entitlement layer, restore, and cross-platform "does
-  this user own X" as one call; free under ~$2.5k/mo) or
-  `@capacitor-community/in-app-purchases`. Products: `welcome_pack` ($0.99),
-  `founding_covekeeper` ($4.99) and `sparkle_pack` ($2.99) — **all
-  non-consumable**, created in both consoles.
+  UMP consent SDK. Flip `ADS_ENABLED` (make it a remote-config flag).
 
   **The purchase-persistence contract (scaffolded + tested in `index.html`)** —
   a store purchase lives on the player's Apple/Google account, so an app
@@ -220,8 +249,10 @@ Pack IAP **simulated**. Before turning either on:
     Both current packs are pure entitlement (no consumable rewards) so nothing
     routes through it yet.
   - `restorePurchases()` (fail-open, `try/catch`) + the "Restore purchases"
-    button (pack modal *and* the Back-up sheet — Apple requires a
-    no-purchase-needed path) already exist; fill in the one billing call.
+    button now call `window.CoveNative.iap.restore()` (RevenueCat) on device.
+  - **Acknowledgement is handled by RevenueCat** (default `configure()` — it
+    acknowledges every purchase server-side), so `completePurchase()` doesn't
+    need to.
 
   **Pre-launch IAP test matrix** (`__cove.iap(...)` simulates most; do the
   real ones on a device with a sandbox / license-test account):
@@ -244,9 +275,8 @@ Pack IAP **simulated**. Before turning either on:
   (`{owned, grants}`) in it too so the one-time-reward ledger survives a
   reinstall — the entitlements themselves still come from the store.
 
-> ⚠️ **Before submitting:** the store description + keywords in §2 are a
-> pre-V3 draft (flagged there too) — reposition around the care loop, not
-> "absence is neutral", once it's playtested. See `V3-RETHINK.md`.
+> **Store copy in §2 is V3-accurate** (care loop, cats can leave with a warning).
+> Full Google Play launch sequence: **`LAUNCH-ANDROID.md`**.
 
 ---
 
