@@ -129,19 +129,21 @@ workflow with a track). Version code = the run number (always increases).
 
 ---
 
-## 5. Internal testing — upload by hand  **[you]** · ~15 min
+## 5. Internal testing  **[you]** · ✅ DONE 2026-09-06
 
-1. Play Console → **Testing → Internal testing → Create new release**.
-2. **Upload** `catmint-cove-1.0.0.aab`. Accept **Play App Signing** (the default).
-   *(Play requires the very first bundle by hand so it can register the signing
-   key. After this, `git tag android-v1.0.1 && git push --tags` — or the workflow
-   with a track picked — does it.)*
-3. Add yourself (and a second Google account / a friend) as an internal tester.
-   Save + roll out to Internal testing.
+Builds `1.0.4` then `1.0.5` (billing) uploaded to Internal testing; tester
+opt-in link + license-test Gmail set up (Play → Settings → License testing,
+`RESPOND_NORMALLY`). Later builds: `git tag android-v1.0.6 && git push --tags`.
 
 ---
 
-## 6. On-device smoke test  **[you]** · ~20 min
+## 6. On-device smoke test  **[you]** · ✅ DONE 2026-09-06
+
+Installed on the dev's Android phone. App runs, real Google Play purchase sheet
+appears for each pack, purchases complete + unlock the cosmetics + persist
+across a restart. RevenueCat billing verified end-to-end.
+
+<details><summary>original checklist</summary>
 
 Install via the internal-testing opt-in link on a real Android phone. Check:
 
@@ -166,9 +168,11 @@ If a purchase doesn't register: RevenueCat dashboard → the customer → check 
 product is listed there; confirm the product id matches exactly in all 3 places
 (Play Console / RevenueCat / `COVE_PRODUCTS` in the bridge).
 
+</details>
+
 ---
 
-## 7. Store listing + policy declarations  **[you]** · ~1 hr
+## 7. Store listing + policy declarations  **[you]** · ~1 hr — NEXT
 
 In Play Console → **Grow → Store presence → Main store listing**:
 
