@@ -22,7 +22,7 @@ Everything that shapes the build is committed: `package.json`,
 |---|---|---|---|
 | Google Play Console | play.google.com/console | **$25 once** | can be done entirely on Windows |
 | Apple Developer Program | developer.apple.com | **$99/yr** | web signup; **approval takes 1–3 days** — start now |
-| Node 20+ | nodejs.org | free | only needed if you want to build/preview locally |
+| Node 22+ | nodejs.org | free | Capacitor 8 CLI needs ≥22; only for local build/preview |
 
 Local sanity check (optional): `npm ci && npm run build && npx cap sync` on
 Windows should all succeed. A full Android build also needs Android Studio + JDK 21.

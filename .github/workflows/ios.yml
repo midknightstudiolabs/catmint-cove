@@ -1,6 +1,6 @@
 name: iOS build (TestFlight)
 
-# Manual trigger, or push a tag like  ios-v2.0.1
+# Manual trigger, or push a tag like  ios-v1.0.0
 # Requires the Apple secrets listed in STORE-SETUP.md. Until those exist this
 # workflow will fail at "Import signing certificate" — that's expected.
 on:
@@ -23,7 +23,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
 
       - name: Work out the version

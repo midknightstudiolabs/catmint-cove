@@ -1,6 +1,6 @@
 name: Android build
 
-# Manual trigger, or push a tag like  android-v2.0.1
+# Manual trigger, or push a tag like  android-v1.0.0
 on:
   workflow_dispatch:
     inputs:
@@ -27,7 +27,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
 
       - uses: actions/setup-java@v4
