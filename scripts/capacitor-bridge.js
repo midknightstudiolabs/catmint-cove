@@ -93,7 +93,7 @@
    * IAP_PRODUCTS keys. RevenueCat "entitlements" are not required — we read
    * customerInfo.allPurchasedProductIdentifiers directly.
    * ------------------------------------------------------------------------- */
-  var REVENUECAT_ANDROID_KEY = "";
+  var REVENUECAT_ANDROID_KEY = "goog_ZJtWmfOuiBnhjfOuCuBsVLHVqsP";
   var REVENUECAT_IOS_KEY = "";
   var COVE_PRODUCTS = ["welcome_pack", "founding_covekeeper", "sparkle_pack"];
 
