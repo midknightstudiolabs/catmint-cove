@@ -94,7 +94,7 @@
    * customerInfo.allPurchasedProductIdentifiers directly.
    * ------------------------------------------------------------------------- */
   var REVENUECAT_ANDROID_KEY = "goog_ZJtWmfOuiBnhjfOuCuBsVLHVqsP";
-  var REVENUECAT_IOS_KEY = "";
+  var REVENUECAT_IOS_KEY = "appl_NOnpzwbRdsrmoSDdowFOZQntdxp";
   var COVE_PRODUCTS = ["welcome_pack", "founding_covekeeper", "sparkle_pack"];
 
   (function initIAP() {
