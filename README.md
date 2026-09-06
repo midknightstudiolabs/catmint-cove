@@ -127,7 +127,8 @@ rethink.
       one full sunrise→night loop every 30 real minutes, started from your real
       local time (so a night-owl still sees dawn within a session). `DAY_CYCLE_MIN`
 - [x] Activity stations — fishing dock, bakery, sunbeam mat, catmint garden
-- [x] Canvas accessories — collar / bandana / bow / flower crown
+- [x] Canvas accessories — 6 shop groups, ≥3 pieces each: Collars, Neckwear,
+      Specs (glasses / sunglasses / monocle), Blooms, Hats, Regalia
 - [x] Photo mode — frames the scene with a caption + cove-name watermark
 - [x] Tall-screen scene layout pass (foreground meadow)
 - [x] Calmer ASMR meow synth (now the fallback)
