@@ -171,13 +171,45 @@ Pack IAP **simulated**. Before turning either on:
 - **AdMob**: create the account (needs the app published first), add
   `@capacitor-community/admob`, put the app IDs in the native config, add the
   UMP consent SDK + iOS ATT. Flip `ADS_ENABLED` (make it a remote-config flag).
-- **IAP $4.99**: add `@capacitor-community/in-app-purchases` (or RevenueCat),
-  create the `cozy_supporter_pack` product in both consoles, wire
-  `grantSupporter()` to a real purchase + restore. See `showPackOffer()` in
-  `index.html` for the integration point.
+- **IAP**: add `@revenuecat/purchases-capacitor` (recommended — it handles
+  receipt validation, the entitlement layer, restore, and cross-platform "does
+  this user own X" as one call; free under ~$2.5k/mo) or
+  `@capacitor-community/in-app-purchases`. Products: `cozy_supporter`
+  ($4.99) and `sparkle_pack` ($2.99) — **both non-consumable**, created in both
+  consoles.
+
+  **The purchase-persistence contract (already scaffolded in `index.html`):**
+  a store purchase lives on the player's Apple/Google account, never in the
+  local save — so an app update, a reinstall, or a new device must not lose it.
+  - `G.iap.owned` is only a **cache**. On every launch and on the "Restore
+    purchases" tap, call `restorePurchases()` → query the billing plugin for
+    owned products → overwrite `G.iap.owned` → `applyEntitlements()`.
+  - `applyEntitlements()` re-derives every perk (ads-off, 2× offline,
+    Midknight's ribbon, the Sparkle cosmetics) from `owned`. It is idempotent —
+    run it as often as you like. The legacy `G.ads.supporter` / `perm2x` are
+    now just mirrors it writes.
+  - After a confirmed purchase call `completePurchase(productId)` **and
+    acknowledge/finish the transaction in the same callback** — Google Play
+    auto-refunds an unacknowledged purchase after 3 days.
+  - One-time rewards (the ✦50 in the Supporter Pack) go through
+    `grantOnce(key, fn)`, ledgered in `G.iap.grants` (in the save). NATIVE:
+    key it off the store **transaction id** so a naive restore can't repeat it,
+    and mirror `G.iap.grants` into cloud save so a fresh reinstall neither
+    re-grants nor loses it. **Simplest fix: drop the ✦50 and keep the Supporter
+    Pack purely entitlement-based** — then there's nothing to ledger.
+  - `restorePurchases()` and the "Restore purchases" affordance (in the pack
+    modal and the Back-up sheet) already exist — just fill in the billing call.
+  - `__cove.iap("buy"|"restore"|"clearlocal"|"apply")` exercises the flow in
+    the simulated build.
 - **Cloud save**: `@capacitor-firebase/*` is overkill — use Google Play Games
   *Saved Games* + Apple Game Center saved games. The `saveCode()` export in the
-  Today sheet is the interim.
+  Today sheet is the interim. When it lands, put `G.iap.grants` in it so the
+  one-time-reward ledger survives a reinstall.
+
+> ⚠️ **Store copy above is stale.** The full description still says "no timer
+> and no fail state / time is weather / cats never leave" — V3 added a real
+> care layer with a telegraphed leave condition. Rewrite the description +
+> keywords once the care loop is playtested (see `V3-RETHINK.md`).
 
 ---
 

@@ -1389,9 +1389,23 @@ const NAMES = ["Biscuit","Miso","Pixel","Tofu","Clover","Waffle","Sardine","Pebb
 /* ---------- game state ---------- */
 let G = null;
 
+// --- IAP entitlements ------------------------------------------------------
+// A store purchase lives on the player's Apple / Google account, NOT in this
+// local save. `G.iap.owned` is only a CACHE of what the store last told us —
+// the native build MUST re-query the billing plugin on every launch and on a
+// "Restore purchases" tap and overwrite it, so an app update / reinstall / new
+// device never loses a purchase. One-time rewards (the ✦50 pearls) are ledgered
+// in `G.iap.grants` so a restore can't double-grant them and cloud save can
+// carry them. `applyEntitlements()` re-derives every perk from `owned` and is
+// safe to run any number of times.
+const IAP_PRODUCTS = {
+  cozy_supporter: { price: "$4.99", label: "Cozy Supporter Pack", type: "non-consumable" },
+  sparkle_pack:   { price: "$2.99", label: "Sparkle Pack",        type: "non-consumable" },   // planned — unlocks the effect cosmetics
+};
+function newIapState() { return { owned: {}, grants: {} }; }
 function newAdsState() {
   return {
-    supporter: false,      // bought the Cozy Supporter Pack — no more interstitials
+    supporter: false,      // MIRROR of iap.owned.cozy_supporter — re-derived by applyEntitlements(), never the source of truth
     perm2x: false,         // Supporter perk: offline earnings always doubled
     born: null,            // birth year from the one-time age gate
     npa: true,             // non-personalized ads (default until we know an adult is playing)
@@ -1489,6 +1503,14 @@ function load() {
     if (!G.cosmetics.props || typeof G.cosmetics.props !== "object") G.cosmetics.props = {};
     if (!DECOR_THEMES[G.cosmetics.theme] || !G.cosmetics.themes[G.cosmetics.theme]) G.cosmetics.theme = "default";
     G.ads = Object.assign(newAdsState(), G.ads || {});
+    if (!G.iap || typeof G.iap !== "object") G.iap = newIapState();
+    if (!G.iap.owned) G.iap.owned = {};
+    if (!G.iap.grants) G.iap.grants = {};
+    // migrate a pre-iap simulated Supporter purchase so an update doesn't drop it
+    if (G.ads.supporter && !G.iap.owned.cozy_supporter) {
+      G.iap.owned.cozy_supporter = true;
+      if (!G.iap.grants["cozy_supporter.pearls"]) G.iap.grants["cozy_supporter.pearls"] = -1;  // they already had the pearls
+    }
     if (G.tutorialDone === undefined) G.tutorialDone = true;  // returning players skip the tutorial
     if (typeof G.coldStep !== "number") G.coldStep = G.tutorialDone ? 99 : 0;
     if (G.midknightSeeded === undefined) G.midknightSeeded = false;
@@ -5097,9 +5119,11 @@ function openBackup() {
       <button class="btn primary" id="bk-copy">Copy code</button>
       <button class="btn" id="bk-restore">Restore from a code…</button>
     </div>
+    <button class="linkbtn" id="bk-iap" style="margin-top:.5rem">Restore purchases</button>
     <button class="linkbtn" id="bk-close">Close</button>
   </div>`);
   document.getElementById("bk-close").onclick = closeModal;
+  document.getElementById("bk-iap").onclick = () => restorePurchases();
   const out = document.getElementById("bk-out");
   document.getElementById("bk-copy").onclick = async () => {
     try { await navigator.clipboard.writeText(code); } catch (e) { out.focus(); out.select(); document.execCommand && document.execCommand("copy"); }
@@ -5570,8 +5594,9 @@ document.getElementById("dev-ad").addEventListener("click", () => {
   Ads.interstitial("dev");
 });
 document.getElementById("dev-super").addEventListener("click", () => {
-  if (Ads.owned()) { G.ads.supporter = false; G.ads.perm2x = false; save(); toast("Supporter OFF"); }
-  else grantSupporter();
+  if (iapOwns("cozy_supporter")) {
+    G.iap.owned.cozy_supporter = false; applyEntitlements(); save(); toast("Supporter OFF");
+  } else grantSupporter();
 });
 document.getElementById("dev-adreset").addEventListener("click", () => {
   G.ads = newAdsState(); save(); toast("Ad state reset (age gate, caps, cooldowns, supporter)");
@@ -5759,21 +5784,72 @@ function askAgeGate(then) {
   inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); submit(); } });
 }
 
+/* ---------- IAP entitlements — see the note by newIapState() ---------- */
+function iapOwns(id) { return !!(G && G.iap && G.iap.owned && G.iap.owned[id]); }
+// run `fn` only the first time ever for `key`; ledgered in the save so a restore
+// can't repeat it. NATIVE: key off the store transaction id
+// (`grantOnce("cozy_supporter.pearls." + txId, …)`) so it's safe even against a
+// naive restore, and mirror `G.iap.grants` into cloud save so a fresh reinstall
+// on a new device doesn't re-grant OR lose the one-time reward. Simplest of all:
+// keep the Supporter Pack purely entitlement-based (no ✦ grant) — then there's
+// nothing to ledger. See STORE-SETUP.md §5.
+function grantOnce(key, fn) {
+  if (!G.iap.grants) G.iap.grants = {};
+  if (G.iap.grants[key]) return false;
+  G.iap.grants[key] = Date.now();
+  try { fn(); } catch (e) {}
+  return true;
+}
+// re-derive every purchased perk from what's owned. idempotent — safe on every launch.
+function applyEntitlements() {
+  if (!G.iap) G.iap = newIapState();
+  const sup = iapOwns("cozy_supporter");
+  G.ads.supporter = sup;              // legacy mirrors — everything downstream still reads these
+  G.ads.perm2x = sup;
+  if (sup) {
+    grantOnce("cozy_supporter.pearls", () => { G.pearls = (G.pearls || 0) + 50; });
+    const mid = cats.find(c => c.mascot);
+    if (mid) {                        // Midknight's supporter ribbon (replaces his bell)
+      mid.worn = normalizeWorn([...(mid.worn || []).filter(k => accSlot(k) !== "neck"), "bow"]);
+      if (mid.owned && !mid.owned.includes("bow")) mid.owned.push("bow");
+    }
+  }
+  if (iapOwns("sparkle_pack")) {      // the effect cosmetics become owned for every resident
+    for (const c of cats) {
+      if (c.visitor) continue;
+      c.owned = c.owned || [];
+      for (const k of ["glowcollar", "wings", "rainbow"]) if (!c.owned.includes(k)) c.owned.push(k);
+    }
+  }
+}
+// call after a store purchase is CONFIRMED + acknowledged (real build: inside the
+// billing plugin's success callback). the native build should also, right here,
+// finish/acknowledge the transaction — Google Play auto-refunds an unacknowledged
+// purchase after 3 days.
+function completePurchase(productId) {
+  if (!G.iap) G.iap = newIapState();
+  G.iap.owned[productId] = true;
+  applyEntitlements();
+  save(); syncHud(); sfx("buy");
+  spawnParticles(W / 2, H * 0.5, "twinkle", 16);
+}
+// Apple REQUIRES a restore path reachable without a purchase attempt. real build:
+// query the billing plugin for owned products and overwrite G.iap.owned from it.
+async function restorePurchases() {
+  // TODO(native): const owned = await Billing.getOwnedProducts();
+  //               G.iap.owned = Object.fromEntries(owned.map(p => [p.productId, true]));
+  applyEntitlements(); save(); syncHud();
+  const any = Object.values((G.iap && G.iap.owned) || {}).some(Boolean);
+  toast(any ? "Purchases restored to this device." : "No purchases found on your store account.", 4);
+  return any;
+}
+
 /* ---------- Cozy Supporter Pack ($4.99 — simulated purchase) ---------- */
 const SUPPORTER_PRICE = "$4.99";
 function grantSupporter() {
-  G.ads.supporter = true;
-  G.ads.perm2x = true;
+  completePurchase("cozy_supporter");
   G.ads.pending = false;
-  G.pearls += 50;
-  const mid = cats.find(c => c.mascot);
-  if (mid) {                             // a little supporter ribbon for Midknight (replaces his bell)
-    mid.worn = normalizeWorn([...(mid.worn || []).filter(k => accSlot(k) !== "neck"), "bow"]);
-    if (!mid.owned.includes("bow")) mid.owned.push("bow");
-  }
-  save(); syncHud();
-  sfx("buy");
-  spawnParticles(W / 2, H * 0.5, "twinkle", 16);
+  save();
   toast(`Thank you for supporting the cove 🧡  ${ADS_ENABLED ? "Ads off · " : ""}✦50 · permanent 2× offline`);
 }
 function showPackOffer(soft) {
@@ -5798,7 +5874,8 @@ function showPackOffer(soft) {
       <button class="btn primary" id="pk-buy">Get it — ${SUPPORTER_PRICE}</button>
       <button class="btn" id="pk-no">Maybe later</button>
     </div>
-    <p class="sub" style="margin:.7rem 0 0;font-size:.76rem;">Simulated purchase in this build — real build uses Google Play / App Store billing.</p>
+    <button class="linkbtn" id="pk-restore" style="margin-top:.6rem">Already bought it? Restore purchase</button>
+    <p class="sub" style="margin:.5rem 0 0;font-size:.76rem;">Simulated purchase in this build — real build uses Google Play / App Store billing. A purchase is tied to your store account, so it carries across updates and reinstalls.</p>
   </div>`);
   document.getElementById("pk-buy").onclick = () => {
     closeModal();
@@ -5806,6 +5883,10 @@ function showPackOffer(soft) {
     grantSupporter();
   };
   document.getElementById("pk-no").onclick = closeModal;
+  document.getElementById("pk-restore").onclick = async () => {
+    const ok = await restorePurchases();
+    if (ok) closeModal();
+  };
 }
 
 /* ---------- offline earnings ---------- */
@@ -11600,6 +11681,13 @@ window.__cove = {
     if (cmd === "reset") { G.ads = newAdsState(); save(); return "reset"; }
     return { enabled: ADS_ENABLED, ...G.ads, inGrace: (G.firstSeen||0) > 0 && Date.now() - G.firstSeen < 48*3600e3, owned: Ads.owned() };
   },
+  iap(cmd, id){
+    if (cmd === "buy") { completePurchase(id || "cozy_supporter"); return "owned: " + Object.keys(G.iap.owned).filter(k => G.iap.owned[k]).join(", "); }
+    if (cmd === "restore") return restorePurchases();
+    if (cmd === "clearlocal") { G.iap.owned = {}; G.ads.supporter = false; G.ads.perm2x = false; applyEntitlements(); save(); return "owned-cache wiped (grants ledger kept) — a real restore re-fills owned from the store"; }
+    if (cmd === "apply") { applyEntitlements(); save(); return "entitlements re-applied"; }
+    return { products: IAP_PRODUCTS, owned: G.iap.owned, grants: G.iap.grants };
+  },
   // big labelled sheet drawn straight to the canvas for close inspection
   sheet(scale = 2.7, state = "loafing"){
     _paused = true;
@@ -11693,6 +11781,7 @@ resize();
 _lastViewBottom = _viewBottomY;
 load();
 restoreCats();
+applyEntitlements();                   // re-derive Supporter / Sparkle perks from what the store account owns
 visitorTimer = nextVisitorGap();      // now that G is loaded, time the next free arrival properly
 rebuildAttractors();
 initDayClock();
