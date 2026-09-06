@@ -33,9 +33,15 @@ Legend for IDs used throughout:
 - [x] 5. ASC API **Team key** `ci`/`L88KLJJN5M` (App Manager) + `.p8` saved
 - [x] 6. Team ID noted
 - [x] 7. RevenueCat App Store app: In-App Purchase Key (`SubscriptionKey_4ZU6CPFPL4`) wired; 3 products created (`welcome_pack`/`sparkle_pack`/`founding_covekeeper`). "Could not check" store status = the optional ASC-API connection, non-blocking.
-- [x] 8. `REVENUECAT_IOS_KEY = appl_NOnpzwbRdsrmoSDdowFOZQntdxp` in the bridge (commit `0b9b122`); 4 GitHub secrets set (`ASC_KEY_ID` `ASC_ISSUER_ID` `ASC_KEY_P8_BASE64` `IOS_TEAM_ID`).
-- [ ] `ios.yml` signing run — in progress (run 3)
-- [ ] 9. TestFlight smoke test
+- [x] 8. `REVENUECAT_IOS_KEY = appl_NOnpzwbRdsrmoSDdowFOZQntdxp` in the bridge (commit `0b9b122`); 4 GitHub secrets set.
+  - `ASC_KEY_ID` / `ASC_KEY_P8_BASE64` = the **Admin** Team key `ci-admin` / `BGH3YKPQ29` (App Manager wasn't enough — "Cloud signing permission error" creating the distribution cert). Issuer `69857763-e208-4c82-a145-c9aff6792b1e`. `.p8` files live in `G:\My Drive\…\Catmint Cove\keys\`.
+- [x] `ios.yml` **GREEN — build `1.0.7` uploaded to App Store Connect** (run `34065436501`). Fixes it took:
+  - Capacitor 8 = SPM not CocoaPods → `-project`, no `pod install`, `-resolvePackageDependencies`
+  - archive `CODE_SIGNING_ALLOWED=NO`, sign during `-exportArchive` (automatic archive signing wants a *development* profile → needs devices)
+  - **Admin** API key for cloud-managed distribution cert
+  - `runs-on: macos-26` + explicit Xcode 26 select (Apple now requires the iOS 26 SDK)
+  - `UIRequiresFullScreen = true` (portrait-only app on iPad must opt out of multitasking)
+- [ ] 9. TestFlight smoke test — build processing (~10 min), then export-compliance prompt, then Internal Testing → device
 - [ ] 10. Store listing + App Privacy + rating
 - [ ] 11. Submit
 
