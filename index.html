@@ -2612,8 +2612,9 @@ function catMotion(c) {
 function zoomWeight(c) {
   if (performance.now() < (c._zoomCD || 0)) return 0;
   const has = t => c.traits && c.traits.includes(t);
-  if (has("lazy") || has("shy") || has("grumpy")) return c.isKitten ? 0.5 : 0;
-  let w = 0.5;
+  const rainbow = c.worn && c.worn.includes("rainbow");   // v3: a rainbow-trail cat wants to run and show it off
+  if (!rainbow && (has("lazy") || has("shy") || has("grumpy"))) return c.isKitten ? 0.5 : 0;
+  let w = rainbow ? 2.2 : 0.5;
   if (has("playful")) w += 1.4;
   if (has("bold")) w += 1.0;
   if (has("curious")) w += 0.7;
@@ -2813,17 +2814,18 @@ function updateCat(c, dt) {
     }
   }
 
-  // v3: rainbow-trail cosmetic — lay down a breadcrumb while the cat's on the
-  // move; each point fades over ~1.5s so the ribbon streams out and dissolves
+  // v3: rainbow-trail cosmetic — lay down a breadcrumb whenever the cat's
+  // moving at all; each point lingers ~2.5s so the ribbon streams well out
+  // behind and dissolves slowly
   if (c.worn && c.worn.includes("rainbow")) {
     const tr = c._trail || (c._trail = []);
-    if (spd > 4) {
+    if (spd > 2) {
       const last = tr[tr.length - 1];
-      if (!last || Math.hypot(c.x - last.x, c.y - last.y) > 4) tr.push({ x: c.x, y: c.y - 8, life: 1 });
-      if (spd > 90 && Math.random() < dt * 8) spawnParticles(c.x + rand(-6, 6), c.y - 8, "twinkle", 1);
+      if (!last || Math.hypot(c.x - last.x, c.y - last.y) > 3.5) tr.push({ x: c.x, y: c.y - 8, life: 1 });
+      if (spd > 70 && Math.random() < dt * 10) spawnParticles(c.x + rand(-7, 7), c.y - 8, "twinkle", 1);
     }
-    for (let i = tr.length - 1; i >= 0; i--) { tr[i].life -= dt * 0.68; if (tr[i].life <= 0) tr.splice(i, 1); }
-    if (tr.length > 80) tr.splice(0, tr.length - 80);
+    for (let i = tr.length - 1; i >= 0; i--) { tr[i].life -= dt * 0.4; if (tr[i].life <= 0) tr.splice(i, 1); }
+    if (tr.length > 120) tr.splice(0, tr.length - 120);
   } else if (c._trail && c._trail.length) {                 // cosmetic removed — let the last of it fade
     for (let i = c._trail.length - 1; i >= 0; i--) { c._trail[i].life -= dt * 1.6; if (c._trail[i].life <= 0) c._trail.splice(i, 1); }
     if (!c._trail.length) c._trail = null;
@@ -9262,23 +9264,37 @@ function drawToken(g, tk) {
 // v3: the rainbow-trail cosmetic — a 6-band ribbon that follows the cat's
 // path, offset perpendicular to the direction of travel, each segment fading
 // with the age of its points so it streams out and dissolves behind them.
-const _RAINBOW = ["#e0655f", "#e6a94e", "#e8cf5a", "#7bb56a", "#5f9fd0", "#9a7bc9"];
-const _RB_GAP = 2.1;
+const _RAINBOW = ["#ec5f5a", "#f0993f", "#f0d24e", "#69b45f", "#4f9ad6", "#9a6fcf"];
+const _RB_GAP = 3.1;
 function drawTrails(g) {
+  const t = performance.now() / 1000;
   for (const c of cats) {
+    // always-on shimmer arc under a rainbow cat, so you see it's equipped even
+    // when it's sitting still
+    if (c.worn && c.worn.includes("rainbow")) {
+      g.save();
+      g.globalAlpha = 0.4 + Math.sin(t * 2 + c.x * 0.01) * 0.1;
+      g.lineCap = "round";
+      for (let band = 0; band < _RAINBOW.length; band++) {
+        g.strokeStyle = _RAINBOW[band]; g.lineWidth = 3;
+        g.beginPath();
+        g.ellipse(c.x, c.y - 2, 20 - band * 1.1, 7 - band * 0.3, 0, Math.PI * 0.92, Math.PI * 2.08);
+        g.stroke();
+      }
+      g.restore();
+    }
     const tr = c._trail;
     if (!tr || tr.length < 2) continue;
     g.save();
     g.lineCap = "round"; g.lineJoin = "round";
     for (let i = 1; i < tr.length; i++) {
       const a = tr[i - 1], b = tr[i];
-      let dx = b.x - a.x, dy = b.y - a.y;
+      const dx = b.x - a.x, dy = b.y - a.y;
       const d = Math.hypot(dx, dy) || 1;
       const px = -dy / d, py = dx / d;                 // unit perpendicular
       const life = (a.life + b.life) * 0.5;
-      const w = 1.4 + 1.4 * life;                      // fatter near the cat (fresh), thinner at the tail
-      g.globalAlpha = 0.6 * life;
-      g.lineWidth = w;
+      g.globalAlpha = 0.85 * life;
+      g.lineWidth = 2.2 + 2.6 * life;                  // fat and bright near the cat, thin and faint at the tail
       for (let band = 0; band < _RAINBOW.length; band++) {
         const o = (band - (_RAINBOW.length - 1) / 2) * _RB_GAP;
         g.strokeStyle = _RAINBOW[band];
