@@ -7286,8 +7286,10 @@ let _weatherP = [];
 function updateWeather(dt) {
   const th = (G && G.cosmetics) ? DECOR_THEMES[G.cosmetics.theme] : null;
   const kind = th && th.weather && th.weather !== "none" ? th.weather : null;
-  const day = window._sky ? window._sky.df : 1;
-  if (_reduceMotion || !kind || day < 0.3) { if (_weatherP.length && !kind) _weatherP.length = 0; }
+  // v3: a bought atmosphere theme shows its weather whatever the cove clock is
+  // doing — no more "sometimes it's there, sometimes it isn't" from the
+  // day/night gate. it just dims a little at night (see drawWeather).
+  if (_reduceMotion || !kind) { if (_weatherP.length) _weatherP.length = 0; }
   else {
     const cap = kind === "snow" ? 44 : 22;
     if (_weatherP.length < cap && Math.random() < dt * (kind === "snow" ? 14 : 5)) {
@@ -7306,7 +7308,7 @@ function updateWeather(dt) {
 function drawWeather(g) {
   if (!_weatherP.length) return;
   const day = window._sky ? window._sky.df : 1;
-  const a = clamp((day - 0.3) / 0.5, 0, 1);
+  const a = clamp(0.55 + day * 0.45, 0.55, 1);   // v3: night floor instead of fading to nothing
   for (const p of _weatherP) {
     g.save(); g.translate(p.x, p.y); g.rotate(p.rot);
     if (p.kind === "snow") { g.fillStyle = `rgba(255,255,255,${(0.72 * a).toFixed(2)})`; g.beginPath(); g.arc(0, 0, 1.8, 0, 7); g.fill(); }
@@ -10630,6 +10632,7 @@ window.__cove = {
     return { ...G.checkin, available: checkinAvailable(), todayReward: CHECKIN_REWARDS[(G.checkin && G.checkin.day || 0) % 7] };
   },
   arrival(){ visitorTimer = 0.001; return "a cat will show up at the edge on the next sim tick"; },
+  weather(){ return { theme: G.cosmetics && G.cosmetics.theme, kind: (DECOR_THEMES[G.cosmetics && G.cosmetics.theme] || {}).weather, particles: _weatherP.length, sky: window._sky ? +window._sky.df.toFixed(2) : null }; },
   care(cmd, v){
     if (cmd === "food") { G.food = clamp(v ?? FOOD_MAX, 0, FOOD_MAX); syncHud(); return G.food; }
     if (cmd === "starve") { G.food = 0; for (const c of cats) if (!c.visitor) { c.hunger = 100; c.thirst = 100; } syncHud(); return "everyone's starving"; }
