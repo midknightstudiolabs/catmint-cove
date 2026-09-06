@@ -158,6 +158,8 @@ Cosmetic + support only — no 2× offline, no pearls.
 - **Founder's plaque** by the cove sign ("FOUNDING COVEKEEPER · 2026") — the
   "cool signate" for a supporter of the game
 - Founder's ribbon for Midknight
+- **Halo** — a glowing gold ring for any cat, a touch brighter after dark
+- **Hero mask** — a dark domino eye mask for any cat
 - ~~Founder's Cove Sign~~ — folded into the plaque
 - ~~Founder's Photo Frame~~ — dropped (no frame system yet)
 - Permanent future ad removal (if ads are ever introduced)

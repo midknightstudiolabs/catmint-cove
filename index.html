@@ -4237,10 +4237,12 @@ const ACCESSORIES = [
   // Welcome Pack IAP ($0.99) — a small first purchase. One accessory, unlocked
   // for the whole cove, plus a carved "welcome paw" that appears by the sign.
   { key:"amberribbon", label:"Amber ribbon", iap:"welcome_pack", slot:"neck", group:"Welcome", premium:true, blurb:"A soft amber ribbon knotted at the neck — the colour of late afternoon light on the cove." },
-  // Founding Covekeeper — Midknight's founder's ribbon. `hidden` keeps it out of
-  // the dress-up rack / every cat's wardrobe; applyEntitlements pins it on the
-  // mascot only. Owned-by-derivation like the packs above.
+  // Founding Covekeeper — Midknight's founder's ribbon (`hidden`, pinned on the
+  // mascot only by applyEntitlements), plus two keepsake cosmetics the pack
+  // unlocks for every cat: a glowing halo and a hero's mask. Owned-by-derivation.
   { key:"founderribbon", label:"Founder's ribbon", iap:"founding_covekeeper", slot:"neck", group:"Founder", premium:true, hidden:true, blurb:"Midknight's — an amber ribbon for the cove's first keeper." },
+  { key:"halo",     label:"Halo",      iap:"founding_covekeeper", slot:"head", group:"Founder", premium:true, blurb:"A soft ring of gold light that hovers over the cat. Glows a little brighter at night." },
+  { key:"heromask", label:"Hero mask", iap:"founding_covekeeper", slot:"face", group:"Founder", premium:true, blurb:"A dark eye mask with pointed corners. The cat looks like it's about to right a wrong (it is going back to sleep)." },
   // v3 effect cosmetics — the Sparkle Pack IAP unlocks all three for the whole
   // cove (present and future cats). No currency path — see MONETIZATION.md.
   { key:"glowcollar",  label:"Glow collar",  iap:"sparkle_pack", slot:"neck", group:"Sparkle", premium:true, blurb:"A collar with a soft, steady light. Comes into its own at night and in Rest mode." },
@@ -4987,6 +4989,7 @@ function renderShopDress(list) {
   const PACK_GROUP = {   // groups whose items are all unlocked by one IAP
     Sparkle: { id: "sparkle_pack", icon: "✦" },
     Welcome: { id: "welcome_pack", icon: "🐾" },
+    Founder: { id: "founding_covekeeper", icon: "🎖️" },
   };
   const rackAcc = ACCESSORIES.filter(a => !a.hidden);   // `hidden` items are auto-equipped only (e.g. the founder's ribbon)
   const groups = [...new Set(rackAcc.map(a => a.group))];
@@ -6210,6 +6213,13 @@ function applyEntitlements() {
     if (c.worn && c.worn.includes("founderribbon") && !(c.mascot && sup))
       c.worn = c.worn.filter(k => k !== "founderribbon");
   }
+  // the pack's two keepsake cosmetics (halo, hero mask) are owned by derivation
+  // in accOwned() while `founding_covekeeper` is owned — nothing to materialise.
+  // If the pack isn't owned, make sure no cat is still wearing one.
+  if (!sup) {
+    const fk = ["halo", "heromask"];
+    for (const c of cats) if (c.worn && c.worn.some(k => fk.includes(k))) c.worn = c.worn.filter(k => !fk.includes(k));
+  }
   // the Sparkle Pack's effect cosmetics (glow/wings/rainbow) are owned by
   // derivation in accOwned() whenever `sparkle_pack` is owned — nothing to
   // materialise here, so it covers every present and future cat automatically.
@@ -6305,6 +6315,7 @@ function showPackOffer(soft) {
     <ul class="packperks">
       <li>A <b>Founding Covekeeper plaque</b> by the cove sign — 2026</li>
       <li>A <b>founder's ribbon</b> for Midknight</li>
+      <li>A glowing <b>halo</b> &amp; a <b>hero's mask</b> — for any cat, now and later</li>
       <li>Ad-free forever, if ads are ever added</li>
       <li>Supports Midknight Studio Labs</li>
     </ul>
@@ -9496,21 +9507,21 @@ function drawCoveSign(g, W, H) {
   // to the right of the sign (a ~20px gap so it never crowds the cove name).
   if (typeof iapOwns === "function" && iapOwns("founding_covekeeper")) {
     g.save();
-    g.translate(bw / 2 + 40, 0);
-    g.fillStyle = "rgba(36,31,23,0.10)"; g.beginPath(); g.ellipse(0, 25, 14, 4, 0, 0, 7); g.fill();
-    g.fillStyle = "#8a6a4a"; g.fillRect(-2, -2, 4, 27);                 // post
-    const pw = 38, ph = 19, py = -20;
+    g.translate(bw / 2 + 46, 0);
+    g.fillStyle = "rgba(36,31,23,0.10)"; g.beginPath(); g.ellipse(0, 26, 18, 4.5, 0, 0, 7); g.fill();
+    g.fillStyle = "#8a6a4a"; g.fillRect(-2.5, -4, 5, 30);                // post
+    const pw = 50, ph = 25, py = -26;
     const grad = g.createLinearGradient(0, py, 0, py + ph);
     grad.addColorStop(0, "#e0c684"); grad.addColorStop(1, "#b6984c");
-    g.fillStyle = grad; roundRect(g, -pw / 2, py, pw, ph, 2.5); g.fill();
-    g.strokeStyle = "rgba(74,53,36,0.45)"; g.lineWidth = 1; roundRect(g, -pw / 2, py, pw, ph, 2.5); g.stroke();
-    g.fillStyle = "rgba(255,255,255,0.28)"; roundRect(g, -pw / 2, py, pw, 5, 2.5); g.fill();
+    g.fillStyle = grad; roundRect(g, -pw / 2, py, pw, ph, 3); g.fill();
+    g.strokeStyle = "rgba(74,53,36,0.45)"; g.lineWidth = 1.2; roundRect(g, -pw / 2, py, pw, ph, 3); g.stroke();
+    g.fillStyle = "rgba(255,255,255,0.28)"; roundRect(g, -pw / 2, py, pw, 6, 3); g.fill();
     g.fillStyle = "#5a4527"; g.textAlign = "center"; g.textBaseline = "middle";
-    g.font = "700 5.4px 'Fraunces', Georgia, serif";
-    g.fillText("FOUNDING", 0, py + 5.5);
-    g.fillText("COVEKEEPER", 0, py + 10.5);
-    g.font = "700 4.4px 'Fraunces', Georgia, serif"; g.fillStyle = "#7a5c38";
-    g.fillText("· 2026 ·", 0, py + 15.5);
+    g.font = "700 6.6px 'Fraunces', Georgia, serif";
+    g.fillText("FOUNDING", 0, py + 7);
+    g.fillText("COVEKEEPER", 0, py + 14);
+    g.font = "700 5px 'Fraunces', Georgia, serif"; g.fillStyle = "#7a5c38";
+    g.fillText("· 2026 ·", 0, py + 20.5);
     g.restore();
   }
   // Welcome Pack — a little trail of amber paw prints pressed into the earth in
@@ -9888,6 +9899,48 @@ function drawAccessory(g, kind, P, coat, kit) {
     g.beginPath(); g.arc(hx, hy, hr * 0.98, Math.PI * 0.16, Math.PI * 0.84); g.stroke();
     g.fillStyle = "#fff6d8";
     g.beginPath(); g.arc(hx, y + 1.5, kit ? 2 : 2.6, 0, 7); g.fill();
+  } else if (kind === "halo") {
+    // Founding Covekeeper — a soft ring of gold light hovering above the head.
+    // Emissive (adds light, never a yellow film); a touch brighter after dark.
+    const night = window._sky ? 1 - window._sky.df : 0;
+    const y = hy - hr * (kit ? 1.5 : 1.78), rx = hr * (kit ? 0.6 : 0.72), ry = rx * 0.34;
+    g.save();
+    g.globalCompositeOperation = "lighter";
+    const glow = g.createRadialGradient(hx, y, 0, hx, y, rx * 2.4);
+    glow.addColorStop(0, `rgba(255,226,150,${0.26 + night * 0.34})`);
+    glow.addColorStop(1, "rgba(255,226,150,0)");
+    g.fillStyle = glow;
+    g.beginPath(); g.ellipse(hx, y, rx * 2.4, ry * 4, 0, 0, 7); g.fill();
+    g.strokeStyle = `rgba(255,232,158,${0.85 + night * 0.15})`;
+    g.lineWidth = kit ? 1.9 : 2.4;
+    g.beginPath(); g.ellipse(hx, y, rx, ry, 0, 0, 7); g.stroke();
+    g.strokeStyle = "rgba(255,248,214,0.9)"; g.lineWidth = kit ? 0.8 : 1;
+    g.beginPath(); g.ellipse(hx, y, rx, ry, 0, Math.PI * 1.05, Math.PI * 1.6); g.stroke();
+    g.restore();
+  } else if (kind === "heromask") {
+    // Founding Covekeeper — a dark hero's eye mask with pointed outer corners.
+    // The eyes are already painted underneath, so the holes are punched out
+    // (evenodd) and left transparent.
+    const ey = hy - (kit ? 0 : 1.5), dx = kit ? 4.6 : 5.2, r = kit ? 3 : 3.5;
+    g.save();
+    g.fillStyle = "#26262e";
+    g.beginPath();
+    g.moveTo(hx - dx - r * 1.7, ey - r * 0.5);
+    g.quadraticCurveTo(hx - dx, ey - r * 1.6, hx, ey - r * 0.62);
+    g.quadraticCurveTo(hx + dx, ey - r * 1.6, hx + dx + r * 1.7, ey - r * 0.5);
+    g.quadraticCurveTo(hx + dx + r * 0.5, ey + r * 0.4, hx + dx + r * 0.2, ey + r * 1.05);
+    g.quadraticCurveTo(hx + dx, ey + r * 1.35, hx, ey + r * 0.5);
+    g.quadraticCurveTo(hx - dx, ey + r * 1.35, hx - dx - r * 0.2, ey + r * 1.05);
+    g.quadraticCurveTo(hx - dx - r * 0.5, ey + r * 0.4, hx - dx - r * 1.7, ey - r * 0.5);
+    g.closePath();
+    for (const s of [-1, 1]) {
+      g.moveTo(hx + s * dx + r, ey);
+      g.ellipse(hx + s * dx, ey, r, r * 0.82, 0, 0, 7);
+    }
+    g.fill("evenodd");
+    g.strokeStyle = "rgba(255,255,255,0.14)"; g.lineWidth = kit ? 0.8 : 1;
+    for (const s of [-1, 1]) { g.beginPath(); g.ellipse(hx + s * dx, ey, r, r * 0.82, 0, 0, 7); g.stroke(); }
+    g.restore();
   }
   // "wings" is drawn behind the body (drawWings, before catSil) and "rainbow"
   // in the scene trail pass — both no-op here
