@@ -152,13 +152,17 @@ rethink.
       rewarded (double offline earnings, coax a cat for free) + one *light*
       session-boundary interstitial (48h grace · ≤3/day · none in Rest mode /
       for supporters) + a one-time neutral age gate for ad treatment.
-- [x] **Founding Covekeeper $4.99** (simulated purchase) — a founder's plaque
-      by the cove sign, an amber founder's ribbon for Midknight, ad-free
-      forever if ads are ever added. **No gameplay advantage** (see
-      `MONETIZATION.md`); replaced the old Cozy Supporter Pack + its
-      2×-offline / ✦50 perks.
+- [x] **Founding Covekeeper $4.99** (RevenueCat) — a dated **2026 founder's
+      plaque** by the cove sign (a limited edition for the founding period),
+      an amber founder's ribbon for Midknight, a glowing **halo** + **hero
+      mask** for any cat, and ad-free forever. Copy leads with *backing a
+      one-person studio — no publisher, no investors*. **No gameplay
+      advantage** (see `MONETIZATION.md`); replaced the old Cozy Supporter
+      Pack + its 2×-offline / ✦50 perks. Shown in the shop's **Featured** tab
+      (alongside the Welcome Pack).
 - [x] **Sparkle Pack $2.99** — unlocks the glow collar / little wings /
       rainbow trail effect cosmetics for the whole cove. Cosmetic only.
+      Not a support tier → pinned to the **Decor** tab, not Featured.
 - [x] **Welcome Pack $0.99** — an amber ribbon for every cat + a trail of
       amber paw prints by the cove sign. Offered once after the tutorial + a
       first framed photo + 2 residents. Cosmetic only.

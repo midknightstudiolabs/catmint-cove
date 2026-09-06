@@ -155,8 +155,8 @@ Install via the internal-testing opt-in link on a real Android phone. Check:
 - [ ] Use a **license-test account** (Play Console → Setup → License testing) so
       you're not charged. Buy **Welcome Pack** → amber ribbon appears in the
       dress-up rack, paw-prints by the sign. Buy **Sparkle Pack** → glow/wings/
-      rainbow unlock. Buy **Founding Covekeeper** → plaque + Midknight's amber
-      ribbon by the sign.
+      rainbow unlock. Buy **Founding Covekeeper** → 2026 plaque by the sign +
+      Midknight's amber ribbon + halo & hero mask in the dress-up rack.
 - [ ] Kill + reopen → all three still owned.
 - [ ] Airplane mode → reopen → still owned (fail-open cache).
 - [ ] "Restore purchases" on the offer modal, or reinstall the app → the packs

@@ -110,10 +110,13 @@ is planned, not in yet.
 ## Monetization
 See `MONETIZATION.md` — **free-to-play, never pay-to-win**; sell attachment /
 expression / ownership, not advantage. Launches **ad-free**. Cosmetic IAPs:
-**Founding Covekeeper $4.99** (a founder's plaque by the sign, Midknight's
-amber founder's ribbon, ad-free forever), **Sparkle Pack $2.99** (the glow /
-wings / rainbow effect cosmetics) and **Welcome Pack $0.99** (an amber ribbon
-+ a trail of amber paw prints by the sign, offered after some engagement).
+**Founding Covekeeper $4.99** (a dated 2026 founder's plaque by the sign,
+Midknight's amber founder's ribbon, a glowing halo + hero mask for any cat,
+ad-free forever — framed as backing a one-person studio), **Sparkle Pack
+$2.99** (the glow / wings / rainbow effect cosmetics) and **Welcome Pack
+$0.99** (an amber ribbon + a trail of amber paw prints by the sign, offered
+after some engagement). Featured tab carries Welcome + Founding Covekeeper;
+Sparkle sits in the Decor tab.
 Planned: Accessory Collection.
 Ads (Google AdMob, rewarded-first + one light session-boundary interstitial)
 come later — AdMob can't approve serving until the app is published, so any
