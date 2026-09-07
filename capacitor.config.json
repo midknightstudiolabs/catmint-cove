@@ -20,7 +20,8 @@
     "allowMixedContent": false
   },
   "ios": {
-    "contentInset": "always",
-    "backgroundColor": "#eef3e6"
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "backgroundColor": "#356b4c"
   }
 }
