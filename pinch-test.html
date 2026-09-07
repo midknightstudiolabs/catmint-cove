@@ -476,6 +476,7 @@
   .goal button{margin-top:.5rem;width:100%;justify-content:center;}
   .goal.claimed{opacity:.5;}
   .pj-bar{height:.5rem;border-radius:999px;background:#e4e0cf;overflow:hidden;margin:.5rem 0 .2rem;}
+  .pj-bar.adv-bar{height:.36rem;margin:.15rem 0 .1rem;}
   .pj-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-bright));transition:width .5s ease;}
   .modal .pj-req{margin:.6rem 0 .3rem;text-align:left;}
   .modal .pj-row{display:flex;justify-content:space-between;font-size:.88rem;color:var(--ink-soft);margin-top:.5rem;}
@@ -999,13 +1000,26 @@
   #rotate b{font-family:"Fraunces",Georgia,serif;font-weight:600;color:var(--ink);}
   @keyframes rotNudge{0%,50%{transform:rotate(0)}70%,100%{transform:rotate(-90deg)}}
   @media (prefers-reduced-motion:reduce){#rotate .glyph{animation:none;}}
-  @media (orientation:landscape) and (max-height:500px){ #rotate{display:flex;} }
+  /* TEST: auto-rotate enabled — the wide-viewport render path handles landscape,
+     so the "turn your phone back" nudge is disabled. Restore the line below to
+     re-lock portrait on phones. */
+  /* @media (orientation:landscape) and (max-height:500px){ #rotate{display:flex;} } */
 
   /* focus camera — press & hold a cat to sit with it; the chrome recedes */
   #hud,#actions,#toast,#hint{transition:opacity .35s ease;}
   #app.focusing #hud,#app.focusing #actions,#app.focusing #toast,#app.focusing #hint{opacity:0;pointer-events:none;}
-  /* the ⊙ / × whole-cove button: hidden with the rest of the chrome in rest / festival / cold-open,
-     but kept during a zoom-out (it's the way back) */
+  /* the ⊙ / × whole-cove button: bottom-right, above the tab bar; hidden with
+     the rest of the chrome in rest / festival / cold-open, but kept during a
+     zoom-out (it's the way back). Lifts clear of the next-action hint band. */
+  #ovBtn{
+    position:fixed;right:calc(12px + env(safe-area-inset-right));
+    bottom:calc(env(safe-area-inset-bottom) + 4.7rem);
+    z-index:24;width:40px;height:40px;border-radius:50%;border:none;
+    background:rgba(247,245,236,.94);color:#356b4c;display:grid;place-items:center;
+    box-shadow:0 3px 12px rgba(36,31,23,.22);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;transition:opacity .3s ease,bottom .22s ease;
+  }
+  #app.has-hint #ovBtn{bottom:calc(env(safe-area-inset-bottom) + 7.4rem);}
   #app.resting #ovBtn,#app.festing #ovBtn,#app.cold-open #ovBtn{opacity:0!important;pointer-events:none;}
   #focusBar{
     position:absolute;left:50%;transform:translateX(-50%);
@@ -4328,8 +4342,7 @@ canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeou
     document.getElementById("app").appendChild(mark);
     const btn = document.createElement("button");
     btn.id = "ovBtn";
-    btn.title = "See the whole cove";
-    btn.style.cssText = "position:fixed;right:calc(10px + env(safe-area-inset-right));top:calc(max(env(safe-area-inset-top),16px) + 3.9rem);z-index:24;width:40px;height:40px;border-radius:50%;border:none;background:rgba(247,245,236,.94);color:#356b4c;display:grid;place-items:center;box-shadow:0 3px 12px rgba(36,31,23,.22);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .3s ease;";
+    btn.title = "See the whole cove";   // positioned + styled in CSS (#ovBtn)
     btn.onclick = () => { if (_focus || restMode || festMode) return; ovSetTarget(_ovTarget > 0.5 ? 0 : 1, true); };
     document.getElementById("app").appendChild(btn);
     _ovSyncBtn();
@@ -4353,6 +4366,14 @@ function handleTap(x, y) {
     hidePropCard();
     if (bc.sick) { openMedicine(bc); return; }   // v3: a sick cat needs medicine, not a pat
     petCat(bc); showCatCard(bc); return;
+  }
+
+  // the "N cats are out exploring" chalk tag on the cove sign — tap to see the trips
+  if (_coveSignTag && Math.abs(x - _coveSignTag.x) <= _coveSignTag.w / 2 + 6
+      && Math.abs(y - _coveSignTag.y) <= _coveSignTag.h / 2 + 6) {
+    hideCatCard(); hidePropCard();
+    if (panels.today && panels.today.hidden) togglePanel("today");
+    return;
   }
 
   // a restoration project marker
@@ -10584,6 +10605,7 @@ function drawBackground(dt) {
   ctx.fillStyle = _vignetteGrad; ctx.fillRect(0, 0, W, H);
 }
 let _vignetteGrad = null, _warmWash = null;
+let _coveSignTag = null;   // world-space bounds of the "N cats are out exploring" tag, for tap-to-open
 // a couple of reusable soft radial gradients for the cat contact shadow, keyed
 // by a bucketed radius — canvas gradient creation is one of the costlier calls
 const _shadowGrads = new Map();
@@ -11567,12 +11589,14 @@ function drawCoveSign(g, W, H) {
   g.fillStyle = "rgba(255,255,255,0.12)"; roundRect(g, -bw / 2, -22, bw, 7, 4); g.fill();
   g.fillStyle = "rgba(60,44,30,0.10)"; roundRect(g, -bw / 2, -8, bw, 8, 4); g.fill();
   g.strokeStyle = "rgba(74,53,36,0.35)"; g.lineWidth = 1; roundRect(g, -bw / 2, -22, bw, 22, 4); g.stroke();
-  // engraved text
-  g.fillStyle = "#4a3524";
+  // engraved text — brand ink (near-black); the old warm brown drifted blue-grey
+  // under the dusk/night mood wash on some screens
+  g.fillStyle = "#241f17";
   g.textAlign = "center"; g.textBaseline = "middle";
   g.font = `700 ${fs}px 'Fraunces', Georgia, serif`;
   g.fillText(label, 0, -10.5);
-  // a little chalk tag while cats are out adventuring
+  // a little chalk tag while cats are out adventuring — tap it to see the trips
+  _coveSignTag = null;
   if (typeof G !== "undefined" && G && Array.isArray(G.adventures) && G.adventures.length) {
     const _n = G.adventures.reduce((s, a) => s + ((a.cats && a.cats.length) || 1), 0);
     const one = G.adventures.length === 1 && _n === 1 ? G.adventures[0].cat : null;
@@ -11583,8 +11607,10 @@ function drawCoveSign(g, W, H) {
     roundRect(g, -tw / 2, 3, tw, 14, 3); g.fill();
     g.strokeStyle = "rgba(74,53,36,0.28)"; g.lineWidth = 1;
     roundRect(g, -tw / 2, 3, tw, 14, 3); g.stroke();
-    g.fillStyle = "#7a5c38"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillStyle = "#4f3b26"; g.textAlign = "center"; g.textBaseline = "middle";
     g.fillText(tag, 0, 10.5);
+    // remember where the tag sits in world space so a tap can open the trips view
+    _coveSignTag = { x, y: y + 10, w: Math.max(tw, 54), h: 20 };
   }
   // Founding Covekeeper — a small brass plaque on its own post, standing clear
   // to the right of the sign (a ~20px gap so it never crowds the cove name).
@@ -14328,10 +14354,12 @@ function renderAdventureCard() {
     const pc0 = !back ? latestPostcardFor(a.cat) : null;
     const pc = (pc0 && pc0.t >= a.startedAt) ? pc0 : null;
     const who = (a.cats && a.cats.length) ? (a.cats.length > 2 ? `${a.cats[0]} + ${a.cats.length - 1}` : joinNice(a.cats)) : a.cat;
+    const prg = back ? 100 : Math.max(3, Math.min(99, Math.round((Date.now() - a.startedAt) / Math.max(1, a.endsAt - a.startedAt) * 100)));
     html += `<div class="adv-trip${back ? " back" : ""}">
       <div class="adv-top"><span class="adv-emoji">${d.emoji}</span>
       <div><div class="adv-title">${esc(who)} &middot; ${esc(d.name)}</div>
       <div class="adv-sub">${back ? "back at the cove — see how it went" : `${T.label.toLowerCase()} · back ${whenText(a.endsAt)}`}</div></div></div>
+      ${back ? "" : `<div class="pj-bar adv-bar"><i style="width:${prg}%"></i></div>`}
       ${pc ? `<div class="adv-postcard">✉️ ${esc(pc.text.replace(/\s*—\s*.*$/, ""))}</div>` : ""}
       ${back ? `<button class="btn primary" data-claim="${a.id}">See how it went</button>`
              : `<button class="btn tiny" data-recall="${a.id}">Call them home</button>${DEV_BUILD ? ` <button class="btn tiny" data-skip="${a.id}">skip · dev</button>` : ""}`}
@@ -14745,14 +14773,10 @@ window.addEventListener("resize", onViewportChange);
 window.addEventListener("orientationchange", onViewportChange);
 if (window.visualViewport) window.visualViewport.addEventListener("resize", onViewportChange);
 try { new ResizeObserver(onViewportChange).observe(document.getElementById("app")); } catch (e) {}
-// Portrait lock is for phones only — a tablet (or desktop PWA) is happy in
-// landscape and the render code already has a wide-viewport path. Best effort
-// where the platform allows it (installed PWA / Android); iOS ignores it and
-// the native Info.plist decides (iPhone portrait-only, iPad free rotation).
-try {
-  if (Math.min(window.innerWidth, window.innerHeight) < 600)
-    screen.orientation.lock("portrait").catch(() => {});
-} catch (e) {}
+// TEST: auto-rotate enabled — no web-side portrait lock. The wide-viewport
+// render path (FILL / PAN in the resize handler) covers landscape. Native lock
+// (iPhone Info.plist / Android manifest) is separate and unchanged; restore the
+// screen.orientation.lock("portrait") call here to re-lock on phones/PWA.
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) { save(); Ads.onHide(); }
