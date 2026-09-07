@@ -12585,6 +12585,119 @@ window.__cove = {
     g.restore();
     return cv.toDataURL("image/png");
   },
+  // Google Play / marketing feature graphic — a real frame of the cove, wide,
+  // with a left shade + wordmark. Returns a PNG data URL. Tune framing with
+  // opts {x0,x1,y0,y1,zoom,panX,panY,w,h,wordmark:false}. Spawn a lively cast
+  // (giveCat / fillDex) and setHour(17.4) first for warm light.
+  featureGraphic(opts = {}){
+    const w = opts.w || 1024, h = opts.h || 500;
+    const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    const g = cv.getContext("2d");
+    const sky = (typeof timeOfDay === "function" && timeOfDay()) || null;
+
+    const sg = g.createLinearGradient(0, 0, 0, h);
+    if (sky) { sg.addColorStop(0, sky.top); sg.addColorStop(0.55, sky.mid); sg.addColorStop(1, sky.bot); }
+    else { sg.addColorStop(0, "#bfe0d6"); sg.addColorStop(1, "#eef3e6"); }
+    g.fillStyle = sg; g.fillRect(0, 0, w, h);
+
+    const sx0 = W * (opts.x0 ?? 0.06), sx1 = W * (opts.x1 ?? 0.94);
+    const sy0 = H * (opts.y0 ?? 0.10), sy1 = H * (opts.y1 ?? 0.92);
+    const sw = sx1 - sx0, sh = sy1 - sy0;
+    const s = Math.max(w / sw, h / sh) * (opts.zoom || 1);
+    const offX = (w - sw * s) / 2 - sx0 * s + (opts.panX || 0);
+    const offY = (h - sh * s) / 2 - sy0 * s + (opts.panY || 0);
+    const horizonY = offY + (H * 0.42) * s;
+
+    const sunLit = !sky || sky.df > 0.34;
+    const sxp = w * 0.82, syp = Math.min(h * 0.19, horizonY - 40), rad = sunLit ? 210 : 120;
+    const lightC = sky ? sky.light : "rgb(255,248,225)";
+    const glow = g.createRadialGradient(sxp, syp, 3, sxp, syp, rad);
+    glow.addColorStop(0, lightC.replace("rgb", "rgba").replace(")", `,${sunLit ? 0.55 : 0.34})`));
+    glow.addColorStop(1, lightC.replace("rgb", "rgba").replace(")", ",0)"));
+    g.fillStyle = glow; g.beginPath(); g.arc(sxp, syp, rad, 0, 7); g.fill();
+    g.fillStyle = sunLit ? "rgba(255,249,229,0.95)" : "rgba(238,240,228,0.95)";
+    g.beginPath(); g.arc(sxp, syp, sunLit ? 26 : 17, 0, 7); g.fill();
+    if (!sunLit) { g.save(); g.globalCompositeOperation = "destination-out"; g.beginPath(); g.arc(sxp + 8, syp - 3, 15, 0, 7); g.fill(); g.restore(); }
+
+    g.fillStyle = sky ? sky.ground : "#d8d2bd";
+    g.beginPath(); g.moveTo(0, horizonY);
+    g.bezierCurveTo(w * 0.3, horizonY - 16, w * 0.7, horizonY + 12, w, horizonY - 6);
+    g.lineTo(w, h); g.lineTo(0, h); g.fill();
+    // soft haze along the horizon so sky and ground melt together (no hard seam)
+    const haze = g.createLinearGradient(0, horizonY - 46, 0, horizonY + 34);
+    const hazeC = sky ? sky.light : "rgb(255,243,214)";
+    haze.addColorStop(0, hazeC.replace("rgb", "rgba").replace(")", ",0)"));
+    haze.addColorStop(0.5, hazeC.replace("rgb", "rgba").replace(")", ",0.5)"));
+    haze.addColorStop(1, hazeC.replace("rgb", "rgba").replace(")", ",0)"));
+    g.fillStyle = haze; g.fillRect(0, horizonY - 46, w, 80);
+
+    g.save();
+    g.translate(offX, offY); g.scale(s, s);
+    try {
+      if (typeof drawCoveSign === "function") drawCoveSign(g, W, H);
+      if (typeof drawCairn === "function") drawCairn(g, W, H);
+      if (typeof drawDecorLayer === "function") drawDecorLayer(g);
+      for (const a of attractors) drawAttractor(g, a);
+      const pgt = performance.now() / 1000, pnight = window._sky ? 1 - window._sky.df : 0;
+      const players = [];
+      for (const c of cats) players.push({ y: c.y, c });
+      for (const f of foreground) players.push({ y: f.y, f });
+      players.sort((p, q) => p.y - q.y);
+      for (const it of players) {
+        if (it.c) drawCat(g, it.c, true);
+        else drawGrassTuft(g, it.f, pgt, pnight);
+      }
+    } catch (e) { g.restore(); return "err: " + e.message; }
+    g.restore();
+
+    // soft overall warmth + gentle vignette (kept light so it doesn't read as night)
+    const vg = g.createRadialGradient(w * 0.52, h * 0.46, h * 0.36, w * 0.5, h * 0.52, w * 0.82);
+    vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(20,14,9,0.20)");
+    g.fillStyle = vg; g.fillRect(0, 0, w, h);
+
+    // a few drifting petals for life
+    g.save();
+    for (let i = 0; i < 8; i++) {
+      const px = w * ((i * 0.161 + 0.12) % 1);
+      const py = h * (0.10 + 0.66 * ((i * 0.293 + 0.4) % 1));
+      g.globalAlpha = 0.4 + (i % 3) * 0.12;
+      g.fillStyle = i % 2 ? "rgba(255,226,236,0.95)" : "rgba(255,245,216,0.95)";
+      g.beginPath(); g.ellipse(px, py, 3.4, 1.8, i * 1.3, 0, 7); g.fill();
+    }
+    g.restore();
+
+    if (opts.wordmark !== false) {
+      const wx = Math.round(w * 0.058), wy = Math.round(h * 0.44);
+      // focused scrim behind the words only — an angled soft pool, not a half-frame wash
+      const scr = g.createRadialGradient(wx + w * 0.10, wy - 6, 10, wx + w * 0.10, wy - 6, w * 0.42);
+      scr.addColorStop(0, "rgba(22,16,11,0.62)");
+      scr.addColorStop(0.55, "rgba(22,16,11,0.30)");
+      scr.addColorStop(1, "rgba(22,16,11,0)");
+      g.fillStyle = scr; g.fillRect(0, 0, w, h);
+      const edge = g.createLinearGradient(0, 0, w * 0.40, 0);
+      edge.addColorStop(0, "rgba(22,16,11,0.34)");
+      edge.addColorStop(1, "rgba(22,16,11,0)");
+      g.fillStyle = edge; g.fillRect(0, 0, w, h);
+
+      g.textBaseline = "alphabetic"; g.textAlign = "left";
+      g.fillStyle = "rgba(0,0,0,0.32)";
+      g.font = "600 64px 'Fraunces', Georgia, serif";
+      g.fillText("Catmint", wx + 2, wy + 3);
+      g.font = "italic 600 64px 'Fraunces', Georgia, serif";
+      g.fillText("Cove", wx + 8, wy + 62);
+      g.fillStyle = "#fdf7ea";
+      g.font = "600 64px 'Fraunces', Georgia, serif";
+      g.fillText("Catmint", wx, wy);
+      g.font = "italic 600 64px 'Fraunces', Georgia, serif";
+      g.fillText("Cove", wx + 6, wy + 59);
+      try { g.letterSpacing = "4px"; } catch (e) {}
+      g.fillStyle = "rgba(253,247,234,0.88)";
+      g.font = "600 14px 'Hanken Grotesk', sans-serif";
+      g.fillText("A COZY CAT SANCTUARY", wx + 3, wy + 90);
+      try { g.letterSpacing = "0px"; } catch (e) {}
+    }
+    return cv.toDataURL("image/png");
+  },
   sheet(scale = 2.7, state = "loafing"){
     _paused = true;
     const errs = [];
