@@ -801,6 +801,11 @@
   .vb-ss{font-size:.72rem;color:var(--ink-soft);}
   .vb-reward{display:inline-block;margin-top:.3rem;color:var(--accent);font-weight:700;}
   .vb-hint{font-size:.74rem;color:var(--ink-faint);line-height:1.4;margin:-.4rem 0 .9rem;}
+  .vb-tut{list-style:none;margin:.2rem 0 1.1rem;padding:0;text-align:left;display:flex;flex-direction:column;gap:.7rem;}
+  .vb-tut li{display:flex;gap:.55rem;font-size:.86rem;line-height:1.46;color:var(--ink-soft);}
+  .vb-tut .vt-e{flex-shrink:0;font-size:1.05rem;line-height:1.4;}
+  .vb-tut .vt-t{flex:1;}
+  .vb-tut b{color:var(--ink);font-weight:700;}
 
   /* 3-2-1 countdown — pinned above the starting line (not dead-centre, so it
      reads like a race light rather than a modal), colour races warm-to-go and
@@ -1134,10 +1139,21 @@
       <h2>Choose your team</h2>
       <p>Pick three cats currently available at the Cove. <span id="volleyPickCount">(0 / 3)</span></p>
       <div class="fp-grid" id="volleyPickGrid"></div>
-      <p class="vb-hint">The cats play by themselves. Tap the one you want on the ball — and tap anyone who's nodding off.</p>
       <div class="btn-row">
         <button class="btn primary" id="volleyStart" disabled>Down to the court</button>
         <button class="btn" id="volleyCancel">Maybe later</button>
+      </div>
+    </div>
+    <div class="fest-panel" id="festVolleyTut" hidden>
+      <div class="fp-art">🏐</div>
+      <h2>The rules, briefly</h2>
+      <ul class="vb-tut">
+        <li><span class="vt-e">🐈</span><span class="vt-t">Your cats have agreed to play volleyball. Their commitment ends there.</span></li>
+        <li><span class="vt-e">👆</span><span class="vt-t">When the ball comes over, <b>tap the cat you want to get it.</b> They'll act like that was the plan.</span></li>
+        <li><span class="vt-e">🥱</span><span class="vt-t"><b>Tap a yawning cat</b> to wake it. A cat that's fully asleep takes two taps and a stern look.</span></li>
+      </ul>
+      <div class="btn-row">
+        <button class="btn primary" id="volleyTutGo">Understood. Probably.</button>
       </div>
     </div>
     <div class="volley-hud" id="volleyHud" hidden>
@@ -8192,6 +8208,7 @@ function openFestPicker(kind) {
   document.getElementById("festPanel").hidden = true;   // shown once we've actually arrived
   document.getElementById("festBoxPanel").hidden = true;
   document.getElementById("festVolleyPanel").hidden = true;
+  document.getElementById("festVolleyTut").hidden = true;
   document.getElementById("volleyHud").hidden = true;
   document.getElementById("volleyBanner").hidden = true;
   document.getElementById("festCountdown").hidden = true;
@@ -8355,6 +8372,7 @@ function closeFest() {
   document.getElementById("festPanel").hidden = true;
   document.getElementById("festBoxPanel").hidden = true;
   document.getElementById("festVolleyPanel").hidden = true;
+  document.getElementById("festVolleyTut").hidden = true;
   document.getElementById("volleyHud").hidden = true;
   document.getElementById("volleyCom").hidden = true;
   document.getElementById("volleyBanner").hidden = true;
@@ -8787,7 +8805,18 @@ document.getElementById("fc-volley").addEventListener("click", () => {
 document.getElementById("boxCancel").addEventListener("click", closeFest);
 document.getElementById("boxStart").addEventListener("click", startBoxChallenge);
 document.getElementById("volleyCancel").addEventListener("click", closeFest);
-document.getElementById("volleyStart").addEventListener("click", startCoveVolley);
+// first match of the session gets a quick deadpan how-to; after that, straight in
+document.getElementById("volleyStart").addEventListener("click", () => {
+  if (volleyPickSel.length !== 3) return;
+  if (_vbTutSeen) { startCoveVolley(); return; }
+  document.getElementById("festVolleyPanel").hidden = true;
+  document.getElementById("festVolleyTut").hidden = false;
+});
+document.getElementById("volleyTutGo").addEventListener("click", () => {
+  _vbTutSeen = true;
+  document.getElementById("festVolleyTut").hidden = true;
+  startCoveVolley();
+});
 document.getElementById("festSkip").addEventListener("click", () => {
   if (festKind === "box") {
     if (boxPhase !== "play" && boxPhase !== "settle") return;
@@ -9303,7 +9332,7 @@ let volleyParts = [], volleyBall = null, volleyPhase = "idle", matchT = 0, _voll
 let volleyScore = { cove: 0, visit: 0 }, volleyVisitName = "Sunbeam Cove";
 let volleyPickSel = [], _vbServeAt = 0, _vbPointAt = 0, _vbResultAt = 0, _vbServer = "visit";
 let _vbResultShown = false, _vbReceiver = null, _vbFast = false, _vbNoDrowse = false, _vbBannerUntil = 0;
-let _vbWakeCd = 0, _vbAllAsleepUntil = 0, _vbSaidAllAsleep = false, _vbMaxDeficit = 0, _vbLastWinner = null, _vbLastTapAt = -9;
+let _vbWakeCd = 0, _vbAllAsleepUntil = 0, _vbSaidAllAsleep = false, _vbMaxDeficit = 0, _vbLastWinner = null, _vbLastTapAt = -9, _vbTutSeen = false;
 function _vwpick(w) { let s = 0; for (const k in w) s += w[k]; let r = Math.random() * s;
   for (const k in w) { r -= w[k]; if (r <= 0) return k; } return Object.keys(w)[0]; }
 function volleyFit() {
@@ -9421,6 +9450,7 @@ function startCoveVolley() {
   document.getElementById("vbNameB").textContent = visit.name;
   updateVolleyHud();
   document.getElementById("festVolleyPanel").hidden = true;
+  document.getElementById("festVolleyTut").hidden = true;
   document.getElementById("volleyHud").hidden = false;
   document.getElementById("volleyBanner").hidden = true;
   document.getElementById("festBar").hidden = false;
@@ -14617,6 +14647,7 @@ window.__cove.volleyForce = (what, idx = 0) => {
   else if (what === "call") { volleyParts.forEach(p => { if (p.side === "cove") p._calledUntil = 0; }); if (cove[idx]) { cove[idx]._calledUntil = matchT + 2.6; cove[idx]._callFlash = matchT; } }
   else if (what === "fast" || what === "accel") _vbFast = !_vbFast;
   else if (what === "nodrowse") _vbNoDrowse = !_vbNoDrowse;
+  else if (what === "tut") _vbTutSeen = false;
   return window.__cove.volleyState();
 };
 window.__cove.volleyStep = (n = 1, dt = 0.05) => { for (let i = 0; i < n; i++) if (festKind === "volley" && festMode) renderVolley(dt); return window.__cove.volleyState(); };
