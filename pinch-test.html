@@ -8627,7 +8627,7 @@ const DECOR_PROPS = [
     movable:true, place:{ x:W*0.075, y:H*0.90, s:1.1 }, render(g,t,x,y,s){ propRowboat(g, x, y, s); } },
   { id:"windmill", name:"Pole windmill",   price: 8000, blurb:"A little pole windmill. The sails turn on their own.",
     movable:true, place:{ x:W*0.91, y:H*0.60, s:1.25 }, render(g,t,x,y,s){ propWindmill(g, x, y, s, t); } },
-  { id:"flagpole", name:"Flag pole",       price: 2600, blurb:"Fly your country's flag over the cove. Tap it any time to change it.",
+  { id:"flagpole", name:"Flag pole",       price: 900, blurb:"Fly your country's flag over the cove. Tap it any time to change it.",
     movable:true, place:{ x:W*0.90, y:H*0.86, s:1.15 }, render(g,t,x,y,s){ propFlagpole(g, t, x, y, s); } },
 ];
 // every country's flag is its own emoji — built from the two-letter code
@@ -13100,6 +13100,15 @@ resize();
 _lastViewBottom = _viewBottomY;
 load();
 restoreCats();
+// PINCH TEST ONLY: stand a flag pole in the cove from the start so it's easy to try
+try {
+  G.cosmetics = G.cosmetics || {};
+  G.cosmetics.props = G.cosmetics.props || {};
+  if (!G.cosmetics.props.flagpole && !G.cosmetics._flagpoleSeeded) {
+    G.cosmetics.props.flagpole = true;
+    G.cosmetics._flagpoleSeeded = true;
+  }
+} catch (e) {}
 loadEntitlements();                    // pull purchases from the dedicated iapStore — runs whatever load() did
 applyEntitlements();                   // re-derive perks from the cached entitlements immediately
 // Hooks the native billing bridge (scripts/capacitor-bridge.js) calls back into.
