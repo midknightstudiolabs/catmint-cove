@@ -9591,9 +9591,13 @@ function tickAngler(m, dt) {
     const zx = (isBigPick && f._zx) ? f._zx : spot.zx;
     const zy = (isBigPick && f._zy) ? f._zy : spot.zy;
     const R = isBigPick ? 44 : spot.catchR;
-    const past = (f.vx > 0 && f.x > zx + R * 2.0) || (f.vx < 0 && f.x < zx - R * 2.0);
-    const inZone = Math.hypot(f.x - zx, f.y - zy) < R * 0.5;
-    if (inZone && fishT - m.focusAt > 0.15) { doPounce(m, isBigPick && fishBig.phase === "focused"); return; }
+    const past = (f.vx > 0 && f.x > zx + R * 2.1) || (f.vx < 0 && f.x < zx - R * 2.1);
+    // auto-pounce only once the fish has slipped past the sweet spot and is
+    // leaving — a "last chance" the cat takes for you. Timing a manual pounce
+    // as it crosses the centre is meaningfully better; this just isn't a whiff.
+    const leaving = (f.vx > 0 && f.x > zx + R * 0.45) || (f.vx < 0 && f.x < zx - R * 0.45);
+    const reachable = Math.hypot(f.x - zx, f.y - zy) < R * 1.15;
+    if (leaving && reachable && fishT - m.focusAt > 0.15) { doPounce(m, isBigPick && fishBig.phase === "focused"); return; }
     if (past) { m.state = "idle"; m.focus = null; f.focusedBy = null; c.squash = 0; c.state = "seeking"; }
     return;
   }
