@@ -64,35 +64,46 @@ Both stores need these before you can submit — none of it is code:
   - **App Store subtitle** (30 char max): `A cozy cat sanctuary`
   - **Play short description** (80 char max):
     `A cozy corner where cats come to be looked after — and you make it theirs.`
-  - **Full description** (both stores) — V3 draft, tweak freely. Positioning:
-    a warmer *Neko Atsume × a light touch of Tamagotchi × decorate-your-space*.
-    Cats need looking after and a badly-neglected one *can* wander off (it stays
-    in your field guide — nothing is ever lost for good), but the register is
-    still calm: a telegraphed warning every time, no timer on the screen, no
-    punishment for a day away.
-    > Catmint Cove is a quiet place. Cats wander in needing someone — a warm
-    > spot in the sun, a full bowl, fresh water, a scratch behind the ears — and
-    > you look after them.
+  - **Full description** (both stores) — FINAL, approved by the dev 2026-09-07.
+    Positioning: a warmer *Neko Atsume × a light touch of Tamagotchi ×
+    decorate-your-space*. Calm register: a telegraphed warning every time, no
+    timer on the screen, no punishment for a day away.
+    > Catmint Cove is a quiet place.
     >
-    > Keep them fed and comfortable and they settle in and make the cove home.
-    > Let things slide too long and a cat might pad off down the shore — you'll
-    > always get a clear warning first, and it's still waiting in your field
-    > guide if you want to coax it back. A day away costs you nothing: the cove
-    > carries on without you and tells you what happened when you return.
+    > Cats wander in needing someone — a warm spot in the sun, a full bowl,
+    > fresh water, a scratch behind the ears — and you look after them.
     >
-    > Every cat has its own way of being a cat — a lazy one loafs, a bold one
-    > gets the zoomies, a shy one watches from the long grass — and the more
-    > time you spend together, the more you notice.
+    > Keep them fed and comfortable and they'll settle in and make the Cove
+    > home. Let things slide for too long and a cat might pad off down the
+    > shore — but you'll always get a clear warning first. And if one does
+    > wander off, it'll still be waiting in your field guide whenever you're
+    > ready to coax it back.
     >
-    > Slowly you make the place theirs: mend the old dock, plant the catmint,
-    > light the little bakery oven, nudge a bed into the corner it wants to be
-    > in. Send a few cats off exploring and read the postcards they send home.
-    > Fill the field guide. Frame a photo. Sit with one cat a while and just
-    > watch it groom.
+    > A day away costs you nothing. The Cove carries on without you and tells
+    > you what happened when you return.
+    >
+    > Every cat has its own way of being a cat. A lazy one loafs. A bold one
+    > gets the zoomies. A shy one watches from the long grass. Spend enough
+    > time together and you'll start noticing the little things that make each
+    > one different.
+    >
+    > Slowly, you make the place theirs. Mend the old dock. Plant the catmint.
+    > Light the little bakery oven. Find just the right spot for a bed. Send a
+    > few cats off exploring and read the postcards they send home.
+    >
+    > Fill the field guide. Frame a photo. Or sit with one cat for a while and
+    > just watch it groom.
     >
     > A cozy corner of the world where cats come to be looked after — and you
     > slowly make it theirs.
-  - **Keywords** (App Store, 100 char): `cat,cats,cozy,idle,relax,calm,pet,animal,collector,sanctuary,kitten,chill,wholesome`
+    >
+    > No pressure to constantly check in. No punishment for taking a day away.
+    >
+    > The Cove will be here when you get back.
+  - **App Store promo text** (170 char, editable without review):
+    `A quiet place where cats wander in needing someone. Feed them, learn their ways, make the cove home — no timers, no way to lose. Somewhere calm to check in on.`
+  - **Keywords** (App Store, 100 char): `cat,cats,cozy,idle,relax,calm,pet,animal,sanctuary,kitten,chill,wholesome,collector,cute`
+  - **Copyright:** `2026 Midknight Studio Labs`
   - **Category:** Games ▸ Simulation (or Casual)
 - **Privacy policy URL** — required. Publish `privacy.html` (repo root) as a
   Blogspot page on `midknightstudiolabs.com`; text of record is `PRIVACY.md`.
