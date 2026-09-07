@@ -134,6 +134,7 @@
   button.btn.primary{background:var(--accent);color:#fff;border-color:transparent;}
   button.btn.primary:hover{background:var(--accent-bright);}
   button.btn:disabled{opacity:.45;cursor:not-allowed;}
+  button.btn[hidden]{display:none!important;}   /* button.btn's display:flex otherwise outranks the UA [hidden] default (see #festBtn, #titleScreen) */
   .btn .ico{font-size:1.05rem;line-height:1;}
 
   /* ---- title screen — the first thing anyone sees ----
@@ -8043,6 +8044,7 @@ function raceX(p) { return 150 + clamp(p, 0, 1) * 1100; }
 // the picker over the same grounds.
 function openFestPicker() {
   if (festMode || restMode || !cats.length) return;
+  if (!festUnlocked()) return;   // day-5 gate — belt for any entry point past the (now correctly hidden) 🎪 button
   if (_placing || _arranging) exitPlacement();
   ensureAudio();   // a real tap — safe to unlock/start audio here, same as opening rest
   restClearUI(); closeAllPanels(); exitFocus();
@@ -13126,7 +13128,7 @@ window.__cove.focus = (name) => {
   return "no such cat";
 };
 // Cove Festival — opens the picker panel (see openFestPicker())
-window.__cove.fest = () => { openFestPicker(); return { on: festMode, picking: !document.getElementById("festPanel").hidden }; };
+window.__cove.fest = () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker(); return { on: festMode, picking: !document.getElementById("festPanel").hidden }; };
 // perf: read the adaptive-detail state, or pin it (true/false) to preview the lite look
 window.__cove.perfLite = (v) => {
   if (v !== undefined) {
