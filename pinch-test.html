@@ -50,8 +50,8 @@
   /* immersive (black-translucent status bar / PWA): a whisper of shade in the
      status-bar strip so the clock stays legible over a bright sky and the phone
      chrome reads as part of the cove's frame, not a separate bar */
-  #app::before{content:"";position:fixed;left:0;right:0;top:0;height:calc(env(safe-area-inset-top) + 6px);
-    background:linear-gradient(rgba(20,26,30,.28),rgba(20,26,30,0));z-index:19;pointer-events:none;}
+  #app::before{content:"";position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);
+    background:linear-gradient(rgba(20,26,30,.3),rgba(20,26,30,0));z-index:19;pointer-events:none;}
 
   /* ---- top HUD ---- */
   #hud{
@@ -841,7 +841,9 @@
   #hint #hintX{flex:0 0 auto;width:1.5rem;height:1.5rem;border-radius:50%;border:none;
     background:#eef1e3;color:var(--ink-soft);cursor:pointer;font-size:.7rem;line-height:1;padding:0;}
   #app.resting #hint,#app.resting #toast{opacity:0;pointer-events:none;}
-  @media(max-width:600px){ #hint{bottom:calc(3.95rem + env(safe-area-inset-bottom));font-size:.8rem;} }
+  @media(max-width:600px){ #hint{bottom:calc(4.45rem + env(safe-area-inset-bottom));font-size:.8rem;} }
+  /* when the next-action hint is up, float the toast clear above it (it shares the bottom strip) */
+  #app.has-hint #toast{bottom:calc(8.4rem + env(safe-area-inset-bottom));}
   button.btn.primary.full{background:#c9b98f;color:#4a4230;}
   /* ---- cold open: a small speech card — Midknight's line + the cue ---- */
   #hint.cold{flex-direction:column;align-items:stretch;gap:.3rem;text-align:left;
@@ -925,6 +927,9 @@
   /* focus camera — press & hold a cat to sit with it; the chrome recedes */
   #hud,#actions,#toast,#hint{transition:opacity .35s ease;}
   #app.focusing #hud,#app.focusing #actions,#app.focusing #toast,#app.focusing #hint{opacity:0;pointer-events:none;}
+  /* the ⊙ / × whole-cove button: hidden with the rest of the chrome in rest / festival / cold-open,
+     but kept during a zoom-out (it's the way back) */
+  #app.resting #ovBtn,#app.festing #ovBtn,#app.cold-open #ovBtn{opacity:0!important;pointer-events:none;}
   #focusBar{
     position:absolute;left:50%;transform:translateX(-50%);
     bottom:max(1.1rem,calc(env(safe-area-inset-bottom) + .5rem));
@@ -4193,12 +4198,12 @@ canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeou
   addEventListener("DOMContentLoaded", () => {
     const mark = document.createElement("div");
     mark.textContent = "⊙ pinch-zoom test";
-    mark.style.cssText = "position:fixed;left:50%;top:calc(6px + env(safe-area-inset-top));transform:translateX(-50%);z-index:60;background:rgba(36,31,23,.82);color:#f4efe2;font:600 11px/1 'Hanken Grotesk',sans-serif;padding:5px 10px;border-radius:999px;pointer-events:none;letter-spacing:.02em;";
+    mark.style.cssText = "position:fixed;left:calc(6px + env(safe-area-inset-left));top:calc(max(env(safe-area-inset-top),16px) + 6.2rem);z-index:18;background:rgba(36,31,23,.55);color:#f4efe2;font:600 9px/1 'Hanken Grotesk',sans-serif;padding:3px 7px;border-radius:999px;pointer-events:none;letter-spacing:.02em;opacity:.7;";
     document.getElementById("app").appendChild(mark);
     const btn = document.createElement("button");
     btn.id = "ovBtn";
     btn.title = "See the whole cove";
-    btn.style.cssText = "position:fixed;right:calc(10px + env(safe-area-inset-right));bottom:calc(74px + env(safe-area-inset-bottom));z-index:55;width:44px;height:44px;border-radius:50%;border:none;background:#f7f5ec;color:#356b4c;display:grid;place-items:center;box-shadow:0 3px 12px rgba(36,31,23,.25);cursor:pointer;-webkit-tap-highlight-color:transparent;";
+    btn.style.cssText = "position:fixed;right:calc(10px + env(safe-area-inset-right));top:calc(max(env(safe-area-inset-top),16px) + 3.9rem);z-index:24;width:40px;height:40px;border-radius:50%;border:none;background:rgba(247,245,236,.94);color:#356b4c;display:grid;place-items:center;box-shadow:0 3px 12px rgba(36,31,23,.22);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .3s ease;";
     btn.onclick = () => { if (_focus || restMode || festMode) return; ovSetTarget(_ovTarget > 0.5 ? 0 : 1, true); };
     document.getElementById("app").appendChild(btn);
     _ovSyncBtn();
@@ -5685,6 +5690,7 @@ function renderHint() {
   if (!txt || (txt === _hintDismissedText && Date.now() - _hintDismissedAt < 180000)) {
     if (!el.hidden) el.hidden = true;
     _hintCur = null;
+    document.getElementById("app").classList.remove("has-hint");
     return;
   }
   if (txt !== _hintCur) {
@@ -5695,6 +5701,7 @@ function renderHint() {
     else go.hidden = true;
     el.hidden = false;
   }
+  document.getElementById("app").classList.toggle("has-hint", !el.hidden);
 }
 document.getElementById("hintGo").addEventListener("click", (e) => { e.stopPropagation(); ensureAudio(); const f = e.currentTarget._act; if (f) f(); });
 document.getElementById("hintX").addEventListener("click", (e) => {
@@ -5702,6 +5709,7 @@ document.getElementById("hintX").addEventListener("click", (e) => {
   if (e.currentTarget._skip || _cold) { endColdOpen(true); return; }   // ✕ = skip the intro while it's running
   _hintDismissedText = _hintCur; _hintDismissedAt = Date.now();
   document.getElementById("hint").hidden = true; _hintCur = null;
+  document.getElementById("app").classList.remove("has-hint");
 });
 
 /* ---------- panels: shop / catdex / today ---------- */
