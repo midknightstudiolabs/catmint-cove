@@ -4476,7 +4476,7 @@ function buyAccessory(c, key) {                   // buy + wear; returns true on
 }
 function renderWardrobe(c) {
   if (!cc.dress) return;
-  if (!c || c.mascot || c.visitor) { cc.dress.hidden = true; cc.dress.innerHTML = ""; return; }
+  if (!c || c.visitor) { cc.dress.hidden = true; cc.dress.innerHTML = ""; return; }   // Midknight can be dressed up too; Labubu (visitor) can't
   cc.dress.hidden = false;
   const worn = new Set(c.worn || []);
   const bySlot = {};
@@ -4905,7 +4905,7 @@ let shopTab = "featured";
 let shopDressCat = null;
 function openShopDress(cat) {
   shopTab = "dress";
-  if (cat && !cat.mascot && cat !== shopDressCat) { shopDressCat = cat; _dressWorn = null; }
+  if (cat && !cat.visitor && cat !== shopDressCat) { shopDressCat = cat; _dressWorn = null; }
   if (panels.shop.hidden) togglePanel("shop");
   else { hideCatCard(); hideToast(); renderShop(); document.getElementById("shopList").scrollTop = 0; }
 }
@@ -5140,7 +5140,7 @@ function dressNewItems(c) {   // items tried on that the cat doesn't own yet (ne
 }
 function stopDressLoop() { if (_dressRAF) { cancelAnimationFrame(_dressRAF); _dressRAF = 0; } }
 function renderShopDress(list) {
-  const cs = cats.filter(c => !c.mascot && !c.visitor);
+  const cs = cats.filter(c => !c.visitor);   // Midknight included — he can wear things now
   stopDressLoop();
   if (!cs.length) {
     list.classList.remove("dressmode");
@@ -12261,6 +12261,42 @@ function resolveAdventure(advId, onDone) {
   renderAdventureCard();
   runVignette(advVignette(a.dest, results), { cat: results[0].cat, onDone });
 }
+// call an in-progress party home early — they return with nothing from the trip
+function recallAdventure(advId) {
+  const a = activeAdvs().find(x => x.id === advId);
+  if (!a || Date.now() >= a.endsAt) { renderAdventureCard(); return; }
+  const party = advPartyOf(a);
+  const who = (a.cats && a.cats.length) ? joinNice(a.cats) : (a.cat || "the party");
+  openModal(`<div class="reveal">
+    <div class="kicker">Call them home</div>
+    <h2>End the trip early?</h2>
+    <p class="sub">${esc(who)} will head straight back to the cove. They won't bring anything home from this trip.</p>
+    <div class="row">
+      <button class="btn primary" id="rc-yes">Call them home</button>
+      <button class="btn" id="rc-no">Let them stay out</button>
+    </div></div>`);
+  document.getElementById("rc-no").onclick = closeModal;
+  document.getElementById("rc-yes").onclick = () => {
+    closeModal();
+    party.forEach((data, k) => {
+      let c = cats.find(x => x.name === data.name || (data.mascot && x.mascot));
+      if (!c) {
+        c = new Cat({ ...data, x: -34 - k * 30, y: rand(H * 0.55, H * 0.8) });
+        cats.push(c);
+        c.state = "arriving"; c.tx = clamp(W * (0.3 + k * 0.16), 40, W - 40); c.ty = c.y; c.face = 1;
+      } else if (data.mood != null) c.mood = data.mood;
+      for (let i = _departures.length - 1; i >= 0; i--) if (_departures[i].c === c) _departures.splice(i, 1);
+      gainBond(c, 2, true);
+      spawnParticles(c.x + 24, c.y - 14, "twinkle", 5);
+    });
+    G.adventures = activeAdvs().filter(x => x !== a);
+    dedupeCats();
+    save(); syncHud(); rebuildAttractors();
+    renderAdventureCard();
+    logMoment("🧭", `${who} came home early — you called the trip off.`, "tale");
+    toast(party.length > 1 ? "The party's back — you called them home." : `${who} is back — you called them home.`, 4);
+  };
+}
 /* ---- postcards: a note home partway through a trip ---- */
 const POSTCARD_LINES = {
   fishing: [
@@ -12397,7 +12433,7 @@ function renderAdventureCard() {
       <div class="adv-sub">${back ? "back at the cove — see how it went" : `${T.label.toLowerCase()} · back ${whenText(a.endsAt)}`}</div></div></div>
       ${pc ? `<div class="adv-postcard">✉️ ${esc(pc.text.replace(/\s*—\s*.*$/, ""))}</div>` : ""}
       ${back ? `<button class="btn primary" data-claim="${a.id}">See how it went</button>`
-             : (DEV_BUILD ? `<button class="btn tiny" data-skip="${a.id}">skip · dev</button>` : "")}
+             : `<button class="btn tiny" data-recall="${a.id}">Call them home</button>${DEV_BUILD ? ` <button class="btn tiny" data-skip="${a.id}">skip · dev</button>` : ""}`}
     </div>`;
   }
   if (ready) {
@@ -12415,6 +12451,7 @@ function renderAdventureCard() {
   html += mapLine();
   el.innerHTML = html;
   el.querySelectorAll("[data-claim]").forEach(b => b.onclick = () => resolveAdventure(b.dataset.claim));
+  el.querySelectorAll("[data-recall]").forEach(b => b.onclick = () => recallAdventure(b.dataset.recall));
   el.querySelectorAll("[data-skip]").forEach(b => b.onclick = () => {
     const a = activeAdvs().find(x => x.id === b.dataset.skip);
     if (a) { a.endsAt = Date.now(); renderAdventureCard(); syncHud(); }
