@@ -12566,6 +12566,25 @@ window.__cove = {
     return { products: IAP_PRODUCTS, owned: G.iap.owned, grants: G.iap.grants, storeKey: IAP_STORE_KEY };
   },
   // big labelled sheet drawn straight to the canvas for close inspection
+  // a single cat, drawn big to an offscreen canvas — for app-icon / marketing art.
+  // returns a PNG data URL. opts: size, scale, state, star, worn, bg, baseY, dx, dy
+  portrait(coatKey = "midknight", opts = {}){
+    const size = opts.size || 1024, k = size / 1024;
+    const cv = document.createElement("canvas"); cv.width = cv.height = size;
+    const g = cv.getContext("2d");
+    if (opts.bg) { g.fillStyle = opts.bg; g.fillRect(0, 0, size, size); }
+    const c = new Cat({ coatKey, mascot: opts.mascot ?? (coatKey === "midknight"),
+      star: opts.star ?? 2, markSeed: opts.markSeed ?? 1, x: 0, y: 0 });
+    c.state = opts.state || "loafing"; c.blink = 3; c.bob = 0.5; c.tail = 0.3;
+    c.trotting = false; c.mood = opts.mood ?? 64;
+    if (opts.worn) c.worn = normalizeWorn(opts.worn);
+    g.save();
+    g.translate(size / 2 + (opts.dx || 0) * k, size * (opts.baseY ?? 0.92) + (opts.dy || 0) * k);
+    const s = (opts.scale || 12) * k; g.scale(s, s);
+    try { drawCat(g, c, true); } catch (e) { g.restore(); return "err: " + e.message; }
+    g.restore();
+    return cv.toDataURL("image/png");
+  },
   sheet(scale = 2.7, state = "loafing"){
     _paused = true;
     const errs = [];
