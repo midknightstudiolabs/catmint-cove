@@ -800,6 +800,7 @@
   .vb-sn{font-weight:700;font-size:.8rem;}
   .vb-ss{font-size:.72rem;color:var(--ink-soft);}
   .vb-reward{display:inline-block;margin-top:.3rem;color:var(--accent);font-weight:700;}
+  .vb-hint{font-size:.74rem;color:var(--ink-faint);line-height:1.4;margin:-.4rem 0 .9rem;}
 
   /* 3-2-1 countdown — pinned above the starting line (not dead-centre, so it
      reads like a race light rather than a modal), colour races warm-to-go and
@@ -1133,6 +1134,7 @@
       <h2>Choose your team</h2>
       <p>Pick three cats currently available at the Cove. <span id="volleyPickCount">(0 / 3)</span></p>
       <div class="fp-grid" id="volleyPickGrid"></div>
+      <p class="vb-hint">The cats play by themselves. Tap the one you want on the ball — and tap anyone who's nodding off.</p>
       <div class="btn-row">
         <button class="btn primary" id="volleyStart" disabled>Down to the court</button>
         <button class="btn" id="volleyCancel">Maybe later</button>
@@ -9226,12 +9228,15 @@ function showBoxResult() {
    Rides the festival rails (overlay, wipe, grounds audio, countdown, result
    card, drawCat, grantReward). Visiting cats are throwaway — never touch
    `cats`, the Catdex, or the save. Everything lives in this block. */
-const VB_W = 560, VB_H = 1180, NET_Y = 588;
+// a small homemade court — compact so the cats fill the frame and read clearly,
+// not a regulation stadium
+const VB_W = 560, VB_H = 980, NET_Y = 486;
 const VB_HOME = {
-  visit: [{ x: 150, y: 330 }, { x: 290, y: 268 }, { x: 430, y: 330 }],
-  cove:  [{ x: 150, y: 872 }, { x: 290, y: 946 }, { x: 430, y: 872 }],
+  visit: [{ x: 148, y: 272 }, { x: 290, y: 220 }, { x: 432, y: 272 }],
+  cove:  [{ x: 148, y: 710 }, { x: 290, y: 764 }, { x: 432, y: 710 }],
 };
-const VB_MIDY = { cove: 872, visit: 320 };   // the row an awake cat holds while covering
+const VB_MIDY = { cove: 706, visit: 262 };   // the row a cat holds while covering
+const VB_CT = { top: 168, bot: 884, cy0: 540, cy1: 862, vy0: 190, vy1: 456 };   // court bounds / per-side landing-y ranges
 // ---- commentator: event-keyed line pools + a priority so a big moment isn't
 // stepped on by a small one. {catName}/{playerCove}/{visitingCove} interpolate.
 const VB_COM = {
@@ -9298,7 +9303,7 @@ let volleyParts = [], volleyBall = null, volleyPhase = "idle", matchT = 0, _voll
 let volleyScore = { cove: 0, visit: 0 }, volleyVisitName = "Sunbeam Cove";
 let volleyPickSel = [], _vbServeAt = 0, _vbPointAt = 0, _vbResultAt = 0, _vbServer = "visit";
 let _vbResultShown = false, _vbReceiver = null, _vbFast = false, _vbNoDrowse = false, _vbBannerUntil = 0;
-let _vbWakeCd = 0, _vbAllAsleepUntil = 0, _vbSaidAllAsleep = false, _vbMaxDeficit = 0, _vbLastWinner = null;
+let _vbWakeCd = 0, _vbAllAsleepUntil = 0, _vbSaidAllAsleep = false, _vbMaxDeficit = 0, _vbLastWinner = null, _vbLastTapAt = -9;
 function _vwpick(w) { let s = 0; for (const k in w) s += w[k]; let r = Math.random() * s;
   for (const k in w) { r -= w[k]; if (r <= 0) return k; } return Object.keys(w)[0]; }
 function volleyFit() {
@@ -9318,7 +9323,7 @@ function mkVolleyPart(c, side, idx) {
   return {
     cat: c, side, idx, home: side === "cove" ? VB_HOME.cove[idx] : VB_HOME.visit[idx],
     drowse: rand(0, 0.14), tier: "awake", _drowsyAt: 0, _sleepUntil: 0, _wakeAt: 0, _drowseVar: rand(0.82, 1.28),
-    _protectUntil: 0, _primed: 0, _pokedAt: 0, _yawnAt: 0,
+    _protectUntil: 0, _primed: 0, _pokedAt: 0, _yawnAt: 0, _calledUntil: 0, _callFlash: 0, _sharpUntil: 0,
     act: null, _actUntil: 0, _hesUntil: 0,
     stats: { returns: 0, saves: 0, points: 0, naps: 0 },
   };
@@ -9392,7 +9397,7 @@ function startCoveVolley() {
   matchT = 0; volleyScore = { cove: 0, visit: 0 }; volleyBall = null;
   _vbServeAt = 0; _vbPointAt = 0; _vbResultAt = 0; _vbServer = Math.random() < 0.5 ? "cove" : "visit";
   _vbResultShown = false; _vbReceiver = null; _vbBannerUntil = 0;
-  _vbWakeCd = 0; _vbAllAsleepUntil = 0; _vbSaidAllAsleep = false; _vbMaxDeficit = 0;
+  _vbWakeCd = 0; _vbAllAsleepUntil = 0; _vbSaidAllAsleep = false; _vbMaxDeficit = 0; _vbLastTapAt = -9; _vbLastWinner = null;
   vbCom = { text: "", at: -99, pri: 0, last: "" };
   document.getElementById("volleyCom").hidden = true;
   particles.length = 0; floaters.length = 0;
@@ -9433,7 +9438,7 @@ function startCoveVolley() {
 }
 function volleyBegin() {
   volleyPhase = "play";
-  _vbServeAt = matchT + 0.7;
+  _vbServeAt = matchT + 0.5;
 }
 function updateVolleyHud() {
   document.getElementById("vbScoreA").textContent = volleyScore.cove;
@@ -9445,7 +9450,7 @@ function vbAwakeOn(side) { return volleyParts.filter(p => p.side === side && (p.
 function vbSideAsleepCount(side) { return volleyParts.filter(p => p.side === side && (p.tier === "asleep" || p.tier === "drowsy" || p.tier === "waking")).length; }
 function vbTargetPoint(side) {
   // aim for a gap — away from that side's awake cats, inside their court
-  const yLo = side === "cove" ? 646 : 176, yHi = side === "cove" ? 1004 : 552;
+  const yLo = side === "cove" ? VB_CT.cy0 : VB_CT.vy0, yHi = side === "cove" ? VB_CT.cy1 : VB_CT.vy1;
   let best = { x: rand(80, 480), y: rand(yLo, yHi) }, bestD = -1;
   for (let i = 0; i < 5; i++) {
     const cand = { x: rand(80, 480), y: rand(yLo, yHi) };
@@ -9461,20 +9466,21 @@ function serveBall() {
   if (!servers.length) { side = side === "cove" ? "visit" : "cove"; servers = vbAwakeOn(side); }
   const recv = side === "cove" ? "visit" : "cove";
   const from = servers.length ? servers[(Math.random() * servers.length) | 0]
-    : { cat: { x: 280, y: side === "cove" ? 1020 : 168 } };
+    : { cat: { x: 280, y: side === "cove" ? VB_H - 40 : 130 } };
   // serve toward the middle of the receiving court so a rally can start — but if
   // that side is down cats, lean toward the open court (their nap is the reason
   // the point happens, and it should read).
   const down = 3 - vbAwakeOn(recv).length;
-  const mid = { x: rand(190, 370), y: recv === "cove" ? rand(760, 900) : rand(280, 420) };
+  const my = recv === "cove" ? [VB_CT.cy0 + 40, VB_CT.cy1 - 40] : [VB_CT.vy0 + 30, VB_CT.vy1 - 30];
+  const mid = { x: rand(190, 370), y: rand(my[0], my[1]) };
   const tgt = down >= 1 ? (() => { const gp = vbTargetPoint(recv); const w = clamp(down * 0.35, 0, 0.7);
     return { x: mid.x * (1 - w) + gp.x * w, y: mid.y * 0.6 + gp.y * 0.4 }; })() : mid;
   volleyBall = {
     x: from.cat.x, y: from.cat.y - 18, fromX: from.cat.x, fromY: from.cat.y - 18,
-    toX: tgt.x, toY: tgt.y, t: 0, dur: rand(1.15, 1.45), arcH: rand(120, 175),
+    toX: tgt.x, toY: tgt.y, t: 0, dur: rand(0.92, 1.15), arcH: rand(95, 140),
     side: recv, live: true, lastHit: servers.length ? from : null, touches: 1, spin: 0, _satOn: null,
   };
-  if (from.cat) { from.cat.face = tgt.x >= from.cat.x ? 1 : -1; from.act = "paw"; from._actUntil = matchT + 0.35; }
+  if (from.cat) { from.cat.face = tgt.x >= from.cat.x ? 1 : -1; if (from.act !== undefined) { from.act = "paw"; from._actUntil = matchT + 0.35; } }
   vbTone("serve");
 }
 function vbReach(p) {
@@ -9506,23 +9512,24 @@ function vbRollAction(p, b) {
 function vbLaunchReturn(p, action) {
   const other = p.side === "cove" ? "visit" : "cove";
   // aim toward the other court — a lean toward its biggest gap that grows as the
-  // rally drags on, so long rallies stretch the defence until someone can't
-  // reach rather than ending on a coin flip.
-  const mid = { x: 280, y: other === "cove" ? 825 : 352 };
+  // rally drags on, so long rallies stretch the defence rather than ending on a
+  // coin flip.
+  const mid = { x: 280, y: other === "cove" ? (VB_CT.cy0 + VB_CT.cy1) / 2 : (VB_CT.vy0 + VB_CT.vy1) / 2 };
   const gap = vbTargetPoint(other);
-  const gapW = clamp(0.4 + volleyBall.touches * 0.04, 0.4, 0.72);
-  const tgt = { x: mid.x * (1 - gapW) + gap.x * gapW, y: mid.y * 0.5 + gap.y * 0.5 + rand(-40, 40) };
-  if (volleyBall.touches === 9) vbSay("longRally");
+  const gapW = clamp(0.4 + volleyBall.touches * 0.05, 0.4, 0.75);
+  const tgt = { x: mid.x * (1 - gapW) + gap.x * gapW, y: mid.y * 0.5 + gap.y * 0.5 + rand(-34, 34) };
+  if (volleyBall.touches === 8) vbSay("longRally");
   let arcH, dur;
-  if (action === "boop") { arcH = rand(160, 215); dur = rand(1.45, 1.8); }
-  else if (action === "jump") { arcH = rand(74, 116); dur = rand(1.0, 1.28); }
-  else if (action === "dive") { arcH = rand(64, 100); dur = rand(1.1, 1.35); }
-  else { arcH = rand(120, 165); dur = rand(1.28, 1.62); }
-  if ((p.cat.traits || []).includes("bold")) { arcH *= 0.84; dur *= 0.92; }
+  if (action === "boop") { arcH = rand(120, 165); dur = rand(1.1, 1.35); }
+  else if (action === "jump") { arcH = rand(60, 92); dur = rand(0.8, 1.0); }
+  else if (action === "dive") { arcH = rand(52, 80); dur = rand(0.88, 1.06); }
+  else { arcH = rand(92, 128); dur = rand(1.0, 1.24); }
+  if ((p.cat.traits || []).includes("bold")) { arcH *= 0.85; dur *= 0.92; }
   const b = volleyBall;
   b.fromX = p.cat.x; b.fromY = p.cat.y - 22;
   b.toX = tgt.x; b.toY = tgt.y; b.t = 0; b.dur = dur; b.arcH = arcH; b.side = other; b.touches++;
   b.lastHit = p;
+  if (p.side === "cove") volleyParts.forEach(o => { if (o.side === "cove") o._calledUntil = 0; });  // ball's away — call the next one fresh
   p.cat.face = tgt.x >= p.cat.x ? 1 : -1;
   vbTone(action === "jump" ? "spike" : action === "boop" ? "boop" : "paw");
 }
@@ -9536,13 +9543,24 @@ function vbResolveArrival() {
     vbBallLands(b.side, null);
     return;
   }
-  // 2. the nearest in-play cat has been running to cover — did it get there?
+  // 2. who takes it? On the COVE side the player "calls" a cat by tapping it —
+  //    the called cat commits (bigger reach, clean hands). With nobody called the
+  //    cats hesitate: they don't know whose ball it is, so it's messy. Visitors
+  //    just play at a steady middling competence.
   let it = recvAwake[0], bd = 1e9;
   for (const p of recvAwake) { const dd = Math.hypot(p.cat.x - b.toX, p.cat.y - b.toY); if (dd < bd) { bd = dd; it = p; } }
+  let called = false, hesitant = false;
+  if (b.side === "cove") {
+    const cc = recvAwake.find(p => p._calledUntil > matchT);
+    if (cc && Math.hypot(cc.cat.x - b.toX, cc.cat.y - b.toY) < vbReach(cc) * 1.9) { it = cc; called = true; }
+    else hesitant = true;   // no call → scramble
+  }
   const T = it.cat.traits || [];
   const soloDefender = recvAwake.length === 1;
-  if (T.includes("shy") && b.dur < 1.05 && Math.random() < 0.2) it._hesUntil = matchT + 0.35;
-  const reach = vbReach(it) * (it._hesUntil > matchT ? 0.55 : 1);
+  if (T.includes("shy") && b.dur < 1.0 && Math.random() < 0.2 && !called) it._hesUntil = matchT + 0.35;
+  let reach = vbReach(it) * (it._hesUntil > matchT ? 0.55 : 1);
+  if (called) reach += 30;
+  else if (hesitant) reach -= 22;
   const d = Math.hypot(it.cat.x - b.toX, it.cat.y - b.toY);
 
   // 3. out of range → the court was open here. tried-but-short = WHIFF, didn't
@@ -9601,7 +9619,9 @@ function vbResolveArrival() {
   if (it.tier === "drowsy") whiffP += 0.3;
   else if (it.tier === "tired") whiffP += 0.07;
   if (action === "dive") whiffP += 0.06;
-  if (b.dur < 0.95) whiffP += 0.06;
+  if (b.dur < 0.9) whiffP += 0.06;
+  if (called) whiffP *= 0.3;                  // clean hands — you told them it was theirs
+  else if (hesitant) whiffP += 0.2;           // "was that yours? I thought it was yours"
   if (Math.random() < clamp(whiffP, 0, 0.85)) {
     it.act = "whiff"; it._actUntil = matchT + 0.45;
     if (b.side === "cove") vbSay("whiff", { cat: it.cat.name });
@@ -9701,6 +9721,7 @@ function vbTickDrowse(p, dt) {
   let rate = VB_DROWSE_BASE * p._drowseVar;
   if (T.includes("lazy")) rate *= 1.9;
   if (T.includes("playful")) rate *= 0.8;                       // stays engaged (distracted by the ball)
+  if (matchT < p._sharpUntil) rate *= 0.35;                     // just told to stay sharp
   rate *= clamp(1 + (58 - (c.mood ?? 60)) / 130, 0.72, 1.45);   // low mood → drowsier
   rate *= 1 + Math.min(0.55, matchT / 140);                     // the longer it drags, the sleepier everyone
   if (volleyScore[p.side] < volleyScore[p.side === "cove" ? "visit" : "cove"]) rate *= 0.82;   // trailing cats try harder
@@ -9754,9 +9775,15 @@ function vbMovePart(p, dt) {
   if (p.tier === "waking") { c.walkAmt = 0; c.trotting = false; c._vbLift = 0; return; }
   let tx = p.home.x, ty = VB_MIDY[p.side];
   const ballOurs = volleyPhase === "play" && volleyBall && volleyBall.live && volleyBall.side === p.side;
-  if (ballOurs && p === _vbReceiver) {
+  const called = p.side === "cove" && p._calledUntil > matchT;
+  const yLo = p.side === "cove" ? VB_CT.cy0 - 20 : VB_CT.vy0 - 10, yHi = p.side === "cove" ? VB_CT.cy1 + 10 : VB_CT.vy1 + 10;
+  // an uncalled cove receiver hesitates — holds for the first ~40% of the
+  // ball's flight before committing ("…is that mine?"), losing ground
+  const uncalledStall = p.side === "cove" && ballOurs && p === _vbReceiver && !called
+    && volleyBall.t / volleyBall.dur < 0.42;
+  if (ballOurs && (p === _vbReceiver || called) && !uncalledStall) {
     tx = clamp(volleyBall.toX, 60, 500);
-    ty = clamp(volleyBall.toY, p.side === "cove" ? 646 : 176, p.side === "cove" ? 1004 : 552);
+    ty = clamp(volleyBall.toY, yLo, yHi);
   } else {
     tx = vbCoverX(p);                                     // hold your zone
     if (ballOurs) tx = tx * 0.72 + clamp(volleyBall.toX, 90, 470) * 0.28;   // drift a touch ball-ward
@@ -9766,7 +9793,7 @@ function vbMovePart(p, dt) {
     }
   }
   const hes = p._hesUntil > matchT ? 0.3 : 1;
-  const spd = (p.tier === "drowsy" ? 36 : p.tier === "tired" ? 74 : 100) * hes;
+  const spd = (p.tier === "drowsy" ? 36 : p.tier === "tired" ? 74 : 100) * hes * (called ? 1.32 : 1);
   const dx = tx - c.x, dy = ty - c.y, dist = Math.hypot(dx, dy);
   const m = catMotion(c);
   if (dist > 5) {
@@ -9806,13 +9833,17 @@ function renderVolley(dt) {
   drawVolleyCourt(g);
   if (!volleyParts.length) return;
 
-  // who's chasing the incoming ball
+  // who's chasing the incoming ball — the called cat if there is one, else nearest
   _vbReceiver = null;
   if (volleyBall && volleyBall.live) {
-    let bd = 1e9;
-    for (const p of vbAwakeOn(volleyBall.side)) {
-      const d = Math.hypot(p.cat.x - volleyBall.toX, p.cat.y - volleyBall.toY);
-      if (d < bd) { bd = d; _vbReceiver = p; }
+    const inPlay = vbAwakeOn(volleyBall.side);
+    if (volleyBall.side === "cove") _vbReceiver = inPlay.find(p => p._calledUntil > matchT) || null;
+    if (!_vbReceiver) {
+      let bd = 1e9;
+      for (const p of inPlay) {
+        const d = Math.hypot(p.cat.x - volleyBall.toX, p.cat.y - volleyBall.toY);
+        if (d < bd) { bd = d; _vbReceiver = p; }
+      }
     }
   }
 
@@ -9845,10 +9876,10 @@ function renderVolley(dt) {
   } else if (volleyPhase === "point") {
     for (const p of volleyParts) { vbTickDrowse(p, dt); vbMovePart(p, dt); }
     if (volleyBall && volleyBall._satOn) { volleyBall.x = volleyBall._satOn.cat.x + 14; volleyBall.y = volleyBall._satOn.cat.y - 6; }
-    if (matchT - _vbPointAt > 1.7) {
+    if (matchT - _vbPointAt > 1.1) {
       if (volleyScore.cove >= 3 || volleyScore.visit >= 3) { volleyPhase = "result"; _vbResultAt = matchT; }
       else {
-        volleyPhase = "play"; _vbServeAt = matchT + 0.8;
+        volleyPhase = "play"; _vbServeAt = matchT + 0.55;
         // rally scoring: the side that WON the point serves. Serving puts you on
         // defence first (the returner aims at your gap), so this rubber-bands
         // toward the trailing side instead of running away from them.
@@ -9885,35 +9916,66 @@ function renderVolley(dt) {
   if (particles.length || floaters.length) drawFX(g);
 }
 function drawVolleyCourt(g) {
-  const sky = g.createLinearGradient(0, 0, 0, 210);
-  sky.addColorStop(0, "#bfe0ea"); sky.addColorStop(1, "#e6efe2");
-  g.fillStyle = sky; g.fillRect(0, 0, VB_W, 210);
-  g.fillStyle = "#7ec3cf"; g.fillRect(0, 150, VB_W, 66);                 // sea
-  g.fillStyle = "rgba(255,255,255,0.5)"; g.lineWidth = 2;
-  for (let i = 0; i < 4; i++) { const y = 168 + i * 12 + Math.sin(matchT * 0.5 + i) * 3;
-    g.beginPath(); g.moveTo((matchT * 9 + i * 120) % (VB_W + 80) - 40, y); g.lineTo((matchT * 9 + i * 120) % (VB_W + 80) + 30, y); g.stroke(); }
-  const sand = g.createLinearGradient(0, 200, 0, VB_H);
-  sand.addColorStop(0, "#ecdcb8"); sand.addColorStop(1, "#ddc492");
-  g.fillStyle = sand; g.fillRect(0, 200, VB_W, VB_H - 200);
-  // court outline + centre line
-  g.strokeStyle = "rgba(255,255,255,0.45)"; g.lineWidth = 3;
-  g.strokeRect(44, 210, VB_W - 88, VB_H - 300);
-  g.setLineDash([14, 12]); g.beginPath(); g.moveTo(44, NET_Y); g.lineTo(VB_W - 44, NET_Y); g.stroke(); g.setLineDash([]);
-  // a beach umbrella, corner
-  g.save(); g.translate(70, 250);
-  g.strokeStyle = "#8a6f52"; g.lineWidth = 4; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 54); g.stroke();
-  g.fillStyle = "#e08b6a"; g.beginPath(); g.moveTo(-34, 0); g.quadraticCurveTo(0, -26, 34, 0); g.closePath(); g.fill();
-  g.fillStyle = "#f3ede0"; g.beginPath(); g.moveTo(-12, -6); g.quadraticCurveTo(0, -22, 12, -6); g.closePath(); g.fill();
+  const HZ = 128, OV = 360;                                             // horizon; overdraw to fill the letterbox
+  const sky = g.createLinearGradient(0, -OV, 0, HZ);
+  sky.addColorStop(0, "#c6e2ea"); sky.addColorStop(1, "#e9efe2");
+  g.fillStyle = sky; g.fillRect(-OV, -OV, VB_W + OV * 2, HZ + OV);
+  g.fillStyle = "#7ec3cf"; g.fillRect(-OV, HZ - 36, VB_W + OV * 2, 62);  // sea
+  g.strokeStyle = "rgba(255,255,255,0.5)"; g.lineWidth = 2;
+  for (let i = 0; i < 3; i++) { const y = HZ - 22 + i * 12 + Math.sin(matchT * 0.5 + i) * 2;
+    const x = (matchT * 8 + i * 150) % (VB_W + 70) - 40;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + 34, y); g.stroke(); }
+  const sand = g.createLinearGradient(0, HZ, 0, VB_H + OV);
+  sand.addColorStop(0, "#ecdcb8"); sand.addColorStop(1, "#d8bf88");
+  g.fillStyle = sand; g.fillRect(-OV, HZ - 10, VB_W + OV * 2, VB_H - HZ + OV);
+  // a couple of gulls
+  g.strokeStyle = "rgba(90,100,110,0.5)"; g.lineWidth = 1.6;
+  for (let i = 0; i < 2; i++) { const gx = 120 + i * 260 + Math.sin(matchT * 0.3 + i * 2) * 40, gy = 44 + i * 22;
+    g.beginPath(); g.moveTo(gx - 7, gy); g.quadraticCurveTo(gx, gy - 4, gx + 1, gy); g.quadraticCurveTo(gx + 2, gy - 4, gx + 9, gy); g.stroke(); }
+  // the cove sign, small, back-left
+  g.save(); g.translate(40, VB_CT.top - 6);
+  g.strokeStyle = "#7c6142"; g.lineWidth = 4; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 26); g.stroke();
+  g.fillStyle = "#8a6b47"; roundRect(g, -22, -14, 44, 15, 3); g.fill();
   g.restore();
+  // a striped towel + a pail, back-right
+  g.save(); g.translate(VB_W - 84, VB_CT.top + 6);
+  for (let i = 0; i < 4; i++) { g.fillStyle = i % 2 ? "#e08b6a" : "#f3ede0"; g.fillRect(i * 13 - 2, 0, 13, 30); }
+  g.strokeStyle = "rgba(120,90,60,0.3)"; g.strokeRect(-2, 0, 52, 30);
+  g.fillStyle = "#63b7c4"; g.beginPath(); g.moveTo(58, 30); g.lineTo(56, 12); g.lineTo(76, 12); g.lineTo(74, 30); g.closePath(); g.fill();
+  g.strokeStyle = "#3f97a4"; g.beginPath(); g.arc(66, 12, 10, Math.PI, 0); g.stroke();
+  g.restore();
+  // the playing area — a raked rectangle, corners staked, not a crisp regulation box
+  g.strokeStyle = "rgba(255,255,255,0.4)"; g.lineWidth = 2.5;
+  g.beginPath();
+  g.moveTo(46, VB_CT.top + 3); g.lineTo(VB_W - 44, VB_CT.top - 2);
+  g.lineTo(VB_W - 46, VB_CT.bot + 2); g.lineTo(48, VB_CT.bot - 3); g.closePath(); g.stroke();
+  g.strokeStyle = "rgba(150,120,86,0.12)"; g.lineWidth = 1.5;                // a few rake marks
+  for (let y = VB_CT.top + 40; y < VB_CT.bot; y += 62) { g.beginPath(); g.moveTo(60, y + Math.sin(y) * 4); g.lineTo(VB_W - 60, y - Math.sin(y) * 4); g.stroke(); }
 }
 function drawVolleyNet(g) {
-  g.strokeStyle = "#8a6f52"; g.lineWidth = 6; g.lineCap = "round";
-  g.beginPath(); g.moveTo(44, NET_Y + 6); g.lineTo(44, NET_Y - 84); g.stroke();
-  g.beginPath(); g.moveTo(VB_W - 44, NET_Y + 6); g.lineTo(VB_W - 44, NET_Y - 84); g.stroke();
-  g.fillStyle = "#f4efe0"; g.fillRect(44, NET_Y - 84, VB_W - 88, 5);       // top tape
-  g.strokeStyle = "rgba(255,255,255,0.32)"; g.lineWidth = 1;
-  for (let x = 52; x < VB_W - 44; x += 13) { g.beginPath(); g.moveTo(x, NET_Y - 79); g.lineTo(x, NET_Y - 6); g.stroke(); }
-  for (let y = NET_Y - 76; y < NET_Y - 4; y += 13) { g.beginPath(); g.moveTo(48, y); g.lineTo(VB_W - 48, y); g.stroke(); }
+  const H = 70;   // a low, homemade net
+  // two driftwood posts, slightly leaning
+  for (const [px, lean] of [[46, -3], [VB_W - 46, 4]]) {
+    g.strokeStyle = "#8a7052"; g.lineWidth = 7; g.lineCap = "round";
+    g.beginPath(); g.moveTo(px, NET_Y + 8); g.lineTo(px + lean, NET_Y - H); g.stroke();
+    g.strokeStyle = "#6f593f"; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(px, NET_Y - 14); g.lineTo(px + lean * 0.5, NET_Y - 30); g.stroke();
+  }
+  // a sagging scrap of old fishing net
+  const sag = 10;
+  g.strokeStyle = "rgba(240,236,224,0.85)"; g.lineWidth = 2.5;
+  g.beginPath(); g.moveTo(46, NET_Y - H + sag);
+  g.quadraticCurveTo(VB_W / 2, NET_Y - H + sag * 2.4, VB_W - 46, NET_Y - H + sag); g.stroke();   // top rope
+  g.strokeStyle = "rgba(238,232,218,0.4)"; g.lineWidth = 1;
+  for (let i = 1; i < 10; i++) {                              // loose mesh
+    const x = 46 + i * (VB_W - 92) / 10;
+    const topY = NET_Y - H + sag + Math.sin(i / 10 * Math.PI) * sag * 1.4;
+    g.beginPath(); g.moveTo(x, topY); g.lineTo(x + 4, NET_Y - 8); g.stroke();
+  }
+  for (let j = 0; j < 3; j++) {
+    const y = NET_Y - H + sag + 14 + j * 16;
+    g.beginPath(); g.moveTo(50, y + 6); g.quadraticCurveTo(VB_W / 2, y + 14, VB_W - 50, y + 6); g.stroke();
+  }
 }
 function drawVolleyShadow(g, b) {
   const k = clamp(b.t / b.dur, 0, 1);
@@ -9942,6 +10004,17 @@ function drawVolleyGlyph(g, p) {
   const c = p.cat;
   g.save();
   g.textAlign = "center"; g.textBaseline = "middle";
+  // a fresh tap ripple (call / stay-sharp feedback)
+  if (p._callFlash && matchT - p._callFlash < 0.4) {
+    const k = (matchT - p._callFlash) / 0.4;
+    g.strokeStyle = `rgba(255,255,255,${0.6 * (1 - k)})`; g.lineWidth = 2;
+    g.beginPath(); g.ellipse(c.x, c.y + 4, 14 + k * 20, 7 + k * 10, 0, 0, 7); g.stroke();
+  }
+  // the CALLED cat — a steady ring saying "this one's on it"
+  if (p.side === "cove" && p._calledUntil > matchT && p.tier !== "asleep" && p.tier !== "drowsy") {
+    g.strokeStyle = "rgba(123,166,76,0.9)"; g.lineWidth = 2.5;
+    g.beginPath(); g.ellipse(c.x, c.y + 4, 24, 11, 0, 0, 7); g.stroke();
+  }
   if (p.tier === "drowsy") {
     const yb = Math.sin(matchT * 3 + p.idx) * 2;
     if (p.side === "cove") {   // tappable — a soft pulse ring, dimmed while the wake cooldown is up
@@ -9964,10 +10037,15 @@ function drawVolleyGlyph(g, p) {
   }
   g.restore();
 }
+// one gesture — tap your cat. What it does depends on the cat and the ball:
+//   asleep  → poke (two taps to actually wake)
+//   drowsy  → wake it (shared cooldown)
+//   ball incoming to your side → CALL this cat onto it (clean, committed return)
+//   otherwise → a small "stay sharp" that slows its drowsiness a moment
 function volleyPointer(e) {
-  if (festKind !== "volley" || (volleyPhase !== "play" && volleyPhase !== "point")) return;
+  if (festKind !== "volley" || volleyPhase !== "play") return;
   const pt = e._arena || volleyScreenToArena(e.clientX, e.clientY);
-  let hit = null, hd = 62 * 62;
+  let hit = null, hd = 66 * 66;
   for (const part of volleyParts) {
     if (part.side !== "cove") continue;
     const c = part.cat;
@@ -9976,27 +10054,37 @@ function volleyPointer(e) {
   }
   if (!hit) return;
   const c = hit.cat;
-  if (matchT < _vbWakeCd) return;   // shared cooldown — you can't perk everyone at once
 
-  if (hit.tier === "drowsy") {                       // one tap saves them
-    trackEvent("volleyball_cat_wake_attempt", { cat: c.name, state: "drowsy", ok: true });
-    vbWake(hit, false);
-    _vbWakeCd = matchT + VB_WAKE_CD;
-    vbSay("wake", { cat: c.name });
-  } else if (hit.tier === "asleep") {                // too late — takes two
+  if (hit.tier === "asleep") {
+    if (matchT < _vbWakeCd) return;
     trackEvent("volleyball_cat_wake_attempt", { cat: c.name, state: "asleep", ok: !!hit._primed });
-    if (hit._primed && matchT < hit._primed) {       // second tap: reluctant wake
-      vbWake(hit, true);
-      _vbWakeCd = matchT + VB_WAKE_CD;
-      vbSay("wake", { cat: c.name });
-    } else {                                          // first tap: one eye, then back to sleep
-      hit._pokedAt = matchT; hit._primed = matchT + 4.5;
-      _vbWakeCd = matchT + VB_WAKE_CD;
-      floatText(c.x, c.y - 30, "😑", "#8a8276");
-      vbSay("failWake", { cat: c.name });
-    }
+    if (hit._primed && matchT < hit._primed) { vbWake(hit, true); _vbWakeCd = matchT + VB_WAKE_CD; vbSay("wake", { cat: c.name }); }
+    else { hit._pokedAt = matchT; hit._primed = matchT + 4.5; _vbWakeCd = matchT + VB_WAKE_CD;
+      floatText(c.x, c.y - 30, "😑", "#8a8276"); vbSay("failWake", { cat: c.name }); }
+    return;
   }
-  // tapping a tired / awake / waking cat does nothing
+  if (hit.tier === "drowsy") {
+    if (matchT < _vbWakeCd) return;
+    trackEvent("volleyball_cat_wake_attempt", { cat: c.name, state: "drowsy", ok: true });
+    vbWake(hit, false); _vbWakeCd = matchT + VB_WAKE_CD; vbSay("wake", { cat: c.name });
+    return;
+  }
+  if (hit.tier === "waking") return;
+  // awake / tired
+  const incoming = volleyBall && volleyBall.live && volleyBall.side === "cove";
+  if (incoming) {
+    if (matchT - _vbLastTapAt < 0.18) return;   // just a debounce
+    _vbLastTapAt = matchT;
+    volleyParts.forEach(o => { if (o.side === "cove") o._calledUntil = 0; });
+    hit._calledUntil = matchT + 2.6; hit._callFlash = matchT;
+    c.face = volleyBall.x >= c.x ? 1 : -1;
+    tone(560, 0.06, "sine", 0.05);
+  } else {
+    if (matchT < hit._sharpUntil - 4) return;   // one "stay sharp" per cat every ~2s of effect
+    hit._sharpUntil = matchT + 6; hit.drowse = Math.max(0, hit.drowse - 0.06); hit._callFlash = matchT;
+    spawnParticles(c.x, c.y - 12, "twinkle", 2);
+    tone(500, 0.05, "sine", 0.04);
+  }
 }
 function vbStatLine(p) {
   const s = p.stats, out = [];
@@ -14508,7 +14596,10 @@ window.__cove.boxState = () => ({ kind: festKind, phase: boxPhase, t: Math.round
 window.__cove.volley = () => { openFestPicker("volley"); return { on: festMode, kind: festKind, eligible: eligibleForVolley().length }; };
 window.__cove.volleyState = () => ({ phase: volleyPhase, t: Math.round(matchT), score: { ...volleyScore },
   wakeCd: Math.max(0, +(_vbWakeCd - matchT).toFixed(1)), com: vbCom.text, visit: volleyVisitName,
+  ball: volleyBall && volleyBall.live ? { side: volleyBall.side, touches: volleyBall.touches,
+    recvIdx: _vbReceiver && _vbReceiver.side === "cove" ? volleyParts.filter(p => p.side === "cove").indexOf(_vbReceiver) : -1 } : null,
   parts: volleyParts.map(p => ({ n: p.cat.name, side: p.side, tier: p.tier, drowse: +p.drowse.toFixed(2), act: p.act,
+    called: p._calledUntil > matchT, sharp: matchT < p._sharpUntil,
     prot: Math.max(0, +(p._protectUntil - matchT).toFixed(1)), primed: p._primed && matchT < p._primed || false,
     traits: (p.cat.traits || []).slice(0, 2), mood: Math.round(p.cat.mood ?? 60), stats: p.stats })) });
 window.__cove.volleyForce = (what, idx = 0) => {
@@ -14523,6 +14614,7 @@ window.__cove.volleyForce = (what, idx = 0) => {
   else if (what === "wakecd") _vbWakeCd = 0;
   else if (what === "2-2" || what === "22") { volleyScore.cove = 2; volleyScore.visit = 2; updateVolleyHud(); }
   else if (what === "longrally") { if (volleyBall) volleyBall.touches = 12; }
+  else if (what === "call") { volleyParts.forEach(p => { if (p.side === "cove") p._calledUntil = 0; }); if (cove[idx]) { cove[idx]._calledUntil = matchT + 2.6; cove[idx]._callFlash = matchT; } }
   else if (what === "fast" || what === "accel") _vbFast = !_vbFast;
   else if (what === "nodrowse") _vbNoDrowse = !_vbNoDrowse;
   return window.__cove.volleyState();
