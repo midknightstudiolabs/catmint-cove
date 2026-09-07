@@ -88,9 +88,13 @@ jobs:
           plutil -replace 'UISupportedInterfaceOrientations~ipad' -json '["UIInterfaceOrientationPortrait","UIInterfaceOrientationPortraitUpsideDown","UIInterfaceOrientationLandscapeLeft","UIInterfaceOrientationLandscapeRight"]' "$P"
           # stay full-screen (no Split View / Slide Over) but still auto-rotate on iPad
           plutil -replace UIRequiresFullScreen -bool true "$P"
+          # immersive game: no status bar (clock / battery / wifi hidden)
+          plutil -replace UIStatusBarHidden -bool true "$P"
+          plutil -replace 'UIStatusBarHidden~ipad' -bool true "$P"
+          plutil -replace UIViewControllerBasedStatusBarAppearance -bool false "$P"
           # only standard HTTPS → exempt; stops TestFlight asking on every build
           plutil -replace ITSAppUsesNonExemptEncryption -bool false "$P"
-          plutil -p "$P" | grep -A5 -iE 'Orientation|FullScreen|Encryption'
+          plutil -p "$P" | grep -A5 -iE 'Orientation|FullScreen|Encryption|StatusBar'
 
       # Capacitor 8's `cap add ios` scaffolds a Swift Package Manager project
       # (ios-spm-template) — App.xcodeproj + CapApp-SPM/, no Podfile, no

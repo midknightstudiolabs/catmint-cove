@@ -8,11 +8,14 @@
 
   window.CoveNative = window.CoveNative || {};
 
-  /* ---- status bar: let the WebView draw under it; the HUD already uses safe-area insets ---- */
+  /* ---- status bar: immersive game — hidden (clock/battery/wifi gone). The
+   *      Info.plist also sets UIStatusBarHidden; this covers Android + any
+   *      re-show after a system event. ---- */
   try {
     if (P.StatusBar) {
       P.StatusBar.setOverlaysWebView({ overlay: true });
-      P.StatusBar.setStyle({ style: "DARK" });
+      P.StatusBar.hide();
+      P.App && P.App.addListener("resume", function () { try { P.StatusBar.hide(); } catch (e) {} });
     }
   } catch (e) {}
 
