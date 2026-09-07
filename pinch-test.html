@@ -3680,9 +3680,10 @@ function ovSetTarget(v) {
   _ovTarget = clamp(v, 0, 1);
   if (_ovTarget > 0 && !_ovActive) {
     _ovActive = true;
-    _frozenLeft = canvas.getBoundingClientRect().left;
-    _frozenTop = canvas.getBoundingClientRect().top;
-    _ovCamX = stage.scrollLeft / displayScale - _worldOffX + (window.innerWidth / 2) / displayScale;
+    _frozenScroll = stage.scrollLeft;                       // freeze the pan (kills the auto-scroll feedback jitter)
+    const r = canvas.getBoundingClientRect();
+    _frozenLeft = r.left; _frozenTop = r.top;
+    _ovCamX = _frozenScroll / displayScale - _worldOffX + (window.innerWidth / 2) / displayScale;
     _ovCamY = H / 2;
     stage.style.touchAction = "none";
     document.getElementById("app").classList.add("focusing");
@@ -3718,15 +3719,19 @@ function exitFocus() { _focus = null; }
 function updateCamera(dt) {
   // ---- PINCH-ZOOM TEST: zoom-out camera (only when not focused on a cat) ----
   if (!_focus && (_ovTarget > 0 || _ovT > 0.001)) {
+    stage.scrollLeft = _frozenScroll;                    // hold the pan still (as the focus camera does)
     _ovT = _reduceMotion ? _ovTarget : _ovT + (_ovTarget - _ovT) * Math.min(1, 10 * dt);
     if (_ovTarget === 0 && _ovT < 0.02) { _ovT = 0; if (_ovActive) ovEnd(); }
-    { const cr = canvas.getBoundingClientRect(); _frozenLeft = cr.left; _frozenTop = cr.top; }
     const fit = ovFitScale();
     const e = _ovT * _ovT * (3 - 2 * _ovT);
     _camScale = displayScale * (1 + (fit - 1) * e);
+    // clamp the free-pan centre so the viewport stays over the cove; when the
+    // zoomed-out view is wider/taller than the cove there's nothing to pan — lock to centre
     const halfW = (window.innerWidth / 2) / _camScale, halfH = (window.innerHeight / 2) / _camScale;
-    _ovCamX = clamp(_ovCamX, halfW - _worldOffX, W + _worldOffX - halfW);
-    _ovCamY = clamp(_ovCamY, Math.min(H / 2, halfH), Math.max(H / 2, H - halfH));
+    const loX = -_worldOffX + halfW, hiX = W + _worldOffX - halfW;
+    _ovCamX = loX >= hiX ? W / 2 : clamp(_ovCamX, loX, hiX);
+    const loY = halfH, hiY = H - halfH;
+    _ovCamY = loY >= hiY ? H / 2 : clamp(_ovCamY, loY, hiY);
     _camX = _ovCamX; _camY = _ovCamY;
     _camTx = window.innerWidth / 2 - _camX * _camScale;
     _camTy = window.innerHeight / 2 - _camY * _camScale;
