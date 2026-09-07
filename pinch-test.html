@@ -3670,6 +3670,8 @@ let _ovTarget = 0, _ovT = 0;              // 0 = normal, 1 = fully zoomed out (e
 let _ovCamX = 0, _ovCamY = 0;             // free pan point while zoomed out (world coords)
 let _ovActive = false;                    // touch-action override + drag-pan engaged
 let _ovBaseScale = 1, _ovFit = 1;         // frozen at entry — the camera never reads live displayScale (which wobbles as the mobile viewport churns)
+let _ovVpW = 0, _ovVpH = 0;               // viewport snapshot the zoom-out camera uses — refreshed only on a real resize, NEVER read per-frame (window.innerWidth/Height jitter ±1px every frame on mobile as the URL bar settles → that was the shake)
+let _ovHold = null;                       // once the zoom is fully settled with no finger down, the whole transform is frozen here and replayed verbatim — no recompute, no shimmer
 const OV_MAX_OUT = 1.7;                   // hard cap: never pull back further than 1.7x the normal view
 function ovComputeFit() {                 // scale (relative to _ovBaseScale) at full zoom-out — computed ONCE at entry
   const de = document.documentElement;
@@ -3679,16 +3681,23 @@ function ovComputeFit() {                 // scale (relative to _ovBaseScale) at
   const want = _ovBaseScale > 0 ? Math.min(1, fit / _ovBaseScale) : 1;
   return Math.max(1 / OV_MAX_OUT, want);
 }
+function ovSnapViewport() {                 // ONE read of the viewport, held until the next real resize
+  const de = document.documentElement;
+  _ovVpW = Math.max(stage.clientWidth || 0, de.clientWidth || 0, window.innerWidth || 0) || 390;
+  _ovVpH = Math.max(stage.clientHeight || 0, de.clientHeight || 0, window.innerHeight || 0) || 780;
+}
 function ovSetTarget(v, recenter) {
   _ovTarget = clamp(v, 0, 1);
+  _ovHold = null;                           // target moved — rebuild the frozen transform once it settles again
   if (_ovTarget > 0 && !_ovActive) {
     _ovActive = true;
     // capture where the eye is, THEN pin the native scroll to 0 so the canvas
     // element never moves under us — the camera is done purely by the ctx
     // transform after this, no getBoundingClientRect() in the frame loop.
     _ovBaseScale = displayScale;
+    ovSnapViewport();
     _ovCamX = recenter ? W / 2
-      : (stage.scrollLeft + window.innerWidth / 2) / _ovBaseScale - _worldOffX;
+      : (stage.scrollLeft + _ovVpW / 2) / _ovBaseScale - _worldOffX;
     _ovCamY = H / 2;
     _ovFit = ovComputeFit();
     try { stage.scrollLeft = 0; } catch (e) {}
@@ -3711,7 +3720,7 @@ function focusEligible(c) {
 function enterFocus(c) {
   if (_placing || _arranging) exitPlacement();
   if (!focusEligible(c) || _focus === c) return;
-  if (_ovTarget || _ovT) { _ovTarget = 0; _ovT = 0; if (_ovActive) ovEnd(); }   // PINCH TEST: leave whole-cove view
+  if (_ovTarget || _ovT) { _ovTarget = 0; _ovT = 0; _ovHold = null; if (_ovActive) ovEnd(); }   // PINCH TEST: leave whole-cove view
   hideCatCard(true);
   const r = canvas.getBoundingClientRect();
   _frozenScroll = stage.scrollLeft; _frozenLeft = r.left; _frozenTop = r.top;
@@ -3728,23 +3737,38 @@ function updateCamera(dt) {
   // ---- PINCH-ZOOM TEST: zoom-out camera (only when not focused on a cat) ----
   if (!_focus && (_ovTarget > 0 || _ovT > 0.001)) {
     if (stage.scrollLeft !== 0) stage.scrollLeft = 0;    // canvas element stays put; camera is all ctx transform
+
+    // SETTLED + no finger down → replay the frozen transform verbatim. Nothing is
+    // read from the viewport, nothing is recomputed, so there is zero per-frame
+    // drift — this is the "fix parameter" that stops the fully-zoomed-out shake.
+    if (_ovHold && _ovT === _ovTarget) {
+      _camScale = _ovHold.scale; _camTx = _ovHold.tx; _camTy = _ovHold.ty;
+      _camX = _ovHold.x; _camY = _ovHold.y;
+      _focusT = _ovT; _wasFocusing = true;
+      return;
+    }
+
     _ovT = _reduceMotion ? _ovTarget : _ovT + (_ovTarget - _ovT) * Math.min(1, 12 * dt);
-    if (_ovTarget === 0 && _ovT < 0.02) { _ovT = 0; if (_ovActive) ovEnd(); }
+    if (_ovTarget === 0 && _ovT < 0.02) { _ovT = 0; _ovHold = null; if (_ovActive) ovEnd(); }
     if (Math.abs(_ovT - _ovTarget) < 0.002) _ovT = _ovTarget;   // settle hard — no residual easing jitter
     const e = _ovT * _ovT * (3 - 2 * _ovT);
     _camScale = _ovBaseScale * (1 + (_ovFit - 1) * e);          // frozen base — immune to viewport churn
     // clamp the free-pan centre so the viewport stays over the cove; when the
-    // zoomed-out view is wider/taller than the cove there's nothing to pan — lock to centre
-    const halfW = (window.innerWidth / 2) / _camScale, halfH = (window.innerHeight / 2) / _camScale;
+    // zoomed-out view is wider/taller than the cove there's nothing to pan — lock to centre.
+    // _ovVpW/_ovVpH are a held snapshot, not live window.innerWidth (which jitters every frame).
+    const halfW = (_ovVpW / 2) / _camScale, halfH = (_ovVpH / 2) / _camScale;
     const loX = -_worldOffX + halfW, hiX = W + _worldOffX - halfW;
     _ovCamX = loX >= hiX ? W / 2 : clamp(_ovCamX, loX, hiX);
     const loY = halfH, hiY = H - halfH;
     _ovCamY = loY >= hiY ? H / 2 : clamp(_ovCamY, loY, hiY);
     _camX = Math.round(_ovCamX * 4) / 4; _camY = Math.round(_ovCamY * 4) / 4;   // quarter-px snap kills sub-pixel shimmer
-    _camTx = Math.round((window.innerWidth / 2 - _camX * _camScale) * 2) / 2;
-    _camTy = Math.round((window.innerHeight / 2 - _camY * _camScale) * 2) / 2;
+    _camTx = Math.round((_ovVpW / 2 - _camX * _camScale) * 2) / 2;
+    _camTy = Math.round((_ovVpH / 2 - _camY * _camScale) * 2) / 2;
     _focusT = _ovT;                          // reuse the same "camera engaged" gate downstream
     _wasFocusing = true;
+    // fully arrived and no gesture in progress → freeze the transform for every frame after this
+    if (_ovT === _ovTarget && _ovTarget > 0)
+      _ovHold = { scale: _camScale, tx: _camTx, ty: _camTy, x: _camX, y: _camY };
     return;
   }
   if (!_focus && _focusT <= 0) {
@@ -4053,6 +4077,7 @@ canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeou
       _ovCamX -= (e.clientX - dragX) / Math.max(0.001, _camScale);
       _ovCamY -= (e.clientY - dragY) / Math.max(0.001, _camScale);
       dragX = e.clientX; dragY = e.clientY;
+      _ovHold = null;                        // panned — the frozen transform is stale, rebuild on release
       e.preventDefault();
     }
   }, true);
@@ -12514,6 +12539,20 @@ function onViewportChange() {
   _resizeRetry = 0;                   // a real viewport event — let resize() retry from scratch if needed
   resize();                          // keep the canvas backing store matched to the box — immediately
   if (restMode) fitRestCanvas();     // ...but rest wants its own small canvas, not the pannable one
+  // PINCH TEST: only a *real* size change (rotation, split-view) re-fits the
+  // zoom-out camera. The mobile URL-bar micro-churn also fires this event — ignore
+  // those (<40px) so the frozen transform, and its stillness, survive.
+  if (_ovActive) {
+    const de = document.documentElement;
+    const nw = Math.max(stage.clientWidth || 0, de.clientWidth || 0, window.innerWidth || 0) || 390;
+    const nh = Math.max(stage.clientHeight || 0, de.clientHeight || 0, window.innerHeight || 0) || 780;
+    if (Math.abs(nw - _ovVpW) > 40 || Math.abs(nh - _ovVpH) > 40) {
+      _ovBaseScale = displayScale;
+      ovSnapViewport();
+      _ovFit = ovComputeFit();
+      _ovHold = null;
+    }
+  }
   clearTimeout(_relayoutT);
   _relayoutT = setTimeout(() => {
     // W/H are fixed, so a resize is usually just a rescale — but the FILL-mode
@@ -12816,7 +12855,9 @@ window.__cove.perfLite = (v) => {
 };
 Object.defineProperty(window.__cove, "cam", { get: () => ({
   focus: _focus && _focus.name, focusT: +_focusT.toFixed(3),
-  camX: Math.round(_camX), camY: Math.round(_camY), camScale: +_camScale.toFixed(3),
+  camX: Math.round(_camX), camY: Math.round(_camY), camScale: +_camScale.toFixed(4),
+  camTx: +_camTx.toFixed(3), camTy: +_camTy.toFixed(3),
+  ov: { target: _ovTarget, t: +_ovT.toFixed(3), held: !!_ovHold, vp: [_ovVpW, _ovVpH] },
   aim: _focus && [Math.round(_focus.x), Math.round(_focus.y)],
 }) });
 
