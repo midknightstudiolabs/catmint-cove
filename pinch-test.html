@@ -744,18 +744,18 @@
   .fp-cell.picked{border-color:var(--accent);background:#fff;}
   .fp-cell.picked .nm{color:var(--ink);}
 
-  /* the Festival hub — the neutral landing page. The event selector sits low,
-     like a tray, so the Festival grounds fill the screen above it: "I arrived
-     at the Festival" first, then "what should we do?". */
-  .fest-panel--hub{left:50%;top:50%;bottom:auto;
-    transform:translate(-50%,-50%);width:min(94vw,420px);max-height:54vh;padding:.9rem 1rem .8rem;}
-  .fest-panel--hub .fp-art{font-size:1.55rem;margin:0 0 .05rem;}
-  .fest-panel--hub h2{font-size:1.16rem;margin:0 0 .15rem;}
-  .fest-panel--hub p{font-size:.8rem;margin:0 0 .7rem;line-height:1.4;}
-  .fc-cards{display:flex;flex-direction:column;gap:.45rem;margin:0 0 .6rem;}
+  /* the Festival hub — the neutral landing page. The event selector floats
+     centred over the grounds: the fairground reads as a strip below the card,
+     bunting above. "I arrived at the Festival" first, then "what should we do?". */
+  .fest-panel--hub{left:50%;top:47%;bottom:auto;
+    transform:translate(-50%,-50%);width:min(93vw,410px);max-height:50vh;padding:.75rem .95rem .65rem;}
+  .fest-panel--hub .fp-art{font-size:1.4rem;margin:0 0 .04rem;}
+  .fest-panel--hub h2{font-size:1.12rem;margin:0 0 .1rem;}
+  .fest-panel--hub p{font-size:.78rem;margin:0 0 .5rem;line-height:1.36;}
+  .fc-cards{display:flex;flex-direction:column;gap:.4rem;margin:0 0 .5rem;}
   .fc-card{display:grid;grid-template-columns:auto 1fr;column-gap:.55rem;row-gap:.05rem;align-items:center;
     text-align:left;background:#eef1e3;border:2px solid transparent;border-radius:13px;
-    padding:.55rem .75rem;cursor:pointer;font:inherit;transition:border-color .12s,background .12s;}
+    padding:.5rem .7rem;cursor:pointer;font:inherit;transition:border-color .12s,background .12s;}
   .fc-card:hover{border-color:var(--accent);background:#fff;}
   .fc-card .fc-emoji{grid-row:1 / span 2;font-size:1.5rem;line-height:1;align-self:center;}
   .fc-card .fc-name{font-family:"Fraunces",serif;font-weight:700;font-size:.96rem;color:var(--ink);}
@@ -8690,9 +8690,10 @@ function showFestPodium() {
 }
 
 /* ---------- Festival hub: the neutral grounds behind the event selector ----------
-   A calm coastal fair. Neither activity dominates — a checkered-flag signpost
-   nods at the Race, a little net + beach ball nods at Volleyball, and a few cats
-   loiter. Portrait space, contain-fit, ~1 landmark per corner. */
+   A calm coastal fair. Neither activity dominates — a soft pennant on a post,
+   a little net + beach ball, a market stall, and a few cats loitering along the
+   shore. Portrait space, contain-fit; the fairground sits low so it reads as a
+   strip below the centred event card. */
 const HUB_W = 560, HUB_H = 1000;
 let _hubT = 0, _hubCats = [];
 function hubFit() {
@@ -8702,7 +8703,7 @@ function hubFit() {
   return { sc, ox: (vw * rd - HUB_W * sc) / 2, oy: (vh * rd - HUB_H * sc) / 2 };
 }
 function festGroundsCats(roster) {
-  const spots = [{ x: 116, y: 812 }, { x: 300, y: 844 }, { x: 452, y: 808 }, { x: 198, y: 868 }, { x: 380, y: 874 }];
+  const spots = [{ x: 120, y: 876 }, { x: 300, y: 906 }, { x: 448, y: 872 }, { x: 206, y: 930 }, { x: 378, y: 936 }];
   _hubCats = (roster || cats.filter(c => !c.visitor)).slice(0, 5).map((c, i) => {
     Object.assign(c, { x: spots[i].x, y: spots[i].y, face: i % 2 ? 1 : -1,
       state: i === 0 ? "loafing" : i === 3 ? "grooming" : "seeking",
@@ -8726,8 +8727,8 @@ function renderFestGrounds(dt) {
     c._wanderAt -= dt;
     if (c._wanderAt <= 0) {
       c._wanderAt = rand(5, 12);
-      c._hx = clamp(c._hx + rand(-44, 44), 96, 470);
-      c._hy = clamp(c._hy + rand(-20, 20), 788, 900);
+      c._hx = clamp(c._hx + rand(-44, 44), 96, 468);
+      c._hy = clamp(c._hy + rand(-18, 18), 852, 958);
     }
     const dx = c._hx - c.x, dy = c._hy - c.y, dist = Math.hypot(dx, dy);
     const m = catMotion(c);
@@ -8766,39 +8767,40 @@ function drawFestGroundsScene(g) {
   gr.addColorStop(0, "#cfe0af"); gr.addColorStop(0.5, "#bcd398"); gr.addColorStop(1, "#aecb8a");
   g.fillStyle = gr; g.fillRect(-OV, HZ - 12, HUB_W + OV * 2, HUB_H - HZ + OV);
   g.fillStyle = "rgba(232,214,170,0.42)";                                  // a sandy patch = "the festival area"
-  g.beginPath(); g.ellipse(HUB_W / 2, 872, 320, 150, 0, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(HUB_W / 2, 916, 330, 138, 0, 0, 7); g.fill();
   // bunting — one run across the top
   drawBunting(g, 6, 92, HUB_W - 12, 30, _hubT);
-  // a little market stall, left of centre — clearly a stall, not a race gantry
-  g.save(); g.translate(HUB_W * 0.40, 742);
-  g.fillStyle = "rgba(90,70,50,0.12)"; g.beginPath(); g.ellipse(0, 94, 88, 12, 0, 0, 7); g.fill();
+  // a little market stall, left of centre — sits along the bottom, below the card
+  g.save(); g.translate(HUB_W * 0.40, 828);
+  g.fillStyle = "rgba(90,70,50,0.12)"; g.beginPath(); g.ellipse(0, 80, 84, 11, 0, 0, 7); g.fill();
   g.strokeStyle = "#8a6f4e"; g.lineWidth = 5;
-  g.beginPath(); g.moveTo(-72, 4); g.lineTo(-72, 92); g.moveTo(72, 4); g.lineTo(72, 92); g.stroke();
-  g.fillStyle = "#caa877"; roundRect(g, -80, 40, 160, 20, 3); g.fill();                 // counter
-  g.fillStyle = "rgba(90,60,34,0.18)"; g.fillRect(-80, 55, 160, 4);
-  g.fillStyle = "#c98f57"; roundRect(g, -54, 30, 30, 12, 3); g.fill();                  // baskets on the counter
-  g.fillStyle = "#cf7d54"; roundRect(g, 16, 27, 34, 15, 3); g.fill();
-  g.fillStyle = "#8a6f4e"; roundRect(g, -86, -6, 172, 8, 2); g.fill();                  // roof beam
-  g.beginPath(); g.moveTo(0, -48); g.lineTo(-94, 2); g.lineTo(94, 2); g.closePath();    // pitched awning
+  g.beginPath(); g.moveTo(-70, 2); g.lineTo(-70, 78); g.moveTo(70, 2); g.lineTo(70, 78); g.stroke();
+  g.fillStyle = "#caa877"; roundRect(g, -78, 34, 156, 18, 3); g.fill();                 // counter
+  g.fillStyle = "rgba(90,60,34,0.18)"; g.fillRect(-78, 47, 156, 4);
+  g.fillStyle = "#c98f57"; roundRect(g, -52, 25, 28, 11, 3); g.fill();                  // baskets on the counter
+  g.fillStyle = "#cf7d54"; roundRect(g, 16, 23, 32, 13, 3); g.fill();
+  g.fillStyle = "#8a6f4e"; roundRect(g, -84, -4, 168, 7, 2); g.fill();                  // roof beam
+  g.beginPath(); g.moveTo(0, -36); g.lineTo(-90, 2); g.lineTo(90, 2); g.closePath();    // pitched awning
   g.fillStyle = "#efe3cb"; g.fill();
   g.save(); g.clip();
   g.fillStyle = "#d98b62";
   for (let i = -5; i <= 5; i++) { g.beginPath();
-    g.moveTo(i * 20, -48); g.lineTo(i * 20 - 34, 4); g.lineTo(i * 20 - 16, 4); g.lineTo(i * 20 + 10, -48); g.closePath(); g.fill(); }
+    g.moveTo(i * 18, -36); g.lineTo(i * 18 - 30, 4); g.lineTo(i * 18 - 14, 4); g.lineTo(i * 18 + 9, -36); g.closePath(); g.fill(); }
   g.restore();
   g.fillStyle = "#d98b62";
-  for (let i = -4; i <= 4; i++) { g.beginPath(); g.arc(i * 22, 2, 11, 0, Math.PI); g.fill(); }   // scalloped valance
+  for (let i = -4; i <= 4; i++) { g.beginPath(); g.arc(i * 21, 2, 10, 0, Math.PI); g.fill(); }   // scalloped valance
   g.restore();
-  // LEFT — a checkered-flag signpost (the Race, subtly)
-  g.save(); g.translate(74, 856);
-  g.strokeStyle = "#7c6142"; g.lineWidth = 5; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 58); g.stroke();
-  const cell = 6; g.fillStyle = "#fff"; g.fillRect(3, -34, 32, 22);
-  g.fillStyle = "#2b2420";
-  for (let ry = 0; ry * cell < 22; ry++) for (let rx = 0; rx * cell < 32; rx++) if ((rx + ry) % 2) g.fillRect(3 + rx * cell, -34 + ry * cell, cell, cell);
-  g.strokeStyle = "rgba(0,0,0,.2)"; g.lineWidth = 1; g.strokeRect(3, -34, 32, 22);
+  // LEFT — a soft pennant on a post (a gentle fair marker; no stark checker)
+  g.save(); g.translate(76, 908);
+  const flut = Math.sin(_hubT * 2.2) * 3;
+  g.strokeStyle = "#7c6142"; g.lineWidth = 5; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 60); g.stroke();
+  g.fillStyle = "#e08b6a";
+  g.beginPath(); g.moveTo(2, -36); g.quadraticCurveTo(24, -30 + flut, 44, -24 + flut); g.quadraticCurveTo(22, -20, 2, -12); g.closePath(); g.fill();
+  g.fillStyle = "rgba(243,237,224,0.5)";
+  g.beginPath(); g.moveTo(2, -36); g.lineTo(20, -30 + flut * 0.6); g.lineTo(2, -22); g.closePath(); g.fill();
   g.restore();
   // RIGHT — a little net + a beach ball (Volleyball, subtly)
-  g.save(); g.translate(HUB_W - 78, 862);
+  g.save(); g.translate(HUB_W - 80, 906);
   g.strokeStyle = "#8a7052"; g.lineWidth = 5;
   g.beginPath(); g.moveTo(-38, 6); g.lineTo(-40, -38); g.moveTo(38, 6); g.lineTo(40, -38); g.stroke();
   g.strokeStyle = "rgba(240,236,224,0.85)"; g.lineWidth = 2;
@@ -8814,9 +8816,9 @@ function drawFestGroundsScene(g) {
   g.globalAlpha = 1; g.restore();
   g.restore();
   // odds and ends — kept sparse
-  drawHubLantern(g, HUB_W - 150, 748);
-  g.fillStyle = "#d97a5f"; g.beginPath(); g.ellipse(150, 892, 22, 13, 0, 0, 7); g.fill();    // a cushion on the grass
-  g.fillStyle = "rgba(255,255,255,0.14)"; g.beginPath(); g.ellipse(144, 888, 10, 5, 0, 0, 7); g.fill();
+  drawHubLantern(g, HUB_W - 150, 812);
+  g.fillStyle = "#d97a5f"; g.beginPath(); g.ellipse(150, 940, 22, 13, 0, 0, 7); g.fill();    // a cushion on the grass
+  g.fillStyle = "rgba(255,255,255,0.14)"; g.beginPath(); g.ellipse(144, 936, 10, 5, 0, 0, 7); g.fill();
 }
 function renderFest(dt) {
   if (festKind === "hub") { renderFestGrounds(dt); return; }
@@ -8945,7 +8947,7 @@ function enterFestVolley() {
   trackEvent("volleyball_card_opened");
 }
 const FEST_EVENTS = [
-  { key: "race", emoji: "🏁", name: "Cove Race",
+  { key: "race", emoji: "🚩", name: "Cove Race",
     desc: "Pick a cat and cheer them all the way to the finish.",
     lock: () => festUnlocked() ? null : "Opens on day 5.", enter: enterFestRace },
   { key: "volley", emoji: "🏐", name: "Cove Volleyball",
