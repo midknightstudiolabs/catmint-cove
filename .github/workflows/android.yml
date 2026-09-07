@@ -47,6 +47,7 @@ jobs:
         id: keys
         env:
           KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          SA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
           if [ -n "$KS" ]; then
             echo "have=true" >> "$GITHUB_OUTPUT"
@@ -54,6 +55,9 @@ jobs:
             echo "have=false" >> "$GITHUB_OUTPUT"
             echo "::warning::No ANDROID_KEYSTORE_BASE64 secret — building an UNSIGNED bundle. Add the keystore secrets (STORE-SETUP.md §3) before you can upload to Play."
           fi
+          # only try the Play upload when the service-account JSON is actually set —
+          # otherwise the run stays green and you grab the .aab from the artifacts
+          if [ -n "$SA" ]; then echo "play=true" >> "$GITHUB_OUTPUT"; else echo "play=false" >> "$GITHUB_OUTPUT"; fi
 
       - run: npm ci
       - run: npm run build
@@ -121,8 +125,12 @@ jobs:
           path: ${{ steps.out.outputs.file }}
           if-no-files-found: error
 
+      - name: No Play upload — grab the .aab from the artifacts
+        if: ${{ inputs.track != '' && inputs.track != 'none' && steps.keys.outputs.have == 'true' && steps.keys.outputs.play != 'true' }}
+        run: echo "::warning::track=${{ inputs.track }} was requested but PLAY_SERVICE_ACCOUNT_JSON isn't set — skipping the auto-upload. Download catmint-cove-${{ steps.ver.outputs.name }}.aab from this run's Artifacts and upload it in Play Console."
+
       - name: Upload to Google Play
-        if: ${{ inputs.track != '' && inputs.track != 'none' && steps.keys.outputs.have == 'true' }}
+        if: ${{ inputs.track != '' && inputs.track != 'none' && steps.keys.outputs.have == 'true' && steps.keys.outputs.play == 'true' }}
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
