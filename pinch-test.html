@@ -814,9 +814,9 @@
 
   /* ---- toast ---- */
   #toast{position:absolute;left:50%;bottom:6.2rem;transform:translateX(-50%) translateY(1rem);
-    z-index:30;background:var(--ink);color:#fff;padding:.6rem 1rem;border-radius:999px;
-    font-size:.86rem;font-weight:600;opacity:0;transition:opacity .3s ease,transform .3s ease;pointer-events:none;
-    max-width:88vw;text-align:center;}
+    z-index:30;background:var(--ink);color:#fff;padding:.8rem 1.25rem;border-radius:15px;
+    font-size:.86rem;font-weight:600;line-height:1.42;opacity:0;transition:opacity .3s ease,transform .3s ease;pointer-events:none;
+    min-width:9rem;max-width:min(22rem,86vw);text-align:center;box-shadow:0 6px 22px rgba(22,18,12,.3);}
   #toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
 
   /* ---- next-action hint ---- */
@@ -857,6 +857,10 @@
   #tut .guide-row{margin:0 0 .85rem;}
   #tut .guide-row b{font-family:"Fraunces",serif;font-size:1rem;}
   #tut .guide-row p{margin:.15rem 0 0;color:var(--ink-soft);font-size:.88rem;line-height:1.46;}
+  #tut .guide-credits{text-align:left;border-top:1px solid var(--hairline,rgba(60,50,38,.16));margin:0 0 1rem;padding:.85rem 0 0;}
+  #tut .guide-credits h3{font-family:"Fraunces",serif;font-size:.98rem;margin:0 0 .3rem;}
+  #tut .guide-credits p{margin:.1rem 0;color:var(--ink-soft);font-size:.84rem;line-height:1.5;}
+  #tut .guide-credits p b{color:var(--ink);}
 
   /* ---- dev overlay ---- */
   #dev{position:absolute;left:.6rem;bottom:3.6rem;z-index:35;display:none;
@@ -6067,7 +6071,13 @@ function openGuide() {
   const card = tutEl.querySelector(".card");
   const rows = GUIDE.filter(([h]) => h !== "The Cove Festival" || festUnlocked());   // not a spoiler before it exists
   card.innerHTML = `<h2 style="margin:.1rem 0 .2rem">How the cove works</h2>
-    <div class="guide-list">${rows.map(([h, b]) => `<div class="guide-row"><b>${esc(h)}</b><p>${esc(b)}</p></div>`).join("")}</div>
+    <div class="guide-list">${rows.map(([h, b]) => `<div class="guide-row"><b>${esc(h)}</b><p>${esc(b)}</p></div>`).join("")}
+    <div class="guide-credits">
+      <h3>Credits</h3>
+      <p><b>Catmint Cove</b> — made by one person at Midknight Studio Labs.</p>
+      <p><b>Co-founders</b> · Yhelle · Cel · Olive</p>
+      <p><b>With thanks to the testers</b> who helped shape the cove · Yhelle · Cel · Olive · Shang · Mikay · Goldie · Gladys</p>
+    </div></div>
     <div class="row"><button class="btn primary" id="guideOk">Got it</button></div>`;
   tutEl.classList.add("on");
   document.getElementById("guideOk").onclick = () => tutEl.classList.remove("on");
@@ -8338,6 +8348,7 @@ function showFestPodium() {
   spawnParticles(raceX(1) - 10, laneY(order[0].lane) - 6, "spark", 12);
   spawnParticles(raceX(1) - 10, laneY(order[0].lane) - 16, "heart", 5);
   document.getElementById("festSkip").hidden = true;
+  document.getElementById("festBar").hidden = true;   // the result card has its own "Back to cove" / "Race again" — the bottom bar is redundant here
   document.getElementById("festResult").hidden = false;
 }
 function renderFest(dt) {
@@ -8421,6 +8432,7 @@ document.getElementById("festStart").addEventListener("click", startFestRace);
 // stays on the grounds — reopens the picker in place, no wipe either direction
 document.getElementById("festAgain").addEventListener("click", () => {
   document.getElementById("festResult").hidden = true;
+  document.getElementById("festBar").hidden = false;   // back to the picker — restore the bottom exit bar
   raceCats = []; raceWinner = null; racePick = null; racePhase = "picker"; festCheerUntil = 0;
   particles.length = 0; floaters.length = 0;   // last heat's zoomies text / confetti shouldn't bleed into this one
   const roster = cats.filter(c => !c.visitor);
