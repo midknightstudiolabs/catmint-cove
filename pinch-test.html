@@ -747,7 +747,7 @@
   /* the Festival hub — the neutral landing page. The event selector sits low,
      like a tray, so the Festival grounds fill the screen above it: "I arrived
      at the Festival" first, then "what should we do?". */
-  .fest-panel--hub{left:50%;top:auto;bottom:calc(env(safe-area-inset-bottom) + 4rem);
+  .fest-panel--hub{left:50%;top:auto;bottom:calc(env(safe-area-inset-bottom) + 6rem);
     transform:translate(-50%,0);width:min(94vw,420px);max-height:56vh;padding:.9rem 1rem .8rem;}
   .fest-panel--hub .fp-art{font-size:1.55rem;margin:0 0 .05rem;}
   .fest-panel--hub h2{font-size:1.16rem;margin:0 0 .15rem;}
@@ -7997,19 +7997,52 @@ function renderRest(dt) {
   g.moveTo(wx, wy + wh / 2); g.lineTo(wx + ww, wy + wh / 2); g.stroke();
   g.fillStyle = "#5a4636"; g.fillRect(wx - 12, wy + wh + 2, ww + 24, 7);   // sill
 
-  // --- wall clock (real local time) — off the visible strip on a phone, so skip it there
+  // --- wall clock: a cat-silhouette pendulum clock, its tail swinging like the
+  //     pendulum. Off the visible strip on a phone, so skip it there.
   if (!L.cramped) {
-  const clkX = W * 0.85, clkY = H * 0.19, cr = clamp(Math.min(W, H) * 0.05, 16, 34);
-  g.fillStyle = "#e9e0cc"; g.beginPath(); g.arc(clkX, clkY, cr, 0, 7); g.fill();
-  g.strokeStyle = "#5b4634"; g.lineWidth = 2.5; g.stroke();
-  const nowd = new Date(), hAng = ((nowd.getHours() % 12) + nowd.getMinutes() / 60) / 12 * 7;
-  g.strokeStyle = "#3a2e28"; g.lineCap = "round";
-  g.lineWidth = 2.6; g.beginPath(); g.moveTo(clkX, clkY); g.lineTo(clkX + Math.sin(hAng) * cr * 0.48, clkY - Math.cos(hAng) * cr * 0.48); g.stroke();
-  g.lineWidth = 1.8; const mAng = nowd.getMinutes() / 60 * 7;
-  g.beginPath(); g.moveTo(clkX, clkY); g.lineTo(clkX + Math.sin(mAng) * cr * 0.76, clkY - Math.cos(mAng) * cr * 0.76); g.stroke();
-  g.strokeStyle = "rgba(180,90,70,0.9)"; g.lineWidth = 1;
-  const sAng = (nowd.getSeconds() + (pn % 1000) / 1000) / 60 * 7;
-  g.beginPath(); g.moveTo(clkX, clkY); g.lineTo(clkX + Math.sin(sAng) * cr * 0.82, clkY - Math.cos(sAng) * cr * 0.82); g.stroke();
+  const ck = clamp(Math.min(W, H) * 0.05, 16, 32);
+  g.save(); g.translate(W * 0.84, H * 0.2);
+  // the tail — the pendulum, pivoting where it meets the haunches
+  const swing = Math.sin(pn / 360) * 0.2;
+  g.save(); g.translate(0, ck * 1.42); g.rotate(swing);
+  g.fillStyle = "#1a1a1c"; g.beginPath();
+  g.moveTo(-ck * 0.14, 0);
+  g.quadraticCurveTo(-ck * 0.34, ck * 1.5, ck * 0.14, ck * 2.15);
+  g.quadraticCurveTo(ck * 0.62, ck * 2.62, ck * 0.44, ck * 3.02);
+  g.quadraticCurveTo(ck * 0.04, ck * 2.66, -ck * 0.02, ck * 2.05);
+  g.quadraticCurveTo(-ck * 0.08, ck * 1.3, -ck * 0.14, 0);
+  g.closePath(); g.fill();
+  g.restore();
+  // the body — a cat sitting with its back to the room: narrow shoulders, wide haunches
+  g.fillStyle = "#1b1b1d"; g.beginPath();
+  g.moveTo(-ck * 0.52, -ck * 0.58);
+  g.bezierCurveTo(-ck * 1.04, ck * 0.05, -ck * 1.12, ck * 1.05, -ck * 0.54, ck * 1.5);
+  g.bezierCurveTo(-ck * 0.2, ck * 1.72, ck * 0.2, ck * 1.72, ck * 0.54, ck * 1.5);
+  g.bezierCurveTo(ck * 1.12, ck * 1.05, ck * 1.04, ck * 0.05, ck * 0.52, -ck * 0.58);
+  g.bezierCurveTo(ck * 0.3, -ck * 0.94, -ck * 0.3, -ck * 0.94, -ck * 0.52, -ck * 0.58);
+  g.closePath(); g.fill();
+  // head + tall ears
+  g.beginPath(); g.arc(0, -ck * 1.12, ck * 0.64, 0, 7); g.fill();
+  g.beginPath(); g.moveTo(-ck * 0.62, -ck * 1.34); g.lineTo(-ck * 0.6, -ck * 2.12); g.lineTo(-ck * 0.02, -ck * 1.48); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(ck * 0.62, -ck * 1.34); g.lineTo(ck * 0.6, -ck * 2.12); g.lineTo(ck * 0.02, -ck * 1.48); g.closePath(); g.fill();
+  // the dial, low on the belly like the reference
+  const dy = ck * 0.56, nowd = new Date();
+  if (!dim) {
+    g.fillStyle = "rgba(255,255,255,0.8)";
+    for (let i = 0; i < 12; i++) { const a = i / 12 * 7, rr = ck * 0.7;
+      g.beginPath(); g.arc(Math.sin(a) * rr, dy - Math.cos(a) * rr, i % 3 === 0 ? 1.6 : 1, 0, 7); g.fill(); }
+  }
+  const hAng = ((nowd.getHours() % 12) + nowd.getMinutes() / 60) / 12 * 7, mAng = nowd.getMinutes() / 60 * 7;
+  g.strokeStyle = "#f5f0e4"; g.lineCap = "round";
+  g.lineWidth = 2.6; g.beginPath(); g.moveTo(0, dy); g.lineTo(Math.sin(hAng) * ck * 0.36, dy - Math.cos(hAng) * ck * 0.36); g.stroke();
+  g.lineWidth = 2; g.beginPath(); g.moveTo(0, dy); g.lineTo(Math.sin(mAng) * ck * 0.56, dy - Math.cos(mAng) * ck * 0.56); g.stroke();
+  if (!dim) {
+    g.strokeStyle = "rgba(214,98,74,0.92)"; g.lineWidth = 1.1;
+    const sAng = (nowd.getSeconds() + (pn % 1000) / 1000) / 60 * 7;
+    g.beginPath(); g.moveTo(0, dy); g.lineTo(Math.sin(sAng) * ck * 0.6, dy - Math.cos(sAng) * ck * 0.6); g.stroke();
+  }
+  g.fillStyle = "#d0d3d7"; g.beginPath(); g.arc(0, dy, 2, 0, 7); g.fill();
+  g.restore();
   }
 
   // --- fireplace (bottom-left) — stone surround, a short wide firebox opening, tall flames
@@ -8197,7 +8230,7 @@ function openFestPicker(kind) {
   _festPickKind = kind || null;   // "race" / "box" jump straight to that picker; null = show the chooser
   _festRoster = roster;
   raceCats = []; raceWinner = null; racePick = null; raceT = 0; racePhase = "picker"; _festG = null; festCheerUntil = 0;
-  festIdleScene(roster);
+  // the hub scene (festGroundsCats) is set up once we've actually arrived, in the setTimeout below
   trackEvent("activity_open", { kind: _festPickKind || "choose" });
   document.getElementById("festResult").hidden = true;
   document.getElementById("festChoose").hidden = true;
@@ -8249,17 +8282,6 @@ function openFestPicker(kind) {
   }, 560);
   setTimeout(() => w.classList.add("out"), 1250);
   setTimeout(() => w.classList.remove("in", "out"), 1850);
-}
-// a loose, ambient group standing around the grounds — shown while you're
-// just picking, before a field's been drawn for an actual heat
-function festIdleScene(roster) {
-  festSpectators = roster.slice(0, 6).map((c, i) => {
-    const y = 356 + Math.floor(i / 3) * 46;
-    return Object.assign(c, {
-      x: 280 + (i % 3) * 300 + rand(-14, 14), y, _festBaseY: y, face: 1,
-      state: "loafing", trotting: false, walkAmt: 0,
-    });
-  });
 }
 function renderFestPickGrid(roster) {
   const grid = document.getElementById("festPickGrid");
@@ -8679,7 +8701,7 @@ function hubFit() {
   return { sc, ox: (vw * rd - HUB_W * sc) / 2, oy: (vh * rd - HUB_H * sc) / 2 };
 }
 function festGroundsCats(roster) {
-  const spots = [{ x: 118, y: 440 }, { x: 296, y: 470 }, { x: 452, y: 438 }, { x: 206, y: 492 }, { x: 380, y: 498 }];
+  const spots = [{ x: 116, y: 352 }, { x: 300, y: 384 }, { x: 452, y: 350 }, { x: 198, y: 408 }, { x: 380, y: 414 }];
   _hubCats = (roster || cats.filter(c => !c.visitor)).slice(0, 5).map((c, i) => {
     Object.assign(c, { x: spots[i].x, y: spots[i].y, face: i % 2 ? 1 : -1,
       state: i === 0 ? "loafing" : i === 3 ? "grooming" : "seeking",
@@ -8703,8 +8725,8 @@ function renderFestGrounds(dt) {
     c._wanderAt -= dt;
     if (c._wanderAt <= 0) {
       c._wanderAt = rand(5, 12);
-      c._hx = clamp(c._hx + rand(-44, 44), 100, 462);
-      c._hy = clamp(c._hy + rand(-20, 20), 410, 508);
+      c._hx = clamp(c._hx + rand(-44, 44), 96, 470);
+      c._hy = clamp(c._hy + rand(-20, 20), 330, 430);
     }
     const dx = c._hx - c.x, dy = c._hy - c.y, dist = Math.hypot(dx, dy);
     const m = catMotion(c);
@@ -8744,22 +8766,30 @@ function drawFestGroundsScene(g) {
   g.fillStyle = gr; g.fillRect(-OV, HZ - 12, HUB_W + OV * 2, HUB_H - HZ + OV);
   g.fillStyle = "rgba(232,214,170,0.42)";                                  // a sandy patch = "the festival area"
   g.beginPath(); g.ellipse(HUB_W / 2, 500, 300, 200, 0, 0, 7); g.fill();
-  // bunting, two runs
+  // bunting — one run across the top
   drawBunting(g, 6, 66, HUB_W - 12, 30, _hubT);
-  drawBunting(g, -46, 132, HUB_W * 0.62, 24, _hubT + 2);
-  // a small striped canopy, centre — sat on the grass
-  g.save(); g.translate(HUB_W / 2, 270);
-  g.fillStyle = "rgba(90,70,50,0.12)"; g.beginPath(); g.ellipse(0, 74, 78, 12, 0, 0, 7); g.fill();
-  g.strokeStyle = "#7c6142"; g.lineWidth = 5;
-  g.beginPath(); g.moveTo(-70, 0); g.lineTo(-70, 70); g.moveTo(70, 0); g.lineTo(70, 70); g.stroke();
-  for (let i = 0; i < 5; i++) {
-    g.fillStyle = i % 2 ? "#e08b6a" : "#f3ede0";
-    g.beginPath(); g.moveTo(-80 + i * 32, 4); g.lineTo(-80 + (i + 1) * 32, 4); g.lineTo(-80 + (i + 0.5) * 32, -24); g.closePath(); g.fill();
-  }
-  g.fillStyle = "rgba(120,90,60,0.14)"; g.fillRect(-72, 70, 144, 5);
+  // a little market stall, left of centre — clearly a stall, not a race gantry
+  g.save(); g.translate(HUB_W * 0.40, 246);
+  g.fillStyle = "rgba(90,70,50,0.12)"; g.beginPath(); g.ellipse(0, 94, 88, 12, 0, 0, 7); g.fill();
+  g.strokeStyle = "#8a6f4e"; g.lineWidth = 5;
+  g.beginPath(); g.moveTo(-72, 4); g.lineTo(-72, 92); g.moveTo(72, 4); g.lineTo(72, 92); g.stroke();
+  g.fillStyle = "#caa877"; roundRect(g, -80, 40, 160, 20, 3); g.fill();                 // counter
+  g.fillStyle = "rgba(90,60,34,0.18)"; g.fillRect(-80, 55, 160, 4);
+  g.fillStyle = "#c98f57"; roundRect(g, -54, 30, 30, 12, 3); g.fill();                  // baskets on the counter
+  g.fillStyle = "#cf7d54"; roundRect(g, 16, 27, 34, 15, 3); g.fill();
+  g.fillStyle = "#8a6f4e"; roundRect(g, -86, -6, 172, 8, 2); g.fill();                  // roof beam
+  g.beginPath(); g.moveTo(0, -48); g.lineTo(-94, 2); g.lineTo(94, 2); g.closePath();    // pitched awning
+  g.fillStyle = "#efe3cb"; g.fill();
+  g.save(); g.clip();
+  g.fillStyle = "#d98b62";
+  for (let i = -5; i <= 5; i++) { g.beginPath();
+    g.moveTo(i * 20, -48); g.lineTo(i * 20 - 34, 4); g.lineTo(i * 20 - 16, 4); g.lineTo(i * 20 + 10, -48); g.closePath(); g.fill(); }
+  g.restore();
+  g.fillStyle = "#d98b62";
+  for (let i = -4; i <= 4; i++) { g.beginPath(); g.arc(i * 22, 2, 11, 0, Math.PI); g.fill(); }   // scalloped valance
   g.restore();
   // LEFT — a checkered-flag signpost (the Race, subtly)
-  g.save(); g.translate(74, 392);
+  g.save(); g.translate(74, 366);
   g.strokeStyle = "#7c6142"; g.lineWidth = 5; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 58); g.stroke();
   const cell = 6; g.fillStyle = "#fff"; g.fillRect(3, -34, 32, 22);
   g.fillStyle = "#2b2420";
@@ -8767,7 +8797,7 @@ function drawFestGroundsScene(g) {
   g.strokeStyle = "rgba(0,0,0,.2)"; g.lineWidth = 1; g.strokeRect(3, -34, 32, 22);
   g.restore();
   // RIGHT — a little net + a beach ball (Volleyball, subtly)
-  g.save(); g.translate(HUB_W - 78, 402);
+  g.save(); g.translate(HUB_W - 78, 372);
   g.strokeStyle = "#8a7052"; g.lineWidth = 5;
   g.beginPath(); g.moveTo(-38, 6); g.lineTo(-40, -38); g.moveTo(38, 6); g.lineTo(40, -38); g.stroke();
   g.strokeStyle = "rgba(240,236,224,0.85)"; g.lineWidth = 2;
@@ -8782,12 +8812,10 @@ function drawFestGroundsScene(g) {
     g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, R, i * Math.PI / 3, (i + 1) * Math.PI / 3); g.closePath(); g.fill(); }
   g.globalAlpha = 1; g.restore();
   g.restore();
-  // odds and ends
-  drawHubLantern(g, 154, 296);
-  drawHubLantern(g, HUB_W - 154, 288);
-  g.fillStyle = "#c99a6a"; roundRect(g, 182, 520, 42, 30, 4); g.fill();                     // a crate
-  g.strokeStyle = "rgba(90,60,34,0.3)"; g.lineWidth = 1.5; g.strokeRect(182, 520, 42, 30);
-  g.fillStyle = "#d97a5f"; g.beginPath(); g.ellipse(356, 528, 24, 14, 0, 0, 7); g.fill();   // a cushion
+  // odds and ends — kept sparse
+  drawHubLantern(g, HUB_W - 150, 250);
+  g.fillStyle = "#d97a5f"; g.beginPath(); g.ellipse(132, 402, 22, 13, 0, 0, 7); g.fill();    // a cushion on the grass
+  g.fillStyle = "rgba(255,255,255,0.14)"; g.beginPath(); g.ellipse(126, 398, 10, 5, 0, 0, 7); g.fill();
 }
 function renderFest(dt) {
   if (festKind === "hub") { renderFestGrounds(dt); return; }
