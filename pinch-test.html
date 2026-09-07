@@ -679,7 +679,7 @@
   #fest{position:absolute;inset:0;z-index:65;display:none;pointer-events:none;}
   #fest.on{display:block;pointer-events:auto;}
   #app.festing #hud,#app.festing #actions{opacity:0;pointer-events:none;transition:opacity .5s;}
-  #app.festing #toast,#app.festing #dev{opacity:0!important;pointer-events:none;}
+  #app.festing #toast,#app.festing #dev,#app.festing #hint{opacity:0!important;pointer-events:none;}
   #app.festing #stage{overflow:hidden;touch-action:none;}
   /* a curtain that rises to COVER, holds (the scene swaps underneath, hidden),
      then drops back away the way it came to REVEAL — same gesture both
@@ -743,6 +743,16 @@
     text-overflow:ellipsis;white-space:nowrap;}
   .fp-cell.picked{border-color:var(--accent);background:#fff;}
   .fp-cell.picked .nm{color:var(--ink);}
+
+  /* the activity chooser — race vs box challenge, shown once you're on the grounds */
+  .fc-cards{display:flex;flex-direction:column;gap:.6rem;margin:0 0 1rem;}
+  .fc-card{display:flex;flex-direction:column;gap:.2rem;text-align:left;background:#eef1e3;
+    border:2px solid transparent;border-radius:14px;padding:.7rem .85rem;cursor:pointer;font:inherit;}
+  .fc-card:hover{border-color:var(--accent);background:#fff;}
+  .fc-card .fc-emoji{font-size:1.4rem;line-height:1;}
+  .fc-card .fc-name{font-family:"Fraunces",serif;font-weight:700;font-size:1rem;color:var(--ink);}
+  .fc-card .fc-desc{font-size:.78rem;color:var(--ink-soft);line-height:1.4;}
+  #boxPickCount{color:var(--ink-faint);font-weight:600;}
 
   /* 3-2-1 countdown — pinned above the starting line (not dead-centre, so it
      reads like a race light rather than a modal), colour races warm-to-go and
@@ -1031,6 +1041,24 @@
   <!-- Cove Festival — a watch-and-cheer race. No shells staked; everyone who
        enters gets a little something, your pick winning gets a bit more. -->
   <div id="fest">
+    <div class="fest-panel" id="festChoose" hidden>
+      <div class="fp-art">🎪</div>
+      <h2>Down at the grounds</h2>
+      <p>Something's on. Two things, actually.</p>
+      <div class="fc-cards">
+        <button class="fc-card" id="fc-race" type="button">
+          <span class="fc-emoji">🏁</span>
+          <span class="fc-name">The Cove Festival</span>
+          <span class="fc-desc">A friendly race down the track. One cat runs for the cove.</span>
+        </button>
+        <button class="fc-card" id="fc-box" type="button">
+          <span class="fc-emoji">📦</span>
+          <span class="fc-name">The Great Box Challenge</span>
+          <span class="fc-desc">Five cats. Five boxes. We have been assured there are rules.</span>
+        </button>
+      </div>
+      <div class="btn-row"><button class="btn" id="festChooseBack">Maybe later</button></div>
+    </div>
     <div class="fest-panel" id="festPanel" hidden>
       <div class="fp-art">🎪</div>
       <h2>The Cove Festival</h2>
@@ -1039,6 +1067,16 @@
       <div class="btn-row">
         <button class="btn primary" id="festStart">Start the race</button>
         <button class="btn" id="festCancel">Maybe later</button>
+      </div>
+    </div>
+    <div class="fest-panel" id="festBoxPanel" hidden>
+      <div class="fp-art">📦</div>
+      <h2>The Great Box Challenge</h2>
+      <p>Choose five highly qualified professionals. <span id="boxPickCount">(0 / 5)</span></p>
+      <div class="fp-grid" id="boxPickGrid"></div>
+      <div class="btn-row">
+        <button class="btn primary" id="boxStart" disabled>Release the boxes</button>
+        <button class="btn" id="boxCancel">Maybe later</button>
       </div>
     </div>
     <div class="fest-countdown" id="festCountdown" hidden>
@@ -1091,6 +1129,7 @@
       <button id="dev-pearls">+5 ✦</button>
       <button id="dev-cat">+ cat</button>
       <button id="dev-fest">🎪 festival</button>
+      <button id="dev-box">📦 box challenge</button>
       <button id="dev-day">skip a day</button>
       <button id="dev-name">name cove</button>
       <button id="dev-ad">show ad</button>
@@ -6274,7 +6313,8 @@ document.getElementById("dev-name").addEventListener("click", () => askOwnerName
 document.getElementById("dev-shells").addEventListener("click", () => { G.shells += 500; syncHud(); });
 document.getElementById("dev-pearls").addEventListener("click", () => { G.pearls += 5; syncHud(); });
 document.getElementById("dev-cat").addEventListener("click", () => { spawnCat({ x: W * 0.5, y: H * 0.7 }); syncHud(); });
-document.getElementById("dev-fest").addEventListener("click", () => openFestPicker());
+document.getElementById("dev-fest").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("race"); });
+document.getElementById("dev-box").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("box"); });
 document.getElementById("dev-day").addEventListener("click", () => {
   G.opens++; G.streakDay = today() - 1; G.goalDay = 0; rollDailyGoals();
   for (const c of cats) { c.acc += aggregateRate() * 120; c.bornAt -= DAY_MS; }   // age the kittens too
@@ -7981,6 +8021,13 @@ function renderRest(dt) {
    bypass the lock, same as they bypass everything else, for testing. */
 function festUnlocked() { return G.opens >= 5; }
 let festMode = false, _festDPR = 0, _festG = null;
+// which activity is live on the grounds — "race" (the original) or "box" (the
+// Great Box Challenge). Set by startBoxChallenge, reset by closeFest. renderFest
+// hands off to renderBox while this is "box".
+let festKind = "race", _festPickKind = null, _festRoster = [];
+// tiny fire-and-forget analytics seam: no library, just a labelled console line
+// in dev builds. Swap the body for a real sink later without touching callers.
+function trackEvent(name, params) { if (DEV_BUILD) console.debug("[analytics]", name, params || {}); }
 const RACE_W = 1400, RACE_H = 640, MAX_RACE_T = 20;
 let raceCats = [], festSpectators = [], racePick = null, raceWinner = null;
 let raceT = 0, racePhase = "run", _festFinishAt = 0, festPickedCat = null, festCheerUntil = 0;
@@ -8048,7 +8095,7 @@ function raceX(p) { return 150 + clamp(p, 0, 1) * 1100; }
 // cove and forth while you're just choosing who runs. Only "Maybe later" /
 // "Back to the cove" ever wipes you back; "Race again" stays put and re-opens
 // the picker over the same grounds.
-function openFestPicker() {
+function openFestPicker(kind) {
   if (festMode || restMode || !cats.length) return;
   if (!festUnlocked()) return;   // day-5 gate — belt for any entry point past the (now correctly hidden) 🎪 button
   if (_placing || _arranging) exitPlacement();
@@ -8057,10 +8104,15 @@ function openFestPicker() {
   const roster = cats.filter(c => !c.visitor);
   if (!roster.length) { toast("No one's around to send to the festival right now."); return; }
   if (!roster.includes(festPickedCat)) festPickedCat = roster.find(c => c.mascot) || roster[0];
+  _festPickKind = kind || null;   // "race" / "box" jump straight to that picker; null = show the chooser
+  _festRoster = roster;
   raceCats = []; raceWinner = null; racePick = null; raceT = 0; racePhase = "picker"; _festG = null; festCheerUntil = 0;
   festIdleScene(roster);
+  trackEvent("activity_open", { kind: _festPickKind || "choose" });
   document.getElementById("festResult").hidden = true;
+  document.getElementById("festChoose").hidden = true;
   document.getElementById("festPanel").hidden = true;   // shown once we've actually arrived
+  document.getElementById("festBoxPanel").hidden = true;
   document.getElementById("festCountdown").hidden = true;
   document.getElementById("festSkip").hidden = true;
 
@@ -8081,8 +8133,15 @@ function openFestPicker() {
     document.getElementById("app").classList.add("festing");
     document.getElementById("fest").classList.add("on");
     document.getElementById("festBar").hidden = false;
-    renderFestPickGrid(roster);
-    document.getElementById("festPanel").hidden = false;
+    if (_festPickKind === "box") {
+      boxPhase = "picker"; renderBoxPickGrid(roster);
+      document.getElementById("festBoxPanel").hidden = false;
+    } else if (_festPickKind === "race") {
+      renderFestPickGrid(roster);
+      document.getElementById("festPanel").hidden = false;
+    } else {
+      document.getElementById("festChoose").hidden = false;
+    }
     startFestAudio();
   }, 560);
   setTimeout(() => w.classList.add("out"), 1250);
@@ -8206,10 +8265,14 @@ function runFestCountdown() {
 // the only exit — wipes back to the cove the same way we arrived, so leaving
 // is one clean motion rather than a cut
 function closeFest() {
+  document.getElementById("festChoose").hidden = true;
   document.getElementById("festPanel").hidden = true;
+  document.getElementById("festBoxPanel").hidden = true;
   document.getElementById("festResult").hidden = true;
   document.getElementById("festCountdown").hidden = true;
   document.getElementById("festSkip").hidden = true;
+  document.getElementById("festSkip").textContent = "Skip to the finish ›";
+  festKind = "race"; boxParts = []; boxPhase = "idle";
   particles.length = 0; floaters.length = 0;   // a live "zoomies!" or confetti spark shouldn't follow you back to the cove
   _festQuietUntil = Date.now() + 1800;   // ...and none land the instant the wipe clears back at the cove
   const w = document.getElementById("festWipe");
@@ -8440,6 +8503,12 @@ function festReward(place) {
 }
 function showFestPodium() {
   const order = festRanking();
+  { // the result card is shared with the Box Challenge — put its race face back
+    const rc = document.getElementById("festResult");
+    rc.querySelector("h2").textContent = "The Cove Festival";
+    rc.querySelector(".fr-emoji").textContent = "🏆";
+    document.getElementById("festAgain").textContent = "Race again";
+  }
   // classic podium arrangement — 2nd/1st/3rd left to right, 1st tallest —
   // right inside the card, hopping in place, instead of out in the field
   // where the card would just cover it
@@ -8486,6 +8555,7 @@ function showFestPodium() {
   document.getElementById("festResult").hidden = false;
 }
 function renderFest(dt) {
+  if (festKind === "box") { renderBox(dt); return; }
   raceT += dt;
   const g = ctx;
   { // a resize() elsewhere restores the full pannable canvas — put the fest canvas back
@@ -8567,14 +8637,49 @@ document.getElementById("festStart").addEventListener("click", startFestRace);
 document.getElementById("festAgain").addEventListener("click", () => {
   document.getElementById("festResult").hidden = true;
   document.getElementById("festBar").hidden = false;   // back to the picker — restore the bottom exit bar
-  raceCats = []; raceWinner = null; racePick = null; racePhase = "picker"; festCheerUntil = 0;
-  particles.length = 0; floaters.length = 0;   // last heat's zoomies text / confetti shouldn't bleed into this one
+  particles.length = 0; floaters.length = 0;   // last round's zoomies text / confetti shouldn't bleed into this one
   const roster = cats.filter(c => !c.visitor);
   festIdleScene(roster);
+  if (festKind === "box") {
+    boxParts = []; boxPhase = "picker"; festKind = "race";   // grounds behind the picker; startBoxChallenge flips it back
+    renderBoxPickGrid(roster);
+    document.getElementById("festBoxPanel").hidden = false;
+    trackEvent("box_challenge_replayed");
+    return;
+  }
+  raceCats = []; raceWinner = null; racePick = null; racePhase = "picker"; festCheerUntil = 0;
   renderFestPickGrid(roster);
   document.getElementById("festPanel").hidden = false;
 });
+// the activity chooser
+document.getElementById("festChooseBack").addEventListener("click", closeFest);
+document.getElementById("fc-race").addEventListener("click", () => {
+  document.getElementById("festChoose").hidden = true;
+  festKind = "race";
+  document.getElementById("festTime").textContent = "the cove festival";
+  const roster = _festRoster.length ? _festRoster : cats.filter(c => !c.visitor);
+  festIdleScene(roster); renderFestPickGrid(roster);
+  document.getElementById("festPanel").hidden = false;
+  trackEvent("activity_open", { kind: "race" });
+});
+document.getElementById("fc-box").addEventListener("click", () => {
+  document.getElementById("festChoose").hidden = true;
+  boxPhase = "picker";
+  const roster = _festRoster.length ? _festRoster : cats.filter(c => !c.visitor);
+  festIdleScene(roster); renderBoxPickGrid(roster);
+  document.getElementById("festBoxPanel").hidden = false;
+  trackEvent("activity_open", { kind: "box" });
+});
+document.getElementById("boxCancel").addEventListener("click", closeFest);
+document.getElementById("boxStart").addEventListener("click", startBoxChallenge);
 document.getElementById("festSkip").addEventListener("click", () => {
+  if (festKind === "box") {
+    if (boxPhase !== "play" && boxPhase !== "settle") return;
+    boxPhase = "tally"; boxTallyAt = boxT - 1.4;   // short settle, then the result card
+    boxParts.forEach(p => { if (p.state === "approach" || p.state === "wander") { p.state = "beside"; } });
+    document.getElementById("festSkip").hidden = true;
+    return;
+  }
   if (racePhase !== "run") return;
   const order = [...raceCats].sort((a, b) => b.progress - a.progress);
   order.forEach((r, i) => { r.done = true; r.progress = Math.max(r.progress, 1 - i * 0.03); r.doneAt = raceT + i * 0.001; });
@@ -8585,6 +8690,412 @@ document.getElementById("festSkip").addEventListener("click", () => {
   document.getElementById("festSkip").hidden = true;
   festAllInChime(0.4);   // skip fires both cues at once — stagger so the win fanfare finishes first
 });
+
+/* ================= THE GREAT BOX CHALLENGE =================
+   A casual, upside-only Cove activity that rides the same rails as the race:
+   the #fest overlay, festMode, the wipe, the grounds audio, the shared
+   #festResult card, drawCat, grantReward. Five cats, five boxes, ~34s of
+   watching cats be cats around cardboard. A hidden "box interest" score picks
+   a deadpan winner; nobody loses, nobody's penalised, the reward is a small
+   Shell payout in the same shape as the race's. Save schema is untouched.
+   Everything box-specific lives in this block. */
+const BOX_W = 560, BOX_H = 1180, BOX_DUR = 34;
+// a loose pile someone left out, not a tidy rack — scattered down a portrait arena
+const BOX_SLOTS = [
+  { x: 146, y: 320 }, { x: 410, y: 268 }, { x: 282, y: 486 },
+  { x: 150, y: 690 }, { x: 414, y: 656 },
+];
+// trait -> shifts to the action weights a cat rolls each time it re-decides
+// what to do with a box. Deltas only; averaged across a cat's traits so two
+// don't stack into a certainty. Probabilities, never guarantees (spec).
+const BOX_TENDENCIES = {
+  glutton: { enter: 0.10, nap: 0.06, paw: 0.04 },
+  playful: { paw: 0.34, top: 0.12, enter: 0.08, nap: -0.16, wander: 0.06 },
+  shy:     { enter: 0.30, beside: 0.10, top: -0.20, wander: -0.12 },
+  cuddly:  { beside: 0.26, enter: 0.10, nap: 0.10 },
+  climber: { top: 0.44, enter: -0.04, nap: -0.04 },
+  chatty:  { beside: 0.30, wander: 0.12, nap: -0.06 },
+  lazy:    { nap: 0.40, enter: 0.16, paw: -0.20, wander: -0.16 },
+  curious: { enter: 0.24, paw: 0.16, wander: 0.16, top: 0.06 },
+  grumpy:  { enter: 0.14, top: 0.10, beside: -0.14, paw: -0.10 },
+  bold:    { enter: 0.30, top: 0.20, paw: 0.10, wander: -0.06 },
+};
+const BOX_NAP_LINES_IN = [
+  "got in a box and was asleep inside a minute",
+  "climbed into a box, turned around once, and was gone",
+  "found a box, declared it home, and shut down for the day",
+];
+const BOX_NAP_LINES_TOP = [
+  "fell asleep on top of a box, mid-supervision",
+  "dozed off on the lid and nearly slid off twice",
+  "held the high ground until sleep took it",
+];
+const BOX_ENTER_LINES = [
+  "got into a box early and simply stayed",
+  "folded into a box two sizes too small and looked delighted",
+  "reversed into a box like it had done this before",
+];
+const BOX_TOP_LINES = [
+  "climbed on top of a box and looked down on the proceedings",
+  "sat on the tallest box available, on principle",
+  "took the lid and refused to acknowledge the others",
+];
+const BOX_PAW_LINES = [
+  "pawed at the same box until it stopped being interesting",
+  "spent the afternoon fighting one specific flap",
+  "batted a box across the rug and chased it",
+];
+function boxNapLine(onTop) { return _bpick(onTop ? BOX_NAP_LINES_TOP : BOX_NAP_LINES_IN); }
+const BOX_WIN_LINES = [
+  "[CAT] wins. The box remains undefeated.",
+  "[CAT] wins. We are not entirely sure what the rules were.",
+  "[CAT] is declared the winner. The committee has questions but no objections.",
+  "[CAT] wins by a margin the boxes have asked us not to disclose.",
+  "[CAT] takes it. A formal box was involved. That is all we can confirm.",
+];
+let boxes = [], boxParts = [], boxTouched = [], boxPickedCats = [];
+let boxPhase = "idle", boxT = 0, boxTallyAt = 0, boxWinner = null;
+function _bpick(a) { return a[(Math.random() * a.length) | 0]; }
+function _bshuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function boxFit() {
+  const { vw, vh } = restViewportPx();
+  const rd = _festDPR || DPR;
+  // the arena is a portrait rectangle now (roughly a phone's shape) so a plain
+  // contain-fit fills the screen instead of sitting in a thin letterboxed band
+  const sc = Math.min((vw * rd) / BOX_W, (vh * rd) / BOX_H);
+  return { sc, ox: (vw * rd - BOX_W * sc) / 2, oy: (vh * rd - BOX_H * sc) / 2 };
+}
+function boxApproachPt(i) { const b = boxes[i]; return { x: b.x + rand(-12, 12), y: b.y + 52 }; }
+function boxInsidePt(i)   { const b = boxes[i]; return { x: b.x + rand(-6, 6), y: b.y - 4 }; }
+function boxTopPt(i)      { const b = boxes[i]; return { x: b.x + rand(-10, 10), y: b.y - 42 }; }
+function boxBesidePt(i)   { const b = boxes[i]; return { x: b.x + (Math.random() < 0.5 ? -1 : 1) * 64, y: b.y + 8 }; }
+
+function renderBoxPickGrid(roster) {
+  boxPickedCats = [];
+  const grid = document.getElementById("boxPickGrid");
+  grid.innerHTML = "";
+  const need = Math.min(5, roster.length);
+  for (const c of roster) {
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "fp-cell";
+    cell.innerHTML = `<canvas width="56" height="48"></canvas><span class="nm"></span>`;
+    cell.querySelector(".nm").textContent = c.name;
+    cell.addEventListener("click", () => {
+      const at = boxPickedCats.indexOf(c);
+      if (at >= 0) { boxPickedCats.splice(at, 1); cell.classList.remove("picked"); }
+      else { if (boxPickedCats.length >= 5) return; boxPickedCats.push(c); cell.classList.add("picked"); }
+      document.getElementById("boxPickCount").textContent = `(${boxPickedCats.length} / 5)`;
+      document.getElementById("boxStart").disabled = boxPickedCats.length < need;
+    });
+    grid.appendChild(cell);
+    miniCat(cell.querySelector("canvas"), c.coatKey, c.star, "loafing", false, 1);
+  }
+  document.getElementById("boxPickCount").textContent = `(0 / 5)`;
+  document.getElementById("boxStart").disabled = true;
+}
+function startBoxChallenge() {
+  const need = Math.min(5, cats.filter(c => !c.visitor).length);
+  if (boxPickedCats.length < need) return;
+  document.getElementById("festBoxPanel").hidden = true;
+  festKind = "box";
+  fitFestCanvas();
+  boxT = 0; boxPhase = "settle"; boxWinner = null;
+  particles.length = 0; floaters.length = 0;
+  const variants = _bshuffle(["plain", "paw", "tape", "dent", "plain"]);
+  boxes = BOX_SLOTS.map((s, i) => ({ x: s.x, y: s.y, variant: variants[i] }));
+  boxTouched = boxes.map(() => false);
+  const field = boxPickedCats.slice(0, 5);
+  while (field.length < 5) field.push(new Cat({ visitor: true }));   // a small cove gets guests, same as the race
+  boxParts = field.map((c, i) => {
+    Object.assign(c, {
+      x: 70 + i * ((BOX_W - 140) / 4), y: BOX_H - 210, face: 1,
+      walk: 0, walkAmt: 0, trotting: false, blink: rand(1, 4), state: "exploring",
+    });
+    const home = i;
+    const ap = boxApproachPt(home);
+    return {
+      cat: c, box: home, state: "approach", t: 0, decideAt: rand(0.3, 1.2),
+      score: 0, seen: new Set(), log: [], pawN: 0, stayT: 0,
+      napping: false, entered: false, climbed: false, tx: ap.x, ty: ap.y,
+    };
+  });
+  document.getElementById("festResult").hidden = true;
+  document.getElementById("festBar").hidden = false;
+  document.getElementById("festTime").textContent = "the great box challenge";
+  document.getElementById("festSkip").hidden = true;
+  document.getElementById("festSkip").textContent = "Skip to the tally ›";
+  trackEvent("box_challenge_started", { cats: boxParts.map(p => p.cat.name) });
+}
+// weighted choice of what a cat does with a box next; trait deltas nudge it
+function boxChoiceWeights(p) {
+  const base = { enter: 0.26, top: 0.15, beside: 0.18, paw: 0.22, wander: 0.21, nap: 0.06 };
+  const traits = (p.cat.traits || []).filter(t => BOX_TENDENCIES[t]);
+  for (const k of Object.keys(base)) {
+    if (traits.length) {
+      let d = 0;
+      for (const t of traits) d += (BOX_TENDENCIES[t][k] || 0);
+      base[k] += d / traits.length;
+    }
+    base[k] = Math.max(0.02, base[k]);
+  }
+  if (p.entered) base.enter *= 0.4;          // did that already — spread out
+  if (p.climbed) base.top *= 0.4;
+  if (p.pawN >= 3) base.paw *= 0.3;
+  if (p.napping) return { nap: 1 };          // asleep stays asleep
+  return base;
+}
+function boxRoll(w) {
+  let sum = 0; for (const k in w) sum += w[k];
+  let r = Math.random() * sum;
+  for (const k in w) { r -= w[k]; if (r <= 0) return k; }
+  return "beside";
+}
+function boxInspect(p) {
+  if (p.seen.has(p.box)) return;
+  p.seen.add(p.box);
+  const fresh = !boxTouched[p.box];
+  boxTouched[p.box] = true;
+  p.score += 1 + (fresh ? 2 : 0);           // inspect +1, first cat to touch this box +2 (unique interaction)
+  spawnParticles(boxes[p.box].x, boxes[p.box].y + 4, "dust", 3);
+  if (p.seen.size === 5) { p.score += 4; p.log.push("checked every single box, one at a time, then picked the first one again"); }
+}
+function boxTick(p, dt) {
+  if (boxPhase === "tally" || boxPhase === "podium") return;
+  const c = p.cat;
+  p.t += dt;
+  const dist = Math.hypot(p.tx - c.x, p.ty - c.y);
+  if (p.state === "approach" || p.state === "goto") {
+    if (dist < 10) {
+      if (p.state === "approach") { boxInspect(p); p.state = "decide"; p.t = 0; p.decideAt = rand(0.5, 1.1); }
+      else { p.state = p.gotoState; p.t = 0; onBoxArrive(p); }
+    }
+    return;
+  }
+  if (p.state === "decide") {
+    if (p.t < p.decideAt) return;
+    p.t = 0;
+    const choice = boxRoll(boxChoiceWeights(p));
+    if (choice === "wander") {
+      // prefer a box nobody has touched yet — that's where the unique points are
+      let pool = boxes.map((_, i) => i).filter(i => i !== p.box);
+      const fresh = pool.filter(i => !boxTouched[i]);
+      p.box = _bpick(fresh.length ? fresh : pool);
+      const ap = boxApproachPt(p.box);
+      p.tx = ap.x; p.ty = ap.y; p.state = "approach";
+      return;
+    }
+    if (choice === "paw") {
+      p.pawN++;
+      if (p.pawN <= 5) p.score += 1;
+      if (p.pawN === 3) p.log.push(_bpick(BOX_PAW_LINES));
+      spawnParticles(boxes[p.box].x + rand(-8, 8), boxes[p.box].y, "dust", 2);
+      p.state = "paw"; p.pawUntil = rand(0.8, 1.6);
+      const bp = boxBesidePt(p.box); p.tx = bp.x; p.ty = bp.y;
+      return;
+    }
+    p.pendingNap = choice === "nap";
+    const settleAs = (choice === "top") ? "ontop" : (choice === "beside") ? "beside" : "inside";  // enter + nap both head into a box
+    const dest = settleAs === "ontop" ? boxTopPt(p.box) : settleAs === "beside" ? boxBesidePt(p.box) : boxInsidePt(p.box);
+    p.tx = dest.x; p.ty = dest.y;
+    p.state = "goto"; p.gotoState = settleAs;
+    return;
+  }
+  if (p.state === "paw") {
+    p.pawUntil -= dt;
+    if (p.pawUntil <= 0) { p.state = "decide"; p.decideAt = rand(0.6, 1.4); p.t = 0; }
+    return;
+  }
+  // settled states: inside / ontop / beside — accrue points, maybe nap, maybe move on.
+  // a napping cat is done: the +3 was the payout, it stops ticking so the field
+  // doesn't just converge on "everyone slept for the same number of ticks".
+  if (p.napping) return;
+  p.stayT += dt;
+  const tickEvery = 3.4;
+  if (p.stayT >= tickEvery) {
+    p.stayT -= tickEvery;
+    if (p.state === "inside" || p.state === "ontop") p.score += 1;   // stay put (periodic) +1
+    else if (p.state === "beside") p.score += 1;                     // holding court still counts
+    const r = Math.random();
+    const T = p.cat.traits || [];
+    const napBias = T.includes("lazy") ? 0.32 : T.includes("playful") ? 0.04 : T.includes("cuddly") ? 0.10 : 0.15;
+    if ((p.state === "inside" || p.state === "ontop") && boxT > 6 && r < napBias) {
+      p.napping = true;
+      p.score += 3;                                       // nap +3 (terminal)
+      p.log.push(boxNapLine(p.state === "ontop"));
+    } else if (r > 0.62 && boxT < BOX_DUR - 5) {
+      p.state = "decide"; p.decideAt = rand(0.4, 1.0); p.t = 0;      // gets bored, moves on
+    }
+  }
+}
+function onBoxArrive(p) {
+  if (p.state === "inside" && !p.entered) {
+    p.entered = true; p.score += 3;                       // enter +3
+    p.log.push(_bpick(BOX_ENTER_LINES));
+    spawnParticles(boxes[p.box].x, boxes[p.box].y - 6, "heart", 2);
+  } else if (p.state === "ontop" && !p.climbed) {
+    p.climbed = true; p.score += 4;                       // sit on top +4 — the iconic move
+    p.log.push(_bpick(BOX_TOP_LINES));
+  } else if (p.state === "beside") {
+    p.score += 1;                                         // sit beside +1
+  }
+  p.stayT = 0;
+  if (p.pendingNap && (p.state === "inside" || p.state === "ontop") && boxT > 5) {
+    p.pendingNap = false;
+    p.napping = true;
+    p.score += 3;                                         // nap +3 (terminal)
+    p.log.push(boxNapLine(p.state === "ontop"));
+  }
+}
+function syncBoxCat(p, dt) {
+  const c = p.cat, m = catMotion(c);
+  const moving = boxPhase !== "tally" && (p.state === "approach" || p.state === "goto");
+  const k = Math.min(1, dt * 3.4);
+  c.x += (p.tx - c.x) * k; c.y += (p.ty - c.y) * k;
+  if (Math.abs(p.tx - c.x) > 1) c.face = p.tx > c.x ? 1 : -1;
+  const far = Math.hypot(p.tx - c.x, p.ty - c.y) > 6;
+  if (moving && far) {
+    c.state = "exploring"; c.trotting = true;
+    c.walk += 40 * dt * 0.34; c.walkAmt = Math.min(1, (c.walkAmt || 0) + dt * 8);
+    c.tail += dt * 6 * m.tailRate; c.bob += dt * 9;
+  } else {
+    c.state = p.napping ? "sleeping" : p.state === "paw" ? "playing" : "loafing";
+    c.walkAmt = Math.max(0, (c.walkAmt || 0) - dt * 4);
+    c.trotting = c.walkAmt > 0.05;
+    c.tail += dt * 2.6 * m.tailRate; c.bob += dt * 3;
+  }
+  c.blink -= dt; if (c.blink < -0.12) c.blink = rand(2.4, 6.5) * m.blinkEvery;
+}
+function drawBoxRoom(g) {
+  g.fillStyle = "#ece3d1"; g.fillRect(0, 0, BOX_W, BOX_H);
+  g.fillStyle = "#ddd0b7"; g.fillRect(0, 0, BOX_W, 190);            // back wall
+  g.fillStyle = "#e4d9c2"; g.fillRect(0, 190, BOX_W, 12);           // skirting
+  g.fillStyle = "rgba(150,120,88,0.13)";                            // a rug the boxes sit on
+  g.beginPath(); g.ellipse(BOX_W / 2, 560, 300, 380, 0, 0, 7); g.fill();
+  g.strokeStyle = "rgba(150,120,88,0.18)"; g.lineWidth = 3;
+  g.beginPath(); g.ellipse(BOX_W / 2, 560, 276, 356, 0, 0, 7); g.stroke();
+}
+function drawBox(g, b, layer) {
+  const x = b.x, y = b.y;
+  const outer = "#cf975d", side = "#b9834b", inner = "#71492b", lip = "#e2ad78", edge = "rgba(90,58,34,0.35)";
+  if (layer === "back") {
+    g.fillStyle = side;                                   // body rising behind
+    g.beginPath(); g.moveTo(x - 48, y - 4); g.lineTo(x - 56, y - 42); g.lineTo(x + 56, y - 42); g.lineTo(x + 48, y - 4); g.closePath(); g.fill();
+    g.fillStyle = inner;                                  // interior well
+    g.beginPath(); g.moveTo(x - 44, y - 4); g.lineTo(x - 38, y - 32); g.lineTo(x + 38, y - 32); g.lineTo(x + 44, y - 4); g.closePath(); g.fill();
+    g.fillStyle = lip;                                    // far flap, tipped away
+    g.beginPath(); g.moveTo(x - 38, y - 32); g.lineTo(x - 44, y - 54); g.lineTo(x + 44, y - 54); g.lineTo(x + 38, y - 32); g.closePath(); g.fill();
+    g.strokeStyle = edge; g.lineWidth = 1.5; g.stroke();
+  } else {
+    g.fillStyle = side;                                   // open side flaps
+    g.beginPath(); g.moveTo(x - 48, y - 4); g.lineTo(x - 72, y - 12); g.lineTo(x - 66, y - 32); g.lineTo(x - 46, y - 22); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(x + 48, y - 4); g.lineTo(x + 72, y - 12); g.lineTo(x + 66, y - 32); g.lineTo(x + 46, y - 22); g.closePath(); g.fill();
+    g.fillStyle = outer;                                  // front face
+    roundRect(g, x - 50, y - 6, 100, 30, 4); g.fill();
+    g.fillStyle = lip;                                    // near flap folded toward us
+    g.beginPath(); g.moveTo(x - 50, y - 6); g.lineTo(x - 60, y + 10); g.lineTo(x + 60, y + 10); g.lineTo(x + 50, y - 6); g.closePath(); g.fill();
+    g.strokeStyle = edge; g.lineWidth = 1.5; g.strokeRect(x - 50, y - 6, 100, 30);
+    if (b.variant === "paw") {
+      g.fillStyle = "rgba(92,60,38,0.4)";
+      g.beginPath(); g.ellipse(x, y + 12, 5, 4, 0, 0, 7); g.fill();
+      for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(x - 5 + i * 5, y + 5, 1.9, 0, 7); g.fill(); }
+    } else if (b.variant === "tape") {
+      g.strokeStyle = "rgba(214,194,152,0.8)"; g.lineWidth = 5;
+      g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x, y + 10); g.stroke();
+    } else if (b.variant === "dent") {
+      g.fillStyle = "rgba(90,58,34,0.24)";
+      g.beginPath(); g.ellipse(x + 16, y + 6, 11, 5, 0.3, 0, 7); g.fill();
+    }
+  }
+}
+function renderBox(dt) {
+  boxT += dt;
+  const g = ctx;
+  { const px = restViewportPx();
+    if (Math.abs(canvas.width - Math.round(px.vw * (_festDPR || DPR))) > 2) fitFestCanvas(); }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  const V = boxFit();
+  g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
+  drawBoxRoom(g);
+  if (!boxes.length) return;   // chooser/picker still open — just the empty room behind the panel
+
+  if (boxPhase === "settle" || boxPhase === "play" || boxPhase === "tally") {
+    for (const p of boxParts) { boxTick(p, dt); syncBoxCat(p, dt); }
+    if (boxPhase === "settle" && boxParts.every(p => p.state !== "approach")) {
+      boxPhase = "play";
+      document.getElementById("festSkip").hidden = false;
+    }
+    if (boxPhase === "play" && boxT > BOX_DUR) {
+      boxPhase = "tally"; boxTallyAt = boxT;
+      document.getElementById("festSkip").hidden = true;
+    }
+    if (boxPhase === "tally" && boxT - boxTallyAt > 2.0) { boxPhase = "podium"; showBoxResult(); }
+  }
+
+  const order = boxes.map((_, i) => i).sort((a, b) => boxes[a].y - boxes[b].y);
+  for (const i of order) {
+    drawBox(g, boxes[i], "back");
+    for (const p of boxParts) if (p.box === i && p.state === "inside") drawCat(g, p.cat, false);
+    drawBox(g, boxes[i], "front");
+    for (const p of boxParts) if (p.box === i && p.state === "ontop") drawCat(g, p.cat, false);
+  }
+  const roam = boxParts.filter(p => p.state !== "inside" && p.state !== "ontop").sort((a, b) => a.cat.y - b.cat.y);
+  for (const p of roam) drawCat(g, p.cat, false);
+  if (particles.length) drawFX(g);
+}
+function boxRanking() {
+  return boxParts.map(p => ({ p, total: p.score + rand(0, 4) }))   // small end jitter (spec)
+    .sort((a, b) => b.total - a.total);
+}
+function showBoxResult() {
+  const rank = boxRanking();
+  boxWinner = rank[0].p;
+  const res = document.getElementById("festResult");
+  res.querySelector("h2").textContent = "The Great Box Challenge";
+  res.querySelector(".fr-emoji").textContent = "📦";
+  document.getElementById("festAgain").textContent = "Go again";
+
+  const top = rank.slice(0, 3).map(r => r.p);
+  const display = [top[1], top[0], top[2]].filter(Boolean);
+  const displayPlace = display.map(p => top.indexOf(p));
+  const blockClass = ["gold", "silver", "bronze"];
+  document.getElementById("festPodium").innerHTML =
+    `<div class="fr-pod-tops">${display.map((p, i) => {
+      const place = displayPlace[i];
+      return `<div class="fr-pod-top rank${place + 1}">
+        <canvas width="64" height="60"></canvas>
+        <div class="fr-pod-name${p.cat.visitor ? "" : " mine"}">${esc(p.cat.name)}</div>
+      </div>`;
+    }).join("")}</div>
+    <div class="fr-pod-blocks">${display.map((p, i) => `<div class="fr-pod-block ${blockClass[displayPlace[i]]}">${displayPlace[i] + 1}</div>`).join("")}</div>`;
+  const cols = document.querySelectorAll("#festPodium .fr-pod-top");
+  display.forEach((p, i) => miniCat(cols[i].querySelector("canvas"), p.cat.coatKey, p.cat.star, p.napping ? "sleeping" : "loafing", false, 0.85));
+
+  const base = goalShells(0.25);
+  const mine = !boxWinner.cat.visitor;
+  const rw = { shells: mine ? goalShells(0.6) : base };   // participation, +winner bump if a resident took it
+  grantReward(rw, null);
+  syncHud();
+
+  document.getElementById("festPickLine").textContent =
+    _bpick(BOX_WIN_LINES).replace("[CAT]", boxWinner.cat.name) + `  +${rw.shells} ◈`;
+
+  const lines = [];
+  if (boxWinner.log.length) lines.push(`${boxWinner.cat.name} ${_bpick(boxWinner.log)}.`);
+  const others = boxParts.filter(p => p !== boxWinner && p.log.length);
+  if (others.length) { const o = _bpick(others); lines.push(`${o.cat.name} ${_bpick(o.log)}.`); }
+  if (!lines.length) lines.push("Not much happened. The boxes seemed content with that.");
+  document.getElementById("festRestLine").textContent = lines.join(" ");
+  logMoment("📦", `The Great Box Challenge — ${boxWinner.cat.name} won. ` + lines.join(" "), "tale");
+
+  spawnParticles(BOX_W / 2, 260, "spark", 10);
+  document.getElementById("festSkip").hidden = true;
+  document.getElementById("festSkip").textContent = "Skip to the finish ›";
+  document.getElementById("festBar").hidden = true;
+  res.hidden = false;
+  trackEvent("box_challenge_completed", { winner: boxWinner.cat.name, mine, score: boxWinner.score });
+}
 
 /* ---------- rendering ---------- */
 let clouds = [];
@@ -13021,7 +13532,10 @@ window.__cove.focus = (name) => {
   return "no such cat";
 };
 // Cove Festival — opens the picker panel (see openFestPicker())
-window.__cove.fest = () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker(); return { on: festMode, picking: !document.getElementById("festPanel").hidden }; };
+window.__cove.fest = () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("race"); return { on: festMode, picking: !document.getElementById("festPanel").hidden }; };
+// The Great Box Challenge — jumps straight to its cat picker (bypasses the day-5 gate, like fest())
+window.__cove.box = () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("box"); return { on: festMode, kind: festKind, phase: boxPhase }; };
+window.__cove.boxState = () => ({ kind: festKind, phase: boxPhase, t: Math.round(boxT), parts: boxParts.map(p => ({ n: p.cat.name, st: p.state, box: p.box, score: p.score, nap: p.napping, log: p.log })) });
 // perf: read the adaptive-detail state, or pin it (true/false) to preview the lite look
 window.__cove.perfLite = (v) => {
   if (v !== undefined) {
