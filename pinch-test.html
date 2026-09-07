@@ -484,17 +484,6 @@
   .reveal .stars{font-size:1.1rem;letter-spacing:2px;margin-bottom:.5rem;}
   .reveal .sub{color:var(--ink-soft);font-size:.9rem;margin-bottom:1rem;}
 
-  /* ---- flag-pole country picker ---- */
-  .flagpick .name-in{margin:.2rem 0 .55rem;}
-  .flag-list{max-height:46vh;overflow-y:auto;-webkit-overflow-scrolling:touch;text-align:left;
-    border:1px solid var(--panel-line);border-radius:12px;background:#faf8f0;margin-bottom:.8rem;}
-  .flag-row{display:flex;align-items:center;gap:.6rem;width:100%;padding:.5rem .7rem;border:0;
-    background:none;font:inherit;font-size:.9rem;color:var(--ink);cursor:pointer;text-align:left;border-bottom:1px solid rgba(60,50,38,.08);}
-  .flag-row:last-child{border-bottom:0;}
-  .flag-row:hover{background:#f0ede1;}
-  .flag-row.on{background:#e3efe3;font-weight:700;}
-  .flag-row .fe{font-size:1.15rem;flex:0 0 auto;width:1.6rem;text-align:center;}
-
   .cc-stars{font-size:.85rem;letter-spacing:1px;margin-bottom:.5rem;}
 
   /* ---- cat card ---- */
@@ -1558,7 +1547,7 @@ function newGame() {
     tips: [],
     metrics: { pets:0, tokens:0, photos:0, catsAllTime:0, coaxed:0, dryStreak:0 },
     dex: { midknight: { star: 0, count: 1 } },   // coatKey -> { star: bestStar, count: timesSeen } — Midknight's always in the guide
-    cosmetics: { theme: "default", themes: { default: true }, props: {}, propPos: {}, propBoxed: {}, decorPos: {}, comfortPos: {}, flagCountry: "" },   // renewable decor: atmosphere theme + owned props (+ player positions / packed-away) + player-placed cottages/trees/flowers/stations + player-placed bowls/beds/toys/scratchers + the flag-pole country
+    cosmetics: { theme: "default", themes: { default: true }, props: {}, propPos: {}, propBoxed: {}, decorPos: {}, comfortPos: {} },   // renewable decor: atmosphere theme + owned props (+ player positions / packed-away) + player-placed cottages/trees/flowers/stations + player-placed bowls/beds/toys/scratchers
     dexRewards: [],         // claimed Catdex milestone thresholds
     goals: null, goalDay: 0,
     streak: 0, streakDay: 0,
@@ -1617,7 +1606,8 @@ function load() {
     if (!G.cosmetics.propBoxed || typeof G.cosmetics.propBoxed !== "object") G.cosmetics.propBoxed = {};
     if (!G.cosmetics.decorPos || typeof G.cosmetics.decorPos !== "object") G.cosmetics.decorPos = {};  // player-set cottage/tree/flower/station positions, keyed "type:index" ("station:fishing:0")
     if (!G.cosmetics.comfortPos || typeof G.cosmetics.comfortPos !== "object") G.cosmetics.comfortPos = {};  // player-set bowl/toy/bed/scratcher positions, keyed "type:index"
-    if (typeof G.cosmetics.flagCountry !== "string") G.cosmetics.flagCountry = "";
+    if (G.cosmetics.props) delete G.cosmetics.props.flagpole;   // flag pole parked — clear the seeded test grant
+    delete G.cosmetics.flagCountry; delete G.cosmetics._flagpoleSeeded;
     if (!DECOR_THEMES[G.cosmetics.theme] || !G.cosmetics.themes[G.cosmetics.theme]) G.cosmetics.theme = "default";
     G.ads = Object.assign(newAdsState(), G.ads || {});
     // entitlements are loaded UNCONDITIONALLY by loadEntitlements() in the boot
@@ -3962,13 +3952,11 @@ function finishPlacing() {
       }
     }
   }
-  const wasFlagpole = kind === "prop" && key === "flagpole" && !(G.cosmetics && G.cosmetics.flagCountry);
   _placing = null; _placeGhost = null;
   sfx("buy"); spawnParticles(spot.x, spot.y, "dust", 6);
   syncHud(); save();
   if (_arranging) { document.getElementById("placeBarTxt").innerHTML = `Arranging your cove — drag anything, then <b>Done</b>`; }
   else { document.getElementById("placeBar").hidden = true; toast(`Set. Move it again any time — press and hold it, or use the Shop's Decor tab.`, 4); }
-  if (wasFlagpole) setTimeout(openFlagPicker, 450);   // just planted a flag pole with no country yet — pick one
 }
 // put a piece back where the drag started (cancel / hard-stop)
 function _revertPlacing(kind, key, from) {
@@ -4067,37 +4055,6 @@ function boxProp(id) {
   spawnParticles(propPos(id).x, propPos(id).y, "dust", 6);
   save(); renderShop();
   toast(`Packed the ${p.name.toLowerCase()} away — place it again any time.`, 3);
-}
-// ---- flag pole: pick the country whose flag flies over the cove ----
-function setFlagCountry(code) {
-  G.cosmetics = G.cosmetics || {};
-  G.cosmetics.flagCountry = code || "";
-  _flagCode = null;                 // force the flag canvas to rebuild
-  save();
-  const cn = code && (FLAG_COUNTRIES.find(x => x.code === code) || {}).name;
-  if (cn) toast(`Now flying ${cn}.`, 3);
-}
-function openFlagPicker() {
-  ensureAudio();
-  const cur = (G.cosmetics && G.cosmetics.flagCountry) || "";
-  const none = () => `<button class="flag-row${!cur ? " on" : ""}" data-cc="">— No flag (bare pole) —</button>`;
-  const rows = (q) => FLAG_COUNTRIES
-    .filter(x => !q || x.name.toLowerCase().includes(q) || x.code.toLowerCase() === q)
-    .map(x => `<button class="flag-row${x.code === cur ? " on" : ""}" data-cc="${x.code}"><span class="fe">${flagEmoji(x.code)}</span><span>${esc(x.name)}</span></button>`).join("");
-  openModal(`<div class="reveal flagpick">
-    <div class="kicker">Flag pole</div>
-    <h2>Fly a flag</h2>
-    <input id="flagSearch" class="name-in" placeholder="Search countries…" autocomplete="off" spellcheck="false">
-    <div class="flag-list" id="flagList">${none()}${rows("")}</div>
-    <div class="row"><button class="btn" id="flagDone">Done</button></div>
-  </div>`);
-  const list = document.getElementById("flagList");
-  const wire = () => list.querySelectorAll("[data-cc]").forEach(b => b.onclick = () => { setFlagCountry(b.dataset.cc); closeModal(); });
-  wire();
-  document.getElementById("flagDone").onclick = closeModal;
-  const si = document.getElementById("flagSearch");
-  si.addEventListener("input", () => { const q = si.value.trim().toLowerCase(); list.innerHTML = none() + rows(q); wire(); list.scrollTop = 0; });
-  setTimeout(() => si.focus(), 60);
 }
 document.getElementById("placeBarDone").onclick = () => { if (_placing) finishPlacing(); else if (_arranging) endArrange(); };
 document.getElementById("placeBarCancel").onclick = cancelPlacing;
@@ -4263,12 +4220,6 @@ function handleTap(x, y) {
 
   // Midknight's cairn, if there's one standing (or still being built)
   if (tapCairn(x, y)) return;
-
-  // the flag pole — tap it to change the country (or clear it)
-  if (G.cosmetics && G.cosmetics.props && G.cosmetics.props.flagpole && !propBoxed("flagpole")) {
-    const fp = propPos("flagpole");
-    if (dist2(x, y, fp.x, fp.y - 40 * (fp.s || 1)) < 42 * 42) { hideCatCard(); hidePropCard(); openFlagPicker(); return; }
-  }
 
   hideCatCard(); hidePropCard();
 }
@@ -8627,28 +8578,7 @@ const DECOR_PROPS = [
     movable:true, place:{ x:W*0.075, y:H*0.90, s:1.1 }, render(g,t,x,y,s){ propRowboat(g, x, y, s); } },
   { id:"windmill", name:"Pole windmill",   price: 8000, blurb:"A little pole windmill. The sails turn on their own.",
     movable:true, place:{ x:W*0.91, y:H*0.60, s:1.25 }, render(g,t,x,y,s){ propWindmill(g, x, y, s, t); } },
-  { id:"flagpole", name:"Flag pole",       price: 900, blurb:"Fly your country's flag over the cove. Tap it any time to change it.",
-    movable:true, place:{ x:W*0.90, y:H*0.86, s:1.15 }, render(g,t,x,y,s){ propFlagpole(g, t, x, y, s); } },
 ];
-// every country's flag is its own emoji — built from the two-letter code
-const FLAG_COUNTRIES = ("AD:Andorra|AE:United Arab Emirates|AF:Afghanistan|AG:Antigua & Barbuda|AL:Albania|AM:Armenia|AO:Angola|AR:Argentina|AT:Austria|AU:Australia|AW:Aruba|AZ:Azerbaijan|BA:Bosnia & Herzegovina|BB:Barbados|BD:Bangladesh|BE:Belgium|BF:Burkina Faso|BG:Bulgaria|BH:Bahrain|BI:Burundi|BJ:Benin|BM:Bermuda|BN:Brunei|BO:Bolivia|BR:Brazil|BS:Bahamas|BT:Bhutan|BW:Botswana|BY:Belarus|BZ:Belize|CA:Canada|CD:DR Congo|CF:Central African Republic|CG:Congo|CH:Switzerland|CI:Côte d'Ivoire|CK:Cook Islands|CL:Chile|CM:Cameroon|CN:China|CO:Colombia|CR:Costa Rica|CU:Cuba|CV:Cape Verde|CW:Curaçao|CY:Cyprus|CZ:Czechia|DE:Germany|DJ:Djibouti|DK:Denmark|DM:Dominica|DO:Dominican Republic|DZ:Algeria|EC:Ecuador|EE:Estonia|EG:Egypt|ER:Eritrea|ES:Spain|ET:Ethiopia|FI:Finland|FJ:Fiji|FK:Falkland Islands|FM:Micronesia|FO:Faroe Islands|FR:France|GA:Gabon|GB:United Kingdom|GD:Grenada|GE:Georgia|GF:French Guiana|GG:Guernsey|GH:Ghana|GI:Gibraltar|GL:Greenland|GM:Gambia|GN:Guinea|GP:Guadeloupe|GQ:Equatorial Guinea|GR:Greece|GT:Guatemala|GU:Guam|GW:Guinea-Bissau|GY:Guyana|HK:Hong Kong|HN:Honduras|HR:Croatia|HT:Haiti|HU:Hungary|ID:Indonesia|IE:Ireland|IL:Israel|IM:Isle of Man|IN:India|IQ:Iraq|IR:Iran|IS:Iceland|IT:Italy|JE:Jersey|JM:Jamaica|JO:Jordan|JP:Japan|KE:Kenya|KG:Kyrgyzstan|KH:Cambodia|KI:Kiribati|KM:Comoros|KN:St Kitts & Nevis|KP:North Korea|KR:South Korea|KW:Kuwait|KY:Cayman Islands|KZ:Kazakhstan|LA:Laos|LB:Lebanon|LC:St Lucia|LI:Liechtenstein|LK:Sri Lanka|LR:Liberia|LS:Lesotho|LT:Lithuania|LU:Luxembourg|LV:Latvia|LY:Libya|MA:Morocco|MC:Monaco|MD:Moldova|ME:Montenegro|MF:St Martin|MG:Madagascar|MH:Marshall Islands|MK:North Macedonia|ML:Mali|MM:Myanmar|MN:Mongolia|MO:Macau|MP:Northern Mariana Islands|MQ:Martinique|MR:Mauritania|MS:Montserrat|MT:Malta|MU:Mauritius|MV:Maldives|MW:Malawi|MX:Mexico|MY:Malaysia|MZ:Mozambique|NA:Namibia|NC:New Caledonia|NE:Niger|NF:Norfolk Island|NG:Nigeria|NI:Nicaragua|NL:Netherlands|NO:Norway|NP:Nepal|NR:Nauru|NU:Niue|NZ:New Zealand|OM:Oman|PA:Panama|PE:Peru|PF:French Polynesia|PG:Papua New Guinea|PH:Philippines|PK:Pakistan|PL:Poland|PM:St Pierre & Miquelon|PR:Puerto Rico|PS:Palestine|PT:Portugal|PW:Palau|PY:Paraguay|QA:Qatar|RE:Réunion|RO:Romania|RS:Serbia|RU:Russia|RW:Rwanda|SA:Saudi Arabia|SB:Solomon Islands|SC:Seychelles|SD:Sudan|SE:Sweden|SG:Singapore|SH:St Helena|SI:Slovenia|SJ:Svalbard & Jan Mayen|SK:Slovakia|SL:Sierra Leone|SM:San Marino|SN:Senegal|SO:Somalia|SR:Suriname|SS:South Sudan|ST:São Tomé & Príncipe|SV:El Salvador|SX:Sint Maarten|SY:Syria|SZ:Eswatini|TC:Turks & Caicos|TD:Chad|TG:Togo|TH:Thailand|TJ:Tajikistan|TK:Tokelau|TL:Timor-Leste|TM:Turkmenistan|TN:Tunisia|TO:Tonga|TR:Turkey|TT:Trinidad & Tobago|TV:Tuvalu|TW:Taiwan|TZ:Tanzania|UA:Ukraine|UG:Uganda|US:United States|UY:Uruguay|UZ:Uzbekistan|VA:Vatican City|VC:St Vincent & Grenadines|VE:Venezuela|VG:British Virgin Islands|VI:US Virgin Islands|VN:Vietnam|VU:Vanuatu|WF:Wallis & Futuna|WS:Samoa|XK:Kosovo|YE:Yemen|YT:Mayotte|ZA:South Africa|ZM:Zambia|ZW:Zimbabwe")
-  .split("|").map(s => { const i = s.indexOf(":"); return { code: s.slice(0, i), name: s.slice(i + 1) }; });
-const flagEmoji = code => (code || "").toUpperCase().replace(/[A-Z]/g, c => String.fromCodePoint(127397 + c.charCodeAt(0)));
-let _flagCv = null, _flagCode = null;
-function flagCanvas() {
-  const code = (G.cosmetics && G.cosmetics.flagCountry) || "";
-  if (_flagCode === code) return code ? _flagCv : null;
-  _flagCode = code;
-  if (!code) { _flagCv = null; return null; }
-  const cv = _flagCv || (_flagCv = document.createElement("canvas"));
-  cv.width = 132; cv.height = 88;
-  const g = cv.getContext("2d");
-  g.clearRect(0, 0, 132, 88);
-  g.textAlign = "center"; g.textBaseline = "middle";
-  g.font = "82px 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif";
-  g.fillText(flagEmoji(code), 66, 46);
-  return cv;
-}
 const PROP_BY_ID = Object.fromEntries(DECOR_PROPS.map(p => [p.id, p]));
 function propPos(id) {
   const p = PROP_BY_ID[id]; if (!p) return { x: 0, y: 0, s: 1 };
@@ -9388,37 +9318,6 @@ function propWindmill(g, x, y, s, t) {
     g.beginPath(); g.moveTo(0, 0); g.lineTo(3, -18); g.lineTo(-3, -18); g.closePath(); g.fill(); }
   g.fillStyle = "#5b4634"; g.beginPath(); g.arc(0, 0, 2.4, 0, 7); g.fill();
   g.restore();
-  g.restore();
-}
-function propFlagpole(g, t, x, y, s) {
-  s = s || 1;
-  g.save(); g.translate(x, y); g.scale(s, s);
-  g.fillStyle = "rgba(36,31,23,0.12)"; g.beginPath(); g.ellipse(0, 3, 7, 2.6, 0, 0, 7); g.fill();
-  const PH = 60;
-  g.fillStyle = "#b9ac93"; g.fillRect(-1.6, -PH, 3.2, PH);
-  g.fillStyle = "#8a7d64"; g.fillRect(-1.6, -PH, 1.1, PH);           // shaded edge
-  g.fillStyle = "#e8b45a"; g.beginPath(); g.arc(0, -PH - 1, 2.6, 0, 7); g.fill();   // finial
-  const cv = flagCanvas();
-  const fw = 32, fh = 21, fy = -PH + 4, k = 3.2;
-  if (cv) {
-    const n = 16;
-    for (let i = 0; i < n; i++) {
-      const p = i / n;
-      const wave = Math.sin(t * k - i * 0.5) * p * 3.4;
-      const sq = 1 - Math.abs(Math.sin(t * k - i * 0.5)) * p * 0.18;
-      g.save();
-      g.translate(1.6 + p * fw, fy + wave);
-      g.drawImage(cv, p * cv.width, 0, cv.width / n + 0.5, cv.height, 0, 0, fw / n + 0.7, fh * sq);
-      const fold = Math.max(0, Math.sin(t * k - i * 0.5));
-      if (fold > 0.02) { g.fillStyle = `rgba(20,14,8,${0.13 * fold})`; g.fillRect(0, 0, fw / n + 0.7, fh * sq); }
-      g.restore();
-    }
-  } else {
-    g.fillStyle = "#f2ecdd";
-    const wv = Math.sin(t * 3) * 1.6;
-    g.beginPath(); g.moveTo(1.6, fy); g.quadraticCurveTo(15, fy + 3 + wv, 27, fy + 5 + wv);
-    g.lineTo(1.6, fy + 13); g.closePath(); g.fill();
-  }
   g.restore();
 }
 // a "needs work" marker: a still pond, a few broken planks, a rope, a hand-lettered
@@ -13100,15 +12999,6 @@ resize();
 _lastViewBottom = _viewBottomY;
 load();
 restoreCats();
-// PINCH TEST ONLY: stand a flag pole in the cove from the start so it's easy to try
-try {
-  G.cosmetics = G.cosmetics || {};
-  G.cosmetics.props = G.cosmetics.props || {};
-  if (!G.cosmetics.props.flagpole && !G.cosmetics._flagpoleSeeded) {
-    G.cosmetics.props.flagpole = true;
-    G.cosmetics._flagpoleSeeded = true;
-  }
-} catch (e) {}
 loadEntitlements();                    // pull purchases from the dedicated iapStore — runs whatever load() did
 applyEntitlements();                   // re-derive perks from the cached entitlements immediately
 // Hooks the native billing bridge (scripts/capacitor-bridge.js) calls back into.
