@@ -1547,7 +1547,7 @@ function newGame() {
     tips: [],
     metrics: { pets:0, tokens:0, photos:0, catsAllTime:0, coaxed:0, dryStreak:0 },
     dex: { midknight: { star: 0, count: 1 } },   // coatKey -> { star: bestStar, count: timesSeen } — Midknight's always in the guide
-    cosmetics: { theme: "default", themes: { default: true }, props: {}, propPos: {}, propBoxed: {}, decorPos: {} },   // renewable decor: atmosphere theme + owned props (+ player positions / packed-away) + player-placed cottages/trees/flowers
+    cosmetics: { theme: "default", themes: { default: true }, props: {}, propPos: {}, propBoxed: {}, decorPos: {}, comfortPos: {} },   // renewable decor: atmosphere theme + owned props (+ player positions / packed-away) + player-placed cottages/trees/flowers/stations + player-placed bowls/beds/toys/scratchers
     dexRewards: [],         // claimed Catdex milestone thresholds
     goals: null, goalDay: 0,
     streak: 0, streakDay: 0,
@@ -1604,7 +1604,8 @@ function load() {
     if (!G.cosmetics.props || typeof G.cosmetics.props !== "object") G.cosmetics.props = {};
     if (!G.cosmetics.propPos || typeof G.cosmetics.propPos !== "object") G.cosmetics.propPos = {};    // v3: player-set prop positions
     if (!G.cosmetics.propBoxed || typeof G.cosmetics.propBoxed !== "object") G.cosmetics.propBoxed = {};
-    if (!G.cosmetics.decorPos || typeof G.cosmetics.decorPos !== "object") G.cosmetics.decorPos = {};  // player-set cottage/tree/flower positions, keyed "type:index"
+    if (!G.cosmetics.decorPos || typeof G.cosmetics.decorPos !== "object") G.cosmetics.decorPos = {};  // player-set cottage/tree/flower/station positions, keyed "type:index" ("station:fishing:0")
+    if (!G.cosmetics.comfortPos || typeof G.cosmetics.comfortPos !== "object") G.cosmetics.comfortPos = {};  // player-set bowl/toy/bed/scratcher positions, keyed "type:index"
     if (!DECOR_THEMES[G.cosmetics.theme] || !G.cosmetics.themes[G.cosmetics.theme]) G.cosmetics.theme = "default";
     G.ads = Object.assign(newAdsState(), G.ads || {});
     // entitlements are loaded UNCONDITIONALLY by loadEntitlements() in the boot
@@ -1747,14 +1748,19 @@ function placeClear(items, avoid) {
 function rebuildDecor() {
   decor = [];
   const foot = [];   // running footprint list — stations, then trees/cottages/flowers
-  // stations sit in their canonical corners (with a little spread for repeats)
+  // stations sit in their canonical corners (with a little spread for repeats) —
+  // unless the player has dragged one, in which case it keeps that spot
+  const dpos0 = (G.cosmetics && G.cosmetics.decorPos) || {};
   for (const [type, home] of Object.entries(STATION_HOME)) {
     for (let i = 0; i < (G.stations[type] || 0); i++) {
+      const dkey = "station:" + type + ":" + i;
       const jx = i === 0 ? 0 : (mulberry32(3300 + i * 17)() - 0.5) * 0.16;
       const jy = i === 0 ? 0 : (mulberry32(4400 + i * 17)() - 0.5) * 0.05;
-      const x = clamp(W * (home.x + jx), 52, W - 52);
-      const y = clamp(H * (home.y + jy), H * 0.46, catFloor() - 14);
-      decor.push({ type: "station", station: type, seed: 3300 + type.length * 100 + i, x, y });
+      let x = clamp(W * (home.x + jx), 52, W - 52);
+      let y = clamp(H * (home.y + jy), H * 0.46, catFloor() - 14);
+      const f = dpos0[dkey];
+      if (f && Number.isFinite(f.x) && Number.isFinite(f.y)) { x = clamp(f.x, 52, W - 52); y = clamp(f.y, H * 0.44, catFloor() - 12); }
+      decor.push({ type: "station", station: type, seed: 3300 + type.length * 100 + i, x, y, dkey });
       foot.push({ x, y, r: 46 });
     }
   }
@@ -1808,13 +1814,24 @@ function rebuildAttractors() {
   // food / toy / bed — placed clear of decor, stations, water and each other
   const avoid = decor.map(d => ({ x: d.x, y: d.y, r: d.type === "cottage" ? 46 : d.type === "station" || d.type === "project" ? 44 : d.type === "tree" ? 38 : 24 }))
     .concat(obstacles.map(o => ({ x: o.x, y: o.y, r: Math.max(o.rx, o.ry) * 0.95 })));
-  const comforts = [];
-  for (let i = 0; i < G.bowls; i++) comforts.push({ type: "food", r: 26, seed: 12001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
-  for (let i = 0; i < G.toys;  i++) comforts.push({ type: "toy",  r: 24, seed: 13001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
-  for (let i = 0; i < G.beds;  i++) comforts.push({ type: "bed",  r: 30, seed: 14001 + i * 7, yBand: [H * 0.54, catFloor() - 8] });
-  for (let i = 0; i < (G.scratch || 0); i++) comforts.push({ type: "scratch", r: 24, seed: 15001 + i * 7, yBand: [H * 0.56, catFloor() - 8] });
-  const cpos = placeClear(comforts, avoid);
-  comforts.forEach((c, i) => attractors.push({ type: c.type, x: cpos[i].x, y: cpos[i].y }));
+  const comforts = [], cKeys = [];
+  const addC = (n, type, r, seed0, lo) => { for (let i = 0; i < n; i++) { comforts.push({ type, r, seed: seed0 + i * 7, yBand: [lo, catFloor() - 8] }); cKeys.push(type + ":" + i); } };
+  addC(G.bowls, "food", 26, 12001, H * 0.56);
+  addC(G.toys, "toy", 24, 13001, H * 0.56);
+  addC(G.beds, "bed", 30, 14001, H * 0.54);
+  addC(G.scratch || 0, "scratch", 24, 15001, H * 0.56);
+  // a piece the player dragged keeps its spot; the rest auto-place around everything (incl. the dragged ones)
+  const cposMap = (G.cosmetics && G.cosmetics.comfortPos) || {};
+  const cResolved = new Array(comforts.length);
+  const cAuto = [], cAutoIdx = [];
+  comforts.forEach((c, i) => {
+    const f = cposMap[cKeys[i]];
+    if (f && Number.isFinite(f.x) && Number.isFinite(f.y)) { cResolved[i] = { x: f.x, y: f.y }; avoid.push({ x: f.x, y: f.y, r: c.r * 0.8 }); }
+    else { cAuto.push(c); cAutoIdx.push(i); }
+  });
+  const cposAuto = placeClear(cAuto, avoid);
+  cAuto.forEach((c, k) => { cResolved[cAutoIdx[k]] = cposAuto[k]; });
+  comforts.forEach((c, i) => attractors.push({ type: c.type, key: cKeys[i], x: cResolved[i].x, y: cResolved[i].y }));
   for (const d of decor) {
     if (d.type === "tree")    attractors.push({ type: "tree",    x: clamp(d.x + 14, 32, W - 32), y: clamp(d.y + 34, H * 0.44, catFloor()) });
     if (d.type === "cottage") attractors.push({ type: "cottage", x: clamp(d.x,      32, W - 32), y: clamp(d.y + 34, H * 0.44, catFloor()) });
@@ -3866,8 +3883,12 @@ let _lpTimer = 0, _lpFired = false;
 let _placing = null;
 let _placeGhost = null;     // { x, y } world pos the ghost follows
 let _arranging = false;
-const DECOR_LABEL = { cottage: "cottage", tree: "tree", flowers: "flower patch" };
-const DECOR_CLEAR = { cottage: 40, tree: 30, flowers: 22 };   // how much open space each needs
+const DECOR_LABEL = { cottage: "cottage", tree: "tree", flowers: "flower patch", station: "spot",
+  food: "food bowl", toy: "toy", bed: "bed", scratch: "scratching post" };
+const DECOR_CLEAR = { cottage: 40, tree: 30, flowers: 22, station: 40,
+  food: 22, toy: 20, bed: 26, scratch: 20 };   // how much open space each needs
+const STATION_LABEL = { fishing: "fishing dock", bakery: "bakery oven", sunbeam: "sunbeam", garden: "catmint patch" };
+const COMFORT_TYPES = new Set(["food", "toy", "bed", "scratch"]);
 function _beginPlace(spec) {
   if (!_arranging) closeAllPanels();
   _placing = spec;
@@ -3887,15 +3908,23 @@ function startPlacing(id) {   // a prop, from the shop row / straight after buyi
 }
 function startPlacingDecor(d) {   // a decor entry from `decor` (has .dkey, .type, .x, .y)
   if (!d || !d.dkey || !DECOR_LABEL[d.type]) return;
-  _beginPlace({ kind: "decor", key: d.dkey, dtype: d.type, label: DECOR_LABEL[d.type],
+  const label = d.type === "station" ? (STATION_LABEL[d.station] || "spot") : DECOR_LABEL[d.type];
+  _beginPlace({ kind: "decor", key: d.dkey, dtype: d.type, label,
     r: DECOR_CLEAR[d.type] || 30,
     from: { ...((G.cosmetics.decorPos && G.cosmetics.decorPos[d.dkey]) || { x: d.x, y: d.y }) },
     _start: { x: d.x, y: d.y } });
 }
+function startPlacingComfort(a) {   // a bowl / toy / bed / scratcher (an attractor with .key)
+  if (!a || !a.key) return;
+  _beginPlace({ kind: "comfort", key: a.key, dtype: a.type, label: DECOR_LABEL[a.type] || "it",
+    r: DECOR_CLEAR[a.type] || 22,
+    from: { ...((G.cosmetics.comfortPos && G.cosmetics.comfortPos[a.key]) || { x: a.x, y: a.y }) },
+    _start: { x: a.x, y: a.y } });
+}
 function _placeOK(x, y) {
-  return _placing && _placing.kind === "decor"
-    ? validDecorSpot(x, y, _placing.dtype, _placing.key)
-    : validPropSpot(x, y);
+  if (!_placing) return false;
+  if (_placing.kind === "decor") return validDecorSpot(x, y, _placing.dtype, _placing.key);
+  return validPropSpot(x, y);   // props and comforts: on the grass, clear of water / the sign / stations
 }
 function finishPlacing() {
   if (!_placing) return;
@@ -3906,6 +3935,10 @@ function finishPlacing() {
     G.cosmetics.propPos = G.cosmetics.propPos || {};
     G.cosmetics.propPos[key] = spot;
     if (G.cosmetics.propBoxed) delete G.cosmetics.propBoxed[key];
+  } else if (kind === "comfort") {
+    G.cosmetics.comfortPos = G.cosmetics.comfortPos || {};
+    G.cosmetics.comfortPos[key] = spot;
+    rebuildAttractors();
   } else {
     G.cosmetics.decorPos = G.cosmetics.decorPos || {};
     G.cosmetics.decorPos[key] = spot;
@@ -3923,13 +3956,17 @@ function finishPlacing() {
   if (_arranging) { document.getElementById("placeBarTxt").innerHTML = `Arranging your cove — drag anything, then <b>Done</b>`; }
   else { document.getElementById("placeBar").hidden = true; toast(`Set. Move it again any time — press and hold it, or use the Shop's Decor tab.`, 4); }
 }
+// put a piece back where the drag started (cancel / hard-stop)
+function _revertPlacing(kind, key, from) {
+  if (!from || from.x == null) return;
+  if (kind === "prop") { G.cosmetics.propPos = G.cosmetics.propPos || {}; G.cosmetics.propPos[key] = { x: from.x, y: from.y }; }
+  else if (kind === "comfort") { G.cosmetics.comfortPos = G.cosmetics.comfortPos || {}; G.cosmetics.comfortPos[key] = { x: from.x, y: from.y }; rebuildAttractors(); }
+  else { G.cosmetics.decorPos = G.cosmetics.decorPos || {}; G.cosmetics.decorPos[key] = { x: from.x, y: from.y }; rebuildAttractors(); }
+}
 function cancelPlacing() {
   if (!_placing) { if (_arranging) endArrange(); return; }
   const { kind, key, from } = _placing;
-  if (from && from.x != null) {
-    if (kind === "prop") { G.cosmetics.propPos = G.cosmetics.propPos || {}; G.cosmetics.propPos[key] = { x: from.x, y: from.y }; }
-    else { G.cosmetics.decorPos = G.cosmetics.decorPos || {}; G.cosmetics.decorPos[key] = { x: from.x, y: from.y }; rebuildAttractors(); }
-  }
+  _revertPlacing(kind, key, from);
   _placing = null; _placeGhost = null;
   if (_arranging) { document.getElementById("placeBarTxt").innerHTML = `Arranging your cove — drag anything, then <b>Done</b>`; }
   else document.getElementById("placeBar").hidden = true;
@@ -3942,7 +3979,7 @@ function startArrange() {
   document.getElementById("placeBarCancel").textContent = "Back";
   document.getElementById("placeBarDone").textContent = "Done";
   document.getElementById("placeBar").hidden = false;
-  toast("Drag the cottage, trees, flowers or any decoration. Tap Done when it's just so.", 5);
+  toast("Drag anything — bowls, beds, toys, trees, the cottage, even your stations. Tap Done when it's just so.", 5);
 }
 function endArrange() {
   _arranging = false; _placing = null; _placeGhost = null;
@@ -3956,10 +3993,7 @@ function endArrange() {
 function exitPlacement() {
   if (_placing) {
     const { kind, key, from } = _placing;
-    if (from && from.x != null) {
-      if (kind === "prop") { G.cosmetics.propPos = G.cosmetics.propPos || {}; G.cosmetics.propPos[key] = { x: from.x, y: from.y }; }
-      else { G.cosmetics.decorPos = G.cosmetics.decorPos || {}; G.cosmetics.decorPos[key] = { x: from.x, y: from.y }; rebuildAttractors(); }
-    }
+    _revertPlacing(kind, key, from);
   }
   _placing = null; _placeGhost = null; _arranging = false;
   const pb = document.getElementById("placeBar"); if (pb) pb.hidden = true;
@@ -3973,6 +4007,14 @@ function dropDecorPos(type, newCount) {
   for (const k of Object.keys(dp)) {
     const m = k.match(/^(\w+):(\d+)$/);
     if (m && m[1] === type && +m[2] >= newCount) delete dp[k];
+  }
+}
+// same, for bowls/toys/beds/scratchers sold in the Shop
+function dropComfortPos(type, newCount) {
+  const cp = G.cosmetics && G.cosmetics.comfortPos; if (!cp) return;
+  for (const k of Object.keys(cp)) {
+    const m = k.match(/^(\w+):(\d+)$/);
+    if (m && m[1] === type && +m[2] >= newCount) delete cp[k];
   }
 }
 // the movable object under a world point. `tight` (long-press, where cats may be
@@ -3989,11 +4031,17 @@ function movableAt(x, y, tight) {
     const pos = propPos(p.id);
     if (Math.hypot(x - pos.x, y - (pos.y - 6)) < 26 * f) return { kind: "prop", id: p.id };
   }
+  // bowls / toys / beds / scratchers — live in `attractors`, not `decor`
+  for (const a of attractors) {
+    if (!a.key || !COMFORT_TYPES.has(a.type)) continue;
+    if (Math.hypot(x - a.x, y - (a.y - 6)) < ((DECOR_CLEAR[a.type] || 22) + 8) * f) return { kind: "comfort", a };
+  }
   return null;
 }
 function grabMovable(hit) {
   if (!hit) return false;
   if (hit.kind === "decor") startPlacingDecor(hit.d);
+  else if (hit.kind === "comfort") startPlacingComfort(hit.a);
   else startPlacing(hit.id);
   return true;
 }
@@ -4846,13 +4894,13 @@ const SHOP_TABS = [
 ];
 const SHOP = [
   { key:"bowls", cat:"comforts", type:"food", name:"Food bowl", desc:"Cats come here to eat, then wash up. +2 cat capacity.",
-    base:12, mul:1.6, keepMin:1, get:()=>G.bowls, buy:()=>{ G.bowls++; rebuildAttractors(); }, remove:()=>{ G.bowls--; rebuildAttractors(); } },
+    base:12, mul:1.6, keepMin:1, get:()=>G.bowls, buy:()=>{ G.bowls++; rebuildAttractors(); }, remove:()=>{ G.bowls--; dropComfortPos("food", G.bowls); rebuildAttractors(); } },
   { key:"toys", cat:"comforts", type:"toy", name:"Toy", desc:"Cats come here to play — playing boosts their output. +1 capacity.",
-    base:16, mul:1.6, get:()=>G.toys, buy:()=>{ G.toys++; rebuildAttractors(); }, remove:()=>{ G.toys--; rebuildAttractors(); } },
+    base:16, mul:1.6, get:()=>G.toys, buy:()=>{ G.toys++; rebuildAttractors(); }, remove:()=>{ G.toys--; dropComfortPos("toy", G.toys); rebuildAttractors(); } },
   { key:"beds", cat:"comforts", type:"bed", name:"Cozy bed", desc:"A favourite napping spot — sleeping restores mood. +1 capacity.",
-    base:22, mul:1.6, get:()=>G.beds, buy:()=>{ G.beds++; rebuildAttractors(); }, remove:()=>{ G.beds--; rebuildAttractors(); } },
+    base:22, mul:1.6, get:()=>G.beds, buy:()=>{ G.beds++; rebuildAttractors(); }, remove:()=>{ G.beds--; dropComfortPos("bed", G.beds); rebuildAttractors(); } },
   { key:"scratch", cat:"comforts", type:"scratch", name:"Scratch pad", desc:"Cats stop by for a good scratch — sharpens the claws, lifts the mood, and they always stretch after. +1 capacity.",
-    base:20, mul:1.6, get:()=>G.scratch, buy:()=>{ G.scratch++; rebuildAttractors(); }, remove:()=>{ G.scratch--; rebuildAttractors(); } },
+    base:20, mul:1.6, get:()=>G.scratch, buy:()=>{ G.scratch++; rebuildAttractors(); }, remove:()=>{ G.scratch--; dropComfortPos("scratch", G.scratch); rebuildAttractors(); } },
   { key:"tree", cat:"comforts", type:"tree", name:"Shade tree", desc:"Cats doze in the shade. Lifts the whole cove's mood.",
     base:30, mul:1.7, get:()=>G.decor.tree, buy:()=>{ G.decor.tree++; rebuildAttractors(); }, remove:()=>{ G.decor.tree--; dropDecorPos("tree", G.decor.tree); rebuildAttractors(); } },
   { key:"cottage", cat:"comforts", type:"cottage", name:"Cat cottage", desc:"A little house cats curl up inside to sleep. +2 capacity.",
@@ -8548,7 +8596,7 @@ function validPropSpot(x, y) {
 function validDecorSpot(x, y, dtype, exceptKey) {
   const clr = DECOR_CLEAR[dtype] || 30;
   if (x < 40 + clr * 0.4 || x > W - (40 + clr * 0.4)) return false;
-  if (y < H * 0.50 || y > catFloor() - 8) return false;
+  if (y < (dtype === "station" ? H * 0.44 : H * 0.50) || y > catFloor() - 8) return false;
   for (const o of obstacles) if (o.water && Math.hypot((x - o.x) / (o.rx + clr), (y - o.y) / (o.ry + clr * 0.7)) < 1) return false;
   if (x < W * 0.30 && y < H * 0.56) return false;                       // the cove sign corner
   for (const d of decor) {
@@ -9158,7 +9206,7 @@ function drawProps(g) {
     g.save();
     g.strokeStyle = ok ? "rgba(90,160,106,.95)" : "rgba(201,80,63,.95)";
     g.lineWidth = 3; g.setLineDash(ok ? [] : [8, 6]);
-    const ghR = _placing.kind === "decor" ? (DECOR_CLEAR[_placing.dtype] || 30) + 6 : 34;
+    const ghR = (_placing.kind === "decor" || _placing.kind === "comfort") ? (DECOR_CLEAR[_placing.dtype] || 30) + 6 : 34;
     g.beginPath(); g.ellipse(gh.x, gh.y, ghR, ghR * 0.45, 0, 0, 7); g.stroke();
     g.setLineDash([]);
     g.globalAlpha = ok ? 0.94 : 0.5;
@@ -11407,7 +11455,8 @@ function renderScene(dt) {
   drawCairn(ctx, W, H);
   drawDecorLayer(ctx);
   drawProps(ctx);
-  for (const a of attractors) drawAttractor(ctx, a);
+  const _skipA = _placing && _placing.kind === "comfort" ? _placing.key : null;   // the bowl/bed being dragged is drawn as the ghost, not here
+  for (const a of attractors) { if (_skipA && a.key === _skipA) continue; drawAttractor(ctx, a); }
   drawTrails(ctx);   // v3: rainbow-trail cosmetic — behind the cats
   const _pt1 = performance.now();
   // interleave cats and grass tufts by y so nearer grass covers farther cats and
