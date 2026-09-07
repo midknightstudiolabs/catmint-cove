@@ -747,8 +747,8 @@
   /* the Festival hub — the neutral landing page. The event selector sits low,
      like a tray, so the Festival grounds fill the screen above it: "I arrived
      at the Festival" first, then "what should we do?". */
-  .fest-panel--hub{left:50%;top:auto;bottom:calc(env(safe-area-inset-bottom) + 6rem);
-    transform:translate(-50%,0);width:min(94vw,420px);max-height:56vh;padding:.9rem 1rem .8rem;}
+  .fest-panel--hub{left:50%;top:50%;bottom:auto;
+    transform:translate(-50%,-50%);width:min(94vw,420px);max-height:54vh;padding:.9rem 1rem .8rem;}
   .fest-panel--hub .fp-art{font-size:1.55rem;margin:0 0 .05rem;}
   .fest-panel--hub h2{font-size:1.16rem;margin:0 0 .15rem;}
   .fest-panel--hub p{font-size:.8rem;margin:0 0 .7rem;line-height:1.4;}
@@ -8002,15 +8002,16 @@ function renderRest(dt) {
   if (!L.cramped) {
   const ck = clamp(Math.min(W, H) * 0.05, 16, 32);
   g.save(); g.translate(W * 0.84, H * 0.2);
-  // the tail — the pendulum, pivoting where it meets the haunches
-  const swing = Math.sin(pn / 360) * 0.2;
-  g.save(); g.translate(0, ck * 1.42); g.rotate(swing);
+  // the tail is a RIGID pendulum: one fixed shape, pivoting from inside the
+  // body and swinging as a solid piece — a wall-clock pendulum, not a cat's flick
+  const swing = Math.sin(pn / 380) * 0.16;
+  g.save(); g.translate(0, ck * 0.95); g.rotate(swing);
   g.fillStyle = "#1a1a1c"; g.beginPath();
-  g.moveTo(-ck * 0.14, 0);
-  g.quadraticCurveTo(-ck * 0.34, ck * 1.5, ck * 0.14, ck * 2.15);
-  g.quadraticCurveTo(ck * 0.62, ck * 2.62, ck * 0.44, ck * 3.02);
-  g.quadraticCurveTo(ck * 0.04, ck * 2.66, -ck * 0.02, ck * 2.05);
-  g.quadraticCurveTo(-ck * 0.08, ck * 1.3, -ck * 0.14, 0);
+  g.moveTo(-ck * 0.16, 0);
+  g.lineTo(-ck * 0.10, ck * 2.68);
+  g.quadraticCurveTo(-ck * 0.10, ck * 3.04, ck * 0.06, ck * 3.04);
+  g.quadraticCurveTo(ck * 0.24, ck * 3.04, ck * 0.22, ck * 2.70);   // a rounded weight at the tip
+  g.lineTo(ck * 0.16, 0);
   g.closePath(); g.fill();
   g.restore();
   // the body — a cat sitting with its back to the room: narrow shoulders, wide haunches
@@ -8701,7 +8702,7 @@ function hubFit() {
   return { sc, ox: (vw * rd - HUB_W * sc) / 2, oy: (vh * rd - HUB_H * sc) / 2 };
 }
 function festGroundsCats(roster) {
-  const spots = [{ x: 116, y: 352 }, { x: 300, y: 384 }, { x: 452, y: 350 }, { x: 198, y: 408 }, { x: 380, y: 414 }];
+  const spots = [{ x: 116, y: 812 }, { x: 300, y: 844 }, { x: 452, y: 808 }, { x: 198, y: 868 }, { x: 380, y: 874 }];
   _hubCats = (roster || cats.filter(c => !c.visitor)).slice(0, 5).map((c, i) => {
     Object.assign(c, { x: spots[i].x, y: spots[i].y, face: i % 2 ? 1 : -1,
       state: i === 0 ? "loafing" : i === 3 ? "grooming" : "seeking",
@@ -8726,7 +8727,7 @@ function renderFestGrounds(dt) {
     if (c._wanderAt <= 0) {
       c._wanderAt = rand(5, 12);
       c._hx = clamp(c._hx + rand(-44, 44), 96, 470);
-      c._hy = clamp(c._hy + rand(-20, 20), 330, 430);
+      c._hy = clamp(c._hy + rand(-20, 20), 788, 900);
     }
     const dx = c._hx - c.x, dy = c._hy - c.y, dist = Math.hypot(dx, dy);
     const m = catMotion(c);
@@ -8765,11 +8766,11 @@ function drawFestGroundsScene(g) {
   gr.addColorStop(0, "#cfe0af"); gr.addColorStop(0.5, "#bcd398"); gr.addColorStop(1, "#aecb8a");
   g.fillStyle = gr; g.fillRect(-OV, HZ - 12, HUB_W + OV * 2, HUB_H - HZ + OV);
   g.fillStyle = "rgba(232,214,170,0.42)";                                  // a sandy patch = "the festival area"
-  g.beginPath(); g.ellipse(HUB_W / 2, 500, 300, 200, 0, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(HUB_W / 2, 872, 320, 150, 0, 0, 7); g.fill();
   // bunting — one run across the top
-  drawBunting(g, 6, 66, HUB_W - 12, 30, _hubT);
+  drawBunting(g, 6, 92, HUB_W - 12, 30, _hubT);
   // a little market stall, left of centre — clearly a stall, not a race gantry
-  g.save(); g.translate(HUB_W * 0.40, 246);
+  g.save(); g.translate(HUB_W * 0.40, 742);
   g.fillStyle = "rgba(90,70,50,0.12)"; g.beginPath(); g.ellipse(0, 94, 88, 12, 0, 0, 7); g.fill();
   g.strokeStyle = "#8a6f4e"; g.lineWidth = 5;
   g.beginPath(); g.moveTo(-72, 4); g.lineTo(-72, 92); g.moveTo(72, 4); g.lineTo(72, 92); g.stroke();
@@ -8789,7 +8790,7 @@ function drawFestGroundsScene(g) {
   for (let i = -4; i <= 4; i++) { g.beginPath(); g.arc(i * 22, 2, 11, 0, Math.PI); g.fill(); }   // scalloped valance
   g.restore();
   // LEFT — a checkered-flag signpost (the Race, subtly)
-  g.save(); g.translate(74, 366);
+  g.save(); g.translate(74, 856);
   g.strokeStyle = "#7c6142"; g.lineWidth = 5; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 58); g.stroke();
   const cell = 6; g.fillStyle = "#fff"; g.fillRect(3, -34, 32, 22);
   g.fillStyle = "#2b2420";
@@ -8797,7 +8798,7 @@ function drawFestGroundsScene(g) {
   g.strokeStyle = "rgba(0,0,0,.2)"; g.lineWidth = 1; g.strokeRect(3, -34, 32, 22);
   g.restore();
   // RIGHT — a little net + a beach ball (Volleyball, subtly)
-  g.save(); g.translate(HUB_W - 78, 372);
+  g.save(); g.translate(HUB_W - 78, 862);
   g.strokeStyle = "#8a7052"; g.lineWidth = 5;
   g.beginPath(); g.moveTo(-38, 6); g.lineTo(-40, -38); g.moveTo(38, 6); g.lineTo(40, -38); g.stroke();
   g.strokeStyle = "rgba(240,236,224,0.85)"; g.lineWidth = 2;
@@ -8813,9 +8814,9 @@ function drawFestGroundsScene(g) {
   g.globalAlpha = 1; g.restore();
   g.restore();
   // odds and ends — kept sparse
-  drawHubLantern(g, HUB_W - 150, 250);
-  g.fillStyle = "#d97a5f"; g.beginPath(); g.ellipse(132, 402, 22, 13, 0, 0, 7); g.fill();    // a cushion on the grass
-  g.fillStyle = "rgba(255,255,255,0.14)"; g.beginPath(); g.ellipse(126, 398, 10, 5, 0, 0, 7); g.fill();
+  drawHubLantern(g, HUB_W - 150, 748);
+  g.fillStyle = "#d97a5f"; g.beginPath(); g.ellipse(150, 892, 22, 13, 0, 0, 7); g.fill();    // a cushion on the grass
+  g.fillStyle = "rgba(255,255,255,0.14)"; g.beginPath(); g.ellipse(144, 888, 10, 5, 0, 0, 7); g.fill();
 }
 function renderFest(dt) {
   if (festKind === "hub") { renderFestGrounds(dt); return; }
