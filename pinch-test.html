@@ -744,14 +744,23 @@
   .fp-cell.picked{border-color:var(--accent);background:#fff;}
   .fp-cell.picked .nm{color:var(--ink);}
 
-  /* the activity chooser — race vs box challenge, shown once you're on the grounds */
-  .fc-cards{display:flex;flex-direction:column;gap:.6rem;margin:0 0 1rem;}
-  .fc-card{display:flex;flex-direction:column;gap:.2rem;text-align:left;background:#eef1e3;
-    border:2px solid transparent;border-radius:14px;padding:.7rem .85rem;cursor:pointer;font:inherit;}
+  /* the Festival hub — the neutral landing page. The event selector sits low,
+     like a tray, so the Festival grounds fill the screen above it: "I arrived
+     at the Festival" first, then "what should we do?". */
+  .fest-panel--hub{left:50%;top:auto;bottom:calc(env(safe-area-inset-bottom) + 4rem);
+    transform:translate(-50%,0);width:min(94vw,420px);max-height:56vh;padding:.9rem 1rem .8rem;}
+  .fest-panel--hub .fp-art{font-size:1.55rem;margin:0 0 .05rem;}
+  .fest-panel--hub h2{font-size:1.16rem;margin:0 0 .15rem;}
+  .fest-panel--hub p{font-size:.8rem;margin:0 0 .7rem;line-height:1.4;}
+  .fc-cards{display:flex;flex-direction:column;gap:.45rem;margin:0 0 .6rem;}
+  .fc-card{display:grid;grid-template-columns:auto 1fr;column-gap:.55rem;row-gap:.05rem;align-items:center;
+    text-align:left;background:#eef1e3;border:2px solid transparent;border-radius:13px;
+    padding:.55rem .75rem;cursor:pointer;font:inherit;transition:border-color .12s,background .12s;}
   .fc-card:hover{border-color:var(--accent);background:#fff;}
-  .fc-card .fc-emoji{font-size:1.4rem;line-height:1;}
-  .fc-card .fc-name{font-family:"Fraunces",serif;font-weight:700;font-size:1rem;color:var(--ink);}
-  .fc-card .fc-desc{font-size:.78rem;color:var(--ink-soft);line-height:1.4;}
+  .fc-card .fc-emoji{grid-row:1 / span 2;font-size:1.5rem;line-height:1;align-self:center;}
+  .fc-card .fc-name{font-family:"Fraunces",serif;font-weight:700;font-size:.96rem;color:var(--ink);}
+  .fc-card .fc-desc{font-size:.74rem;color:var(--ink-soft);line-height:1.34;}
+  .fc-card .fc-lock{grid-column:2;}
   .fc-card .fc-lock{font-size:.72rem;font-weight:700;color:var(--ink-faint);margin-top:.15rem;}
   .fc-card.locked{opacity:.55;cursor:not-allowed;}
   .fc-card.locked:hover{border-color:transparent;background:#eef1e3;}
@@ -1094,24 +1103,11 @@
   <!-- Cove Festival — a watch-and-cheer race. No shells staked; everyone who
        enters gets a little something, your pick winning gets a bit more. -->
   <div id="fest">
-    <div class="fest-panel" id="festChoose" hidden>
+    <div class="fest-panel fest-panel--hub" id="festChoose" hidden>
       <div class="fp-art">🎪</div>
-      <h2>Down at the grounds</h2>
-      <p>Something's on. A few things, actually.</p>
-      <div class="fc-cards">
-        <button class="fc-card" id="fc-race" type="button">
-          <span class="fc-emoji">🏁</span>
-          <span class="fc-name">The Cove Festival</span>
-          <span class="fc-desc">A friendly race down the track. One cat runs for the cove.</span>
-          <span class="fc-lock" hidden>Opens on day 5.</span>
-        </button>
-        <button class="fc-card" id="fc-volley" type="button">
-          <span class="fc-emoji">🏐</span>
-          <span class="fc-name">Cove Volleyball</span>
-          <span class="fc-desc">Three cats. One beach ball. Staying awake is optional.</span>
-          <span class="fc-lock" hidden>You need 3 cats at the Cove to play.</span>
-        </button>
-      </div>
+      <h2>Cove Festival</h2>
+      <p>Pick an event. The cats will handle the rest.</p>
+      <div class="fc-cards" id="festEventCards"></div>
       <div class="btn-row"><button class="btn" id="festChooseBack">Maybe later</button></div>
     </div>
     <div class="fest-panel" id="festPanel" hidden>
@@ -1149,8 +1145,8 @@
       <h2>The rules, briefly</h2>
       <ul class="vb-tut">
         <li><span class="vt-e">🐈</span><span class="vt-t">Your cats have agreed to play volleyball. Their commitment ends there.</span></li>
-        <li><span class="vt-e">👆</span><span class="vt-t">When the ball comes over, <b>tap the cat you want to get it.</b> They'll act like that was the plan.</span></li>
-        <li><span class="vt-e">🥱</span><span class="vt-t"><b>Tap a yawning cat</b> to wake it. A cat that's fully asleep takes two taps and a stern look.</span></li>
+        <li><span class="vt-e">🏐</span><span class="vt-t">When the ball comes over, <b>tap the cat you want to go for it.</b> They'll act like that was the plan.</span></li>
+        <li><span class="vt-e">🥱</span><span class="vt-t"><b>Tap a yawning cat</b> to keep them awake. Already asleep? Two taps. And perhaps a stern look.</span></li>
       </ul>
       <div class="btn-row">
         <button class="btn primary" id="volleyTutGo">Understood. Probably.</button>
@@ -6399,7 +6395,7 @@ document.getElementById("dev-name").addEventListener("click", () => askOwnerName
 document.getElementById("dev-shells").addEventListener("click", () => { G.shells += 500; syncHud(); });
 document.getElementById("dev-pearls").addEventListener("click", () => { G.pearls += 5; syncHud(); });
 document.getElementById("dev-cat").addEventListener("click", () => { spawnCat({ x: W * 0.5, y: H * 0.7 }); syncHud(); });
-document.getElementById("dev-fest").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("race"); });
+document.getElementById("dev-fest").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker(); });
 document.getElementById("dev-box").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("box"); });
 document.getElementById("dev-volley").addEventListener("click", () => { openFestPicker("volley"); });
 document.getElementById("dev-day").addEventListener("click", () => {
@@ -8217,11 +8213,11 @@ function openFestPicker(kind) {
   _festQuietUntil = Date.now() + 2500;   // no cove toasts through the wipe into the festival
   const w = document.getElementById("festWipe");
   document.getElementById("festWipeEmoji").textContent = pick(["🎪", "🎏", "🏵️"]);
-  document.getElementById("festWipeTitle").textContent = "The Cove Festival";
+  document.getElementById("festWipeTitle").textContent = "Cove Festival";
   document.getElementById("festWipeSub").textContent = pick([
-    "Everyone's heading down to the track…",
+    "Everyone's wandering down to the grounds…",
     "Bunting's up, kettle's on…",
-    "Something's happening by the field…",
+    "There's something on down by the shore…",
   ]);
   w.classList.remove("out"); void w.offsetWidth; w.classList.add("in");
   setTimeout(() => {
@@ -8235,12 +8231,17 @@ function openFestPicker(kind) {
       boxPhase = "picker"; renderBoxPickGrid(roster);
       document.getElementById("festBoxPanel").hidden = false;
     } else if (_festPickKind === "volley") {
+      festKind = "hub"; festGroundsCats(roster);
       renderVolleyPickGrid(eligibleForVolley());
       document.getElementById("festVolleyPanel").hidden = false;
     } else if (_festPickKind === "race") {
+      festKind = "hub"; festGroundsCats(roster);   // picker sits over the grounds, not the bare track
+      document.getElementById("festTime").textContent = "cove race";
       renderFestPickGrid(roster);
       document.getElementById("festPanel").hidden = false;
     } else {
+      festKind = "hub"; festGroundsCats(roster);
+      document.getElementById("festTime").textContent = "cove festival";
       renderFestChooser();
       document.getElementById("festChoose").hidden = false;
     }
@@ -8282,6 +8283,7 @@ function renderFestPickGrid(roster) {
 // building the field + the countdown.
 function startFestRace() {
   document.getElementById("festPanel").hidden = true;
+  festKind = "race"; _festG = null;   // the track appears now that the race is actually on
   const mk = cats.find(c => c.mascot);
   const others = cats.filter(c => c !== mk && c !== festPickedCat && !c.visitor);
   for (let i = others.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [others[i], others[j]] = [others[j], others[i]]; }
@@ -8380,7 +8382,7 @@ function closeFest() {
   document.getElementById("festCountdown").hidden = true;
   document.getElementById("festSkip").hidden = true;
   document.getElementById("festSkip").textContent = "Skip to the finish ›";
-  festKind = "race"; boxParts = []; boxPhase = "idle";
+  festKind = "race"; boxParts = []; boxPhase = "idle"; _hubCats = [];
   volleyPhase = "idle"; volleyParts = []; volleyBall = null; _vbNoDrowse = false; _vbFast = false;
   particles.length = 0; floaters.length = 0;   // a live "zoomies!" or confetti spark shouldn't follow you back to the cove
   _festQuietUntil = Date.now() + 1800;   // ...and none land the instant the wipe clears back at the cove
@@ -8663,7 +8665,132 @@ function showFestPodium() {
   document.getElementById("festBar").hidden = true;   // the result card has its own "Back to cove" / "Race again" — the bottom bar is redundant here
   document.getElementById("festResult").hidden = false;
 }
+
+/* ---------- Festival hub: the neutral grounds behind the event selector ----------
+   A calm coastal fair. Neither activity dominates — a checkered-flag signpost
+   nods at the Race, a little net + beach ball nods at Volleyball, and a few cats
+   loiter. Portrait space, contain-fit, ~1 landmark per corner. */
+const HUB_W = 560, HUB_H = 1000;
+let _hubT = 0, _hubCats = [];
+function hubFit() {
+  const { vw, vh } = restViewportPx();
+  const rd = _festDPR || DPR;
+  const sc = Math.min((vw * rd) / HUB_W, (vh * rd) / HUB_H);
+  return { sc, ox: (vw * rd - HUB_W * sc) / 2, oy: (vh * rd - HUB_H * sc) / 2 };
+}
+function festGroundsCats(roster) {
+  const spots = [{ x: 118, y: 440 }, { x: 296, y: 470 }, { x: 452, y: 438 }, { x: 206, y: 492 }, { x: 380, y: 498 }];
+  _hubCats = (roster || cats.filter(c => !c.visitor)).slice(0, 5).map((c, i) => {
+    Object.assign(c, { x: spots[i].x, y: spots[i].y, face: i % 2 ? 1 : -1,
+      state: i === 0 ? "loafing" : i === 3 ? "grooming" : "seeking",
+      trotting: false, walkAmt: 0, _vbLift: 0, _hx: spots[i].x, _hy: spots[i].y, _wanderAt: rand(2.5, 9) });
+    c._motion = null;
+    return c;
+  });
+}
+function renderFestGrounds(dt) {
+  _hubT += dt;
+  updateFX(Math.min(dt, 0.05));
+  const g = ctx;
+  { const px = restViewportPx();
+    if (Math.abs(canvas.width - Math.round(px.vw * (_festDPR || DPR))) > 2) fitFestCanvas(); }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  const V = hubFit();
+  g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
+  drawFestGroundsScene(g);
+  for (const c of _hubCats) {
+    c._wanderAt -= dt;
+    if (c._wanderAt <= 0) {
+      c._wanderAt = rand(5, 12);
+      c._hx = clamp(c._hx + rand(-44, 44), 100, 462);
+      c._hy = clamp(c._hy + rand(-20, 20), 410, 508);
+    }
+    const dx = c._hx - c.x, dy = c._hy - c.y, dist = Math.hypot(dx, dy);
+    const m = catMotion(c);
+    if (dist > 4) {
+      const step = Math.min(dist, 24 * dt);
+      c.x += dx / dist * step; c.y += dy / dist * step;
+      c.face = dx >= 0 ? 1 : -1; c.state = "exploring"; c.trotting = true;
+      c.walk += dt * 4; c.walkAmt = Math.min(1, (c.walkAmt || 0) + dt * 5); c.bob += dt * 7;
+    } else {
+      c.walkAmt = Math.max(0, (c.walkAmt || 0) - dt * 3); c.trotting = c.walkAmt > 0.05;
+      if (c.state === "exploring") c.state = "seeking";
+      c.bob += dt * 2; c.tail += dt * 2 * m.tailRate;
+    }
+    c.blink -= dt; if (c.blink < -0.12) c.blink = rand(2, 6) * m.blinkEvery;
+  }
+  _hubCats.slice().sort((a, b) => a.y - b.y).forEach(c => drawCat(g, c, false));
+  if (particles.length || floaters.length) drawFX(g);
+}
+function drawHubLantern(g, x, y) {
+  g.save(); g.translate(x, y);
+  g.strokeStyle = "#7c6142"; g.lineWidth = 3; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 58); g.stroke();
+  g.fillStyle = "rgba(255,232,170,0.5)"; g.beginPath(); g.arc(0, -3, 13, 0, 7); g.fill();
+  g.fillStyle = "#e8b45a"; roundRect(g, -7, -14, 14, 18, 3); g.fill();
+  g.restore();
+}
+function drawFestGroundsScene(g) {
+  const HZ = 232, OV = 460;
+  const sky = g.createLinearGradient(0, -OV, 0, HZ);
+  sky.addColorStop(0, "#c3dfe8"); sky.addColorStop(1, "#eaefdf");
+  g.fillStyle = sky; g.fillRect(-OV, -OV, HUB_W + OV * 2, HZ + OV);
+  g.fillStyle = "#7ec3cf"; g.fillRect(-OV, HZ - 40, HUB_W + OV * 2, 58);   // sea
+  g.strokeStyle = "rgba(255,255,255,0.45)"; g.lineWidth = 2;
+  for (let i = 0; i < 4; i++) { const y = HZ - 30 + i * 11; const x = (_hubT * 7 + i * 150) % (HUB_W + 90) - 45;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + 30, y); g.stroke(); }
+  const gr = g.createLinearGradient(0, HZ - 10, 0, HUB_H + OV);
+  gr.addColorStop(0, "#cfe0af"); gr.addColorStop(0.5, "#bcd398"); gr.addColorStop(1, "#aecb8a");
+  g.fillStyle = gr; g.fillRect(-OV, HZ - 12, HUB_W + OV * 2, HUB_H - HZ + OV);
+  g.fillStyle = "rgba(232,214,170,0.42)";                                  // a sandy patch = "the festival area"
+  g.beginPath(); g.ellipse(HUB_W / 2, 500, 300, 200, 0, 0, 7); g.fill();
+  // bunting, two runs
+  drawBunting(g, 6, 66, HUB_W - 12, 30, _hubT);
+  drawBunting(g, -46, 132, HUB_W * 0.62, 24, _hubT + 2);
+  // a small striped canopy, centre — sat on the grass
+  g.save(); g.translate(HUB_W / 2, 270);
+  g.fillStyle = "rgba(90,70,50,0.12)"; g.beginPath(); g.ellipse(0, 74, 78, 12, 0, 0, 7); g.fill();
+  g.strokeStyle = "#7c6142"; g.lineWidth = 5;
+  g.beginPath(); g.moveTo(-70, 0); g.lineTo(-70, 70); g.moveTo(70, 0); g.lineTo(70, 70); g.stroke();
+  for (let i = 0; i < 5; i++) {
+    g.fillStyle = i % 2 ? "#e08b6a" : "#f3ede0";
+    g.beginPath(); g.moveTo(-80 + i * 32, 4); g.lineTo(-80 + (i + 1) * 32, 4); g.lineTo(-80 + (i + 0.5) * 32, -24); g.closePath(); g.fill();
+  }
+  g.fillStyle = "rgba(120,90,60,0.14)"; g.fillRect(-72, 70, 144, 5);
+  g.restore();
+  // LEFT — a checkered-flag signpost (the Race, subtly)
+  g.save(); g.translate(74, 392);
+  g.strokeStyle = "#7c6142"; g.lineWidth = 5; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 58); g.stroke();
+  const cell = 6; g.fillStyle = "#fff"; g.fillRect(3, -34, 32, 22);
+  g.fillStyle = "#2b2420";
+  for (let ry = 0; ry * cell < 22; ry++) for (let rx = 0; rx * cell < 32; rx++) if ((rx + ry) % 2) g.fillRect(3 + rx * cell, -34 + ry * cell, cell, cell);
+  g.strokeStyle = "rgba(0,0,0,.2)"; g.lineWidth = 1; g.strokeRect(3, -34, 32, 22);
+  g.restore();
+  // RIGHT — a little net + a beach ball (Volleyball, subtly)
+  g.save(); g.translate(HUB_W - 78, 402);
+  g.strokeStyle = "#8a7052"; g.lineWidth = 5;
+  g.beginPath(); g.moveTo(-38, 6); g.lineTo(-40, -38); g.moveTo(38, 6); g.lineTo(40, -38); g.stroke();
+  g.strokeStyle = "rgba(240,236,224,0.85)"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(-40, -34); g.quadraticCurveTo(0, -25, 40, -34); g.stroke();
+  g.strokeStyle = "rgba(240,236,224,0.4)"; g.lineWidth = 1;
+  for (let i = -3; i <= 3; i++) { g.beginPath(); g.moveTo(i * 12, -32); g.lineTo(i * 12 + 2, -8); g.stroke(); }
+  const wob = Math.sin(_hubT * 1.4) * 1.6;
+  g.save(); g.translate(-4 + wob, 24); g.rotate(wob * 0.04);
+  const R = 16, cols = ["#e88a6a", "#63b7c4", "#f0c453"];
+  g.fillStyle = "#fbf7ec"; g.beginPath(); g.arc(0, 0, R, 0, 7); g.fill();
+  for (let i = 0; i < 6; i++) { g.fillStyle = cols[i % 3]; g.globalAlpha = i % 2 ? 0.9 : 0.74;
+    g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, R, i * Math.PI / 3, (i + 1) * Math.PI / 3); g.closePath(); g.fill(); }
+  g.globalAlpha = 1; g.restore();
+  g.restore();
+  // odds and ends
+  drawHubLantern(g, 154, 296);
+  drawHubLantern(g, HUB_W - 154, 288);
+  g.fillStyle = "#c99a6a"; roundRect(g, 182, 520, 42, 30, 4); g.fill();                     // a crate
+  g.strokeStyle = "rgba(90,60,34,0.3)"; g.lineWidth = 1.5; g.strokeRect(182, 520, 42, 30);
+  g.fillStyle = "#d97a5f"; g.beginPath(); g.ellipse(356, 528, 24, 14, 0, 0, 7); g.fill();   // a cushion
+}
 function renderFest(dt) {
+  if (festKind === "hub") { renderFestGrounds(dt); return; }
   if (festKind === "box") { renderBox(dt); return; }
   if (festKind === "volley") { renderVolley(dt); return; }
   raceT += dt;
@@ -8749,16 +8876,15 @@ document.getElementById("festAgain").addEventListener("click", () => {
   document.getElementById("festBar").hidden = false;   // back to the picker — restore the bottom exit bar
   particles.length = 0; floaters.length = 0;   // last round's zoomies text / confetti shouldn't bleed into this one
   const roster = cats.filter(c => !c.visitor);
-  festIdleScene(roster);
   if (festKind === "box") {
-    boxParts = []; boxPhase = "picker"; festKind = "race";   // grounds behind the picker; startBoxChallenge flips it back
+    boxParts = []; boxPhase = "picker"; festKind = "hub"; festGroundsCats(roster);
     renderBoxPickGrid(roster);
     document.getElementById("festBoxPanel").hidden = false;
     trackEvent("box_challenge_replayed");
     return;
   }
   if (festKind === "volley") {
-    volleyParts = []; volleyBall = null; volleyPhase = "idle"; festKind = "race";
+    volleyParts = []; volleyBall = null; volleyPhase = "idle"; festKind = "hub"; festGroundsCats(roster);
     document.getElementById("volleyHud").hidden = true;
     document.getElementById("volleyCom").hidden = true;
     document.getElementById("volleyBanner").hidden = true;
@@ -8767,41 +8893,53 @@ document.getElementById("festAgain").addEventListener("click", () => {
     trackEvent("volleyball_replayed");
     return;
   }
+  festKind = "hub"; festGroundsCats(roster);
   raceCats = []; raceWinner = null; racePick = null; racePhase = "picker"; festCheerUntil = 0;
   renderFestPickGrid(roster);
   document.getElementById("festPanel").hidden = false;
 });
-// the activity chooser — Race needs day 5; Volleyball needs 3 cats present.
-// (The Great Box Challenge is parked — code stays, reachable only via __cove.box()
-// / the dev button — so it's off this chooser.)
-function renderFestChooser() {
-  const rc = document.getElementById("fc-race");
-  rc.classList.toggle("locked", !festUnlocked());
-  rc.querySelector(".fc-lock").hidden = festUnlocked();
-  const vc = document.getElementById("fc-volley");
-  vc.classList.toggle("locked", !volleyReady());
-  vc.querySelector(".fc-lock").hidden = volleyReady();
-}
-document.getElementById("festChooseBack").addEventListener("click", closeFest);
-document.getElementById("fc-race").addEventListener("click", () => {
-  if (!festUnlocked()) return;
+// ---- Festival hub: the event list is data-driven so a third activity later is
+// one entry here, not a screen redesign. (The Great Box Challenge is parked —
+// its code stays, reachable only via __cove.box() / the dev button.)
+function enterFestRace() {
   document.getElementById("festChoose").hidden = true;
-  festKind = "race";
-  document.getElementById("festTime").textContent = "the cove festival";
-  const roster = _festRoster.length ? _festRoster : cats.filter(c => !c.visitor);
-  festIdleScene(roster); renderFestPickGrid(roster);
-  document.getElementById("festPanel").hidden = false;
+  document.getElementById("festTime").textContent = "cove race";
+  renderFestPickGrid(_festRoster.length ? _festRoster : cats.filter(c => !c.visitor));
+  document.getElementById("festPanel").hidden = false;   // festKind stays "hub" — the track appears when the race starts (startFestRace)
   trackEvent("activity_open", { kind: "race" });
-});
-document.getElementById("fc-volley").addEventListener("click", () => {
-  if (!volleyReady()) return;
+}
+function enterFestVolley() {
   document.getElementById("festChoose").hidden = true;
   document.getElementById("festTime").textContent = "cove volleyball";
-  const roster = _festRoster.length ? _festRoster : cats.filter(c => !c.visitor);
-  festIdleScene(roster); renderVolleyPickGrid(eligibleForVolley());
+  renderVolleyPickGrid(eligibleForVolley());
   document.getElementById("festVolleyPanel").hidden = false;
   trackEvent("volleyball_card_opened");
-});
+}
+const FEST_EVENTS = [
+  { key: "race", emoji: "🏁", name: "Cove Race",
+    desc: "Pick a cat and cheer them all the way to the finish.",
+    lock: () => festUnlocked() ? null : "Opens on day 5.", enter: enterFestRace },
+  { key: "volley", emoji: "🏐", name: "Cove Volleyball",
+    desc: "Three cats. One visiting Cove. Keep them awake and hope they remember how volleyball works.",
+    lock: () => volleyReady() ? null : "You need 3 cats at the Cove to play.", enter: enterFestVolley },
+];
+function renderFestChooser() {
+  const wrap = document.getElementById("festEventCards");
+  wrap.innerHTML = FEST_EVENTS.map(ev => {
+    const locked = ev.lock();
+    return `<button class="fc-card${locked ? " locked" : ""}" data-ev="${ev.key}" type="button">
+      <span class="fc-emoji">${ev.emoji}</span>
+      <span class="fc-name">${esc(ev.name)}</span>
+      <span class="fc-desc">${esc(ev.desc)}</span>
+      ${locked ? `<span class="fc-lock">${esc(locked)}</span>` : ""}
+    </button>`;
+  }).join("");
+  wrap.querySelectorAll(".fc-card").forEach(el => el.addEventListener("click", () => {
+    const ev = FEST_EVENTS.find(e => e.key === el.dataset.ev);
+    if (ev && !ev.lock()) ev.enter();
+  }));
+}
+document.getElementById("festChooseBack").addEventListener("click", closeFest);
 document.getElementById("boxCancel").addEventListener("click", closeFest);
 document.getElementById("boxStart").addEventListener("click", startBoxChallenge);
 document.getElementById("volleyCancel").addEventListener("click", closeFest);
@@ -14618,7 +14756,7 @@ window.__cove.focus = (name) => {
   return "no such cat";
 };
 // Cove Festival — opens the picker panel (see openFestPicker())
-window.__cove.fest = () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("race"); return { on: festMode, picking: !document.getElementById("festPanel").hidden }; };
+window.__cove.fest = (kind) => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker(kind); return { on: festMode, kind: festKind }; };
 // The Great Box Challenge — jumps straight to its cat picker (bypasses the day-5 gate, like fest())
 window.__cove.box = () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("box"); return { on: festMode, kind: festKind, phase: boxPhase }; };
 window.__cove.boxState = () => ({ kind: festKind, phase: boxPhase, t: Math.round(boxT), parts: boxParts.map(p => ({ n: p.cat.name, st: p.state, box: p.box, score: p.score, nap: p.napping, log: p.log })) });
