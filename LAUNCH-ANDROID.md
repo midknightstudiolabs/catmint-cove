@@ -242,7 +242,8 @@ Expected outcome: **ESRB Everyone / PEGI 3 / USK 0** (all-ages).
 | Profanity / crude humour | **None** |
 | Controlled substances (alcohol / tobacco / drugs) | **None** — reference or use |
 | **Gambling** — simulated or real | **No.** The "Cove Festival" is a race with no wager, no stake, no loss; every entrant is rewarded and it is always skippable. Nothing of value is risked. |
-| Digital purchases | **Yes** — the app offers in-app purchases (cosmetic only). |
+| "Digital Purchases, Cash Convertible Rewards, or NFTs" (bundled question — digital goods **that are cash-convertible / tradeable / gift cards / play-to-earn / crypto / NFTs**) | **No.** Cosmetic IAPs can't be resold, refunded to cash, traded, or converted to anything of value. |
+| Plain in-app purchases (the separate Monetization question, if asked) | **Yes** — cosmetic-only, $0.99–$4.99. Also declared on the App content page ("In-app purchases: Yes"). |
 | User interaction / user-generated content / shares location / personal info | **No** — no chat, no social features, no UGC sharing, no location. |
 | Unrestricted internet access / opens web browser | **No** |
 | In-game currency purchasable with real money | **No** — no currency is sold; purchases are one-time cosmetic unlocks. |

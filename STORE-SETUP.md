@@ -123,7 +123,7 @@ Both stores need these before you can submit — none of it is code:
 | Short description | *(the ≤80-char line above)* |
 | Full description | *(the block above — already V3-accurate, ≤4000)* |
 | App category | Simulation |
-| Tags | cats, casual, relaxing, idle |
+| Tags | pick up to 5 from Google's **fixed list** (Store listing ▸ Manage tags — you search, you can't invent them). Ranked choice: **Pet Simulation · Life Simulation · Idle · Relaxing · Creature Collector** (fallbacks if any aren't offered: Sandbox, Casual, Tycoon). Google also auto-suggests some from your description — accept the ones that fit. |
 | Contact email | `carlosgotiong@gmail.com` |
 | App icon | 512×512 from `assets/logo.png` |
 | Feature graphic | **1024×500** — `assets/store/feature-graphic.png` (from `assets/_feature-graphic.html`) |
