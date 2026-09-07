@@ -1528,6 +1528,7 @@ function newGame() {
     pearls: 0,             // premium currency (earned via Catdex / daily goals)
     comfort: 0,            // 0..5 global production tiers
     coax: 0,               // times coaxed (price scaling)
+    lastCatAt: 0,          // when a resident last joined — the "coax" hint only nudges after a long quiet stretch
     bowls: 1, toys: 0, beds: 0, scratch: 0,
     food: 30,              // v3: cove-wide food store (servings). cats eat it down; refill for shells. empty → hunger climbs
     decor: { tree: 0, cottage: 0, flowers: 0 },
@@ -1635,6 +1636,7 @@ function load() {
     }
     G.adventure = null;                                 // superseded by G.adventures
     if (typeof G.advDay !== "string") G.advDay = "";
+    if (typeof G.lastCatAt !== "number" || !G.lastCatAt) G.lastCatAt = Date.now();   // existing saves: start the quiet-cove clock now, don't nag on load
     if (typeof G.mapPieces !== "number") G.mapPieces = 0;
     if (!Array.isArray(G.keepsakes)) G.keepsakes = [];
     if (!G.materials || typeof G.materials !== "object") G.materials = { driftwood: 0 };
@@ -2354,6 +2356,7 @@ function acceptArrival() {
   setTimeout(() => {
     cats.push(c);
     G.metrics.catsAllTime++;
+    G.lastCatAt = Date.now();
     go(c, "arriving", rand(5, 9), { x: rand(W * 0.28, W * 0.72), y: rand(H * 0.6, catFloor() - 22) });
     registerInDex(c, true);
     logMoment("🐾", `${c.name} settled in — a ${c.coat.name}.`, "arrival");
@@ -2550,7 +2553,7 @@ function spawnCat(o) {
   if (residentCount() >= capacity() && !o) return null;
   const c = new Cat(o || {});
   cats.push(c);
-  if (!c.visitor) G.metrics.catsAllTime++;
+  if (!c.visitor) { G.metrics.catsAllTime++; G.lastCatAt = Date.now(); }
   registerInDex(c, o ? !!o._celeb : true);   // silent for starters, celebratory for coaxed cats
   return c;
 }
@@ -5578,12 +5581,16 @@ function nextAction() {
   if (advReady() && cats.filter(c => !c.visitor).length >= 2 && !G.tips.includes("explore_seen"))
     return { t: `A cat could take a trip today — pick a spot in Today.`, go: "Open Today", act: () => togglePanel("today") };
 
-  // early game — keep the loop legible until the cove has a few cats
-  if (cats.length < 4) {
-    if (G.shells >= coaxPrice())
-      return { t: `You've ◈ ${Math.floor(G.shells)}. Coax another cat to grow the cove.`, go: "Coax", act: () => document.getElementById("coaxBtn").click() };
+  // brand-new cove with barely any cats and no shells yet — one gentle pointer
+  if (cats.length < 4 && G.shells < coaxPrice())
     return { t: `Tap the glowing shells the cats leave to gather more.` };
-  }
+
+  // the "coax a cat" nudge is otherwise off — it only comes back as a reminder
+  // when the cove's gone quiet: no new arrival in ~4h and shells to spare
+  if (residentCount() < capacity() && G.shells >= coaxPrice()
+      && Date.now() - (G.lastCatAt || Date.now()) > 4 * 3600e3)
+    return { t: `It's been quiet — coax a new cat to the cove?`, go: "Coax", act: () => document.getElementById("coaxBtn").click() };
+
   return null;
 }
 let _hintT = 0;
