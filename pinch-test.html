@@ -865,14 +865,16 @@
   #tut .guide-row b{font-family:"Fraunces",serif;font-size:1rem;}
   #tut .guide-row p{margin:.15rem 0 0;color:var(--ink-soft);font-size:.88rem;line-height:1.46;}
   #tut .guide-foot{gap:.5rem;flex-wrap:wrap;}
-  .credits{text-align:center;max-height:72vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-  .credits h2{margin:.15rem 0 .5rem;}
-  .credits .cr-lead{color:var(--ink);font-size:.9rem;line-height:1.5;margin:.6rem auto 0;max-width:30ch;}
-  .credits .cr-sec{margin:1.05rem 0 0;}
-  .credits .cr-sec h3{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--apricot);margin:0 0 .25rem;}
-  .credits .cr-sec p{margin:.12rem 0;font-size:.92rem;color:var(--ink);}
-  .credits .cr-note{color:var(--ink-soft);font-size:.8rem;line-height:1.5;font-style:italic;margin:.3rem auto 0;max-width:32ch;}
-  .credits .row{margin-top:1.3rem;}
+  .credits{text-align:center;max-height:78vh;overflow-y:auto;-webkit-overflow-scrolling:touch;position:relative;padding-top:.4rem;}
+  .credits .cr-x{position:absolute;top:0;right:0;width:1.9rem;height:1.9rem;border:none;border-radius:50%;
+    background:#eef1e3;color:var(--ink-soft);font-size:.8rem;line-height:1;cursor:pointer;z-index:2;}
+  .credits h2{margin:.15rem 0 .45rem;}
+  .credits .cr-lead{color:var(--ink);font-size:.88rem;line-height:1.5;margin:.55rem auto 0;max-width:30ch;}
+  .credits .cr-sec{margin:.9rem 0 0;}
+  .credits .cr-sec h3{font-family:"IBM Plex Mono",monospace;font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--apricot);margin:0 0 .22rem;}
+  .credits .cr-sec p{margin:.1rem 0;font-size:.9rem;color:var(--ink);}
+  .credits .cr-note{color:var(--ink-soft);font-size:.78rem;line-height:1.48;font-style:italic;margin:.28rem auto 0;max-width:32ch;}
+  .credits .row{margin-top:1.1rem;position:sticky;bottom:-.1rem;background:linear-gradient(rgba(247,244,236,0),var(--panel) 40%);padding-top:.7rem;}
 
   /* ---- dev overlay ---- */
   #dev{position:absolute;left:.6rem;bottom:3.6rem;z-index:35;display:none;
@@ -5156,11 +5158,13 @@ function renderShopDecor(list) {
   if (sp) list.appendChild(sp);
   const decorCount = (G.decor.cottage || 0) + (G.decor.tree || 0) + (G.decor.flowers || 0);
   const propCount = DECOR_PROPS.filter(p => p.movable && cm.props[p.id] && !propBoxed(p.id)).length;
-  if (decorCount + propCount > 0) {
+  const comfortCount = (G.bowls || 0) + (G.toys || 0) + (G.beds || 0) + (G.scratch || 0);
+  const stationCount2 = stationCount();
+  if (decorCount + propCount + comfortCount + stationCount2 > 0) {
     const row = document.createElement("div");
     row.className = "shop-item";
     row.innerHTML = `<div class="txt"><div class="name">Arrange the cove</div>
-      <div class="desc">Move the cottage, trees, flowers and decorations wherever you like — or just press and hold one in the cove.</div></div>
+      <div class="desc">Move anything — bowls, beds, trees, the cottage, your stations — wherever you like. Or just press and hold one in the cove.</div></div>
       <div class="shop-actions"><button class="btn primary" id="arrange-go">Arrange</button></div>`;
     list.appendChild(row);
     row.querySelector("#arrange-go").onclick = () => startArrange();
@@ -6179,6 +6183,7 @@ function openGuide() {
 function openCredits() {
   ensureAudio();
   openModal(`<div class="reveal credits">
+    <button class="cr-x" id="crX" aria-label="Close">✕</button>
     <div class="kicker">Made with 🐾</div>
     <h2>Catmint Cove</h2>
     <p class="cr-lead">Made by one hooman at Midknight Studio Labs, with Midknight supervising 24/7 — mostly by sleeping near the keyboard and judging every decision.</p>
@@ -6193,6 +6198,7 @@ function openCredits() {
     <div class="row"><button class="btn primary" id="crClose">Back to the cove</button></div>
   </div>`);
   document.getElementById("crClose").onclick = closeModal;
+  document.getElementById("crX").onclick = closeModal;
 }
 document.getElementById("helpBtn").addEventListener("click", openGuide);
 document.getElementById("focusBar").addEventListener("click", exitFocus);
