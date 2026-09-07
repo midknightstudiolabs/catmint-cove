@@ -3669,24 +3669,30 @@ let _frozenScroll = 0, _frozenLeft = 0, _frozenTop = 0;
 let _ovTarget = 0, _ovT = 0;              // 0 = normal, 1 = fully zoomed out (eased)
 let _ovCamX = 0, _ovCamY = 0;             // free pan point while zoomed out (world coords)
 let _ovActive = false;                    // touch-action override + drag-pan engaged
+let _ovBaseScale = 1, _ovFit = 1;         // frozen at entry — the camera never reads live displayScale (which wobbles as the mobile viewport churns)
 const OV_MAX_OUT = 1.7;                   // hard cap: never pull back further than 1.7x the normal view
-function ovFitScale() {                   // scale (relative to displayScale) at full zoom-out
+function ovComputeFit() {                 // scale (relative to _ovBaseScale) at full zoom-out — computed ONCE at entry
   const de = document.documentElement;
   const fvw = Math.max(stage.clientWidth || 0, de.clientWidth || 0, 390);
   const fvh = Math.max(stage.clientHeight || 0, de.clientHeight || 0, 780);
-  const fit = Math.min(fvw / W, fvh / H) * 0.98;              // "whole cove fits" scale
-  const want = displayScale > 0 ? Math.min(1, fit / displayScale) : 1;
-  return Math.max(1 / OV_MAX_OUT, want);                       // clamp so it can't over-zoom-out and thrash
+  const fit = Math.min(fvw / W, fvh / H) * 0.98;
+  const want = _ovBaseScale > 0 ? Math.min(1, fit / _ovBaseScale) : 1;
+  return Math.max(1 / OV_MAX_OUT, want);
 }
-function ovSetTarget(v) {
+function ovSetTarget(v, recenter) {
   _ovTarget = clamp(v, 0, 1);
   if (_ovTarget > 0 && !_ovActive) {
     _ovActive = true;
-    _frozenScroll = stage.scrollLeft;                       // freeze the pan (kills the auto-scroll feedback jitter)
-    const r = canvas.getBoundingClientRect();
-    _frozenLeft = r.left; _frozenTop = r.top;
-    _ovCamX = _frozenScroll / displayScale - _worldOffX + (window.innerWidth / 2) / displayScale;
+    // capture where the eye is, THEN pin the native scroll to 0 so the canvas
+    // element never moves under us — the camera is done purely by the ctx
+    // transform after this, no getBoundingClientRect() in the frame loop.
+    _ovBaseScale = displayScale;
+    _ovCamX = recenter ? W / 2
+      : (stage.scrollLeft + window.innerWidth / 2) / _ovBaseScale - _worldOffX;
     _ovCamY = H / 2;
+    _ovFit = ovComputeFit();
+    try { stage.scrollLeft = 0; } catch (e) {}
+    _frozenLeft = 0; _frozenTop = 0;
     stage.style.touchAction = "none";
     document.getElementById("app").classList.add("focusing");
   }
@@ -3721,12 +3727,12 @@ function exitFocus() { _focus = null; }
 function updateCamera(dt) {
   // ---- PINCH-ZOOM TEST: zoom-out camera (only when not focused on a cat) ----
   if (!_focus && (_ovTarget > 0 || _ovT > 0.001)) {
-    stage.scrollLeft = _frozenScroll;                    // hold the pan still (as the focus camera does)
-    _ovT = _reduceMotion ? _ovTarget : _ovT + (_ovTarget - _ovT) * Math.min(1, 10 * dt);
+    if (stage.scrollLeft !== 0) stage.scrollLeft = 0;    // canvas element stays put; camera is all ctx transform
+    _ovT = _reduceMotion ? _ovTarget : _ovT + (_ovTarget - _ovT) * Math.min(1, 12 * dt);
     if (_ovTarget === 0 && _ovT < 0.02) { _ovT = 0; if (_ovActive) ovEnd(); }
-    const fit = ovFitScale();
+    if (Math.abs(_ovT - _ovTarget) < 0.002) _ovT = _ovTarget;   // settle hard — no residual easing jitter
     const e = _ovT * _ovT * (3 - 2 * _ovT);
-    _camScale = displayScale * (1 + (fit - 1) * e);
+    _camScale = _ovBaseScale * (1 + (_ovFit - 1) * e);          // frozen base — immune to viewport churn
     // clamp the free-pan centre so the viewport stays over the cove; when the
     // zoomed-out view is wider/taller than the cove there's nothing to pan — lock to centre
     const halfW = (window.innerWidth / 2) / _camScale, halfH = (window.innerHeight / 2) / _camScale;
@@ -3734,9 +3740,9 @@ function updateCamera(dt) {
     _ovCamX = loX >= hiX ? W / 2 : clamp(_ovCamX, loX, hiX);
     const loY = halfH, hiY = H - halfH;
     _ovCamY = loY >= hiY ? H / 2 : clamp(_ovCamY, loY, hiY);
-    _camX = _ovCamX; _camY = _ovCamY;
-    _camTx = window.innerWidth / 2 - _camX * _camScale;
-    _camTy = window.innerHeight / 2 - _camY * _camScale;
+    _camX = Math.round(_ovCamX * 4) / 4; _camY = Math.round(_ovCamY * 4) / 4;   // quarter-px snap kills sub-pixel shimmer
+    _camTx = Math.round((window.innerWidth / 2 - _camX * _camScale) * 2) / 2;
+    _camTy = Math.round((window.innerHeight / 2 - _camY * _camScale) * 2) / 2;
     _focusT = _ovT;                          // reuse the same "camera engaged" gate downstream
     _wasFocusing = true;
     return;
@@ -4069,7 +4075,7 @@ canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeou
     const now = performance.now();
     if (now - lastTapT < 300 && Math.hypot(e.clientX - lastTapX, e.clientY - lastTapY) < 30) {
       const w = screenToWorld(e.clientX, e.clientY);
-      if (!catAt(w.x, w.y, 46)) { ovSetTarget(_ovTarget > 0.5 ? 0 : 1); lastTapT = 0; return; }
+      if (!catAt(w.x, w.y, 46)) { ovSetTarget(_ovTarget > 0.5 ? 0 : 1, true); lastTapT = 0; return; }
     }
     lastTapT = now; lastTapX = e.clientX; lastTapY = e.clientY;
   });
@@ -4084,7 +4090,7 @@ canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeou
     btn.textContent = "⊙";
     btn.title = "See the whole cove";
     btn.style.cssText = "position:fixed;right:calc(10px + env(safe-area-inset-right));bottom:calc(74px + env(safe-area-inset-bottom));z-index:55;width:44px;height:44px;border-radius:50%;border:none;background:#f7f5ec;color:#356b4c;font-size:20px;box-shadow:0 3px 12px rgba(36,31,23,.25);cursor:pointer;";
-    btn.onclick = () => { if (_focus || restMode || festMode) return; ovSetTarget(_ovTarget > 0.5 ? 0 : 1); };
+    btn.onclick = () => { if (_focus || restMode || festMode) return; ovSetTarget(_ovTarget > 0.5 ? 0 : 1, true); };
     document.getElementById("app").appendChild(btn);
   });
 })();
