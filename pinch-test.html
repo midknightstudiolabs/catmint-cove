@@ -3669,12 +3669,14 @@ let _frozenScroll = 0, _frozenLeft = 0, _frozenTop = 0;
 let _ovTarget = 0, _ovT = 0;              // 0 = normal, 1 = fully zoomed out (eased)
 let _ovCamX = 0, _ovCamY = 0;             // free pan point while zoomed out (world coords)
 let _ovActive = false;                    // touch-action override + drag-pan engaged
-function ovFitScale() {                   // scale (relative to displayScale) that fits the whole cove
+const OV_MAX_OUT = 1.7;                   // hard cap: never pull back further than 1.7x the normal view
+function ovFitScale() {                   // scale (relative to displayScale) at full zoom-out
   const de = document.documentElement;
   const fvw = Math.max(stage.clientWidth || 0, de.clientWidth || 0, 390);
   const fvh = Math.max(stage.clientHeight || 0, de.clientHeight || 0, 780);
-  const fit = Math.min(fvw / W, fvh / H) * 0.98;
-  return displayScale > 0 ? Math.min(1, fit / displayScale) : 1;
+  const fit = Math.min(fvw / W, fvh / H) * 0.98;              // "whole cove fits" scale
+  const want = displayScale > 0 ? Math.min(1, fit / displayScale) : 1;
+  return Math.max(1 / OV_MAX_OUT, want);                       // clamp so it can't over-zoom-out and thrash
 }
 function ovSetTarget(v) {
   _ovTarget = clamp(v, 0, 1);
