@@ -752,7 +752,33 @@
   .fc-card .fc-emoji{font-size:1.4rem;line-height:1;}
   .fc-card .fc-name{font-family:"Fraunces",serif;font-weight:700;font-size:1rem;color:var(--ink);}
   .fc-card .fc-desc{font-size:.78rem;color:var(--ink-soft);line-height:1.4;}
-  #boxPickCount{color:var(--ink-faint);font-weight:600;}
+  #boxPickCount,#fishPickCount{color:var(--ink-faint);font-weight:600;}
+
+  /* Cove Fishing — pick cells show two traits; then a spot-assignment row */
+  .fp-cell .fp-tr{display:flex;gap:.2rem;flex-wrap:wrap;justify-content:center;margin-top:.1rem;}
+  .fp-cell .fp-tr span{background:#e2e6d5;border-radius:999px;padding:.02rem .34rem;font-size:.56rem;
+    font-weight:600;color:var(--ink-soft);white-space:nowrap;}
+  .fp-cell.picked .fp-tr span{background:#eef4e6;color:var(--accent);}
+  .ff-spots{display:flex;gap:.4rem;justify-content:center;margin:.2rem 0 .5rem;}
+  .ff-spots[hidden]{display:none;}
+  .ff-spot{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:.1rem;
+    background:#eef1e3;border:2px solid transparent;border-radius:12px;padding:.45rem .2rem;cursor:pointer;font:inherit;}
+  .ff-spot .ff-spot-emoji{font-size:1.15rem;line-height:1;}
+  .ff-spot .ff-spot-name{font-size:.62rem;font-weight:700;color:var(--ink-soft);letter-spacing:.02em;}
+  .ff-spot .ff-spot-cat{font-size:.66rem;font-weight:700;color:var(--accent);max-width:100%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ff-spot.sel{border-color:var(--accent);background:#fff;}
+  .ff-hint{font-size:.72rem;color:var(--ink-faint);margin:.1rem 0 .7rem;}
+  .fr-catch{font-size:.66rem;font-weight:700;color:var(--ink-soft);}
+  .ff-reward{display:inline-block;margin-top:.3rem;color:var(--accent);font-weight:700;}
+
+  /* "Something big is coming." — a calm banner, not an alarm */
+  .fish-banner{position:absolute;left:50%;top:26%;transform:translate(-50%,-50%);z-index:64;
+    pointer-events:none;background:rgba(17,14,21,.62);color:#f4efe2;font-family:"Fraunces",serif;
+    font-weight:700;font-size:1.15rem;padding:.6rem 1.2rem;border-radius:999px;
+    box-shadow:0 8px 26px rgba(0,0,0,.32);animation:fishBannerIn .5s ease both;text-align:center;}
+  .fish-banner[hidden]{display:none;}
+  @keyframes fishBannerIn{from{opacity:0;transform:translate(-50%,-40%);}}
 
   /* 3-2-1 countdown — pinned above the starting line (not dead-centre, so it
      reads like a race light rather than a modal), colour races warm-to-go and
@@ -1048,13 +1074,13 @@
       <div class="fc-cards">
         <button class="fc-card" id="fc-race" type="button">
           <span class="fc-emoji">🏁</span>
-          <span class="fc-name">The Cove Festival</span>
-          <span class="fc-desc">A friendly race down the track. One cat runs for the cove.</span>
+          <span class="fc-name">Festival Race</span>
+          <span class="fc-desc">Choose your racers and see who takes the Cove crown.</span>
         </button>
-        <button class="fc-card" id="fc-box" type="button">
-          <span class="fc-emoji">📦</span>
-          <span class="fc-name">The Great Box Challenge</span>
-          <span class="fc-desc">Five cats. Five boxes. We have been assured there are rules.</span>
+        <button class="fc-card" id="fc-fish" type="button">
+          <span class="fc-emoji">🐟</span>
+          <span class="fc-name">Cove Fishing</span>
+          <span class="fc-desc">Pick three cats and spend a quiet afternoon by the water.</span>
         </button>
       </div>
       <div class="btn-row"><button class="btn" id="festChooseBack">Maybe later</button></div>
@@ -1079,6 +1105,23 @@
         <button class="btn" id="boxCancel">Maybe later</button>
       </div>
     </div>
+    <div class="fest-panel" id="festFishPanel" hidden>
+      <div class="fp-art">🐟</div>
+      <h2>Choose your fishing crew</h2>
+      <p>Three highly qualified fishing professionals. <span id="fishPickCount">(0 / 3)</span></p>
+      <div class="fp-grid" id="fishPickGrid"></div>
+      <div class="ff-spots" id="fishSpots" hidden>
+        <button class="ff-spot" data-spot="0" type="button"><span class="ff-spot-emoji">🌿</span><span class="ff-spot-name">Shallows</span><span class="ff-spot-cat"></span></button>
+        <button class="ff-spot" data-spot="1" type="button"><span class="ff-spot-emoji">🪨</span><span class="ff-spot-name">Rocks</span><span class="ff-spot-cat"></span></button>
+        <button class="ff-spot" data-spot="2" type="button"><span class="ff-spot-emoji">🌊</span><span class="ff-spot-name">Deep Cove</span><span class="ff-spot-cat"></span></button>
+      </div>
+      <p class="ff-hint" id="fishSpotHint" hidden>Tap a spot to move a cat there.</p>
+      <div class="btn-row">
+        <button class="btn primary" id="fishStart" disabled>Go fishing</button>
+        <button class="btn" id="fishCancel">Maybe later</button>
+      </div>
+    </div>
+    <div class="fish-banner" id="fishBanner" hidden><span id="fishBannerText">Something big is coming.</span></div>
     <div class="fest-countdown" id="festCountdown" hidden>
       <div class="cd-ring" id="festCdRing"></div>
       <span id="festCdNum">3</span>
@@ -1130,6 +1173,8 @@
       <button id="dev-cat">+ cat</button>
       <button id="dev-fest">🎪 festival</button>
       <button id="dev-box">📦 box challenge</button>
+      <button id="dev-fish">🐟 cove fishing</button>
+      <button id="dev-fish-big">🐟 fishing + big one</button>
       <button id="dev-day">skip a day</button>
       <button id="dev-name">name cove</button>
       <button id="dev-ad">show ad</button>
@@ -4120,6 +4165,7 @@ document.getElementById("placeBarCancel").onclick = cancelPlacing;
 
 canvas.addEventListener("pointerdown", (e) => {
   ensureAudio();
+  if (festMode) { if (festKind === "fish") fishPointer(e); return; }   // fishing owns its own taps; race/box use HTML buttons
   if (_placing) { _placeGhost = screenToWorld(e.clientX, e.clientY); _tpX = e.clientX; _tpY = e.clientY; _tpMoved = false; return; }
   _tpX = e.clientX; _tpY = e.clientY; _tpScroll = stage.scrollLeft; _tpMoved = false; _lpFired = false;
   clearTimeout(_lpTimer);
@@ -4141,10 +4187,12 @@ canvas.addEventListener("pointerdown", (e) => {
   }, 430);
 });
 canvas.addEventListener("pointermove", (e) => {
+  if (festMode) return;
   if (_placing) { if (_tpX != null) { _placeGhost = screenToWorld(e.clientX, e.clientY); if (Math.hypot(e.clientX - _tpX, e.clientY - _tpY) > 6) _tpMoved = true; } return; }
   if (_tpX != null && Math.hypot(e.clientX - _tpX, e.clientY - _tpY) > 9) { _tpMoved = true; clearTimeout(_lpTimer); }
 });
 canvas.addEventListener("pointerup", (e) => {
+  if (festMode) return;   // fishing acts on pointerdown; race/box ignore canvas taps
   if (_placing) {
     _placeGhost = screenToWorld(e.clientX, e.clientY);
     const draggedOut = _tpMoved;
@@ -6315,6 +6363,8 @@ document.getElementById("dev-pearls").addEventListener("click", () => { G.pearls
 document.getElementById("dev-cat").addEventListener("click", () => { spawnCat({ x: W * 0.5, y: H * 0.7 }); syncHud(); });
 document.getElementById("dev-fest").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("race"); });
 document.getElementById("dev-box").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("box"); });
+document.getElementById("dev-fish").addEventListener("click", () => { _fishForceBig = false; G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("fish"); });
+document.getElementById("dev-fish-big").addEventListener("click", () => { _fishForceBig = true; G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("fish"); });
 document.getElementById("dev-day").addEventListener("click", () => {
   G.opens++; G.streakDay = today() - 1; G.goalDay = 0; rollDailyGoals();
   for (const c of cats) { c.acc += aggregateRate() * 120; c.bornAt -= DAY_MS; }   // age the kittens too
@@ -8104,8 +8154,9 @@ function openFestPicker(kind) {
   const roster = cats.filter(c => !c.visitor);
   if (!roster.length) { toast("No one's around to send to the festival right now."); return; }
   if (!roster.includes(festPickedCat)) festPickedCat = roster.find(c => c.mascot) || roster[0];
-  _festPickKind = kind || null;   // "race" / "box" jump straight to that picker; null = show the chooser
+  _festPickKind = kind || null;   // "race" / "box" / "fish" jump straight to that picker; null = show the chooser
   _festRoster = roster;
+  document.getElementById("festTime").textContent = _festPickKind === "fish" ? "cove fishing" : "the cove festival";
   raceCats = []; raceWinner = null; racePick = null; raceT = 0; racePhase = "picker"; _festG = null; festCheerUntil = 0;
   festIdleScene(roster);
   trackEvent("activity_open", { kind: _festPickKind || "choose" });
@@ -8113,6 +8164,7 @@ function openFestPicker(kind) {
   document.getElementById("festChoose").hidden = true;
   document.getElementById("festPanel").hidden = true;   // shown once we've actually arrived
   document.getElementById("festBoxPanel").hidden = true;
+  document.getElementById("festFishPanel").hidden = true;
   document.getElementById("festCountdown").hidden = true;
   document.getElementById("festSkip").hidden = true;
 
@@ -8136,6 +8188,9 @@ function openFestPicker(kind) {
     if (_festPickKind === "box") {
       boxPhase = "picker"; renderBoxPickGrid(roster);
       document.getElementById("festBoxPanel").hidden = false;
+    } else if (_festPickKind === "fish") {
+      renderFishPickGrid(roster);
+      document.getElementById("festFishPanel").hidden = false;
     } else if (_festPickKind === "race") {
       renderFestPickGrid(roster);
       document.getElementById("festPanel").hidden = false;
@@ -8268,11 +8323,14 @@ function closeFest() {
   document.getElementById("festChoose").hidden = true;
   document.getElementById("festPanel").hidden = true;
   document.getElementById("festBoxPanel").hidden = true;
+  document.getElementById("festFishPanel").hidden = true;
   document.getElementById("festResult").hidden = true;
   document.getElementById("festCountdown").hidden = true;
   document.getElementById("festSkip").hidden = true;
   document.getElementById("festSkip").textContent = "Skip to the finish ›";
+  _fishBanner(null);
   festKind = "race"; boxParts = []; boxPhase = "idle";
+  fishPhase = "idle"; fishShadows = []; fishCrew = []; fishBig = null;
   particles.length = 0; floaters.length = 0;   // a live "zoomies!" or confetti spark shouldn't follow you back to the cove
   _festQuietUntil = Date.now() + 1800;   // ...and none land the instant the wipe clears back at the cove
   const w = document.getElementById("festWipe");
@@ -8556,6 +8614,7 @@ function showFestPodium() {
 }
 function renderFest(dt) {
   if (festKind === "box") { renderBox(dt); return; }
+  if (festKind === "fish") { renderFish(dt); return; }
   raceT += dt;
   const g = ctx;
   { // a resize() elsewhere restores the full pannable canvas — put the fest canvas back
@@ -8647,6 +8706,15 @@ document.getElementById("festAgain").addEventListener("click", () => {
     trackEvent("box_challenge_replayed");
     return;
   }
+  if (festKind === "fish") {
+    fishPhase = "idle"; fishShadows = []; fishCrew = []; festKind = "race"; _fishBanner(null);
+    document.getElementById("festSkip").hidden = true;
+    document.getElementById("festSkip").textContent = "Skip to the finish ›";
+    renderFishPickGrid(roster);
+    document.getElementById("festFishPanel").hidden = false;
+    trackEvent("festival_fishing_replayed");
+    return;
+  }
   raceCats = []; raceWinner = null; racePick = null; racePhase = "picker"; festCheerUntil = 0;
   renderFestPickGrid(roster);
   document.getElementById("festPanel").hidden = false;
@@ -8662,14 +8730,15 @@ document.getElementById("fc-race").addEventListener("click", () => {
   document.getElementById("festPanel").hidden = false;
   trackEvent("activity_open", { kind: "race" });
 });
-document.getElementById("fc-box").addEventListener("click", () => {
+document.getElementById("fc-fish").addEventListener("click", () => {
   document.getElementById("festChoose").hidden = true;
-  boxPhase = "picker";
   const roster = _festRoster.length ? _festRoster : cats.filter(c => !c.visitor);
-  festIdleScene(roster); renderBoxPickGrid(roster);
-  document.getElementById("festBoxPanel").hidden = false;
-  trackEvent("activity_open", { kind: "box" });
+  festIdleScene(roster); renderFishPickGrid(roster);
+  document.getElementById("festFishPanel").hidden = false;
+  trackEvent("festival_fishing_opened");
 });
+document.getElementById("fishCancel").addEventListener("click", closeFest);
+document.getElementById("fishStart").addEventListener("click", startCoveFishing);
 document.getElementById("boxCancel").addEventListener("click", closeFest);
 document.getElementById("boxStart").addEventListener("click", startBoxChallenge);
 document.getElementById("festSkip").addEventListener("click", () => {
@@ -8678,6 +8747,12 @@ document.getElementById("festSkip").addEventListener("click", () => {
     boxPhase = "tally"; boxTallyAt = boxT - 1.4;   // short settle, then the result card
     boxParts.forEach(p => { if (p.state === "approach" || p.state === "wander") { p.state = "beside"; } });
     document.getElementById("festSkip").hidden = true;
+    return;
+  }
+  if (festKind === "fish") {
+    if (fishPhase !== "fish") return;
+    if (fishBig && (fishBig.phase === "incoming" || fishBig.phase === "ready" || fishBig.phase === "focused")) { fishBig.phase = "done"; }
+    endFishSession();
     return;
   }
   if (racePhase !== "run") return;
@@ -9095,6 +9170,587 @@ function showBoxResult() {
   document.getElementById("festBar").hidden = true;
   res.hidden = false;
   trackEvent("box_challenge_completed", { winner: boxWinner.cat.name, mine, score: boxWinner.score });
+}
+
+/* ================= COVE FISHING =================
+   A short, cooperative Festival activity. Pick 3 residents, assign one to each
+   of three fishing spots, then spend ~50 quiet seconds by the water. Fish
+   shadows drift through; the player taps a fish to make the active cat focus,
+   taps again to pounce. PLAYER TIMING decides whether an opportunity lands;
+   RANDOMNESS decides what shows up. Nobody loses anything. Rides the same rails
+   as the race/box: #fest overlay, festMode, wipe, grounds audio, shared
+   #festResult card, drawCat, drawFish, grantReward. Save schema untouched.
+   Everything fishing-specific lives in this block. */
+const FISH_W = 560, FISH_H = 1180, FISH_DUR = 52, WATER_TOP = 360;
+// three spots: cat seat, catch-zone centre out in the water, base catch radius,
+// a fish-speed multiplier and which catch table the water here draws from.
+const FISH_SPOTS = [
+  { key: "shallows", emoji: "🌿", name: "Shallows",  cx: 118, cy: 468, zx: 224, zy: 556, catchR: 64, speed: 0.74, table: "common" },
+  { key: "rocks",    emoji: "🪨", name: "Rocks",     cx: 452, cy: 600, zx: 356, zy: 672, catchR: 53, speed: 1.00, table: "varied" },
+  { key: "deep",     emoji: "🌊", name: "Deep Cove", cx: 286, cy: 1012, zx: 286, zy: 902, catchR: 41, speed: 1.34, table: "deep"  },
+];
+const FISH_CATCH = {
+  common: [["fish","🐟","Small Fish",6],["fish","🐟","Cove Fish",4],["fish","🐟","Stripefish",2],
+           ["shell","🐚","Shell",3],["seaweed","🌿","Seaweed",2],["driftwood","🪵","Driftwood",1],["sock","🧦","Old Sock",1]],
+  varied: [["fish","🐟","Cove Fish",4],["fish","🐟","Stripefish",4],["fish","🐟","Small Fish",3],
+           ["shell","🐚","Shell",3],["driftwood","🪵","Driftwood",2],["seaweed","🌿","Seaweed",1],
+           ["sock","🧦","Old Sock",1],["boot","👢","Old Boot",1],["shiny","✨","Shiny Thing",1]],
+  deep:   [["fish","🐟","Stripefish",5],["fish","🐟","Cove Fish",3],["fish","🐟","Small Fish",1],
+           ["shell","🐚","Shell",2],["driftwood","🪵","Driftwood",2],["boot","👢","Old Boot",1],["shiny","✨","Shiny Thing",2]],
+};
+const FISH_MISS_LINES = [
+  "Nearly.", "The fish had other plans.", "An excellent splash.",
+  "Close enough to concern the fish.", "The water won that one.", "A confident, wet miss.",
+];
+const BIG_ONE_CATCH = [["bigfish","🐟","Big Cove Fish"],["crab","🦀","Crab"],["bigboot","👢","Suspiciously Large Boot"]];
+let fishCrew = [], fishShadows = [], fishPhase = "idle", fishT = 0, _fishVp = null;
+let fishActive = 0, fishPickSel = [], _fishSpotSel = -1;
+let _fishLastCatchT = -99, _fishSplashUntil = 0, _fishMissLineAt = -99, _fishReelAt = 0, _fishSpawnAt = 0;
+let fishTally = {}, fishBig = null, _fishForceBig = false;
+function _fwpick(list) { let tot = 0; for (const it of list) tot += it[it.length - 1]; let r = Math.random() * tot;
+  for (const it of list) { r -= it[it.length - 1]; if (r <= 0) return it; } return list[list.length - 1]; }
+function rollCatch(tableKey) { const it = _fwpick(FISH_CATCH[tableKey] || FISH_CATCH.common); return { kind: it[0], emoji: it[1], name: it[2] }; }
+function fishFit() {
+  const { vw, vh } = restViewportPx();
+  const rd = _festDPR || DPR;
+  const sc = Math.min((vw * rd) / FISH_W, (vh * rd) / FISH_H);
+  return { sc, ox: (vw * rd - FISH_W * sc) / 2, oy: (vh * rd - FISH_H * sc) / 2 };
+}
+function fishScreenToArena(cx, cy) {
+  const r = canvas.getBoundingClientRect();
+  const V = _fishVp || fishFit();
+  const bx = (cx - r.left) * (canvas.width / Math.max(1, r.width));
+  const by = (cy - r.top) * (canvas.height / Math.max(1, r.height));
+  return { x: (bx - V.ox) / V.sc, y: (by - V.oy) / V.sc };
+}
+// ---- traits: understandable advantages, never a guarantee. Each returns a
+// multiplier on the effective catch window (bigger = more forgiving timing).
+function fishWindowMult(cat, fish, spot) {
+  let m = 1;
+  const T = cat.traits || [];
+  if (T.includes("lazy"))    m *= 1.4;                                   // slow to react, but a wide margin
+  if (T.includes("grumpy"))  m *= 0.9;                                   // tighter — and a better catch on hard ones (below)
+  if (T.includes("climber") && spot.key === "rocks") m *= 1.32;          // at home on the rocks
+  if (T.includes("bold")    && spot.key === "deep")  m *= 1.28;          // unbothered by fast deep water
+  if (T.includes("shy")     && fish.slow)            m *= 1.25;          // patient with slow fish
+  if (T.includes("shy")     && fishT < _fishSplashUntil) m *= 0.78;      // a nearby splash rattles them
+  if (T.includes("cuddly")  && fishT - _fishLastCatchT < 4) m *= 1.16;   // buoyed when the crew's doing well
+  if (T.includes("glutton") && fishT < (cat._fishMomo || 0)) m *= 1.2;   // on a roll after a catch
+  return clamp(m, 0.72, 1.7);
+}
+function fishReactBonus(cat) {   // curious notices sooner → a slightly longer usable focus
+  return (cat.traits || []).includes("curious") ? 0.55 : 0;
+}
+function fishRecovery(cat) {
+  const T = cat.traits || [];
+  if (T.includes("playful")) return 0.5;
+  if (T.includes("lazy"))    return 1.15;
+  return 0.8;
+}
+function fishReactLag(cat) { return (cat.traits || []).includes("lazy") ? 0.28 : (cat.traits || []).includes("glutton") ? 0.05 : 0.14; }
+
+let fishAssign = [null, null, null];   // spot index -> chosen cat (or null)
+function renderFishPickGrid(roster) {
+  fishPickSel = []; fishAssign = [null, null, null]; _fishSpotSel = -1;
+  const grid = document.getElementById("fishPickGrid");
+  grid.innerHTML = "";
+  const need = Math.min(3, roster.length);
+  for (const c of roster) {
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "fp-cell";
+    const tr = (c.traits || []).slice(0, 2).map(k => `<span>${esc(TRAITS[k] ? TRAITS[k].label : k)}</span>`).join("");
+    cell.innerHTML = `<canvas width="56" height="48"></canvas><span class="nm"></span><span class="fp-tr">${tr}</span>`;
+    cell.querySelector(".nm").textContent = c.name;
+    cell.addEventListener("click", () => {
+      const at = fishPickSel.indexOf(c);
+      if (at >= 0) { fishPickSel.splice(at, 1); cell.classList.remove("picked"); }
+      else { if (fishPickSel.length >= 3) return; fishPickSel.push(c); cell.classList.add("picked"); }
+      document.getElementById("fishPickCount").textContent = `(${fishPickSel.length} / 3)`;
+      const ready = fishPickSel.length >= need;
+      document.getElementById("fishStart").disabled = !ready;
+      document.getElementById("fishSpots").hidden = !ready;
+      document.getElementById("fishSpotHint").hidden = !ready;
+      if (ready) { fishAutoAssign(); renderFishSpotRow(); }
+      else { fishAssign = [null, null, null]; _fishSpotSel = -1; }
+    });
+    grid.appendChild(cell);
+    miniCat(cell.querySelector("canvas"), c.coatKey, c.star, "loafing", false, 1);
+  }
+  document.getElementById("fishPickCount").textContent = `(0 / 3)`;
+  document.getElementById("fishStart").disabled = true;
+  document.getElementById("fishSpots").hidden = true;
+  document.getElementById("fishSpotHint").hidden = true;
+}
+// a sensible default: climber→rocks, bold→deep, calm cats→shallows, then fill.
+// the player re-taps spots to swap. spot order = [0]shallows [1]rocks [2]deep.
+function fishAutoAssign() {
+  const pool = fishPickSel.slice(0, 3);
+  fishAssign = [null, null, null];
+  const score = (c, key) => {
+    let s = Math.random() * 0.3;
+    const T = c.traits || [];
+    if (key === "rocks" && T.includes("climber")) s += 2;
+    if (key === "deep" && T.includes("bold")) s += 2;
+    if (key === "deep" && (T.includes("curious") || T.includes("playful"))) s += 0.6;
+    if (key === "shallows" && (T.includes("shy") || T.includes("lazy") || T.includes("grumpy"))) s += 1;
+    return s;
+  };
+  ["rocks", "deep", "shallows"].forEach(key => {
+    const idx = FISH_SPOTS.findIndex(sp => sp.key === key);
+    let best = 0, bv = -9;
+    pool.forEach((c, i) => { const v = score(c, key); if (v > bv) { bv = v; best = i; } });
+    fishAssign[idx] = pool.splice(best, 1)[0] || null;
+  });
+}
+function renderFishSpotRow() {
+  document.querySelectorAll("#fishSpots .ff-spot").forEach((el, i) => {
+    el.querySelector(".ff-spot-cat").textContent = fishAssign[i] ? fishAssign[i].name : "—";
+    el.classList.toggle("sel", i === _fishSpotSel);
+  });
+}
+document.querySelectorAll("#fishSpots .ff-spot").forEach(el => {
+  el.addEventListener("click", () => {
+    const i = +el.dataset.spot;
+    if (_fishSpotSel === -1) _fishSpotSel = i;
+    else if (_fishSpotSel === i) _fishSpotSel = -1;
+    else { const t = fishAssign[_fishSpotSel]; fishAssign[_fishSpotSel] = fishAssign[i]; fishAssign[i] = t; _fishSpotSel = -1; }
+    renderFishSpotRow();
+  });
+});
+function startCoveFishing() {
+  const need = Math.min(3, cats.filter(c => !c.visitor).length);
+  if (fishPickSel.filter(Boolean).length < need) return;
+  if (fishAssign.filter(Boolean).length !== 3) fishAutoAssign();
+  while (fishAssign.filter(Boolean).length < 3) {   // tiny cove — a guest fills a rod
+    const gi = fishAssign.indexOf(null);
+    fishAssign[gi] = new Cat({ visitor: true });
+  }
+  document.getElementById("festFishPanel").hidden = true;
+  festKind = "fish";
+  fitFestCanvas();
+  fishT = 0; fishPhase = "fish"; fishActive = 0;
+  fishShadows = []; fishTally = {};
+  _fishLastCatchT = -99; _fishSplashUntil = 0; _fishMissLineAt = -99; _fishSpawnAt = 0.8;
+  particles.length = 0; floaters.length = 0;
+  fishCrew = fishAssign.map((c, i) => {
+    const sp = FISH_SPOTS[i];
+    Object.assign(c, { x: sp.cx, y: sp.cy, face: sp.zx >= sp.cx ? 1 : -1, state: "seeking",
+      trotting: false, walkAmt: 0, walk: 0, squash: 0, blink: rand(1, 4), _fx: null });
+    c._fishReadyAt = 0; c._fishMomo = 0; c._homeX = sp.cx; c._homeY = sp.cy;
+    return { cat: c, spot: sp, spotIdx: i, focus: null, focusAt: 0, pounceAt: 0,
+      state: "idle", catches: [], misses: 0, focusTime: 0 };
+  });
+  fishBig = { will: _fishForceBig || Math.random() < 0.34, at: rand(15, 30), phase: "pending", crew: -1, fish: null, result: null, seen: false };
+  _fishForceBig = false;
+  document.getElementById("festResult").hidden = true;
+  document.getElementById("festBar").hidden = false;
+  document.getElementById("festTime").textContent = "cove fishing";
+  document.getElementById("festSkip").hidden = false;
+  document.getElementById("festSkip").textContent = "Head back in ›";
+  _fishBanner(null);
+  trackEvent("festival_fishing_started", {
+    cats: fishCrew.map(m => m.cat.name),
+    traits: fishCrew.map(m => (m.cat.traits || []).slice(0, 2)),
+    spots: fishCrew.map(m => m.spot.key),
+  });
+}
+function _fishBanner(txt) {
+  const el = document.getElementById("fishBanner");
+  if (!txt) { el.hidden = true; return; }
+  document.getElementById("fishBannerText").textContent = txt;
+  el.hidden = false; el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";
+}
+function spawnFishShadow() {
+  const spotIdx = (Math.random() * 3) | 0;
+  const sp = FISH_SPOTS[spotIdx];
+  const fromLeft = Math.random() < 0.5;
+  const catchId = rollCatch(sp.table);
+  const junk = catchId.kind === "sock" || catchId.kind === "boot" || catchId.kind === "seaweed";
+  const base = 78 * sp.speed * rand(0.85, 1.2) * (junk ? 0.7 : 1);
+  fishShadows.push({
+    spotIdx, x: fromLeft ? -30 : FISH_W + 30, y: sp.zy + rand(-46, 46),
+    vx: (fromLeft ? 1 : -1) * base, wob: rand(0, 6), amp: junk ? 1.5 : rand(3, 8),
+    id: catchId, junk, slow: base < 62 * sp.speed, focusedBy: null, fleeing: 0, life: 0, gone: false,
+  });
+}
+function fishActiveMember() { return fishCrew[fishActive]; }
+function fishPointer(e) {
+  if (fishPhase !== "fish") return;
+  const p = e._arena || fishScreenToArena(e.clientX, e.clientY);
+  // tap a cat → make it the active cat
+  for (let i = 0; i < fishCrew.length; i++) {
+    const c = fishCrew[i].cat;
+    if (Math.hypot(p.x - c.x, p.y - (c.y - 14)) < 60) {
+      if (fishBig.phase === "incoming") { bigOneCommit(i); return; }
+      fishActive = i; sfx("collect"); return;
+    }
+  }
+  if (p.y < WATER_TOP - 10) return;   // tapped the sky/shore, not the water
+  // BIG ONE: first water tap after a cat is committed → focus; second → pounce
+  if (fishBig.phase === "ready" || fishBig.phase === "focused") { bigOneWaterTap(p); return; }
+  if (fishBig.phase === "incoming") return;   // must pick a cat first
+  const m = fishActiveMember();
+  if (!m) return;
+  if (m.state === "focus") { doPounce(m); return; }              // second tap → pounce
+  if (m.state !== "idle" || m.cat._fishReadyAt > fishT) return;  // busy / recovering
+  // focus: the nearest not-yet-passed fish in this cat's lane, near the tap
+  let best = null, bd = 240 * 240;
+  for (const f of fishShadows) {
+    if (f.gone || f.spotIdx !== m.spotIdx || f.focusedBy) continue;
+    const past = (f.vx > 0 && f.x > m.spot.zx + m.spot.catchR) || (f.vx < 0 && f.x < m.spot.zx - m.spot.catchR);
+    if (past) continue;
+    const d = (f.x - p.x) ** 2 + (f.y - p.y) ** 2;
+    if (d < bd) { bd = d; best = f; }
+  }
+  if (!best) return;
+  m.state = "focus"; m.focus = best; m.focusAt = fishT + fishReactLag(m.cat); best.focusedBy = m;
+  m.cat.face = best.x >= m.cat.x ? 1 : -1;
+  spawnParticles(m.spot.zx, m.spot.zy, "ripple", 1);
+  tone(540, 0.12, "sine", 0.05);
+}
+function doPounce(m, big) {
+  const f = m.focus; if (!f) { m.state = "idle"; return; }
+  const spot = m.spot;
+  const zx = big ? f._zx : spot.zx, zy = big ? f._zy : spot.zy;
+  const d = Math.hypot(f.x - zx, f.y - zy);
+  const win = (big ? 44 : spot.catchR) * fishWindowMult(m.cat, f, spot) * (big ? 0.82 : 1);
+  const focusedFor = fishT - m.focusAt;
+  let q = clamp(1 - d / win, 0, 1);
+  if (focusedFor > 0 && focusedFor < 0.5) q *= 0.82;                 // rushed it
+  q = clamp(q + Math.min(0.12, focusedFor * 0.05) + fishReactBonus(m.cat) * 0.08, 0, 1);
+  const junky = f.junk || (f.id && (f.id.kind === "shell" || f.id.kind === "driftwood"));
+  let chance = junky ? clamp(0.32 + q, 0, 0.98) : clamp(0.07 + 1.08 * q, 0, 0.97);
+  if (big) chance = clamp(0.04 + 1.15 * q, 0, 0.94);
+  const got = Math.random() < chance;
+  // pounce motion + splash
+  m.state = "pounce"; m.pounceAt = fishT;
+  m.cat.state = "playing"; m.cat.face = f.x >= m.cat.x ? 1 : -1;
+  m.cat._lungeX = f.x; m.cat._lungeY = f.y;
+  const psp = (m.cat.traits || []).includes("playful") ? 0.26 : 0.36;
+  m.cat._pounceDur = psp;
+  spawnParticles(f.x, f.y, "ripple", 3); spawnParticles(f.x, f.y - 4, "dust", 4);
+  _fishSplashUntil = fishT + 1.2;
+  tone(190, 0.14, "sine", 0.12); tone(150, 0.18, "sine", 0.08, 0.05);
+  if (got) resolveCatch(m, f, big, q); else resolveMiss(m, f, big);
+}
+function resolveCatch(m, f, big, q) {
+  f.gone = true; f.focusedBy = null;
+  let id;
+  if (big) { const row = _bpick(BIG_ONE_CATCH); id = { kind: row[0], emoji: row[1], name: row[2] }; }
+  else id = f.id;
+  fishTally[id.kind] = (fishTally[id.kind] || 0) + 1;
+  m.catches.push({ kind: id.kind, name: id.name });
+  _fishLastCatchT = fishT;
+  if ((m.cat.traits || []).includes("glutton")) m.cat._fishMomo = fishT + 4;
+  floatText(m.cat.x, m.cat.y - 34, `${id.emoji} ${id.name.toUpperCase()}`, "#e8b45a");
+  spawnParticles(m.cat.x, m.cat.y - 18, "heart", big ? 5 : 2);
+  spawnParticles(m.cat.x, m.cat.y - 10, "twinkle", big ? 8 : 3);
+  if (id.kind === "shiny" || big) [740, 990, 1240].forEach((fr, i) => tone(fr, 0.2, "triangle", 0.08, i * 0.06));
+  else { tone(680, 0.14, "sine", 0.06); tone(1020, 0.12, "sine", 0.03, 0.04); }
+  if ((m.cat.traits || []).includes("chatty") && Math.random() < 0.5) fishMeow(m.cat);
+  m.cat._fishReadyAt = fishT + fishRecovery(m.cat) * 0.7;
+  trackEvent("festival_fishing_catch", { cat: m.cat.name, spot: m.spot.key, catch: id.kind, big: !!big, timing: +q.toFixed(2) });
+  if (big) { fishBig.phase = "done"; fishBig.result = id; _fishBanner(null);
+    trackEvent("festival_fishing_big_one", { seen: true, caught: true, catch: id.kind }); }
+}
+function resolveMiss(m, f, big) {
+  f.focusedBy = null; f.fleeing = 0.8; f.vx *= 1.9;
+  m.misses++;
+  if ((m.cat.traits || []).includes("grumpy")) { fishMeow(m.cat, true); }
+  if (fishT - _fishMissLineAt > 9 && Math.random() < 0.4) {
+    _fishMissLineAt = fishT;
+    floatText(m.cat.x, m.cat.y - 32, _bpick(FISH_MISS_LINES), "#8aa0b4");
+  }
+  m.cat._fishReadyAt = fishT + fishRecovery(m.cat);
+  if (big) { fishBig.phase = "done"; _fishBanner(null);
+    trackEvent("festival_fishing_big_one", { seen: true, caught: false }); }
+}
+function fishMeow(cat, grumpy) {
+  const pool = cat && (cat.isKitten || cat.growth < 1) ? "kitten" : grumpy ? "grumpy" : "meow";
+  if (!playSample(pool, { vol: 0.42, rate: rand(0.95, 1.12) })) meow(!grumpy, 0.42);
+}
+// ---- THE BIG ONE ----
+function bigOneStart() {
+  fishBig.phase = "incoming"; fishBig.seen = true;
+  const fromLeft = Math.random() < 0.5;
+  fishBig.fish = { x: fromLeft ? -60 : FISH_W + 60, y: (WATER_TOP + FISH_H) / 2 - 30,
+    vx: (fromLeft ? 1 : -1) * 42, wob: 0, amp: 5, big: true, id: null, junk: false, slow: true,
+    focusedBy: null, fleeing: 0, gone: false, _zx: 0, _zy: 0 };
+  _fishBanner("Something big is coming.");
+  for (const s of fishShadows) s.vx *= 0.55;   // everything else eases off
+  tone(120, 0.5, "sine", 0.09); tone(90, 0.7, "sine", 0.06, 0.12);
+  trackEvent("festival_fishing_big_one", { seen: true, caught: null });
+}
+function bigOneCommit(crewIdx) {
+  fishBig.crew = crewIdx; fishBig.phase = "ready";
+  const m = fishCrew[crewIdx];
+  m.state = "idle"; m.focus = null;
+  // step the cat to the water's edge on the big fish's path
+  m.cat.x = clamp(fishBig.fish.x < FISH_W / 2 ? 150 : FISH_W - 150, 90, FISH_W - 90);
+  m.cat.y = clamp(fishBig.fish.y + 96, WATER_TOP + 40, FISH_H - 120);
+  m.cat._homeX = m.cat.x; m.cat._homeY = m.cat.y;   // return here after the lunge, not the old seat
+  fishBig.fish._zx = m.cat.x; fishBig.fish._zy = m.cat.y - 74;
+  _fishBanner(`${m.cat.name} moves to the water's edge.`);
+  for (let i = 0; i < fishCrew.length; i++) if (i !== crewIdx) fishCrew[i].cat.state = "seeking";
+}
+function bigOneWaterTap(p) {
+  const m = fishCrew[fishBig.crew]; if (!m) return;
+  if (fishBig.phase === "ready") {
+    fishBig.phase = "focused";
+    m.state = "focus"; m.focus = fishBig.fish; m.focusAt = fishT + fishReactLag(m.cat);
+    fishBig.fish.focusedBy = m;
+    m.cat.face = fishBig.fish.x >= m.cat.x ? 1 : -1;
+    spawnParticles(fishBig.fish._zx, fishBig.fish._zy, "ripple", 2);
+    tone(430, 0.16, "sine", 0.06);
+  } else if (fishBig.phase === "focused") {
+    doPounce(m, true);
+  }
+}
+function fishSpotHasFocus() { return fishCrew.some(m => m.state === "focus" || m.state === "pounce"); }
+function endFishSession() {
+  fishPhase = "reeling"; _fishReelAt = fishT;
+  for (const m of fishCrew) { m.state = "idle"; m.focus = null; m.cat.state = "seeking"; }
+  document.getElementById("festSkip").hidden = true;
+  _fishBanner(null);
+}
+function renderFish(dt) {
+  fishT += dt;
+  updateFX(Math.min(dt, 0.05));   // fest render skips simulate(); step ripples/splashes/floaters here
+  const g = ctx;
+  { const px = restViewportPx();
+    if (Math.abs(canvas.width - Math.round(px.vw * (_festDPR || DPR))) > 2) fitFestCanvas(); }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  const V = fishFit(); _fishVp = V;
+  g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
+  drawFishScene(g);
+
+  if (fishPhase === "fish") {
+    // spawn cadence — calm, capped
+    if (fishBig.phase !== "incoming" && fishBig.phase !== "ready" && fishBig.phase !== "focused") {
+      _fishSpawnAt -= dt;
+      if (_fishSpawnAt <= 0 && fishShadows.filter(f => !f.gone).length < 5) {
+        _fishSpawnAt = rand(1.5, 2.8); spawnFishShadow();
+      }
+    }
+    if (fishBig.will && fishBig.phase === "pending" && fishT > fishBig.at && fishShadows.length) bigOneStart();
+    if (fishBig.fish && (fishBig.phase === "incoming" || fishBig.phase === "ready" || fishBig.phase === "focused")) tickFish(fishBig.fish, dt, true);
+    if (fishBig.phase === "done" && fishBig.fish) { fishBig.fish = null; for (const s of fishShadows) s.vx *= 1.8; }
+    for (const f of fishShadows) tickFish(f, dt, false);
+    fishShadows = fishShadows.filter(f => !f.gone && f.x > -80 && f.x < FISH_W + 80);
+    for (const m of fishCrew) tickAngler(m, dt);
+    const bigBusy = fishBig.phase === "incoming" || fishBig.phase === "ready" || fishBig.phase === "focused";
+    if ((fishT > FISH_DUR && !fishSpotHasFocus() && !bigBusy) || fishT > FISH_DUR + 14) endFishSession();
+  } else if (fishPhase === "reeling") {
+    for (const m of fishCrew) tickAngler(m, dt);
+    if (fishT - _fishReelAt > 1.6) { fishPhase = "report"; showFishResult(); }
+  }
+
+  // draw fish shadows, then cats front-to-back, then FX
+  for (const f of fishShadows) drawShadow(g, f, false);
+  if (fishBig.fish) drawShadow(g, fishBig.fish, true);
+  const painted = fishCrew.map(m => m.cat).sort((a, b) => a.y - b.y);
+  for (const c of painted) { drawAnglerHalo(g, c); drawCat(g, c, false); }
+  drawFishBasket(g);
+  if (particles.length || floaters.length) drawFX(g);
+}
+function tickFish(f, dt, big) {
+  f.life += dt; f.wob += dt * 2.4;
+  f.x += f.vx * dt;
+  f.y += Math.sin(f.wob) * f.amp * dt;
+  if (f.fleeing > 0) { f.fleeing -= dt; if (f.fleeing <= 0 && !big) f.gone = true; }
+  if (big && ((f.vx > 0 && f.x > FISH_W + 50) || (f.vx < 0 && f.x < -50))) {
+    // the big one wandered off before anyone committed
+    if (fishBig.phase === "incoming") { fishBig.phase = "done"; _fishBanner(null); trackEvent("festival_fishing_big_one", { seen: true, caught: false, left: true }); }
+  }
+}
+function tickAngler(m, dt) {
+  const c = m.cat, spot = m.spot;
+  const homeX = c._homeX != null ? c._homeX : spot.cx;
+  const homeY = c._homeY != null ? c._homeY : spot.cy;
+  const isBigPick = fishBig && fishBig.crew === m.spotIdx && fishBig.phase !== "pending";
+  // mid-lunge: a quick out-and-back toward where the fish was
+  if (m.state === "pounce") {
+    const k = clamp((fishT - m.pounceAt) / (c._pounceDur || 0.34), 0, 1);
+    const lx = c._lungeX != null ? c._lungeX : spot.zx, ly = c._lungeY != null ? c._lungeY : spot.zy;
+    const arc = Math.sin(k * Math.PI) * 0.55;
+    c.x = homeX + (lx - homeX) * arc;
+    c.y = homeY + (ly - homeY) * arc;
+    c.bob += dt * 14;
+    if (k >= 1) { m.state = "idle"; m.focus = null; c.state = "seeking"; c.squash = 0; }
+    return;
+  }
+  // focus: crouch a little, keep facing the fish
+  if (m.state === "focus") {
+    const f = m.focus;
+    if (!f || f.gone) { m.state = "idle"; m.focus = null; c.squash = 0; return; }
+    c.face = f.x >= c.x ? 1 : -1;
+    c.squash = Math.min(0.15, (c.squash || 0) + dt * 0.55);
+    c.state = "seeking";
+    const zx = (isBigPick && f._zx) ? f._zx : spot.zx;
+    const zy = (isBigPick && f._zy) ? f._zy : spot.zy;
+    const R = isBigPick ? 44 : spot.catchR;
+    const past = (f.vx > 0 && f.x > zx + R * 2.0) || (f.vx < 0 && f.x < zx - R * 2.0);
+    const inZone = Math.hypot(f.x - zx, f.y - zy) < R * 0.5;
+    if (inZone && fishT - m.focusAt > 0.15) { doPounce(m, isBigPick && fishBig.phase === "focused"); return; }
+    if (past) { m.state = "idle"; m.focus = null; f.focusedBy = null; c.squash = 0; c.state = "seeking"; }
+    return;
+  }
+  // idle: settle back to the seat
+  c.squash = Math.max(0, (c.squash || 0) - dt * 0.6);
+  c.x += (homeX - c.x) * Math.min(1, dt * 4);
+  c.y += (homeY - c.y) * Math.min(1, dt * 4);
+  c.state = "seeking"; c.face = spot.zx >= homeX ? 1 : -1;
+  const m2 = catMotion(c);
+  c.bob += dt * 2.4; c.tail += dt * 2 * m2.tailRate;
+  c.blink -= dt; if (c.blink < -0.12) c.blink = rand(2.4, 6.5) * m2.blinkEvery;
+}
+function drawFishScene(g) {
+  // sky + far shore
+  const sky = g.createLinearGradient(0, 0, 0, WATER_TOP);
+  sky.addColorStop(0, "#cfe6d3"); sky.addColorStop(1, "#eef1e0");
+  g.fillStyle = sky; g.fillRect(0, 0, FISH_W, WATER_TOP);
+  g.fillStyle = "#8bbf7c"; g.beginPath();
+  g.moveTo(0, WATER_TOP); g.lineTo(0, WATER_TOP - 66);
+  g.bezierCurveTo(FISH_W * 0.3, WATER_TOP - 92, FISH_W * 0.7, WATER_TOP - 44, FISH_W, WATER_TOP - 72);
+  g.lineTo(FISH_W, WATER_TOP); g.closePath(); g.fill();
+  g.fillStyle = "rgba(255,249,229,0.5)"; g.beginPath(); g.arc(FISH_W * 0.8, 74, 30, 0, 7); g.fill();
+  g.fillStyle = "rgba(255,249,229,0.95)"; g.beginPath(); g.arc(FISH_W * 0.8, 74, 15, 0, 7); g.fill();
+  // water
+  const wat = g.createLinearGradient(0, WATER_TOP, 0, FISH_H);
+  wat.addColorStop(0, "#86c4d0"); wat.addColorStop(0.5, "#589db0"); wat.addColorStop(1, "#3a7d92");
+  g.fillStyle = wat; g.fillRect(0, WATER_TOP, FISH_W, FISH_H - WATER_TOP);
+  // drifting shimmer lines
+  g.strokeStyle = "rgba(255,255,255,0.14)"; g.lineWidth = 2;
+  for (let i = 0; i < 7; i++) {
+    const y = WATER_TOP + 60 + i * 118 + Math.sin(fishT * 0.5 + i) * 6;
+    const off = (fishT * 12 + i * 90) % (FISH_W + 120) - 60;
+    g.beginPath(); g.moveTo(off, y); g.lineTo(off + 70, y); g.stroke();
+  }
+  // the rock at the Rocks spot
+  const rk = FISH_SPOTS[1];
+  g.fillStyle = "#8d8577"; g.beginPath(); g.ellipse(rk.cx, rk.cy + 12, 46, 24, 0, 0, 7); g.fill();
+  g.fillStyle = "#9d958657"; g.beginPath(); g.ellipse(rk.cx - 8, rk.cy + 4, 30, 15, 0, 0, 7); g.fill();
+  // spot markers — a soft ring on the water where each catch zone sits
+  for (let i = 0; i < FISH_SPOTS.length; i++) {
+    const sp = FISH_SPOTS[i], on = i === fishActive && (!fishBig.phase || fishBig.phase === "pending" || fishBig.phase === "done");
+    g.strokeStyle = on ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.16)";
+    g.lineWidth = on ? 3 : 2;
+    g.beginPath(); g.ellipse(sp.zx, sp.zy, sp.catchR, sp.catchR * 0.6, 0, 0, 7); g.stroke();
+  }
+}
+function drawShadow(g, f, big) {
+  g.save();
+  const w = big ? 58 : (f.junk ? 15 : 15), h = big ? 24 : 7;
+  g.fillStyle = big ? "rgba(20,40,48,0.42)" : "rgba(18,34,40,0.34)";
+  g.beginPath(); g.ellipse(f.x, f.y + 6, w, h, 0, 0, 7); g.fill();
+  const col = big ? "#20323a" : "#26414a";
+  drawFish(g, f.x, f.y, (f.vx < 0 ? Math.PI : 0) + Math.sin(f.wob) * 0.12, col, big ? 3.4 : (f.junk ? 1.1 : 1.35));
+  if (f.focusedBy) {
+    const r = 12 + (Math.sin(fishT * 6) * 0.5 + 0.5) * 8;
+    g.strokeStyle = "rgba(255,255,255,0.7)"; g.lineWidth = 2;
+    g.beginPath(); g.arc(f.x, f.y, r, 0, 7); g.stroke();
+    g.beginPath(); g.arc(f.x, f.y, r + 7, 0, 7); g.globalAlpha = 0.4; g.stroke(); g.globalAlpha = 1;
+  }
+  g.restore();
+}
+function drawAnglerHalo(g, c) {
+  const m = fishCrew.find(x => x.cat === c);
+  const isActive = m && fishCrew[fishActive] === m && fishPhase === "fish";
+  const isBigPick = m && fishBig.phase && fishBig.crew === m.spotIdx && fishBig.phase !== "done" && fishBig.phase !== "pending";
+  if (!isActive && !isBigPick) return;
+  g.save();
+  g.strokeStyle = isBigPick ? "rgba(232,180,74,0.9)" : "rgba(255,255,255,0.75)";
+  g.lineWidth = 3;
+  g.beginPath(); g.ellipse(c.x, c.y + 6, 30, 13, 0, 0, 7); g.stroke();
+  g.restore();
+}
+function drawFishBasket(g) {
+  const bx = FISH_W - 96, by = FISH_H - 172;
+  const total = Object.values(fishTally).reduce((a, b) => a + b, 0);
+  const fill = clamp(total / 8, 0, 1);
+  g.save();
+  g.fillStyle = "#b98a4e"; g.beginPath(); g.ellipse(bx, by + 26, 40, 12, 0, 0, 7); g.fill();
+  g.fillStyle = "#caa066";
+  g.beginPath(); g.moveTo(bx - 38, by - 20); g.lineTo(bx + 38, by - 20); g.lineTo(bx + 30, by + 24); g.lineTo(bx - 30, by + 24); g.closePath(); g.fill();
+  g.fillStyle = "rgba(90,60,34,0.28)";
+  const fh = 42 * fill;
+  g.beginPath(); g.moveTo(bx - 36 + 6, by + 22 - fh); g.lineTo(bx + 36 - 6, by + 22 - fh); g.lineTo(bx + 30, by + 24); g.lineTo(bx - 30, by + 24); g.closePath(); g.fill();
+  g.strokeStyle = "#8a6238"; g.lineWidth = 2;
+  for (let i = -3; i <= 3; i++) { g.beginPath(); g.moveTo(bx + i * 11, by - 20); g.lineTo(bx + i * 9, by + 24); g.stroke(); }
+  g.strokeStyle = "#8a6238"; g.beginPath(); g.moveTo(bx - 38, by - 20); g.quadraticCurveTo(bx, by - 42, bx + 38, by - 20); g.stroke();
+  // session progress — a faint arc filling around the basket
+  g.strokeStyle = "rgba(255,255,255,0.5)"; g.lineWidth = 3;
+  g.beginPath(); g.arc(bx, by, 46, -Math.PI / 2, -Math.PI / 2 + clamp(fishT / FISH_DUR, 0, 1) * Math.PI * 2); g.stroke();
+  g.restore();
+}
+function showFishResult() {
+  const res = document.getElementById("festResult");
+  res.querySelector("h2").textContent = "Fishing Report";
+  res.querySelector(".fr-emoji").textContent = "🐟";
+  document.getElementById("festAgain").textContent = "Go fishing again";
+
+  // crew strip — cooperative, NO ranking: three cats side by side with their haul
+  document.getElementById("festPodium").innerHTML =
+    `<div class="fr-pod-tops">${fishCrew.map(m => `<div class="fr-pod-top">
+      <canvas width="64" height="60"></canvas>
+      <div class="fr-pod-name mine">${esc(m.cat.name)}</div>
+      <div class="fr-catch">${m.spot.emoji} ${m.catches.length ? "🐟×" + m.catches.length : "—"}</div>
+    </div>`).join("")}</div>`;
+  const cols = document.querySelectorAll("#festPodium .fr-pod-top canvas");
+  fishCrew.forEach((m, i) => miniCat(cols[i], m.cat.coatKey, m.cat.star, "loafing", false, 0.85));
+
+  const T = fishTally;
+  const order = ["fish", "bigfish", "crab", "shell", "driftwood", "seaweed", "shiny", "sock", "boot", "bigboot"];
+  const emo = { fish: "🐟", bigfish: "🐟", crab: "🦀", shell: "🐚", driftwood: "🪵", seaweed: "🌿", shiny: "✨", sock: "🧦", boot: "👢", bigboot: "👢" };
+  const nm = { fish: "Fish", bigfish: "Big Fish", crab: "Crab", shell: "Shells", driftwood: "Driftwood", seaweed: "Seaweed", shiny: "Shiny Thing", sock: "Old Sock", boot: "Old Boot", bigboot: "Large Boot" };
+  const tallyStr = order.filter(k => T[k]).map(k => `${emo[k]} ${T[k]} ${nm[k]}`).join("   ") || "🐟 0 Fish";
+
+  // rewards — modest, from useful catches, with a floor so everyone comes home
+  // with something. no pearls.
+  let shells = Math.round((T.fish || 0) * goalShells(0.03) + (T.shell || 0) * goalShells(0.045)
+    + (T.shiny || 0) * goalShells(0.6) + (T.bigfish || 0) * goalShells(0.42) + (T.crab || 0) * goalShells(0.46));
+  shells = Math.max(shells, goalShells(0.25));
+  const drift = (T.driftwood || 0) + (T.bigboot || 0);
+  grantReward({ shells, driftwood: drift || 0 }, null);
+  syncHud();
+  document.getElementById("festPickLine").innerHTML =
+    `${esc(tallyStr)}<br><span class="ff-reward">+${shells} ◈${drift ? "  ·  +" + drift + " 🪵" : ""}</span>`;
+
+  // 1–2 personality recap lines from what actually happened
+  const lines = [];
+  const funny = fishCrew.find(m => m.catches.some(c => c.kind === "sock" || c.kind === "boot"));
+  if (funny) {
+    const fN = funny.catches.filter(c => c.kind === "fish").length;
+    const thing = funny.catches.find(c => c.kind === "sock" || c.kind === "boot").kind === "sock" ? "sock" : "boot";
+    lines.push(`${funny.cat.name} caught ${fN ? (fN === 1 ? "one fish" : fN + " fish") : "no fish"} and one thing we're calling a ${thing}.`);
+  }
+  const busiest = [...fishCrew].sort((a, b) => b.catches.length - a.catches.length)[0];
+  if (busiest && busiest.catches.length >= 3 && lines.length < 2) lines.push(`${busiest.cat.name} had a good afternoon at the ${busiest.spot.name}.`);
+  const splasher = fishCrew.find(m => m.misses >= 3 && m.misses > m.catches.length);
+  if (splasher && lines.length < 2 && splasher !== funny) {
+    const n = splasher.catches.filter(c => c.kind === "fish").length;
+    lines.push(`${splasher.cat.name} contributed ${n ? (n === 1 ? "one fish" : n + " fish") : "nothing"} and several excellent splashes.`);
+  }
+  if (fishBig.result && lines.length < 2) lines.push(`The ${fishBig.result.name.toLowerCase()} is in the basket now, unimpressed.`);
+  if ((T.boot || T.bigboot) && !funny && lines.length < 2) lines.push("Nobody knows how the boot got there.");
+  if (!lines.length) lines.push("A calm afternoon. The fish were mostly left to their own devices.");
+  document.getElementById("festRestLine").textContent = lines.slice(0, 2).join(" ");
+
+  const total = Object.values(T).reduce((a, b) => a + b, 0);
+  logMoment("🐟", `Cove Fishing — ${fishCrew.map(m => m.cat.name).join(", ")} brought back ${total} thing${total === 1 ? "" : "s"}. ` + lines[0], "tale");
+  spawnParticles(FISH_W / 2, WATER_TOP + 40, "twinkle", 8);
+  document.getElementById("festSkip").hidden = true;
+  document.getElementById("festSkip").textContent = "Skip to the finish ›";
+  document.getElementById("festBar").hidden = true;
+  res.hidden = false;
+  trackEvent("festival_fishing_completed", {
+    cats: fishCrew.map(m => m.cat.name), total_catches: total,
+    misses: fishCrew.reduce((a, m) => a + m.misses, 0),
+    big_one_seen: !!fishBig.seen, big_one_caught: !!fishBig.result,
+    duration: Math.round(fishT),
+  });
 }
 
 /* ---------- rendering ---------- */
@@ -13535,6 +14191,14 @@ window.__cove.focus = (name) => {
 window.__cove.fest = () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("race"); return { on: festMode, picking: !document.getElementById("festPanel").hidden }; };
 // The Great Box Challenge — jumps straight to its cat picker (bypasses the day-5 gate, like fest())
 window.__cove.box = () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("box"); return { on: festMode, kind: festKind, phase: boxPhase }; };
+// Cove Fishing — {big:true} forces The Big One this session
+window.__cove.fish = (opts) => { _fishForceBig = !!(opts && opts.big); G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("fish"); return { on: festMode, kind: festKind }; };
+window.__cove.fishStep = (n = 1, dt = 0.05) => { for (let i = 0; i < n; i++) if (festKind === "fish" && festMode) renderFish(dt); return window.__cove.fishState(); };
+window.__cove.fishTapArena = (ax, ay) => { fishPointer({ clientX: -1, clientY: -1, _arena: { x: ax, y: ay } }); };
+window.__cove.fishState = () => ({ phase: fishPhase, t: Math.round(fishT), active: fishActive, shadows: fishShadows.length,
+  big: fishBig && { phase: fishBig.phase, at: Math.round(fishBig.at), result: fishBig.result && fishBig.result.name },
+  crew: fishCrew.map(m => ({ n: m.cat.name, spot: m.spot.key, st: m.state, catches: m.catches.length, misses: m.misses })),
+  tally: fishTally });
 window.__cove.boxState = () => ({ kind: festKind, phase: boxPhase, t: Math.round(boxT), parts: boxParts.map(p => ({ n: p.cat.name, st: p.state, box: p.box, score: p.score, nap: p.napping, log: p.log })) });
 // perf: read the adaptive-detail state, or pin it (true/false) to preview the lite look
 window.__cove.perfLite = (v) => {
