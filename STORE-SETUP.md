@@ -38,15 +38,18 @@ API 36 clears Google Play's "must target a recent Android" gate.
 - **Bundle / package id:** `com.midknightstudiolabs.catmintcove` (already set in
   `capacitor.config.json` and both workflows — change it in all three if needed).
 - **App name:** `Catmint Cove`
-- **Icon / splash:** `assets/logo.png` (1024²), `assets/icon-foreground.png` +
-  `assets/icon-background.png` (Android adaptive layers), `assets/splash.png`
-  (2732²) — Midknight peeking over the cove wall, rendered from the game's own
-  drawCat art (see `_iconforge.html`, gitignored). `@capacitor/assets`
-  regenerates every density in CI. To revise, keep the same filenames.
-- **Orientation:** portrait-locked. Both build workflows patch the generated
-  `AndroidManifest.xml` / `Info.plist` after `cap sync` (see the "Lock the app to
-  portrait" steps). The web build enforces it too (`#rotate` overlay +
-  `screen.orientation.lock`).
+- **Icon / splash:** `assets/icon.png` (1024², flat) + `assets/icon-foreground.png`
+  + `assets/icon-background.png` (Android adaptive layers) + `assets/splash.png`
+  (2732²) — Midknight's in-game silhouette sitting in front of a large gold disc,
+  on Catmint Cove green (`#356b4c` + `#e8b45a`). Rendered from the real cat art
+  via `__cove.portrait()` (a `window.__cove` debug helper) then flattened to a
+  clean silhouette. `@capacitor/assets` regenerates every density in CI. To
+  revise, keep the same filenames. (`assets/logo*.png` are older character-art
+  variants, not used by `@capacitor/assets` now that `icon.png` exists.)
+- **Orientation:** iPhone portrait-locked; **iPad auto-rotates** (all 4
+  orientations, stays full-screen). Both build workflows patch the generated
+  `AndroidManifest.xml` / `Info.plist` after `cap sync`. The web build's runtime
+  `screen.orientation.lock("portrait")` only fires on phone-sized viewports.
 
 ---
 
