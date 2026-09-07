@@ -3697,6 +3697,7 @@ function ovSnapViewport() {                 // ONE read of the viewport, held un
 function ovSetTarget(v, recenter) {
   _ovTarget = clamp(v, 0, 1);
   _ovHold = null;                           // target moved — rebuild the frozen transform once it settles again
+  _ovSyncBtn();
   if (_ovTarget > 0 && !_ovActive) {
     _ovActive = true;
     // capture where the eye is, THEN pin the native scroll to 0 so the canvas
@@ -3720,6 +3721,18 @@ function ovEnd() {                        // eased back to 0 — hand the pan ba
   if (!_focus) document.getElementById("app").classList.remove("focusing");
   const want = (_ovCamX + _worldOffX) * displayScale - window.innerWidth / 2;
   try { stage.scrollLeft = clamp(want, 0, Math.max(0, canvas.clientWidth - window.innerWidth)); } catch (e) {}
+  _ovSyncBtn();
+}
+// the ⊙-button icon: corner brackets = "fit the whole cove in view", flips to an × once you're out there
+const OV_ICON_FIT = '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H4v5M20 9V4h-5M15 20h5v-5M4 15v5h5"/></svg>';
+const OV_ICON_CLOSE = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+function _ovSyncBtn() {
+  const b = document.getElementById("ovBtn");
+  if (!b) return;
+  const open = _ovTarget > 0.5;
+  b.innerHTML = open ? OV_ICON_CLOSE : OV_ICON_FIT;
+  b.title = open ? "Back to the cove" : "See the whole cove";
+  b.setAttribute("aria-label", b.title);
 }
 
 function focusEligible(c) {
@@ -3728,7 +3741,7 @@ function focusEligible(c) {
 function enterFocus(c) {
   if (_placing || _arranging) exitPlacement();
   if (!focusEligible(c) || _focus === c) return;
-  if (_ovTarget || _ovT) { _ovTarget = 0; _ovT = 0; _ovHold = null; if (_ovActive) ovEnd(); }   // PINCH TEST: leave whole-cove view
+  if (_ovTarget || _ovT) { _ovTarget = 0; _ovT = 0; _ovHold = null; if (_ovActive) ovEnd(); _ovSyncBtn(); }   // PINCH TEST: leave whole-cove view
   hideCatCard(true);
   const r = canvas.getBoundingClientRect();
   _frozenScroll = stage.scrollLeft; _frozenLeft = r.left; _frozenTop = r.top;
@@ -4120,11 +4133,12 @@ canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeou
     mark.style.cssText = "position:fixed;left:50%;top:calc(6px + env(safe-area-inset-top));transform:translateX(-50%);z-index:60;background:rgba(36,31,23,.82);color:#f4efe2;font:600 11px/1 'Hanken Grotesk',sans-serif;padding:5px 10px;border-radius:999px;pointer-events:none;letter-spacing:.02em;";
     document.getElementById("app").appendChild(mark);
     const btn = document.createElement("button");
-    btn.textContent = "⊙";
+    btn.id = "ovBtn";
     btn.title = "See the whole cove";
-    btn.style.cssText = "position:fixed;right:calc(10px + env(safe-area-inset-right));bottom:calc(74px + env(safe-area-inset-bottom));z-index:55;width:44px;height:44px;border-radius:50%;border:none;background:#f7f5ec;color:#356b4c;font-size:20px;box-shadow:0 3px 12px rgba(36,31,23,.25);cursor:pointer;";
+    btn.style.cssText = "position:fixed;right:calc(10px + env(safe-area-inset-right));bottom:calc(74px + env(safe-area-inset-bottom));z-index:55;width:44px;height:44px;border-radius:50%;border:none;background:#f7f5ec;color:#356b4c;display:grid;place-items:center;box-shadow:0 3px 12px rgba(36,31,23,.25);cursor:pointer;-webkit-tap-highlight-color:transparent;";
     btn.onclick = () => { if (_focus || restMode || festMode) return; ovSetTarget(_ovTarget > 0.5 ? 0 : 1, true); };
     document.getElementById("app").appendChild(btn);
+    _ovSyncBtn();
   });
 })();
 function handleTap(x, y) {
