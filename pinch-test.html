@@ -10386,39 +10386,25 @@ function drawVolleyBall(g, b) {
   g.fillStyle = "rgba(255,255,255,0.5)"; g.beginPath(); g.arc(-R * 0.32, -R * 0.32, R * 0.28, 0, 7); g.fill();
   g.restore();
 }
+// ONE expanding ring per tap, colour-coded so it reads at a glance:
+// green = called it · amber = woke it · cream = stay sharp · slate = poked a
+// sleeper · grey = missed. No stacked rings.
+const VB_TAP_COL = { call: "#5f9c3a", wake: "#eab234", sharp: "#efe7d2", poke: "#8ba1b3", miss: "#94897366" };
 function drawVolleyTaps(g) {
   for (let i = _vbTaps.length - 1; i >= 0; i--) {
-    const tp = _vbTaps[i], age = matchT - tp.at;
-    if (age > 0.5) { _vbTaps.splice(i, 1); continue; }
-    const k = age / 0.5, ik = 1 - k;
+    const tp = _vbTaps[i], age = matchT - tp.at, life = tp.hit ? 0.4 : 0.3;
+    if (age > life) { _vbTaps.splice(i, 1); continue; }
+    const k = age / life, ik = 1 - k;
+    const col = VB_TAP_COL[tp.kind] || (tp.hit ? "#5f9c3a" : "#948973");
     g.save();
-    if (tp.hit) {
-      // a filled flash that fades fast + a bold expanding double ring, so a tap
-      // on a cat is unmistakable against the pale sand
-      const r = 12 + k * 40;
-      if (k < 0.5) { g.globalAlpha = (0.5 - k) * 0.7; g.fillStyle = "#ffe6a8";
-        g.beginPath(); g.arc(tp.x, tp.y, 22 * (1 - k * 1.4 < 0 ? 0 : 1 - k * 1.4) + 6, 0, 7); g.fill(); }
-      g.globalAlpha = ik;
-      g.strokeStyle = "#e0873c"; g.lineWidth = 4.5 - k * 2.5;
-      g.beginPath(); g.arc(tp.x, tp.y, r, 0, 7); g.stroke();
-      g.globalAlpha = ik * 0.95;
-      g.strokeStyle = "#fff"; g.lineWidth = 2.5;
-      g.beginPath(); g.arc(tp.x, tp.y, r * 0.62, 0, 7); g.stroke();
-      if (k < 0.4) {                                    // a 4-spoke burst pinning the exact point
-        g.globalAlpha = (0.4 - k) / 0.4;
-        g.strokeStyle = "#e0873c"; g.lineWidth = 2.5; g.lineCap = "round";
-        for (let a = 0; a < 4; a++) {
-          const ang = a * Math.PI / 2 + Math.PI / 4, i0 = 6, i1 = 13 + k * 18;
-          g.beginPath();
-          g.moveTo(tp.x + Math.cos(ang) * i0, tp.y + Math.sin(ang) * i0);
-          g.lineTo(tp.x + Math.cos(ang) * i1, tp.y + Math.sin(ang) * i1);
-          g.stroke();
-        }
-      }
-    } else {                                            // a miss still shows a faint ring — the tap registered
-      g.globalAlpha = ik * 0.5;
-      g.strokeStyle = "#8a7c66"; g.lineWidth = 2;
-      g.beginPath(); g.arc(tp.x, tp.y, 8 + k * 22, 0, 7); g.stroke();
+    g.globalAlpha = (tp.hit ? 1 : 0.5) * ik;
+    g.strokeStyle = col; g.lineWidth = (tp.hit ? 3.4 : 2) * ik + 0.6;
+    const r = (tp.hit ? 11 : 8) + k * (tp.hit ? 28 : 18);
+    g.beginPath(); g.arc(tp.x, tp.y, r, 0, 7); g.stroke();
+    if (tp.hit && k < 0.28) {   // a small dot pins the exact point, then it's gone
+      g.globalAlpha = (0.28 - k) / 0.28;
+      g.fillStyle = col;
+      g.beginPath(); g.arc(tp.x, tp.y, 3.4, 0, 7); g.fill();
     }
     g.restore();
   }
@@ -10427,27 +10413,23 @@ function drawVolleyGlyph(g, p) {
   const c = p.cat;
   g.save();
   g.textAlign = "center"; g.textBaseline = "middle";
-  // a fresh tap ripple on the cat itself — bright, so "I tapped THIS one" reads
-  if (p._callFlash && matchT - p._callFlash < 0.45) {
-    const k = (matchT - p._callFlash) / 0.45;
-    g.strokeStyle = `rgba(255,241,214,${0.9 * (1 - k)})`; g.lineWidth = 3 - k * 1.6;
-    g.beginPath(); g.ellipse(c.x, c.y + 3, 16 + k * 22, 8 + k * 11, 0, 0, 7); g.stroke();
-  }
-  // the CALLED cat — a steady ring saying "this one's on it"
+  // the CALLED cat — a soft green spotlight at its feet, "this one's on it"
   if (p.side === "cove" && p._calledUntil > matchT && p.tier !== "asleep" && p.tier !== "drowsy") {
-    g.strokeStyle = "rgba(123,166,76,0.9)"; g.lineWidth = 2.5;
-    g.beginPath(); g.ellipse(c.x, c.y + 4, 24, 11, 0, 0, 7); g.stroke();
+    g.fillStyle = "rgba(95,156,58,0.16)";
+    g.beginPath(); g.ellipse(c.x, c.y + 7, 26, 10, 0, 0, 7); g.fill();
+    g.strokeStyle = "rgba(95,156,58,0.8)"; g.lineWidth = 1.6;
+    g.beginPath(); g.ellipse(c.x, c.y + 7, 24, 9, 0, 0, 7); g.stroke();
   }
   if (p.tier === "drowsy") {
     const yb = Math.sin(matchT * 3 + p.idx) * 2;
-    if (p.side === "cove") {   // tappable — a soft pulse ring, dimmed while the wake cooldown is up
-      const pr = Math.sin(matchT * 4) * 0.5 + 0.5;
-      const cool = matchT < _vbWakeCd ? 0.32 : 1;
-      g.strokeStyle = `rgba(240,196,74,${(0.5 - pr * 0.35) * cool})`; g.lineWidth = 2.5;
-      g.beginPath(); g.ellipse(c.x, c.y + 4, 26 + pr * 10, 12 + pr * 5, 0, 0, 7); g.stroke();
+    if (p.side === "cove") {   // tappable — a soft amber glow at its feet (no hard ring), dimmed on cooldown
+      const pr = Math.sin(matchT * 3.4) * 0.5 + 0.5;
+      const cool = matchT < _vbWakeCd ? 0.4 : 1;
+      g.fillStyle = `rgba(240,196,74,${(0.13 + pr * 0.13) * cool})`;
+      g.beginPath(); g.ellipse(c.x, c.y + 7, 24 + pr * 6, 10 + pr * 3, 0, 0, 7); g.fill();
     }
-    g.font = "17px sans-serif";
-    g.fillText("🥱", c.x, c.y - 40 + yb);
+    g.font = p.side === "cove" ? "21px sans-serif" : "16px sans-serif";   // the tappable ones read louder
+    g.fillText("🥱", c.x, c.y - 42 + yb);
   } else if (p.tier === "asleep") {
     g.font = "16px sans-serif";
     const primed = p._primed && matchT < p._primed;
@@ -10475,26 +10457,25 @@ function volleyPointer(e) {
     const dd = (pt.x - c.x) ** 2 + (pt.y - (c.y - 14)) ** 2;
     if (dd < hd) { hd = dd; hit = part; }
   }
-  // a ripple right where the finger landed — so every tap reads as registered,
-  // hit or miss (miss = a faint grey; hit = a bright confirm)
-  const tapFx = { x: pt.x, y: pt.y, at: matchT, hit: !!hit };
-  _vbTaps.push(tapFx); if (_vbTaps.length > 6) _vbTaps.shift();
+  // one mark where the finger landed — colour says what the tap did
+  const tapFx = { x: pt.x, y: pt.y, at: matchT, hit: !!hit, kind: "miss" };
+  _vbTaps.push(tapFx); if (_vbTaps.length > 5) _vbTaps.shift();
   if (!hit) return;
   const c = hit.cat;
-  hit._callFlash = matchT;                               // the cat always flashes on a tap
-  c.squash = Math.max(c.squash || 0, 0.34);              // ...and gives a quick pop
-  vbMeow(c, hit.tier === "awake" || hit.tier === "tired");   // every tap on one of your cats gets a meow
+  c.squash = Math.max(c.squash || 0, 0.24);   // a small pop
+  vbMeow(c, hit.tier === "awake" || hit.tier === "tired");
 
   if (hit.tier === "asleep") {
-    if (matchT < _vbWakeCd) return;
+    if (matchT < _vbWakeCd) { tapFx.kind = "poke"; return; }
     trackEvent("volleyball_cat_wake_attempt", { cat: c.name, state: "asleep", ok: !!hit._primed });
-    if (hit._primed && matchT < hit._primed) { vbWake(hit, true); _vbWakeCd = matchT + VB_WAKE_CD; vbSay("wake", { cat: c.name }); }
-    else { hit._pokedAt = matchT; hit._primed = matchT + 4.5; _vbWakeCd = matchT + VB_WAKE_CD;
+    if (hit._primed && matchT < hit._primed) { tapFx.kind = "wake"; vbWake(hit, true); _vbWakeCd = matchT + VB_WAKE_CD; vbSay("wake", { cat: c.name }); }
+    else { tapFx.kind = "poke"; hit._pokedAt = matchT; hit._primed = matchT + 4.5; _vbWakeCd = matchT + VB_WAKE_CD;
       floatText(c.x, c.y - 30, "😑", "#8a8276"); vbSay("failWake", { cat: c.name }); }
     return;
   }
   if (hit.tier === "drowsy") {
-    if (matchT < _vbWakeCd) return;
+    if (matchT < _vbWakeCd) { tapFx.kind = "poke"; return; }
+    tapFx.kind = "wake";
     trackEvent("volleyball_cat_wake_attempt", { cat: c.name, state: "drowsy", ok: true });
     vbWake(hit, false); _vbWakeCd = matchT + VB_WAKE_CD; vbSay("wake", { cat: c.name });
     return;
@@ -10505,13 +10486,15 @@ function volleyPointer(e) {
   if (incoming) {
     if (matchT - _vbLastTapAt < 0.18) return;   // just a debounce
     _vbLastTapAt = matchT;
+    tapFx.kind = "call";
     volleyParts.forEach(o => { if (o.side === "cove") o._calledUntil = 0; });
     hit._calledUntil = matchT + 2.6; hit._callFlash = matchT;
     c.face = volleyBall.x >= c.x ? 1 : -1;
     tone(560, 0.06, "sine", 0.05);
   } else {
     if (matchT < hit._sharpUntil - 4) return;   // one "stay sharp" per cat every ~2s of effect
-    hit._sharpUntil = matchT + 6; hit.drowse = Math.max(0, hit.drowse - 0.06); hit._callFlash = matchT;
+    tapFx.kind = "sharp";
+    hit._sharpUntil = matchT + 6; hit.drowse = Math.max(0, hit.drowse - 0.06);
     spawnParticles(c.x, c.y - 12, "twinkle", 2);
     tone(500, 0.05, "sine", 0.04);
   }
