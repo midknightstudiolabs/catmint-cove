@@ -7341,7 +7341,8 @@ function ensureAudio() {
       // when it returns to "running" the looping beds are dead, so rebuild them
       // (but not on the very first unlock, when they're being built fresh anyway)
       actx.onstatechange = () => {
-        if (!actx || actx.state !== "running") return;
+        if (!actx) return;
+        if (actx.state !== "running") { _audioStale = true; return; }   // suspended / interrupted → beds are now dead
         if (_audioWasRunning) _rebuildAudioBeds();
         _audioWasRunning = true;
       };
@@ -7359,6 +7360,7 @@ function ensureAudio() {
     applySound();
   }
   if (actx) { startAmbience(); loadSfx(); }
+  if (_audioStale || (actx && actx.state !== "running")) resumeAudio(true);
 }
 let catsGain = null, coveGain = null, musicGain = null;
 // push G.sound → the buses. called on unlock and after every slider move.
@@ -7378,28 +7380,55 @@ function applySound() {
   const mb = document.getElementById("muteBtn");
   if (mb) { const ic = mb.querySelector(".ico"); if (ic) ic.textContent = S.on ? "🔊" : "🔇"; }
 }
-let _audioRebuildAt = 0, _audioWasRunning = false;
+let _audioRebuildAt = 0, _audioWasRunning = false, _audioStale = false, _rebuildQueued = false, _resumeFails = 0;
 // rebuild whichever ambient bed(s) should be playing right now — the cove bed,
-// plus the rest-mode rain or the festival bed if we're in one of those
+// plus the rest-mode rain or the festival bed if we're in one of those. debounced,
+// but a call inside the window schedules ONE trailing rebuild so a real recovery
+// isn't swallowed by an earlier (possibly premature) one.
 function _rebuildAudioBeds() {
-  if (!actx || Date.now() - _audioRebuildAt < 800) return;   // debounce repeated statechange fires
+  if (!actx) return;
+  const since = Date.now() - _audioRebuildAt;
+  if (since < 700) {
+    if (!_rebuildQueued) { _rebuildQueued = true; setTimeout(() => { _rebuildQueued = false; _rebuildAudioBeds(); }, 720 - since); }
+    return;
+  }
   _audioRebuildAt = Date.now();
-  stopAmbience();
-  startAmbience();
+  _audioStale = false;
+  stopAmbience(); startAmbience();
   if (restMode) startRestAudio();
   else if (festMode) { startFestAudio(); if (festKind === "volley" && volleyPhase === "play") startVolleyBed(); }
+  applySound();
+}
+// tear the graph down for a full AudioContext reset (iOS occasionally wedges the
+// context past .resume() recovery — the fix is a fresh one on the next tap)
+function _resetAudioContext() {
+  try { stopAmbience(); } catch (e) {}
+  try { stopRestAudio(); } catch (e) {}
+  try { stopFestAudio(); } catch (e) {}
+  try { stopVolleyBed(); } catch (e) {}
+  try { actx && actx.close(); } catch (e) {}
+  catsGain = coveGain = musicGain = null;
+  actx = null; _audioWasRunning = false; _resumeFails = 0; _audioStale = true;
 }
 // bring audio back after iOS suspends/interrupts it (screen lock, backgrounding,
-// a phone call). .resume() alone leaves the loops dead — rebuild them too.
-function resumeAudio() {
-  if (!actx) return;
-  if (actx.state === "running") return;
-  actx.resume().then(_rebuildAudioBeds).catch(() => {});
+// a call, the Control Center). .resume() alone leaves the loops dead — rebuild
+// them too — and the context can return to "running" on its own with dead beds,
+// so a stale flag (not just state) drives the rebuild.
+function resumeAudio(fromGesture) {
+  if (!actx) { if (fromGesture) ensureAudio(); return; }
+  if (actx.state === "running") { if (_audioStale) _rebuildAudioBeds(); return; }
+  actx.resume().then(() => {
+    _resumeFails = 0; _audioStale = true; _rebuildAudioBeds();
+  }).catch(() => {
+    if (fromGesture && ++_resumeFails >= 2) { _resetAudioContext(); ensureAudio(); }
+  });
 }
-// catch-all: any tap anywhere un-sticks a suspended/interrupted context
-document.addEventListener("pointerdown", resumeAudio, true);
-window.addEventListener("focus", resumeAudio);
-window.addEventListener("pageshow", resumeAudio);
+// catch-all: any tap anywhere un-sticks a suspended/interrupted (or wedged) context;
+// coming back to the app resumes + rebuilds if onstatechange flagged the beds dead
+document.addEventListener("pointerdown", () => resumeAudio(true), true);
+window.addEventListener("focus", () => resumeAudio(false));
+window.addEventListener("pageshow", () => resumeAudio(false));
+document.addEventListener("visibilitychange", () => { if (!document.hidden) resumeAudio(false); });
 function tone(freq, dur, type = "sine", vol = 0.16, when = 0) {
   if (muted || !actx) return;
   const t = actx.currentTime + when;
