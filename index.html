@@ -6323,13 +6323,24 @@ const COLD = [
     test(s) { return s.newCat && s.newCat.petCount > s.armPet2; },
     exit() { _coldTarget = null; },
   },
-  { // 4 — the cove is yours (a beat, not a task)
+  { // 4 — the festival, something to look forward to
     say: null, cue: null,
     arm(s) {
       _coldTarget = cats.find(c => c.mascot) || null;
-      this.say = "Cats turn up, some stay, the shore keeps handing things back. There's a festival being set up down at the field, too — a few days off yet.";
+      this.say = "One more thing. There's a festival coming to the field — five days off.";
+      this.cue = "You'll want to be here for it.";
+      s.doneAt = performance.now() + 4600;
+    },
+    test(s) { return performance.now() >= s.doneAt; },
+    exit() { _coldTarget = null; },
+  },
+  { // 5 — the cove is yours (a beat, not a task)
+    say: null, cue: null,
+    arm(s) {
+      _coldTarget = cats.find(c => c.mascot) || null;
+      this.say = "Cats turn up, some stay, the shore keeps handing things back.";
       this.cue = "It's yours to look after now.";
-      s.doneAt = performance.now() + 5400;
+      s.doneAt = performance.now() + 4200;
     },
     test(s) { return performance.now() >= s.doneAt; },
     exit() { _coldTarget = null; },
