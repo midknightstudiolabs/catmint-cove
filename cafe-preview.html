@@ -1237,6 +1237,20 @@
         <button class="btn" id="cafeCancel">Maybe later</button>
       </div>
     </div>
+    <div class="fest-panel" id="festCafeTut" hidden>
+      <div class="fp-art">🐈‍⬛☕</div>
+      <h2>Running the café</h2>
+      <ul class="vb-tut">
+        <li><span class="vt-e">🐈</span><span class="vt-t">Three cats have agreed to run a pop-up café. None of them asked what that involves.</span></li>
+        <li><span class="vt-e">☕🍰🤵</span><span class="vt-t"><b>Barista</b> makes it, <b>Server</b> carries it, <b>Host</b> seats the guests. That's the whole plan.</span></li>
+        <li><span class="vt-e">🔀</span><span class="vt-t">Someone clearly not coping? <b>Drag their card to another role.</b> The swap's instant. The improvement is a hope, not a promise.</span></li>
+        <li><span class="vt-e">⏳</span><span class="vt-t">The shift runs itself — opening, coffee rush, festival rush, last orders. Serve guests before they give up and keep the <b>Café Mood</b> up.</span></li>
+        <li><span class="vt-e">😼</span><span class="vt-t">It will not go smoothly. Perfect chaos is the target.</span></li>
+      </ul>
+      <div class="btn-row">
+        <button class="btn primary" id="cafeTutGo">Let them cook</button>
+      </div>
+    </div>
     <div class="fest-panel" id="festVolleyTut" hidden>
       <div class="fp-art">🏐</div>
       <h2>The rules, briefly</h2>
@@ -8617,6 +8631,7 @@ function openFestPicker(kind) {
   document.getElementById("festVolleyTut").hidden = true;
   document.getElementById("volleyHud").hidden = true;
   document.getElementById("festCafePanel").hidden = true;
+  document.getElementById("festCafeTut").hidden = true;
   document.getElementById("cafeBoard").hidden = true;
   document.getElementById("volleyBanner").hidden = true;
   document.getElementById("festCountdown").hidden = true;
@@ -8793,6 +8808,7 @@ function closeFest() {
   cafeStaff = []; cafeCust = []; _cafeRunning = false; _cafeResultShown = false; cafePick = null;
   document.getElementById("cafeBoard").hidden = true;
   document.getElementById("festCafePanel").hidden = true;
+  document.getElementById("festCafeTut").hidden = true;
   particles.length = 0; floaters.length = 0;   // a live "zoomies!" or confetti spark shouldn't follow you back to the cove
   _festQuietUntil = Date.now() + 1800;   // ...and none land the instant the wipe clears back at the cove
   const w = document.getElementById("festWipe");
@@ -9397,7 +9413,7 @@ document.getElementById("festHub").addEventListener("click", () => {
   cafeStaff = []; cafeCust = []; _cafeRunning = false;
   stopVolleyBed();
   festKind = "hub"; festGroundsCats(roster);
-  for (const id of ["festPanel", "festBoxPanel", "festVolleyPanel", "festVolleyTut", "festCafePanel",
+  for (const id of ["festPanel", "festBoxPanel", "festVolleyPanel", "festVolleyTut", "festCafePanel", "festCafeTut",
                     "volleyHud", "cafeBoard", "volleyCom", "volleyBanner", "festCountdown"]) {
     document.getElementById(id).hidden = true;
   }
@@ -9495,6 +9511,7 @@ document.getElementById("boxCancel").addEventListener("click", closeFest);
 document.getElementById("boxStart").addEventListener("click", startBoxChallenge);
 document.getElementById("volleyCancel").addEventListener("click", closeFest);
 document.getElementById("cafeCancel").addEventListener("click", closeFest);
+document.getElementById("cafeTutGo").addEventListener("click", () => { _cafeTutSeen = true; cafeShowPicker(); });
 document.getElementById("cafeStart").addEventListener("click", () => { if (cafePickSel.length === 3) startCoveCafe(); });
 // first match of the session gets a quick deadpan how-to; after that, straight in
 document.getElementById("volleyStart").addEventListener("click", () => {
@@ -11002,10 +11019,10 @@ const CAFE_JOBS = ["barista", "server", "host"];
 const CAFE_JICON = { barista: "☕", server: "🍰", host: "🤵" };
 const CAFE_JNAME = { barista: "Barista", server: "Server", host: "Host" };
 const CAFE_POS  = { barista: { x: 120, y: 402 }, server: { x: 288, y: 500 }, host: { x: 432, y: 690 } };
-const CAFE_IDLE = { barista: { x: 120, y: 452 }, server: { x: 300, y: 524 }, host: { x: 470, y: 728 } };
+const CAFE_IDLE = { barista: { x: 120, y: 452 }, server: { x: 300, y: 524 }, host: { x: 406, y: 706 } };
 // where staff actually stand while working — below their counter so they read
 // in front of it, never on top
-const CAFE_WORK = { barista: { x: 120, y: 448 }, host: { x: 432, y: 726 } };
+const CAFE_WORK = { barista: { x: 120, y: 448 }, host: { x: 416, y: 700 } };
 // the pass: barista carries finished orders here, server collects from here
 const CAFE_PASS = { x: 240, y: 470 };
 const CAFE_PASTRIES = [ ["#e7b95c", 0], ["#d98b53", 1], ["#e7c99a", 0], ["#c96f4a", 2], ["#efd9a6", 0] ];
@@ -11098,12 +11115,19 @@ function renderCafePickGrid(roster) {
   document.getElementById("cafePickCount").textContent = "(0 / 3)";
   document.getElementById("cafeStart").disabled = true;
 }
+let _cafeTutSeen = false;
 function enterFestCafe() {
   document.getElementById("festChoose").hidden = true;
   document.getElementById("festTime").textContent = "catmint café";
+  trackEvent("cafe_card_opened");
+  if (!_cafeTutSeen) { document.getElementById("festCafeTut").hidden = false; return; }
   renderCafePickGrid(eligibleForVolley());
   document.getElementById("festCafePanel").hidden = false;
-  trackEvent("cafe_card_opened");
+}
+function cafeShowPicker() {
+  document.getElementById("festCafeTut").hidden = true;
+  renderCafePickGrid(eligibleForVolley());
+  document.getElementById("festCafePanel").hidden = false;
 }
 
 /* ---- start ---- */
@@ -11302,8 +11326,9 @@ function cafeCustLost(c, atSeat) {
 function cafeStepCust(c, dt) {
   c._ct += dt;
   if (c.state === "queue") {
+    // straight line down the right of the deck (front of it = nearest the podium)
     const ahead = cafeCust.filter(o => o.state === "queue" && o._ct > c._ct).length;
-    cafeMoveTo(c, CAFE_PODIUM.x + 6 + ahead * 13, CAFE_PODIUM.y + 4 + ahead * 37, 46, dt);
+    cafeMoveTo(c, CAFE_PODIUM.x + 8, CAFE_PODIUM.y + 16 + ahead * 44, 46, dt);
     c.patience -= dt * (0.5 / 40);
     if (c.patience <= 0) { cafeCustLost(c); return true; }
   } else if (c.state === "toSeat") {
@@ -11334,7 +11359,8 @@ function cafeStepCust(c, dt) {
     // free the table only once we've stepped clear of it
     for (const st of cafeSeats) if (st._clearing === c && Math.hypot(st.x - c.x, st.y - c.y) > 44) st._clearing = null;
     if (!c._out) { if (cafeMoveTo(c, c.x, 764, 52, dt)) c._out = true; return false; }
-    if (cafeMoveTo(c, CAFE_DOOR.x + 8, CAFE_DOOR.y + 40, 50, dt)) {
+    cafeMoveTo(c, CAFE_DOOR.x + 8, CAFE_DOOR.y + 44, 50, dt);
+    if (c.y > 812) {   // off the deck and heading out — that's gone enough
       for (const st of cafeSeats) if (st._clearing === c) st._clearing = null;
       _cafeCustPool.push(c); return true;
     }
@@ -11485,6 +11511,26 @@ function cafeStepServer(s, dt, speed) {
   }
   c.state = "loafing"; cafeMoveTo(c, CAFE_IDLE.server.x, CAFE_IDLE.server.y, speed * 0.5, dt);
 }
+// soft-body separation so cats on the move never sit inside each other — a
+// gentle shove apart for any two walking/queuing/leaving cats that overlap
+function cafeSeparate() {
+  // once a leaver is off the deck it's on its way out — stop nudging it so it
+  // can't get pinned against the other leavers by the door
+  const movers = cafeCust.filter(c => c.state === "queue" || c.state === "toSeat" || (c.state === "leave" && c.y < 800));
+  for (let i = 0; i < movers.length; i++) {
+    for (let j = i + 1; j < movers.length; j++) {
+      const a = movers[i], b = movers[j];
+      let dx = b.x - a.x, dy = b.y - a.y;
+      let d = Math.hypot(dx, dy);
+      if (d >= 36) continue;
+      if (d < 0.01) { dx = (Math.random() - 0.5); dy = (Math.random() - 0.5); d = Math.hypot(dx, dy); }
+      const push = (36 - d) / 2, ux = dx / d, uy = dy / d;
+      a.x -= ux * push; a.y -= uy * push;
+      b.x += ux * push; b.y += uy * push;
+    }
+  }
+  for (const c of movers) { c.x = Math.max(12, Math.min(CAFE_W - 12, c.x)); c.y = Math.max(340, Math.min(CAFE_H - 12, c.y)); }
+}
 function cafeStepHost(s, dt, speed) {
   const c = s.cat;
   const q = cafeCust.filter(x => x.state === "queue").sort((a, b) => b._ct - a._ct)[0];
@@ -11532,6 +11578,7 @@ function cafeStep(dt) {
   _cafePassWaitT = cafeReady.length ? _cafePassWaitT + dt : 0;
   for (const s of cafeStaff) cafeStepStaff(s, dt);
   for (let i = cafeCust.length - 1; i >= 0; i--) if (cafeStepCust(cafeCust[i], dt)) cafeCust.splice(i, 1);
+  cafeSeparate();
   cafeMood += (0.5 - cafeMood) * dt * 0.02; cafeMood = Math.max(0, Math.min(1, cafeMood));
   if (_cafeQuietT > 26 && cafePhaseIx > 0 && cafePhaseIx < 4 && !cafeStaff.some(s => s.incident)
       && cafeOrderQ.length < 2 && cafeCust.filter(c => c.state === "queue").length === 0) { cafeNote("quiet"); _cafeQuietT = rand(-6, 0); }
