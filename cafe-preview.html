@@ -11482,8 +11482,10 @@ function cafeStepServer(s, dt, speed) {
   if (s.carry && s.carry.items && s.carry.items.length) {
     const it = s.carry.items[0];
     if (!it.seat || !it.seat.cust || it.seat.cust.state === "leave") { s.carry.items.shift(); return; }
-    // stand a clear step in front of the table, not on it
-    if (!cafeMoveTo(c, it.seat.x, it.seat.y + 40, speed, dt)) return;
+    // approach the table from the top (same side the server comes from); hand
+    // the drink over as soon as we're close, never standing on the guest
+    cafeMoveTo(c, it.seat.x, it.seat.y - 30, speed, dt);
+    if (Math.hypot(c.x - it.seat.x, c.y - it.seat.y) > 46) return;
     it.seat.cust.state = "enjoy"; it.seat.cust._ct = 0;
     s.stats.delivered++; s.squash = 0.4; s.carry.items.shift();
     if (!s.carry.items.length) {
@@ -11499,7 +11501,8 @@ function cafeStepServer(s, dt, speed) {
   }
   const need = cafeSeats.find(s2 => s2.cust && s2.cust.state === "seated");
   if (need) {
-    if (!cafeMoveTo(c, need.x, need.y + 40, speed, dt)) return;
+    cafeMoveTo(c, need.x, need.y - 30, speed, dt);
+    if (Math.hypot(c.x - need.x, c.y - need.y) > 46) return;
     for (const seat of cafeSeats) {
       if (seat.cust && seat.cust.state === "seated" && Math.hypot(seat.x - c.x, seat.y - c.y) < 90) {
         seat.cust.state = "wait"; seat.cust._ct = 0;
@@ -11511,25 +11514,32 @@ function cafeStepServer(s, dt, speed) {
   }
   c.state = "loafing"; cafeMoveTo(c, CAFE_IDLE.server.x, CAFE_IDLE.server.y, speed * 0.5, dt);
 }
-// soft-body separation so cats on the move never sit inside each other — a
-// gentle shove apart for any two walking/queuing/leaving cats that overlap
+// soft-body separation so no two cats ever sit inside each other. Every cat is
+// solid; a "fixed" cat (seated guest, a cat that's basically out the door) holds
+// its ground and only the other one is pushed.
+const CAFE_BODY = 38;
 function cafeSeparate() {
-  // once a leaver is off the deck it's on its way out — stop nudging it so it
-  // can't get pinned against the other leavers by the door
-  const movers = cafeCust.filter(c => c.state === "queue" || c.state === "toSeat" || (c.state === "leave" && c.y < 800));
-  for (let i = 0; i < movers.length; i++) {
-    for (let j = i + 1; j < movers.length; j++) {
-      const a = movers[i], b = movers[j];
-      let dx = b.x - a.x, dy = b.y - a.y;
+  const all = [];
+  for (const c of cafeCust) {
+    const fixed = c.state === "seated" || c.state === "enjoy" || c.state === "wait" || (c.state === "leave" && c.y >= 800);
+    all.push({ c, fixed });
+  }
+  for (const s of cafeStaff) all.push({ c: s.cat, fixed: false });
+  for (let i = 0; i < all.length; i++) {
+    for (let j = i + 1; j < all.length; j++) {
+      const A = all[i], B = all[j];
+      if (A.fixed && B.fixed) continue;
+      let dx = B.c.x - A.c.x, dy = B.c.y - A.c.y;
       let d = Math.hypot(dx, dy);
-      if (d >= 36) continue;
-      if (d < 0.01) { dx = (Math.random() - 0.5); dy = (Math.random() - 0.5); d = Math.hypot(dx, dy); }
-      const push = (36 - d) / 2, ux = dx / d, uy = dy / d;
-      a.x -= ux * push; a.y -= uy * push;
-      b.x += ux * push; b.y += uy * push;
+      if (d >= CAFE_BODY) continue;
+      if (d < 0.01) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d = Math.hypot(dx, dy); }
+      const over = CAFE_BODY - d, ux = dx / d, uy = dy / d;
+      if (A.fixed) { B.c.x += ux * over; B.c.y += uy * over; }
+      else if (B.fixed) { A.c.x -= ux * over; A.c.y -= uy * over; }
+      else { A.c.x -= ux * over / 2; A.c.y -= uy * over / 2; B.c.x += ux * over / 2; B.c.y += uy * over / 2; }
     }
   }
-  for (const c of movers) { c.x = Math.max(12, Math.min(CAFE_W - 12, c.x)); c.y = Math.max(340, Math.min(CAFE_H - 12, c.y)); }
+  for (const e of all) if (!e.fixed) { e.c.x = Math.max(12, Math.min(CAFE_W - 12, e.c.x)); e.c.y = Math.max(340, Math.min(CAFE_H - 12, e.c.y)); }
 }
 function cafeStepHost(s, dt, speed) {
   const c = s.cat;
