@@ -10617,12 +10617,28 @@ function propPos(id) {
 }
 function propBoxed(id) { return !!(G.cosmetics && G.cosmetics.propBoxed && G.cosmetics.propBoxed[id]); }
 // a prop can sit here: on the grass band, clear of the pond, the sign, and stations/projects
+// the dock, the bakery and the other project / station structures are big and
+// rise upward (ovens, domes) or reach forward (docks) well past their decor
+// point — nothing else may sit on top of them. A generous, taller-upward ellipse.
+function offBigStructure(x, y, pad, exceptKey) {
+  for (const d of decor) {
+    if (d.type !== "project" && d.type !== "station") continue;
+    if (exceptKey && d.dkey === exceptKey) continue;
+    const proj = d.type === "project";
+    const cx = d.x + (proj ? 4 : 0), cy = d.y - 8;
+    const rx = (proj ? 74 : 50) + pad;
+    const dy = y - cy;
+    const ry = (dy < 0 ? (proj ? 46 : 58) : (proj ? 42 : 26)) + pad;   // taller above
+    if ((x - cx) ** 2 / (rx * rx) + dy * dy / (ry * ry) < 1) return false;
+  }
+  return true;
+}
 function validPropSpot(x, y) {
   if (x < 44 || x > W - 44) return false;
   if (y < H * 0.62 + 6 || y > catFloor() - 6) return false;
   for (const o of obstacles) if (o.water && Math.hypot((x - o.x) / (o.rx + 20), (y - o.y) / (o.ry + 14)) < 1) return false;
   if (x < W * 0.30 && y < H * 0.56) return false;                       // the cove sign corner
-  for (const d of decor) if ((d.type === "station" || d.type === "project") && Math.hypot(x - d.x, y - d.y) < 54) return false;
+  if (!offBigStructure(x, y, (_placing && _placing.r || 24) * 0.5)) return false;
   return true;
 }
 // a cottage / tree / flower patch can sit here: on the grass, clear of water,
@@ -10634,9 +10650,10 @@ function validDecorSpot(x, y, dtype, exceptKey) {
   if (y < (dtype === "station" ? H * 0.44 : H * 0.50) || y > catFloor() - 8) return false;
   for (const o of obstacles) if (o.water && Math.hypot((x - o.x) / (o.rx + clr), (y - o.y) / (o.ry + clr * 0.7)) < 1) return false;
   if (x < W * 0.30 && y < H * 0.56) return false;                       // the cove sign corner
+  if (!offBigStructure(x, y, clr * 0.45, exceptKey)) return false;
   for (const d of decor) {
     if (d.dkey && d.dkey === exceptKey) continue;
-    if (d.type === "station" || d.type === "project") { if (Math.hypot(x - d.x, y - d.y) < 52 + clr * 0.3) return false; continue; }
+    if (d.type === "station" || d.type === "project") continue;         // handled by offBigStructure
     if (DECOR_LABEL[d.type]) { if (Math.hypot(x - d.x, y - d.y) < clr + (DECOR_CLEAR[d.type] || 30) - 10) return false; }
   }
   return true;
@@ -11240,6 +11257,14 @@ function drawProps(g) {
   if (_placing && _placeGhost) {
     const gh = _placeGhost, ok = _placeOK(gh.x, gh.y);
     g.save();
+    // the no-go zone around the dock / bakery / other fixed structures
+    g.setLineDash([4, 4]); g.lineWidth = 1.4; g.strokeStyle = "rgba(201,80,63,.4)";
+    for (const d of decor) {
+      if (d.type !== "project" && d.type !== "station") continue;
+      const proj = d.type === "project";
+      g.beginPath(); g.ellipse(d.x + (proj ? 4 : 0), d.y - 8, (proj ? 74 : 50), (proj ? 44 : 42), 0, 0, 7); g.stroke();
+    }
+    g.setLineDash([]);
     g.strokeStyle = ok ? "rgba(90,160,106,.95)" : "rgba(201,80,63,.95)";
     g.lineWidth = 3; g.setLineDash(ok ? [] : [8, 6]);
     const ghR = (_placing.kind === "decor" || _placing.kind === "comfort") ? (DECOR_CLEAR[_placing.dtype] || 30) + 6 : 34;
