@@ -53,36 +53,35 @@
     100%{opacity:0;transform:translate(-50%,-50%) scale(1.04);}
   }
 
-  /* ---- staff strip: three fixed stations, cats slotted in ---- */
-  #staff{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:8px;padding:8px 10px calc(env(safe-area-inset-bottom) + 12px);
-    background:var(--panel);border-top:1px solid var(--panel-line);z-index:3;}
-  #staffHint{flex:0 0 100%;text-align:center;font:700 11px/1.3 "Hanken Grotesk";color:var(--ink-soft);}
+  /* ---- staff board: fixed role slots, movable cat tokens ---- */
+  #staff{flex:0 0 auto;background:var(--panel);border-top:1px solid var(--panel-line);
+    padding:8px 10px calc(env(safe-area-inset-bottom) + 12px);z-index:3;}
+  #staffHint{text-align:center;font:700 11px/1.3 "Hanken Grotesk";color:var(--ink-soft);margin-bottom:7px;}
   #staffHint b{color:var(--accent);}
-  .card{flex:1 1 0;min-width:0;background:#fffdf6;border:2px solid var(--panel-line);border-radius:14px;
-    padding:0 6px 8px;display:flex;flex-direction:column;align-items:center;cursor:pointer;
-    transition:border-color .12s ease, box-shadow .12s ease, background .12s ease;position:relative;overflow:hidden;}
-  .card:active{background:#f3efe2;}
-  .card .station{display:flex;align-items:center;justify-content:center;gap:5px;width:calc(100% + 12px);margin:0 -6px 7px;
-    padding:6px 0;background:#f1ede0;border-bottom:1px solid var(--panel-line);}
-  .card .station .ji{font-size:14px;line-height:1;}
-  .card .station .jn{font:800 8.5px/1 "IBM Plex Mono";letter-spacing:.1em;text-transform:uppercase;color:var(--accent);}
-  .card .cat{display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .18s ease;width:100%;}
-  .card .nm{font:800 13.5px/1 "Hanken Grotesk";white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
-  .card .tr{font:600 9px/1 "IBM Plex Mono";letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);}
-  .card .st{font-size:11px;line-height:1;min-height:12px;color:var(--ink-soft);font-weight:700;margin-top:1px;}
-  .card.picked{border-color:var(--accent);box-shadow:0 0 0 3px rgba(53,107,76,.18);}
-  .card.picked .cat{transform:translateY(-3px) scale(1.05);}
-  .card.target{border-color:var(--accent-bright);background:#eef4ec;}
-  .card.target .cat .st{visibility:hidden;}
-  .card.target .cat .tr{opacity:.5;}
-  .card.target .swaptag{position:absolute;left:0;right:0;bottom:7px;text-align:center;
-    font:800 10px/1 "Hanken Grotesk";letter-spacing:.02em;color:var(--accent-bright);}
-  .card.choke{border-color:var(--apricot);}
-  .card.choke::after{content:"";position:absolute;inset:-2px;border-radius:14px;border:2px solid var(--apricot);
-    animation:pulse 1.1s ease-in-out infinite;pointer-events:none;}
+  #slots{display:flex;gap:8px;}
+  .slot{flex:1 1 0;min-width:0;border:2px dashed #cfc7ae;border-radius:14px;padding:4px;
+    display:flex;flex-direction:column;gap:4px;transition:border-color .12s ease, background .12s ease;}
+  .slot .slothead{display:flex;align-items:center;justify-content:center;gap:5px;padding:2px 0 0;}
+  .slot .slothead .ji{font-size:13px;line-height:1;}
+  .slot .slothead .jn{font:800 8.5px/1 "IBM Plex Mono";letter-spacing:.11em;text-transform:uppercase;color:var(--ink-faint);}
+  .slot .catbox{flex:1 1 auto;min-height:50px;display:flex;}
+  .slot.drop{border-color:var(--accent-bright);background:#eef4ec;}
+  .slot.drop .slothead .jn{color:var(--accent-bright);}
+  .slot.choke{border-style:solid;border-color:var(--apricot);}
+  .slot.choke .slothead .jn{color:var(--apricot);}
+
+  .cattok{flex:1 1 auto;background:#fffdf6;border:1.5px solid var(--panel-line);border-radius:11px;
+    padding:6px 4px 7px;display:flex;flex-direction:column;align-items:center;gap:1px;
+    box-shadow:0 2px 5px rgba(36,31,23,.12);touch-action:none;cursor:grab;
+    transition:transform .12s ease, box-shadow .12s ease;position:relative;}
+  .cattok:active{cursor:grabbing;}
+  .cattok.lifted{box-shadow:0 14px 26px -6px rgba(36,31,23,.45);border-color:var(--accent);}
+  .cattok .nm{font:800 13px/1.05 "Hanken Grotesk";white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  .cattok .tr{font:600 8.5px/1 "IBM Plex Mono";letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);}
+  .cattok .st{font-size:10.5px;font-weight:700;color:var(--ink-soft);min-height:11px;margin-top:1px;}
+  @keyframes tokBounce{0%{transform:scale(.85);}55%{transform:scale(1.07);}100%{transform:scale(1);}}
+  .cattok.landed{animation:tokBounce .32s ease;}
   @keyframes pulse{0%,100%{opacity:.22;}50%{opacity:.85;}}
-  @keyframes swapBounce{0%{transform:scale(.86);}55%{transform:scale(1.08);}100%{transform:scale(1);}}
-  .card.swapped .cat{animation:swapBounce .34s ease;}
 
   /* ---- modals ---- */
   #scrim{position:absolute;inset:0;background:rgba(30,26,18,.5);backdrop-filter:blur(3px);
@@ -127,7 +126,7 @@
     <div id="banner"></div>
     <div class="tag">prototype · not the real game</div>
   </div>
-  <div id="staff"><div id="staffHint"></div></div>
+  <div id="staff"><div id="staffHint"></div><div id="slots"></div></div>
 </div>
 
 <div id="scrim" class="on">
@@ -281,35 +280,10 @@ function freeSeat(){ return seats.find(s => !s.cust); }
 function moodEmoji(){ return mood>.75?"😻":mood>.55?"😺":mood>.35?"🙂":"😐"; }
 function guestFace(c){ return c.patience>.6?"😺":c.patience>.35?"🙂":c.patience>.15?"😐":"🫥"; }
 
-/* ---------------- swap ---------------- */
-// One rule: tap a cat, then tap the station you want them at. Whoever is
-// already there trades places. Tapping the picked cat again cancels.
-function beginPick(s){
-  if (!running) return;
-  if (!pick){ pick = s; renderStaff(); return; }
-  if (pick === s){ pick = null; renderStaff(); return; }
-  const a = pick, b = s; pick = null;
-  const aj = a.job, bj = b.job;
-  a.job = bj; b.job = aj;
-  for (const cat of [a,b]){
-    cat.transiting = true; cat.ramp = 0.6; cat.act = null; cat.actT = 0;
-    if (cat.carry && cat.carry.items){ readyShelf.push(...cat.carry.items); }
-    cat.carry = null;
-    if (cat.incident){ cat.incident = null; cat.incT = 0; }
-    cat.tx = JOB_POS[cat.job].x; cat.ty = JOB_POS[cat.job].y;
-    cat._swapAnim = Date.now();
-  }
-  const now = shiftT;
-  if (now - a._lastSwap < 11 && a._lastSwapWith === b.name) note("swapBack");
-  else note("swapIn", { c:a.name, j: JOB_NAME[a.job] });
-  a._lastSwap = b._lastSwap = now; a._lastSwapWith = b.name; b._lastSwapWith = a.name;
-  renderStaff();
-  setTimeout(renderStaff, 420);
-}
-
-/* ---------------- staff strip ---------------- */
+/* ---------------- staff board ---------------- */
+// Model: three fixed role slots. The cat tokens are movable — drag a cat onto
+// another slot (or tap one then tap a slot). Whoever's there trades places.
 function chokeJob(){
-  // biggest visible pile relative to a soft threshold
   const q = customers.filter(c=>c.state==="queue").length;
   const un = seats.filter(s=>s.cust && s.cust.state==="seated").length;
   const scores = {
@@ -320,39 +294,107 @@ function chokeJob(){
   let best=null, bv=0; for (const k in scores) if (scores[k]>bv){ bv=scores[k]; best=k; }
   return best;
 }
-function renderStaff(){
-  const wrap = document.getElementById("staff");
-  const hint = document.getElementById("staffHint");
-  const ck = running ? chokeJob() : null;
-  wrap.querySelectorAll(".card").forEach(n => n.remove());
-  for (const job of JOBS){                       // stations are fixed L→R; the CAT is what moves
-    const s = staff.find(x => x.job === job);
-    const isPick = pick === s, isTarget = !!pick && pick !== s;
-    const el = document.createElement("div");
-    el.className = "card"
-      + (isPick ? " picked" : "")
-      + (isTarget ? " target" : "")
-      + (ck === job && !pick ? " choke" : "")
-      + (s._swapAnim && Date.now() - s._swapAnim < 400 ? " swapped" : "");
-    let st = "<span style='color:var(--ink-faint);font-weight:600'>working</span>";
-    if (s.transiting) st = "🚶 walking over";
-    else if (s.incident==="break") st = "💤 on a break";
-    else if (s.incident==="inspect") st = "👃 checking a plate";
-    else if (s.incident==="chat") st = "💬 chatting";
-    else if (s.incident==="zoom") st = "✨ zoomies";
-    else if (s.incident==="linger") st = "❤️ at a table";
-    el.innerHTML = `<span class="station"><span class="ji">${JOB_ICON[job]}</span><span class="jn">${JOB_NAME[job]}</span></span>
-      <span class="cat">
-        <span class="nm">${s.name}</span>
-        <span class="tr">${s.trait}</span>
-        <span class="st">${st}</span>
-      </span>${isTarget ? `<span class="swaptag">↔ move ${pick.name} here</span>` : ""}`;
-    el.onclick = (e) => { e.stopPropagation(); beginPick(s); };
-    wrap.appendChild(el);
+function swapCats(a, b){
+  if (!a || !b || a === b) return;
+  const aj = a.job, bj = b.job;
+  a.job = bj; b.job = aj;
+  for (const cat of [a,b]){
+    cat.transiting = true; cat.ramp = 0.6; cat.act = null; cat.actT = 0;
+    if (cat.carry && cat.carry.items) readyShelf.push(...cat.carry.items);
+    cat.carry = null;
+    if (cat.incident){ cat.incident = null; cat.incT = 0; }
+    cat.tx = JOB_POS[cat.job].x; cat.ty = JOB_POS[cat.job].y;
+    cat._land = Date.now();
   }
-  if (!running) hint.textContent = "";
-  else if (pick) hint.innerHTML = `Now tap a station to move <b>${pick.name}</b> there. (Tap ${pick.name} again to cancel.)`;
-  else hint.innerHTML = `Tap a cat to move them — whoever's there swaps in.`;
+  const now = shiftT;
+  if (now - a._lastSwap < 11 && a._lastSwapWith === b.name) note("swapBack");
+  else note("swapIn", { c:a.name, j: JOB_NAME[a.job] });
+  a._lastSwap = b._lastSwap = now; a._lastSwapWith = b.name; b._lastSwapWith = a.name;
+  pick = null;
+  renderStaff();
+}
+// tap fallback: tap a cat to pick, tap a slot (or another cat) to drop
+function tapCat(s){
+  if (!running) return;
+  if (!pick){ pick = s; renderStaff(); return; }
+  if (pick === s){ pick = null; renderStaff(); return; }
+  swapCats(pick, s);
+}
+function tapSlot(job){
+  if (!running || !pick) return;
+  if (pick.job === job){ pick = null; renderStaff(); return; }
+  swapCats(pick, staff.find(x => x.job === job));
+}
+
+let _drag = null;
+function tokDown(ev, s){
+  if (!running || ev.button) return;
+  const tok = ev.currentTarget;
+  _drag = { s, tok, x0: ev.clientX, y0: ev.clientY, moved:false };
+  try { tok.setPointerCapture(ev.pointerId); } catch(e){}
+}
+function tokMove(ev){
+  if (!_drag) return;
+  const dx = ev.clientX - _drag.x0, dy = ev.clientY - _drag.y0;
+  if (!_drag.moved && Math.hypot(dx,dy) > 7){ _drag.moved = true; _drag.tok.classList.add("lifted"); pick = _drag.s; renderStaffHint(); }
+  if (_drag.moved){
+    _drag.tok.style.transform = `translate(${dx}px, ${dy}px)`;
+    const el = document.elementFromPoint(ev.clientX, ev.clientY);
+    const slot = el && el.closest(".slot");
+    document.querySelectorAll("#slots .slot").forEach(sl =>
+      sl.classList.toggle("drop", sl === slot && sl.dataset.job !== _drag.s.job));
+  }
+}
+function tokUp(ev){
+  if (!_drag) return;
+  const d = _drag; _drag = null;
+  d.tok.classList.remove("lifted"); d.tok.style.transform = "";
+  if (!d.moved){ tapCat(d.s); return; }
+  const el = document.elementFromPoint(ev.clientX, ev.clientY);
+  const slot = el && el.closest(".slot");
+  document.querySelectorAll("#slots .slot").forEach(sl => sl.classList.remove("drop"));
+  if (slot && slot.dataset.job !== d.s.job) swapCats(d.s, staff.find(x => x.job === slot.dataset.job));
+  else { pick = null; renderStaff(); }
+}
+
+function catStatus(s){
+  if (s.transiting) return "🚶 walking over";
+  if (s.incident==="break") return "💤 on a break";
+  if (s.incident==="inspect") return "👃 checking a plate";
+  if (s.incident==="chat") return "💬 chatting";
+  if (s.incident==="zoom") return "✨ zoomies";
+  if (s.incident==="linger") return "❤️ at a table";
+  return "<span style='color:var(--ink-faint);font-weight:600'>working</span>";
+}
+function renderStaffHint(){
+  const hint = document.getElementById("staffHint");
+  if (!running){ hint.textContent = ""; return; }
+  if (pick) hint.innerHTML = `Drop <b>${pick.name}</b> on a role — or tap one.`;
+  else hint.innerHTML = `Drag a cat to a different role. Whoever's there swaps in.`;
+}
+function renderStaff(){
+  const slots = document.getElementById("slots");
+  const ck = running ? chokeJob() : null;
+  slots.innerHTML = "";
+  for (const job of JOBS){
+    const s = staff.find(x => x.job === job);
+    const slot = document.createElement("div");
+    slot.className = "slot" + (ck === job && !pick ? " choke" : "");
+    slot.dataset.job = job;
+    slot.innerHTML = `<span class="slothead"><span class="ji">${JOB_ICON[job]}</span><span class="jn">${JOB_NAME[job]}</span></span>
+      <span class="catbox"><span class="cattok${pick===s?" lifted":""}${s._land && Date.now()-s._land<380?" landed":""}">
+        <span class="nm">${s.name}</span><span class="tr">${s.trait}</span><span class="st">${catStatus(s)}</span>
+      </span></span>`;
+    const tok = slot.querySelector(".cattok");
+    tok.addEventListener("pointerdown", (e) => tokDown(e, s));
+    tok.addEventListener("pointermove", tokMove);
+    tok.addEventListener("pointerup", tokUp);
+    tok.addEventListener("pointercancel", tokUp);
+    slot.addEventListener("click", (e) => { e.stopPropagation(); if (pick && pick.job !== job) tapSlot(job); });
+    slots.appendChild(slot);
+  }
+  renderStaffHint();
+  if (staff.some(s => s._land && Date.now()-s._land < 380)) setTimeout(renderStaff, 400);
 }
 
 /* ---------------- sim ---------------- */
