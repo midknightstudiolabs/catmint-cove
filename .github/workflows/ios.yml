@@ -84,6 +84,15 @@ jobs:
           npx @capacitor/assets generate --ios
           npx cap sync ios
 
+      - name: App icon sanity check — must be regenerated from assets/icon.png
+        run: |
+          ICON=ios/App/App/Assets.xcassets/AppIcon.appiconset
+          echo "--- $ICON ---"
+          ls -la "$ICON" || { echo "::error::AppIcon.appiconset missing — @capacitor/assets did not run"; exit 1; }
+          BIG=$(find "$ICON" -name '*.png' -size +10k | wc -l | tr -d ' ')
+          echo "icon PNGs over 10k: $BIG"
+          [ "$BIG" -ge 1 ] || { echo "::error::AppIcon looks empty — the build would ship Apple's default white icon, not the green + gold Midknight one"; exit 1; }
+
       - name: Info.plist — orientation + export compliance
         run: |
           P=ios/App/App/Info.plist
