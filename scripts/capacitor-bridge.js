@@ -8,6 +8,18 @@
 
   window.CoveNative = window.CoveNative || {};
 
+  /* ---- app version — "1.0 (16)" — surfaced on the Credits screen ---- */
+  try {
+    if (P.App && P.App.getInfo) {
+      P.App.getInfo().then(function (i) {
+        var v = String(i.version), b = String(i.build);
+        // iOS marketing version is "1.0" (build separate) → "1.0 (16)".
+        // Android versionName already carries the run ("1.0.19") → leave as-is.
+        window.CoveNative.appVersion = (v === b || v.slice(-b.length - 1) === "." + b) ? v : v + " (" + b + ")";
+      }).catch(function () {});
+    }
+  } catch (e) {}
+
   /* ---- status bar: immersive game — hidden (clock/battery/wifi gone). The
    *      Info.plist also sets UIStatusBarHidden; this covers Android + any
    *      re-show after a system event. ---- */

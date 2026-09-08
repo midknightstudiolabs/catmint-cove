@@ -947,6 +947,7 @@
   .credits .cr-x{position:absolute;top:0;right:0;width:1.9rem;height:1.9rem;border:none;border-radius:50%;
     background:#eef1e3;color:var(--ink-soft);font-size:.8rem;line-height:1;cursor:pointer;z-index:2;}
   .credits h2{margin:.15rem 0 .45rem;text-wrap:balance;}
+  .credits .cr-ver{margin:0 0 .2rem;font-size:.72rem;letter-spacing:.03em;color:var(--ink-faint);font-variant-numeric:tabular-nums;}
   .credits p{margin-left:auto;margin-right:auto;text-wrap:balance;}
   .credits .cr-lead{color:var(--ink);font-size:.88rem;line-height:1.5;margin:.6rem auto 0;max-width:26rem;}
   .credits .cr-sec{margin:.95rem 0 0;}
@@ -6371,6 +6372,7 @@ function openCredits() {
     <button class="cr-x" id="crX" aria-label="Close">✕</button>
     <div class="kicker">Made with 🐾</div>
     <h2>Catmint Cove</h2>
+    <p class="cr-ver" id="crVer"></p>
     <p class="cr-lead">Made by one hooman at Midknight Studio Labs, with Midknight supervising 24/7 — mostly by sleeping near the keyboard and judging every decision.</p>
     <div class="cr-sec"><h3>Founder &amp; Developer</h3><p>Carlos and Midknight</p></div>
     <div class="cr-sec"><h3>Co-Founders</h3><p>Yhelle · Cel · Olive</p><p class="cr-note">The hoomans who somehow agreed this was a good idea.</p></div>
@@ -6394,6 +6396,9 @@ function openCredits() {
     const src = (typeof SFX_DATA !== "undefined" && SFX_DATA[u[0]]) ? "embed" : "file";
     document.getElementById("crBuild").textContent =
       `voices ${u.filter(x => _sfxBuf[x]).length}/${u.length} ${src} · ${_sfxErr || "ok"} · ${location.protocol} · audio ${actx ? actx.state : "off"}`; }
+  { const nv = window.CoveNative && window.CoveNative.appVersion;
+    const native = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+    document.getElementById("crVer").textContent = "Version " + (nv || (native ? "1.0" : "1.0 · web")); }
   document.querySelectorAll(".credits .cr-links a").forEach(a =>
     a.addEventListener("click", e => { e.preventDefault(); openExternal(a.href); }));
   document.getElementById("crClose").onclick = closeModal;
