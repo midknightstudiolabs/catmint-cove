@@ -6332,7 +6332,7 @@ const COLD = [
     arm(s) {
       _coldTarget = cats.find(c => c.mascot) || null;
       this.say = "One more thing. There's a festival coming to the field — five days off.";
-      this.cue = "Save the date. Meow.";
+      this.cue = "Save the date.";
       s.doneAt = performance.now() + 4600;
     },
     test(s) { return performance.now() >= s.doneAt; },
