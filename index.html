@@ -7331,11 +7331,11 @@ function meow(happy, vol = 1) {
  * immediate repeat, plus per-play pitch + level jitter, so petting for an hour
  * never sounds like the same clip on a loop. Missing/'undecodable file → synth. */
 const SFX_FILES = {
-  meow:   ["sfx/meow-1.mp3", "sfx/meow-2.mp3", "sfx/meow-3.mp3", "sfx/kitten-1.mp3", "sfx/kitten-2.mp3"],
-  kitten: ["sfx/kitten-1.mp3", "sfx/kitten-2.mp3"],
-  grumpy: ["sfx/grumpy-1.mp3", "sfx/grumpy-2.mp3"],
-  wake:   ["sfx/wake.mp3"],
-  purr:   ["sfx/purr.mp3"],
+  meow:   ["sfx/meow-1.m4a", "sfx/meow-2.m4a", "sfx/meow-3.m4a", "sfx/kitten-1.m4a", "sfx/kitten-2.m4a"],
+  kitten: ["sfx/kitten-1.m4a", "sfx/kitten-2.m4a"],
+  grumpy: ["sfx/grumpy-1.m4a", "sfx/grumpy-2.m4a"],
+  wake:   ["sfx/wake.m4a"],
+  purr:   ["sfx/purr.m4a"],
 };
 const _sfxBuf = {};          // url -> AudioBuffer
 const _sfxLast = {};         // pool -> last index played
