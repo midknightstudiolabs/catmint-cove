@@ -10807,12 +10807,24 @@ function showVolleyResult() {
   const cvs = document.querySelectorAll("#festPodium .vb-stat-row canvas");
   cove.forEach((p, i) => miniCat(cvs[i], p.cat.coatKey, p.cat.star, p.tier === "asleep" ? "sleeping" : "loafing", false, 0.75));
 
-  const rw = { shells: won ? goalShells(0.55) : goalShells(0.3) };
+  // reward — matched to the Cove Race (a win pays like a podium finish), and it
+  // reads *how* you won: a sweep, a comeback, keeping your side awake. A great
+  // run can turn up a pearl, same as taking the race.
+  const naps = cove.reduce((n, p) => n + p.stats.naps, 0);
+  const vnaps = volleyParts.filter(p => p.side === "visit").reduce((n, p) => n + p.stats.naps, 0);
+  const rw = (() => {
+    const base = goalShells(0.42);
+    if (!won) return { shells: Math.round(base * (volleyScore.cove === 2 ? 1.5 : 1.15)) };  // 3-2 loss pays like a gutsy 2nd
+    let m = 2.2;
+    if (volleyScore.visit === 0) m += 0.5;          // clean sweep
+    if (_vbMaxDeficit >= 2)      m += 0.4;          // came back from 2+ down
+    if (naps <= 1)              m += 0.35;          // your side barely slept
+    const big = volleyScore.visit === 0 || _vbMaxDeficit >= 2;
+    return { shells: Math.round(base * m), pearls: Math.random() < (big ? 0.09 : 0.05) ? 1 : 0 };
+  })();
   grantReward(rw, null); syncHud();
 
   // final line, from what actually happened
-  const naps = cove.reduce((n, p) => n + p.stats.naps, 0);
-  const vnaps = volleyParts.filter(p => p.side === "visit").reduce((n, p) => n + p.stats.naps, 0);
   const asleepNow = cove.find(p => p.tier === "asleep");
   const mvp = [...cove].sort((a, b) => (b.stats.saves * 2 + b.stats.returns) - (a.stats.saves * 2 + a.stats.returns))[0];
   let wl;
@@ -10822,7 +10834,7 @@ function showVolleyResult() {
   else if (won) wl = `${coveName()} wins! ` + pick(VB_WIN_LINES);
   else wl = `${volleyVisitName} takes it. ` + pick(VB_LOSE_LINES);
   document.getElementById("festPickLine").innerHTML =
-    `${esc(wl)}<br><span class="vb-reward">+${rw.shells} ◈</span>`;
+    `${esc(wl)}<br><span class="vb-reward">+${rw.shells} ◈${rw.pearls ? ` and a pearl ✦` : ""}</span>`;
   const tail = naps + vnaps === 0 ? "Remarkably, nobody fell asleep."
     : naps > vnaps ? `Your side napped ${naps} time${naps > 1 ? "s" : ""}. ${volleyVisitName} only managed ${vnaps}.`
     : vnaps > naps ? `${volleyVisitName} napped more than you did, for once.`
