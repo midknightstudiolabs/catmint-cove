@@ -176,6 +176,7 @@
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
   .ts-hint{display:none;margin:.9rem 0 0;font-size:.78rem;color:var(--ink-soft);opacity:.75;}
   #app.panning .ts-hint{display:block;}
+  .ts-copy{margin:1.3rem 0 0;font-size:.66rem;letter-spacing:.02em;color:var(--ink-soft);opacity:.6;}
 
   /* ---- bottom action bar ---- */
   #actions{
@@ -954,6 +955,9 @@
   .credits .cr-note{color:var(--ink-soft);font-size:.78rem;line-height:1.48;font-style:italic;margin:.3rem auto 0;max-width:24rem;text-wrap:pretty;}
   .credits .cr-legal{color:var(--ink-soft);font-size:.66rem;line-height:1.55;margin:1rem auto .1rem;max-width:24rem;
     border-top:1px solid var(--panel-line);padding-top:.75rem;text-wrap:pretty;opacity:.85;}
+  .credits .cr-links{margin:.5rem auto 0;font-size:.74rem;color:var(--ink-faint);}
+  .credits .cr-links a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;white-space:nowrap;}
+  .credits .cr-links a:active{opacity:.55;}
   .credits .row{margin-top:1.1rem;position:sticky;bottom:-.1rem;background:linear-gradient(rgba(247,244,236,0),var(--panel) 40%);padding-top:.7rem;}
 
   /* ---- dev overlay ---- */
@@ -1066,6 +1070,7 @@
       <p class="ts-sub">Cats wander in needing someone. Look after them, and the cove slowly becomes theirs.</p>
       <button class="btn primary" id="ts-go">Begin</button>
       <p class="ts-hint">Cosier on a tablet 🐾</p>
+      <p class="ts-copy">© 2026 Midknight Studio Labs</p>
     </div>
   </div>
   <div id="hud">
@@ -6337,6 +6342,12 @@ function openGuide() {
   document.getElementById("guideOk").onclick = () => tutEl.classList.remove("on");
   document.getElementById("guideCredits").onclick = () => { tutEl.classList.remove("on"); openCredits(); };
 }
+// open a URL in the OS browser, never inside the game's WebView. Capacitor
+// recognises the "_system" target on iOS + Android; plain web gets a new tab.
+function openExternal(url) {
+  try { const w = window.open(url, "_system"); if (!w) window.open(url, "_blank", "noopener"); }
+  catch (e) { try { window.open(url, "_blank", "noopener"); } catch (e2) {} }
+}
 function openCredits() {
   ensureAudio();
   openModal(`<div class="reveal credits">
@@ -6354,8 +6365,15 @@ function openCredits() {
     <p class="cr-note">Any remaining bugs are probably Midknight's fault.<br>Midknight strongly disagrees.</p>
     <p class="cr-legal">© 2026 Midknight Studio Labs. All rights reserved.<br>
       Catmint Cove and its original characters, artwork, game content, dialogue, audio, and software are protected by applicable intellectual property laws.</p>
+    <p class="cr-links">
+      <a href="https://www.catmintcove.com/p/privacy.html">Privacy Policy</a> ·
+      <a href="https://www.catmintcove.com/p/terms-and-conditions.html">Terms of Use</a> ·
+      <a href="https://www.catmintcove.com/#contact">Support</a>
+    </p>
     <div class="row"><button class="btn primary" id="crClose">Back to the cove</button></div>
   </div>`);
+  document.querySelectorAll(".credits .cr-links a").forEach(a =>
+    a.addEventListener("click", e => { e.preventDefault(); openExternal(a.href); }));
   document.getElementById("crClose").onclick = closeModal;
   document.getElementById("crX").onclick = closeModal;
 }
@@ -9606,6 +9624,7 @@ const VB_LOSE_LINES = [
   "The visiting cove has won. Several naps were taken.",
 ];
 const VB_DROWSE_BASE = 0.022;   // /sec unmodified — plus activity (jumps/dives/long rallies) and the match-length ramp
+const VB_COVE_DROWSE = 1.34;    // the player's cats nod off faster than the visitors — staying on top of them IS the game
 const VB_DROWSY_HOLD = 2.6;     // sec a cat holds DROWSY (the reaction window) before it drops off — the spec's "2–3s"
 const VB_WAKE_CD = 3.0;         // shared cooldown after any wake/poke — you can't save everyone at once
 const VB_WAKE_PROTECT = [8, 12]; // sec a just-woken cat can't start drowsing again
@@ -9614,6 +9633,7 @@ let volleyScore = { cove: 0, visit: 0 }, volleyVisitName = "Sunbeam Cove";
 let volleyPickSel = [], _vbServeAt = 0, _vbPointAt = 0, _vbResultAt = 0, _vbServer = "visit";
 let _vbResultShown = false, _vbReceiver = null, _vbFast = false, _vbNoDrowse = false, _vbBannerUntil = 0;
 let _vbWakeCd = 0, _vbAllAsleepUntil = 0, _vbSaidAllAsleep = false, _vbMaxDeficit = 0, _vbLastWinner = null, _vbLastTapAt = -9, _vbTutSeen = false, _vbMeowAt = -9;
+let _vbTaps = [];   // recent taps, for the ripple-where-you-pressed feedback (arena coords)
 // a little meow whenever you tap one of your cats — eager if it's alert, grouchy
 // if you just prodded a sleeper. Throttled so mashing taps doesn't machine-gun.
 function vbMeow(c, happy) {
@@ -9716,7 +9736,7 @@ function startCoveVolley() {
   matchT = 0; volleyScore = { cove: 0, visit: 0 }; volleyBall = null;
   _vbServeAt = 0; _vbPointAt = 0; _vbResultAt = 0; _vbServer = Math.random() < 0.5 ? "cove" : "visit";
   _vbResultShown = false; _vbReceiver = null; _vbBannerUntil = 0;
-  _vbWakeCd = 0; _vbAllAsleepUntil = 0; _vbSaidAllAsleep = false; _vbMaxDeficit = 0; _vbLastTapAt = -9; _vbLastWinner = null;
+  _vbWakeCd = 0; _vbAllAsleepUntil = 0; _vbSaidAllAsleep = false; _vbMaxDeficit = 0; _vbLastTapAt = -9; _vbLastWinner = null; _vbTaps = [];
   vbCom = { text: "", at: -99, pri: 0, last: "" };
   document.getElementById("volleyCom").hidden = true;
   particles.length = 0; floaters.length = 0;
@@ -10075,6 +10095,7 @@ function vbTickDrowse(p, dt) {
   if (_vbNoDrowse || matchT < p._protectUntil) { if (p.tier !== "awake") p.tier = "awake"; return; }
 
   let rate = VB_DROWSE_BASE * p._drowseVar;
+  if (p.side === "cove") rate *= VB_COVE_DROWSE;
   if (T.includes("lazy")) rate *= 1.9;
   if (T.includes("playful")) rate *= 0.8;                       // stays engaged (distracted by the ball)
   if (matchT < p._sharpUntil) rate *= 0.35;                     // just told to stay sharp
@@ -10268,6 +10289,7 @@ function renderVolley(dt) {
     c.y = sy;
     drawVolleyGlyph(g, p);
   }
+  drawVolleyTaps(g);
   if (volleyBall) drawVolleyBall(g, volleyBall);
   if (particles.length || floaters.length) drawFX(g);
 }
@@ -10356,15 +10378,52 @@ function drawVolleyBall(g, b) {
   g.fillStyle = "rgba(255,255,255,0.5)"; g.beginPath(); g.arc(-R * 0.32, -R * 0.32, R * 0.28, 0, 7); g.fill();
   g.restore();
 }
+function drawVolleyTaps(g) {
+  for (let i = _vbTaps.length - 1; i >= 0; i--) {
+    const tp = _vbTaps[i], age = matchT - tp.at;
+    if (age > 0.5) { _vbTaps.splice(i, 1); continue; }
+    const k = age / 0.5, ik = 1 - k;
+    g.save();
+    if (tp.hit) {
+      // a filled flash that fades fast + a bold expanding double ring, so a tap
+      // on a cat is unmistakable against the pale sand
+      const r = 12 + k * 40;
+      if (k < 0.5) { g.globalAlpha = (0.5 - k) * 0.7; g.fillStyle = "#ffe6a8";
+        g.beginPath(); g.arc(tp.x, tp.y, 22 * (1 - k * 1.4 < 0 ? 0 : 1 - k * 1.4) + 6, 0, 7); g.fill(); }
+      g.globalAlpha = ik;
+      g.strokeStyle = "#e0873c"; g.lineWidth = 4.5 - k * 2.5;
+      g.beginPath(); g.arc(tp.x, tp.y, r, 0, 7); g.stroke();
+      g.globalAlpha = ik * 0.95;
+      g.strokeStyle = "#fff"; g.lineWidth = 2.5;
+      g.beginPath(); g.arc(tp.x, tp.y, r * 0.62, 0, 7); g.stroke();
+      if (k < 0.4) {                                    // a 4-spoke burst pinning the exact point
+        g.globalAlpha = (0.4 - k) / 0.4;
+        g.strokeStyle = "#e0873c"; g.lineWidth = 2.5; g.lineCap = "round";
+        for (let a = 0; a < 4; a++) {
+          const ang = a * Math.PI / 2 + Math.PI / 4, i0 = 6, i1 = 13 + k * 18;
+          g.beginPath();
+          g.moveTo(tp.x + Math.cos(ang) * i0, tp.y + Math.sin(ang) * i0);
+          g.lineTo(tp.x + Math.cos(ang) * i1, tp.y + Math.sin(ang) * i1);
+          g.stroke();
+        }
+      }
+    } else {                                            // a miss still shows a faint ring — the tap registered
+      g.globalAlpha = ik * 0.5;
+      g.strokeStyle = "#8a7c66"; g.lineWidth = 2;
+      g.beginPath(); g.arc(tp.x, tp.y, 8 + k * 22, 0, 7); g.stroke();
+    }
+    g.restore();
+  }
+}
 function drawVolleyGlyph(g, p) {
   const c = p.cat;
   g.save();
   g.textAlign = "center"; g.textBaseline = "middle";
-  // a fresh tap ripple (call / stay-sharp feedback)
-  if (p._callFlash && matchT - p._callFlash < 0.4) {
-    const k = (matchT - p._callFlash) / 0.4;
-    g.strokeStyle = `rgba(255,255,255,${0.6 * (1 - k)})`; g.lineWidth = 2;
-    g.beginPath(); g.ellipse(c.x, c.y + 4, 14 + k * 20, 7 + k * 10, 0, 0, 7); g.stroke();
+  // a fresh tap ripple on the cat itself — bright, so "I tapped THIS one" reads
+  if (p._callFlash && matchT - p._callFlash < 0.45) {
+    const k = (matchT - p._callFlash) / 0.45;
+    g.strokeStyle = `rgba(255,241,214,${0.9 * (1 - k)})`; g.lineWidth = 3 - k * 1.6;
+    g.beginPath(); g.ellipse(c.x, c.y + 3, 16 + k * 22, 8 + k * 11, 0, 0, 7); g.stroke();
   }
   // the CALLED cat — a steady ring saying "this one's on it"
   if (p.side === "cove" && p._calledUntil > matchT && p.tier !== "asleep" && p.tier !== "drowsy") {
@@ -10408,8 +10467,14 @@ function volleyPointer(e) {
     const dd = (pt.x - c.x) ** 2 + (pt.y - (c.y - 14)) ** 2;
     if (dd < hd) { hd = dd; hit = part; }
   }
+  // a ripple right where the finger landed — so every tap reads as registered,
+  // hit or miss (miss = a faint grey; hit = a bright confirm)
+  const tapFx = { x: pt.x, y: pt.y, at: matchT, hit: !!hit };
+  _vbTaps.push(tapFx); if (_vbTaps.length > 6) _vbTaps.shift();
   if (!hit) return;
   const c = hit.cat;
+  hit._callFlash = matchT;                               // the cat always flashes on a tap
+  c.squash = Math.max(c.squash || 0, 0.34);              // ...and gives a quick pop
   vbMeow(c, hit.tier === "awake" || hit.tier === "tired");   // every tap on one of your cats gets a meow
 
   if (hit.tier === "asleep") {
