@@ -962,6 +962,34 @@
   .credits .cr-build{margin:.5rem 0 0;font-size:.58rem;letter-spacing:.04em;color:var(--ink-faint);opacity:.5;}
   .credits .row{margin-top:1.1rem;position:sticky;bottom:-.1rem;background:linear-gradient(rgba(247,244,236,0),var(--panel) 40%);padding-top:.7rem;}
 
+  /* ---- Sound panel ---- */
+  .snd .sub{color:var(--ink-soft);font-size:.82rem;margin:.1rem 0 .9rem;}
+  .snd-master{width:100%;display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+    background:#eef1e3;border:1px solid var(--panel-line);border-radius:14px;padding:.55rem .75rem;
+    margin-bottom:.7rem;cursor:pointer;font:inherit;color:var(--ink);}
+  .snd-master .lab{display:flex;align-items:center;gap:.55rem;font-weight:700;font-size:.86rem;}
+  .snd-master .lab .ic{font-size:1rem;}
+  .snd-master .tgl{width:2.7rem;height:1.6rem;border-radius:999px;background:var(--accent);position:relative;flex:0 0 auto;transition:background .15s ease;}
+  .snd-master .tgl::after{content:"";position:absolute;top:.18rem;left:.18rem;width:1.24rem;height:1.24rem;border-radius:50%;background:#fff;transition:left .15s ease;}
+  .snd-master .tgl.off{background:#c9c2ad;}
+  .snd-master .tgl.off::after{left:1.28rem;}
+  .snd-rows{transition:opacity .15s ease;}
+  .snd-rows.off{opacity:.4;pointer-events:none;}
+  .snd-row{display:grid;grid-template-columns:1.4rem 1fr auto;align-items:center;gap:.7rem;padding:.6rem .1rem;text-align:left;}
+  .snd-row + .snd-row{border-top:1px solid var(--panel-line);}
+  .snd-row .ic{font-size:1.1rem;text-align:center;}
+  .snd-row .txt b{display:block;font-size:.86rem;font-weight:700;line-height:1.15;}
+  .snd-row .txt small{color:var(--ink-faint);font-size:.68rem;}
+  .snd-row .val{font:600 .78rem/1 "IBM Plex Mono",monospace;color:var(--ink-soft);min-width:2.2rem;text-align:right;font-variant-numeric:tabular-nums;}
+  .snd-slider{grid-column:1 / -1;-webkit-appearance:none;appearance:none;width:100%;height:1.3rem;background:none;cursor:pointer;margin:-.1rem 0 0;}
+  .snd-slider::-webkit-slider-runnable-track{height:6px;border-radius:999px;border:1px solid var(--panel-line);
+    background:linear-gradient(var(--accent),var(--accent)) 0/var(--fill,100%) 100% no-repeat, #e3ddc8;}
+  .snd-slider::-moz-range-track{height:6px;border-radius:999px;background:#e3ddc8;border:1px solid var(--panel-line);}
+  .snd-slider::-moz-range-progress{height:6px;border-radius:999px;background:var(--accent);}
+  .snd-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;margin-top:-8px;width:1.15rem;height:1.15rem;border-radius:50%;
+    background:var(--panel);border:2px solid var(--accent);box-shadow:0 2px 5px rgba(36,31,23,.28);}
+  .snd-slider::-moz-range-thumb{width:1.15rem;height:1.15rem;border-radius:50%;background:var(--panel);border:2px solid var(--accent);}
+
   /* ---- dev overlay ---- */
   #dev{position:absolute;left:.6rem;bottom:3.6rem;z-index:35;display:none;
     background:rgba(24,21,15,.86);color:#e8e2d2;font-family:"Hanken Grotesk",sans-serif;
@@ -1727,6 +1755,7 @@ function newGame() {
     postcards: [],               // notes cats send home mid-adventure
     moments: [],                 // gentle log of the cove's little happenings
     wywa: { lastAt: 0, seen: [] },// "While You Were Away" cooldown + anti-repeat
+    sound: { on: true, cats: 1, cove: 1, music: 1 },   // per-device volume mix (Sound panel)
     adventure: null,             // legacy single-trip slot — superseded by `adventures`
     adventures: [],              // up to ADV_SLOTS active trips { id, cats, party, dest, tier, startedAt, endsAt, seed, cards }
     advDay: "",                  // legacy — the one-a-day cap has been removed
@@ -1790,6 +1819,9 @@ function load() {
     if (!Array.isArray(G.moments)) G.moments = [];
     if (!G.wywa || typeof G.wywa !== "object") G.wywa = { lastAt: 0, seen: [] };
     if (!Array.isArray(G.wywa.seen)) G.wywa.seen = [];
+    if (!G.sound || typeof G.sound !== "object") G.sound = { on: true, cats: 1, cove: 1, music: 1 };
+    for (const k of ["cats", "cove", "music"]) G.sound[k] = typeof G.sound[k] === "number" ? clamp(G.sound[k], 0, 1) : 1;
+    G.sound.on = G.sound.on !== false;
     if (G.adventure === undefined) G.adventure = null;
     if (G.adventure && !G.adventure.party) {            // pre-multi-cat save → wrap the lone traveller
       G.adventure.party = G.adventure.catData ? [G.adventure.catData] : [];
@@ -6181,14 +6213,67 @@ function rampParam(p, target, secs = 0.4) {
   p.setValueAtTime(p.value, t);
   p.linearRampToValueAtTime(target, t + secs);
 }
-document.getElementById("muteBtn").addEventListener("click", (e) => {
-  muted = !muted;
-  e.currentTarget.querySelector(".ico").textContent = muted ? "🔇" : "🔊";
+// 🔊 button: a tap opens the Sound panel (per-part volume); a quick double-tap
+// is the old behaviour — flip all sound on/off without opening anything.
+{
+  const mb = document.getElementById("muteBtn");
+  let _mbTap = 0;
+  mb.addEventListener("click", (e) => {
+    ensureAudio();
+    const now = Date.now();
+    if (now - _mbTap < 300) { _mbTap = 0; G.sound.on = !G.sound.on; applySound(); save(); return; }
+    _mbTap = now;
+    setTimeout(() => { if (_mbTap && Date.now() - _mbTap >= 290) { _mbTap = 0; openSound(); } }, 300);
+  });
+}
+function openSound() {
   ensureAudio();
-  if (ambience && actx) rampParam(ambience.master.gain, muted || restMode || festMode ? 0 : AMB_MASTER);   // rest/fest mode = their own bed only
-  if (restBus && actx) rampParam(restBus.gain, muted || !restOpts.rain ? 0.0001 : 0.9);
-  if (festBus && actx) rampParam(festBus.gain, muted ? 0.0001 : 0.85);
-});
+  const S = G.sound;
+  const rows = [
+    ["cats", "🐾", "Cats", "meows, purrs, little chirrups"],
+    ["cove", "🌊", "Cove", "water, breeze, birds, crickets"],
+    ["music", "🎪", "Music", "festival tune, rest-mode rain"],
+  ];
+  openModal(`<div class="reveal snd">
+    <div class="kicker">Sound</div>
+    <h2>Sound</h2>
+    <p class="sub">How loud each part of the cove is. Saved on this device.</p>
+    <button class="snd-master" id="sndMaster" aria-pressed="${S.on}">
+      <span class="lab"><span class="ic">${S.on ? "🔊" : "🔇"}</span> All sound</span>
+      <span class="tgl${S.on ? "" : " off"}"></span>
+    </button>
+    <div class="snd-rows${S.on ? "" : " off"}" id="sndRows">
+      ${rows.map(([k, ic, name, sub]) => `
+      <div class="snd-row">
+        <span class="ic">${ic}</span>
+        <span class="txt"><b>${name}</b><small>${sub}</small></span>
+        <span class="val" id="sv-${k}">${Math.round(S[k] * 100)}%</span>
+        <input class="snd-slider" id="ss-${k}" type="range" min="0" max="100" step="5"
+               value="${Math.round(S[k] * 100)}" style="--fill:${Math.round(S[k] * 100)}%" aria-label="${name} volume">
+      </div>`).join("")}
+    </div>
+    <div class="row"><button class="btn primary" id="sndClose">Back to the cove</button></div>
+  </div>`);
+  const sync = () => {
+    document.getElementById("sndRows").classList.toggle("off", !S.on);
+    const ic = document.querySelector(".snd-master .ic"); if (ic) ic.textContent = S.on ? "🔊" : "🔇";
+    document.querySelector(".snd-master .tgl").classList.toggle("off", !S.on);
+    document.getElementById("sndMaster").setAttribute("aria-pressed", S.on);
+    applySound();
+  };
+  document.getElementById("sndMaster").onclick = () => { S.on = !S.on; sync(); save(); };
+  for (const [k] of rows) {
+    const sl = document.getElementById("ss-" + k);
+    sl.addEventListener("input", () => {
+      S[k] = +sl.value / 100;
+      document.getElementById("sv-" + k).textContent = sl.value + "%";
+      sl.style.setProperty("--fill", sl.value + "%");
+      applySound();
+    });
+    sl.addEventListener("change", save);
+  }
+  document.getElementById("sndClose").onclick = closeModal;
+}
 
 /* ---------- the cold open — Midknight shows you the cove ----------
    Two short beats, ~90s, played not read. The band (#hint) carries one line
@@ -7263,7 +7348,35 @@ function ensureAudio() {
     } catch (e) { actx = null; }
   }
   if (actx && actx.state !== "running") actx.resume().catch(() => {});
+  if (actx && !catsGain) {
+    // three persistent sub-mix buses the Sound panel rides — the cat voices,
+    // the cove ambience, and the music beds each land on their own gain, so a
+    // slider is one ramp and the existing per-bed logic (mute, rest/fest
+    // fades) is left completely untouched.
+    catsGain = actx.createGain(); catsGain.connect(actx.destination);
+    coveGain = actx.createGain(); coveGain.connect(actx.destination);
+    musicGain = actx.createGain(); musicGain.connect(actx.destination);
+    applySound();
+  }
   if (actx) { startAmbience(); loadSfx(); }
+}
+let catsGain = null, coveGain = null, musicGain = null;
+// push G.sound → the buses. called on unlock and after every slider move.
+function applySound() {
+  const S = (G && G.sound) || { on: true, cats: 1, cove: 1, music: 1 };
+  muted = !S.on;                                   // keep every legacy `if (muted)` check honest
+  if (!actx) return;
+  const lvl = k => (S.on ? S[k] : 0);
+  if (catsGain)  rampParam(catsGain.gain, lvl("cats"), 0.2);
+  if (coveGain)  rampParam(coveGain.gain, lvl("cove"), 0.3);
+  if (musicGain) rampParam(musicGain.gain, lvl("music"), 0.3);
+  // the existing beds also gate on `muted` — re-assert their on/off target so
+  // flipping All sound back on brings a bed that started silent back up
+  if (ambience) rampParam(ambience.master.gain, S.on && !restMode && !festMode ? AMB_MASTER : 0, 0.3);
+  if (restBus)  rampParam(restBus.gain, S.on && restOpts.rain ? 0.9 : 0.0001, 0.3);
+  if (festBus)  rampParam(festBus.gain, S.on ? 0.85 : 0.0001, 0.3);
+  const mb = document.getElementById("muteBtn");
+  if (mb) { const ic = mb.querySelector(".ico"); if (ic) ic.textContent = S.on ? "🔊" : "🔇"; }
 }
 let _audioRebuildAt = 0, _audioWasRunning = false;
 // rebuild whichever ambient bed(s) should be playing right now — the cove bed,
@@ -7307,7 +7420,7 @@ function meow(happy, vol = 1) {
   const dur = happy ? 0.34 : 0.4;
   const out = actx.createGain();
   out.gain.value = vol;
-  out.connect(actx.destination);
+  out.connect(catsGain || actx.destination);
 
   const o1 = actx.createOscillator(), o2 = actx.createOscillator();
   o1.type = "triangle"; o2.type = "sine";       // o2 = a quiet octave-down body
@@ -7412,7 +7525,7 @@ function playSample(pool, { vol = 1, rate = 1, jitter = 0.06, when = 0 } = {}) {
   src.playbackRate.value = Math.max(0.5, rate * (1 + (Math.random() * 2 - 1) * jitter));
   const g = actx.createGain();
   g.gain.value = vol * (0.86 + Math.random() * 0.28);
-  src.connect(g); g.connect(actx.destination);
+  src.connect(g); g.connect(catsGain || actx.destination);
   try { src.start(actx.currentTime + when); } catch (e) { return false; }
   return true;
 }
@@ -7574,7 +7687,7 @@ function startAmbience() {
   const now = actx.currentTime;
   const master = actx.createGain();
   master.gain.value = 0;
-  master.connect(actx.destination);
+  master.connect(coveGain || actx.destination);
   master.gain.linearRampToValueAtTime(muted || restMode || festMode ? 0 : AMB_MASTER, now + 3);   // silent if we (re)start straight into rest / a festival
 
   // brook — pink noise, low-passed, a slow babble wobble. Kept gentle.
@@ -7751,7 +7864,7 @@ async function startRestAudio() {
   if (gen !== _restAudioGen || !restMode) return;   // superseded, or we already left rest
   restBus = actx.createGain();
   restBus.gain.value = 0.0001;
-  restBus.connect(actx.destination);
+  restBus.connect(musicGain || actx.destination);
   rampParam(restBus.gain, muted || !restOpts.rain ? 0.0001 : 0.9, 2.5);
   rainSrc = actx.createBufferSource();
   if (rainBuffer) {
@@ -8585,7 +8698,7 @@ function startFestAudio() {
   if (ambience) rampParam(ambience.master.gain, 0, 1.2);   // the cove goes quiet — you're at the grounds now
   festBus = actx.createGain();
   festBus.gain.value = 0.0001;
-  festBus.connect(actx.destination);
+  festBus.connect(musicGain || actx.destination);
   rampParam(festBus.gain, muted ? 0.0001 : 0.85, 2);
 
   // a loose crowd murmur — brown noise, band-limited to a voice-ish range, breathing slowly
@@ -10142,7 +10255,7 @@ function vbCheer(vol = 0.04, dur = 0.32) {
   g.gain.setValueAtTime(0.0001, t0);
   g.gain.linearRampToValueAtTime(vol, t0 + dur * 0.28);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  src.connect(bp); bp.connect(g); g.connect(actx.destination);
+  src.connect(bp); bp.connect(g); g.connect(musicGain || actx.destination);
   src.start(t0); src.stop(t0 + dur + 0.05);
 }
 // a quick major arpeggio + shimmer — the "yay, a point!" flourish (bigger on a match win)
