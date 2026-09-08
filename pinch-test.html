@@ -3726,7 +3726,10 @@ function dropToken(x, y, value, flair) {
     const idx = fieldTokens.findIndex(t => t.pop === 0);
     fieldTokens.splice(idx < 0 ? 0 : idx, 1);
   }
-  const yy = clamp(y, H * 0.5, catFloor() - 6);   // keep drops in view, clear of the action bar
+  // keep drops in view AND well clear of the bottom nav — on a phone catFloor()
+  // sits just above the tab bar, and a token's tap target (~46px) must not
+  // overlap it or the player can't collect loot that lands down there
+  const yy = clamp(y, H * 0.5, catFloor() - (_narrowUI ? 56 : 6));
   fieldTokens.push({
     x: clamp(x + rand(-11, 11), 18, W - 18), y: yy, baseY: yy, value, flair,
     vy: -60, life: 0, ttl: 75, pop: 0,
@@ -14540,7 +14543,11 @@ function onViewportChange() {
       rebuildAttractors();
       _restG = null;
       if (restMode) { initGlassDrops(); restSeatCats(); }
-      else for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, catFloor()); }
+      else {
+        for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, catFloor()); }
+        const tf = catFloor() - (_narrowUI ? 56 : 6);   // pull any loot that's now behind the nav back up
+        for (const t of fieldTokens) if (t.baseY > tf) { t.baseY = tf; if (t.y > tf) t.y = tf; }
+      }
     }
   }, 180);
 }
