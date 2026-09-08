@@ -1,0 +1,309 @@
+<title>Catmint Café — Room Tone</title>
+<style>
+  :root{
+    --cream:#f6efe0; --paper:#fbf7ee; --coffee:#4a3524; --coffee-2:#6f5942;
+    --terra:#c47a35; --terra-deep:#a75f22; --sage:#7c8a5e; --ink:#2e241b;
+    --line:#e7dcc6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:
+      radial-gradient(120% 90% at 50% 0%, #fffdf6, #f0e7d3);
+    color:var(--ink);min-height:100vh;
+    font-family:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    display:flex;align-items:center;justify-content:center;padding:28px;}
+  .card{width:min(94vw,440px);background:var(--paper);border:1px solid var(--line);
+    border-radius:22px;padding:26px 24px 22px;box-shadow:0 18px 44px rgba(74,53,36,.14);}
+  h1{font-family:"Fraunces","Georgia",serif;font-weight:600;font-size:1.32rem;margin:0 0 3px;
+    letter-spacing:.01em;}
+  .sub{margin:0 0 20px;color:var(--coffee-2);font-size:.86rem;line-height:1.5;}
+  .play{width:100%;border:0;cursor:pointer;border-radius:14px;padding:15px 18px;
+    background:var(--coffee);color:var(--cream);font:600 1rem/1 "Hanken Grotesk",sans-serif;
+    letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:10px;
+    transition:background .15s,transform .06s;}
+  .play:hover{background:#3a2a1c;}
+  .play:active{transform:translateY(1px);}
+  .play.on{background:var(--terra-deep);}
+  .dot{width:9px;height:9px;border-radius:50%;background:currentColor;opacity:.55;}
+  .play.on .dot{opacity:1;animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+  .viz{height:52px;margin:16px 0 6px;display:flex;align-items:flex-end;gap:3px;opacity:.5;transition:opacity .3s;}
+  .viz.on{opacity:1;}
+  .viz i{flex:1;background:linear-gradient(var(--terra),var(--sage));border-radius:2px;height:8%;transition:height .12s ease;}
+  .mix{margin-top:16px;display:flex;flex-direction:column;gap:13px;}
+  .row{display:grid;grid-template-columns:88px 1fr 34px;align-items:center;gap:10px;}
+  .row label{font-size:.78rem;color:var(--coffee-2);letter-spacing:.02em;}
+  .row output{font-size:.72rem;color:var(--coffee-2);text-align:right;font-variant-numeric:tabular-nums;}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
+    background:var(--line);outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+    border-radius:50%;background:var(--terra);cursor:pointer;border:2px solid var(--paper);
+    box-shadow:0 1px 4px rgba(74,53,36,.3);}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--terra);
+    cursor:pointer;border:2px solid var(--paper);}
+  .foot{margin-top:16px;font-size:.74rem;color:var(--coffee-2);line-height:1.5;border-top:1px solid var(--line);padding-top:12px;}
+  code{background:#f0e7d3;border:1px solid #e6d4b6;border-radius:5px;padding:1px 5px;font-size:.72rem;}
+</style>
+
+<div class="card">
+  <h1>Catmint Café — room tone</h1>
+  <p class="sub">A calm coffee-shop bed, generated live (no audio files). Warm pad,
+  a soft plinky playlist, the odd cup, and the espresso machine breathing in the
+  background. Tap play, then dial the mix.</p>
+
+  <button class="play" id="play"><span class="dot"></span><span id="playLbl">Play the café</span></button>
+
+  <div class="viz" id="viz"></div>
+
+  <div class="mix">
+    <div class="row"><label>Master</label><input type="range" id="m-master" min="0" max="100" value="70"><output id="o-master">70</output></div>
+    <div class="row"><label>Warm pad</label><input type="range" id="m-pad" min="0" max="100" value="65"><output id="o-pad">65</output></div>
+    <div class="row"><label>Plinks</label><input type="range" id="m-plink" min="0" max="100" value="55"><output id="o-plink">55</output></div>
+    <div class="row"><label>Espresso</label><input type="range" id="m-steam" min="0" max="100" value="45"><output id="o-steam">45</output></div>
+    <div class="row"><label>Room / crowd</label><input type="range" id="m-room" min="0" max="100" value="40"><output id="o-room">40</output></div>
+    <div class="row"><label>Cups</label><input type="range" id="m-cup" min="0" max="100" value="50"><output id="o-cup">50</output></div>
+  </div>
+
+  <div class="foot">Tune it to taste and tell me the six numbers — I'll bake those
+  levels into <code>startCafeBed()</code> in <code>cafe-preview.html</code>, replacing
+  the borrowed volleyball music.</div>
+</div>
+
+<script>
+(function () {
+  let actx = null, master = null, verbSend = null, running = false, timers = [], nodes = [];
+  const mix = { master: .7, pad: .65, plink: .55, steam: .45, room: .4, cup: .5 };
+  const buf = {};
+  let analyser = null, vizRAF = 0;
+
+  // ---- noise buffers ----
+  function noiseBuffer(kind) {
+    if (buf[kind]) return buf[kind];
+    const n = actx.sampleRate * 2, b = actx.createBuffer(1, n, actx.sampleRate), d = b.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < n; i++) {
+      const w = Math.random() * 2 - 1;
+      if (kind === "brown") { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; }
+      else d[i] = w;
+    }
+    buf[kind] = b; return b;
+  }
+
+  // ---- light shared reverb (feedback delay) ----
+  function buildVerb() {
+    const inp = actx.createGain();
+    const d1 = actx.createDelay(0.5), d2 = actx.createDelay(0.5);
+    d1.delayTime.value = 0.17; d2.delayTime.value = 0.23;
+    const fb = actx.createGain(); fb.gain.value = 0.36;
+    const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2200;
+    const wet = actx.createGain(); wet.gain.value = 0.9;
+    inp.connect(d1); d1.connect(lp); lp.connect(d2); d2.connect(fb); fb.connect(d1);
+    d2.connect(wet); wet.connect(master);
+    return inp;
+  }
+
+  // ---- warm pad: slow drifting maj9 chords ----
+  function startPad() {
+    const g = actx.createGain(); g.gain.value = 0;
+    const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 780; lp.Q.value = 0.6;
+    // slow filter movement
+    const lfo = actx.createOscillator(), lfoG = actx.createGain();
+    lfo.frequency.value = 0.05; lfoG.gain.value = 180;
+    lfo.connect(lfoG); lfoG.connect(lp.frequency); lfo.start();
+    g.connect(lp); lp.connect(master); lp.connect(verbSend);
+    const chords = [
+      [87.31, 174.61, 261.63, 329.63, 392.00],  // Fmaj9
+      [130.81, 196.00, 246.94, 293.66, 392.00],  // Cmaj9
+      [110.00, 164.81, 220.00, 329.63, 415.30],  // Am add9 / Amaj-ish warmth
+      [98.00, 146.83, 220.00, 293.66, 349.23],   // G6/9
+    ];
+    const voices = chords[0].map((f, i) => {
+      const o = actx.createOscillator(), o2 = actx.createOscillator(), vg = actx.createGain();
+      o.type = "triangle"; o2.type = "sine";
+      o.frequency.value = f; o2.frequency.value = f * 1.004;
+      vg.gain.value = (i === 0 ? 0.5 : 0.32) / chords[0].length;
+      o.connect(vg); o2.connect(vg); vg.connect(g);
+      o.start(); o2.start();
+      return { o, o2, base: f };
+    });
+    g.gain.linearRampToValueAtTime(0.16 * mix.pad, actx.currentTime + 6);
+    let ci = 0;
+    const swap = () => {
+      if (!running || !actx) return;
+      ci = (ci + 1) % chords.length;
+      const t = actx.currentTime;
+      voices.forEach((v, i) => {
+        const f = chords[ci][i];
+        v.o.frequency.linearRampToValueAtTime(f, t + 5);
+        v.o2.frequency.linearRampToValueAtTime(f * 1.004, t + 5);
+      });
+    };
+    timers.push(setInterval(swap, 13000));
+    nodes.push({ stop: () => { try { lfo.stop(); voices.forEach(v => { v.o.stop(); v.o2.stop(); }); } catch (e) {} }, g });
+    return g;
+  }
+
+  // ---- plinks: soft celeste-ish pentatonic, sparse ----
+  const PENT = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33];
+  function plink() {
+    if (!running || !actx) return;
+    const f = PENT[(Math.random() * PENT.length) | 0];
+    const t = actx.currentTime;
+    const o = actx.createOscillator(), o3 = actx.createOscillator(), g = actx.createGain();
+    o.type = "sine"; o3.type = "sine";
+    o.frequency.value = f; o3.frequency.value = f * 3.01;
+    const g3 = actx.createGain(); g3.gain.value = 0.12;
+    o.connect(g); o3.connect(g3); g3.connect(g);
+    const peak = 0.14 * mix.plink;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + 1.6);
+    g.connect(master); g.connect(verbSend);
+    o.start(t); o3.start(t); o.stop(t + 1.8); o3.stop(t + 1.8);
+    schedule(plink, 3200, 9000);
+  }
+
+  // ---- espresso machine: low hum + a steam hiss now and then ----
+  function steam() {
+    if (!running || !actx) return;
+    const t = actx.currentTime, dur = 1.4 + Math.random() * 1.6;
+    // portafilter clunk
+    const clunk = actx.createOscillator(), cg = actx.createGain();
+    clunk.type = "sine"; clunk.frequency.setValueAtTime(120, t);
+    clunk.frequency.exponentialRampToValueAtTime(60, t + 0.12);
+    cg.gain.setValueAtTime(0.09 * mix.steam, t); cg.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    clunk.connect(cg); cg.connect(master); clunk.start(t); clunk.stop(t + 0.2);
+    // motor hum
+    const hum = actx.createOscillator(), hg = actx.createGain();
+    hum.type = "sawtooth"; hum.frequency.value = 58;
+    const hlp = actx.createBiquadFilter(); hlp.type = "lowpass"; hlp.frequency.value = 140;
+    hg.gain.setValueAtTime(0, t); hg.gain.linearRampToValueAtTime(0.05 * mix.steam, t + 0.2);
+    hg.gain.setValueAtTime(0.05 * mix.steam, t + dur - 0.3);
+    hg.gain.linearRampToValueAtTime(0, t + dur);
+    hum.connect(hlp); hlp.connect(hg); hg.connect(master);
+    hum.start(t + 0.05); hum.stop(t + dur + 0.05);
+    // steam hiss
+    const src = actx.createBufferSource(); src.buffer = noiseBuffer("white"); src.loop = true;
+    const bp = actx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 0.8;
+    bp.frequency.setValueAtTime(3600, t + 0.3);
+    bp.frequency.exponentialRampToValueAtTime(1400, t + dur);
+    const sg = actx.createGain();
+    sg.gain.setValueAtTime(0, t + 0.3);
+    sg.gain.linearRampToValueAtTime(0.06 * mix.steam, t + 0.5);
+    sg.gain.exponentialRampToValueAtTime(0.0005, t + dur);
+    src.connect(bp); bp.connect(sg); sg.connect(master); sg.connect(verbSend);
+    src.start(t + 0.3); src.stop(t + dur + 0.1);
+    schedule(steam, 12000, 30000);
+  }
+
+  // ---- cups / spoons ----
+  function cup() {
+    if (!running || !actx) return;
+    const t = actx.currentTime;
+    for (let k = 0; k < 1 + ((Math.random() * 2) | 0); k++) {
+      const f = 2000 + Math.random() * 1800;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = "triangle"; o.frequency.value = f;
+      const st = t + k * 0.09;
+      g.gain.setValueAtTime(0.05 * mix.cup, st);
+      g.gain.exponentialRampToValueAtTime(0.0005, st + 0.12);
+      o.connect(g); g.connect(master); g.connect(verbSend);
+      o.start(st); o.stop(st + 0.16);
+    }
+    schedule(cup, 14000, 46000);
+  }
+
+  // ---- room tone + distant murmur ----
+  function startRoom() {
+    // low room hum
+    const src = actx.createBufferSource(); src.buffer = noiseBuffer("brown"); src.loop = true;
+    const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 420;
+    const g = actx.createGain(); g.gain.value = 0.03 * mix.room;
+    src.connect(lp); lp.connect(g); g.connect(master);
+    src.start();
+    // murmur — bandpassed noise, slowly wobbling, suggests conversation
+    const m = actx.createBufferSource(); m.buffer = noiseBuffer("white"); m.loop = true;
+    const bp = actx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 500; bp.Q.value = 1.4;
+    const mg = actx.createGain(); mg.gain.value = 0.015 * mix.room;
+    const wob = actx.createOscillator(), wobG = actx.createGain();
+    wob.type = "sine"; wob.frequency.value = 0.13; wobG.gain.value = 0.012 * mix.room;
+    wob.connect(wobG); wobG.connect(mg.gain);
+    m.connect(bp); bp.connect(mg); mg.connect(master); mg.connect(verbSend);
+    m.start(); wob.start();
+    nodes.push({ stop: () => { try { src.stop(); m.stop(); wob.stop(); } catch (e) {} }, g, roomG: g, murmurG: mg });
+    return { g, mg };
+  }
+
+  // ---- scheduling helper ----
+  function schedule(fn, minMs, maxMs) {
+    if (!running) return;
+    timers.push(setTimeout(fn, minMs + Math.random() * (maxMs - minMs)));
+  }
+
+  let padG = null, roomRefs = null;
+  function start() {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    master = actx.createGain(); master.gain.value = 0;
+    analyser = actx.createAnalyser(); analyser.fftSize = 64;
+    master.connect(analyser); analyser.connect(actx.destination);
+    verbSend = buildVerb();
+    running = true;
+    padG = startPad();
+    roomRefs = startRoom();
+    master.gain.linearRampToValueAtTime(0.9 * mix.master, actx.currentTime + 2);
+    schedule(plink, 1500, 3500);
+    schedule(steam, 4000, 9000);
+    schedule(cup, 6000, 16000);
+    runViz();
+    window.__caPeek = () => {
+      if (!analyser) return null;
+      const d = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(d);
+      return { state: actx && actx.state, master: master && +master.gain.value.toFixed(3), sum: d.reduce((a, b) => a + b, 0), max: Math.max(...d) };
+    };
+  }
+  function stop() {
+    running = false;
+    timers.forEach(clearTimeout); timers.forEach(clearInterval); timers = [];
+    if (master) master.gain.linearRampToValueAtTime(0, actx.currentTime + 0.6);
+    setTimeout(() => { nodes.forEach(n => n.stop && n.stop()); try { actx.close(); } catch (e) {} actx = null; nodes = []; }, 700);
+    cancelAnimationFrame(vizRAF);
+    document.querySelectorAll(".viz i").forEach(i => i.style.height = "8%");
+  }
+
+  // ---- viz ----
+  const viz = document.getElementById("viz");
+  for (let i = 0; i < 28; i++) viz.appendChild(document.createElement("i"));
+  function runViz() {
+    if (!running || !analyser) return;
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(data);
+    const bars = viz.children;
+    for (let i = 0; i < bars.length; i++) {
+      const v = data[Math.min(i, data.length - 1)] / 255;
+      bars[i].style.height = (8 + v * 88) + "%";
+    }
+    vizRAF = requestAnimationFrame(runViz);
+  }
+
+  // ---- controls ----
+  const btn = document.getElementById("play"), lbl = document.getElementById("playLbl");
+  btn.addEventListener("click", () => {
+    if (running) { stop(); btn.classList.remove("on"); viz.classList.remove("on"); lbl.textContent = "Play the café"; }
+    else { start(); btn.classList.add("on"); viz.classList.add("on"); lbl.textContent = "Stop"; }
+  });
+  const apply = () => {
+    if (!running) return;
+    const t = actx.currentTime;
+    master.gain.linearRampToValueAtTime(0.9 * mix.master, t + 0.3);
+    if (padG) padG.gain.linearRampToValueAtTime(0.16 * mix.pad, t + 0.3);
+    if (roomRefs) {
+      roomRefs.g.gain.linearRampToValueAtTime(0.03 * mix.room, t + 0.3);
+      roomRefs.mg.gain.linearRampToValueAtTime(0.015 * mix.room, t + 0.3);
+    }
+  };
+  ["master", "pad", "plink", "steam", "room", "cup"].forEach(k => {
+    const s = document.getElementById("m-" + k), o = document.getElementById("o-" + k);
+    s.addEventListener("input", () => { mix[k] = s.value / 100; o.textContent = s.value; apply(); });
+  });
+})();
+</script>
