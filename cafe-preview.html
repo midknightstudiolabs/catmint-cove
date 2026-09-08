@@ -1307,6 +1307,7 @@
       <button id="dev-fest">🎪 festival</button>
       <button id="dev-box">📦 box challenge</button>
       <button id="dev-volley">🏐 volleyball</button>
+      <button id="dev-cafe">🎀 café</button>
       <button id="dev-day">skip a day</button>
       <button id="dev-name">name cove</button>
       <button id="dev-ad">show ad</button>
@@ -6618,7 +6619,12 @@ document.getElementById("dev-pearls").addEventListener("click", () => { G.pearls
 document.getElementById("dev-cat").addEventListener("click", () => { spawnCat({ x: W * 0.5, y: H * 0.7 }); syncHud(); });
 document.getElementById("dev-fest").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker(); });
 document.getElementById("dev-box").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("box"); });
-document.getElementById("dev-volley").addEventListener("click", () => { openFestPicker("volley"); });
+// dev: guarantee 3 cats standing in the cove, then open the picker — volleyball
+// and the café both gate on eligibleForVolley().length >= 3, so without this the
+// button just toasts and does nothing on a fresh/small cove.
+function devFillCove() { let guard = 8; while (eligibleForVolley().length < 3 && guard-- > 0) spawnCat({ x: W * 0.5, y: H * 0.7 }); syncHud(); }
+document.getElementById("dev-volley").addEventListener("click", () => { devFillCove(); openFestPicker("volley"); });
+document.getElementById("dev-cafe").addEventListener("click", () => { devFillCove(); openFestPicker("cafe"); });
 document.getElementById("dev-day").addEventListener("click", () => {
   G.opens++; G.streakDay = today() - 1; G.goalDay = 0; rollDailyGoals();
   for (const c of cats) { c.acc += aggregateRate() * 120; c.bornAt -= DAY_MS; }   // age the kittens too
