@@ -2005,7 +2005,7 @@ function rebuildAttractors() {
     if (d.type === "tree")    attractors.push({ type: "tree",    x: clamp(d.x + 14, 32, W - 32), y: clamp(d.y + 34, H * 0.44, catFloor()) });
     if (d.type === "cottage") attractors.push({ type: "cottage", x: clamp(d.x,      32, W - 32), y: clamp(d.y + 34, H * 0.44, catFloor()) });
     if (d.type === "station") {
-      const off = d.station === "fishing" ? { x: -6, y: 4 }
+      const off = d.station === "fishing" ? { x: -36, y: 6 }    // the shore/campfire end of the dock — clear of the pond, so cats walk TO the dock, not across the water
                 : d.station === "bakery"  ? { x: 26, y: 6 }     // beside the oven, not in front of it
                 : { x: 0, y: 16 };
       attractors.push({ type: d.station, station: true, x: clamp(d.x + off.x, 36, W - 36), y: clamp(d.y + off.y, H * 0.44, catFloor()) });
@@ -3297,7 +3297,15 @@ function updateCat(c, dt) {
   // don't clip through the solid bits of scenery (tree trunk, cottage body) or
   // wade into open water. one ellipse per obstacle; a passing / loafing cat gets
   // shoved out and, if travelling, steered around toward its target.
-  const angler = c._station === "fishing" || c._pendStation === "fishing" || c._arriveState === "fishing";
+  // a cat that's ARRIVED and fishing is waved past the water. one still walking
+  // over only gets the pass in the last stretch (≈on the dock) — for the long
+  // haul it takes normal pond collision, so it rounds the water instead of
+  // strolling across it. that's what had cats padding over the open pond.
+  let angler = c._station === "fishing";
+  if (!angler && (c._pendStation === "fishing" || c._arriveState === "fishing")) {
+    const _fa = nearestAttractor(c, "fishing");
+    angler = !!_fa && Math.hypot(c.x - _fa.x, c.y - _fa.y) < 58;
+  }
   {
     for (const o of obstacles) {
       // solids: a napping or walking-in cat is left alone (naps against a tree,
@@ -3525,9 +3533,9 @@ function updateCat(c, dt) {
     if (!c._fx) { c._fx = { p: "cast", t: 0, biteAt: 0 }; }
     const fx = c._fx;
     fx.t += dt;
-    fx.px = a ? a.x + 68 : c.x + 56;
-    fx.py = a ? a.y + 13 : c.y + 8;
-    c.face = (fx.p === "cook" || fx.p === "eat") ? -1 : 1;
+    fx.px = a ? a.x + 96 : c.x + 56;   // line reaches from the shore end out into the pond
+    fx.py = a ? a.y + 15 : c.y + 8;
+    c.face = 1;   // shore end of the dock: water and campfire are both to the right
     if (fx.p === "cast") {
       if (fx.t > 0.7) { fx.p = "wait"; fx.t = 0; fx.biteAt = rand(3, 8); spawnParticles(fx.px, fx.py, "ripple", 1); }
     } else if (fx.p === "wait") {
@@ -3538,7 +3546,7 @@ function updateCat(c, dt) {
       if (fx.t > 0.9) { fx.p = "cook"; fx.t = 0; _fishFireLit++; }
     } else if (fx.p === "cook") {
       c._sz = (c._sz || 0) + dt;
-      if (c._sz > 0.4) { c._sz = 0; spawnParticles((a ? a.x : c.x) - 26, (a ? a.y : c.y) + 4, "twinkle", 1); }
+      if (c._sz > 0.4) { c._sz = 0; spawnParticles((a ? a.x : c.x) + 4, (a ? a.y : c.y) + 10, "twinkle", 1); }
       if (fx.t > 2.6) { fx.p = "eat"; fx.t = 0; _fishFireLit = Math.max(0, _fishFireLit - 1); sfx("eat"); }
     } else if (fx.p === "eat") {
       if (fx.t > 1.6) {
@@ -7134,11 +7142,14 @@ function checkOffline(then) {
   }
   // 2) a postcard from a trip still in progress
   if (deliverDuePostcards({ pop: true, onDone: earningsThen })) return;
-  // 3) the care roster — someone needs attention, or a cat left. takes priority
-  //    over the flavour beat (don't pile a vignette on top of "3 cats are unwell")
+  // 3) the "while you were away" roster. shows whenever someone needs attention
+  //    or a cat left — and, after a real absence (45 min+), also when all's well,
+  //    so a return always opens with what happened to the cove and how the cats
+  //    are, not just a coin count. takes priority over the flavour beat.
   if (_wywaReport && (_wywaReport.leaving.length
       || _wywaReport.rows.some(r => r.need === "sick" || r.need === "leave")
-      || (_wywaReport.foodEmpty && elapsed > 6 * 3600))) {
+      || (_wywaReport.foodEmpty && elapsed > 6 * 3600)
+      || elapsed >= 2700)) {
     setTimeout(() => showWywaReport(earningsThen), 500);
     return;
   }
