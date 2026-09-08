@@ -782,10 +782,10 @@
   .vb-score .vb-a,.vb-score .vb-b{font-family:"Hanken Grotesk",sans-serif;font-weight:600;font-size:.72rem;
     opacity:.82;max-width:6.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .vb-score .vb-dash{opacity:.5;}
-  .volley-com{display:flex;align-items:center;gap:.45rem;max-width:min(88vw,420px);
+  .volley-com{display:flex;align-items:center;justify-content:center;gap:.45rem;max-width:min(88vw,420px);
     background:rgba(34,24,15,.72);color:#ffdf9e;border:1px solid rgba(255,223,158,.46);
     border-radius:16px;padding:.55rem 1rem;
-    font-family:"Hanken Grotesk",sans-serif;font-weight:600;font-size:.82rem;line-height:1.34;text-align:left;
+    font-family:"Hanken Grotesk",sans-serif;font-weight:600;font-size:.82rem;line-height:1.34;text-align:center;
     text-shadow:0 1px 4px rgba(0,0,0,.45);box-shadow:0 5px 18px rgba(0,0,0,.3);
     animation:vbComIn .34s ease both;transition:opacity .5s;}
   .volley-com[hidden]{display:none;}
@@ -794,7 +794,7 @@
   @keyframes vbComIn{from{opacity:0;transform:translateY(-4px);}}
   .volley-banner{position:absolute;left:50%;top:31%;transform:translate(-50%,-50%);z-index:65;
     pointer-events:none;background:rgba(224,105,60,.9);color:#fff;font-family:"Fraunces",serif;font-weight:700;
-    font-size:1.35rem;letter-spacing:.03em;padding:.5rem 1.3rem;border-radius:999px;
+    text-align:center;font-size:1.35rem;letter-spacing:.03em;padding:.5rem 1.3rem;border-radius:999px;
     box-shadow:0 10px 30px rgba(0,0,0,.32);animation:vbBannerIn .5s ease both;}
   .volley-banner[hidden]{display:none;}
   @keyframes vbBannerIn{from{opacity:0;transform:translate(-50%,-40%) scale(.9);}}
@@ -10999,7 +10999,7 @@ function cafeEmblemImg() {
 }
 function cafeEmblemHTML(px) { return `<img class="cafe-emblem" src="${CAFE_EMBLEM_URI}" alt="Catmint Café" width="${px}" height="${px}">`; }
 const CAFE_JOBS = ["barista", "server", "host"];
-const CAFE_JICON = { barista: "☕", server: "🍰", host: "🎀" };
+const CAFE_JICON = { barista: "☕", server: "🍰", host: "🤵" };
 const CAFE_JNAME = { barista: "Barista", server: "Server", host: "Host" };
 const CAFE_POS  = { barista: { x: 120, y: 402 }, server: { x: 288, y: 500 }, host: { x: 432, y: 690 } };
 const CAFE_IDLE = { barista: { x: 120, y: 452 }, server: { x: 300, y: 524 }, host: { x: 470, y: 728 } };
@@ -11321,9 +11321,12 @@ function cafeStepCust(c, dt) {
   } else if (c.state === "enjoy") {
     if (c.enjoyFor == null) c.enjoyFor = rand(6, 10);
     if (c._ct > c.enjoyFor) {
-      cafeServed++; if (Math.random() < 0.35) cafeShellTips += 1;
+      cafeServed++;
+      const tipped = Math.random() < 0.35; if (tipped) cafeShellTips += 1;
       cafeMood = Math.min(1, cafeMood + 0.035);
       if (Math.random() < 0.22) cafeNote("good");
+      // a little parting reaction on the way out — bigger if they tipped / the café's humming
+      c._bye = (tipped || cafeMood > 0.72) ? "😻" : cafeMood > 0.45 ? "😺" : "🙂";
       c.state = "leave"; c._ct = 0; c._out = false;
       const s = cafeSeats.find(x => x.cust === c); if (s) { s.cust = null; s._clearing = c; }
     }
@@ -11427,9 +11430,10 @@ function cafeStepStaff(s, dt) {
 }
 function cafeStepBarista(s, dt, speed) {
   const c = s.cat, home = CAFE_WORK.barista;
-  // finished an order — carry it over to the pass and set it down
+  // finished an order — carry it round to the BACK of the pass and set it down
+  // (kitchen side; the counter itself hides the barista's body, head reaches over)
   if (s.done) {
-    if (!cafeMoveTo(c, CAFE_PASS.x - 40, CAFE_PASS.y + 48, speed, dt)) return;
+    if (!cafeMoveTo(c, CAFE_PASS.x + 22, CAFE_PASS.y - 6, speed, dt)) return;
     c.trotting = false; c.walkAmt = Math.max(0, c.walkAmt - dt * 3);
     cafeReady.push(s.done); s.done = null; s.squash = 0.4; cafeDawdleAfter(s);
     return;
@@ -11452,7 +11456,8 @@ function cafeStepServer(s, dt, speed) {
   if (s.carry && s.carry.items && s.carry.items.length) {
     const it = s.carry.items[0];
     if (!it.seat || !it.seat.cust || it.seat.cust.state === "leave") { s.carry.items.shift(); return; }
-    if (!cafeMoveTo(c, it.seat.x + 20, it.seat.y + CAFE_SIT_DY, speed, dt)) return;
+    // stand a clear step in front of the table, not on it
+    if (!cafeMoveTo(c, it.seat.x, it.seat.y + 40, speed, dt)) return;
     it.seat.cust.state = "enjoy"; it.seat.cust._ct = 0;
     s.stats.delivered++; s.squash = 0.4; s.carry.items.shift();
     if (!s.carry.items.length) {
@@ -11468,7 +11473,7 @@ function cafeStepServer(s, dt, speed) {
   }
   const need = cafeSeats.find(s2 => s2.cust && s2.cust.state === "seated");
   if (need) {
-    if (!cafeMoveTo(c, need.x + 22, need.y + CAFE_SIT_DY, speed, dt)) return;
+    if (!cafeMoveTo(c, need.x, need.y + 40, speed, dt)) return;
     for (const seat of cafeSeats) {
       if (seat.cust && seat.cust.state === "seated" && Math.hypot(seat.x - c.x, seat.y - c.y) < 90) {
         seat.cust.state = "wait"; seat.cust._ct = 0;
@@ -11639,9 +11644,13 @@ function renderCafe(dt) {
 }
 function drawCafeCustomer(g, c) {
   drawCat(g, c, false);
+  g.textAlign = "center";
   if (["queue", "seated", "wait"].includes(c.state)) {
     const fe = c.patience > .6 ? "😺" : c.patience > .35 ? "🙂" : c.patience > .15 ? "😐" : "🫥";
-    g.font = "13px serif"; g.textAlign = "center"; g.fillStyle = "#000"; g.fillText(fe, c.x, c.y - 34);
+    g.font = "13px serif"; g.fillStyle = "#000"; g.fillText(fe, c.x, c.y - 34);
+  } else if (c.state === "leave" && c._bye) {
+    const a = Math.max(0, 1 - c._ct / 2.4);           // fades over the first ~2.4s of the walk out
+    if (a > 0) { g.save(); g.globalAlpha = a; g.font = "15px serif"; g.fillText(c._bye, c.x, c.y - 36 - (1 - a) * 8); g.restore(); }
   }
 }
 function drawCafeStaffCat(g, s) {
@@ -11800,7 +11809,7 @@ function showCafeResult() {
     const chips = [];
     if (s.stats.drinks) chips.push(`☕ ${s.stats.drinks}`);
     if (s.stats.delivered) chips.push(`🍰 ${s.stats.delivered}`);
-    if (s.stats.greeted) chips.push(`🎀 ${s.stats.greeted}`);
+    if (s.stats.greeted) chips.push(`🤵 ${s.stats.greeted}`);
     if (s.stats.breaks) chips.push(`💤 ${s.stats.breaks}`);
     if (s.stats.ate) chips.push(`🍽️ ${s.stats.ate}`);
     if (s.stats.cuddles) chips.push(`😽 ${s.stats.cuddles}`);
@@ -16366,7 +16375,7 @@ window.__cove.volleyForce = (what, idx = 0) => {
 window.__cove.volleyStep = (n = 1, dt = 0.05) => { for (let i = 0; i < n; i++) if (festKind === "volley" && festMode) renderVolley(dt); return window.__cove.volleyState(); };
 window.__cove.volleyTap = (idx = 0) => { const c = volleyParts.filter(p => p.side === "cove")[idx]; if (c) volleyPointer({ _arena: { x: c.cat.x, y: c.cat.y - 14 } }); return window.__cove.volleyState(); };
 window.__cove.cafe = () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("cafe"); return { on: festMode, kind: festKind, eligible: eligibleForVolley().length }; };
-window.__cove.cafeState = () => ({ kind: festKind, phase: CAFE_PHASES[cafePhaseIx] && CAFE_PHASES[cafePhaseIx].id, t: Math.round(cafeShiftT), served: cafeServed, lost: cafeLost, mood: +cafeMood.toFixed(2), tips: cafeShellTips, running: _cafeRunning, orderQ: cafeOrderQ.length, ready: cafeReady.length, cust: cafeCust.length, seatsFull: cafeSeats.filter(x => x.cust).length, staff: cafeStaff.map(s => ({ n: s.cat.name, job: s.job, tr: (s.cat.traits || [])[0], bored: +s.boredom.toFixed(2), dawdle: s.dawdling, inc: s.incident, dawdles: s.stats.dawdles })), custs: cafeCust.map(c => ({ st: c.state, x: Math.round(c.x), y: Math.round(c.y), seat: c.seat ? cafeSeats.indexOf(c.seat) : -1, lined: !!c._lined })), seats: cafeSeats.map(s => ({ x: s.x, y: s.y, cust: !!s.cust, clearing: !!s._clearing })) });
+window.__cove.cafeState = () => ({ kind: festKind, phase: CAFE_PHASES[cafePhaseIx] && CAFE_PHASES[cafePhaseIx].id, t: Math.round(cafeShiftT), served: cafeServed, lost: cafeLost, mood: +cafeMood.toFixed(2), tips: cafeShellTips, running: _cafeRunning, orderQ: cafeOrderQ.length, ready: cafeReady.length, cust: cafeCust.length, seatsFull: cafeSeats.filter(x => x.cust).length, staff: cafeStaff.map(s => ({ n: s.cat.name, job: s.job, x: Math.round(s.cat.x), y: Math.round(s.cat.y), done: !!s.done, act: !!s.act, carry: !!(s.carry && s.carry.items && s.carry.items.length), tr: (s.cat.traits || [])[0], bored: +s.boredom.toFixed(2), dawdle: s.dawdling, inc: s.incident, dawdles: s.stats.dawdles })), custs: cafeCust.map(c => ({ st: c.state, x: Math.round(c.x), y: Math.round(c.y), seat: c.seat ? cafeSeats.indexOf(c.seat) : -1, lined: !!c._lined })), seats: cafeSeats.map(s => ({ x: s.x, y: s.y, cust: !!s.cust, clearing: !!s._clearing })) });
 window.__cove.cafeStep = (n = 1, dt = 0.05) => { for (let i = 0; i < n; i++) if (festKind === "cafe" && festMode) renderCafe(dt); return window.__cove.cafeState(); };
 // perf: read the adaptive-detail state, or pin it (true/false) to preview the lite look
 window.__cove.perfLite = (v) => {
