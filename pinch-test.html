@@ -7412,6 +7412,10 @@ function _resetAudioContext() {
   try { stopVolleyBed(); } catch (e) {}
   try { actx && actx.close(); } catch (e) {}
   catsGain = coveGain = musicGain = null;
+  // AudioBuffers are bound to the context that decoded them — drop every cached
+  // one so loadSfx() / loadRainLoop() re-decode into the fresh context
+  for (const k in _sfxBuf) delete _sfxBuf[k];
+  _sfxLoading = false; rainBuffer = null;
   actx = null; _audioWasRunning = false; _resumeFails = 0; _audioStale = true;
 }
 // bring audio back after iOS suspends/interrupts it (screen lock, backgrounding,
