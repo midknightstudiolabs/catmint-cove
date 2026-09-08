@@ -8720,18 +8720,33 @@ function syncRacerCat(r, dt, freeze) {
   }
   c.blink -= dt; if (c.blink < -0.12) c.blink = rand(2.4, 6.5) * _m.blinkEvery;
 }
-function drawBunting(g, x0, y, w, h, t) {
+// bunting that reads as strung up, not floating: the cord sags in a real
+// catenary between its two ends, the flags hang straight down off it under
+// gravity (with a light breeze sway), and opts.posts stands a pole at each
+// end running down to opts.groundY so it's visibly tied to something.
+function drawBunting(g, x0, y, w, h, t, opts = {}) {
   const n = Math.max(2, Math.round(w / 44));
   const cols = ["#e0b24b", "#d97a5f", "#7ba64c", "#f4efe0"];
+  const droop = opts.droop != null ? opts.droop : Math.min(34, h + 4);
+  const sagAt = (f) => y + droop * 4 * f * (1 - f) + Math.sin(t * 0.6 + f * 5) * 1.1;   // parabolic sag + a faint ripple
   g.save();
-  g.strokeStyle = "rgba(60,45,30,0.5)"; g.lineWidth = 2;
+  if (opts.posts) {
+    const gy = opts.groundY != null ? opts.groundY : y + droop + 120;
+    g.strokeStyle = "#7c6142"; g.lineWidth = 5; g.lineCap = "round";
+    g.beginPath(); g.moveTo(x0, sagAt(0)); g.lineTo(x0, gy); g.moveTo(x0 + w, sagAt(1)); g.lineTo(x0 + w, gy); g.stroke();
+    g.fillStyle = "#5a4432";
+    g.beginPath(); g.arc(x0, sagAt(0) - 2, 4, 0, 7); g.arc(x0 + w, sagAt(1) - 2, 4, 0, 7); g.fill();
+  }
+  g.strokeStyle = "rgba(60,45,30,0.55)"; g.lineWidth = 2;
   g.beginPath();
-  for (let i = 0; i <= n; i++) { const x = x0 + i * (w / n), yy = y + Math.sin(t * 0.6 + i) * 1.6; if (i === 0) g.moveTo(x, yy); else g.lineTo(x, yy); }
+  for (let i = 0; i <= n * 2; i++) { const f = i / (n * 2), x = x0 + f * w; i ? g.lineTo(x, sagAt(f)) : g.moveTo(x, sagAt(f)); }
   g.stroke();
   for (let i = 0; i < n; i++) {
-    const x = x0 + i * (w / n) + (w / n) / 2, yy = y + Math.sin(t * 0.6 + i) * 1.6;
+    const f = (i + 0.5) / n, x = x0 + f * w, yy = sagAt(f);
+    g.save(); g.translate(x, yy); g.rotate(Math.sin(t * 1.3 + i * 0.9) * 0.05);
     g.fillStyle = cols[i % cols.length];
-    g.beginPath(); g.moveTo(x - 14, yy); g.lineTo(x + 14, yy); g.lineTo(x, yy + h * 0.7); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(-11, 0); g.lineTo(11, 0); g.lineTo(0, h * 0.92); g.closePath(); g.fill();
+    g.restore();
   }
   g.restore();
 }
@@ -8944,11 +8959,17 @@ function renderFestGrounds(dt) {
   _hubCats.slice().sort((a, b) => a.y - b.y).forEach(c => drawCat(g, c, false));
   if (particles.length || floaters.length) drawFX(g);
 }
-function drawHubLantern(g, x, y) {
-  g.save(); g.translate(x, y);
-  g.strokeStyle = "#7c6142"; g.lineWidth = 3; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 58); g.stroke();
-  g.fillStyle = "rgba(255,232,170,0.5)"; g.beginPath(); g.arc(0, -3, 13, 0, 7); g.fill();
-  g.fillStyle = "#e8b45a"; roundRect(g, -7, -14, 14, 18, 3); g.fill();
+// a lantern on a shepherd's-hook pole — hangs off the hook, doesn't float.
+// (x, groundY) is where the pole meets the ground.
+function drawHubLantern(g, x, groundY) {
+  g.save(); g.translate(x, groundY);
+  g.strokeStyle = "#7c6142"; g.lineWidth = 4; g.lineCap = "round";
+  g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -72); g.quadraticCurveTo(0, -86, -16, -85); g.stroke();
+  g.translate(-16, -85); g.rotate(Math.sin(_hubT * 1.6) * 0.05);
+  g.strokeStyle = "#6b5335"; g.lineWidth = 2; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 11); g.stroke();
+  g.fillStyle = "rgba(255,232,170,0.5)"; g.beginPath(); g.arc(0, 24, 13, 0, 7); g.fill();
+  g.fillStyle = "#e8b45a"; roundRect(g, -7, 13, 14, 18, 3); g.fill();
+  g.fillStyle = "#7c6142"; roundRect(g, -8, 10, 16, 4, 1); g.fill();
   g.restore();
 }
 function drawFestGroundsScene(g) {
@@ -8966,7 +8987,7 @@ function drawFestGroundsScene(g) {
   g.fillStyle = "rgba(232,214,170,0.42)";                                  // a sandy patch = "the festival area"
   g.beginPath(); g.ellipse(HUB_W / 2, 916, 330, 138, 0, 0, 7); g.fill();
   // bunting — one run across the top
-  drawBunting(g, 6, 92, HUB_W - 12, 30, _hubT);
+  drawBunting(g, 20, 96, HUB_W - 40, 30, _hubT, { posts: true, groundY: 262 });
   // a little market stall, left of centre — sits along the bottom, below the card
   g.save(); g.translate(HUB_W * 0.40, 828);
   g.fillStyle = "rgba(90,70,50,0.12)"; g.beginPath(); g.ellipse(0, 80, 84, 11, 0, 0, 7); g.fill();
@@ -9013,7 +9034,7 @@ function drawFestGroundsScene(g) {
   g.globalAlpha = 1; g.restore();
   g.restore();
   // odds and ends — kept sparse
-  drawHubLantern(g, HUB_W - 150, 812);
+  drawHubLantern(g, HUB_W - 150, 892);
   g.fillStyle = "#d97a5f"; g.beginPath(); g.ellipse(150, 940, 22, 13, 0, 0, 7); g.fill();    // a cushion on the grass
   g.fillStyle = "rgba(255,255,255,0.14)"; g.beginPath(); g.ellipse(144, 936, 10, 5, 0, 0, 7); g.fill();
 }
