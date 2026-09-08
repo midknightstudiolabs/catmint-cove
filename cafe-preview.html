@@ -8708,6 +8708,7 @@ function renderFestPickGrid(roster) {
 // building the field + the countdown.
 function startFestRace() {
   document.getElementById("festPanel").hidden = true;
+  stopVolleyBed();   // race has no bed of its own — make sure no other game's music carries in
   festKind = "race"; _festG = null;   // the track appears now that the race is actually on
   const mk = cats.find(c => c.mascot);
   const others = cats.filter(c => c !== mk && c !== festPickedCat && !c.visitor);
@@ -9694,6 +9695,7 @@ function startBoxChallenge() {
   const need = Math.min(5, cats.filter(c => !c.visitor).length);
   if (boxPickedCats.length < need) return;
   document.getElementById("festBoxPanel").hidden = true;
+  stopVolleyBed();   // no other game's bed should carry into the box challenge
   festKind = "box";
   fitFestCanvas();
   boxT = 0; boxPhase = "settle"; boxWinner = null;
@@ -10183,6 +10185,7 @@ function renderVolleyPickGrid(roster) {
 function startCoveVolley() {
   if (volleyPickSel.length !== 3) return;
   if (!volleyPickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats just wandered off."); return; }
+  stopVolleyBed();   // clear any prior game's bed (incl. a stale beach bed) before this match's starts
   festKind = "volley";
   fitFestCanvas();
   matchT = 0; volleyScore = { cove: 0, visit: 0 }; volleyBall = null;
@@ -11177,6 +11180,7 @@ function cafeShowPicker() {
 function startCoveCafe() {
   if (cafePickSel.length !== 3) return;
   if (!cafePickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats just wandered off."); return; }
+  stopVolleyBed();   // any prior game's bed (beach / café) stops before this shift's music starts
   festKind = "cafe";
   fitFestCanvas();
   cafeShiftT = 0; cafePhaseIx = 0; cafePhaseT = 0; cafeMood = 0.6; cafeShellTips = 0;
