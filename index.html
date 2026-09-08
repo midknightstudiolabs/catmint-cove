@@ -176,6 +176,7 @@
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
   .ts-hint{display:none;margin:.9rem 0 0;font-size:.78rem;color:var(--ink-soft);opacity:.75;}
   #app.panning .ts-hint{display:block;}
+  .ts-copy{margin:1.3rem 0 0;font-size:.66rem;letter-spacing:.02em;color:var(--ink-soft);opacity:.6;}
 
   /* ---- bottom action bar ---- */
   #actions{
@@ -476,6 +477,7 @@
   .goal button{margin-top:.5rem;width:100%;justify-content:center;}
   .goal.claimed{opacity:.5;}
   .pj-bar{height:.5rem;border-radius:999px;background:#e4e0cf;overflow:hidden;margin:.5rem 0 .2rem;}
+  .pj-bar.adv-bar{height:.36rem;margin:.15rem 0 .1rem;}
   .pj-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-bright));transition:width .5s ease;}
   .modal .pj-req{margin:.6rem 0 .3rem;text-align:left;}
   .modal .pj-row{display:flex;justify-content:space-between;font-size:.88rem;color:var(--ink-soft);margin-top:.5rem;}
@@ -679,7 +681,7 @@
   #fest{position:absolute;inset:0;z-index:65;display:none;pointer-events:none;}
   #fest.on{display:block;pointer-events:auto;}
   #app.festing #hud,#app.festing #actions{opacity:0;pointer-events:none;transition:opacity .5s;}
-  #app.festing #toast,#app.festing #dev{opacity:0!important;pointer-events:none;}
+  #app.festing #toast,#app.festing #dev,#app.festing #hint{opacity:0!important;pointer-events:none;}
   #app.festing #stage{overflow:hidden;touch-action:none;}
   /* a curtain that rises to COVER, holds (the scene swaps underneath, hidden),
      then drops back away the way it came to REVEAL — same gesture both
@@ -743,6 +745,80 @@
     text-overflow:ellipsis;white-space:nowrap;}
   .fp-cell.picked{border-color:var(--accent);background:#fff;}
   .fp-cell.picked .nm{color:var(--ink);}
+
+  /* the Festival hub — the neutral landing page. The event selector floats
+     centred over the grounds: the fairground reads as a strip below the card,
+     bunting above. "I arrived at the Festival" first, then "what should we do?". */
+  .fest-panel--hub{left:50%;top:47%;bottom:auto;
+    transform:translate(-50%,-50%);width:min(93vw,410px);max-height:50vh;padding:.75rem .95rem .65rem;}
+  .fest-panel--hub .fp-art{font-size:1.4rem;margin:0 0 .04rem;}
+  .fest-panel--hub h2{font-size:1.12rem;margin:0 0 .1rem;}
+  .fest-panel--hub p{font-size:.78rem;margin:0 0 .5rem;line-height:1.36;}
+  .fc-cards{display:flex;flex-direction:column;gap:.4rem;margin:0 0 .5rem;}
+  .fc-card{display:grid;grid-template-columns:auto 1fr;column-gap:.55rem;row-gap:.05rem;align-items:center;
+    text-align:left;background:#eef1e3;border:2px solid transparent;border-radius:13px;
+    padding:.5rem .7rem;cursor:pointer;font:inherit;transition:border-color .12s,background .12s;}
+  .fc-card:hover{border-color:var(--accent);background:#fff;}
+  .fc-card .fc-emoji{grid-row:1 / span 2;font-size:1.5rem;line-height:1;align-self:center;}
+  .fc-card .fc-name{font-family:"Fraunces",serif;font-weight:700;font-size:.96rem;color:var(--ink);}
+  .fc-card .fc-desc{font-size:.74rem;color:var(--ink-soft);line-height:1.34;}
+  .fc-card .fc-lock{grid-column:2;}
+  .fc-card .fc-lock{font-size:.72rem;font-weight:700;color:var(--ink-faint);margin-top:.15rem;}
+  .fc-card.locked{opacity:.55;cursor:not-allowed;}
+  .fc-card.locked:hover{border-color:transparent;background:#eef1e3;}
+  #boxPickCount,#volleyPickCount{color:var(--ink-faint);font-weight:600;}
+
+  /* Cove Volleyball — score + commentator HUD (unobtrusive, top of the court) */
+  .volley-hud{position:absolute;left:0;right:0;top:calc(max(env(safe-area-inset-top),12px) + .3rem);
+    z-index:64;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.35rem;}
+  .volley-hud[hidden]{display:none;}
+  .vb-score{display:flex;align-items:center;gap:.5rem;background:rgba(17,14,21,.58);color:#f4efe2;
+    border-radius:999px;padding:.34rem .95rem;font-family:"Fraunces",serif;font-weight:700;font-size:.92rem;
+    box-shadow:0 6px 20px rgba(0,0,0,.28);}
+  .vb-score b{font-size:1.15rem;min-width:1ch;text-align:center;}
+  .vb-score .vb-a,.vb-score .vb-b{font-family:"Hanken Grotesk",sans-serif;font-weight:600;font-size:.72rem;
+    opacity:.82;max-width:6.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .vb-score .vb-dash{opacity:.5;}
+  .volley-com{display:flex;align-items:center;gap:.45rem;max-width:min(88vw,420px);
+    background:rgba(34,24,15,.72);color:#ffdf9e;border:1px solid rgba(255,223,158,.46);
+    border-radius:16px;padding:.55rem 1rem;
+    font-family:"Hanken Grotesk",sans-serif;font-weight:600;font-size:.82rem;line-height:1.34;text-align:left;
+    text-shadow:0 1px 4px rgba(0,0,0,.45);box-shadow:0 5px 18px rgba(0,0,0,.3);
+    animation:vbComIn .34s ease both;transition:opacity .5s;}
+  .volley-com[hidden]{display:none;}
+  .volley-com.fade{opacity:0;}
+  .volley-com .vc-mic{flex-shrink:0;font-size:.86rem;opacity:1;}
+  @keyframes vbComIn{from{opacity:0;transform:translateY(-4px);}}
+  .volley-banner{position:absolute;left:50%;top:31%;transform:translate(-50%,-50%);z-index:65;
+    pointer-events:none;background:rgba(224,105,60,.9);color:#fff;font-family:"Fraunces",serif;font-weight:700;
+    font-size:1.35rem;letter-spacing:.03em;padding:.5rem 1.3rem;border-radius:999px;
+    box-shadow:0 10px 30px rgba(0,0,0,.32);animation:vbBannerIn .5s ease both;}
+  .volley-banner[hidden]{display:none;}
+  @keyframes vbBannerIn{from{opacity:0;transform:translate(-50%,-40%) scale(.9);}}
+  /* trait chips in the volleyball / picker cells */
+  .fp-cell .fp-tr{display:flex;gap:.2rem;flex-wrap:wrap;justify-content:center;margin-top:.1rem;}
+  .fp-cell .fp-tr span{background:#e2e6d5;border-radius:999px;padding:.02rem .34rem;font-size:.56rem;
+    font-weight:600;color:var(--ink-soft);white-space:nowrap;}
+  .fp-cell.picked .fp-tr span{background:#eef4e6;color:var(--accent);}
+  /* volleyball result — score + per-cat stat rows (cooperative, no ranking) */
+  .vb-final{display:flex;flex-direction:column;gap:.3rem;margin:.7rem 0 .8rem;}
+  .vb-final-row{display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+    background:#eef1e3;border-radius:12px;padding:.4rem .8rem;font-family:"Fraunces",serif;font-weight:700;}
+  .vb-final-row span{font-size:.86rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .vb-final-row b{font-size:1.3rem;}
+  .vb-final-row.win{background:#e7f0df;color:var(--accent);}
+  .vb-stat-rows{display:flex;flex-direction:column;gap:.35rem;margin:0 0 .3rem;}
+  .vb-stat-row{display:flex;align-items:center;gap:.5rem;text-align:left;}
+  .vb-stat-row canvas{width:2.6rem;height:2.38rem;flex-shrink:0;}
+  .vb-sn{font-weight:700;font-size:.8rem;}
+  .vb-ss{font-size:.72rem;color:var(--ink-soft);}
+  .vb-reward{display:inline-block;margin-top:.3rem;color:var(--accent);font-weight:700;}
+  .vb-hint{font-size:.74rem;color:var(--ink-faint);line-height:1.4;margin:-.4rem 0 .9rem;}
+  .vb-tut{list-style:none;margin:.2rem 0 1.1rem;padding:0;text-align:left;display:flex;flex-direction:column;gap:.7rem;}
+  .vb-tut li{display:flex;gap:.55rem;font-size:.86rem;line-height:1.46;color:var(--ink-soft);}
+  .vb-tut .vt-e{flex-shrink:0;font-size:1.05rem;line-height:1.4;}
+  .vb-tut .vt-t{flex:1;}
+  .vb-tut b{color:var(--ink);font-weight:700;}
 
   /* 3-2-1 countdown — pinned above the starting line (not dead-centre, so it
      reads like a race light rather than a modal), colour races warm-to-go and
@@ -877,6 +953,11 @@
   .credits .cr-sec h3{font-family:"IBM Plex Mono",monospace;font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--apricot);margin:0 0 .22rem;text-wrap:balance;}
   .credits .cr-sec p{margin:.1rem auto;font-size:.9rem;color:var(--ink);max-width:26rem;}
   .credits .cr-note{color:var(--ink-soft);font-size:.78rem;line-height:1.48;font-style:italic;margin:.3rem auto 0;max-width:24rem;text-wrap:pretty;}
+  .credits .cr-legal{color:var(--ink-soft);font-size:.66rem;line-height:1.55;margin:1rem auto .1rem;max-width:24rem;
+    border-top:1px solid var(--panel-line);padding-top:.75rem;text-wrap:pretty;opacity:.85;}
+  .credits .cr-links{margin:.5rem auto 0;font-size:.74rem;color:var(--ink-faint);}
+  .credits .cr-links a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;white-space:nowrap;}
+  .credits .cr-links a:active{opacity:.55;}
   .credits .row{margin-top:1.1rem;position:sticky;bottom:-.1rem;background:linear-gradient(rgba(247,244,236,0),var(--panel) 40%);padding-top:.7rem;}
 
   /* ---- dev overlay ---- */
@@ -927,13 +1008,26 @@
   #rotate b{font-family:"Fraunces",Georgia,serif;font-weight:600;color:var(--ink);}
   @keyframes rotNudge{0%,50%{transform:rotate(0)}70%,100%{transform:rotate(-90deg)}}
   @media (prefers-reduced-motion:reduce){#rotate .glyph{animation:none;}}
-  @media (orientation:landscape) and (max-height:500px){ #rotate{display:flex;} }
+  /* TEST: auto-rotate enabled — the wide-viewport render path handles landscape,
+     so the "turn your phone back" nudge is disabled. Restore the line below to
+     re-lock portrait on phones. */
+  /* @media (orientation:landscape) and (max-height:500px){ #rotate{display:flex;} } */
 
   /* focus camera — press & hold a cat to sit with it; the chrome recedes */
   #hud,#actions,#toast,#hint{transition:opacity .35s ease;}
   #app.focusing #hud,#app.focusing #actions,#app.focusing #toast,#app.focusing #hint{opacity:0;pointer-events:none;}
-  /* the ⊙ / × whole-cove button: hidden with the rest of the chrome in rest / festival / cold-open,
-     but kept during a zoom-out (it's the way back) */
+  /* the ⊙ / × whole-cove button: bottom-right, above the tab bar; hidden with
+     the rest of the chrome in rest / festival / cold-open, but kept during a
+     zoom-out (it's the way back). Lifts clear of the next-action hint band. */
+  #ovBtn{
+    position:fixed;right:calc(12px + env(safe-area-inset-right));
+    bottom:calc(env(safe-area-inset-bottom) + 4.7rem);
+    z-index:24;width:40px;height:40px;border-radius:50%;border:none;
+    background:rgba(247,245,236,.94);color:#356b4c;display:grid;place-items:center;
+    box-shadow:0 3px 12px rgba(36,31,23,.22);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;transition:opacity .3s ease,bottom .22s ease;
+  }
+  #app.has-hint #ovBtn{bottom:calc(env(safe-area-inset-bottom) + 7.4rem);}
   #app.resting #ovBtn,#app.festing #ovBtn,#app.cold-open #ovBtn{opacity:0!important;pointer-events:none;}
   #focusBar{
     position:absolute;left:50%;transform:translateX(-50%);
@@ -976,6 +1070,7 @@
       <p class="ts-sub">Cats wander in needing someone. Look after them, and the cove slowly becomes theirs.</p>
       <button class="btn primary" id="ts-go">Begin</button>
       <p class="ts-hint">Cosier on a tablet 🐾</p>
+      <p class="ts-copy">© 2026 Midknight Studio Labs</p>
     </div>
   </div>
   <div id="hud">
@@ -1031,6 +1126,13 @@
   <!-- Cove Festival — a watch-and-cheer race. No shells staked; everyone who
        enters gets a little something, your pick winning gets a bit more. -->
   <div id="fest">
+    <div class="fest-panel fest-panel--hub" id="festChoose" hidden>
+      <div class="fp-art">🎪</div>
+      <h2>Cove Festival</h2>
+      <p>Pick an event. The cats will handle the rest.</p>
+      <div class="fc-cards" id="festEventCards"></div>
+      <div class="btn-row"><button class="btn" id="festChooseBack">Maybe later</button></div>
+    </div>
     <div class="fest-panel" id="festPanel" hidden>
       <div class="fp-art">🎪</div>
       <h2>The Cove Festival</h2>
@@ -1041,6 +1143,43 @@
         <button class="btn" id="festCancel">Maybe later</button>
       </div>
     </div>
+    <div class="fest-panel" id="festBoxPanel" hidden>
+      <div class="fp-art">📦</div>
+      <h2>The Great Box Challenge</h2>
+      <p>Choose five highly qualified professionals. <span id="boxPickCount">(0 / 5)</span></p>
+      <div class="fp-grid" id="boxPickGrid"></div>
+      <div class="btn-row">
+        <button class="btn primary" id="boxStart" disabled>Release the boxes</button>
+        <button class="btn" id="boxCancel">Maybe later</button>
+      </div>
+    </div>
+    <div class="fest-panel" id="festVolleyPanel" hidden>
+      <div class="fp-art">🏐</div>
+      <h2>Choose your team</h2>
+      <p>Pick three cats currently available at the Cove. <span id="volleyPickCount">(0 / 3)</span></p>
+      <div class="fp-grid" id="volleyPickGrid"></div>
+      <div class="btn-row">
+        <button class="btn primary" id="volleyStart" disabled>Down to the court</button>
+        <button class="btn" id="volleyCancel">Maybe later</button>
+      </div>
+    </div>
+    <div class="fest-panel" id="festVolleyTut" hidden>
+      <div class="fp-art">🏐</div>
+      <h2>The rules, briefly</h2>
+      <ul class="vb-tut">
+        <li><span class="vt-e">🐈</span><span class="vt-t">Your cats have agreed to play volleyball. Their commitment ends there.</span></li>
+        <li><span class="vt-e">🏐</span><span class="vt-t">When the ball comes over, <b>tap the cat you want to go for it.</b> They'll act like that was the plan.</span></li>
+        <li><span class="vt-e">🥱</span><span class="vt-t"><b>Tap a yawning cat</b> to keep them awake. Already asleep? Two taps. And perhaps a stern look.</span></li>
+      </ul>
+      <div class="btn-row">
+        <button class="btn primary" id="volleyTutGo">Understood. Probably.</button>
+      </div>
+    </div>
+    <div class="volley-hud" id="volleyHud" hidden>
+      <div class="vb-score"><span class="vb-a" id="vbNameA">Catmint Cove</span><b id="vbScoreA">0</b><span class="vb-dash">–</span><b id="vbScoreB">0</b><span class="vb-b" id="vbNameB">Sunbeam Cove</span></div>
+      <div class="volley-com" id="volleyCom" hidden><span class="vc-mic">🎙️</span><span id="vbComText"></span></div>
+    </div>
+    <div class="volley-banner" id="volleyBanner" hidden>MATCH POINT</div>
     <div class="fest-countdown" id="festCountdown" hidden>
       <div class="cd-ring" id="festCdRing"></div>
       <span id="festCdNum">3</span>
@@ -1091,6 +1230,8 @@
       <button id="dev-pearls">+5 ✦</button>
       <button id="dev-cat">+ cat</button>
       <button id="dev-fest">🎪 festival</button>
+      <button id="dev-box">📦 box challenge</button>
+      <button id="dev-volley">🏐 volleyball</button>
       <button id="dev-day">skip a day</button>
       <button id="dev-name">name cove</button>
       <button id="dev-ad">show ad</button>
@@ -1382,6 +1523,9 @@ const COATS = [
   { key:"golden",   name:"golden",             tier:"rare", w:7, season:"autumn", base:"#d9a94e", belly:"#f0dcaa", pattern:"mackerel",
     stripe:"#b8863a", eye:"#c98b3c", nose:"#c58a5c", inner:"#e5c39e",
     note:"Warm, this-time-of-year only. The exact colour of a good afternoon in late October." },
+  { key:"rosewater", name:"rosewater cat",      tier:"rare", w:3, base:"#eec4cd", belly:"#fae6ec", pattern:"solid",
+    white:["bib","muzzle","paws"], eye:"#8ec5dd", nose:"#dd8a99", inner:"#e7a9b7",
+    note:"A white cat that spent a rainy week asleep on a red blanket nobody had checked was colourfast. The colour took. The blanket was quietly retired." },
   // ---- VISITORS ---- (tier "special": never rolled; met through cove events)
   { key:"midknight",name:"Midknight",          tier:"special", base:"#26232b", belly:"#f1ece0", pattern:"solid",
     white:["bib","belly","muzzle","paws"], eye:"#e0b24b", nose:"#2c2530", inner:"#3b3040", mascot:true,
@@ -1453,7 +1597,9 @@ const NAMES = ["Biscuit","Miso","Pixel","Tofu","Clover","Waffle","Sardine","Pebb
   "Marlow","Juniper","Olive","Cricket","Nimbus","Turnip","Salt","Pepper","Mochi","Dumpling","Fennel","Cinder",
   "Barnaby","Willow","P734","Comma","Loaf","Umbra","Sprocket","Kelp",
   "Heuna","Vicas","Astra","Hampiyah","Marcel","Victor","Boots","Pickle","Shadow","Melon",
-  "Caramel","Choco","Cream","Fluff","Coco","Milk","Berry","Moon","Blue","Milo"];
+  "Caramel","Choco","Cream","Fluff","Coco","Milk","Berry","Moon","Blue","Milo",
+  "Pillow","Strawberry","Black","Cutie","Snowball","Bambi","Twinkle","Star","Heart","Princess",
+  "Duke","Prince","Spot","Sparkle","Vanilla","Coffee","Blanket"];
 
 /* ---------- game state ---------- */
 let G = null;
@@ -1626,6 +1772,8 @@ function load() {
     if (!G.cosmetics.propBoxed || typeof G.cosmetics.propBoxed !== "object") G.cosmetics.propBoxed = {};
     if (!G.cosmetics.decorPos || typeof G.cosmetics.decorPos !== "object") G.cosmetics.decorPos = {};  // player-set cottage/tree/flower/station positions, keyed "type:index" ("station:fishing:0")
     if (!G.cosmetics.comfortPos || typeof G.cosmetics.comfortPos !== "object") G.cosmetics.comfortPos = {};  // player-set bowl/toy/bed/scratcher positions, keyed "type:index"
+    if (G.cosmetics.props) delete G.cosmetics.props.flagpole;   // flag pole parked — clear the seeded test grant
+    delete G.cosmetics.flagCountry; delete G.cosmetics._flagpoleSeeded;
     if (!DECOR_THEMES[G.cosmetics.theme] || !G.cosmetics.themes[G.cosmetics.theme]) G.cosmetics.theme = "default";
     G.ads = Object.assign(newAdsState(), G.ads || {});
     // entitlements are loaded UNCONDITIONALLY by loadEntitlements() in the boot
@@ -3592,7 +3740,10 @@ function dropToken(x, y, value, flair) {
     const idx = fieldTokens.findIndex(t => t.pop === 0);
     fieldTokens.splice(idx < 0 ? 0 : idx, 1);
   }
-  const yy = clamp(y, H * 0.5, catFloor() - 6);   // keep drops in view, clear of the action bar
+  // keep drops in view AND well clear of the bottom nav — on a phone catFloor()
+  // sits just above the tab bar, and a token's tap target (~46px) must not
+  // overlap it or the player can't collect loot that lands down there
+  const yy = clamp(y, H * 0.5, catFloor() - (_narrowUI ? 56 : 6));
   fieldTokens.push({
     x: clamp(x + rand(-11, 11), 18, W - 18), y: yy, baseY: yy, value, flair,
     vy: -60, life: 0, ttl: 75, pop: 0,
@@ -3710,7 +3861,7 @@ let _camX = 0, _camY = 0;                 // world point held at screen centre (
 let _camScale = 1, _camTx = 0, _camTy = 0;   // derived screen-space transform
 let _preCamX = 0, _preCamY = 0;           // pre-focus framing, to ease home on exit
 let _frozenScroll = 0, _frozenLeft = 0, _frozenTop = 0;
-/* ===== whole-cove view — pinch out / the ⊙ button to see the whole cove ===== */
+/* ===== PINCH-ZOOM TEST — pinch out / ⊙ button to see the whole cove ===== */
 let _ovTarget = 0, _ovT = 0;              // 0 = normal, 1 = fully zoomed out (eased)
 let _ovCamX = 0, _ovCamY = 0;             // free pan point while zoomed out (world coords)
 let _ovActive = false;                    // touch-action override + drag-pan engaged
@@ -3778,7 +3929,7 @@ function focusEligible(c) {
 function enterFocus(c) {
   if (_placing || _arranging) exitPlacement();
   if (!focusEligible(c) || _focus === c) return;
-  if (_ovTarget || _ovT) { _ovTarget = 0; _ovT = 0; _ovHold = null; if (_ovActive) ovEnd(); _ovSyncBtn(); }   // leave the whole-cove view
+  if (_ovTarget || _ovT) { _ovTarget = 0; _ovT = 0; _ovHold = null; if (_ovActive) ovEnd(); _ovSyncBtn(); }   // PINCH TEST: leave whole-cove view
   hideCatCard(true);
   const r = canvas.getBoundingClientRect();
   _frozenScroll = stage.scrollLeft; _frozenLeft = r.left; _frozenTop = r.top;
@@ -3792,7 +3943,7 @@ function enterFocus(c) {
 function exitFocus() { _focus = null; }
 
 function updateCamera(dt) {
-  // ---- whole-cove view: zoom-out camera (only when not focused on a cat) ----
+  // ---- PINCH-ZOOM TEST: zoom-out camera (only when not focused on a cat) ----
   if (!_focus && (_ovTarget > 0 || _ovT > 0.001)) {
     if (stage.scrollLeft !== 0) stage.scrollLeft = 0;    // canvas element stays put; camera is all ctx transform
 
@@ -4077,8 +4228,17 @@ function boxProp(id) {
 document.getElementById("placeBarDone").onclick = () => { if (_placing) finishPlacing(); else if (_arranging) endArrange(); };
 document.getElementById("placeBarCancel").onclick = cancelPlacing;
 
+// Cove Volleyball taps land on the #fest overlay (z-65, pointer-events:auto),
+// NOT the canvas beneath it — so the tap handler has to live on #fest.
+document.getElementById("fest").addEventListener("pointerdown", (e) => {
+  ensureAudio();
+  if (!festMode || festKind !== "volley" || volleyPhase !== "play") return;
+  if (e.target.closest("button, .fest-panel, .fest-result, .volley-hud, .volley-com, .fest-bar, .fest-skip")) return;
+  volleyPointer(e);
+});
 canvas.addEventListener("pointerdown", (e) => {
   ensureAudio();
+  if (festMode) { if (festKind === "volley") volleyPointer(e); return; }   // festival modes own their taps; race/box use HTML buttons
   if (_placing) { _placeGhost = screenToWorld(e.clientX, e.clientY); _tpX = e.clientX; _tpY = e.clientY; _tpMoved = false; return; }
   _tpX = e.clientX; _tpY = e.clientY; _tpScroll = stage.scrollLeft; _tpMoved = false; _lpFired = false;
   clearTimeout(_lpTimer);
@@ -4100,10 +4260,12 @@ canvas.addEventListener("pointerdown", (e) => {
   }, 430);
 });
 canvas.addEventListener("pointermove", (e) => {
+  if (festMode) return;
   if (_placing) { if (_tpX != null) { _placeGhost = screenToWorld(e.clientX, e.clientY); if (Math.hypot(e.clientX - _tpX, e.clientY - _tpY) > 6) _tpMoved = true; } return; }
   if (_tpX != null && Math.hypot(e.clientX - _tpX, e.clientY - _tpY) > 9) { _tpMoved = true; clearTimeout(_lpTimer); }
 });
 canvas.addEventListener("pointerup", (e) => {
+  if (festMode) return;   // volleyball acts on pointerdown; race/box ignore canvas taps
   if (_placing) {
     _placeGhost = screenToWorld(e.clientX, e.clientY);
     const draggedOut = _tpMoved;
@@ -4137,7 +4299,7 @@ canvas.addEventListener("pointerup", (e) => {
 });
 canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeout(_lpTimer); _lpFired = false; });
 
-/* ===== whole-cove view: gesture + button wiring ===== */
+/* ================= PINCH-ZOOM TEST ================= */
 (function pinchZoomTest() {
   const pts = new Map();                 // pointerId -> {x,y}
   let pinchStart = 0, ovStart = 0;       // distance + _ovTarget at pinch start
@@ -4201,8 +4363,7 @@ canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeou
   addEventListener("DOMContentLoaded", () => {
     const btn = document.createElement("button");
     btn.id = "ovBtn";
-    btn.title = "See the whole cove";
-    btn.style.cssText = "position:fixed;right:calc(10px + env(safe-area-inset-right));top:calc(max(env(safe-area-inset-top),16px) + 3.9rem);z-index:24;width:40px;height:40px;border-radius:50%;border:none;background:rgba(247,245,236,.94);color:#356b4c;display:grid;place-items:center;box-shadow:0 3px 12px rgba(36,31,23,.22);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .3s ease;";
+    btn.title = "See the whole cove";   // positioned + styled in CSS (#ovBtn)
     btn.onclick = () => { if (_focus || restMode || festMode) return; ovSetTarget(_ovTarget > 0.5 ? 0 : 1, true); };
     document.getElementById("app").appendChild(btn);
     _ovSyncBtn();
@@ -4226,6 +4387,14 @@ function handleTap(x, y) {
     hidePropCard();
     if (bc.sick) { openMedicine(bc); return; }   // v3: a sick cat needs medicine, not a pat
     petCat(bc); showCatCard(bc); return;
+  }
+
+  // the "N cats are out exploring" chalk tag on the cove sign — tap to see the trips
+  if (_coveSignTag && Math.abs(x - _coveSignTag.x) <= _coveSignTag.w / 2 + 6
+      && Math.abs(y - _coveSignTag.y) <= _coveSignTag.h / 2 + 6) {
+    hideCatCard(); hidePropCard();
+    if (panels.today && panels.today.hidden) togglePanel("today");
+    return;
   }
 
   // a restoration project marker
@@ -5606,7 +5775,7 @@ function syncHud() {
     if (cbc) cbc.style.display = full ? "none" : "";
   }
   document.getElementById("dexBadge").textContent = dexCount() + "";
-  document.getElementById("festBtn").hidden = !festUnlocked();
+  document.getElementById("festBtn").hidden = !(festUnlocked() || volleyReady());
   const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
   const advBack = anyAdvBack();
   const projReady = PROJECTS.some(p => { if (projectStage(p.id) !== "open") return false; const n = projectNeed(p.id); return n.shells === 0 && n.driftwood === 0; });
@@ -6177,6 +6346,12 @@ function openGuide() {
   document.getElementById("guideOk").onclick = () => tutEl.classList.remove("on");
   document.getElementById("guideCredits").onclick = () => { tutEl.classList.remove("on"); openCredits(); };
 }
+// open a URL in the OS browser, never inside the game's WebView. Capacitor
+// recognises the "_system" target on iOS + Android; plain web gets a new tab.
+function openExternal(url) {
+  try { const w = window.open(url, "_system"); if (!w) window.open(url, "_blank", "noopener"); }
+  catch (e) { try { window.open(url, "_blank", "noopener"); } catch (e2) {} }
+}
 function openCredits() {
   ensureAudio();
   openModal(`<div class="reveal credits">
@@ -6192,8 +6367,17 @@ function openCredits() {
     </div>
     <p class="cr-lead">Thanks for helping us build the best little Cove we can.</p>
     <p class="cr-note">Any remaining bugs are probably Midknight's fault.<br>Midknight strongly disagrees.</p>
+    <p class="cr-legal">© 2026 Midknight Studio Labs. All rights reserved.<br>
+      Catmint Cove and its original characters, artwork, game content, dialogue, audio, and software are protected by applicable intellectual property laws.</p>
+    <p class="cr-links">
+      <a href="https://www.catmintcove.com/p/privacy.html">Privacy Policy</a> ·
+      <a href="https://www.catmintcove.com/p/terms-and-conditions.html">Terms of Use</a> ·
+      <a href="https://www.catmintcove.com/#contact">Support</a>
+    </p>
     <div class="row"><button class="btn primary" id="crClose">Back to the cove</button></div>
   </div>`);
+  document.querySelectorAll(".credits .cr-links a").forEach(a =>
+    a.addEventListener("click", e => { e.preventDefault(); openExternal(a.href); }));
   document.getElementById("crClose").onclick = closeModal;
   document.getElementById("crX").onclick = closeModal;
 }
@@ -6268,7 +6452,9 @@ document.getElementById("dev-name").addEventListener("click", () => askOwnerName
 document.getElementById("dev-shells").addEventListener("click", () => { G.shells += 500; syncHud(); });
 document.getElementById("dev-pearls").addEventListener("click", () => { G.pearls += 5; syncHud(); });
 document.getElementById("dev-cat").addEventListener("click", () => { spawnCat({ x: W * 0.5, y: H * 0.7 }); syncHud(); });
-document.getElementById("dev-fest").addEventListener("click", () => openFestPicker());
+document.getElementById("dev-fest").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker(); });
+document.getElementById("dev-box").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("box"); });
+document.getElementById("dev-volley").addEventListener("click", () => { openFestPicker("volley"); });
 document.getElementById("dev-day").addEventListener("click", () => {
   G.opens++; G.streakDay = today() - 1; G.goalDay = 0; rollDailyGoals();
   for (const c of cats) { c.acc += aggregateRate() * 120; c.bornAt -= DAY_MS; }   // age the kittens too
@@ -7041,13 +7227,44 @@ document.getElementById("titlePill").addEventListener("click", () => askOwnerNam
 /* ---------- audio (procedural) ---------- */
 let actx = null;
 function ensureAudio() {
-  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } }
-  if (actx && actx.state === "suspended") actx.resume();
+  if (!actx) {
+    try {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      // iOS drops to "interrupted" on a call / Siri / Control Center and back —
+      // when it returns to "running" the looping beds are dead, so rebuild them
+      // (but not on the very first unlock, when they're being built fresh anyway)
+      actx.onstatechange = () => {
+        if (!actx || actx.state !== "running") return;
+        if (_audioWasRunning) _rebuildAudioBeds();
+        _audioWasRunning = true;
+      };
+    } catch (e) { actx = null; }
+  }
+  if (actx && actx.state !== "running") actx.resume().catch(() => {});
   if (actx) { startAmbience(); loadSfx(); }
 }
-// catch-all: any tap anywhere un-sticks a suspended context (covers overlays the
-// individual handlers don't touch — the tutorial, modals, the rest panel)
-document.addEventListener("pointerdown", () => { if (actx && actx.state === "suspended") actx.resume(); }, true);
+let _audioRebuildAt = 0, _audioWasRunning = false;
+// rebuild whichever ambient bed(s) should be playing right now — the cove bed,
+// plus the rest-mode rain or the festival bed if we're in one of those
+function _rebuildAudioBeds() {
+  if (!actx || Date.now() - _audioRebuildAt < 800) return;   // debounce repeated statechange fires
+  _audioRebuildAt = Date.now();
+  stopAmbience();
+  startAmbience();
+  if (restMode) startRestAudio();
+  else if (festMode) { startFestAudio(); if (festKind === "volley" && volleyPhase === "play") startVolleyBed(); }
+}
+// bring audio back after iOS suspends/interrupts it (screen lock, backgrounding,
+// a phone call). .resume() alone leaves the loops dead — rebuild them too.
+function resumeAudio() {
+  if (!actx) return;
+  if (actx.state === "running") return;
+  actx.resume().then(_rebuildAudioBeds).catch(() => {});
+}
+// catch-all: any tap anywhere un-sticks a suspended/interrupted context
+document.addEventListener("pointerdown", resumeAudio, true);
+window.addEventListener("focus", resumeAudio);
+window.addEventListener("pageshow", resumeAudio);
 function tone(freq, dur, type = "sine", vol = 0.16, when = 0) {
   if (muted || !actx) return;
   const t = actx.currentTime + when;
@@ -7309,7 +7526,7 @@ function startAmbience() {
   const master = actx.createGain();
   master.gain.value = 0;
   master.connect(actx.destination);
-  master.gain.linearRampToValueAtTime(muted || restMode ? 0 : AMB_MASTER, now + 3);   // stay silent if we boot straight into rest
+  master.gain.linearRampToValueAtTime(muted || restMode || festMode ? 0 : AMB_MASTER, now + 3);   // silent if we (re)start straight into rest / a festival
 
   // brook — pink noise, low-passed, a slow babble wobble. Kept gentle.
   const water = loopNoise("pink", 8);
@@ -7338,10 +7555,19 @@ function startAmbience() {
   const birdGain = actx.createGain(); birdGain.gain.value = 0;
   birdGain.connect(master);
 
-  ambience = { master, waterGain, windGain, crickGain, birdGain };
+  ambience = { master, waterGain, windGain, crickGain, birdGain, srcs: [water, crick, babble, tremOsc] };
   applyAmbienceDayNight(dayFactor, 0.5);
   scheduleBird();
   scheduleChime();
+}
+// tear the cove bed down so it can be rebuilt (iOS kills looping sources on an
+// audio interruption — screen lock, a call, Control Center — and .resume() alone
+// doesn't restart them)
+function stopAmbience() {
+  if (!ambience) return;
+  const a = ambience; ambience = null;
+  try { for (const s of a.srcs || []) { try { s.stop(); } catch (e) {} } } catch (e) {}
+  setTimeout(() => { try { a.master.disconnect(); } catch (e) {} }, 60);
 }
 
 function applyAmbienceDayNight(f, ramp = 4) {
@@ -7868,19 +8094,53 @@ function renderRest(dt) {
   g.moveTo(wx, wy + wh / 2); g.lineTo(wx + ww, wy + wh / 2); g.stroke();
   g.fillStyle = "#5a4636"; g.fillRect(wx - 12, wy + wh + 2, ww + 24, 7);   // sill
 
-  // --- wall clock (real local time) — off the visible strip on a phone, so skip it there
+  // --- wall clock: a cat-silhouette pendulum clock, its tail swinging like the
+  //     pendulum. Off the visible strip on a phone, so skip it there.
   if (!L.cramped) {
-  const clkX = W * 0.85, clkY = H * 0.19, cr = clamp(Math.min(W, H) * 0.05, 16, 34);
-  g.fillStyle = "#e9e0cc"; g.beginPath(); g.arc(clkX, clkY, cr, 0, 7); g.fill();
-  g.strokeStyle = "#5b4634"; g.lineWidth = 2.5; g.stroke();
-  const nowd = new Date(), hAng = ((nowd.getHours() % 12) + nowd.getMinutes() / 60) / 12 * 7;
-  g.strokeStyle = "#3a2e28"; g.lineCap = "round";
-  g.lineWidth = 2.6; g.beginPath(); g.moveTo(clkX, clkY); g.lineTo(clkX + Math.sin(hAng) * cr * 0.48, clkY - Math.cos(hAng) * cr * 0.48); g.stroke();
-  g.lineWidth = 1.8; const mAng = nowd.getMinutes() / 60 * 7;
-  g.beginPath(); g.moveTo(clkX, clkY); g.lineTo(clkX + Math.sin(mAng) * cr * 0.76, clkY - Math.cos(mAng) * cr * 0.76); g.stroke();
-  g.strokeStyle = "rgba(180,90,70,0.9)"; g.lineWidth = 1;
-  const sAng = (nowd.getSeconds() + (pn % 1000) / 1000) / 60 * 7;
-  g.beginPath(); g.moveTo(clkX, clkY); g.lineTo(clkX + Math.sin(sAng) * cr * 0.82, clkY - Math.cos(sAng) * cr * 0.82); g.stroke();
+  const ck = clamp(Math.min(W, H) * 0.05, 16, 32);
+  g.save(); g.translate(W * 0.84, H * 0.2);
+  // the tail is a RIGID pendulum: one fixed shape, pivoting from inside the
+  // body and swinging as a solid piece — a wall-clock pendulum, not a cat's flick
+  const swing = Math.sin(pn / 380) * 0.16;
+  g.save(); g.translate(0, ck * 0.95); g.rotate(swing);
+  g.fillStyle = "#1a1a1c"; g.beginPath();
+  g.moveTo(-ck * 0.16, 0);
+  g.lineTo(-ck * 0.10, ck * 2.68);
+  g.quadraticCurveTo(-ck * 0.10, ck * 3.04, ck * 0.06, ck * 3.04);
+  g.quadraticCurveTo(ck * 0.24, ck * 3.04, ck * 0.22, ck * 2.70);   // a rounded weight at the tip
+  g.lineTo(ck * 0.16, 0);
+  g.closePath(); g.fill();
+  g.restore();
+  // the body — a cat sitting with its back to the room: narrow shoulders, wide haunches
+  g.fillStyle = "#1b1b1d"; g.beginPath();
+  g.moveTo(-ck * 0.52, -ck * 0.58);
+  g.bezierCurveTo(-ck * 1.04, ck * 0.05, -ck * 1.12, ck * 1.05, -ck * 0.54, ck * 1.5);
+  g.bezierCurveTo(-ck * 0.2, ck * 1.72, ck * 0.2, ck * 1.72, ck * 0.54, ck * 1.5);
+  g.bezierCurveTo(ck * 1.12, ck * 1.05, ck * 1.04, ck * 0.05, ck * 0.52, -ck * 0.58);
+  g.bezierCurveTo(ck * 0.3, -ck * 0.94, -ck * 0.3, -ck * 0.94, -ck * 0.52, -ck * 0.58);
+  g.closePath(); g.fill();
+  // head + tall ears
+  g.beginPath(); g.arc(0, -ck * 1.12, ck * 0.64, 0, 7); g.fill();
+  g.beginPath(); g.moveTo(-ck * 0.62, -ck * 1.34); g.lineTo(-ck * 0.6, -ck * 2.12); g.lineTo(-ck * 0.02, -ck * 1.48); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(ck * 0.62, -ck * 1.34); g.lineTo(ck * 0.6, -ck * 2.12); g.lineTo(ck * 0.02, -ck * 1.48); g.closePath(); g.fill();
+  // the dial, low on the belly like the reference
+  const dy = ck * 0.56, nowd = new Date();
+  if (!dim) {
+    g.fillStyle = "rgba(255,255,255,0.8)";
+    for (let i = 0; i < 12; i++) { const a = i / 12 * 7, rr = ck * 0.7;
+      g.beginPath(); g.arc(Math.sin(a) * rr, dy - Math.cos(a) * rr, i % 3 === 0 ? 1.6 : 1, 0, 7); g.fill(); }
+  }
+  const hAng = ((nowd.getHours() % 12) + nowd.getMinutes() / 60) / 12 * 7, mAng = nowd.getMinutes() / 60 * 7;
+  g.strokeStyle = "#f5f0e4"; g.lineCap = "round";
+  g.lineWidth = 2.6; g.beginPath(); g.moveTo(0, dy); g.lineTo(Math.sin(hAng) * ck * 0.36, dy - Math.cos(hAng) * ck * 0.36); g.stroke();
+  g.lineWidth = 2; g.beginPath(); g.moveTo(0, dy); g.lineTo(Math.sin(mAng) * ck * 0.56, dy - Math.cos(mAng) * ck * 0.56); g.stroke();
+  if (!dim) {
+    g.strokeStyle = "rgba(214,98,74,0.92)"; g.lineWidth = 1.1;
+    const sAng = (nowd.getSeconds() + (pn % 1000) / 1000) / 60 * 7;
+    g.beginPath(); g.moveTo(0, dy); g.lineTo(Math.sin(sAng) * ck * 0.6, dy - Math.cos(sAng) * ck * 0.6); g.stroke();
+  }
+  g.fillStyle = "#d0d3d7"; g.beginPath(); g.arc(0, dy, 2, 0, 7); g.fill();
+  g.restore();
   }
 
   // --- fireplace (bottom-left) — stone surround, a short wide firebox opening, tall flames
@@ -7974,7 +8234,19 @@ function renderRest(dt) {
    been there. The dev panel's "🎪 festival" button / window.__cove.fest()
    bypass the lock, same as they bypass everything else, for testing. */
 function festUnlocked() { return G.opens >= 5; }
+// Cove Volleyball has its OWN gate — no day requirement, just 3 cats actually
+// standing in the cove right now (adventurers are spliced out of `cats`, so
+// this naturally drops and recovers as trips leave and return).
+function eligibleForVolley() { return cats.filter(c => !c.visitor && !c._gone && !c._leaving); }
+function volleyReady() { return eligibleForVolley().length >= 3; }
 let festMode = false, _festDPR = 0, _festG = null;
+// which activity is live on the grounds — "race" (the original), "box" (the
+// Great Box Challenge) or "volley" (Cove Volleyball). Set when an activity
+// starts, reset by closeFest. renderFest hands off to renderBox / renderVolley.
+let festKind = "race", _festPickKind = null, _festRoster = [];
+// tiny fire-and-forget analytics seam: no library, just a labelled console line
+// in dev builds. Swap the body for a real sink later without touching callers.
+function trackEvent(name, params) { if (DEV_BUILD) console.debug("[analytics]", name, params || {}); }
 const RACE_W = 1400, RACE_H = 640, MAX_RACE_T = 20;
 let raceCats = [], festSpectators = [], racePick = null, raceWinner = null;
 let raceT = 0, racePhase = "run", _festFinishAt = 0, festPickedCat = null, festCheerUntil = 0;
@@ -8042,30 +8314,41 @@ function raceX(p) { return 150 + clamp(p, 0, 1) * 1100; }
 // cove and forth while you're just choosing who runs. Only "Maybe later" /
 // "Back to the cove" ever wipes you back; "Race again" stays put and re-opens
 // the picker over the same grounds.
-function openFestPicker() {
+function openFestPicker(kind) {
   if (festMode || restMode || !cats.length) return;
-  if (!festUnlocked()) return;   // day-5 gate — belt for any entry point past the (now correctly hidden) 🎪 button
+  if (!festUnlocked() && !volleyReady()) return;   // nothing available yet (race/box are day-5; volleyball needs 3 cats)
+  if (kind === "volley" && !volleyReady()) { toast("You need 3 cats at the Cove to play."); return; }
+  if ((kind === "race" || kind === "box") && !festUnlocked()) return;
   if (_placing || _arranging) exitPlacement();
   ensureAudio();   // a real tap — safe to unlock/start audio here, same as opening rest
   restClearUI(); closeAllPanels(); exitFocus();
   const roster = cats.filter(c => !c.visitor);
   if (!roster.length) { toast("No one's around to send to the festival right now."); return; }
   if (!roster.includes(festPickedCat)) festPickedCat = roster.find(c => c.mascot) || roster[0];
+  _festPickKind = kind || null;   // "race" / "box" jump straight to that picker; null = show the chooser
+  _festRoster = roster;
   raceCats = []; raceWinner = null; racePick = null; raceT = 0; racePhase = "picker"; _festG = null; festCheerUntil = 0;
-  festIdleScene(roster);
+  // the hub scene (festGroundsCats) is set up once we've actually arrived, in the setTimeout below
+  trackEvent("activity_open", { kind: _festPickKind || "choose" });
   document.getElementById("festResult").hidden = true;
+  document.getElementById("festChoose").hidden = true;
   document.getElementById("festPanel").hidden = true;   // shown once we've actually arrived
+  document.getElementById("festBoxPanel").hidden = true;
+  document.getElementById("festVolleyPanel").hidden = true;
+  document.getElementById("festVolleyTut").hidden = true;
+  document.getElementById("volleyHud").hidden = true;
+  document.getElementById("volleyBanner").hidden = true;
   document.getElementById("festCountdown").hidden = true;
   document.getElementById("festSkip").hidden = true;
 
   _festQuietUntil = Date.now() + 2500;   // no cove toasts through the wipe into the festival
   const w = document.getElementById("festWipe");
   document.getElementById("festWipeEmoji").textContent = pick(["🎪", "🎏", "🏵️"]);
-  document.getElementById("festWipeTitle").textContent = "The Cove Festival";
+  document.getElementById("festWipeTitle").textContent = "Cove Festival";
   document.getElementById("festWipeSub").textContent = pick([
-    "Everyone's heading down to the track…",
+    "Everyone's wandering down to the grounds…",
     "Bunting's up, kettle's on…",
-    "Something's happening by the field…",
+    "There's something on down by the shore…",
   ]);
   w.classList.remove("out"); void w.offsetWidth; w.classList.add("in");
   setTimeout(() => {
@@ -8075,23 +8358,28 @@ function openFestPicker() {
     document.getElementById("app").classList.add("festing");
     document.getElementById("fest").classList.add("on");
     document.getElementById("festBar").hidden = false;
-    renderFestPickGrid(roster);
-    document.getElementById("festPanel").hidden = false;
+    if (_festPickKind === "box") {
+      boxPhase = "picker"; renderBoxPickGrid(roster);
+      document.getElementById("festBoxPanel").hidden = false;
+    } else if (_festPickKind === "volley") {
+      festKind = "hub"; festGroundsCats(roster);
+      renderVolleyPickGrid(eligibleForVolley());
+      document.getElementById("festVolleyPanel").hidden = false;
+    } else if (_festPickKind === "race") {
+      festKind = "hub"; festGroundsCats(roster);   // picker sits over the grounds, not the bare track
+      document.getElementById("festTime").textContent = "cove race";
+      renderFestPickGrid(roster);
+      document.getElementById("festPanel").hidden = false;
+    } else {
+      festKind = "hub"; festGroundsCats(roster);
+      document.getElementById("festTime").textContent = "cove festival";
+      renderFestChooser();
+      document.getElementById("festChoose").hidden = false;
+    }
     startFestAudio();
   }, 560);
   setTimeout(() => w.classList.add("out"), 1250);
   setTimeout(() => w.classList.remove("in", "out"), 1850);
-}
-// a loose, ambient group standing around the grounds — shown while you're
-// just picking, before a field's been drawn for an actual heat
-function festIdleScene(roster) {
-  festSpectators = roster.slice(0, 6).map((c, i) => {
-    const y = 356 + Math.floor(i / 3) * 46;
-    return Object.assign(c, {
-      x: 280 + (i % 3) * 300 + rand(-14, 14), y, _festBaseY: y, face: 1,
-      state: "loafing", trotting: false, walkAmt: 0,
-    });
-  });
 }
 function renderFestPickGrid(roster) {
   const grid = document.getElementById("festPickGrid");
@@ -8115,6 +8403,7 @@ function renderFestPickGrid(roster) {
 // building the field + the countdown.
 function startFestRace() {
   document.getElementById("festPanel").hidden = true;
+  festKind = "race"; _festG = null;   // the track appears now that the race is actually on
   const mk = cats.find(c => c.mascot);
   const others = cats.filter(c => c !== mk && c !== festPickedCat && !c.visitor);
   for (let i = others.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [others[i], others[j]] = [others[j], others[i]]; }
@@ -8192,6 +8481,7 @@ function runFestCountdown() {
     else setTimeout(() => {
       if (mySeq !== _festCdSeq) return;
       el.hidden = true;
+      if (festKind === "volley") { volleyBegin(); return; }
       racePhase = "run";
       document.getElementById("festSkip").hidden = false;
     }, 500);
@@ -8200,10 +8490,20 @@ function runFestCountdown() {
 // the only exit — wipes back to the cove the same way we arrived, so leaving
 // is one clean motion rather than a cut
 function closeFest() {
+  document.getElementById("festChoose").hidden = true;
   document.getElementById("festPanel").hidden = true;
+  document.getElementById("festBoxPanel").hidden = true;
+  document.getElementById("festVolleyPanel").hidden = true;
+  document.getElementById("festVolleyTut").hidden = true;
+  document.getElementById("volleyHud").hidden = true;
+  document.getElementById("volleyCom").hidden = true;
+  document.getElementById("volleyBanner").hidden = true;
   document.getElementById("festResult").hidden = true;
   document.getElementById("festCountdown").hidden = true;
   document.getElementById("festSkip").hidden = true;
+  document.getElementById("festSkip").textContent = "Skip to the finish ›";
+  festKind = "race"; boxParts = []; boxPhase = "idle"; _hubCats = [];
+  volleyPhase = "idle"; volleyParts = []; volleyBall = null; _vbNoDrowse = false; _vbFast = false;
   particles.length = 0; floaters.length = 0;   // a live "zoomies!" or confetti spark shouldn't follow you back to the cove
   _festQuietUntil = Date.now() + 1800;   // ...and none land the instant the wipe clears back at the cove
   const w = document.getElementById("festWipe");
@@ -8217,6 +8517,7 @@ function closeFest() {
     document.getElementById("app").classList.remove("festing");
     document.getElementById("festBar").hidden = true;
     _festDPR = 0; resize();
+    stopVolleyBed();
     stopFestAudio();
     for (const c of cats) { c.stateDur = 0; decide(c); }
   }, 560);
@@ -8229,6 +8530,7 @@ let festBus = null, festMurmur = null, _festAudioGen = 0, _festMelodyBeat = 0;
 function startFestAudio() {
   if (!actx) return;
   const gen = ++_festAudioGen;
+  stopVolleyBed();                 // a fresh festival session starts at the hub — no stale beach bed
   stopFestAudio(true);              // tear down anything already playing (keeps gen)
   _festAudioGen = gen;
   if (ambience) rampParam(ambience.master.gain, 0, 1.2);   // the cove goes quiet — you're at the grounds now
@@ -8275,6 +8577,7 @@ const FEST_TUNE = [
 ].map(n => ({ len: 0.5, ...n }));
 function scheduleFestMelody() {
   if (!festBus) return;
+  if (_volleyBed) { setTimeout(scheduleFestMelody, 900); return; }   // volleyball runs its own beach bed; calliope steps aside
   const root = 523.25;   // C5 — bright calliope register
   let beatT = 0.05;
   for (const note of FEST_TUNE) {
@@ -8300,6 +8603,79 @@ function scheduleFestMelody() {
     _festMelodyBeat++;
   }
   setTimeout(scheduleFestMelody, (beatT + 0.35 + Math.random() * 0.3) * 1000);
+}
+
+/* ---- Cove Volleyball's own background: a lazy sunny-beach bed. The crowd
+   murmur (festMurmur) keeps going; the fairground calliope steps aside for
+   a slow wave wash + a sparse pentatonic marimba figure + the odd gull. ---- */
+let _volleyBed = null;
+function startVolleyBed() {
+  if (!actx || !festBus || _volleyBed) return;
+  const g = actx.createGain(); g.gain.value = 0.0001; g.connect(festBus);
+  rampParam(g.gain, muted ? 0.0001 : 1, 1.6);
+  // wave wash — pink noise, a lowpass that breathes open and shut on a ~6s swell
+  const surf = loopNoise("pink", 5);
+  const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 520; lp.Q.value = 0.3;
+  const surfG = actx.createGain(); surfG.gain.value = 0.085;
+  const swell = actx.createOscillator(); swell.type = "sine"; swell.frequency.value = 0.16;
+  const swellA = actx.createGain(); swellA.gain.value = 0.05;
+  const swellFA = actx.createGain(); swellFA.gain.value = 240;
+  swell.connect(swellA); swellA.connect(surfG.gain);
+  swell.connect(swellFA); swellFA.connect(lp.frequency);
+  swell.start();
+  surf.connect(lp); lp.connect(surfG); surfG.connect(g);
+  _volleyBed = { g, surf, swell, stopped: false };
+  scheduleVolleyPlink();
+  scheduleGull();
+}
+const VB_PENT = [0, 3, 5, 7, 10, 12, 15];   // soft minor-pentatonic, mellow
+function scheduleVolleyPlink() {
+  if (!_volleyBed || _volleyBed.stopped || !festBus) return;
+  const root = 392;   // G4
+  const n = 2 + (Math.random() * 3 | 0);
+  let t = actx.currentTime + 0.05;
+  for (let i = 0; i < n; i++) {
+    const f = root * Math.pow(2, VB_PENT[(Math.random() * VB_PENT.length) | 0] / 12);
+    const o = actx.createOscillator(), og = actx.createGain();
+    o.type = "triangle"; o.frequency.value = f;
+    const olp = actx.createBiquadFilter(); olp.type = "lowpass"; olp.frequency.value = 1900;
+    og.gain.setValueAtTime(0.0001, t);
+    og.gain.linearRampToValueAtTime(muted ? 0 : 0.05, t + 0.015);
+    og.gain.exponentialRampToValueAtTime(0.0004, t + 0.5);
+    o.connect(olp); olp.connect(og); og.connect(_volleyBed.g);
+    o.start(t); o.stop(t + 0.6);
+    t += 0.28 + Math.random() * 0.5;
+  }
+  setTimeout(scheduleVolleyPlink, (3 + Math.random() * 4) * 1000);
+}
+function scheduleGull() {
+  if (!_volleyBed || _volleyBed.stopped || !festBus) return;
+  if (Math.random() < 0.7) {
+    const t = actx.currentTime + 0.05;
+    const o = actx.createOscillator(), og = actx.createGain();
+    o.type = "sine";
+    const f0 = 1450 + Math.random() * 520;
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(f0 * 0.55, t + 0.22);
+    o.frequency.setValueAtTime(f0 * 0.94, t + 0.27);
+    o.frequency.exponentialRampToValueAtTime(f0 * 0.5, t + 0.47);
+    og.gain.setValueAtTime(0.0001, t);
+    og.gain.linearRampToValueAtTime(muted ? 0 : 0.02, t + 0.03);
+    og.gain.exponentialRampToValueAtTime(0.0004, t + 0.24);
+    og.gain.setValueAtTime(muted ? 0 : 0.018, t + 0.28);
+    og.gain.exponentialRampToValueAtTime(0.0004, t + 0.48);
+    o.connect(og); og.connect(_volleyBed.g);
+    o.start(t); o.stop(t + 0.55);
+  }
+  setTimeout(scheduleGull, (7 + Math.random() * 9) * 1000);
+}
+function stopVolleyBed() {
+  if (!_volleyBed || !actx) { _volleyBed = null; return; }
+  const b = _volleyBed; _volleyBed = null; b.stopped = true;
+  const t = actx.currentTime;
+  try { rampParam(b.g.gain, 0.0001, 1); } catch (e) {}
+  try { b.surf.stop(t + 1.2); b.swell.stop(t + 1.2); } catch (e) {}
+  setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, 1600);
 }
 
 function syncRacerCat(r, dt, freeze) {
@@ -8434,6 +8810,12 @@ function festReward(place) {
 }
 function showFestPodium() {
   const order = festRanking();
+  { // the result card is shared with the Box Challenge — put its race face back
+    const rc = document.getElementById("festResult");
+    rc.querySelector("h2").textContent = "The Cove Festival";
+    rc.querySelector(".fr-emoji").textContent = "🏆";
+    document.getElementById("festAgain").textContent = "Race again";
+  }
   // classic podium arrangement — 2nd/1st/3rd left to right, 1st tallest —
   // right inside the card, hopping in place, instead of out in the field
   // where the card would just cover it
@@ -8479,7 +8861,142 @@ function showFestPodium() {
   document.getElementById("festBar").hidden = true;   // the result card has its own "Back to cove" / "Race again" — the bottom bar is redundant here
   document.getElementById("festResult").hidden = false;
 }
+
+/* ---------- Festival hub: the neutral grounds behind the event selector ----------
+   A calm coastal fair. Neither activity dominates — a soft pennant on a post,
+   a little net + beach ball, a market stall, and a few cats loitering along the
+   shore. Portrait space, contain-fit; the fairground sits low so it reads as a
+   strip below the centred event card. */
+const HUB_W = 560, HUB_H = 1000;
+let _hubT = 0, _hubCats = [];
+function hubFit() {
+  const { vw, vh } = restViewportPx();
+  const rd = _festDPR || DPR;
+  const sc = Math.min((vw * rd) / HUB_W, (vh * rd) / HUB_H);
+  return { sc, ox: (vw * rd - HUB_W * sc) / 2, oy: (vh * rd - HUB_H * sc) / 2 };
+}
+function festGroundsCats(roster) {
+  const spots = [{ x: 120, y: 876 }, { x: 300, y: 906 }, { x: 448, y: 872 }, { x: 206, y: 930 }, { x: 378, y: 936 }];
+  _hubCats = (roster || cats.filter(c => !c.visitor)).slice(0, 5).map((c, i) => {
+    Object.assign(c, { x: spots[i].x, y: spots[i].y, face: i % 2 ? 1 : -1,
+      state: i === 0 ? "loafing" : i === 3 ? "grooming" : "seeking",
+      trotting: false, walkAmt: 0, _vbLift: 0, _hx: spots[i].x, _hy: spots[i].y, _wanderAt: rand(2.5, 9) });
+    c._motion = null;
+    return c;
+  });
+}
+function renderFestGrounds(dt) {
+  _hubT += dt;
+  updateFX(Math.min(dt, 0.05));
+  const g = ctx;
+  { const px = restViewportPx();
+    if (Math.abs(canvas.width - Math.round(px.vw * (_festDPR || DPR))) > 2) fitFestCanvas(); }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  const V = hubFit();
+  g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
+  drawFestGroundsScene(g);
+  for (const c of _hubCats) {
+    c._wanderAt -= dt;
+    if (c._wanderAt <= 0) {
+      c._wanderAt = rand(5, 12);
+      c._hx = clamp(c._hx + rand(-44, 44), 96, 468);
+      c._hy = clamp(c._hy + rand(-18, 18), 852, 958);
+    }
+    const dx = c._hx - c.x, dy = c._hy - c.y, dist = Math.hypot(dx, dy);
+    const m = catMotion(c);
+    if (dist > 4) {
+      const step = Math.min(dist, 24 * dt);
+      c.x += dx / dist * step; c.y += dy / dist * step;
+      c.face = dx >= 0 ? 1 : -1; c.state = "exploring"; c.trotting = true;
+      c.walk += dt * 4; c.walkAmt = Math.min(1, (c.walkAmt || 0) + dt * 5); c.bob += dt * 7;
+    } else {
+      c.walkAmt = Math.max(0, (c.walkAmt || 0) - dt * 3); c.trotting = c.walkAmt > 0.05;
+      if (c.state === "exploring") c.state = "seeking";
+      c.bob += dt * 2; c.tail += dt * 2 * m.tailRate;
+    }
+    c.blink -= dt; if (c.blink < -0.12) c.blink = rand(2, 6) * m.blinkEvery;
+  }
+  _hubCats.slice().sort((a, b) => a.y - b.y).forEach(c => drawCat(g, c, false));
+  if (particles.length || floaters.length) drawFX(g);
+}
+function drawHubLantern(g, x, y) {
+  g.save(); g.translate(x, y);
+  g.strokeStyle = "#7c6142"; g.lineWidth = 3; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 58); g.stroke();
+  g.fillStyle = "rgba(255,232,170,0.5)"; g.beginPath(); g.arc(0, -3, 13, 0, 7); g.fill();
+  g.fillStyle = "#e8b45a"; roundRect(g, -7, -14, 14, 18, 3); g.fill();
+  g.restore();
+}
+function drawFestGroundsScene(g) {
+  const HZ = 232, OV = 460;
+  const sky = g.createLinearGradient(0, -OV, 0, HZ);
+  sky.addColorStop(0, "#c3dfe8"); sky.addColorStop(1, "#eaefdf");
+  g.fillStyle = sky; g.fillRect(-OV, -OV, HUB_W + OV * 2, HZ + OV);
+  g.fillStyle = "#7ec3cf"; g.fillRect(-OV, HZ - 40, HUB_W + OV * 2, 58);   // sea
+  g.strokeStyle = "rgba(255,255,255,0.45)"; g.lineWidth = 2;
+  for (let i = 0; i < 4; i++) { const y = HZ - 30 + i * 11; const x = (_hubT * 7 + i * 150) % (HUB_W + 90) - 45;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + 30, y); g.stroke(); }
+  const gr = g.createLinearGradient(0, HZ - 10, 0, HUB_H + OV);
+  gr.addColorStop(0, "#cfe0af"); gr.addColorStop(0.5, "#bcd398"); gr.addColorStop(1, "#aecb8a");
+  g.fillStyle = gr; g.fillRect(-OV, HZ - 12, HUB_W + OV * 2, HUB_H - HZ + OV);
+  g.fillStyle = "rgba(232,214,170,0.42)";                                  // a sandy patch = "the festival area"
+  g.beginPath(); g.ellipse(HUB_W / 2, 916, 330, 138, 0, 0, 7); g.fill();
+  // bunting — one run across the top
+  drawBunting(g, 6, 92, HUB_W - 12, 30, _hubT);
+  // a little market stall, left of centre — sits along the bottom, below the card
+  g.save(); g.translate(HUB_W * 0.40, 828);
+  g.fillStyle = "rgba(90,70,50,0.12)"; g.beginPath(); g.ellipse(0, 80, 84, 11, 0, 0, 7); g.fill();
+  g.strokeStyle = "#8a6f4e"; g.lineWidth = 5;
+  g.beginPath(); g.moveTo(-70, 2); g.lineTo(-70, 78); g.moveTo(70, 2); g.lineTo(70, 78); g.stroke();
+  g.fillStyle = "#caa877"; roundRect(g, -78, 34, 156, 18, 3); g.fill();                 // counter
+  g.fillStyle = "rgba(90,60,34,0.18)"; g.fillRect(-78, 47, 156, 4);
+  g.fillStyle = "#c98f57"; roundRect(g, -52, 25, 28, 11, 3); g.fill();                  // baskets on the counter
+  g.fillStyle = "#cf7d54"; roundRect(g, 16, 23, 32, 13, 3); g.fill();
+  g.fillStyle = "#8a6f4e"; roundRect(g, -84, -4, 168, 7, 2); g.fill();                  // roof beam
+  g.beginPath(); g.moveTo(0, -36); g.lineTo(-90, 2); g.lineTo(90, 2); g.closePath();    // pitched awning
+  g.fillStyle = "#efe3cb"; g.fill();
+  g.save(); g.clip();
+  g.fillStyle = "#d98b62";
+  for (let i = -5; i <= 5; i++) { g.beginPath();
+    g.moveTo(i * 18, -36); g.lineTo(i * 18 - 30, 4); g.lineTo(i * 18 - 14, 4); g.lineTo(i * 18 + 9, -36); g.closePath(); g.fill(); }
+  g.restore();
+  g.fillStyle = "#d98b62";
+  for (let i = -4; i <= 4; i++) { g.beginPath(); g.arc(i * 21, 2, 10, 0, Math.PI); g.fill(); }   // scalloped valance
+  g.restore();
+  // LEFT — a soft pennant on a post (a gentle fair marker; no stark checker)
+  g.save(); g.translate(76, 908);
+  const flut = Math.sin(_hubT * 2.2) * 3;
+  g.strokeStyle = "#7c6142"; g.lineWidth = 5; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 60); g.stroke();
+  g.fillStyle = "#e08b6a";
+  g.beginPath(); g.moveTo(2, -36); g.quadraticCurveTo(24, -30 + flut, 44, -24 + flut); g.quadraticCurveTo(22, -20, 2, -12); g.closePath(); g.fill();
+  g.fillStyle = "rgba(243,237,224,0.5)";
+  g.beginPath(); g.moveTo(2, -36); g.lineTo(20, -30 + flut * 0.6); g.lineTo(2, -22); g.closePath(); g.fill();
+  g.restore();
+  // RIGHT — a little net + a beach ball (Volleyball, subtly)
+  g.save(); g.translate(HUB_W - 80, 906);
+  g.strokeStyle = "#8a7052"; g.lineWidth = 5;
+  g.beginPath(); g.moveTo(-38, 6); g.lineTo(-40, -38); g.moveTo(38, 6); g.lineTo(40, -38); g.stroke();
+  g.strokeStyle = "rgba(240,236,224,0.85)"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(-40, -34); g.quadraticCurveTo(0, -25, 40, -34); g.stroke();
+  g.strokeStyle = "rgba(240,236,224,0.4)"; g.lineWidth = 1;
+  for (let i = -3; i <= 3; i++) { g.beginPath(); g.moveTo(i * 12, -32); g.lineTo(i * 12 + 2, -8); g.stroke(); }
+  const wob = Math.sin(_hubT * 1.4) * 1.6;
+  g.save(); g.translate(-4 + wob, 24); g.rotate(wob * 0.04);
+  const R = 16, cols = ["#e88a6a", "#63b7c4", "#f0c453"];
+  g.fillStyle = "#fbf7ec"; g.beginPath(); g.arc(0, 0, R, 0, 7); g.fill();
+  for (let i = 0; i < 6; i++) { g.fillStyle = cols[i % 3]; g.globalAlpha = i % 2 ? 0.9 : 0.74;
+    g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, R, i * Math.PI / 3, (i + 1) * Math.PI / 3); g.closePath(); g.fill(); }
+  g.globalAlpha = 1; g.restore();
+  g.restore();
+  // odds and ends — kept sparse
+  drawHubLantern(g, HUB_W - 150, 812);
+  g.fillStyle = "#d97a5f"; g.beginPath(); g.ellipse(150, 940, 22, 13, 0, 0, 7); g.fill();    // a cushion on the grass
+  g.fillStyle = "rgba(255,255,255,0.14)"; g.beginPath(); g.ellipse(144, 936, 10, 5, 0, 0, 7); g.fill();
+}
 function renderFest(dt) {
+  if (festKind === "hub") { renderFestGrounds(dt); return; }
+  if (festKind === "box") { renderBox(dt); return; }
+  if (festKind === "volley") { renderVolley(dt); return; }
   raceT += dt;
   const g = ctx;
   { // a resize() elsewhere restores the full pannable canvas — put the fest canvas back
@@ -8561,14 +9078,96 @@ document.getElementById("festStart").addEventListener("click", startFestRace);
 document.getElementById("festAgain").addEventListener("click", () => {
   document.getElementById("festResult").hidden = true;
   document.getElementById("festBar").hidden = false;   // back to the picker — restore the bottom exit bar
-  raceCats = []; raceWinner = null; racePick = null; racePhase = "picker"; festCheerUntil = 0;
-  particles.length = 0; floaters.length = 0;   // last heat's zoomies text / confetti shouldn't bleed into this one
+  particles.length = 0; floaters.length = 0;   // last round's zoomies text / confetti shouldn't bleed into this one
   const roster = cats.filter(c => !c.visitor);
-  festIdleScene(roster);
+  if (festKind === "box") {
+    boxParts = []; boxPhase = "picker"; festKind = "hub"; festGroundsCats(roster);
+    renderBoxPickGrid(roster);
+    document.getElementById("festBoxPanel").hidden = false;
+    trackEvent("box_challenge_replayed");
+    return;
+  }
+  if (festKind === "volley") {
+    volleyParts = []; volleyBall = null; volleyPhase = "idle"; festKind = "hub"; festGroundsCats(roster);
+    stopVolleyBed();   // back to the hub → the calliope resumes
+    document.getElementById("volleyHud").hidden = true;
+    document.getElementById("volleyCom").hidden = true;
+    document.getElementById("volleyBanner").hidden = true;
+    renderVolleyPickGrid(eligibleForVolley());
+    document.getElementById("festVolleyPanel").hidden = false;
+    trackEvent("volleyball_replayed");
+    return;
+  }
+  festKind = "hub"; festGroundsCats(roster);
+  raceCats = []; raceWinner = null; racePick = null; racePhase = "picker"; festCheerUntil = 0;
   renderFestPickGrid(roster);
   document.getElementById("festPanel").hidden = false;
 });
+// ---- Festival hub: the event list is data-driven so a third activity later is
+// one entry here, not a screen redesign. (The Great Box Challenge is parked —
+// its code stays, reachable only via __cove.box() / the dev button.)
+function enterFestRace() {
+  document.getElementById("festChoose").hidden = true;
+  document.getElementById("festTime").textContent = "cove race";
+  renderFestPickGrid(_festRoster.length ? _festRoster : cats.filter(c => !c.visitor));
+  document.getElementById("festPanel").hidden = false;   // festKind stays "hub" — the track appears when the race starts (startFestRace)
+  trackEvent("activity_open", { kind: "race" });
+}
+function enterFestVolley() {
+  document.getElementById("festChoose").hidden = true;
+  document.getElementById("festTime").textContent = "cove volleyball";
+  renderVolleyPickGrid(eligibleForVolley());
+  document.getElementById("festVolleyPanel").hidden = false;
+  trackEvent("volleyball_card_opened");
+}
+const FEST_EVENTS = [
+  { key: "race", emoji: "🚩", name: "Cove Race",
+    desc: "Pick a cat and cheer them all the way to the finish.",
+    lock: () => festUnlocked() ? null : "Opens on day 5.", enter: enterFestRace },
+  { key: "volley", emoji: "🏐", name: "Cove Volleyball",
+    desc: "Three cats. One visiting Cove. Keep them awake and hope they remember how volleyball works.",
+    lock: () => volleyReady() ? null : "You need 3 cats at the Cove to play.", enter: enterFestVolley },
+];
+function renderFestChooser() {
+  const wrap = document.getElementById("festEventCards");
+  wrap.innerHTML = FEST_EVENTS.map(ev => {
+    const locked = ev.lock();
+    return `<button class="fc-card${locked ? " locked" : ""}" data-ev="${ev.key}" type="button">
+      <span class="fc-emoji">${ev.emoji}</span>
+      <span class="fc-name">${esc(ev.name)}</span>
+      <span class="fc-desc">${esc(ev.desc)}</span>
+      ${locked ? `<span class="fc-lock">${esc(locked)}</span>` : ""}
+    </button>`;
+  }).join("");
+  wrap.querySelectorAll(".fc-card").forEach(el => el.addEventListener("click", () => {
+    const ev = FEST_EVENTS.find(e => e.key === el.dataset.ev);
+    if (ev && !ev.lock()) ev.enter();
+  }));
+}
+document.getElementById("festChooseBack").addEventListener("click", closeFest);
+document.getElementById("boxCancel").addEventListener("click", closeFest);
+document.getElementById("boxStart").addEventListener("click", startBoxChallenge);
+document.getElementById("volleyCancel").addEventListener("click", closeFest);
+// first match of the session gets a quick deadpan how-to; after that, straight in
+document.getElementById("volleyStart").addEventListener("click", () => {
+  if (volleyPickSel.length !== 3) return;
+  if (_vbTutSeen) { startCoveVolley(); return; }
+  document.getElementById("festVolleyPanel").hidden = true;
+  document.getElementById("festVolleyTut").hidden = false;
+});
+document.getElementById("volleyTutGo").addEventListener("click", () => {
+  _vbTutSeen = true;
+  document.getElementById("festVolleyTut").hidden = true;
+  startCoveVolley();
+});
 document.getElementById("festSkip").addEventListener("click", () => {
+  if (festKind === "box") {
+    if (boxPhase !== "play" && boxPhase !== "settle") return;
+    boxPhase = "tally"; boxTallyAt = boxT - 1.4;   // short settle, then the result card
+    boxParts.forEach(p => { if (p.state === "approach" || p.state === "wander") { p.state = "beside"; } });
+    document.getElementById("festSkip").hidden = true;
+    return;
+  }
   if (racePhase !== "run") return;
   const order = [...raceCats].sort((a, b) => b.progress - a.progress);
   order.forEach((r, i) => { r.done = true; r.progress = Math.max(r.progress, 1 - i * 0.03); r.doneAt = raceT + i * 0.001; });
@@ -8579,6 +9178,1429 @@ document.getElementById("festSkip").addEventListener("click", () => {
   document.getElementById("festSkip").hidden = true;
   festAllInChime(0.4);   // skip fires both cues at once — stagger so the win fanfare finishes first
 });
+
+/* ================= THE GREAT BOX CHALLENGE =================
+   A casual, upside-only Cove activity that rides the same rails as the race:
+   the #fest overlay, festMode, the wipe, the grounds audio, the shared
+   #festResult card, drawCat, grantReward. Five cats, five boxes, ~34s of
+   watching cats be cats around cardboard. A hidden "box interest" score picks
+   a deadpan winner; nobody loses, nobody's penalised, the reward is a small
+   Shell payout in the same shape as the race's. Save schema is untouched.
+   Everything box-specific lives in this block. */
+const BOX_W = 560, BOX_H = 1180, BOX_DUR = 34;
+// a loose pile someone left out, not a tidy rack — scattered down a portrait arena
+const BOX_SLOTS = [
+  { x: 146, y: 320 }, { x: 410, y: 268 }, { x: 282, y: 486 },
+  { x: 150, y: 690 }, { x: 414, y: 656 },
+];
+// trait -> shifts to the action weights a cat rolls each time it re-decides
+// what to do with a box. Deltas only; averaged across a cat's traits so two
+// don't stack into a certainty. Probabilities, never guarantees (spec).
+const BOX_TENDENCIES = {
+  glutton: { enter: 0.10, nap: 0.06, paw: 0.04 },
+  playful: { paw: 0.34, top: 0.12, enter: 0.08, nap: -0.16, wander: 0.06 },
+  shy:     { enter: 0.30, beside: 0.10, top: -0.20, wander: -0.12 },
+  cuddly:  { beside: 0.26, enter: 0.10, nap: 0.10 },
+  climber: { top: 0.44, enter: -0.04, nap: -0.04 },
+  chatty:  { beside: 0.30, wander: 0.12, nap: -0.06 },
+  lazy:    { nap: 0.40, enter: 0.16, paw: -0.20, wander: -0.16 },
+  curious: { enter: 0.24, paw: 0.16, wander: 0.16, top: 0.06 },
+  grumpy:  { enter: 0.14, top: 0.10, beside: -0.14, paw: -0.10 },
+  bold:    { enter: 0.30, top: 0.20, paw: 0.10, wander: -0.06 },
+};
+const BOX_NAP_LINES_IN = [
+  "got in a box and was asleep inside a minute",
+  "climbed into a box, turned around once, and was gone",
+  "found a box, declared it home, and shut down for the day",
+];
+const BOX_NAP_LINES_TOP = [
+  "fell asleep on top of a box, mid-supervision",
+  "dozed off on the lid and nearly slid off twice",
+  "held the high ground until sleep took it",
+];
+const BOX_ENTER_LINES = [
+  "got into a box early and simply stayed",
+  "folded into a box two sizes too small and looked delighted",
+  "reversed into a box like it had done this before",
+];
+const BOX_TOP_LINES = [
+  "climbed on top of a box and looked down on the proceedings",
+  "sat on the tallest box available, on principle",
+  "took the lid and refused to acknowledge the others",
+];
+const BOX_PAW_LINES = [
+  "pawed at the same box until it stopped being interesting",
+  "spent the afternoon fighting one specific flap",
+  "batted a box across the rug and chased it",
+];
+function boxNapLine(onTop) { return _bpick(onTop ? BOX_NAP_LINES_TOP : BOX_NAP_LINES_IN); }
+const BOX_WIN_LINES = [
+  "[CAT] wins. The box remains undefeated.",
+  "[CAT] wins. We are not entirely sure what the rules were.",
+  "[CAT] is declared the winner. The committee has questions but no objections.",
+  "[CAT] wins by a margin the boxes have asked us not to disclose.",
+  "[CAT] takes it. A formal box was involved. That is all we can confirm.",
+];
+let boxes = [], boxParts = [], boxTouched = [], boxPickedCats = [];
+let boxPhase = "idle", boxT = 0, boxTallyAt = 0, boxWinner = null;
+function _bpick(a) { return a[(Math.random() * a.length) | 0]; }
+function _bshuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function boxFit() {
+  const { vw, vh } = restViewportPx();
+  const rd = _festDPR || DPR;
+  // the arena is a portrait rectangle now (roughly a phone's shape) so a plain
+  // contain-fit fills the screen instead of sitting in a thin letterboxed band
+  const sc = Math.min((vw * rd) / BOX_W, (vh * rd) / BOX_H);
+  return { sc, ox: (vw * rd - BOX_W * sc) / 2, oy: (vh * rd - BOX_H * sc) / 2 };
+}
+function boxApproachPt(i) { const b = boxes[i]; return { x: b.x + rand(-12, 12), y: b.y + 52 }; }
+function boxInsidePt(i)   { const b = boxes[i]; return { x: b.x + rand(-6, 6), y: b.y - 4 }; }
+function boxTopPt(i)      { const b = boxes[i]; return { x: b.x + rand(-10, 10), y: b.y - 42 }; }
+function boxBesidePt(i)   { const b = boxes[i]; return { x: b.x + (Math.random() < 0.5 ? -1 : 1) * 64, y: b.y + 8 }; }
+
+function renderBoxPickGrid(roster) {
+  boxPickedCats = [];
+  const grid = document.getElementById("boxPickGrid");
+  grid.innerHTML = "";
+  const need = Math.min(5, roster.length);
+  for (const c of roster) {
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "fp-cell";
+    cell.innerHTML = `<canvas width="56" height="48"></canvas><span class="nm"></span>`;
+    cell.querySelector(".nm").textContent = c.name;
+    cell.addEventListener("click", () => {
+      const at = boxPickedCats.indexOf(c);
+      if (at >= 0) { boxPickedCats.splice(at, 1); cell.classList.remove("picked"); }
+      else { if (boxPickedCats.length >= 5) return; boxPickedCats.push(c); cell.classList.add("picked"); }
+      document.getElementById("boxPickCount").textContent = `(${boxPickedCats.length} / 5)`;
+      document.getElementById("boxStart").disabled = boxPickedCats.length < need;
+    });
+    grid.appendChild(cell);
+    miniCat(cell.querySelector("canvas"), c.coatKey, c.star, "loafing", false, 1);
+  }
+  document.getElementById("boxPickCount").textContent = `(0 / 5)`;
+  document.getElementById("boxStart").disabled = true;
+}
+function startBoxChallenge() {
+  const need = Math.min(5, cats.filter(c => !c.visitor).length);
+  if (boxPickedCats.length < need) return;
+  document.getElementById("festBoxPanel").hidden = true;
+  festKind = "box";
+  fitFestCanvas();
+  boxT = 0; boxPhase = "settle"; boxWinner = null;
+  particles.length = 0; floaters.length = 0;
+  const variants = _bshuffle(["plain", "paw", "tape", "dent", "plain"]);
+  boxes = BOX_SLOTS.map((s, i) => ({ x: s.x, y: s.y, variant: variants[i] }));
+  boxTouched = boxes.map(() => false);
+  const field = boxPickedCats.slice(0, 5);
+  while (field.length < 5) field.push(new Cat({ visitor: true }));   // a small cove gets guests, same as the race
+  boxParts = field.map((c, i) => {
+    Object.assign(c, {
+      x: 70 + i * ((BOX_W - 140) / 4), y: BOX_H - 210, face: 1,
+      walk: 0, walkAmt: 0, trotting: false, blink: rand(1, 4), state: "exploring",
+    });
+    const home = i;
+    const ap = boxApproachPt(home);
+    return {
+      cat: c, box: home, state: "approach", t: 0, decideAt: rand(0.3, 1.2),
+      score: 0, seen: new Set(), log: [], pawN: 0, stayT: 0,
+      napping: false, entered: false, climbed: false, tx: ap.x, ty: ap.y,
+    };
+  });
+  document.getElementById("festResult").hidden = true;
+  document.getElementById("festBar").hidden = false;
+  document.getElementById("festTime").textContent = "the great box challenge";
+  document.getElementById("festSkip").hidden = true;
+  document.getElementById("festSkip").textContent = "Skip to the tally ›";
+  trackEvent("box_challenge_started", { cats: boxParts.map(p => p.cat.name) });
+}
+// weighted choice of what a cat does with a box next; trait deltas nudge it
+function boxChoiceWeights(p) {
+  const base = { enter: 0.26, top: 0.15, beside: 0.18, paw: 0.22, wander: 0.21, nap: 0.06 };
+  const traits = (p.cat.traits || []).filter(t => BOX_TENDENCIES[t]);
+  for (const k of Object.keys(base)) {
+    if (traits.length) {
+      let d = 0;
+      for (const t of traits) d += (BOX_TENDENCIES[t][k] || 0);
+      base[k] += d / traits.length;
+    }
+    base[k] = Math.max(0.02, base[k]);
+  }
+  if (p.entered) base.enter *= 0.4;          // did that already — spread out
+  if (p.climbed) base.top *= 0.4;
+  if (p.pawN >= 3) base.paw *= 0.3;
+  if (p.napping) return { nap: 1 };          // asleep stays asleep
+  return base;
+}
+function boxRoll(w) {
+  let sum = 0; for (const k in w) sum += w[k];
+  let r = Math.random() * sum;
+  for (const k in w) { r -= w[k]; if (r <= 0) return k; }
+  return "beside";
+}
+function boxInspect(p) {
+  if (p.seen.has(p.box)) return;
+  p.seen.add(p.box);
+  const fresh = !boxTouched[p.box];
+  boxTouched[p.box] = true;
+  p.score += 1 + (fresh ? 2 : 0);           // inspect +1, first cat to touch this box +2 (unique interaction)
+  spawnParticles(boxes[p.box].x, boxes[p.box].y + 4, "dust", 3);
+  if (p.seen.size === 5) { p.score += 4; p.log.push("checked every single box, one at a time, then picked the first one again"); }
+}
+function boxTick(p, dt) {
+  if (boxPhase === "tally" || boxPhase === "podium") return;
+  const c = p.cat;
+  p.t += dt;
+  const dist = Math.hypot(p.tx - c.x, p.ty - c.y);
+  if (p.state === "approach" || p.state === "goto") {
+    if (dist < 10) {
+      if (p.state === "approach") { boxInspect(p); p.state = "decide"; p.t = 0; p.decideAt = rand(0.5, 1.1); }
+      else { p.state = p.gotoState; p.t = 0; onBoxArrive(p); }
+    }
+    return;
+  }
+  if (p.state === "decide") {
+    if (p.t < p.decideAt) return;
+    p.t = 0;
+    const choice = boxRoll(boxChoiceWeights(p));
+    if (choice === "wander") {
+      // prefer a box nobody has touched yet — that's where the unique points are
+      let pool = boxes.map((_, i) => i).filter(i => i !== p.box);
+      const fresh = pool.filter(i => !boxTouched[i]);
+      p.box = _bpick(fresh.length ? fresh : pool);
+      const ap = boxApproachPt(p.box);
+      p.tx = ap.x; p.ty = ap.y; p.state = "approach";
+      return;
+    }
+    if (choice === "paw") {
+      p.pawN++;
+      if (p.pawN <= 5) p.score += 1;
+      if (p.pawN === 3) p.log.push(_bpick(BOX_PAW_LINES));
+      spawnParticles(boxes[p.box].x + rand(-8, 8), boxes[p.box].y, "dust", 2);
+      p.state = "paw"; p.pawUntil = rand(0.8, 1.6);
+      const bp = boxBesidePt(p.box); p.tx = bp.x; p.ty = bp.y;
+      return;
+    }
+    p.pendingNap = choice === "nap";
+    const settleAs = (choice === "top") ? "ontop" : (choice === "beside") ? "beside" : "inside";  // enter + nap both head into a box
+    const dest = settleAs === "ontop" ? boxTopPt(p.box) : settleAs === "beside" ? boxBesidePt(p.box) : boxInsidePt(p.box);
+    p.tx = dest.x; p.ty = dest.y;
+    p.state = "goto"; p.gotoState = settleAs;
+    return;
+  }
+  if (p.state === "paw") {
+    p.pawUntil -= dt;
+    if (p.pawUntil <= 0) { p.state = "decide"; p.decideAt = rand(0.6, 1.4); p.t = 0; }
+    return;
+  }
+  // settled states: inside / ontop / beside — accrue points, maybe nap, maybe move on.
+  // a napping cat is done: the +3 was the payout, it stops ticking so the field
+  // doesn't just converge on "everyone slept for the same number of ticks".
+  if (p.napping) return;
+  p.stayT += dt;
+  const tickEvery = 3.4;
+  if (p.stayT >= tickEvery) {
+    p.stayT -= tickEvery;
+    if (p.state === "inside" || p.state === "ontop") p.score += 1;   // stay put (periodic) +1
+    else if (p.state === "beside") p.score += 1;                     // holding court still counts
+    const r = Math.random();
+    const T = p.cat.traits || [];
+    const napBias = T.includes("lazy") ? 0.32 : T.includes("playful") ? 0.04 : T.includes("cuddly") ? 0.10 : 0.15;
+    if ((p.state === "inside" || p.state === "ontop") && boxT > 6 && r < napBias) {
+      p.napping = true;
+      p.score += 3;                                       // nap +3 (terminal)
+      p.log.push(boxNapLine(p.state === "ontop"));
+    } else if (r > 0.62 && boxT < BOX_DUR - 5) {
+      p.state = "decide"; p.decideAt = rand(0.4, 1.0); p.t = 0;      // gets bored, moves on
+    }
+  }
+}
+function onBoxArrive(p) {
+  if (p.state === "inside" && !p.entered) {
+    p.entered = true; p.score += 3;                       // enter +3
+    p.log.push(_bpick(BOX_ENTER_LINES));
+    spawnParticles(boxes[p.box].x, boxes[p.box].y - 6, "heart", 2);
+  } else if (p.state === "ontop" && !p.climbed) {
+    p.climbed = true; p.score += 4;                       // sit on top +4 — the iconic move
+    p.log.push(_bpick(BOX_TOP_LINES));
+  } else if (p.state === "beside") {
+    p.score += 1;                                         // sit beside +1
+  }
+  p.stayT = 0;
+  if (p.pendingNap && (p.state === "inside" || p.state === "ontop") && boxT > 5) {
+    p.pendingNap = false;
+    p.napping = true;
+    p.score += 3;                                         // nap +3 (terminal)
+    p.log.push(boxNapLine(p.state === "ontop"));
+  }
+}
+function syncBoxCat(p, dt) {
+  const c = p.cat, m = catMotion(c);
+  const moving = boxPhase !== "tally" && (p.state === "approach" || p.state === "goto");
+  const k = Math.min(1, dt * 3.4);
+  c.x += (p.tx - c.x) * k; c.y += (p.ty - c.y) * k;
+  if (Math.abs(p.tx - c.x) > 1) c.face = p.tx > c.x ? 1 : -1;
+  const far = Math.hypot(p.tx - c.x, p.ty - c.y) > 6;
+  if (moving && far) {
+    c.state = "exploring"; c.trotting = true;
+    c.walk += 40 * dt * 0.34; c.walkAmt = Math.min(1, (c.walkAmt || 0) + dt * 8);
+    c.tail += dt * 6 * m.tailRate; c.bob += dt * 9;
+  } else {
+    c.state = p.napping ? "sleeping" : p.state === "paw" ? "playing" : "loafing";
+    c.walkAmt = Math.max(0, (c.walkAmt || 0) - dt * 4);
+    c.trotting = c.walkAmt > 0.05;
+    c.tail += dt * 2.6 * m.tailRate; c.bob += dt * 3;
+  }
+  c.blink -= dt; if (c.blink < -0.12) c.blink = rand(2.4, 6.5) * m.blinkEvery;
+}
+function drawBoxRoom(g) {
+  g.fillStyle = "#ece3d1"; g.fillRect(0, 0, BOX_W, BOX_H);
+  g.fillStyle = "#ddd0b7"; g.fillRect(0, 0, BOX_W, 190);            // back wall
+  g.fillStyle = "#e4d9c2"; g.fillRect(0, 190, BOX_W, 12);           // skirting
+  g.fillStyle = "rgba(150,120,88,0.13)";                            // a rug the boxes sit on
+  g.beginPath(); g.ellipse(BOX_W / 2, 560, 300, 380, 0, 0, 7); g.fill();
+  g.strokeStyle = "rgba(150,120,88,0.18)"; g.lineWidth = 3;
+  g.beginPath(); g.ellipse(BOX_W / 2, 560, 276, 356, 0, 0, 7); g.stroke();
+}
+function drawBox(g, b, layer) {
+  const x = b.x, y = b.y;
+  const outer = "#cf975d", side = "#b9834b", inner = "#71492b", lip = "#e2ad78", edge = "rgba(90,58,34,0.35)";
+  if (layer === "back") {
+    g.fillStyle = side;                                   // body rising behind
+    g.beginPath(); g.moveTo(x - 48, y - 4); g.lineTo(x - 56, y - 42); g.lineTo(x + 56, y - 42); g.lineTo(x + 48, y - 4); g.closePath(); g.fill();
+    g.fillStyle = inner;                                  // interior well
+    g.beginPath(); g.moveTo(x - 44, y - 4); g.lineTo(x - 38, y - 32); g.lineTo(x + 38, y - 32); g.lineTo(x + 44, y - 4); g.closePath(); g.fill();
+    g.fillStyle = lip;                                    // far flap, tipped away
+    g.beginPath(); g.moveTo(x - 38, y - 32); g.lineTo(x - 44, y - 54); g.lineTo(x + 44, y - 54); g.lineTo(x + 38, y - 32); g.closePath(); g.fill();
+    g.strokeStyle = edge; g.lineWidth = 1.5; g.stroke();
+  } else {
+    g.fillStyle = side;                                   // open side flaps
+    g.beginPath(); g.moveTo(x - 48, y - 4); g.lineTo(x - 72, y - 12); g.lineTo(x - 66, y - 32); g.lineTo(x - 46, y - 22); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(x + 48, y - 4); g.lineTo(x + 72, y - 12); g.lineTo(x + 66, y - 32); g.lineTo(x + 46, y - 22); g.closePath(); g.fill();
+    g.fillStyle = outer;                                  // front face
+    roundRect(g, x - 50, y - 6, 100, 30, 4); g.fill();
+    g.fillStyle = lip;                                    // near flap folded toward us
+    g.beginPath(); g.moveTo(x - 50, y - 6); g.lineTo(x - 60, y + 10); g.lineTo(x + 60, y + 10); g.lineTo(x + 50, y - 6); g.closePath(); g.fill();
+    g.strokeStyle = edge; g.lineWidth = 1.5; g.strokeRect(x - 50, y - 6, 100, 30);
+    if (b.variant === "paw") {
+      g.fillStyle = "rgba(92,60,38,0.4)";
+      g.beginPath(); g.ellipse(x, y + 12, 5, 4, 0, 0, 7); g.fill();
+      for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(x - 5 + i * 5, y + 5, 1.9, 0, 7); g.fill(); }
+    } else if (b.variant === "tape") {
+      g.strokeStyle = "rgba(214,194,152,0.8)"; g.lineWidth = 5;
+      g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x, y + 10); g.stroke();
+    } else if (b.variant === "dent") {
+      g.fillStyle = "rgba(90,58,34,0.24)";
+      g.beginPath(); g.ellipse(x + 16, y + 6, 11, 5, 0.3, 0, 7); g.fill();
+    }
+  }
+}
+function renderBox(dt) {
+  boxT += dt;
+  const g = ctx;
+  { const px = restViewportPx();
+    if (Math.abs(canvas.width - Math.round(px.vw * (_festDPR || DPR))) > 2) fitFestCanvas(); }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  const V = boxFit();
+  g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
+  drawBoxRoom(g);
+  if (!boxes.length) return;   // chooser/picker still open — just the empty room behind the panel
+
+  if (boxPhase === "settle" || boxPhase === "play" || boxPhase === "tally") {
+    for (const p of boxParts) { boxTick(p, dt); syncBoxCat(p, dt); }
+    if (boxPhase === "settle" && boxParts.every(p => p.state !== "approach")) {
+      boxPhase = "play";
+      document.getElementById("festSkip").hidden = false;
+    }
+    if (boxPhase === "play" && boxT > BOX_DUR) {
+      boxPhase = "tally"; boxTallyAt = boxT;
+      document.getElementById("festSkip").hidden = true;
+    }
+    if (boxPhase === "tally" && boxT - boxTallyAt > 2.0) { boxPhase = "podium"; showBoxResult(); }
+  }
+
+  const order = boxes.map((_, i) => i).sort((a, b) => boxes[a].y - boxes[b].y);
+  for (const i of order) {
+    drawBox(g, boxes[i], "back");
+    for (const p of boxParts) if (p.box === i && p.state === "inside") drawCat(g, p.cat, false);
+    drawBox(g, boxes[i], "front");
+    for (const p of boxParts) if (p.box === i && p.state === "ontop") drawCat(g, p.cat, false);
+  }
+  const roam = boxParts.filter(p => p.state !== "inside" && p.state !== "ontop").sort((a, b) => a.cat.y - b.cat.y);
+  for (const p of roam) drawCat(g, p.cat, false);
+  if (particles.length) drawFX(g);
+}
+function boxRanking() {
+  return boxParts.map(p => ({ p, total: p.score + rand(0, 4) }))   // small end jitter (spec)
+    .sort((a, b) => b.total - a.total);
+}
+function showBoxResult() {
+  const rank = boxRanking();
+  boxWinner = rank[0].p;
+  const res = document.getElementById("festResult");
+  res.querySelector("h2").textContent = "The Great Box Challenge";
+  res.querySelector(".fr-emoji").textContent = "📦";
+  document.getElementById("festAgain").textContent = "Go again";
+
+  const top = rank.slice(0, 3).map(r => r.p);
+  const display = [top[1], top[0], top[2]].filter(Boolean);
+  const displayPlace = display.map(p => top.indexOf(p));
+  const blockClass = ["gold", "silver", "bronze"];
+  document.getElementById("festPodium").innerHTML =
+    `<div class="fr-pod-tops">${display.map((p, i) => {
+      const place = displayPlace[i];
+      return `<div class="fr-pod-top rank${place + 1}">
+        <canvas width="64" height="60"></canvas>
+        <div class="fr-pod-name${p.cat.visitor ? "" : " mine"}">${esc(p.cat.name)}</div>
+      </div>`;
+    }).join("")}</div>
+    <div class="fr-pod-blocks">${display.map((p, i) => `<div class="fr-pod-block ${blockClass[displayPlace[i]]}">${displayPlace[i] + 1}</div>`).join("")}</div>`;
+  const cols = document.querySelectorAll("#festPodium .fr-pod-top");
+  display.forEach((p, i) => miniCat(cols[i].querySelector("canvas"), p.cat.coatKey, p.cat.star, p.napping ? "sleeping" : "loafing", false, 0.85));
+
+  const base = goalShells(0.25);
+  const mine = !boxWinner.cat.visitor;
+  const rw = { shells: mine ? goalShells(0.6) : base };   // participation, +winner bump if a resident took it
+  grantReward(rw, null);
+  syncHud();
+
+  document.getElementById("festPickLine").textContent =
+    _bpick(BOX_WIN_LINES).replace("[CAT]", boxWinner.cat.name) + `  +${rw.shells} ◈`;
+
+  const lines = [];
+  if (boxWinner.log.length) lines.push(`${boxWinner.cat.name} ${_bpick(boxWinner.log)}.`);
+  const others = boxParts.filter(p => p !== boxWinner && p.log.length);
+  if (others.length) { const o = _bpick(others); lines.push(`${o.cat.name} ${_bpick(o.log)}.`); }
+  if (!lines.length) lines.push("Not much happened. The boxes seemed content with that.");
+  document.getElementById("festRestLine").textContent = lines.join(" ");
+  logMoment("📦", `The Great Box Challenge — ${boxWinner.cat.name} won. ` + lines.join(" "), "tale");
+
+  spawnParticles(BOX_W / 2, 260, "spark", 10);
+  document.getElementById("festSkip").hidden = true;
+  document.getElementById("festSkip").textContent = "Skip to the finish ›";
+  document.getElementById("festBar").hidden = true;
+  res.hidden = false;
+  trackEvent("box_challenge_completed", { winner: boxWinner.cat.name, mine, score: boxWinner.score });
+}
+
+/* ================= COVE VOLLEYBALL =================
+   A 3-v-3 beach match: the player's cats vs a made-up visiting cove. The
+   volleyball plays itself — the player's job is to keep their cats awake.
+
+   Points EMERGE from the court: a ball has a trajectory + landing spot, the
+   nearest awake cat runs to cover it, and whether they get there depends on
+   distance / state / small trait modifiers. Nothing decides the rally winner
+   up front. Sleeping cats are literally removed from coverage — fewer awake
+   cats means real uncovered court. The player taps a DROWSY (or asleep) cat to
+   perk it back up, gated by a short shared cooldown, no visible counter. A
+   text commentator narrates actual events. First to 3.
+
+   Rides the festival rails (overlay, wipe, grounds audio, countdown, result
+   card, drawCat, grantReward). Visiting cats are throwaway — never touch
+   `cats`, the Catdex, or the save. Everything lives in this block. */
+// a small homemade court — compact so the cats fill the frame and read clearly,
+// not a regulation stadium
+const VB_W = 560, VB_H = 980, NET_Y = 486;
+const VB_HOME = {
+  visit: [{ x: 148, y: 272 }, { x: 290, y: 220 }, { x: 432, y: 272 }],
+  cove:  [{ x: 148, y: 710 }, { x: 290, y: 764 }, { x: 432, y: 710 }],
+};
+const VB_MIDY = { cove: 706, visit: 262 };   // the row a cat holds while covering
+const VB_CT = { top: 168, bot: 884, cy0: 540, cy1: 862, vy0: 190, vy1: 456 };   // court bounds / per-side landing-y ranges
+// ---- commentator: event-keyed line pools + a priority so a big moment isn't
+// stepped on by a small one. {catName}/{playerCove}/{visitingCove} interpolate.
+const VB_COM = {
+  drowsy: ["Oh no… {catName} is getting sleepy.", "{catName}'s eyes are closing…",
+    "That's a concerning amount of yawning from {catName}.", "{catName} appears to be reconsidering volleyball.",
+    "Someone might want to check on {catName}.", "{catName} is looking dangerously comfortable."],
+  asleep: ["{catName} is down! …No, wait. Sleeping.", "And {catName} has officially chosen nap.",
+    "{catName} is asleep. During the match.", "Apparently volleyball can wait.",
+    "{catName} has left the match spiritually."],
+  twoVthree: ["{playerCove} is now playing two against three."],
+  solo: ["{catName} is covering the court alone.", "It's currently {catName} versus everybody.",
+    "{catName} could really use some help."],
+  wake: ["{catName} is back!", "Awake again. For now.", "{catName} has reluctantly returned to work.",
+    "A successful intervention.", "We have another conscious volleyball player.",
+    "{catName} has rejoined the sporting world."],
+  failWake: ["…That didn't work.", "{catName} has declined.", "{catName} heard you. That's somehow worse.",
+    "Request denied.", "{catName} remains unavailable.", "An attempt was made."],
+  save: ["{catName} saves it!", "Somehow, {catName} got there.", "That was almost athletic.",
+    "{catName} keeps it alive!"],
+  heroicSave: ["{catName} SAVES IT!", "{catName} is doing everything right now!", "Somebody help {catName}!",
+    "One cat. Entire court."],
+  whiff: ["Excellent jump. Wrong location.", "{catName} had the right idea.",
+    "Close enough to concern the ball.", "Almost.", "Strong effort. Limited contact."],
+  watch: ["{catName} watched that one very carefully.", "No attempt was made.",
+    "A strong observational performance from {catName}.", "{catName} has chosen not to interfere.",
+    "The ball was thoroughly observed."],
+  longRally: ["They're actually playing volleyball!", "This rally has gone suspiciously well.",
+    "Nobody has fallen asleep yet.", "This is becoming alarmingly competitive.", "Still going!"],
+  comeback: ["{playerCove} isn't done yet!", "Not over yet.", "{playerCove} is clawing back."],
+  tie: ["We're tied!", "Somehow, this is now {scoreA}–{scoreB}.", "Next point takes it."],
+  matchPoint: ["Next point takes it.", "One point. Three cats. Varying levels of consciousness.",
+    "This is somehow match point.", "Nobody nap now."],
+  allAsleep: ["We'll give them a minute.", "Volleyball has been temporarily cancelled.",
+    "This appears to be a nap now.", "Nobody is currently available for volleyball."],
+  generic: ["The ball is still in play.", "Somewhere, a whistle.", "Beach conditions remain excellent."],
+};
+const VB_COM_PRI = { matchWin: 100, allAsleep: 92, matchPoint: 80, heroicSave: 72, save: 52, comeback: 48,
+  tie: 46, twoVthree: 44, solo: 44, asleep: 42, failWake: 38, wake: 34, drowsy: 30, whiff: 12, watch: 12,
+  longRally: 10, generic: 4 };
+let vbCom = { text: "", at: -99, pri: 0, last: "" };
+const VB_COVE_NAMES = ["Sunbeam Cove", "Driftwood Cove", "Moonbell Cove", "Seashell Cove", "Whisker Bay",
+  "Pebble Cove", "Dandelion Cove", "Tidepool Cove", "Willow Cove", "Saltwind Cove", "Lantern Cove",
+  "Marigold Cove", "Foghorn Cove", "Anemone Cove", "Cinnamon Cove", "Hollow Cove", "Barnacle Bay",
+  "Clementine Cove", "Thistle Cove", "Puddle Cove", "Harborlight Cove", "Rockpool Cove", "Gullwing Cove"];
+const VB_CAT_NAMES = ["Bean", "Toast", "Maple", "Pesto", "Pickles", "Poppy", "Noodle", "Sunny", "Marmalade",
+  "Custard", "Sprout", "Radish", "Gizmo", "Domino", "Peanut", "Hazel", "Tater", "Waffle", "Bramble", "Gravy"];
+const VB_WIN_LINES = [
+  "A surprisingly legitimate sporting event.",
+  "Nobody expected it to go this well.",
+  "Three cats have technically won at volleyball.",
+  "The trophy is a shell. They seem satisfied.",
+];
+const VB_LOSE_LINES = [
+  "Strong performance. Questionable attendance.",
+  "Everyone participated eventually.",
+  "A valiant effort, punctuated by naps.",
+  "The visiting cove has won. Several naps were taken.",
+];
+const VB_DROWSE_BASE = 0.022;   // /sec unmodified — plus activity (jumps/dives/long rallies) and the match-length ramp
+const VB_COVE_DROWSE = 1.34;    // the player's cats nod off faster than the visitors — staying on top of them IS the game
+const VB_DROWSY_HOLD = 2.6;     // sec a cat holds DROWSY (the reaction window) before it drops off — the spec's "2–3s"
+const VB_WAKE_CD = 3.0;         // shared cooldown after any wake/poke — you can't save everyone at once
+const VB_WAKE_PROTECT = [8, 12]; // sec a just-woken cat can't start drowsing again
+let volleyParts = [], volleyBall = null, volleyPhase = "idle", matchT = 0, _volleyVp = null;
+let volleyScore = { cove: 0, visit: 0 }, volleyVisitName = "Sunbeam Cove";
+let volleyPickSel = [], _vbServeAt = 0, _vbPointAt = 0, _vbResultAt = 0, _vbServer = "visit";
+let _vbResultShown = false, _vbReceiver = null, _vbFast = false, _vbNoDrowse = false, _vbBannerUntil = 0;
+let _vbWakeCd = 0, _vbAllAsleepUntil = 0, _vbSaidAllAsleep = false, _vbMaxDeficit = 0, _vbLastWinner = null, _vbLastTapAt = -9, _vbTutSeen = false, _vbMeowAt = -9;
+let _vbTaps = [];   // recent taps, for the ripple-where-you-pressed feedback (arena coords)
+// a little meow whenever you tap one of your cats — eager if it's alert, grouchy
+// if you just prodded a sleeper. Throttled so mashing taps doesn't machine-gun.
+function vbMeow(c, happy) {
+  if (matchT - _vbMeowAt < 0.3) return;
+  _vbMeowAt = matchT;
+  // loud + up front — it needs to cut over the festival bed as tap feedback
+  if (happy) { if (!playSample("meow", { vol: 1.25, rate: 1.06 })) meow(true, 1.7); }
+  else { if (!playSample("grumpy", { vol: 1.1 })) meow(false, 1.4); }
+}
+function _vwpick(w) { let s = 0; for (const k in w) s += w[k]; let r = Math.random() * s;
+  for (const k in w) { r -= w[k]; if (r <= 0) return k; } return Object.keys(w)[0]; }
+function volleyFit() {
+  const { vw, vh } = restViewportPx();
+  const rd = _festDPR || DPR;
+  const sc = Math.min((vw * rd) / VB_W, (vh * rd) / VB_H);
+  return { sc, ox: (vw * rd - VB_W * sc) / 2, oy: (vh * rd - VB_H * sc) / 2 };
+}
+function volleyScreenToArena(cx, cy) {
+  const r = canvas.getBoundingClientRect();
+  const V = _volleyVp || volleyFit();
+  const bx = (cx - r.left) * (canvas.width / Math.max(1, r.width));
+  const by = (cy - r.top) * (canvas.height / Math.max(1, r.height));
+  return { x: (bx - V.ox) / V.sc, y: (by - V.oy) / V.sc };
+}
+function mkVolleyPart(c, side, idx) {
+  return {
+    cat: c, side, idx, home: side === "cove" ? VB_HOME.cove[idx] : VB_HOME.visit[idx],
+    drowse: rand(0, 0.14), tier: "awake", _drowsyAt: 0, _sleepUntil: 0, _wakeAt: 0, _drowseVar: rand(0.82, 1.28),
+    _protectUntil: 0, _primed: 0, _pokedAt: 0, _yawnAt: 0, _calledUntil: 0, _callFlash: 0, _sharpUntil: 0,
+    act: null, _actUntil: 0, _hesUntil: 0,
+    stats: { returns: 0, saves: 0, points: 0, naps: 0 },
+  };
+}
+// commentator — pick an event-appropriate line, respecting priority + cooldown
+function vbSay(key, ctx) {
+  ctx = ctx || {};
+  const pri = VB_COM_PRI[key] || 4;
+  const age = matchT - vbCom.at;
+  if (age < 2.0 && vbCom.pri > pri) return;                 // a bigger line is still up
+  if (pri < 44 && age < rand(3, 5)) return;                 // normal chatter cooldown
+  const pool = VB_COM[key] || VB_COM.generic;
+  let line = pick(pool), guard = 0;
+  while (line === vbCom.last && guard++ < 4) line = pick(pool);
+  line = line.replace(/\{catName\}/g, ctx.cat || "Someone")
+    .replace(/\{playerCove\}/g, coveName()).replace(/\{visitingCove\}/g, volleyVisitName)
+    .replace(/\{scoreA\}/g, volleyScore.cove).replace(/\{scoreB\}/g, volleyScore.visit);
+  vbCom = { text: line, at: matchT, pri, last: line };
+  const el = document.getElementById("volleyCom");
+  document.getElementById("vbComText").textContent = line;
+  el.hidden = false; el.classList.remove("fade");
+  el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";
+  trackEvent("volleyball_commentary_event", { event: key, cat: ctx.cat || null });
+}
+function makeVisitingCove(playerAvgMood) {
+  const name = pick(VB_COVE_NAMES);
+  const used = new Set(cats.map(c => c.name));
+  const pool = VB_CAT_NAMES.filter(n => !used.has(n));
+  const out = [];
+  // visitors start at roughly the player team's own condition — so a match
+  // between two rested coves is a coin flip, and the player's NUDGING is what
+  // tips it, not who tended better beforehand.
+  const base = clamp(playerAvgMood || 66, 50, 88);
+  for (let i = 0; i < 3; i++) {
+    const n = pool.length ? pool.splice((Math.random() * pool.length) | 0, 1)[0] : "Guest " + roman(i + 2);
+    const c = new Cat({ visitor: true, name: n, mood: clamp(base + rand(-12, 12), 40, 96), x: -999, y: -999 });
+    c._motion = null;
+    out.push(c);
+  }
+  return { name, cats: out };
+}
+function renderVolleyPickGrid(roster) {
+  volleyPickSel = [];
+  const grid = document.getElementById("volleyPickGrid");
+  grid.innerHTML = "";
+  for (const c of roster) {
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "fp-cell";
+    const tr = (c.traits || []).slice(0, 2).map(k => `<span>${esc(TRAITS[k] ? TRAITS[k].label : k)}</span>`).join("");
+    cell.innerHTML = `<canvas width="56" height="48"></canvas><span class="nm"></span><span class="fp-tr">${tr}</span>`;
+    cell.querySelector(".nm").textContent = c.name;
+    cell.addEventListener("click", () => {
+      const at = volleyPickSel.indexOf(c);
+      if (at >= 0) { volleyPickSel.splice(at, 1); cell.classList.remove("picked"); }
+      else { if (volleyPickSel.length >= 3) return; volleyPickSel.push(c); cell.classList.add("picked"); }
+      document.getElementById("volleyPickCount").textContent = `(${volleyPickSel.length} / 3)`;
+      document.getElementById("volleyStart").disabled = volleyPickSel.length !== 3;
+    });
+    grid.appendChild(cell);
+    miniCat(cell.querySelector("canvas"), c.coatKey, c.star, "loafing", false, 1);
+  }
+  document.getElementById("volleyPickCount").textContent = "(0 / 3)";
+  document.getElementById("volleyStart").disabled = true;
+}
+function startCoveVolley() {
+  if (volleyPickSel.length !== 3) return;
+  if (!volleyPickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats just wandered off."); return; }
+  festKind = "volley";
+  fitFestCanvas();
+  matchT = 0; volleyScore = { cove: 0, visit: 0 }; volleyBall = null;
+  _vbServeAt = 0; _vbPointAt = 0; _vbResultAt = 0; _vbServer = Math.random() < 0.5 ? "cove" : "visit";
+  _vbResultShown = false; _vbReceiver = null; _vbBannerUntil = 0;
+  _vbWakeCd = 0; _vbAllAsleepUntil = 0; _vbSaidAllAsleep = false; _vbMaxDeficit = 0; _vbLastTapAt = -9; _vbLastWinner = null; _vbTaps = [];
+  vbCom = { text: "", at: -99, pri: 0, last: "" };
+  document.getElementById("volleyCom").hidden = true;
+  particles.length = 0; floaters.length = 0;
+  const avgMood = volleyPickSel.reduce((s, c) => s + (c.mood ?? 60), 0) / volleyPickSel.length;
+  const visit = makeVisitingCove(avgMood);
+  volleyVisitName = visit.name;
+  volleyParts = [];
+  volleyPickSel.forEach((c, i) => {
+    Object.assign(c, { x: VB_HOME.cove[i].x, y: VB_HOME.cove[i].y, face: 1, state: "seeking",
+      walkAmt: 0, walk: 0, trotting: false, squash: 0, blink: rand(1, 4), _vbLift: 0, _fx: null });
+    c._motion = null;
+    volleyParts.push(mkVolleyPart(c, "cove", i));
+  });
+  visit.cats.forEach((c, i) => {
+    Object.assign(c, { x: VB_HOME.visit[i].x, y: VB_HOME.visit[i].y, face: 1, state: "seeking",
+      walkAmt: 0, walk: 0, trotting: false, squash: 0, blink: rand(1, 4), _vbLift: 0 });
+    volleyParts.push(mkVolleyPart(c, "visit", i));
+  });
+  volleyPhase = "countdown";
+  document.getElementById("vbNameA").textContent = coveName();
+  document.getElementById("vbNameB").textContent = visit.name;
+  updateVolleyHud();
+  document.getElementById("festVolleyPanel").hidden = true;
+  document.getElementById("festVolleyTut").hidden = true;
+  document.getElementById("volleyHud").hidden = false;
+  document.getElementById("volleyBanner").hidden = true;
+  document.getElementById("festBar").hidden = false;
+  document.getElementById("festTime").textContent = "cove volleyball";
+  document.getElementById("festSkip").hidden = true;
+  document.getElementById("festResult").hidden = true;
+  trackEvent("volleyball_team_selected", {
+    cats: volleyPickSel.map(c => c.name),
+    traits: volleyPickSel.map(c => (c.traits || []).slice(0, 2)),
+    moods: volleyPickSel.map(c => Math.round(c.mood ?? 60)),
+    visiting_cove: visit.name,
+  });
+  startVolleyBed();     // swap the fairground calliope for the beach bed
+  runFestCountdown();   // → volleyBegin() at "Go!"
+  trackEvent("volleyball_started", { visiting_cove: visit.name });
+}
+function volleyBegin() {
+  volleyPhase = "play";
+  _vbServeAt = matchT + 0.5;
+}
+function updateVolleyHud() {
+  document.getElementById("vbScoreA").textContent = volleyScore.cove;
+  document.getElementById("vbScoreB").textContent = volleyScore.visit;
+}
+// "in play" for coverage/targeting: awake or tired, but NOT drowsy/asleep/waking.
+// A sleeping cat is literally not a target and does not cover court.
+function vbAwakeOn(side) { return volleyParts.filter(p => p.side === side && (p.tier === "awake" || p.tier === "tired")); }
+function vbSideAsleepCount(side) { return volleyParts.filter(p => p.side === side && (p.tier === "asleep" || p.tier === "drowsy" || p.tier === "waking")).length; }
+function vbTargetPoint(side) {
+  // aim for a gap — away from that side's awake cats, inside their court
+  const yLo = side === "cove" ? VB_CT.cy0 : VB_CT.vy0, yHi = side === "cove" ? VB_CT.cy1 : VB_CT.vy1;
+  let best = { x: rand(80, 480), y: rand(yLo, yHi) }, bestD = -1;
+  for (let i = 0; i < 5; i++) {
+    const cand = { x: rand(80, 480), y: rand(yLo, yHi) };
+    let near = 1e9;
+    for (const p of vbAwakeOn(side)) near = Math.min(near, Math.hypot(p.cat.x - cand.x, p.cat.y - cand.y));
+    if (near > bestD) { bestD = near; best = cand; }
+  }
+  return best;
+}
+function serveBall() {
+  let side = _vbServer;
+  let servers = vbAwakeOn(side);
+  if (!servers.length) { side = side === "cove" ? "visit" : "cove"; servers = vbAwakeOn(side); }
+  const recv = side === "cove" ? "visit" : "cove";
+  const from = servers.length ? servers[(Math.random() * servers.length) | 0]
+    : { cat: { x: 280, y: side === "cove" ? VB_H - 40 : 130 } };
+  // serve toward the middle of the receiving court so a rally can start — but if
+  // that side is down cats, lean toward the open court (their nap is the reason
+  // the point happens, and it should read).
+  const down = 3 - vbAwakeOn(recv).length;
+  const my = recv === "cove" ? [VB_CT.cy0 + 40, VB_CT.cy1 - 40] : [VB_CT.vy0 + 30, VB_CT.vy1 - 30];
+  const mid = { x: rand(190, 370), y: rand(my[0], my[1]) };
+  const tgt = down >= 1 ? (() => { const gp = vbTargetPoint(recv); const w = clamp(down * 0.35, 0, 0.7);
+    return { x: mid.x * (1 - w) + gp.x * w, y: mid.y * 0.6 + gp.y * 0.4 }; })() : mid;
+  volleyBall = {
+    x: from.cat.x, y: from.cat.y - 18, fromX: from.cat.x, fromY: from.cat.y - 18,
+    toX: tgt.x, toY: tgt.y, t: 0, dur: rand(0.92, 1.15), arcH: rand(95, 140),
+    side: recv, live: true, lastHit: servers.length ? from : null, touches: 1, spin: 0, _satOn: null,
+  };
+  if (from.cat) { from.cat.face = tgt.x >= from.cat.x ? 1 : -1; if (from.act !== undefined) { from.act = "paw"; from._actUntil = matchT + 0.35; } }
+  vbTone("serve");
+}
+function vbReach(p) {
+  let r = p.side === "visit" ? 90 : 88;   // the visitors have nobody keeping them awake — a hair of an edge so the player's nudging is what wins matches (TUNE)
+  const T = p.cat.traits || [];
+  if (T.includes("playful")) r += 22;
+  if (T.includes("bold")) r += 13;
+  if (T.includes("curious")) r += 12;
+  if (T.includes("cuddly")) r += 4;
+  if (T.includes("lazy")) r -= 15;
+  if (p.tier === "tired") r -= 10;
+  if (p.tier === "drowsy") r -= 28;
+  r += clamp(((p.cat.mood ?? 60) - 60) / 8, -6, 8);
+  return Math.max(32, r);
+}
+function vbRollAction(p, b) {
+  const T = p.cat.traits || [];
+  const nearNet = Math.abs(b.toY - NET_Y) < 135;
+  const fast = b.dur < 1.0;
+  const w = { paw: 1.0, boop: 0.5, jump: 0.32, dive: 0.22 };
+  if (nearNet) w.jump += T.includes("climber") ? 1.3 : 0.4;
+  if (fast) w.dive += 0.55;
+  if (T.includes("bold")) w.dive += 0.7;
+  if (T.includes("playful")) { w.dive += 0.3; w.jump += 0.2; }
+  if (T.includes("grumpy")) w.paw += 0.8;
+  if (T.includes("lazy")) { w.jump *= 0.3; w.dive *= 0.4; w.boop += 0.4; }
+  return _vwpick(w);
+}
+function vbLaunchReturn(p, action) {
+  const other = p.side === "cove" ? "visit" : "cove";
+  // aim toward the other court — a lean toward its biggest gap that grows as the
+  // rally drags on, so long rallies stretch the defence rather than ending on a
+  // coin flip.
+  const mid = { x: 280, y: other === "cove" ? (VB_CT.cy0 + VB_CT.cy1) / 2 : (VB_CT.vy0 + VB_CT.vy1) / 2 };
+  const gap = vbTargetPoint(other);
+  const gapW = clamp(0.4 + volleyBall.touches * 0.05, 0.4, 0.75);
+  const tgt = { x: mid.x * (1 - gapW) + gap.x * gapW, y: mid.y * 0.5 + gap.y * 0.5 + rand(-34, 34) };
+  if (volleyBall.touches === 8) vbSay("longRally");
+  let arcH, dur;
+  if (action === "boop") { arcH = rand(120, 165); dur = rand(1.1, 1.35); }
+  else if (action === "jump") { arcH = rand(60, 92); dur = rand(0.8, 1.0); }
+  else if (action === "dive") { arcH = rand(52, 80); dur = rand(0.88, 1.06); }
+  else { arcH = rand(92, 128); dur = rand(1.0, 1.24); }
+  if ((p.cat.traits || []).includes("bold")) { arcH *= 0.85; dur *= 0.92; }
+  const b = volleyBall;
+  b.fromX = p.cat.x; b.fromY = p.cat.y - 22;
+  b.toX = tgt.x; b.toY = tgt.y; b.t = 0; b.dur = dur; b.arcH = arcH; b.side = other; b.touches++;
+  b.lastHit = p;
+  if (p.side === "cove") volleyParts.forEach(o => { if (o.side === "cove") o._calledUntil = 0; });  // ball's away — call the next one fresh
+  p.cat.face = tgt.x >= p.cat.x ? 1 : -1;
+  vbTone(action === "jump" ? "spike" : action === "boop" ? "boop" : "paw");
+}
+function vbResolveArrival() {
+  const b = volleyBall;
+  const recvAwake = vbAwakeOn(b.side);
+  // 1. nobody in play on that side → the ball simply lands
+  if (!recvAwake.length) {
+    floatText(b.toX, b.toY - 14, "The ball lands. Nobody objects.", "#9aa0a6");
+    vbTone("ocean");
+    vbBallLands(b.side, null);
+    return;
+  }
+  // 2. who takes it? On the COVE side the player "calls" a cat by tapping it —
+  //    the called cat commits (bigger reach, clean hands). With nobody called the
+  //    cats hesitate: they don't know whose ball it is, so it's messy. Visitors
+  //    just play at a steady middling competence.
+  let it = recvAwake[0], bd = 1e9;
+  for (const p of recvAwake) { const dd = Math.hypot(p.cat.x - b.toX, p.cat.y - b.toY); if (dd < bd) { bd = dd; it = p; } }
+  let called = false, hesitant = false;
+  if (b.side === "cove") {
+    const cc = recvAwake.find(p => p._calledUntil > matchT);
+    if (cc && Math.hypot(cc.cat.x - b.toX, cc.cat.y - b.toY) < vbReach(cc) * 1.9) { it = cc; called = true; }
+    else hesitant = true;   // no call → scramble
+  }
+  const T = it.cat.traits || [];
+  const soloDefender = recvAwake.length === 1;
+  if (T.includes("shy") && b.dur < 1.0 && Math.random() < 0.2 && !called) it._hesUntil = matchT + 0.35;
+  let reach = vbReach(it) * (it._hesUntil > matchT ? 0.55 : 1);
+  if (called) reach += 30;
+  else if (hesitant) reach -= 22;
+  const d = Math.hypot(it.cat.x - b.toX, it.cat.y - b.toY);
+
+  // 3. out of range → the court was open here. tried-but-short = WHIFF, didn't
+  //    bother / chose not to = WATCH. Either way the point is earned by position.
+  if (d > reach) {
+    const tried = d < reach * 1.55 && !(T.includes("lazy") && d > reach * 1.15)
+      && !(T.includes("grumpy") && Math.random() < 0.14);
+    if (tried) {
+      it.act = "whiff"; it._actUntil = matchT + 0.45;
+      it.cat.x += clamp(b.toX - it.cat.x, -30, 30); it.cat.y += clamp(b.toY - it.cat.y, -22, 22);
+      if (b.side === "cove") vbSay("whiff", { cat: it.cat.name });
+      if (d < reach * 1.05 && Math.random() < 0.16) {   // BALL SIT
+        b._satOn = it; floatText(it.cat.x, it.cat.y - 30, "This is technically not volleyball.", "#c98a52");
+      }
+    } else {
+      it.act = "watch"; it._actUntil = matchT + 0.75;
+      floatText(it.cat.x, it.cat.y - 28, pick(["…", "Noted.", "The ball, observed."]), "#9aa0a6");
+      if (b.side === "cove") vbSay("watch", { cat: it.cat.name });
+    }
+    vbBallLands(b.side, b.lastHit);
+    return;
+  }
+
+  // 4. in range but occasionally chooses not to engage — grumpy/very tired/low
+  //    mood, and it should read on screen (cat stands right by the ball).
+  const watchP = (b.touches <= 2 ? 0.015 : 0.035) + (it.tier === "tired" ? 0.06 : 0)
+    + clamp((56 - (it.cat.mood ?? 60)) / 360, 0, 0.06) + (T.includes("grumpy") ? 0.06 : 0);
+  if (!soloDefender && Math.random() < watchP) {
+    it.act = "watch"; it._actUntil = matchT + 0.75;
+    floatText(it.cat.x, it.cat.y - 28, pick(["Declined to interfere.", "…", "No."]), "#9aa0a6");
+    if (b.side === "cove") vbSay("watch", { cat: it.cat.name });
+    vbBallLands(b.side, b.lastHit);
+    return;
+  }
+
+  // 5. reached it → a return. Behaviour from ball position + trait; a WHIFF only
+  //    at the very edge of reach, on a hard dive, or while drowsy — never a flat
+  //    coin flip.
+  const action = vbRollAction(it, b);
+  it.act = action; it._actUntil = matchT + (action === "dive" ? 0.62 : 0.42);
+  it.cat.x += clamp(b.toX - it.cat.x, -24, 24);
+  it.drowse += action === "dive" ? 0.075 : action === "jump" ? 0.045 : 0.012;   // activity tires them
+  // DOUBLE DIVE flavour
+  if (action === "dive") {
+    const mate = recvAwake.filter(p => p !== it)
+      .sort((a, c) => Math.hypot(a.cat.x - b.toX, a.cat.y - b.toY) - Math.hypot(c.cat.x - b.toX, c.cat.y - b.toY))[0];
+    if (mate && Math.hypot(mate.cat.x - b.toX, mate.cat.y - b.toY) < reach * 0.95 && Math.random() < 0.4) {
+      mate.act = "dive"; mate._actUntil = matchT + 0.62; mate.drowse += 0.05;
+      mate.cat.x += clamp(b.toX - mate.cat.x, -20, 20);
+      spawnParticles((it.cat.x + mate.cat.x) / 2, (it.cat.y + mate.cat.y) / 2, "dust", 6);
+      floatText((it.cat.x + mate.cat.x) / 2, Math.min(it.cat.y, mate.cat.y) - 30, "— oof —", "#c98a52");
+    }
+  }
+  const edge = clamp((d - reach * 0.7) / (reach * 0.3), 0, 1);   // 0 well-placed, 1 at the limit
+  let whiffP = edge * 0.42;
+  if (it.tier === "drowsy") whiffP += 0.3;
+  else if (it.tier === "tired") whiffP += 0.07;
+  if (action === "dive") whiffP += 0.06;
+  if (b.dur < 0.9) whiffP += 0.06;
+  if (called) whiffP *= 0.3;                  // clean hands — you told them it was theirs
+  else if (hesitant) whiffP += 0.2;           // "was that yours? I thought it was yours"
+  if (Math.random() < clamp(whiffP, 0, 0.85)) {
+    it.act = "whiff"; it._actUntil = matchT + 0.45;
+    if (b.side === "cove") vbSay("whiff", { cat: it.cat.name });
+    vbBallLands(b.side, b.lastHit);
+    return;
+  }
+  // a real save/return
+  const hardBall = edge > 0.5 || b.dur < 1.0;
+  if (action === "dive") {
+    it.stats.saves++;
+    if (b.side === "cove") vbSay(soloDefender ? "heroicSave" : hardBall ? "save" : "generic", { cat: it.cat.name });
+  } else {
+    it.stats.returns++;
+    if (b.side === "cove" && soloDefender && hardBall) vbSay("heroicSave", { cat: it.cat.name });
+    else if (b.side === "cove" && hardBall && Math.random() < 0.4) vbSay("save", { cat: it.cat.name });
+  }
+  vbLaunchReturn(it, action);
+}
+function vbBallLands(concededSide, lastHit) {
+  const b = volleyBall;
+  b.live = false;
+  const winner = concededSide === "cove" ? "visit" : "cove";
+  _vbLastWinner = winner;
+  volleyScore[winner]++;
+  if (lastHit && lastHit.side === winner && lastHit.stats) lastHit.stats.points++;
+  if (!b._satOn) { b.x = b.toX; b.y = b.toY; spawnParticles(b.toX, b.toY, "dust", 5); }
+  vbTone("point");
+  if (Math.max(volleyScore.cove, volleyScore.visit) >= 3 && winner === "cove") vbCheer(0.075, 0.7);   // cove takes the match — a proper cheer over the flourish
+  _vbPointAt = matchT;
+  volleyPhase = "point";
+  updateVolleyHud();
+  trackEvent("volleyball_point", { winner, score: `${volleyScore.cove}-${volleyScore.visit}` });
+  _vbMaxDeficit = Math.max(_vbMaxDeficit, volleyScore.visit - volleyScore.cove);
+  const S = volleyScore, hi = Math.max(S.cove, S.visit);
+  // score-aware commentary
+  if (hi < 3) {
+    if (S.cove === 2 && S.visit === 2) { vbSay("tie"); vbSay("matchPoint"); }
+    else if (winner === "cove" && _vbMaxDeficit >= 2 && S.cove <= S.visit) vbSay("comeback");
+    else if (winner === "cove" && _vbMaxDeficit >= 1 && S.cove === S.visit) vbSay("tie");
+    if (hi === 2) {
+      const bn = document.getElementById("volleyBanner");
+      bn.textContent = "MATCH POINT"; bn.hidden = false;
+      bn.style.animation = "none"; void bn.offsetWidth; bn.style.animation = "";
+      _vbBannerUntil = matchT + 2.6;
+      if (!(S.cove === 2 && S.visit === 2)) vbSay("matchPoint");
+    }
+  }
+}
+// a short, bright crowd-cheer swell — filtered noise, no library, festival feel
+function vbCheer(vol = 0.04, dur = 0.32) {
+  if (muted || !actx) return;
+  const t0 = actx.currentTime + 0.02;
+  const sr = actx.sampleRate, len = Math.max(1, Math.floor(sr * dur));
+  const buf = actx.createBuffer(1, len, sr);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = actx.createBufferSource(); src.buffer = buf;
+  const bp = actx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 0.8;
+  bp.frequency.setValueAtTime(650, t0);
+  bp.frequency.linearRampToValueAtTime(1700, t0 + dur * 0.45);
+  bp.frequency.linearRampToValueAtTime(950, t0 + dur);
+  const g = actx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(vol, t0 + dur * 0.28);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  src.connect(bp); bp.connect(g); g.connect(actx.destination);
+  src.start(t0); src.stop(t0 + dur + 0.05);
+}
+// a quick major arpeggio + shimmer — the "yay, a point!" flourish (bigger on a match win)
+function vbFanfare(big) {
+  if (muted || !actx) return;
+  const notes = big ? [523.25, 659.25, 783.99, 1046.5, 1318.5] : [523.25, 659.25, 783.99, 1046.5];
+  const step = big ? 0.07 : 0.055;
+  notes.forEach((f, i) => {
+    tone(f, 0.16, "triangle", 0.05 - i * 0.003, i * step);
+    tone(f * 2, 0.09, "sine", 0.015, i * step + 0.01);
+  });
+  vbCheer(big ? 0.06 : 0.032, big ? 0.5 : 0.3);
+}
+function vbTone(kind) {
+  if (kind === "serve") {                                    // a bright "ready!" whistle
+    tone(520, 0.07, "triangle", 0.06); tone(700, 0.09, "triangle", 0.06, 0.06);
+    tone(1400, 0.05, "sine", 0.02, 0.06);
+  }
+  else if (kind === "paw") { tone(420, 0.05, "triangle", 0.055); tone(840, 0.04, "sine", 0.02, 0.02); }
+  else if (kind === "boop") { tone(380, 0.07, "triangle", 0.05); tone(560, 0.06, "triangle", 0.032, 0.05); }
+  else if (kind === "spike") { tone(300, 0.06, "square", 0.05); tone(190, 0.11, "sine", 0.05, 0.02); tone(1000, 0.05, "sine", 0.022, 0.01); }
+  else if (kind === "point") { vbFanfare(false); }
+  else if (kind === "ocean") { tone(120, 0.5, "sine", 0.05); tone(90, 0.6, "sine", 0.03, 0.1); }
+  else if (kind === "yawn") { tone(360, 0.28, "sine", 0.05); tone(250, 0.34, "sine", 0.04, 0.12); }
+  else if (kind === "nudge") { tone(560, 0.08, "triangle", 0.06); tone(840, 0.09, "triangle", 0.05, 0.05); tone(1120, 0.07, "sine", 0.03, 0.1); }
+}
+function vbWake(p, reluctant) {
+  const c = p.cat;
+  p.tier = "waking"; p._wakeAt = matchT; p.drowse = 0.08;
+  p._protectUntil = matchT + rand(VB_WAKE_PROTECT[0], VB_WAKE_PROTECT[1]);
+  p._primed = 0; p._pokedAt = 0;
+  c.state = "stretching"; c.stateT = 0; c.stateDur = reluctant ? 1.5 : 1.0;
+  if (reluctant && (c.traits || []).includes("grumpy")) floatText(c.x, c.y - 30, "hmph.", "#9a8a72");
+  spawnParticles(c.x, c.y - 12, "heart", 2); spawnParticles(c.x, c.y - 6, "twinkle", 3);
+  vbTone("nudge");   // the tap meow already fired in volleyPointer
+  trackEvent("volleyball_cat_woke", { cat: c.name, side: p.side, reluctant: !!reluctant });
+}
+function vbTickDrowse(p, dt) {
+  const c = p.cat, T = c.traits || [];
+  if (p.tier === "asleep") {
+    // primed by a first poke but not followed up → back to a plain sleep
+    if (p._primed && matchT > p._primed) p._primed = 0;
+    if (matchT >= p._sleepUntil) vbWake(p, false);   // natural wake-up
+    else {
+      // cuddly stirs when a teammate bustles past; chatty can rouse a napping mate
+      if (T.includes("cuddly") && Math.random() < dt * 0.5) {
+        const near = volleyParts.some(o => o.side === p.side && o !== p && o.tier !== "asleep"
+          && Math.hypot(o.cat.x - c.x, o.cat.y - c.y) < 55 && (o.cat.walkAmt || 0) > 0.3);
+        if (near) vbWake(p, false);
+      }
+    }
+    return;
+  }
+  if (p.tier === "waking") {
+    if (matchT - p._wakeAt > (T.includes("lazy") ? 1.7 : 1.1)) { p.tier = "awake"; p.drowse = 0.1; c.state = "seeking"; }
+    return;
+  }
+  // chatty flavour: an awake chatty cat occasionally meows a sleeping mate awake
+  if (T.includes("chatty") && p.tier === "awake" && Math.random() < dt * 0.05) {
+    const mate = volleyParts.find(o => o.side === p.side && o.tier === "asleep"
+      && Math.hypot(o.cat.x - c.x, o.cat.y - c.y) < 90);
+    if (mate) { floatText(c.x, c.y - 28, "mrrp?", "#7ba0c0"); vbWake(mate, false); }
+  }
+  if (_vbNoDrowse || matchT < p._protectUntil) { if (p.tier !== "awake") p.tier = "awake"; return; }
+
+  let rate = VB_DROWSE_BASE * p._drowseVar;
+  if (p.side === "cove") rate *= VB_COVE_DROWSE;
+  if (T.includes("lazy")) rate *= 1.9;
+  if (T.includes("playful")) rate *= 0.8;                       // stays engaged (distracted by the ball)
+  if (matchT < p._sharpUntil) rate *= 0.35;                     // just told to stay sharp
+  rate *= clamp(1 + (58 - (c.mood ?? 60)) / 130, 0.72, 1.45);   // low mood → drowsier
+  rate *= 1 + Math.min(0.55, matchT / 140);                     // the longer it drags, the sleepier everyone
+  if (volleyScore[p.side] < volleyScore[p.side === "cove" ? "visit" : "cove"]) rate *= 0.82;   // trailing cats try harder
+  if (_vbFast) rate *= 4;
+  p.drowse += rate * dt;
+
+  if (p.drowse >= 1) {
+    if (p.tier === "drowsy" && matchT - p._drowsyAt > (_vbFast ? 0.8 : VB_DROWSY_HOLD)) {
+      p.tier = "asleep"; p.drowse = 1;
+      p._sleepUntil = matchT + (_vbFast ? rand(2, 4) : rand(5, 12));
+      c.state = "sleeping"; c.stateT = 0; c.stateDur = 99;
+      p.act = null; p.stats.naps++;
+      vbTone("yawn");
+      trackEvent("volleyball_cat_slept", { cat: c.name, side: p.side });
+      if (p.side === "cove") {
+        const awake = vbAwakeOn("cove").length;
+        if (awake === 1) vbSay("solo", { cat: vbAwakeOn("cove")[0].cat.name });
+        else if (awake === 2) { vbSay("asleep", { cat: c.name }); vbSay("twoVthree"); }
+        else vbSay("asleep", { cat: c.name });
+      }
+    }
+  } else if (p.drowse >= 0.72) {
+    if (p.tier !== "drowsy") {
+      p.tier = "drowsy"; p._drowsyAt = matchT; vbTone("yawn");
+      trackEvent("volleyball_cat_drowsy", { cat: c.name, side: p.side });
+      if (p.side === "cove") vbSay("drowsy", { cat: c.name });
+    }
+  } else if (p.drowse >= 0.48) {
+    p.tier = "tired";
+    if (matchT - p._yawnAt > rand(3.5, 6)) p._yawnAt = matchT;   // drives the occasional TIRED yawn glyph
+  } else {
+    p.tier = "awake";
+  }
+}
+// where an awake cat stands to cover its share of the court — spread evenly
+// across the width by how many teammates are still awake. Two awake = each
+// holds half; one awake = it holds the middle and the edges are simply open.
+function vbCoverX(p) {
+  // slot the cats that can still move (awake / tired / drowsy) evenly across the
+  // width; the awake ones among them actually chase, but everyone holds a spot
+  // so a drowsy cat doesn't stack on a teammate.
+  const up = volleyParts.filter(o => o.side === p.side && o.tier !== "asleep" && o.tier !== "waking")
+    .sort((a, b) => a.home.x - b.home.x);
+  const n = up.length || 1;
+  const i = Math.max(0, up.indexOf(p));
+  return 90 + (i + 0.5) * (380 / n);
+}
+function vbMovePart(p, dt) {
+  const c = p.cat, T = c.traits || [];
+  if (p.tier === "asleep") { c.state = "sleeping"; c.walkAmt = 0; c.trotting = false; c._vbLift = 0; return; }
+  if (p.tier === "waking") { c.walkAmt = 0; c.trotting = false; c._vbLift = 0; return; }
+  let tx = p.home.x, ty = VB_MIDY[p.side];
+  const ballOurs = volleyPhase === "play" && volleyBall && volleyBall.live && volleyBall.side === p.side;
+  const called = p.side === "cove" && p._calledUntil > matchT;
+  const yLo = p.side === "cove" ? VB_CT.cy0 - 20 : VB_CT.vy0 - 10, yHi = p.side === "cove" ? VB_CT.cy1 + 10 : VB_CT.vy1 + 10;
+  // an uncalled cove receiver hesitates — holds for the first ~40% of the
+  // ball's flight before committing ("…is that mine?"), losing ground
+  const uncalledStall = p.side === "cove" && ballOurs && p === _vbReceiver && !called
+    && volleyBall.t / volleyBall.dur < 0.42;
+  if (ballOurs && (p === _vbReceiver || called) && !uncalledStall) {
+    tx = clamp(volleyBall.toX, 60, 500);
+    ty = clamp(volleyBall.toY, yLo, yHi);
+  } else {
+    tx = vbCoverX(p);                                     // hold your zone
+    if (ballOurs) tx = tx * 0.72 + clamp(volleyBall.toX, 90, 470) * 0.28;   // drift a touch ball-ward
+    if (T.includes("cuddly")) {
+      const mate = volleyParts.find(o => o.side === p.side && o !== p && o.tier !== "asleep");
+      if (mate) tx = tx * 0.82 + mate.cat.x * 0.18;
+    }
+  }
+  const hes = p._hesUntil > matchT ? 0.3 : 1;
+  const spd = (p.tier === "drowsy" ? 36 : p.tier === "tired" ? 74 : 100) * hes * (called ? 1.32 : 1);
+  const dx = tx - c.x, dy = ty - c.y, dist = Math.hypot(dx, dy);
+  const m = catMotion(c);
+  if (dist > 5) {
+    const step = Math.min(dist, spd * dt);
+    c.x += dx / dist * step; c.y += dy / dist * step;
+    c.face = dx >= 0 ? 1 : -1;
+    c.state = "exploring"; c.trotting = true;
+    c.walk += dt * 6.5; c.walkAmt = Math.min(1, (c.walkAmt || 0) + dt * 8);
+    c.bob += dt * 9;
+  } else {
+    c.walkAmt = Math.max(0, (c.walkAmt || 0) - dt * 4); c.trotting = c.walkAmt > 0.05;
+    const acting = p.act && matchT < p._actUntil;
+    c.state = acting && p.act !== "watch" ? "playing" : p.tier === "drowsy" ? "loafing" : "seeking";
+    if (volleyBall) c.face = volleyBall.x >= c.x ? 1 : -1;
+    c.bob += dt * (acting ? 12 : p.tier === "drowsy" ? 1.6 : 2.6);
+    c.tail += dt * 2.2 * m.tailRate;
+  }
+  // action lift
+  if (p.act && matchT < p._actUntil) {
+    const k = clamp(1 - (p._actUntil - matchT) / (p.act === "dive" ? 0.6 : 0.42), 0, 1);
+    const s = Math.sin(k * Math.PI);
+    c._vbLift = p.act === "jump" ? s * 28 : p.act === "dive" ? s * 6 : p.act === "boop" ? s * 12 : s * 7;
+    if (p.act === "dive") c.squash = 0.18 * s;
+  } else { p.act = null; c._vbLift = 0; c.squash = Math.max(0, (c.squash || 0) - dt); }
+  c.blink -= dt; if (c.blink < -0.12) c.blink = rand(2, 6) * m.blinkEvery;
+}
+function renderVolley(dt) {
+  matchT += dt;
+  updateFX(Math.min(dt, 0.05));   // fest render skips simulate() — step ripples/floaters here
+  const g = ctx;
+  { const px = restViewportPx();
+    if (Math.abs(canvas.width - Math.round(px.vw * (_festDPR || DPR))) > 2) fitFestCanvas(); }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  const V = volleyFit(); _volleyVp = V;
+  g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
+  drawVolleyCourt(g);
+  if (!volleyParts.length) return;
+
+  // who's chasing the incoming ball — the called cat if there is one, else nearest
+  _vbReceiver = null;
+  if (volleyBall && volleyBall.live) {
+    const inPlay = vbAwakeOn(volleyBall.side);
+    if (volleyBall.side === "cove") _vbReceiver = inPlay.find(p => p._calledUntil > matchT) || null;
+    if (!_vbReceiver) {
+      let bd = 1e9;
+      for (const p of inPlay) {
+        const d = Math.hypot(p.cat.x - volleyBall.toX, p.cat.y - volleyBall.toY);
+        if (d < bd) { bd = d; _vbReceiver = p; }
+      }
+    }
+  }
+
+  // all six asleep — a rare special beat: hold the action, ocean, one line
+  const allOut = volleyParts.length && volleyParts.every(p => p.tier === "asleep" || p.tier === "drowsy");
+  if (volleyPhase === "play" && allOut && !_vbSaidAllAsleep) {
+    _vbSaidAllAsleep = true; _vbAllAsleepUntil = matchT + 4;
+    if (volleyBall && volleyBall.live) volleyBall.live = false;
+    vbTone("ocean"); vbSay("allAsleep");
+  } else if (!allOut) _vbSaidAllAsleep = false;
+
+  if (volleyPhase === "play") {
+    const frozen = allOut && matchT < _vbAllAsleepUntil;   // let the nap breathe
+    if (!frozen) {
+      if (!volleyBall || !volleyBall.live) { if (matchT >= _vbServeAt) serveBall(); }
+      if (volleyBall && volleyBall.live) {
+        const b = volleyBall;
+        b.t += dt; b.spin += dt * 3.2;
+        const k = clamp(b.t / b.dur, 0, 1);
+        b.x = b.fromX + (b.toX - b.fromX) * k;
+        b.y = b.fromY + (b.toY - b.fromY) * k - Math.sin(k * Math.PI) * b.arcH;
+        if (k >= 1) vbResolveArrival();
+      }
+    }
+    for (const p of volleyParts) { vbTickDrowse(p, dt); vbMovePart(p, dt); }
+    if (matchT > 175) {   // safety net for a pathological stall — settle on the leader
+      volleyScore[volleyScore.cove >= volleyScore.visit ? "cove" : "visit"] = 3;
+      volleyBall = null; volleyPhase = "result"; _vbResultAt = matchT; updateVolleyHud();
+    }
+  } else if (volleyPhase === "point") {
+    for (const p of volleyParts) { vbTickDrowse(p, dt); vbMovePart(p, dt); }
+    if (volleyBall && volleyBall._satOn) { volleyBall.x = volleyBall._satOn.cat.x + 14; volleyBall.y = volleyBall._satOn.cat.y - 6; }
+    if (matchT - _vbPointAt > 1.1) {
+      if (volleyScore.cove >= 3 || volleyScore.visit >= 3) { volleyPhase = "result"; _vbResultAt = matchT; }
+      else {
+        volleyPhase = "play"; _vbServeAt = matchT + 0.55;
+        // rally scoring: the side that WON the point serves. Serving puts you on
+        // defence first (the returner aims at your gap), so this rubber-bands
+        // toward the trailing side instead of running away from them.
+        _vbServer = _vbLastWinner || _vbServer;
+        for (const p of volleyParts) p.act = null;
+      }
+    }
+  } else if (volleyPhase === "result") {
+    for (const p of volleyParts) { vbTickDrowse(p, dt); vbMovePart(p, dt); }
+    if (!_vbResultShown && matchT - _vbResultAt > 1.0) showVolleyResult();
+  }
+  if (_vbBannerUntil && matchT > _vbBannerUntil) { document.getElementById("volleyBanner").hidden = true; _vbBannerUntil = 0; }
+  { // commentator line fades out after ~4.5s
+    const el = document.getElementById("volleyCom");
+    if (!el.hidden) {
+      const age = matchT - vbCom.at;
+      el.classList.toggle("fade", age > 4);
+      if (age > 5) el.hidden = true;
+    }
+  }
+
+  // draw — net behind, cats by depth, ball on top
+  drawVolleyNet(g);
+  if (volleyBall && volleyBall.live) drawVolleyShadow(g, volleyBall);
+  const painted = volleyParts.slice().sort((a, b) => a.cat.y - b.cat.y);
+  for (const p of painted) {
+    const c = p.cat, sy = c.y;
+    c.y -= (c._vbLift || 0);
+    drawCat(g, c, false);
+    c.y = sy;
+    drawVolleyGlyph(g, p);
+  }
+  drawVolleyTaps(g);
+  if (volleyBall) drawVolleyBall(g, volleyBall);
+  if (particles.length || floaters.length) drawFX(g);
+}
+function drawVolleyCourt(g) {
+  const HZ = 128, OV = 360;                                             // horizon; overdraw to fill the letterbox
+  const sky = g.createLinearGradient(0, -OV, 0, HZ);
+  sky.addColorStop(0, "#c6e2ea"); sky.addColorStop(1, "#e9efe2");
+  g.fillStyle = sky; g.fillRect(-OV, -OV, VB_W + OV * 2, HZ + OV);
+  g.fillStyle = "#7ec3cf"; g.fillRect(-OV, HZ - 36, VB_W + OV * 2, 62);  // sea
+  g.strokeStyle = "rgba(255,255,255,0.5)"; g.lineWidth = 2;
+  for (let i = 0; i < 3; i++) { const y = HZ - 22 + i * 12 + Math.sin(matchT * 0.5 + i) * 2;
+    const x = (matchT * 8 + i * 150) % (VB_W + 70) - 40;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + 34, y); g.stroke(); }
+  const sand = g.createLinearGradient(0, HZ, 0, VB_H + OV);
+  sand.addColorStop(0, "#ecdcb8"); sand.addColorStop(1, "#d8bf88");
+  g.fillStyle = sand; g.fillRect(-OV, HZ - 10, VB_W + OV * 2, VB_H - HZ + OV);
+  // a couple of gulls
+  g.strokeStyle = "rgba(90,100,110,0.5)"; g.lineWidth = 1.6;
+  for (let i = 0; i < 2; i++) { const gx = 120 + i * 260 + Math.sin(matchT * 0.3 + i * 2) * 40, gy = 44 + i * 22;
+    g.beginPath(); g.moveTo(gx - 7, gy); g.quadraticCurveTo(gx, gy - 4, gx + 1, gy); g.quadraticCurveTo(gx + 2, gy - 4, gx + 9, gy); g.stroke(); }
+  // the cove sign, small, back-left
+  g.save(); g.translate(40, VB_CT.top - 6);
+  g.strokeStyle = "#7c6142"; g.lineWidth = 4; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 26); g.stroke();
+  g.fillStyle = "#8a6b47"; roundRect(g, -22, -14, 44, 15, 3); g.fill();
+  g.restore();
+  // a striped towel + a pail, back-right
+  g.save(); g.translate(VB_W - 84, VB_CT.top + 6);
+  for (let i = 0; i < 4; i++) { g.fillStyle = i % 2 ? "#e08b6a" : "#f3ede0"; g.fillRect(i * 13 - 2, 0, 13, 30); }
+  g.strokeStyle = "rgba(120,90,60,0.3)"; g.strokeRect(-2, 0, 52, 30);
+  g.fillStyle = "#63b7c4"; g.beginPath(); g.moveTo(58, 30); g.lineTo(56, 12); g.lineTo(76, 12); g.lineTo(74, 30); g.closePath(); g.fill();
+  g.strokeStyle = "#3f97a4"; g.beginPath(); g.arc(66, 12, 10, Math.PI, 0); g.stroke();
+  g.restore();
+  // the playing area — a raked rectangle, corners staked, not a crisp regulation box
+  g.strokeStyle = "rgba(255,255,255,0.4)"; g.lineWidth = 2.5;
+  g.beginPath();
+  g.moveTo(46, VB_CT.top + 3); g.lineTo(VB_W - 44, VB_CT.top - 2);
+  g.lineTo(VB_W - 46, VB_CT.bot + 2); g.lineTo(48, VB_CT.bot - 3); g.closePath(); g.stroke();
+  g.strokeStyle = "rgba(150,120,86,0.12)"; g.lineWidth = 1.5;                // a few rake marks
+  for (let y = VB_CT.top + 40; y < VB_CT.bot; y += 62) { g.beginPath(); g.moveTo(60, y + Math.sin(y) * 4); g.lineTo(VB_W - 60, y - Math.sin(y) * 4); g.stroke(); }
+}
+function drawVolleyNet(g) {
+  const H = 70;   // a low, homemade net
+  // two driftwood posts, slightly leaning
+  for (const [px, lean] of [[46, -3], [VB_W - 46, 4]]) {
+    g.strokeStyle = "#8a7052"; g.lineWidth = 7; g.lineCap = "round";
+    g.beginPath(); g.moveTo(px, NET_Y + 8); g.lineTo(px + lean, NET_Y - H); g.stroke();
+    g.strokeStyle = "#6f593f"; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(px, NET_Y - 14); g.lineTo(px + lean * 0.5, NET_Y - 30); g.stroke();
+  }
+  // a sagging scrap of old fishing net
+  const sag = 10;
+  g.strokeStyle = "rgba(240,236,224,0.85)"; g.lineWidth = 2.5;
+  g.beginPath(); g.moveTo(46, NET_Y - H + sag);
+  g.quadraticCurveTo(VB_W / 2, NET_Y - H + sag * 2.4, VB_W - 46, NET_Y - H + sag); g.stroke();   // top rope
+  g.strokeStyle = "rgba(238,232,218,0.4)"; g.lineWidth = 1;
+  for (let i = 1; i < 10; i++) {                              // loose mesh
+    const x = 46 + i * (VB_W - 92) / 10;
+    const topY = NET_Y - H + sag + Math.sin(i / 10 * Math.PI) * sag * 1.4;
+    g.beginPath(); g.moveTo(x, topY); g.lineTo(x + 4, NET_Y - 8); g.stroke();
+  }
+  for (let j = 0; j < 3; j++) {
+    const y = NET_Y - H + sag + 14 + j * 16;
+    g.beginPath(); g.moveTo(50, y + 6); g.quadraticCurveTo(VB_W / 2, y + 14, VB_W - 50, y + 6); g.stroke();
+  }
+}
+function drawVolleyShadow(g, b) {
+  const k = clamp(b.t / b.dur, 0, 1);
+  const gy = b.fromY + (b.toY - b.fromY) * k;
+  const lift = Math.sin(k * Math.PI);
+  g.fillStyle = `rgba(60,44,24,${0.26 * (1 - lift * 0.6)})`;
+  g.beginPath(); g.ellipse(b.x, gy + 10, 20 + lift * 10, 7 + lift * 3, 0, 0, 7); g.fill();
+}
+function drawVolleyBall(g, b) {
+  g.save(); g.translate(b.x, b.y); g.rotate(b.spin);
+  const R = 22;
+  g.fillStyle = "#fbf7ec"; g.beginPath(); g.arc(0, 0, R, 0, 7); g.fill();
+  const cols = ["#e88a6a", "#63b7c4", "#f0c453", "#e88a6a", "#63b7c4", "#f0c453"];
+  for (let i = 0; i < 6; i++) {
+    g.fillStyle = cols[i];
+    g.beginPath(); g.moveTo(0, 0);
+    g.arc(0, 0, R, i * Math.PI / 3, i * Math.PI / 3 + Math.PI / 3);
+    g.closePath(); g.globalAlpha = i % 2 ? 0.9 : 0.78; g.fill();
+  }
+  g.globalAlpha = 1;
+  g.strokeStyle = "rgba(0,0,0,0.12)"; g.lineWidth = 1.5; g.beginPath(); g.arc(0, 0, R, 0, 7); g.stroke();
+  g.fillStyle = "rgba(255,255,255,0.5)"; g.beginPath(); g.arc(-R * 0.32, -R * 0.32, R * 0.28, 0, 7); g.fill();
+  g.restore();
+}
+// ONE expanding ring per tap, colour-coded so it reads at a glance:
+// green = called it · amber = woke it · cream = stay sharp · slate = poked a
+// sleeper · grey = missed. No stacked rings.
+const VB_TAP_COL = { call: "#5f9c3a", wake: "#eab234", sharp: "#efe7d2", poke: "#8ba1b3", miss: "#94897366" };
+function drawVolleyTaps(g) {
+  for (let i = _vbTaps.length - 1; i >= 0; i--) {
+    const tp = _vbTaps[i], age = matchT - tp.at, life = tp.hit ? 0.4 : 0.3;
+    if (age > life) { _vbTaps.splice(i, 1); continue; }
+    const k = age / life, ik = 1 - k;
+    const col = VB_TAP_COL[tp.kind] || (tp.hit ? "#5f9c3a" : "#948973");
+    g.save();
+    g.globalAlpha = (tp.hit ? 1 : 0.5) * ik;
+    g.strokeStyle = col; g.lineWidth = (tp.hit ? 3.4 : 2) * ik + 0.6;
+    const r = (tp.hit ? 11 : 8) + k * (tp.hit ? 28 : 18);
+    g.beginPath(); g.arc(tp.x, tp.y, r, 0, 7); g.stroke();
+    if (tp.hit && k < 0.28) {   // a small dot pins the exact point, then it's gone
+      g.globalAlpha = (0.28 - k) / 0.28;
+      g.fillStyle = col;
+      g.beginPath(); g.arc(tp.x, tp.y, 3.4, 0, 7); g.fill();
+    }
+    g.restore();
+  }
+}
+function drawVolleyGlyph(g, p) {
+  const c = p.cat;
+  g.save();
+  g.textAlign = "center"; g.textBaseline = "middle";
+  // the CALLED cat — a soft green spotlight at its feet, "this one's on it"
+  if (p.side === "cove" && p._calledUntil > matchT && p.tier !== "asleep" && p.tier !== "drowsy") {
+    g.fillStyle = "rgba(95,156,58,0.16)";
+    g.beginPath(); g.ellipse(c.x, c.y + 7, 26, 10, 0, 0, 7); g.fill();
+    g.strokeStyle = "rgba(95,156,58,0.8)"; g.lineWidth = 1.6;
+    g.beginPath(); g.ellipse(c.x, c.y + 7, 24, 9, 0, 0, 7); g.stroke();
+  }
+  if (p.tier === "drowsy") {
+    const yb = Math.sin(matchT * 3 + p.idx) * 2;
+    if (p.side === "cove") {   // tappable — a soft amber glow at its feet (no hard ring), dimmed on cooldown
+      const pr = Math.sin(matchT * 3.4) * 0.5 + 0.5;
+      const cool = matchT < _vbWakeCd ? 0.4 : 1;
+      g.fillStyle = `rgba(240,196,74,${(0.13 + pr * 0.13) * cool})`;
+      g.beginPath(); g.ellipse(c.x, c.y + 7, 24 + pr * 6, 10 + pr * 3, 0, 0, 7); g.fill();
+    }
+    g.font = p.side === "cove" ? "21px sans-serif" : "16px sans-serif";   // the tappable ones read louder
+    g.fillText("🥱", c.x, c.y - 42 + yb);
+  } else if (p.tier === "asleep") {
+    g.font = "16px sans-serif";
+    const primed = p._primed && matchT < p._primed;
+    g.fillText(primed ? "😑" : "💤", c.x + (primed ? 0 : 12), c.y - 34 + Math.sin(matchT * 1.5 + p.idx) * 2);
+  } else if (p.tier === "tired" && matchT - p._yawnAt < 1.1) {   // a brief, subtle yawn
+    g.globalAlpha = 1 - (matchT - p._yawnAt) / 1.1;
+    g.font = "13px sans-serif";
+    g.fillText("🥱", c.x, c.y - 38);
+    g.globalAlpha = 1;
+  }
+  g.restore();
+}
+// one gesture — tap your cat. What it does depends on the cat and the ball:
+//   asleep  → poke (two taps to actually wake)
+//   drowsy  → wake it (shared cooldown)
+//   ball incoming to your side → CALL this cat onto it (clean, committed return)
+//   otherwise → a small "stay sharp" that slows its drowsiness a moment
+function volleyPointer(e) {
+  if (festKind !== "volley" || volleyPhase !== "play") return;
+  const pt = e._arena || volleyScreenToArena(e.clientX, e.clientY);
+  let hit = null, hd = 82 * 82;   // forgiving tap radius — the cats are small on a phone
+  for (const part of volleyParts) {
+    if (part.side !== "cove") continue;
+    const c = part.cat;
+    const dd = (pt.x - c.x) ** 2 + (pt.y - (c.y - 14)) ** 2;
+    if (dd < hd) { hd = dd; hit = part; }
+  }
+  // one mark where the finger landed — colour says what the tap did
+  const tapFx = { x: pt.x, y: pt.y, at: matchT, hit: !!hit, kind: "miss" };
+  _vbTaps.push(tapFx); if (_vbTaps.length > 5) _vbTaps.shift();
+  if (!hit) return;
+  const c = hit.cat;
+  c.squash = Math.max(c.squash || 0, 0.24);   // a small pop
+  vbMeow(c, hit.tier === "awake" || hit.tier === "tired");
+
+  if (hit.tier === "asleep") {
+    if (matchT < _vbWakeCd) { tapFx.kind = "poke"; return; }
+    trackEvent("volleyball_cat_wake_attempt", { cat: c.name, state: "asleep", ok: !!hit._primed });
+    if (hit._primed && matchT < hit._primed) { tapFx.kind = "wake"; vbWake(hit, true); _vbWakeCd = matchT + VB_WAKE_CD; vbSay("wake", { cat: c.name }); }
+    else { tapFx.kind = "poke"; hit._pokedAt = matchT; hit._primed = matchT + 4.5; _vbWakeCd = matchT + VB_WAKE_CD;
+      floatText(c.x, c.y - 30, "😑", "#8a8276"); vbSay("failWake", { cat: c.name }); }
+    return;
+  }
+  if (hit.tier === "drowsy") {
+    if (matchT < _vbWakeCd) { tapFx.kind = "poke"; return; }
+    tapFx.kind = "wake";
+    trackEvent("volleyball_cat_wake_attempt", { cat: c.name, state: "drowsy", ok: true });
+    vbWake(hit, false); _vbWakeCd = matchT + VB_WAKE_CD; vbSay("wake", { cat: c.name });
+    return;
+  }
+  if (hit.tier === "waking") return;
+  // awake / tired
+  const incoming = volleyBall && volleyBall.live && volleyBall.side === "cove";
+  if (incoming) {
+    if (matchT - _vbLastTapAt < 0.18) return;   // just a debounce
+    _vbLastTapAt = matchT;
+    tapFx.kind = "call";
+    volleyParts.forEach(o => { if (o.side === "cove") o._calledUntil = 0; });
+    hit._calledUntil = matchT + 2.6; hit._callFlash = matchT;
+    c.face = volleyBall.x >= c.x ? 1 : -1;
+    tone(560, 0.06, "sine", 0.05);
+  } else {
+    if (matchT < hit._sharpUntil - 4) return;   // one "stay sharp" per cat every ~2s of effect
+    tapFx.kind = "sharp";
+    hit._sharpUntil = matchT + 6; hit.drowse = Math.max(0, hit.drowse - 0.06);
+    spawnParticles(c.x, c.y - 12, "twinkle", 2);
+    tone(500, 0.05, "sine", 0.04);
+  }
+}
+function vbStatLine(p) {
+  const s = p.stats, out = [];
+  if (s.saves) out.push(`${s.saves} save${s.saves > 1 ? "s" : ""}`);
+  if (s.returns) out.push(`${s.returns} return${s.returns > 1 ? "s" : ""}`);
+  if (s.points) out.push(`${s.points} point${s.points > 1 ? "s" : ""}`);
+  if (s.naps) out.push(`${s.naps} nap${s.naps > 1 ? "s" : ""}`);
+  if (!out.length) return "present, mostly";
+  if (!s.naps && (s.returns + s.saves) >= 3) out.push("stayed awake somehow");
+  return out.join(" · ");
+}
+function showVolleyResult() {
+  _vbResultShown = true;
+  const won = volleyScore.cove >= 3;
+  const res = document.getElementById("festResult");
+  res.querySelector("h2").textContent = "Cove Volleyball";
+  res.querySelector(".fr-emoji").textContent = "🏐";
+  document.getElementById("festAgain").textContent = "Play again";
+  const cove = volleyParts.filter(p => p.side === "cove");
+  document.getElementById("festPodium").innerHTML =
+    `<div class="vb-final">
+       <div class="vb-final-row${won ? " win" : ""}"><span>${esc(coveName())}</span><b>${volleyScore.cove}</b></div>
+       <div class="vb-final-row${won ? "" : " win"}"><span>${esc(volleyVisitName)}</span><b>${volleyScore.visit}</b></div>
+     </div>
+     <div class="vb-stat-rows">${cove.map(p => `
+       <div class="vb-stat-row"><canvas width="46" height="42"></canvas>
+         <div class="vb-stat-txt"><div class="vb-sn">${esc(p.cat.name)}</div><div class="vb-ss">${esc(vbStatLine(p))}</div></div>
+       </div>`).join("")}</div>`;
+  const cvs = document.querySelectorAll("#festPodium .vb-stat-row canvas");
+  cove.forEach((p, i) => miniCat(cvs[i], p.cat.coatKey, p.cat.star, p.tier === "asleep" ? "sleeping" : "loafing", false, 0.75));
+
+  const rw = { shells: won ? goalShells(0.55) : goalShells(0.3) };
+  grantReward(rw, null); syncHud();
+
+  // final line, from what actually happened
+  const naps = cove.reduce((n, p) => n + p.stats.naps, 0);
+  const vnaps = volleyParts.filter(p => p.side === "visit").reduce((n, p) => n + p.stats.naps, 0);
+  const asleepNow = cove.find(p => p.tier === "asleep");
+  const mvp = [...cove].sort((a, b) => (b.stats.saves * 2 + b.stats.returns) - (a.stats.saves * 2 + a.stats.returns))[0];
+  let wl;
+  if (won && _vbMaxDeficit >= 2) wl = `${coveName()} completes the comeback!`;
+  else if (won && asleepNow) wl = `${coveName()} wins! ${asleepNow.cat.name} remains unavailable for comment.`;
+  else if (won && mvp && mvp.stats.saves >= 2) wl = `${coveName()} takes it. ${mvp.cat.name} did most of the work.`;
+  else if (won) wl = `${coveName()} wins! ` + pick(VB_WIN_LINES);
+  else wl = `${volleyVisitName} takes it. ` + pick(VB_LOSE_LINES);
+  document.getElementById("festPickLine").innerHTML =
+    `${esc(wl)}<br><span class="vb-reward">+${rw.shells} ◈</span>`;
+  const tail = naps + vnaps === 0 ? "Remarkably, nobody fell asleep."
+    : naps > vnaps ? `Your side napped ${naps} time${naps > 1 ? "s" : ""}. ${volleyVisitName} only managed ${vnaps}.`
+    : vnaps > naps ? `${volleyVisitName} napped more than you did, for once.`
+    : `Both coves napped exactly ${naps} time${naps > 1 ? "s" : ""}. Fair's fair.`;
+  document.getElementById("festRestLine").textContent = tail;
+  logMoment("🏐", `Cove Volleyball vs ${volleyVisitName} — ${volleyScore.cove}–${volleyScore.visit}. ${wl}`, "tale");
+
+  spawnParticles(VB_W / 2, 300, won ? "spark" : "twinkle", 10);
+  document.getElementById("volleyHud").hidden = true;
+  document.getElementById("volleyCom").hidden = true;
+  document.getElementById("volleyBanner").hidden = true;
+  document.getElementById("festBar").hidden = true;
+  document.getElementById("festSkip").hidden = true;
+  res.hidden = false;
+  trackEvent("volleyball_completed", {
+    visiting_cove: volleyVisitName, final_score: `${volleyScore.cove}-${volleyScore.visit}`,
+    winner: won ? "cove" : "visit", comeback: won && _vbMaxDeficit >= 2,
+    player_naps: naps, opponent_naps: vnaps, duration: Math.round(matchT),
+  });
+}
 
 /* ---------- rendering ---------- */
 let clouds = [];
@@ -8631,12 +10653,28 @@ function propPos(id) {
 }
 function propBoxed(id) { return !!(G.cosmetics && G.cosmetics.propBoxed && G.cosmetics.propBoxed[id]); }
 // a prop can sit here: on the grass band, clear of the pond, the sign, and stations/projects
+// the dock, the bakery and the other project / station structures are big and
+// rise upward (ovens, domes) or reach forward (docks) well past their decor
+// point — nothing else may sit on top of them. A generous, taller-upward ellipse.
+function offBigStructure(x, y, pad, exceptKey) {
+  for (const d of decor) {
+    if (d.type !== "project" && d.type !== "station") continue;
+    if (exceptKey && d.dkey === exceptKey) continue;
+    const proj = d.type === "project";
+    const cx = d.x + (proj ? 4 : 0), cy = d.y - 8;
+    const rx = (proj ? 74 : 50) + pad;
+    const dy = y - cy;
+    const ry = (dy < 0 ? (proj ? 46 : 58) : (proj ? 42 : 26)) + pad;   // taller above
+    if ((x - cx) ** 2 / (rx * rx) + dy * dy / (ry * ry) < 1) return false;
+  }
+  return true;
+}
 function validPropSpot(x, y) {
   if (x < 44 || x > W - 44) return false;
   if (y < H * 0.62 + 6 || y > catFloor() - 6) return false;
   for (const o of obstacles) if (o.water && Math.hypot((x - o.x) / (o.rx + 20), (y - o.y) / (o.ry + 14)) < 1) return false;
   if (x < W * 0.30 && y < H * 0.56) return false;                       // the cove sign corner
-  for (const d of decor) if ((d.type === "station" || d.type === "project") && Math.hypot(x - d.x, y - d.y) < 54) return false;
+  if (!offBigStructure(x, y, (_placing && _placing.r || 24) * 0.5)) return false;
   return true;
 }
 // a cottage / tree / flower patch can sit here: on the grass, clear of water,
@@ -8648,9 +10686,10 @@ function validDecorSpot(x, y, dtype, exceptKey) {
   if (y < (dtype === "station" ? H * 0.44 : H * 0.50) || y > catFloor() - 8) return false;
   for (const o of obstacles) if (o.water && Math.hypot((x - o.x) / (o.rx + clr), (y - o.y) / (o.ry + clr * 0.7)) < 1) return false;
   if (x < W * 0.30 && y < H * 0.56) return false;                       // the cove sign corner
+  if (!offBigStructure(x, y, clr * 0.45, exceptKey)) return false;
   for (const d of decor) {
     if (d.dkey && d.dkey === exceptKey) continue;
-    if (d.type === "station" || d.type === "project") { if (Math.hypot(x - d.x, y - d.y) < 52 + clr * 0.3) return false; continue; }
+    if (d.type === "station" || d.type === "project") continue;         // handled by offBigStructure
     if (DECOR_LABEL[d.type]) { if (Math.hypot(x - d.x, y - d.y) < clr + (DECOR_CLEAR[d.type] || 30) - 10) return false; }
   }
   return true;
@@ -8812,6 +10851,7 @@ function drawBackground(dt) {
   ctx.fillStyle = _vignetteGrad; ctx.fillRect(0, 0, W, H);
 }
 let _vignetteGrad = null, _warmWash = null;
+let _coveSignTag = null;   // world-space bounds of the "N cats are out exploring" tag, for tap-to-open
 // a couple of reusable soft radial gradients for the cat contact shadow, keyed
 // by a bucketed radius — canvas gradient creation is one of the costlier calls
 const _shadowGrads = new Map();
@@ -9253,6 +11293,14 @@ function drawProps(g) {
   if (_placing && _placeGhost) {
     const gh = _placeGhost, ok = _placeOK(gh.x, gh.y);
     g.save();
+    // the no-go zone around the dock / bakery / other fixed structures
+    g.setLineDash([4, 4]); g.lineWidth = 1.4; g.strokeStyle = "rgba(201,80,63,.4)";
+    for (const d of decor) {
+      if (d.type !== "project" && d.type !== "station") continue;
+      const proj = d.type === "project";
+      g.beginPath(); g.ellipse(d.x + (proj ? 4 : 0), d.y - 8, (proj ? 74 : 50), (proj ? 44 : 42), 0, 0, 7); g.stroke();
+    }
+    g.setLineDash([]);
     g.strokeStyle = ok ? "rgba(90,160,106,.95)" : "rgba(201,80,63,.95)";
     g.lineWidth = 3; g.setLineDash(ok ? [] : [8, 6]);
     const ghR = (_placing.kind === "decor" || _placing.kind === "comfort") ? (DECOR_CLEAR[_placing.dtype] || 30) + 6 : 34;
@@ -9795,12 +11843,14 @@ function drawCoveSign(g, W, H) {
   g.fillStyle = "rgba(255,255,255,0.12)"; roundRect(g, -bw / 2, -22, bw, 7, 4); g.fill();
   g.fillStyle = "rgba(60,44,30,0.10)"; roundRect(g, -bw / 2, -8, bw, 8, 4); g.fill();
   g.strokeStyle = "rgba(74,53,36,0.35)"; g.lineWidth = 1; roundRect(g, -bw / 2, -22, bw, 22, 4); g.stroke();
-  // engraved text
-  g.fillStyle = "#4a3524";
+  // engraved text — brand ink (near-black); the old warm brown drifted blue-grey
+  // under the dusk/night mood wash on some screens
+  g.fillStyle = "#241f17";
   g.textAlign = "center"; g.textBaseline = "middle";
   g.font = `700 ${fs}px 'Fraunces', Georgia, serif`;
   g.fillText(label, 0, -10.5);
-  // a little chalk tag while cats are out adventuring
+  // a little chalk tag while cats are out adventuring — tap it to see the trips
+  _coveSignTag = null;
   if (typeof G !== "undefined" && G && Array.isArray(G.adventures) && G.adventures.length) {
     const _n = G.adventures.reduce((s, a) => s + ((a.cats && a.cats.length) || 1), 0);
     const one = G.adventures.length === 1 && _n === 1 ? G.adventures[0].cat : null;
@@ -9811,8 +11861,10 @@ function drawCoveSign(g, W, H) {
     roundRect(g, -tw / 2, 3, tw, 14, 3); g.fill();
     g.strokeStyle = "rgba(74,53,36,0.28)"; g.lineWidth = 1;
     roundRect(g, -tw / 2, 3, tw, 14, 3); g.stroke();
-    g.fillStyle = "#7a5c38"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillStyle = "#4f3b26"; g.textAlign = "center"; g.textBaseline = "middle";
     g.fillText(tag, 0, 10.5);
+    // remember where the tag sits in world space so a tap can open the trips view
+    _coveSignTag = { x, y: y + 10, w: Math.max(tw, 54), h: 20 };
   }
   // Founding Covekeeper — a small brass plaque on its own post, standing clear
   // to the right of the sign (a ~20px gap so it never crowds the cove name).
@@ -11490,7 +13542,7 @@ function renderScene(dt) {
   const _pt0 = performance.now();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (_ovT > 0.01 && window._sky) {                    // fill the zoom-out letterbox with the sky, not the dark stage
+  if (_ovT > 0.01 && window._sky) {                    // PINCH TEST: fill the zoom-out letterbox with the sky, not the dark stage
     const sk = window._sky, ch = canvas.height;
     const g = ctx.createLinearGradient(0, 0, 0, ch);
     g.addColorStop(0, sk.top); g.addColorStop(0.55, sk.mid); g.addColorStop(1, sk.bot);
@@ -12556,10 +14608,12 @@ function renderAdventureCard() {
     const pc0 = !back ? latestPostcardFor(a.cat) : null;
     const pc = (pc0 && pc0.t >= a.startedAt) ? pc0 : null;
     const who = (a.cats && a.cats.length) ? (a.cats.length > 2 ? `${a.cats[0]} + ${a.cats.length - 1}` : joinNice(a.cats)) : a.cat;
+    const prg = back ? 100 : Math.max(3, Math.min(99, Math.round((Date.now() - a.startedAt) / Math.max(1, a.endsAt - a.startedAt) * 100)));
     html += `<div class="adv-trip${back ? " back" : ""}">
       <div class="adv-top"><span class="adv-emoji">${d.emoji}</span>
       <div><div class="adv-title">${esc(who)} &middot; ${esc(d.name)}</div>
       <div class="adv-sub">${back ? "back at the cove — see how it went" : `${T.label.toLowerCase()} · back ${whenText(a.endsAt)}`}</div></div></div>
+      ${back ? "" : `<div class="pj-bar adv-bar"><i style="width:${prg}%"></i></div>`}
       ${pc ? `<div class="adv-postcard">✉️ ${esc(pc.text.replace(/\s*—\s*.*$/, ""))}</div>` : ""}
       ${back ? `<button class="btn primary" data-claim="${a.id}">See how it went</button>`
              : `<button class="btn tiny" data-recall="${a.id}">Call them home</button>${DEV_BUILD ? ` <button class="btn tiny" data-skip="${a.id}">skip · dev</button>` : ""}`}
@@ -12717,7 +14771,7 @@ function onViewportChange() {
   _resizeRetry = 0;                   // a real viewport event — let resize() retry from scratch if needed
   resize();                          // keep the canvas backing store matched to the box — immediately
   if (restMode) fitRestCanvas();     // ...but rest wants its own small canvas, not the pannable one
-  // only a *real* size change (rotation, split-view) re-fits the
+  // PINCH TEST: only a *real* size change (rotation, split-view) re-fits the
   // zoom-out camera. The mobile URL-bar micro-churn also fires this event — ignore
   // those (<40px) so the frozen transform, and its stillness, survive.
   if (_ovActive) {
@@ -12740,7 +14794,11 @@ function onViewportChange() {
       rebuildAttractors();
       _restG = null;
       if (restMode) { initGlassDrops(); restSeatCats(); }
-      else for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, catFloor()); }
+      else {
+        for (const c of cats) { c.x = clamp(c.x, 20, W - 20); c.y = clamp(c.y, H * 0.46, catFloor()); }
+        const tf = catFloor() - (_narrowUI ? 56 : 6);   // pull any loot that's now behind the nav back up
+        for (const t of fieldTokens) if (t.baseY > tf) { t.baseY = tf; if (t.y > tf) t.y = tf; }
+      }
     }
   }, 180);
 }
@@ -13086,18 +15144,14 @@ window.addEventListener("resize", onViewportChange);
 window.addEventListener("orientationchange", onViewportChange);
 if (window.visualViewport) window.visualViewport.addEventListener("resize", onViewportChange);
 try { new ResizeObserver(onViewportChange).observe(document.getElementById("app")); } catch (e) {}
-// Portrait lock is for phones only — a tablet (or desktop PWA) is happy in
-// landscape and the render code already has a wide-viewport path. Best effort
-// where the platform allows it (installed PWA / Android); iOS ignores it and
-// the native Info.plist decides (iPhone portrait-only, iPad free rotation).
-try {
-  if (Math.min(window.innerWidth, window.innerHeight) < 600)
-    screen.orientation.lock("portrait").catch(() => {});
-} catch (e) {}
+// TEST: auto-rotate enabled — no web-side portrait lock. The wide-viewport
+// render path (FILL / PAN in the resize handler) covers landscape. Native lock
+// (iPhone Info.plist / Android manifest) is separate and unchanged; restore the
+// screen.orientation.lock("portrait") call here to re-lock on phones/PWA.
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) { save(); Ads.onHide(); }
-  else { onViewportChange(); Ads.onShow(); }   // onShow: maybe a session-transition interstitial
+  else { onViewportChange(); resumeAudio(); Ads.onShow(); }   // iOS often suspends audio while hidden
 });
 window.addEventListener("pagehide", save);
 const _saveInterval = setInterval(save, 5000);
@@ -13128,7 +15182,40 @@ window.__cove.focus = (name) => {
   return "no such cat";
 };
 // Cove Festival — opens the picker panel (see openFestPicker())
-window.__cove.fest = () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker(); return { on: festMode, picking: !document.getElementById("festPanel").hidden }; };
+window.__cove.fest = (kind) => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker(kind); return { on: festMode, kind: festKind }; };
+// The Great Box Challenge — jumps straight to its cat picker (bypasses the day-5 gate, like fest())
+window.__cove.box = () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("box"); return { on: festMode, kind: festKind, phase: boxPhase }; };
+window.__cove.boxState = () => ({ kind: festKind, phase: boxPhase, t: Math.round(boxT), parts: boxParts.map(p => ({ n: p.cat.name, st: p.state, box: p.box, score: p.score, nap: p.napping, log: p.log })) });
+// Cove Volleyball — opens the team picker (needs 3 cats at the cove)
+window.__cove.volley = () => { openFestPicker("volley"); return { on: festMode, kind: festKind, eligible: eligibleForVolley().length }; };
+window.__cove.volleyState = () => ({ phase: volleyPhase, t: Math.round(matchT), score: { ...volleyScore },
+  wakeCd: Math.max(0, +(_vbWakeCd - matchT).toFixed(1)), com: vbCom.text, visit: volleyVisitName,
+  ball: volleyBall && volleyBall.live ? { side: volleyBall.side, touches: volleyBall.touches,
+    recvIdx: _vbReceiver && _vbReceiver.side === "cove" ? volleyParts.filter(p => p.side === "cove").indexOf(_vbReceiver) : -1 } : null,
+  parts: volleyParts.map(p => ({ n: p.cat.name, side: p.side, tier: p.tier, drowse: +p.drowse.toFixed(2), act: p.act,
+    called: p._calledUntil > matchT, sharp: matchT < p._sharpUntil,
+    prot: Math.max(0, +(p._protectUntil - matchT).toFixed(1)), primed: p._primed && matchT < p._primed || false,
+    traits: (p.cat.traits || []).slice(0, 2), mood: Math.round(p.cat.mood ?? 60), stats: p.stats })) });
+window.__cove.volleyForce = (what, idx = 0) => {
+  const cove = volleyParts.filter(p => p.side === "cove"), visit = volleyParts.filter(p => p.side === "visit");
+  const drow = p => { if (p) { p.drowse = 0.75; p.tier = "drowsy"; p._drowsyAt = matchT; p._protectUntil = 0; } };
+  const slp = p => { if (p) { p.tier = "asleep"; p.drowse = 1; p._sleepUntil = matchT + rand(5, 12); p.cat.state = "sleeping"; p.cat.stateT = 0; p.stats.naps++; p._protectUntil = 0; } };
+  if (what === "drowsy") drow(cove[idx]);
+  else if (what === "asleep") slp(cove[idx]);
+  else if (what === "vdrowsy") drow(visit[idx]);
+  else if (what === "vasleep") slp(visit[idx]);
+  else if (what === "allasleep") volleyParts.forEach(slp);
+  else if (what === "wakecd") _vbWakeCd = 0;
+  else if (what === "2-2" || what === "22") { volleyScore.cove = 2; volleyScore.visit = 2; updateVolleyHud(); }
+  else if (what === "longrally") { if (volleyBall) volleyBall.touches = 12; }
+  else if (what === "call") { volleyParts.forEach(p => { if (p.side === "cove") p._calledUntil = 0; }); if (cove[idx]) { cove[idx]._calledUntil = matchT + 2.6; cove[idx]._callFlash = matchT; } }
+  else if (what === "fast" || what === "accel") _vbFast = !_vbFast;
+  else if (what === "nodrowse") _vbNoDrowse = !_vbNoDrowse;
+  else if (what === "tut") _vbTutSeen = false;
+  return window.__cove.volleyState();
+};
+window.__cove.volleyStep = (n = 1, dt = 0.05) => { for (let i = 0; i < n; i++) if (festKind === "volley" && festMode) renderVolley(dt); return window.__cove.volleyState(); };
+window.__cove.volleyTap = (idx = 0) => { const c = volleyParts.filter(p => p.side === "cove")[idx]; if (c) volleyPointer({ _arena: { x: c.cat.x, y: c.cat.y - 14 } }); return window.__cove.volleyState(); };
 // perf: read the adaptive-detail state, or pin it (true/false) to preview the lite look
 window.__cove.perfLite = (v) => {
   if (v !== undefined) {
