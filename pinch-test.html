@@ -4228,6 +4228,14 @@ function boxProp(id) {
 document.getElementById("placeBarDone").onclick = () => { if (_placing) finishPlacing(); else if (_arranging) endArrange(); };
 document.getElementById("placeBarCancel").onclick = cancelPlacing;
 
+// Cove Volleyball taps land on the #fest overlay (z-65, pointer-events:auto),
+// NOT the canvas beneath it — so the tap handler has to live on #fest.
+document.getElementById("fest").addEventListener("pointerdown", (e) => {
+  ensureAudio();
+  if (!festMode || festKind !== "volley" || volleyPhase !== "play") return;
+  if (e.target.closest("button, .fest-panel, .fest-result, .volley-hud, .volley-com, .fest-bar, .fest-skip")) return;
+  volleyPointer(e);
+});
 canvas.addEventListener("pointerdown", (e) => {
   ensureAudio();
   if (festMode) { if (festKind === "volley") volleyPointer(e); return; }   // festival modes own their taps; race/box use HTML buttons
