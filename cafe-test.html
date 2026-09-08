@@ -708,7 +708,7 @@ function stepCustomer(c, dt){
   else if (c.state==="enjoy"){
     if (c.enjoyFor == null) c.enjoyFor = rnd(6,10);
     if (c.t > c.enjoyFor){
-      served++; shells += c.wants==="food" ? 3 : 2;
+      served++; if (Math.random() < 0.35) shells += 1;   // the odd tip — the real payout is the shift bonus
       mood = Math.min(1, mood + 0.035);
       if (Math.random()<0.22) note("goodGuest");
       c.state = "leave"; c.t = 0; freeSeatOf(c);
@@ -895,9 +895,19 @@ function endShift(){
 }
 function showReport(){
   const moodWord = mood>.75?"😻 Cozy": mood>.55?"😺 Warm": mood>.35?"🙂 Fine":"😐 Quiet";
-  const bonus = 1 + (mood - 0.5) * 0.5;
-  const earned = Math.round((served * 2 + 6) * bonus);
-  shells += earned - (served*2); // top-up to the bonus'd figure roughly
+  // reward — same base unit + shape as the Cove Race / Volleyball. Scales with
+  // net happy guests, then Café Mood swings it ±30% (the cozy meta matters more
+  // than raw throughput). A standout shift can turn up a keepsake.
+  const BASE = 25;                                   // ≈ goalShells(0.42) at ~10 residents
+  const tips = shells;                               // the odd tip banked during the shift
+  const rate = Math.max(0, served - lost * 1.5);
+  let mult = (0.5 + rate * 0.09) * (0.7 + mood * 0.6);
+  mult = Math.max(0.35, Math.min(3.0, mult));
+  const bonus = Math.round(BASE * mult);
+  const great = mood > 0.7 && lost <= 2 && served >= 14;
+  const keepsake = great && Math.random() < 0.06;
+  const earned = tips + bonus;
+  shells = earned;
   const eots = employeeOfShift();
   let cats = "";
   for (const s of staff){
@@ -925,8 +935,9 @@ function showReport(){
       <div class="rpt-line"><span>Guests served</span><b>${served}</b></div>
       <div class="rpt-line"><span>Guests lost</span><b>${lost}</b></div>
       <div class="rpt-line"><span>Café Mood</span><b>${moodWord}</b></div>
-      <div class="rpt-line" style="border:none"><span>Shells earned</span><b style="color:var(--apricot)">+${earned}</b></div>
+      <div class="rpt-line" style="border:none"><span>Shells earned</span><b style="color:var(--apricot)">+${earned}${keepsake ? " ✦" : ""}</b></div>
     </div>
+    ${keepsake ? `<p style="margin:6px 0 0;font-size:12px;font-style:italic;color:var(--ink-soft)">${eots.name} pocketed a pastry on the way out. It's yours now, technically.</p>` : ""}
     ${cats}
     <div class="eots">
       <div class="k">Employee of the shift</div>
