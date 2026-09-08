@@ -26,13 +26,26 @@
 
   /* ---- top HUD ---- */
   #hud{position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 8px) 10px 8px;
-    display:flex;align-items:flex-start;justify-content:space-between;gap:8px;pointer-events:none;z-index:3;}
+    display:flex;flex-direction:column;gap:6px;pointer-events:none;z-index:3;}
   .chip{background:var(--panel);border:1px solid var(--panel-line);border-radius:999px;
     box-shadow:var(--shadow);padding:6px 11px;font:700 12px/1 "Hanken Grotesk";display:flex;align-items:center;gap:6px;}
-  #phasePill{font-family:"IBM Plex Mono",monospace;font-weight:600;letter-spacing:.04em;}
   #moodPill .bar{width:64px;height:7px;border-radius:999px;background:#e2dcc7;overflow:hidden;}
   #moodPill .bar i{display:block;height:100%;background:var(--accent);transition:width .5s ease;}
   #shellPill{color:var(--apricot);}
+  .hud-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+
+  /* the shift "day" — sun crosses toward the closing bell, no numbers */
+  #shiftBar{flex:1 1 auto;background:var(--panel);border:1px solid var(--panel-line);border-radius:999px;
+    box-shadow:var(--shadow);padding:6px 12px 6px 10px;display:flex;align-items:center;gap:8px;min-width:0;}
+  #shiftBar .sb-phase{font:800 9px/1 "IBM Plex Mono";letter-spacing:.09em;text-transform:uppercase;color:var(--accent);white-space:nowrap;}
+  #shiftBar.closing .sb-phase{color:var(--apricot);}
+  #shiftBar .sb-track{flex:1 1 auto;position:relative;height:8px;border-radius:999px;background:#e6e0cb;min-width:40px;}
+  #shiftBar .sb-fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--accent);width:0;}
+  #shiftBar.closing .sb-fill{background:var(--apricot);}
+  #shiftBar .sb-seg{position:absolute;top:-1px;bottom:-1px;width:1.5px;background:rgba(74,53,36,.18);}
+  #shiftBar .sb-sun{position:absolute;top:50%;left:0;transform:translate(-50%,-50%);font-size:13px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.2));}
+  #shiftBar .sb-bell{font-size:12px;flex:0 0 auto;}
+  #shiftBar.closing .sb-bell{animation:pulse 1s ease-in-out infinite;}
 
   #note{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 46px);transform:translateX(-50%);
     max-width:min(88vw,360px);background:#fffdf6;border:1px solid #e4dcc2;border-left:4px solid var(--apricot);
@@ -118,9 +131,17 @@
   <div id="stage">
     <canvas id="c"></canvas>
     <div id="hud">
-      <div class="chip" id="phasePill">🌤️ opening</div>
-      <div class="chip" id="moodPill">💕 <span class="bar"><i style="width:60%"></i></span></div>
-      <div class="chip" id="shellPill">◈ <span id="shells">0</span></div>
+      <div class="hud-row">
+        <div id="shiftBar">
+          <span class="sb-phase" id="sbPhase">Opening</span>
+          <span class="sb-track" id="sbTrack"><i class="sb-fill" id="sbFill"></i><span class="sb-sun" id="sbSun">☀️</span></span>
+          <span class="sb-bell">🔔</span>
+        </div>
+      </div>
+      <div class="hud-row">
+        <div class="chip" id="moodPill">💕 <span class="bar"><i style="width:60%"></i></span></div>
+        <div class="chip" id="shellPill">◈ <span id="shells">0</span></div>
+      </div>
     </div>
     <div id="note"><b>Shift note</b><span id="noteText"></span></div>
     <div id="banner"></div>
@@ -193,6 +214,7 @@ const PHASE_HINT = {
   rush:"Festival's spilling in — the door's about to get busy.",
   last:"Last orders. Winding down.",
 };
+const SHIFT_TOTAL = PHASES.filter(p => p.id !== "closed").reduce((s,p) => s + p.dur, 0);
 
 const NOTES = {
   break:      ["{c} is taking an unauthorised break.", "{c} has stepped away from the counter.", "{c} needed a moment."],
@@ -250,19 +272,47 @@ function newShift(){
   served = 0; lost = 0; spawnT = 2; _hintedPhase = ""; _quietT = 0; pick = null;
   running = true;
   renderStaff();
+  buildShiftTicks();
   setPhase(0, true);
+  showBanner("☀️  Catmint Café — open");
 }
 
 /* ---------------- phases ---------------- */
+function showBanner(txt){
+  const b = document.getElementById("banner");
+  b.textContent = txt;
+  b.classList.remove("show"); void b.offsetWidth; b.classList.add("show");
+}
 function setPhase(ix, silent){
   phaseIx = ix; phaseT = 0;
   const p = PHASES[ix];
-  document.getElementById("phasePill").textContent = p.emoji + " " + p.label;
+  const bar = document.getElementById("shiftBar");
+  document.getElementById("sbPhase").textContent = p.emoji + " " + p.label[0].toUpperCase() + p.label.slice(1);
+  bar.classList.toggle("closing", p.id === "last" || p.id === "closed");
+  updateShiftBar();
   if (silent) return;
-  const b = document.getElementById("banner");
-  b.textContent = p.emoji + "  " + p.label.toUpperCase();
-  b.classList.remove("show"); void b.offsetWidth; b.classList.add("show");
+  showBanner(p.emoji + "  " + p.label.toUpperCase());
   note("phase", { p: p.label[0].toUpperCase()+p.label.slice(1) });
+}
+// draw the phase dividers on the track once
+function buildShiftTicks(){
+  const tr = document.getElementById("sbTrack");
+  tr.querySelectorAll(".sb-seg").forEach(n => n.remove());
+  let cum = 0;
+  for (const p of PHASES){
+    if (p.id === "closed") break;
+    cum += p.dur;
+    if (cum >= SHIFT_TOTAL) break;
+    const seg = document.createElement("span");
+    seg.className = "sb-seg";
+    seg.style.left = (cum / SHIFT_TOTAL * 100) + "%";
+    tr.appendChild(seg);
+  }
+}
+function updateShiftBar(){
+  const f = Math.max(0, Math.min(1, shiftT / SHIFT_TOTAL));
+  document.getElementById("sbFill").style.width = (f * 100) + "%";
+  document.getElementById("sbSun").style.left = (f * 100) + "%";
 }
 
 /* ---------------- customers ---------------- */
@@ -440,6 +490,7 @@ function step(dt){
   document.getElementById("shells").textContent = shells;
   document.getElementById("moodPill").firstChild.textContent = moodEmoji() + " ";
   document.querySelector("#moodPill .bar i").style.width = Math.round(mood*100) + "%";
+  updateShiftBar();
 }
 
 function moveTo(o, tx, ty, sp, dt){
@@ -686,6 +737,25 @@ function draw(){
   g.fillStyle="rgba(36,31,23,.1)"; roundRect(-14,-2,28,8,3); g.fill();
   g.restore();
 
+  // ---- the OPEN / LAST CALL / CLOSED sign, swinging by the door ----
+  {
+    const p = PHASES[phaseIx];
+    const txt = !running ? "CLOSED" : p.id==="last" ? "LAST CALL" : p.id==="closed" ? "CLOSED" : "OPEN";
+    const col = txt==="OPEN" ? "#3f8159" : txt==="LAST CALL" ? "#c47a35" : "#8a8072";
+    const t = performance.now()/1000;
+    g.save(); g.translate(DOOR.x + 30, DOOR.y - 42);
+    g.strokeStyle="#7c6142"; g.lineWidth=2.5;
+    g.beginPath(); g.moveTo(0,-10); g.lineTo(0,0); g.stroke();          // hook post
+    g.rotate(Math.sin(t*1.4) * 0.045);
+    g.strokeStyle="#6b5335"; g.lineWidth=1.4;
+    g.beginPath(); g.moveTo(-12,0); g.lineTo(-8,9); g.moveTo(12,0); g.lineTo(8,9); g.stroke();   // chains
+    g.fillStyle="#f4ead6"; roundRect(-26,8,52,18,3); g.fill();
+    g.strokeStyle="rgba(74,53,36,.4)"; g.lineWidth=1.2; roundRect(-26,8,52,18,3); g.stroke();
+    g.fillStyle=col; g.font="800 9.5px 'Hanken Grotesk', sans-serif"; g.textAlign="center"; g.textBaseline="middle";
+    g.fillText(txt, 0, 18);
+    g.restore();
+  }
+
   // ---- tables ----
   for (let i=0;i<seats.length;i++){
     const s = seats[i];
@@ -768,8 +838,11 @@ function roundRect(x,y,w,h,r){ g.beginPath();
 function endShift(){
   if (!running) return;
   running = false;
+  document.getElementById("sbFill").style.width = "100%";
+  document.getElementById("sbSun").style.left = "100%";
+  showBanner("🔔  Café closed");
   note("phase", { p: "The staff have clocked out" });
-  setTimeout(showReport, 900);
+  setTimeout(showReport, 1500);
 }
 function showReport(){
   const moodWord = mood>.75?"😻 Cozy": mood>.55?"😺 Warm": mood>.35?"🙂 Fine":"😐 Quiet";
