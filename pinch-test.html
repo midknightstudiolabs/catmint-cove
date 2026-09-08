@@ -778,13 +778,15 @@
   .vb-score .vb-a,.vb-score .vb-b{font-family:"Hanken Grotesk",sans-serif;font-weight:600;font-size:.72rem;
     opacity:.82;max-width:6.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .vb-score .vb-dash{opacity:.5;}
-  .volley-com{display:flex;align-items:center;gap:.35rem;max-width:min(88vw,420px);
-    background:rgba(17,14,21,.5);color:#f0ece0;border-radius:999px;padding:.28rem .8rem;
-    font-family:"Hanken Grotesk",sans-serif;font-size:.78rem;line-height:1.3;text-align:left;
-    animation:vbComIn .3s ease both;transition:opacity .5s;}
+  .volley-com{display:flex;align-items:center;gap:.42rem;max-width:min(88vw,420px);
+    background:rgba(34,24,15,.7);color:#ffdf9e;border:1px solid rgba(255,223,158,.44);
+    border-radius:999px;padding:.3rem .9rem;
+    font-family:"Hanken Grotesk",sans-serif;font-weight:600;font-size:.8rem;line-height:1.32;text-align:left;
+    text-shadow:0 1px 4px rgba(0,0,0,.45);box-shadow:0 4px 16px rgba(0,0,0,.28);
+    animation:vbComIn .34s ease both;transition:opacity .5s;}
   .volley-com[hidden]{display:none;}
   .volley-com.fade{opacity:0;}
-  .volley-com .vc-mic{flex-shrink:0;font-size:.82rem;opacity:.8;}
+  .volley-com .vc-mic{flex-shrink:0;font-size:.86rem;opacity:1;}
   @keyframes vbComIn{from{opacity:0;transform:translateY(-4px);}}
   .volley-banner{position:absolute;left:50%;top:31%;transform:translate(-50%,-50%);z-index:65;
     pointer-events:none;background:rgba(224,105,60,.9);color:#fff;font-family:"Fraunces",serif;font-weight:700;
@@ -8449,6 +8451,7 @@ function closeFest() {
     document.getElementById("app").classList.remove("festing");
     document.getElementById("festBar").hidden = true;
     _festDPR = 0; resize();
+    stopVolleyBed();
     stopFestAudio();
     for (const c of cats) { c.stateDur = 0; decide(c); }
   }, 560);
@@ -8461,6 +8464,7 @@ let festBus = null, festMurmur = null, _festAudioGen = 0, _festMelodyBeat = 0;
 function startFestAudio() {
   if (!actx) return;
   const gen = ++_festAudioGen;
+  stopVolleyBed();                 // a fresh festival session starts at the hub — no stale beach bed
   stopFestAudio(true);              // tear down anything already playing (keeps gen)
   _festAudioGen = gen;
   if (ambience) rampParam(ambience.master.gain, 0, 1.2);   // the cove goes quiet — you're at the grounds now
@@ -8507,6 +8511,7 @@ const FEST_TUNE = [
 ].map(n => ({ len: 0.5, ...n }));
 function scheduleFestMelody() {
   if (!festBus) return;
+  if (_volleyBed) { setTimeout(scheduleFestMelody, 900); return; }   // volleyball runs its own beach bed; calliope steps aside
   const root = 523.25;   // C5 — bright calliope register
   let beatT = 0.05;
   for (const note of FEST_TUNE) {
@@ -8532,6 +8537,79 @@ function scheduleFestMelody() {
     _festMelodyBeat++;
   }
   setTimeout(scheduleFestMelody, (beatT + 0.35 + Math.random() * 0.3) * 1000);
+}
+
+/* ---- Cove Volleyball's own background: a lazy sunny-beach bed. The crowd
+   murmur (festMurmur) keeps going; the fairground calliope steps aside for
+   a slow wave wash + a sparse pentatonic marimba figure + the odd gull. ---- */
+let _volleyBed = null;
+function startVolleyBed() {
+  if (!actx || !festBus || _volleyBed) return;
+  const g = actx.createGain(); g.gain.value = 0.0001; g.connect(festBus);
+  rampParam(g.gain, muted ? 0.0001 : 1, 1.6);
+  // wave wash — pink noise, a lowpass that breathes open and shut on a ~6s swell
+  const surf = loopNoise("pink", 5);
+  const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 520; lp.Q.value = 0.3;
+  const surfG = actx.createGain(); surfG.gain.value = 0.085;
+  const swell = actx.createOscillator(); swell.type = "sine"; swell.frequency.value = 0.16;
+  const swellA = actx.createGain(); swellA.gain.value = 0.05;
+  const swellFA = actx.createGain(); swellFA.gain.value = 240;
+  swell.connect(swellA); swellA.connect(surfG.gain);
+  swell.connect(swellFA); swellFA.connect(lp.frequency);
+  swell.start();
+  surf.connect(lp); lp.connect(surfG); surfG.connect(g);
+  _volleyBed = { g, surf, swell, stopped: false };
+  scheduleVolleyPlink();
+  scheduleGull();
+}
+const VB_PENT = [0, 3, 5, 7, 10, 12, 15];   // soft minor-pentatonic, mellow
+function scheduleVolleyPlink() {
+  if (!_volleyBed || _volleyBed.stopped || !festBus) return;
+  const root = 392;   // G4
+  const n = 2 + (Math.random() * 3 | 0);
+  let t = actx.currentTime + 0.05;
+  for (let i = 0; i < n; i++) {
+    const f = root * Math.pow(2, VB_PENT[(Math.random() * VB_PENT.length) | 0] / 12);
+    const o = actx.createOscillator(), og = actx.createGain();
+    o.type = "triangle"; o.frequency.value = f;
+    const olp = actx.createBiquadFilter(); olp.type = "lowpass"; olp.frequency.value = 1900;
+    og.gain.setValueAtTime(0.0001, t);
+    og.gain.linearRampToValueAtTime(muted ? 0 : 0.05, t + 0.015);
+    og.gain.exponentialRampToValueAtTime(0.0004, t + 0.5);
+    o.connect(olp); olp.connect(og); og.connect(_volleyBed.g);
+    o.start(t); o.stop(t + 0.6);
+    t += 0.28 + Math.random() * 0.5;
+  }
+  setTimeout(scheduleVolleyPlink, (3 + Math.random() * 4) * 1000);
+}
+function scheduleGull() {
+  if (!_volleyBed || _volleyBed.stopped || !festBus) return;
+  if (Math.random() < 0.7) {
+    const t = actx.currentTime + 0.05;
+    const o = actx.createOscillator(), og = actx.createGain();
+    o.type = "sine";
+    const f0 = 1450 + Math.random() * 520;
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(f0 * 0.55, t + 0.22);
+    o.frequency.setValueAtTime(f0 * 0.94, t + 0.27);
+    o.frequency.exponentialRampToValueAtTime(f0 * 0.5, t + 0.47);
+    og.gain.setValueAtTime(0.0001, t);
+    og.gain.linearRampToValueAtTime(muted ? 0 : 0.02, t + 0.03);
+    og.gain.exponentialRampToValueAtTime(0.0004, t + 0.24);
+    og.gain.setValueAtTime(muted ? 0 : 0.018, t + 0.28);
+    og.gain.exponentialRampToValueAtTime(0.0004, t + 0.48);
+    o.connect(og); og.connect(_volleyBed.g);
+    o.start(t); o.stop(t + 0.55);
+  }
+  setTimeout(scheduleGull, (7 + Math.random() * 9) * 1000);
+}
+function stopVolleyBed() {
+  if (!_volleyBed || !actx) { _volleyBed = null; return; }
+  const b = _volleyBed; _volleyBed = null; b.stopped = true;
+  const t = actx.currentTime;
+  try { rampParam(b.g.gain, 0.0001, 1); } catch (e) {}
+  try { b.surf.stop(t + 1.2); b.swell.stop(t + 1.2); } catch (e) {}
+  setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, 1600);
 }
 
 function syncRacerCat(r, dt, freeze) {
@@ -8945,6 +9023,7 @@ document.getElementById("festAgain").addEventListener("click", () => {
   }
   if (festKind === "volley") {
     volleyParts = []; volleyBall = null; volleyPhase = "idle"; festKind = "hub"; festGroundsCats(roster);
+    stopVolleyBed();   // back to the hub → the calliope resumes
     document.getElementById("volleyHud").hidden = true;
     document.getElementById("volleyCom").hidden = true;
     document.getElementById("volleyBanner").hidden = true;
@@ -9534,10 +9613,11 @@ let _vbWakeCd = 0, _vbAllAsleepUntil = 0, _vbSaidAllAsleep = false, _vbMaxDefici
 // a little meow whenever you tap one of your cats — eager if it's alert, grouchy
 // if you just prodded a sleeper. Throttled so mashing taps doesn't machine-gun.
 function vbMeow(c, happy) {
-  if (matchT - _vbMeowAt < 0.5) return;
+  if (matchT - _vbMeowAt < 0.3) return;
   _vbMeowAt = matchT;
-  if (happy) { if (!playSample("meow", { vol: 0.6, rate: 1.05 })) meow(true, 0.6); }
-  else { if (!playSample("grumpy", { vol: 0.55 })) meow(false, 0.5); }
+  // loud + up front — it needs to cut over the festival bed as tap feedback
+  if (happy) { if (!playSample("meow", { vol: 1.25, rate: 1.06 })) meow(true, 1.7); }
+  else { if (!playSample("grumpy", { vol: 1.1 })) meow(false, 1.4); }
 }
 function _vwpick(w) { let s = 0; for (const k in w) s += w[k]; let r = Math.random() * s;
   for (const k in w) { r -= w[k]; if (r <= 0) return k; } return Object.keys(w)[0]; }
@@ -9669,6 +9749,7 @@ function startCoveVolley() {
     moods: volleyPickSel.map(c => Math.round(c.mood ?? 60)),
     visiting_cove: visit.name,
   });
+  startVolleyBed();     // swap the fairground calliope for the beach bed
   runFestCountdown();   // → volleyBegin() at "Go!"
   trackEvent("volleyball_started", { visiting_cove: visit.name });
 }
@@ -9958,7 +10039,7 @@ function vbWake(p, reluctant) {
   c.state = "stretching"; c.stateT = 0; c.stateDur = reluctant ? 1.5 : 1.0;
   if (reluctant && (c.traits || []).includes("grumpy")) floatText(c.x, c.y - 30, "hmph.", "#9a8a72");
   spawnParticles(c.x, c.y - 12, "heart", 2); spawnParticles(c.x, c.y - 6, "twinkle", 3);
-  vbTone("nudge"); vbMeow(c, !reluctant);
+  vbTone("nudge");   // the tap meow already fired in volleyPointer
   trackEvent("volleyball_cat_woke", { cat: c.name, side: p.side, reluctant: !!reluctant });
 }
 function vbTickDrowse(p, dt) {
@@ -10316,7 +10397,7 @@ function drawVolleyGlyph(g, p) {
 function volleyPointer(e) {
   if (festKind !== "volley" || volleyPhase !== "play") return;
   const pt = e._arena || volleyScreenToArena(e.clientX, e.clientY);
-  let hit = null, hd = 66 * 66;
+  let hit = null, hd = 82 * 82;   // forgiving tap radius — the cats are small on a phone
   for (const part of volleyParts) {
     if (part.side !== "cove") continue;
     const c = part.cat;
@@ -10325,13 +10406,14 @@ function volleyPointer(e) {
   }
   if (!hit) return;
   const c = hit.cat;
+  vbMeow(c, hit.tier === "awake" || hit.tier === "tired");   // every tap on one of your cats gets a meow
 
   if (hit.tier === "asleep") {
     if (matchT < _vbWakeCd) return;
     trackEvent("volleyball_cat_wake_attempt", { cat: c.name, state: "asleep", ok: !!hit._primed });
     if (hit._primed && matchT < hit._primed) { vbWake(hit, true); _vbWakeCd = matchT + VB_WAKE_CD; vbSay("wake", { cat: c.name }); }
     else { hit._pokedAt = matchT; hit._primed = matchT + 4.5; _vbWakeCd = matchT + VB_WAKE_CD;
-      floatText(c.x, c.y - 30, "😑", "#8a8276"); vbSay("failWake", { cat: c.name }); vbMeow(c, false); }
+      floatText(c.x, c.y - 30, "😑", "#8a8276"); vbSay("failWake", { cat: c.name }); }
     return;
   }
   if (hit.tier === "drowsy") {
@@ -10349,12 +10431,12 @@ function volleyPointer(e) {
     volleyParts.forEach(o => { if (o.side === "cove") o._calledUntil = 0; });
     hit._calledUntil = matchT + 2.6; hit._callFlash = matchT;
     c.face = volleyBall.x >= c.x ? 1 : -1;
-    tone(560, 0.06, "sine", 0.05); vbMeow(c, true);
+    tone(560, 0.06, "sine", 0.05);
   } else {
     if (matchT < hit._sharpUntil - 4) return;   // one "stay sharp" per cat every ~2s of effect
     hit._sharpUntil = matchT + 6; hit.drowse = Math.max(0, hit.drowse - 0.06); hit._callFlash = matchT;
     spawnParticles(c.x, c.y - 12, "twinkle", 2);
-    tone(500, 0.05, "sine", 0.04); vbMeow(c, true);
+    tone(500, 0.05, "sine", 0.04);
   }
 }
 function vbStatLine(p) {
