@@ -7231,13 +7231,44 @@ document.getElementById("titlePill").addEventListener("click", () => askOwnerNam
 /* ---------- audio (procedural) ---------- */
 let actx = null;
 function ensureAudio() {
-  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } }
-  if (actx && actx.state === "suspended") actx.resume();
+  if (!actx) {
+    try {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      // iOS drops to "interrupted" on a call / Siri / Control Center and back —
+      // when it returns to "running" the looping beds are dead, so rebuild them
+      // (but not on the very first unlock, when they're being built fresh anyway)
+      actx.onstatechange = () => {
+        if (!actx || actx.state !== "running") return;
+        if (_audioWasRunning) _rebuildAudioBeds();
+        _audioWasRunning = true;
+      };
+    } catch (e) { actx = null; }
+  }
+  if (actx && actx.state !== "running") actx.resume().catch(() => {});
   if (actx) { startAmbience(); loadSfx(); }
 }
-// catch-all: any tap anywhere un-sticks a suspended context (covers overlays the
-// individual handlers don't touch — the tutorial, modals, the rest panel)
-document.addEventListener("pointerdown", () => { if (actx && actx.state === "suspended") actx.resume(); }, true);
+let _audioRebuildAt = 0, _audioWasRunning = false;
+// rebuild whichever ambient bed(s) should be playing right now — the cove bed,
+// plus the rest-mode rain or the festival bed if we're in one of those
+function _rebuildAudioBeds() {
+  if (!actx || Date.now() - _audioRebuildAt < 800) return;   // debounce repeated statechange fires
+  _audioRebuildAt = Date.now();
+  stopAmbience();
+  startAmbience();
+  if (restMode) startRestAudio();
+  else if (festMode) { startFestAudio(); if (festKind === "volley" && volleyPhase === "play") startVolleyBed(); }
+}
+// bring audio back after iOS suspends/interrupts it (screen lock, backgrounding,
+// a phone call). .resume() alone leaves the loops dead — rebuild them too.
+function resumeAudio() {
+  if (!actx) return;
+  if (actx.state === "running") return;
+  actx.resume().then(_rebuildAudioBeds).catch(() => {});
+}
+// catch-all: any tap anywhere un-sticks a suspended/interrupted context
+document.addEventListener("pointerdown", resumeAudio, true);
+window.addEventListener("focus", resumeAudio);
+window.addEventListener("pageshow", resumeAudio);
 function tone(freq, dur, type = "sine", vol = 0.16, when = 0) {
   if (muted || !actx) return;
   const t = actx.currentTime + when;
@@ -7499,7 +7530,7 @@ function startAmbience() {
   const master = actx.createGain();
   master.gain.value = 0;
   master.connect(actx.destination);
-  master.gain.linearRampToValueAtTime(muted || restMode ? 0 : AMB_MASTER, now + 3);   // stay silent if we boot straight into rest
+  master.gain.linearRampToValueAtTime(muted || restMode || festMode ? 0 : AMB_MASTER, now + 3);   // silent if we (re)start straight into rest / a festival
 
   // brook — pink noise, low-passed, a slow babble wobble. Kept gentle.
   const water = loopNoise("pink", 8);
@@ -7528,10 +7559,19 @@ function startAmbience() {
   const birdGain = actx.createGain(); birdGain.gain.value = 0;
   birdGain.connect(master);
 
-  ambience = { master, waterGain, windGain, crickGain, birdGain };
+  ambience = { master, waterGain, windGain, crickGain, birdGain, srcs: [water, crick, babble, tremOsc] };
   applyAmbienceDayNight(dayFactor, 0.5);
   scheduleBird();
   scheduleChime();
+}
+// tear the cove bed down so it can be rebuilt (iOS kills looping sources on an
+// audio interruption — screen lock, a call, Control Center — and .resume() alone
+// doesn't restart them)
+function stopAmbience() {
+  if (!ambience) return;
+  const a = ambience; ambience = null;
+  try { for (const s of a.srcs || []) { try { s.stop(); } catch (e) {} } } catch (e) {}
+  setTimeout(() => { try { a.master.disconnect(); } catch (e) {} }, 60);
 }
 
 function applyAmbienceDayNight(f, ramp = 4) {
@@ -15002,7 +15042,7 @@ try { new ResizeObserver(onViewportChange).observe(document.getElementById("app"
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) { save(); Ads.onHide(); }
-  else { onViewportChange(); Ads.onShow(); }   // onShow: maybe a session-transition interstitial
+  else { onViewportChange(); resumeAudio(); Ads.onShow(); }   // iOS often suspends audio while hidden
 });
 window.addEventListener("pagehide", save);
 const _saveInterval = setInterval(save, 5000);
