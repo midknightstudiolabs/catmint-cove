@@ -11002,7 +11002,7 @@ const CAFE_JOBS = ["barista", "server", "host"];
 const CAFE_JICON = { barista: "☕", server: "🍰", host: "🎀" };
 const CAFE_JNAME = { barista: "Barista", server: "Server", host: "Host" };
 const CAFE_POS  = { barista: { x: 120, y: 402 }, server: { x: 288, y: 500 }, host: { x: 432, y: 690 } };
-const CAFE_IDLE = { barista: { x: 106, y: 430 }, server: { x: 270, y: 520 }, host: { x: 442, y: 694 } };
+const CAFE_IDLE = { barista: { x: 120, y: 452 }, server: { x: 300, y: 524 }, host: { x: 470, y: 700 } };
 // the pass: barista carries finished orders here, server collects from here
 const CAFE_PASS = { x: 240, y: 470 };
 const CAFE_PASTRIES = [ ["#e7b95c", 0], ["#d98b53", 1], ["#e7c99a", 0], ["#c96f4a", 2], ["#efd9a6", 0] ];
@@ -11011,7 +11011,7 @@ const CAFE_PODIUM = { x: 452, y: 724 };
 // two rows; back-row tables sit in the GAPS of the front row so a cat walking
 // up the aisle to a back table never has to cross a front one
 const CAFE_TABLES = [ {x:102,y:580},{x:224,y:580},{x:350,y:580},{x:150,y:706},{x:298,y:706} ];
-const CAFE_SIT_DY = 13;   // a seated cat sits this far in front of its table (plate stays on the table behind)
+const CAFE_SIT_DY = 11;   // a seated cat sits this far in front of its table (plate stays on the table behind)
 const CAFE_PHASES = [
   { id:"opening", label:"opening",       emoji:"🌤️", dur:24, every:6.5, foodP:.35 },
   { id:"coffee",  label:"coffee rush",   emoji:"☕",  dur:48, every:3.4, foodP:.15 },
@@ -11465,7 +11465,7 @@ function cafeStepServer(s, dt, speed) {
   }
   const need = cafeSeats.find(s2 => s2.cust && s2.cust.state === "seated");
   if (need) {
-    if (!cafeMoveTo(c, need.x, need.y - 16, speed, dt)) return;
+    if (!cafeMoveTo(c, need.x + 22, need.y + CAFE_SIT_DY, speed, dt)) return;
     for (const seat of cafeSeats) {
       if (seat.cust && seat.cust.state === "seated" && Math.hypot(seat.x - c.x, seat.y - c.y) < 90) {
         seat.cust.state = "wait"; seat.cust._ct = 0;
@@ -11655,12 +11655,11 @@ function drawCafeScene(g) {
   g.fillStyle = "#efe3cb"; roundRect(g, -16, -22, 32, 20, 3); g.fill();
   g.fillStyle = "#c47a35"; g.font = "700 9px 'Fraunces', serif"; g.textAlign = "center"; g.fillText("CAFÉ", 0, -9);
   g.restore();
-  // tables
+  // tables (back half + top — the near half is redrawn over the cats in drawCafeFronts)
   for (const s of cafeSeats) {
-    g.fillStyle = "rgba(36,31,23,.12)"; g.beginPath(); g.ellipse(s.x, s.y + 9, 20, 7, 0, 0, 7); g.fill();
-    g.fillStyle = "#b98e63"; g.beginPath(); g.arc(s.x, s.y, 15, 0, 7); g.fill();
-    g.fillStyle = "#caa477"; g.beginPath(); g.arc(s.x, s.y, 15, Math.PI, Math.PI * 2); g.fill();
-    if (s.cust && s.cust.state === "enjoy") { g.fillStyle = "rgba(255,255,255,.7)"; g.beginPath(); g.ellipse(s.x, s.y - 5, 7, 3.5, 0, 0, 7); g.fill(); g.fillStyle = s.cust.wants === "food" ? "#e7c99a" : "#f3ede0"; roundRect(g, s.x - 4, s.y - 11, 8, s.cust.wants === "food" ? 8 : 11, 2); g.fill(); }
+    g.fillStyle = "rgba(36,31,23,.12)"; g.beginPath(); g.ellipse(s.x, s.y + 12, 23, 7.5, 0, 0, 7); g.fill();
+    g.fillStyle = "#b98e63"; g.beginPath(); g.arc(s.x, s.y + 4, 19, 0, 7); g.fill();
+    g.fillStyle = "#caa477"; g.beginPath(); g.arc(s.x, s.y + 4, 19, Math.PI, Math.PI * 2); g.fill();
   }
   // OPEN / LAST CALL / CLOSED sign
   {
@@ -11733,18 +11732,47 @@ function renderCafe(dt) {
       for (let i = 0; i < Math.min(s.carry.items.length, 3); i++) { g.fillStyle = "#f3ede0"; roundRect(g, s.cat.x - 7 + i * 5, s.cat.y - 30, 4, 5, 1); g.fill(); }
     }
   }
-  // front face of the pass, redrawn over the cats so barista/server read as behind it
-  {
-    g.save(); g.translate(CAFE_PASS.x, CAFE_PASS.y);
-    g.fillStyle = "#8a6f4e"; roundRect(g, -64, 16, 128, 22, 5); g.fill();
-    g.fillStyle = "#7c6142"; roundRect(g, -64, 30, 128, 8, 5); g.fill();
-    g.fillStyle = "rgba(255,255,255,.06)"; g.fillRect(-64, 17, 128, 1.5);
-    g.font = "9.5px 'IBM Plex Mono', monospace"; g.fillStyle = "rgba(36,31,23,.42)"; g.textAlign = "center";
-    g.fillText("PICK-UP", 0, 51);
-    g.restore();
-  }
+  // furniture fronts, redrawn over the cats so a cat AT a table / counter reads
+  // as tucked behind it and a cat walking past is occluded by it
+  drawCafeFronts(g);
   if (particles.length || floaters.length) drawFX(g);
   if (_cafeBannerUntil && cafeShiftT > _cafeBannerUntil) { document.getElementById("volleyBanner").hidden = true; _cafeBannerUntil = 0; }
+}
+
+// redrawn on top of the cats each frame — the near face of every piece of
+// furniture, so cats sit/stand behind their edges instead of on top of them
+function drawCafeFronts(g) {
+  // bar cart front
+  g.save(); g.translate(CAFE_POS.barista.x, CAFE_POS.barista.y);
+  g.fillStyle = "#8a6f4e"; roundRect(g, -58, 6, 116, 26, 4); g.fill();
+  g.fillStyle = "#7c6142"; roundRect(g, -58, 24, 116, 8, 4); g.fill();
+  g.fillStyle = "rgba(255,255,255,.05)"; g.fillRect(-58, 7, 116, 1.4);
+  g.font = "10px 'IBM Plex Mono', monospace"; g.fillStyle = "rgba(36,31,23,.45)"; g.textAlign = "center"; g.fillText("BAR", 0, 52);
+  g.restore();
+  // host podium front (the stand; the sign above stays from the scene draw)
+  g.save(); g.translate(CAFE_POS.host.x, CAFE_POS.host.y);
+  g.fillStyle = "#8a6f4e"; roundRect(g, -13, 8, 26, 22, 3); g.fill();
+  g.fillStyle = "#7c6142"; roundRect(g, -13, 24, 26, 6, 3); g.fill();
+  g.restore();
+  // pass / pick-up counter front
+  g.save(); g.translate(CAFE_PASS.x, CAFE_PASS.y);
+  g.fillStyle = "#8a6f4e"; roundRect(g, -64, 12, 128, 26, 5); g.fill();
+  g.fillStyle = "#7c6142"; roundRect(g, -64, 30, 128, 8, 5); g.fill();
+  g.fillStyle = "rgba(255,255,255,.06)"; g.fillRect(-64, 13, 128, 1.5);
+  g.font = "9.5px 'IBM Plex Mono', monospace"; g.fillStyle = "rgba(36,31,23,.42)"; g.textAlign = "center"; g.fillText("PICK-UP", 0, 51);
+  g.restore();
+  // occupied tables — redraw the near half over the seated cat's lower body
+  for (const s of cafeSeats) {
+    if (!s.cust || s.cust.state === "toSeat") continue;
+    g.fillStyle = "#b98e63"; g.beginPath(); g.arc(s.x, s.y + 4, 19, 0, Math.PI); g.fill();
+    g.fillStyle = "#caa477"; g.fillRect(s.x - 19, s.y + 2, 38, 3);
+    g.fillStyle = "rgba(36,31,23,.10)"; g.fillRect(s.x - 19, s.y + 5, 38, 1.4);
+    if (s.cust.state === "enjoy") {
+      g.fillStyle = "rgba(255,255,255,.72)"; g.beginPath(); g.ellipse(s.x, s.y, 7, 3.4, 0, 0, 7); g.fill();
+      g.fillStyle = s.cust.wants === "food" ? "#e7c99a" : "#f3ede0";
+      roundRect(g, s.x - 4, s.y - 6, 8, s.cust.wants === "food" ? 8 : 11, 2); g.fill();
+    }
+  }
 }
 
 /* ---- result ---- */
