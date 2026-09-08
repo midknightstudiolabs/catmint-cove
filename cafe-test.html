@@ -53,23 +53,36 @@
     100%{opacity:0;transform:translate(-50%,-50%) scale(1.04);}
   }
 
-  /* ---- staff strip ---- */
-  #staff{flex:0 0 auto;display:flex;gap:8px;padding:10px 10px calc(env(safe-area-inset-bottom) + 12px);
+  /* ---- staff strip: three fixed stations, cats slotted in ---- */
+  #staff{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:8px;padding:8px 10px calc(env(safe-area-inset-bottom) + 12px);
     background:var(--panel);border-top:1px solid var(--panel-line);z-index:3;}
+  #staffHint{flex:0 0 100%;text-align:center;font:700 11px/1.3 "Hanken Grotesk";color:var(--ink-soft);}
+  #staffHint b{color:var(--accent);}
   .card{flex:1 1 0;min-width:0;background:#fffdf6;border:2px solid var(--panel-line);border-radius:14px;
-    padding:8px 8px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
-    transition:transform .12s ease, border-color .12s ease, box-shadow .12s ease;position:relative;}
-  .card:active{transform:scale(.97);}
-  .card.picked{border-color:var(--accent);box-shadow:0 0 0 3px rgba(53,107,76,.16);transform:translateY(-3px);}
+    padding:0 6px 8px;display:flex;flex-direction:column;align-items:center;cursor:pointer;
+    transition:border-color .12s ease, box-shadow .12s ease, background .12s ease;position:relative;overflow:hidden;}
+  .card:active{background:#f3efe2;}
+  .card .station{display:flex;align-items:center;justify-content:center;gap:5px;width:calc(100% + 12px);margin:0 -6px 7px;
+    padding:6px 0;background:#f1ede0;border-bottom:1px solid var(--panel-line);}
+  .card .station .ji{font-size:14px;line-height:1;}
+  .card .station .jn{font:800 8.5px/1 "IBM Plex Mono";letter-spacing:.1em;text-transform:uppercase;color:var(--accent);}
+  .card .cat{display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .18s ease;width:100%;}
+  .card .nm{font:800 13.5px/1 "Hanken Grotesk";white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  .card .tr{font:600 9px/1 "IBM Plex Mono";letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);}
+  .card .st{font-size:11px;line-height:1;min-height:12px;color:var(--ink-soft);font-weight:700;margin-top:1px;}
+  .card.picked{border-color:var(--accent);box-shadow:0 0 0 3px rgba(53,107,76,.18);}
+  .card.picked .cat{transform:translateY(-3px) scale(1.05);}
+  .card.target{border-color:var(--accent-bright);background:#eef4ec;}
+  .card.target .cat .st{visibility:hidden;}
+  .card.target .cat .tr{opacity:.5;}
+  .card.target .swaptag{position:absolute;left:0;right:0;bottom:7px;text-align:center;
+    font:800 10px/1 "Hanken Grotesk";letter-spacing:.02em;color:var(--accent-bright);}
   .card.choke{border-color:var(--apricot);}
   .card.choke::after{content:"";position:absolute;inset:-2px;border-radius:14px;border:2px solid var(--apricot);
-    animation:pulse 1.1s ease-in-out infinite;}
-  @keyframes pulse{0%,100%{opacity:.25;}50%{opacity:.9;}}
-  .card .job{font-size:19px;line-height:1;}
-  .card .jn{font:700 8.5px/1 "IBM Plex Mono";letter-spacing:.1em;text-transform:uppercase;color:var(--accent);}
-  .card .nm{font:800 13px/1 "Hanken Grotesk";white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
-  .card .tr{font:600 9px/1 "IBM Plex Mono";letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);}
-  .card .st{font-size:11px;line-height:1;min-height:12px;color:var(--ink-soft);font-weight:700;}
+    animation:pulse 1.1s ease-in-out infinite;pointer-events:none;}
+  @keyframes pulse{0%,100%{opacity:.22;}50%{opacity:.85;}}
+  @keyframes swapBounce{0%{transform:scale(.86);}55%{transform:scale(1.08);}100%{transform:scale(1);}}
+  .card.swapped .cat{animation:swapBounce .34s ease;}
 
   /* ---- modals ---- */
   #scrim{position:absolute;inset:0;background:rgba(30,26,18,.5);backdrop-filter:blur(3px);
@@ -96,9 +109,6 @@
   .eots .n{font-family:"Fraunces",serif;font-weight:600;font-size:18px;margin:3px 0 2px;}
   .eots .r{font-size:12px;font-style:italic;color:var(--ink-soft);}
 
-  .hintbar{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);background:rgba(36,31,23,.82);
-    color:#f4efe2;font:600 11px/1.3 "Hanken Grotesk";padding:7px 12px;border-radius:999px;z-index:3;
-    max-width:88vw;text-align:center;transition:opacity .3s;}
   .tag{position:absolute;left:8px;bottom:calc(env(safe-area-inset-bottom) + 96px);z-index:3;
     background:rgba(36,31,23,.5);color:#f4efe2;font:600 9px/1 "IBM Plex Mono";letter-spacing:.04em;
     padding:3px 7px;border-radius:999px;pointer-events:none;}
@@ -116,9 +126,8 @@
     <div id="note"><b>Shift note</b><span id="noteText"></span></div>
     <div id="banner"></div>
     <div class="tag">prototype · not the real game</div>
-    <div class="hintbar" id="hintbar">Tap a staff card, then another, to swap their jobs.</div>
   </div>
-  <div id="staff"></div>
+  <div id="staff"><div id="staffHint"></div></div>
 </div>
 
 <div id="scrim" class="on">
@@ -273,28 +282,30 @@ function moodEmoji(){ return mood>.75?"😻":mood>.55?"😺":mood>.35?"🙂":"�
 function guestFace(c){ return c.patience>.6?"😺":c.patience>.35?"🙂":c.patience>.15?"😐":"🫥"; }
 
 /* ---------------- swap ---------------- */
+// One rule: tap a cat, then tap the station you want them at. Whoever is
+// already there trades places. Tapping the picked cat again cancels.
 function beginPick(s){
   if (!running) return;
-  if (pick === s){ pick = null; renderStaff(); return; }
   if (!pick){ pick = s; renderStaff(); return; }
-  // swap jobs of pick <-> s
+  if (pick === s){ pick = null; renderStaff(); return; }
   const a = pick, b = s; pick = null;
   const aj = a.job, bj = b.job;
   a.job = bj; b.job = aj;
   for (const cat of [a,b]){
     cat.transiting = true; cat.ramp = 0.6; cat.act = null; cat.actT = 0;
-    // drop what they were carrying back into the flow
-    if (cat.carry){ if (cat.carry.type==="order") orderQ.push(cat.carry.order); cat.carry = null; }
+    if (cat.carry && cat.carry.items){ readyShelf.push(...cat.carry.items); }
+    cat.carry = null;
     if (cat.incident){ cat.incident = null; cat.incT = 0; }
     cat.tx = JOB_POS[cat.job].x; cat.ty = JOB_POS[cat.job].y;
+    cat._swapAnim = Date.now();
   }
   const now = shiftT;
-  if (now - a._lastSwap < 11 && a._lastSwapWith === b.name){ note("swapBack"); }
-  else note("swapIn", { c:a.name, j: labelJob(a.job) });
+  if (now - a._lastSwap < 11 && a._lastSwapWith === b.name) note("swapBack");
+  else note("swapIn", { c:a.name, j: JOB_NAME[a.job] });
   a._lastSwap = b._lastSwap = now; a._lastSwapWith = b.name; b._lastSwapWith = a.name;
   renderStaff();
+  setTimeout(renderStaff, 420);
 }
-function labelJob(j){ return j==="barista"?"bar": j==="server"?"floor":"door"; }
 
 /* ---------------- staff strip ---------------- */
 function chokeJob(){
@@ -311,26 +322,37 @@ function chokeJob(){
 }
 function renderStaff(){
   const wrap = document.getElementById("staff");
+  const hint = document.getElementById("staffHint");
   const ck = running ? chokeJob() : null;
-  wrap.innerHTML = "";
-  for (const s of staff){
+  wrap.querySelectorAll(".card").forEach(n => n.remove());
+  for (const job of JOBS){                       // stations are fixed L→R; the CAT is what moves
+    const s = staff.find(x => x.job === job);
+    const isPick = pick === s, isTarget = !!pick && pick !== s;
     const el = document.createElement("div");
-    el.className = "card" + (pick===s?" picked":"") + (ck && s.job===ck?" choke":"");
+    el.className = "card"
+      + (isPick ? " picked" : "")
+      + (isTarget ? " target" : "")
+      + (ck === job && !pick ? " choke" : "")
+      + (s._swapAnim && Date.now() - s._swapAnim < 400 ? " swapped" : "");
     let st = "<span style='color:var(--ink-faint);font-weight:600'>working</span>";
-    if (s.transiting) st = "🚶 moving";
-    else if (s.incident==="break") st = "💤 break";
-    else if (s.incident==="inspect") st = "👃 checking";
+    if (s.transiting) st = "🚶 walking over";
+    else if (s.incident==="break") st = "💤 on a break";
+    else if (s.incident==="inspect") st = "👃 checking a plate";
     else if (s.incident==="chat") st = "💬 chatting";
     else if (s.incident==="zoom") st = "✨ zoomies";
     else if (s.incident==="linger") st = "❤️ at a table";
-    el.innerHTML = `<span class="job">${JOB_ICON[s.job]}</span>
-      <span class="jn">${JOB_NAME[s.job]}</span>
-      <span class="nm">${s.name}</span>
-      <span class="tr">${s.trait}</span>
-      <span class="st">${st}</span>`;
-    el.onclick = () => beginPick(s);
+    el.innerHTML = `<span class="station"><span class="ji">${JOB_ICON[job]}</span><span class="jn">${JOB_NAME[job]}</span></span>
+      <span class="cat">
+        <span class="nm">${s.name}</span>
+        <span class="tr">${s.trait}</span>
+        <span class="st">${st}</span>
+      </span>${isTarget ? `<span class="swaptag">↔ move ${pick.name} here</span>` : ""}`;
+    el.onclick = (e) => { e.stopPropagation(); beginPick(s); };
     wrap.appendChild(el);
   }
+  if (!running) hint.textContent = "";
+  else if (pick) hint.innerHTML = `Now tap a station to move <b>${pick.name}</b> there. (Tap ${pick.name} again to cancel.)`;
+  else hint.innerHTML = `Tap a cat to move them — whoever's there swaps in.`;
 }
 
 /* ---------------- sim ---------------- */
@@ -751,7 +773,7 @@ function showReport(){
   </div>`;
   m.classList.add("on");
   document.getElementById("againBtn").onclick = () => { m.classList.remove("on"); newShift(); };
-  document.getElementById("closeBtn").onclick = () => { m.classList.remove("on"); document.getElementById("hintbar").style.opacity = "0"; };
+  document.getElementById("closeBtn").onclick = () => { m.classList.remove("on"); };
 }
 function catLine(s){
   const L = s.log;
@@ -807,8 +829,11 @@ window.__cafe = {
 document.getElementById("startBtn").onclick = () => {
   document.getElementById("scrim").classList.remove("on");
   fit(); newShift();
-  setTimeout(() => { document.getElementById("hintbar").style.opacity = "0"; }, 7000);
 };
+// tap anywhere off the staff strip cancels a pending pick
+document.addEventListener("pointerdown", (e) => {
+  if (pick && !e.target.closest("#staff")) { pick = null; renderStaff(); }
+}, true);
 fit();
 requestAnimationFrame(frame);
 })();
