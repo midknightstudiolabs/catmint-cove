@@ -264,7 +264,8 @@ function newShift(){
     job: jobs[i], x: IDLE_POS[jobs[i]].x, y: IDLE_POS[jobs[i]].y, tx:0, ty:0,
     act:null, actT:0, phase:0, carry:null, incident:null, incT:0, ramp:1,
     transiting:false, bob: Math.random()*6, squash:0, face: i?1:-1, _lastSwap:0,
-    stats:{ drinks:0, delivered:0, greeted:0, breaks:0, inspects:0, ate:0, chats:0, zooms:0, cuddles:0 },
+    boredom: rnd(0.15, 0.4), dawdleT:0, dawdling:false, _idleFace: 1,
+    stats:{ drinks:0, delivered:0, greeted:0, breaks:0, inspects:0, ate:0, chats:0, zooms:0, cuddles:0, dawdles:0 },
     log:[],
   }));
   customers = []; orderQ = []; readyShelf = []; seats = TABLES.map(t => ({ x:t.x, y:t.y, cust:null }));
@@ -353,6 +354,7 @@ function swapCats(a, b){
     if (cat.carry && cat.carry.items) readyShelf.push(...cat.carry.items);
     cat.carry = null;
     if (cat.incident){ cat.incident = null; cat.incT = 0; }
+    cat.boredom = rnd(0.08, 0.22); cat.dawdleT = 0; cat.dawdling = false;   // a change of scene perks them up
     cat.tx = JOB_POS[cat.job].x; cat.ty = JOB_POS[cat.job].y;
     cat._land = Date.now();
   }
@@ -414,7 +416,10 @@ function catStatus(s){
   if (s.incident==="chat") return "💬 chatting";
   if (s.incident==="zoom") return "✨ zoomies";
   if (s.incident==="linger") return "❤️ at a table";
-  return "<span style='color:var(--ink-faint);font-weight:600'>working</span>";
+  if (s.dawdling) return "😾 dawdling";
+  if (s.boredom > 0.62) return "<span style='color:var(--ink-faint);font-weight:600'>😑 unbothered</span>";
+  if (s.boredom > 0.35) return "<span style='color:var(--ink-faint);font-weight:600'>going through the motions</span>";
+  return "<span style='color:var(--ink-faint);font-weight:600'>on it, sort of</span>";
 }
 function renderStaffHint(){
   const hint = document.getElementById("staffHint");
@@ -534,13 +539,47 @@ function stepStaff(s, dt){
     }
   }
 
-  // maybe start an incident (trait-driven), only when actually on the job
+  // ---- boredom: cats are cats. it drifts up when the café's quiet, down when
+  // it's slammed, resets when you move them. high boredom → more dawdling. ----
+  const busy = customers.filter(c => c.state !== "leave").length;
+  s.boredom = Math.max(0, Math.min(1, s.boredom + dt * (busy < 4 ? 0.022 : busy > 7 ? -0.05 : 0.003)));
+
+  // ---- dawdle: a small "I'll get to it" pause between tasks. NOT an incident —
+  // it just slows the cat, it doesn't wander off or break the café. ----
+  if (s.dawdleT > 0){
+    s.dawdleT -= dt; s.dawdling = true;
+    moveTo(s, IDLE_POS[s.job].x, IDLE_POS[s.job].y, speed * 0.35, dt);
+    if (s.dawdleT <= 0){ s.dawdling = false; renderStaff(); }
+    return;
+  }
+  s.dawdling = false;
+
   maybeIncident(s, dt);
   if (s.incident) { renderStaff(); return; }
 
   if (s.job==="barista") stepBarista(s, dt, speed);
   else if (s.job==="server") stepServer(s, dt, speed);
   else stepHost(s, dt, speed);
+}
+// call after a cat finishes a task — a chance they take a beat before the next one
+const DAWDLE_NOTES = ["{c} is considering the job.", "{c} has other priorities.",
+  "{c} paused to look at nothing.", "{c} is taking their time.", "No urgency was displayed.",
+  "{c} acknowledged the work exists."];
+function dawdleAfter(s){
+  const P = PHASES[phaseIx];
+  const calm = P.id === "opening" || P.id === "last" || P.id === "closed";
+  let ch = 0.38 + s.boredom * 0.4 + (calm ? 0.18 : -0.12) + (s.trait === "lazy" ? 0.18 : 0);
+  ch = Math.max(0.08, Math.min(0.82, ch));
+  if (Math.random() < ch){
+    s.dawdleT = rnd(0.7, 1.6 + s.boredom * 1.8);
+    s.dawdling = true; s.stats.dawdles++;
+    if (Math.random() < 0.22){
+      const t = DAWDLE_NOTES[Math.random()*DAWDLE_NOTES.length|0].replace("{c}", s.name);
+      const el = document.getElementById("note"); document.getElementById("noteText").textContent = t;
+      document.getElementById("note").querySelector("b").textContent = "Shift note";
+      el.classList.add("on"); clearTimeout(note._t); note._t = setTimeout(() => el.classList.remove("on"), 3400);
+    }
+  }
 }
 
 function maybeIncident(s, dt){
@@ -578,6 +617,7 @@ function stepBarista(s, dt, speed){
     readyShelf.push({ wants:s.act.order.wants, seat:s.act.order.seat });
     s.stats.drinks++; s.squash = 0.5;
     s.act = null;
+    dawdleAfter(s);
   }
 }
 
@@ -590,8 +630,10 @@ function stepServer(s, dt, speed){
     it.seat.cust.state = "enjoy"; it.seat.cust.t = 0;
     s.stats.delivered++; s.squash = 0.4;
     s.carry.items.shift();
-    if (!s.carry.items.length && s.trait==="chatty" && Math.random()<0.4){
-      s.incident="linger"; s.incT=rnd(2,3.5); s.stats.chats++; note("linger",{c:s.name,n:seatNum(it.seat)});
+    if (!s.carry.items.length){
+      if (s.trait==="chatty" && Math.random()<0.4){
+        s.incident="linger"; s.incT=rnd(2,3.5); s.stats.chats++; note("linger",{c:s.name,n:seatNum(it.seat)});
+      } else dawdleAfter(s);
     }
     renderStaff();
     return;
@@ -617,6 +659,7 @@ function stepServer(s, dt, speed){
       }
     }
     s.squash = 0.3;
+    dawdleAfter(s);
     return;
   }
   moveTo(s, IDLE_POS.server.x, IDLE_POS.server.y, speed*0.5, dt);
@@ -639,6 +682,7 @@ function stepHost(s, dt, speed){
       q.state = "toSeat"; q.seat = seat; seat.cust = q;   // reserve
       s.stats.greeted++; s.squash = 0.35; s.act = null;
       if (s.trait==="chatty") mood = Math.min(1, mood + 0.02);
+      dawdleAfter(s);
       renderStaff();
     }
     return;
@@ -780,13 +824,18 @@ function draw(){
 
   // ---- staff (draw sorted by y) ----
   for (const s of [...staff].sort((a,b)=>a.y-b.y)){
-    drawCat(s.x, s.y, s.col, s.face, s.bob, s.squash, s.transiting || s.act || false);
+    const bored = !s.incident && !s.transiting && (s.dawdling || s.boredom > 0.55);
+    // a bored / dawdling cat loafs and looks away
+    const loaf = s.dawdling ? 0.55 : bored ? 0.32 : (s.squash || 0);
+    const lookFace = bored ? -s.face : s.face;
+    drawCat(s.x, s.y, s.col, lookFace, s.bob, loaf, s.transiting || (s.act && !bored) || false);
     // job badge
     g.font="12px serif"; g.textAlign="center";
     g.fillText(JOB_ICON[s.job], s.x, s.y - 30);
-    // incident bubble
+    // incident / mood bubble
     const ib = s.incident==="break"?"💤":s.incident==="inspect"?"👃":s.incident==="chat"?"💬":
-               s.incident==="zoom"?"✨":s.incident==="linger"?"❤️":s.transiting?"🚶":"";
+               s.incident==="zoom"?"✨":s.incident==="linger"?"❤️":s.transiting?"🚶":
+               s.dawdling?"💭": s.boredom>0.7?"😑":"";
     if (ib){ g.font="13px serif"; g.fillText(ib, s.x + 14, s.y - 26); }
     // carry (a tray of cups)
     if (s.carry && s.carry.items && s.carry.items.length){
@@ -861,6 +910,7 @@ function showReport(){
     if (s.stats.ate) chips.push(`🍽️ ${s.stats.ate} eaten`);
     if (s.stats.chats) chips.push(`💬 ${s.stats.chats} conversations`);
     if (s.stats.zooms) chips.push(`✨ ${s.stats.zooms} zoomies`);
+    if (s.stats.dawdles) chips.push(`💭 ${s.stats.dawdles} pauses`);
     cats += `<div class="rpt-cat">
       <div class="rc-h"><span class="sw" style="background:${s.col}"></span>${s.name} <span style="font-weight:600;color:var(--ink-faint);font-size:11px">· ${s.trait}</span></div>
       <div class="rc-stats">${chips.slice(0,4).map(c=>`<span>${c}</span>`).join("") || "<span>quiet shift</span>"}</div>
@@ -891,15 +941,18 @@ function showReport(){
   document.getElementById("closeBtn").onclick = () => { m.classList.remove("on"); };
 }
 function catLine(s){
-  const L = s.log;
+  const L = s.log, st = s.stats;
   const n = k => L.filter(x=>x===k).length;
-  if (n("break") >= 3) return "Was, at various points, resting.";
+  const work = st.drinks + st.delivered + st.greeted;
   if (n("ate") >= 1) return "Conducted rigorous quality control.";
+  if (n("break") >= 3) return "Was, at various points, resting.";
   if (n("chat") + n("linger") >= 4) return "Built lasting customer relationships.";
-  if (n("zoom") >= 2) return "Brought a lot of energy to the role.";
-  if (L.length === 0 && (s.stats.drinks + s.stats.delivered + s.stats.greeted) > 4) return "No notes. Genuinely.";
-  if (L.length === 0) return "Was technically present.";
-  return "Had a shift.";
+  if (n("zoom") >= 2) return "Brought unexpected energy to the role.";
+  if (st.dawdles >= 8) return "Did the job around a busy schedule of pausing.";
+  if (st.dawdles >= 4 && work >= 4) return "Got there in the end, mostly.";
+  if (work >= 8 && L.length === 0 && st.dawdles < 3) return "Uncharacteristically committed.";
+  if (work <= 2) return "Was, broadly, in the building.";
+  return pick(["Met the minimum.", "Did what was asked, eventually.", "Present. Unbothered.", "Had a shift."]);
 }
 function employeeOfShift(){
   // comedic scoring — best story wins, not best numbers
@@ -908,14 +961,16 @@ function employeeOfShift(){
     const st = s.stats, L = s.log;
     const work = st.drinks + st.delivered + st.greeted;
     const chaos = st.breaks + st.inspects + st.ate + st.zooms + st.chats;
-    let score = work * 2 - chaos * 0.5;
+    let score = work * 2 - chaos * 0.5 - st.dawdles * 0.15;
     let reason = "Remained employed for the entire shift.";
     if (st.drinks >= 7 && st.ate === 0){ score += 4; reason = `Made ${st.drinks} drinks and didn't touch one.`; }
+    if (st.dawdles >= 6 && work >= 5){ score += 4; reason = `Paused ${st.dawdles} times and still did the most work.`; }
+    if (st.dawdles <= 2 && work >= 4){ score += 3; reason = "Was engaged. We're keeping an eye on them."; }
     if (st.breaks >= 4){ score += 3; reason = `Rested ${st.breaks} times and it worked out.`; }
     if (st.ate >= 1){ score += 3; reason = `Ate ${st.ate} of the orders. Employee of the shift.`; }
     if (chaos >= 5 && work >= 6){ score += 7; reason = `Caused ${chaos} incidents and still did the most work.`; }
-    if (chaos === 0 && work >= 5){ score += 3; reason = "No incidents. We're not sure how."; }
-    if (work <= 2 && chaos <= 1){ score = 0.1; reason = "Was, at all times, technically present."; }
+    if (chaos === 0 && st.dawdles <= 3 && work >= 5){ score += 3; reason = "No incidents. We're not sure how."; }
+    if (work <= 2){ score = 0.1; reason = "Was, at all times, technically present."; }
     if (work >= 11 && chaos >= 4){ score += 5; reason = "Perfect shift. We're investigating."; }
     if (score > bestScore){ bestScore = score; best = s; bestReason = reason; }
   }
@@ -937,6 +992,7 @@ window.__cafe = {
     custStates: customers.reduce((m,c)=>{m[c.state]=(m[c.state]||0)+1;return m;},{}),
     seatsFull: seats.filter(x=>x.cust).length,
     staff: staff.map(s=>({n:s.name,job:s.job,tr:s.trait,x:Math.round(s.x),y:Math.round(s.y),transit:s.transiting,inc:s.incident,
+      bored:+s.boredom.toFixed(2), dawdle:s.dawdling, dawdles:s.stats.dawdles,
       carry: s.carry ? (s.carry.items?("tray:"+s.carry.items.length):"y") : null, act:!!s.act})) }; },
   step:(n=60)=>{ for(let i=0;i<n;i++) step(0.05); return window.__cafe.state; },
 };
