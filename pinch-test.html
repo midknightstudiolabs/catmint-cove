@@ -6331,9 +6331,9 @@ const COLD = [
     say: null, cue: null,
     arm(s) {
       _coldTarget = cats.find(c => c.mascot) || null;
-      this.say = "Cats turn up, some stay, the shore keeps handing things back.";
+      this.say = "Cats turn up, some stay, the shore keeps handing things back. There's a festival being set up down at the field, too — a few days off yet.";
       this.cue = "It's yours to look after now.";
-      s.doneAt = performance.now() + 4200;
+      s.doneAt = performance.now() + 5400;
     },
     test(s) { return performance.now() >= s.doneAt; },
     exit() { _coldTarget = null; },
@@ -7437,6 +7437,17 @@ document.addEventListener("pointerdown", () => resumeAudio(true), true);
 window.addEventListener("focus", () => resumeAudio(false));
 window.addEventListener("pageshow", () => resumeAudio(false));
 document.addEventListener("visibilitychange", () => { if (!document.hidden) resumeAudio(false); });
+// watchdog: a "running" context whose clock has stopped advancing is a zombie —
+// iOS can wedge one where .resume() no longer helps. Drop it so the next tap
+// (pointerdown → resumeAudio → ensureAudio) builds a clean one.
+let _actxClock = -1, _actxStuck = 0;
+setInterval(() => {
+  if (document.hidden || !actx) { _actxStuck = 0; return; }
+  if (actx.state !== "running") { _audioStale = true; return; }
+  if (actx.currentTime === _actxClock) { if (++_actxStuck >= 2) { _actxStuck = 0; _resetAudioContext(); } }
+  else _actxStuck = 0;
+  _actxClock = actx.currentTime;
+}, 4000);
 function tone(freq, dur, type = "sine", vol = 0.16, when = 0) {
   if (muted || !actx) return;
   const t = actx.currentTime + when;
