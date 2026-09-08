@@ -91,13 +91,21 @@ jobs:
           plutil -replace 'UISupportedInterfaceOrientations~ipad' -json '["UIInterfaceOrientationPortrait","UIInterfaceOrientationPortraitUpsideDown","UIInterfaceOrientationLandscapeLeft","UIInterfaceOrientationLandscapeRight"]' "$P"
           # stay full-screen (no Split View / Slide Over) but still auto-rotate on iPad
           plutil -replace UIRequiresFullScreen -bool true "$P"
+          # FULL-SCREEN LAUNCH — iOS letterboxes the whole app window (grey bars
+          # top + bottom) when it can't find a valid launch screen. @capacitor/assets
+          # 3.x runs against Capacitor 8's newer SPM template and can leave
+          # LaunchScreen.storyboard in a state iOS won't accept. The modern
+          # UILaunchScreen key (empty dict = plain full-bleed launch, every screen
+          # size supported) sidesteps the storyboard entirely; the SplashScreen
+          # plugin still paints the branded splash right after.
+          plutil -replace UILaunchScreen -json '{}' "$P"
           # immersive game: no status bar (clock / battery / wifi hidden)
           plutil -replace UIStatusBarHidden -bool true "$P"
           plutil -replace 'UIStatusBarHidden~ipad' -bool true "$P"
           plutil -replace UIViewControllerBasedStatusBarAppearance -bool false "$P"
           # only standard HTTPS → exempt; stops TestFlight asking on every build
           plutil -replace ITSAppUsesNonExemptEncryption -bool false "$P"
-          plutil -p "$P" | grep -A5 -iE 'Orientation|FullScreen|Encryption|StatusBar'
+          plutil -p "$P" | grep -A5 -iE 'Orientation|FullScreen|Encryption|StatusBar|LaunchScreen|LaunchStoryboard'
 
       # Capacitor 8's `cap add ios` scaffolds a Swift Package Manager project
       # (ios-spm-template) — App.xcodeproj + CapApp-SPM/, no Podfile, no
