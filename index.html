@@ -7627,6 +7627,7 @@ function applySound() {
   if (ambience) rampParam(ambience.master.gain, S.on && !restMode && !festMode ? AMB_MASTER : 0, 0.3);
   if (restBus)  rampParam(restBus.gain, S.on && restOpts.rain ? 0.9 : 0.0001, 0.3);
   if (festBus)  rampParam(festBus.gain, S.on ? 0.85 : 0.0001, 0.3);
+  if (_festBed) rampParam(_festBed.g.gain, S.on ? 0.55 : 0.0001, 0.3);
   const mb = document.getElementById("muteBtn");
   if (mb) { const ic = mb.querySelector(".ico"); if (ic) ic.textContent = S.on ? "🔊" : "🔇"; }
 }
@@ -7661,7 +7662,7 @@ function _resetAudioContext() {
   // AudioBuffers are bound to the context that decoded them — drop every cached
   // one so loadSfx() / loadRainLoop() re-decode into the fresh context
   for (const k in _sfxBuf) delete _sfxBuf[k];
-  _sfxLoading = false; rainBuffer = null;
+  _sfxLoading = false; rainBuffer = null; festBedBuffer = null;
   actx = null; _audioWasRunning = false; _resumeFails = 0; _audioStale = true;
 }
 // bring audio back after iOS suspends/interrupts it (screen lock, backgrounding,
@@ -8860,6 +8861,7 @@ function renderFestPickGrid(roster) {
 function startFestRace() {
   document.getElementById("festPanel").hidden = true;
   festKind = "race"; _festG = null;   // the track appears now that the race is actually on
+  stopFestBed();                      // the race is on — hand the grounds back to the calliope
   const mk = cats.find(c => c.mascot);
   const others = cats.filter(c => c !== mk && c !== festPickedCat && !c.visitor);
   for (let i = others.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [others[i], others[j]] = [others[j], others[i]]; }
@@ -9007,9 +9009,11 @@ function startFestAudio() {
 
   _festMelodyBeat = 0;
   scheduleFestMelody(gen);
+  startFestBed();                    // the hub's cozy track bed (no-ops off the hub / if the file won't load)
 }
 function stopFestAudio(keepGen) {
   if (!keepGen) _festAudioGen++;    // invalidate any in-flight startFestAudio()
+  stopFestBed();
   if (!actx) return;
   const t = actx.currentTime;
   const bus = festBus, src = festMurmur;
@@ -9034,6 +9038,7 @@ const FEST_TUNE = [
 function scheduleFestMelody(gen) {
   if (gen !== _festAudioGen || !festBus) return;   // a newer startFestAudio() superseded this loop
   if (_volleyBed) { setTimeout(() => scheduleFestMelody(gen), 900); return; }   // volleyball runs its own beach bed; calliope steps aside
+  if (_festBed || (festKind === "hub" && festBedBuffer !== false)) { setTimeout(() => scheduleFestMelody(gen), 900); return; }   // hub plays the cozy track bed; calliope steps aside (unless the file failed to load)
   const root = 523.25;   // C5 — bright calliope register
   let beatT = 0.05;
   for (const note of FEST_TUNE) {
@@ -9132,6 +9137,47 @@ function stopVolleyBed() {
   try { rampParam(b.g.gain, 0.0001, 1); } catch (e) {}
   try { b.surf.stop(t + 1.2); b.swell.stop(t + 1.2); } catch (e) {}
   setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, 1600);
+}
+
+/* ---- The festival hub's music bed — the "pick an activity" screen and the
+   race / volleyball picker grids that sit on the grounds. A warm, bass-light,
+   seam-faded loop of the fair's own track (fest-bed.mp3, fetched once). Rides
+   festBus, so the Sound panel's Music slider and mute already reach it. The
+   calliope steps aside while it plays (scheduleFestMelody); starting an
+   activity stops it and hands back to the calliope / beach bed. If the file
+   won't load the calliope just carries on as before. ---- */
+let festBedBuffer = null, _festBed = null, _festBedGen = 0;
+async function loadFestBed() {
+  if (festBedBuffer !== null || !actx) return;   // loaded (buffer) or tried and failed (false)
+  try {
+    const res = await fetch(bust("fest-bed.mp3"));
+    if (!res.ok) throw 0;
+    festBedBuffer = await actx.decodeAudioData(await res.arrayBuffer());
+  } catch (e) { festBedBuffer = false; }
+}
+async function startFestBed() {
+  if (!actx || _festBed || festKind !== "hub") return;
+  const gen = ++_festBedGen;
+  await loadFestBed();
+  // superseded, left the hub, the whole fest session ended, or the file failed
+  if (gen !== _festBedGen || !festBus || !festMode || festKind !== "hub" || !festBedBuffer) return;
+  const g = actx.createGain();
+  g.gain.value = 0.0001;
+  g.connect(festBus);
+  rampParam(g.gain, muted ? 0.0001 : 0.55, 1.8);
+  const src = actx.createBufferSource();
+  src.buffer = festBedBuffer; src.loop = true;
+  src.connect(g); src.start();
+  _festBed = { g, src };
+}
+function stopFestBed() {
+  _festBedGen++;                       // cancel any in-flight startFestBed()
+  if (!_festBed || !actx) { _festBed = null; return; }
+  const b = _festBed; _festBed = null;
+  const t = actx.currentTime;
+  try { rampParam(b.g.gain, 0.0001, 0.9); } catch (e) {}
+  try { b.src.stop(t + 1.1); } catch (e) {}
+  setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, 1500);
 }
 
 function syncRacerCat(r, dt, freeze) {
@@ -9340,7 +9386,7 @@ function showFestPodium() {
    strip below the centred event card. */
 const HUB_W = 560, HUB_H = 1000;
 let _hubT = 0, _hubBeat = 0, _hubCats = [];
-const HUB_BPS = 1.9;   // festival beat — the grounds cats bounce to it
+const HUB_BPS = 2.27;   // ≈136 BPM — matches fest-bed.mp3 so the grounds cats bounce on the track's beat
 function hubFit() {
   const { vw, vh } = restViewportPx();
   const rd = _festDPR || DPR;
@@ -9391,8 +9437,8 @@ function renderFestGrounds(dt) {
       const groove = Math.abs(Math.sin(_hubBeat * Math.PI * HUB_BPS + c._danceOff));
       c.walkAmt = 0.16 + groove * 0.14;
       c.walk += dt * 7; c.bob += dt * 11; c.tail += dt * 8 * m.tailRate;
-      const beatPh = (_hubBeat * HUB_BPS + c._danceOff * 0.16) % 1;
-      if (beatPh < dt * HUB_BPS && !c._jumpT) catHop(c, rand(9, 16));
+      const beatPh = (_hubBeat * HUB_BPS * 0.5 + c._danceOff * 0.16) % 1;   // hop every other beat — a dance bounce, not a frantic one
+      if (beatPh < dt * HUB_BPS * 0.5 && !c._jumpT) catHop(c, rand(9, 16));
       if (c._faceFlipT > 0) c._faceFlipT -= dt;
       else if (Math.random() < dt * 0.3) { c.face *= -1; c._faceFlipT = rand(2.5, 5); }   // a groove turn now and then
     }
@@ -9574,6 +9620,7 @@ document.getElementById("festAgain").addEventListener("click", () => {
   const roster = cats.filter(c => !c.visitor);
   if (festKind === "box") {
     boxParts = []; boxPhase = "picker"; festKind = "hub"; festGroundsCats(roster);
+    startFestBed();
     renderBoxPickGrid(roster);
     document.getElementById("festBoxPanel").hidden = false;
     trackEvent("box_challenge_replayed");
@@ -9581,7 +9628,7 @@ document.getElementById("festAgain").addEventListener("click", () => {
   }
   if (festKind === "volley") {
     volleyParts = []; volleyBall = null; volleyPhase = "idle"; festKind = "hub"; festGroundsCats(roster);
-    stopVolleyBed();   // back to the hub → the calliope resumes
+    stopVolleyBed(); startFestBed();   // back to the hub → the cozy track bed resumes
     document.getElementById("volleyHud").hidden = true;
     document.getElementById("volleyCom").hidden = true;
     document.getElementById("volleyBanner").hidden = true;
@@ -9591,6 +9638,7 @@ document.getElementById("festAgain").addEventListener("click", () => {
     return;
   }
   festKind = "hub"; festGroundsCats(roster);
+  startFestBed();   // back to the picker on the grounds → cozy bed
   raceCats = []; raceWinner = null; racePick = null; racePhase = "picker"; festCheerUntil = 0;
   renderFestPickGrid(roster);
   document.getElementById("festPanel").hidden = false;
@@ -9779,6 +9827,7 @@ function startBoxChallenge() {
   if (boxPickedCats.length < need) return;
   document.getElementById("festBoxPanel").hidden = true;
   festKind = "box";
+  stopFestBed();
   fitFestCanvas();
   boxT = 0; boxPhase = "settle"; boxWinner = null;
   particles.length = 0; floaters.length = 0;
@@ -10268,6 +10317,7 @@ function startCoveVolley() {
   if (volleyPickSel.length !== 3) return;
   if (!volleyPickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats just wandered off."); return; }
   festKind = "volley";
+  stopFestBed();                      // volleyball brings its own beach bed
   fitFestCanvas();
   matchT = 0; volleyScore = { cove: 0, visit: 0 }; volleyBall = null;
   _vbServeAt = 0; _vbPointAt = 0; _vbResultAt = 0; _vbServer = Math.random() < 0.5 ? "cove" : "visit";

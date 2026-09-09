@@ -22,7 +22,7 @@ html = html.replace(marker, '<script src="capacitor-bridge.js"></script>\n$&');
 await writeFile(join(www, "index.html"), html);
 
 // 2. runtime assets the game fetch()es by relative path
-for (const asset of ["rain-loop.opus", "sfx"]) {
+for (const asset of ["rain-loop.opus", "fest-bed.mp3", "sfx"]) {
   if (await exists(join(root, asset))) await cp(join(root, asset), join(www, asset), { recursive: true });
 }
 
