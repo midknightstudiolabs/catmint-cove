@@ -180,8 +180,10 @@ In Play Console → **Grow → Store presence → Main store listing**:
 - **Short description / Full description:** from `STORE-SETUP.md` §2 (already
   V3-accurate). **Do not** mention "Labubu" anywhere in copy, keywords, or
   screenshots — it's an in-game easter-egg character only.
-- **App icon:** `assets/logo.png` (512×512 in Play; `@capacitor/assets`
-  generated the density variants in the build).
+- **App icon:** `assets/icon.png` (1024×1024; `@capacitor/assets` generates every
+  density in the build. It's the single source — do NOT re-add `assets/logo.png`,
+  `@capacitor/assets` would prefer it). The Play Console 512×512 listing icon is
+  set separately in the console.
 - **Feature graphic (1024×500, required):** `assets/store/feature-graphic.png`
   (generated from `assets/_feature-graphic.html` — regenerate/replace freely).
 - **Phone screenshots (2–8, portrait):** `assets/store/*.png`. Swap in real

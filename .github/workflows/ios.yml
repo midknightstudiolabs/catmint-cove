@@ -80,6 +80,10 @@ jobs:
       - name: Generate the native project
         run: |
           rm -rf ios
+          # @capacitor/assets prefers assets/logo.png over assets/icon.png. Keep
+          # icon.png the single source of truth — a stray logo.png (old concept art)
+          # would silently ship instead.
+          [ ! -e assets/logo.png ] || { echo "::error::assets/logo.png exists — delete it; assets/icon.png is the canonical app icon"; exit 1; }
           npx cap add ios
           npx @capacitor/assets generate --ios
           npx cap sync ios
@@ -92,6 +96,12 @@ jobs:
           BIG=$(find "$ICON" -name '*.png' -size +10k | wc -l | tr -d ' ')
           echo "icon PNGs over 10k: $BIG"
           [ "$BIG" -ge 1 ] || { echo "::error::AppIcon looks empty — the build would ship Apple's default white icon, not the green + gold Midknight one"; exit 1; }
+          # the 1024 marketing slot must match assets/icon.png byte-for-byte (that's what @capacitor/assets copies in)
+          MKT=$(find "$ICON" -name '*1024*.png' | head -1)
+          if [ -n "$MKT" ]; then
+            cmp -s "$MKT" assets/icon.png && echo "1024 AppIcon matches assets/icon.png ✓" \
+              || echo "::warning::1024 AppIcon differs from assets/icon.png — @capacitor/assets may have re-encoded it (usually fine)"
+          fi
 
       - name: Info.plist — orientation + export compliance
         run: |

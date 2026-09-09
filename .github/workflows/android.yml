@@ -65,6 +65,9 @@ jobs:
       - name: Generate the native project
         run: |
           rm -rf android
+          # keep assets/icon.png the single source of truth — @capacitor/assets
+          # prefers a logo.png (old concept art) over it if one is present.
+          [ ! -e assets/logo.png ] || { echo "::error::assets/logo.png exists — delete it; assets/icon.png is the canonical app icon"; exit 1; }
           npx cap add android
           npx @capacitor/assets generate --android
           npx cap sync android

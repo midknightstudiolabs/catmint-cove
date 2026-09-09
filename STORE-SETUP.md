@@ -44,8 +44,10 @@ API 36 clears Google Play's "must target a recent Android" gate.
   on Catmint Cove green (`#356b4c` + `#e8b45a`). Rendered from the real cat art
   via `__cove.portrait()` (a `window.__cove` debug helper) then flattened to a
   clean silhouette. `@capacitor/assets` regenerates every density in CI. To
-  revise, keep the same filenames. (`assets/logo*.png` are older character-art
-  variants, not used by `@capacitor/assets` now that `icon.png` exists.)
+  revise, keep the filename `assets/icon.png`. **Never add `assets/logo.png`** —
+  `@capacitor/assets` prefers `logo.png` over `icon.png`, so a stray one silently
+  ships instead (this happened once — old "concept 1" logo.png shipped through
+  build ~13; removed 2026-09-09, CI now hard-fails if it reappears).
 - **Orientation:** iPhone portrait-locked; **iPad auto-rotates** (all 4
   orientations, stays full-screen). Both build workflows patch the generated
   `AndroidManifest.xml` / `Info.plist` after `cap sync`. The web build's runtime
@@ -125,7 +127,7 @@ Both stores need these before you can submit — none of it is code:
 | App category | Simulation |
 | Tags | pick up to 5 from Google's **fixed list** (Store listing ▸ Manage tags — you search, you can't invent them). Ranked choice: **Pet Simulation · Life Simulation · Idle · Relaxing · Creature Collector** (fallbacks if any aren't offered: Sandbox, Casual, Tycoon). Google also auto-suggests some from your description — accept the ones that fit. |
 | Contact email | `carlosgotiong@gmail.com` |
-| App icon | 512×512 from `assets/logo.png` |
+| App icon | 512×512 listing icon set in Play Console; the app-bundle icon is generated from `assets/icon.png` |
 | Feature graphic | **1024×500** — `assets/store/feature-graphic.png` (from `assets/_feature-graphic.html`) |
 | Phone screenshots | 2–8 portrait — `assets/store/*.png` |
 | Contains ads | **No** |
