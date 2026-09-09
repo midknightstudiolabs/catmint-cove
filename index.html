@@ -9086,28 +9086,8 @@ function startVolleyBed() {
   swell.start();
   surf.connect(lp); lp.connect(surfG); surfG.connect(g);
   _volleyBed = { g, surf, swell, stopped: false };
-  scheduleVolleyPlink();
   scheduleGull();
-}
-const VB_PENT = [0, 3, 5, 7, 10, 12, 15];   // soft minor-pentatonic, mellow
-function scheduleVolleyPlink() {
-  if (!_volleyBed || _volleyBed.stopped || !festBus) return;
-  const root = 392;   // G4
-  const n = 2 + (Math.random() * 3 | 0);
-  let t = actx.currentTime + 0.05;
-  for (let i = 0; i < n; i++) {
-    const f = root * Math.pow(2, VB_PENT[(Math.random() * VB_PENT.length) | 0] / 12);
-    const o = actx.createOscillator(), og = actx.createGain();
-    o.type = "triangle"; o.frequency.value = f;
-    const olp = actx.createBiquadFilter(); olp.type = "lowpass"; olp.frequency.value = 1900;
-    og.gain.setValueAtTime(0.0001, t);
-    og.gain.linearRampToValueAtTime(muted ? 0 : 0.12, t + 0.015);
-    og.gain.exponentialRampToValueAtTime(0.0004, t + 0.55);
-    o.connect(olp); olp.connect(og); og.connect(_volleyBed.g);
-    o.start(t); o.stop(t + 0.65);
-    t += 0.26 + Math.random() * 0.45;
-  }
-  setTimeout(scheduleVolleyPlink, (2.4 + Math.random() * 3.4) * 1000);
+  // no marimba figure — the music carries the melody; volleyball just adds surf + gulls over it
 }
 function scheduleGull() {
   if (!_volleyBed || _volleyBed.stopped || !festBus) return;
@@ -9149,7 +9129,7 @@ function stopVolleyBed() {
    murmur (festMurmur) runs under everything the whole time. The procedural
    calliope (scheduleFestMelody) is now only a fallback for when the file
    won't load. ---- */
-const FEST_BED_LVL = 0.55, FEST_BED_LVL_VOLLEY = 0.18;   // well back while the beach layer is up, so surf/marimba/gulls read
+const FEST_BED_LVL = 0.55, FEST_BED_LVL_VOLLEY = 0.34;   // ducked under the surf + gulls, but still carrying the tune
 let festBedBuffer = null, _festBed = null, _festBedGen = 0;
 function festBedTarget() { return muted ? 0.0001 : (_volleyBed ? FEST_BED_LVL_VOLLEY : FEST_BED_LVL); }
 async function loadFestBed() {
