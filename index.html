@@ -2029,10 +2029,24 @@ function rebuildAttractors() {
   for (const d of decor) {
     if (d.type === "tree")    obstacles.push({ x: d.x, y: d.y - 2,  rx: 15, ry: 13 });
     if (d.type === "cottage") obstacles.push({ x: d.x, y: d.y - 12, rx: 28, ry: 22 });
+    if (d.type === "flowers") obstacles.push({ x: d.x, y: d.y - 2,  rx: 20, ry: 12 });
     // the fishing pond is drawn at station-local (64, 24), ~92×34 — cover it, and
     // let the angler through (fishing cats are exempt below, so this can be big)
     if (d.type === "station" && d.station === "fishing") obstacles.push({ x: d.x + 64, y: d.y + 28, rx: 94, ry: 36, water: true });
     if (d.type === "project" && d.pid === "dock")        obstacles.push({ x: d.x + 6,  y: d.y + 11, rx: 55, ry: 19, water: true });
+    // the other stations are solid bodies cats stand beside to work, not walk through
+    if (d.type === "station" && d.station === "bakery")  obstacles.push({ x: d.x, y: d.y - 4, rx: 30, ry: 20 });
+    if (d.type === "station" && d.station === "sunbeam") obstacles.push({ x: d.x, y: d.y - 2, rx: 26, ry: 16 });
+    if (d.type === "station" && d.station === "garden")  obstacles.push({ x: d.x, y: d.y - 2, rx: 28, ry: 18 });
+  }
+  // Midknight's cairn — a small solid by the sign
+  { const cp = cairnPos(W, H); if (G.cairn && !G.cairn.tidied && (G.cairn.size | 0) > 0) obstacles.push({ x: cp.sx, y: cp.gy, rx: 16, ry: 9 }); }
+  // physical movable props (stepping stones stay walkable; hanging props aren't in the way)
+  const PROP_SOLID = { lantern: [8, 11], birdbath: [15, 13], rowboat: [34, 14], windmill: [10, 13] };
+  if (G.cosmetics && G.cosmetics.props) for (const id in PROP_SOLID) {
+    if (!G.cosmetics.props[id] || propBoxed(id)) continue;
+    const pp = propPos(id), r = PROP_SOLID[id];
+    obstacles.push({ x: pp.x, y: pp.y - r[1] * 0.4, rx: r[0], ry: r[1] });
   }
   // food / toy / bed — placed clear of decor, stations, water and each other
   const avoid = decor.map(d => ({ x: d.x, y: d.y, r: d.type === "cottage" ? 46 : d.type === "station" || d.type === "project" ? 44 : d.type === "tree" ? 38 : 24 }))
@@ -2055,6 +2069,13 @@ function rebuildAttractors() {
   const cposAuto = placeClear(cAuto, avoid);
   cAuto.forEach((c, k) => { cResolved[cAutoIdx[k]] = cposAuto[k]; });
   comforts.forEach((c, i) => attractors.push({ type: c.type, key: cKeys[i], x: cResolved[i].x, y: cResolved[i].y }));
+  // bowls / toys / scratchers are solid (cats use them from the side); a bed is
+  // solid to a cat passing by but not to one settling into it or heading for it.
+  const CBOX = { food: [15, 10], toy: [13, 10], scratch: [14, 15], bed: [26, 15] };
+  comforts.forEach((c, i) => {
+    const b = CBOX[c.type]; if (!b) return;
+    obstacles.push({ x: cResolved[i].x, y: cResolved[i].y - b[1] * 0.3, rx: b[0], ry: b[1], bed: c.type === "bed" });
+  });
   for (const d of decor) {
     if (d.type === "tree")    attractors.push({ type: "tree",    x: clamp(d.x + 14, 32, W - 32), y: clamp(d.y + 34, H * 0.44, catFloor()) });
     if (d.type === "cottage") attractors.push({ type: "cottage", x: clamp(d.x,      32, W - 32), y: clamp(d.y + 34, H * 0.44, catFloor()) });
@@ -3192,6 +3213,7 @@ function go(c, state, dur, target) {
     const anglerT = c._arriveState === "fishing" || c._station === "fishing";
     for (const o of obstacles) {             // never aim into water or a solid
       if (o.water && anglerT) continue;
+      if (o.bed) continue;                    // a bed is a valid place to walk to and settle in
       const nx = (tx - o.x) / o.rx, ny = (ty - o.y) / o.ry, nd = Math.hypot(nx, ny);
       if (nd < 1.06 && nd > 0.001) { tx = o.x + (nx / nd) * o.rx * 1.12; ty = o.y + (ny / nd) * o.ry * 1.12; }
     }
@@ -3367,6 +3389,9 @@ function updateCat(c, dt) {
       // not while asleep — only a cat actually fishing here is exempt.
       if (o.water) { if (angler) continue; }
       else if (held || c.state === "arriving") continue;
+      // a bed only pushes cats who are passing through — not one settling into it
+      // or one that's heading straight for it
+      if (o.bed && (!travelling || Math.hypot((c.tx - o.x) / o.rx, (c.ty - o.y) / o.ry) < 1.3)) continue;
       const margin = 15 / Math.min(o.rx, o.ry);           // ~a cat's half-width, in normalised units
       const nx = (c.x - o.x) / o.rx, ny = (c.y - o.y) / o.ry, nd = Math.hypot(nx, ny);
       if (nd < 1 + margin) {
@@ -3426,9 +3451,10 @@ function updateCat(c, dt) {
     else if (c.x > maxX) { c.x = maxX; if (c.vx > 0) c.vx = 0; }
     if (c.y < minY) { c.y = minY; if (c.vy < 0) c.vy = 0; }
     else if (c.y > maxY) { c.y = maxY; if (c.vy > 0) c.vy = 0; }
-    // never end a step inside a solid — pop out to its edge
+    // never end a step inside a solid — pop out to its edge (a bed is allowed:
+    // cats sleep in it; the soft shove above keeps passers-by routed around)
     if (!held) for (const o of obstacles) {
-      if (o.water) continue;
+      if (o.water || o.bed) continue;
       const nx = (c.x - o.x) / o.rx, ny = (c.y - o.y) / o.ry, nd = Math.hypot(nx, ny);
       if (nd < 1 && nd > 0.001) {
         c.x = o.x + (nx / nd) * o.rx;
