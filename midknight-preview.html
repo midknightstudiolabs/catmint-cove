@@ -9030,9 +9030,9 @@ function scheduleFestMelody(gen) {
 /* ---- Cove Volleyball's own background: a lazy sunny-beach bed. The crowd
    murmur (festMurmur) keeps going; the fairground calliope steps aside for
    a slow wave wash + a sparse pentatonic marimba figure + the odd gull. ---- */
-// Tug of Paws bed — paste a seamless-loop data URI into MIDK_BED_DATA to give the
-// game its own music (like the café bed); empty = the festival calliope plays.
-let MIDK_BED_DATA = "";
+// Tug of Paws bed — the festival's cozy track (fest-bed.mp3, fetched once, same
+// file index.html ships). Plays under the whole match; the crowd murmur stays
+// audible under it and the calliope steps aside.
 let _midkBed = null, _midkBedBuf = null;
 let _volleyBed = null;
 function startVolleyBed() {
@@ -9142,18 +9142,18 @@ function stopCafeBed() {
   setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, 1300);
 }
 
-// Tug of Paws music bed — same wiring as the café bed (MIDK_BED_DATA is declared
-// up by _volleyBed). Paste a short seamless loop as a data URI into MIDK_BED_DATA
-// ("data:audio/mpeg;base64,…"). Empty = no bed, calliope keeps playing underneath.
+// Tug of Paws music bed — the festival's cozy track, fetched from fest-bed.mp3
+// (same file index.html ships). Plays under the whole match. The crowd murmur
+// stays audible under it; the calliope steps aside (scheduleFestMelody gate).
 function startMidkBed() {
-  if (!actx || _midkBed || !MIDK_BED_DATA) return;
+  if (!actx || _midkBed) return;
   stopVolleyBed(); stopCafeBed();
   const g = actx.createGain(); g.gain.value = 0.0001;
   g.connect(festBus || musicGain || actx.destination);
-  rampParam(g.gain, muted ? 0.0001 : 0.8, 1.6);
+  rampParam(g.gain, muted ? 0.0001 : 0.55, 1.8);
   const bed = { g, src: null, stopped: false };
   _midkBed = bed;
-  if (festMurmurGain) rampParam(festMurmurGain.gain, 0.05, 1.4);
+  // crowd murmur (festMurmurGain) keeps going at its normal level under the track
   const spin = () => {
     if (bed.stopped || !actx || !_midkBedBuf) return;
     const s = actx.createBufferSource();
@@ -9162,12 +9162,11 @@ function startMidkBed() {
     bed.src = s;
   };
   if (_midkBedBuf) { spin(); return; }
-  try {
-    const b64 = MIDK_BED_DATA.slice(MIDK_BED_DATA.indexOf(",") + 1);
-    const bin = atob(b64), u8 = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-    actx.decodeAudioData(u8.buffer).then(buf => { if (bed.stopped) return; _midkBedBuf = buf; spin(); }).catch(() => {});
-  } catch (e) {}
+  fetch(bust("fest-bed.mp3"))
+    .then(r => r.ok ? r.arrayBuffer() : Promise.reject(0))
+    .then(ab => actx.decodeAudioData(ab))
+    .then(buf => { if (bed.stopped) return; _midkBedBuf = buf; spin(); })
+    .catch(() => {});
 }
 function stopMidkBed() {
   if (!_midkBed || !actx) { _midkBed = null; return; }
@@ -9658,7 +9657,7 @@ document.getElementById("festAgain").addEventListener("click", () => {
   }
   if (festKind === "midk") {
     midkParts = []; midk = null; midkPhase = "idle"; festKind = "hub"; festGroundsCats(roster);
-    stopVolleyBed(); stopMidkBed();
+    stopVolleyBed(); startMidkBed();   // stay on the cozy track for the rematch picker — no switch
     document.getElementById("midkHud").hidden = true;
     document.getElementById("midkCom").hidden = true;
     renderMidkPickGrid(eligibleForVolley().filter(c => !c.mascot));
@@ -12289,6 +12288,7 @@ function enterFestMidk() {
   document.getElementById("festChoose").hidden = true;
   document.getElementById("festTime").textContent = "tug of paws";
   trackEvent("midk_card_opened");
+  startMidkBed();                 // cozy track from the tutorial/picker on, so nothing switches when the match starts
   if (!_midkTutSeen) { document.getElementById("festMidkTut").hidden = false; return; }
   midkShowPicker();
 }
@@ -17161,7 +17161,9 @@ window.__cove = {
   audio(){ return { ctx: actx && actx.state, ambience: !!ambience, dayFactor,
     layers: ambience ? { water: ambience.waterGain.gain.value, wind: ambience.windGain.gain.value,
       crick: ambience.crickGain.gain.value, bird: ambience.birdGain.gain.value, master: ambience.master.gain.value } : null,
-    fest: festBus ? { on: festMode, gain: festBus.gain.value, beat: _festMelodyBeat } : null,
+    fest: festBus ? { on: festMode, gain: festBus.gain.value, beat: _festMelodyBeat,
+      midkBed: _midkBed && _midkBed.g ? +_midkBed.g.gain.value.toFixed(3) : (_midkBed ? "loading" : "off"),
+      murmur: festMurmurGain ? +festMurmurGain.gain.value.toFixed(3) : null } : null,
     samples: Object.fromEntries(Object.entries(SFX_FILES).map(([k,v]) => [k, v.filter(u => _sfxBuf[u]).length + "/" + v.length])) }; },
   meow(pool = "meow"){ ensureAudio(); return playSample(pool, { vol: 0.6 }); },
   chime(){ ensureAudio(); setTimeout(purchaseChime, 40); return "played the purchase chime"; },
