@@ -963,6 +963,23 @@
   .credits .cr-links a:active{opacity:.55;}
   .credits .cr-build{margin:.5rem 0 0;font-size:.58rem;letter-spacing:.04em;color:var(--ink-faint);opacity:.5;}
   .credits .row{margin-top:1.1rem;position:sticky;bottom:-.1rem;background:linear-gradient(rgba(247,244,236,0),var(--panel) 40%);padding-top:.7rem;}
+  .credits .cr-cares{margin:.9rem auto 0;}
+  .credits .cr-cares a{color:#c96d86;font-weight:700;font-size:.82rem;text-decoration:none;}
+  .credits .cr-cares a:active{opacity:.6;}
+
+  /* ---- Catmint Cove Cares ---- */
+  .cares{text-align:center;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;position:relative;padding-top:.3rem;}
+  .cares .cr-x{position:absolute;top:0;right:0;width:1.9rem;height:1.9rem;border:none;border-radius:50%;
+    background:#eef1e3;color:var(--ink-soft);font-size:.8rem;line-height:1;cursor:pointer;z-index:2;}
+  .cares .kicker{color:#c96d86;}
+  .cares h2{font-family:"Fraunces",serif;font-size:1.32rem;line-height:1.28;margin:.3rem auto .1rem;max-width:20rem;text-wrap:balance;}
+  .cares .cc-body{color:var(--ink);font-size:.88rem;line-height:1.52;margin:.55rem auto 0;max-width:24rem;}
+  .cares .cc-cta{margin:1.05rem auto 0;padding-top:.9rem;border-top:1px solid var(--panel-line);max-width:24rem;}
+  .cares .cc-cta p{color:var(--ink-soft);font-size:.83rem;line-height:1.5;margin:0 0 .65rem;}
+  .cares .cc-thanks{color:var(--ink);font-size:.92rem;line-height:1.55;margin:.2rem auto 0;max-width:22rem;}
+  .cares .cc-thanks b{color:#c96d86;}
+  .cares .cc-fine{color:var(--ink-faint);font-size:.68rem;line-height:1.5;margin:.9rem auto .1rem;max-width:23rem;text-wrap:pretty;}
+  .cares .row{margin-top:1rem;}
 
   /* ---- Sound panel ---- */
   .snd .sub{color:var(--ink-soft);font-size:.82rem;margin:.1rem 0 .9rem;}
@@ -1768,6 +1785,7 @@ function newGame() {
     projects: { dock: { stage: "open", paid: { shells: 0, driftwood: 0 } } },
     labubu: { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 },   // Midknight's sidekick — a recurring visitor
     cairn: { stage: 0, progress: 0, size: 0, nextAt: 0 },        // Midknight's slow monument of borrowed things by the sign
+    ccc: { seen: false, firstGiftAt: 0 },                        // Catmint Cove Cares — the pledge; firstGiftAt reserved for the future "Giving Paw"
   };
 }
 
@@ -1848,6 +1866,7 @@ function load() {
     if (typeof G.materials.driftwood !== "number") G.materials.driftwood = 0;
     if (!G.labubu || typeof G.labubu !== "object") G.labubu = { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 };
     if (!G.cairn || typeof G.cairn !== "object") G.cairn = { stage: 0, progress: 0, size: 0, nextAt: 0 };
+    if (!G.ccc || typeof G.ccc !== "object") G.ccc = { seen: false, firstGiftAt: 0 };
     if (!G.projects || typeof G.projects !== "object") {
       // a cove that already owns the fishing dock (bought in the old shop) → dock is already restored
       G.projects = { dock: { stage: (G.stations && G.stations.fishing > 0) ? "done" : "open", paid: { shells: 0, driftwood: 0 } } };
@@ -5120,7 +5139,7 @@ document.getElementById("roster-x").onclick = () => {
 
 /* ---------- shop ---------- */
 const SHOP_TABS = [
-  { id:"featured", label:"Featured", intro:"Little ways to help the cove along." },
+  { id:"featured", label:"Featured", intro:"Optional ways to support Catmint Cove — no pressure, and appreciated. See ❤️ Cove Cares in Help." },
   { id:"comforts", label:"Comforts", intro:"More comforts draw more cats — and the right one keeps each personality happy." },
   { id:"stations", label:"Stations", intro:"Spots where cats work: bigger output while they're busy, plus a mood lift." },
   { id:"dress",    label:"Dress-up", intro:"Pick a cat, then pick a look. Each piece is bought for that one cat." },
@@ -5219,8 +5238,8 @@ function shopPackRow() {
     ? `<div class="txt"><div class="name">Founding Covekeeper</div>
          <div class="desc">Your plaque's by the sign${ADS_ENABLED ? " · ads off" : ""} · thank you 🧡</div></div>
        <span class="owned">Owned</span>`
-    : `<div class="txt"><div class="name">Founding Covekeeper</div>
-         <div class="desc">Back the one-person studio behind the Cove · a limited 2026 founder's plaque, ribbon, halo &amp; hero mask · ad-free forever</div></div>
+    : `<div class="txt"><div class="name">❤️ Founding Covekeeper</div>
+         <div class="desc">For the hoomans helping our little Cove grow from the start · a limited 2026 founder's plaque, ribbon, halo &amp; hero mask · ad-free forever</div></div>
        <button class="btn primary">${IAP_PRODUCTS.founding_covekeeper.price}</button>`;
   const pb = pack.querySelector("button");
   if (pb) pb.addEventListener("click", () => showPackOffer(false));
@@ -5239,7 +5258,7 @@ function shopWelcomeRow(keepsake) {
          <div class="desc">The amber ribbon's in the dress-up rack · welcome paw's by the sign · thank you 🧡</div></div>
        <span class="owned">Owned</span>`
     : `<div class="txt"><div class="name">🐾 Welcome Pack</div>
-         <div class="desc">An amber ribbon for every cat + a carved welcome paw by the sign · purely cosmetic</div></div>
+         <div class="desc">An amber ribbon for every cat + a carved welcome paw by the sign · purely cosmetic · ❤️ supports the Cove</div></div>
        <button class="btn primary">${IAP_PRODUCTS.welcome_pack.price}</button>`;
   const b = row.querySelector("button");
   if (b) b.addEventListener("click", () => showWelcomeOffer(false));
@@ -6448,10 +6467,12 @@ function openGuide() {
     <div class="guide-list">${rows.map(([h, b]) => `<div class="guide-row"><b>${esc(h)}</b><p>${esc(b)}</p></div>`).join("")}</div>
     <div class="row guide-foot">
       <button class="btn primary" id="guideOk">Got it</button>
+      <button class="btn" id="guideCares">❤️ Cove Cares</button>
       <button class="btn" id="guideCredits">🐾 Credits</button>
     </div>`;
   tutEl.classList.add("on");
   document.getElementById("guideOk").onclick = () => tutEl.classList.remove("on");
+  document.getElementById("guideCares").onclick = () => { tutEl.classList.remove("on"); openCares(); };
   document.getElementById("guideCredits").onclick = () => { tutEl.classList.remove("on"); openCredits(); };
 }
 // open a URL in the OS browser, never inside the game's WebView. Capacitor
@@ -6475,6 +6496,7 @@ function openCredits() {
       <p class="cr-note">And to all the other hoomans who tested, broke things we thought were working, found things we didn't know were broken, and shared feedback to make the Cove better.</p>
     </div>
     <p class="cr-lead">Thanks for helping us build the best little Cove we can.</p>
+    <p class="cr-cares"><a href="#" id="crCares">❤️ Catmint Cove Cares — a little Cove can do a little good</a></p>
     <p class="cr-note">Any remaining bugs are probably Midknight's fault.<br>Midknight strongly disagrees.</p>
     <p class="cr-legal">© 2026 Midknight Studio Labs. All rights reserved.<br>
       Catmint Cove and its original characters, artwork, game content, dialogue, audio, and software are protected by applicable intellectual property laws.</p>
@@ -6497,6 +6519,52 @@ function openCredits() {
     a.addEventListener("click", e => { e.preventDefault(); openExternal(a.href); }));
   document.getElementById("crClose").onclick = closeModal;
   document.getElementById("crX").onclick = closeModal;
+  { const cc = document.getElementById("crCares");
+    if (cc) cc.onclick = e => { e.preventDefault(); closeModal(); setTimeout(openCares, 90); }; }
+}
+
+/* ---------- Catmint Cove Cares — "a little Cove can do a little good" ---------- */
+// what counts as "supporting the Cove" = the two Featured tiers (Sparkle is
+// cosmetics, not a support tier). Kept as one function so a future "Giving Paw"
+// can extend it without touching the card.
+function caresSupported() { return iapOwns("welcome_pack") && iapOwns("founding_covekeeper"); }
+function openCares() {
+  ensureAudio();
+  if (G.ccc) G.ccc.seen = true;
+  const done = caresSupported();
+  const some = !done && (iapOwns("welcome_pack") || iapOwns("founding_covekeeper"));
+  const cta = done
+    ? `<div class="cc-cta">
+         <p class="cc-thanks"><b>❤️ You've already supported the Cove.</b><br>
+         Seriously, thank you. There's nothing else you need to do.<br>
+         Go spend some time with your cats. 🐾</p>
+       </div>`
+    : `<div class="cc-cta">
+         <p>${some
+           ? "Optional purchases keep Catmint Cove growing. There's a little more in the Shop if you'd like — no pressure either way."
+           : "You being here already means something. If you'd like to support the little game we're building, there are optional ways to do that in the Shop."}</p>
+         <div class="row"><button class="btn primary" id="cc-support">❤️ Support the Cove</button></div>
+       </div>`;
+  openModal(`<div class="reveal cares">
+    <button class="cr-x" id="ccX" aria-label="Close">✕</button>
+    <div class="kicker">❤️ Catmint Cove Cares</div>
+    <h2>A little Cove can do a little good.</h2>
+    <p class="cc-body">Catmint Cove started because of one very real cat — Midknight. He got us thinking about a little world where cats can just be cats: cared for, comfortable, curious, and completely themselves.</p>
+    <p class="cc-body">As our little Cove grows, we want some of that good to find its way back to real cats who need it — helping with things like rescue, shelter care, adoption and spay/neuter programs.</p>
+    <p class="cc-body">We're starting small. But every hooman who joins makes the Cove a little bigger — and hopefully, together, we can make the real world a little better for cats too. 🐾</p>
+    ${cta}
+    <p class="cc-fine">Optional purchases support Catmint Cove. Separately, Catmint Cove Cares is our commitment to pledge a portion of what the game earns toward animal-welfare efforts. We're not partnered with a specific charity yet, and no purchase is a donation.</p>
+    <div class="row"><button class="btn${done ? " primary" : ""}" id="ccBack">Back to the cove</button></div>
+  </div>`);
+  document.getElementById("ccX").onclick = closeModal;
+  document.getElementById("ccBack").onclick = closeModal;
+  { const sb = document.getElementById("cc-support");
+    if (sb) sb.onclick = () => {
+      closeModal();
+      shopTab = "featured";
+      if (panels.shop.hidden) togglePanel("shop"); else { renderShop(); document.getElementById("shopList").scrollTop = 0; }
+    }; }
+  if (typeof trackEvent === "function") trackEvent("cares_opened", { supported: done });
 }
 document.getElementById("helpBtn").addEventListener("click", openGuide);
 document.getElementById("focusBar").addEventListener("click", exitFocus);
@@ -6903,7 +6971,8 @@ function showPackOffer(soft) {
   if (Ads.owned()) {
     openModal(`<div class="reveal"><div class="kicker">Founding Covekeeper</div>
       <h2>You were here first 🧡</h2>
-      <p class="sub">Your plaque stands by the cove sign, Midknight's wearing his founder's ribbon${ADS_ENABLED ? ", and the cove stays ad-free" : ""}. Thank you for backing the studio.</p>
+      <p class="sub">Your plaque stands by the cove sign, Midknight's wearing his founder's ribbon${ADS_ENABLED ? ", and the cove stays ad-free" : ""}.</p>
+      <p class="sub" style="margin-top:-.5rem">Thank you, hooman. It means more than you know. 🐾</p>
       <div class="row"><button class="btn primary" id="pk-close">Back to the cove</button></div></div>`);
     document.getElementById("pk-close").onclick = closeModal;
     return;
@@ -6946,6 +7015,7 @@ function showSparkleOffer() {
     openModal(`<div class="reveal"><div class="kicker">✦ Sparkle Pack</div>
       <h2>It's yours 🧡</h2>
       <p class="sub">The glow collar, little wings and rainbow trail are unlocked for every cat in the cove. Dress them up from the Shop.</p>
+      <p class="sub" style="margin-top:-.5rem">Thanks for helping our little Cove grow. 🐾</p>
       <div class="row"><button class="btn primary" id="sp-close">Back to the cove</button></div></div>`);
     document.getElementById("sp-close").onclick = closeModal;
     return;
@@ -6992,6 +7062,7 @@ function showWelcomeOffer(soft) {
     openModal(`<div class="reveal"><div class="kicker">🐾 Welcome Pack</div>
       <h2>It's yours 🧡</h2>
       <p class="sub">The amber ribbon is unlocked for every cat, and your welcome paw is carved by the sign. Dress a cat up from the Shop.</p>
+      <p class="sub" style="margin-top:-.5rem">Thanks for helping our little Cove grow. 🐾</p>
       <div class="row"><button class="btn primary" id="wp-close">Back to the cove</button></div></div>`);
     document.getElementById("wp-close").onclick = closeModal;
     return;
