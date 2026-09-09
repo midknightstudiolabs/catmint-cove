@@ -798,7 +798,7 @@
     box-shadow:0 10px 30px rgba(0,0,0,.32);animation:vbBannerIn .5s ease both;}
   .volley-banner[hidden]{display:none;}
   @keyframes vbBannerIn{from{opacity:0;transform:translate(-50%,-40%) scale(.9);}}
-  /* --- Midknight's Big Problem HUD --- */
+  /* --- Tug of Paws HUD --- */
   .midk-hud{position:absolute;left:0;right:0;z-index:66;pointer-events:none;
     bottom:calc(max(.9rem, env(safe-area-inset-bottom)) + 3.1rem);
     display:flex;flex-direction:column;align-items:center;gap:.55rem;padding:0 12px;}
@@ -814,8 +814,12 @@
   .midk-btn .mb-l{font-size:.74rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;opacity:.9;}
   .midk-btn .mb-cd{position:absolute;left:0;bottom:0;height:100%;width:0;background:rgba(255,255,255,.12);
     pointer-events:none;transition:none;}
-  .midk-btn.cooling{opacity:.55;}
+  .midk-btn.cooling{opacity:.5;}
   .midk-btn.cooling .mb-cd{background:rgba(255,255,255,.10);}
+  #midkSnack.held{background:#3f6b4f;transform:translateY(1px) scale(.98);}
+  #midkSnack.held .mb-cd{background:rgba(255,255,255,.22);}
+  #midkRally.ready{background:#6b5320;box-shadow:0 0 0 2px #e8b45a, 0 6px 20px rgba(0,0,0,.3);}
+  #midkRally.ready .mb-cd{background:rgba(232,180,90,.32);}
   /* trait chips in the volleyball / picker cells */
   .fp-cell .fp-tr{display:flex;gap:.2rem;flex-wrap:wrap;justify-content:center;margin-top:.1rem;}
   .fp-cell .fp-tr span{background:#e2e6d5;border-radius:999px;padding:.02rem .34rem;font-size:.56rem;
@@ -1270,26 +1274,26 @@
       </div>
     </div>
     <div class="fest-panel" id="festMidkPanel" hidden>
-      <div class="fp-art">😼🍽️</div>
-      <h2>Midknight's big problem</h2>
-      <p>Pick five cats to fetch him home. <span id="midkPickCount">(0 / 5)</span></p>
+      <div class="fp-art">🧶</div>
+      <h2>Tug of Paws</h2>
+      <p>Pick your five for the rope. <span id="midkPickCount">(0 / 5)</span></p>
       <div class="fp-grid" id="midkPickGrid"></div>
       <div class="btn-row">
-        <button class="btn primary" id="midkStart" disabled>Go and get him</button>
+        <button class="btn primary" id="midkStart" disabled>Take the rope</button>
         <button class="btn" id="midkCancel">Maybe later</button>
       </div>
     </div>
     <div class="fest-panel" id="festMidkTut" hidden>
-      <div class="fp-art">😼</div>
-      <h2>The situation</h2>
+      <div class="fp-art">🧶</div>
+      <h2>The rope, briefly</h2>
       <ul class="vb-tut">
-        <li><span class="vt-e">😼</span><span class="vt-t">Midknight overate at a visiting Cove's snack table and settled onto <em>their</em> cushion. He is not walking home.</span></li>
-        <li><span class="vt-e">🐟</span><span class="vt-t"><b>Snack</b> — a cat fetches him a fish. Midknight will not walk for anyone unless he's just been fed: each fish buys a few seconds of <b>willing</b> (watch the top bar). Feed too much and he's too full — he slows down and sits.</span></li>
-        <li><span class="vt-e">📣</span><span class="vt-t"><b>Rally</b> — your cats all heave at once. This is what actually hauls him down the field — but only while he's willing. Rally a planted Midknight and nothing happens.</span></li>
-        <li><span class="vt-e">🛏️</span><span class="vt-t">Snack to make him willing, Rally to haul, over and over. The visitors drag him back and cake him to stall you. Get him home before the festival closes.</span></li>
+        <li><span class="vt-e">🧶</span><span class="vt-t">Five of your cats, five of a visiting Cove's, one festival yarn ball. Pull it past your flag to win.</span></li>
+        <li><span class="vt-e">💪</span><span class="vt-t"><b>Hold HEAVE</b> and your team digs in — it drains the stamina bar. Let go to get it back. Redline it and your cats slip.</span></li>
+        <li><span class="vt-e">🎰</span><span class="vt-t">Tugging fills the <b>slot</b>. When it's charged, <b>SPIN</b> — three paws is an all-out heave, three yarn a yank, three fish a snack run, three naps… someone dozes off.</span></li>
+        <li><span class="vt-e">😴</span><span class="vt-t">Cats fall asleep on the rope, find the buffet and double in size, and — if you're losing — Midknight may wander in to help. Sort of.</span></li>
       </ul>
       <div class="btn-row">
-        <button class="btn primary" id="midkTutGo">Right. Let's carry a cat.</button>
+        <button class="btn primary" id="midkTutGo">Take the rope</button>
       </div>
     </div>
     <div class="fest-panel" id="festVolleyTut" hidden>
@@ -1312,8 +1316,8 @@
     <div class="midk-hud" id="midkHud" hidden>
       <div class="volley-com" id="midkCom" hidden><span class="vc-mic">🎙️</span><span id="midkComText"></span></div>
       <div class="midk-acts">
-        <button class="midk-btn" id="midkSnack" type="button"><span class="mb-i">🐟</span><span class="mb-l">Snack</span><span class="mb-cd" id="midkSnackCd"></span></button>
-        <button class="midk-btn" id="midkRally" type="button"><span class="mb-i">📣</span><span class="mb-l">Rally</span><span class="mb-cd" id="midkRallyCd"></span></button>
+        <button class="midk-btn" id="midkSnack" type="button"><span class="mb-i">💪</span><span class="mb-l">Heave</span><span class="mb-cd" id="midkSnackCd"></span></button>
+        <button class="midk-btn" id="midkRally" type="button"><span class="mb-i">🎰</span><span class="mb-l">Spin</span><span class="mb-cd" id="midkRallyCd"></span></button>
       </div>
     </div>
     <div class="fest-countdown" id="festCountdown" hidden>
@@ -1376,7 +1380,7 @@
       <button id="dev-box">📦 box challenge</button>
       <button id="dev-volley">🏐 volleyball</button>
       <button id="dev-cafe">🎀 café</button>
-      <button id="dev-midk">😼 midknight</button>
+      <button id="dev-midk">🧶 tug</button>
       <button id="dev-day">skip a day</button>
       <button id="dev-name">name cove</button>
       <button id="dev-ad">show ad</button>
@@ -9608,9 +9612,9 @@ const FEST_EVENTS = [
   { key: "cafe", emoji: "🎀", art: () => cafeEmblemHTML(34), name: "Catmint Café",
     desc: "Three cats run a pop-up café. You decide who's on which job. They are cats.",
     lock: () => cafeReadyToPlay() ? null : "You need 3 cats at the Cove for the café.", enter: enterFestCafe },
-  { key: "midk", emoji: "😼", name: "Midknight's Big Problem",
-    desc: "Midknight ate too much. Five of your cats drag him home before a visiting Cove drags him to theirs.",
-    lock: () => midkReady() ? null : "You need 5 cats at the Cove (Midknight doesn't count — he's the problem).", enter: enterFestMidk },
+  { key: "midk", emoji: "🧶", name: "Tug of Paws",
+    desc: "Five of your cats. Five of theirs. One yarn ball. Somebody's going to sit down mid-pull.",
+    lock: () => midkReady() ? null : "You need 5 cats at the Cove for the rope.", enter: enterFestMidk },
 ];
 function renderFestChooser() {
   const wrap = document.getElementById("festEventCards");
@@ -9639,8 +9643,11 @@ document.getElementById("cafeCancel").addEventListener("click", closeFest);
 document.getElementById("midkCancel").addEventListener("click", closeFest);
 document.getElementById("midkTutGo").addEventListener("click", () => { _midkTutSeen = true; midkShowPicker(); });
 document.getElementById("midkStart").addEventListener("click", () => { if (midkPickSel.length === 5) startCoveMidk(); });
-document.getElementById("midkSnack").addEventListener("click", midkSnack);
-document.getElementById("midkRally").addEventListener("click", midkRally);
+{ const hb = document.getElementById("midkSnack");
+  hb.addEventListener("pointerdown", (e) => { e.preventDefault(); midkHeaveDown(); });
+  for (const ev of ["pointerup", "pointerleave", "pointercancel"]) hb.addEventListener(ev, midkHeaveUp);
+  hb.addEventListener("contextmenu", (e) => e.preventDefault()); }
+document.getElementById("midkRally").addEventListener("click", midkSpin);
 document.getElementById("cafeTutGo").addEventListener("click", () => { _cafeTutSeen = true; cafeShowPicker(); });
 document.getElementById("cafeStart").addEventListener("click", () => { if (cafePickSel.length === 3) startCoveCafe(); });
 // first match of the session gets a quick deadpan how-to; after that, straight in
@@ -12042,94 +12049,87 @@ function showCafeResult() {
 }
 
 /* ============================================================================
-   MIDKNIGHT'S BIG PROBLEM  —  a festival tug-of-war (Fat Princess shape).
-   Midknight overate at the snack tables and won't walk. Your 5 cats drag his
-   cushion home; a visiting Cove's 5 drag it the other way. Whichever side has
-   more paws on the cushion wins the tug — but feeding Midknight makes him
-   heavier, so he needs more of YOUR cats gripping too. Two buttons: Snack
-   (fatten, stall their pull) and Rally (call every loose cat back).
+   TUG OF PAWS  —  a festival tug-of-war over the big festival yarn ball.
+   Five of your cats on the rope, five of a visiting Cove's. HEAVE (hold) to
+   dig in — it drains a shared stamina bar. A charge meter fills as you tug;
+   when it's full, SPIN the slot: three paws = all-out heave, three yarn = a
+   yank, three fish = a snack run, three naps = someone dozes off. Random
+   things keep happening — a cat finds a sunbeam, a cat finds the buffet and
+   doubles in size, Midknight wanders in and picks the losing side.
+   (Internals stay named `midk*` from the old prototype — same wiring hooks.)
    ============================================================================ */
 const MIDK_W = 560, MIDK_H = 980;
-const MIDK_X = 280;                          // the cushion never moves sideways
-const MIDK_HOME = { cove: 856, visit: 196 }; // each Cove's cushion — visit's is where Midknight starts, cove's is the goal
-const MIDK_START_Y = 196;                    // he begins on the visiting Cove's cushion (clear of the shoreline)
-const MIDK_WIN_Y = { cove: 822, visit: 176 };// cushion centre past this = rescued / dragged back
-const MIDK_HALF_Y = 509;                     // past this toward home at the timer = the rescue counts
-// one snack table on each sideline, near the halfway line — a rallied-to-feed
-// cat trots over, grabs a fish, brings it back. bounded trip from either end.
-const MIDK_FOOD = { cove: { x: MIDK_X + 132, y: MIDK_HALF_Y + 34 }, visit: { x: MIDK_X - 132, y: MIDK_HALF_Y - 34 } };
-function midkFoodFetch(side) { return MIDK_FOOD[side]; }
-const MIDK_MATCH_LEN = 95;                    // seconds, hard cap
-const MIDK_BASE_PULL = 10.5;                  // px/s per unit of effective pull differential
-const MIDK_GRIP_R = 156;                      // a cat this close to the cushion (on its side) counts as pulling
-const MIDK_COMFORT0 = 0.4;
-const MIDK_SNACK_GAIN = 0.18;                 // fewer fish land now (table round-trip) so each one counts more
-const MIDK_COMFORT_DECAY = 0.011;             // per sec — he works off a big meal fairly fast, so you keep feeding
-const MIDK_COMFORT_SWEET = 0.5;               // he carries easiest around here; scared OR stuffed = dead weight
-const MIDK_SCARED = 0.3;                      // below this he digs in — a fish is the only thing that moves him
-const MIDK_STUFFED = 0.72;                    // above this he's too full to shift — dead weight, sits down
-const MIDK_FED_WINDOW = 7;                    // sec after YOUR fish that he'll actually walk; outside it he's planted
-const MIDK_SNACK_CD = 5.5, MIDK_RALLY_CD = 8.0;
-const MIDK_VET_LEN = 6;                       // sec the vet keeps him light + eager
-const MIDK_COVE_NAMES = VB_COVE_NAMES;        // reuse volleyball's visiting-cove name pool
+const MIDK_X = 280;                           // the rope runs straight down the middle
+const MIDK_HOME = { cove: 852, visit: 168 };  // the two flag lines
+const MIDK_START_Y = 512;                     // the yarn ball starts dead centre
+const MIDK_WIN_Y = { cove: 812, visit: 176 };
+const MIDK_MATCH_LEN = 78;                    // seconds, hard cap
+const MIDK_PULL_K = 30;                       // px/s per unit of net pull differential
+const MIDK_GRIP_R = 150;
+const MIDK_STAM_DRAIN = 0.30, MIDK_STAM_RECOVER = 0.24;   // heave cost / rest
+const MIDK_HEAVE_MULT = 1.5;                  // your team's pull while HEAVE is held
+const MIDK_CHARGE_RATE = 0.052;              // slot meter fill / sec (×1.7 while heaving)
+const MIDK_BOWL = { cove: { x: MIDK_X + 150, y: 632 }, visit: { x: MIDK_X - 150, y: 392 } };  // buffet bowls, for the "found the buffet" event
+const MIDK_COVE_NAMES = VB_COVE_NAMES;
 const MIDK_CAT_NAMES = VB_CAT_NAMES;
+const MIDK_SLOT_SYMS = ["paw", "yarn", "fish", "star", "nap"];
+const MIDK_SLOT_EMOJI = { paw: "🐾", yarn: "🧶", fish: "🐟", star: "⭐", nap: "😴" };
+const MIDK_SLOT_WEIGHT = [34, 30, 17, 5, 14];
 
 let midkPhase = "idle", midkT = 0, midkParts = [], midk = null, midkVisitName = "Sunbeam Cove";
 let midkPickSel = [], _midkTutSeen = false;
-let _midkResultShown = false, _midkResultAt = 0, _midkWinner = null, _midkFlopAt = 0, _midkReached = false;
-let _midkSnackCd = 0, _midkRallyCd = 0, _midkAiCd = 0, _midkAiRallyCd = 0;
-let _midkVetDone = false, _midkVetAt = 0, _midkVetUntil = 0;
-let _midkMaxLead = { cove: 0, visit: 0 };     // furthest the cushion got toward each side — for the result read
+let _midkResultShown = false, _midkResultAt = 0, _midkWinner = null, _midkFlopAt = 0;
+let midkStam = 1, _midkHeaving = false, midkCharge = 0;
+let _midkAiHeaveUntil = 0, _midkAiRest = 0, _midkAiChargeT = 0, _midkAiSlotCd = 0;
+let midkSlot = null;                          // { spinning, reels, stopAt, stopped, result, bannerUntil }
+let _midkEventCd = 0, _midkMidkCameo = null, _midkSlipUntil = 0, _midkRainUntil = 0;
+let _midkLead = { cove: 0, visit: 0 };        // furthest the ball got toward each flag — for the result read
 let midkCom = { text: "", at: -99, pri: 0, last: "" };
 
-// how many cats a side needs GRIPPING before the cushion budges — a stuffed
-// Midknight takes the whole team to shift
-function midkNeed() {
-  if (_midkVetUntil > midkT) return 1;
-  return midk.comfort > MIDK_STUFFED ? 3 : 2;
-}
 function midkTrait(p, ...keys) { const T = p.cat.traits || []; return keys.some(k => T.includes(k)); }
+function midkPick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+function midkRollSym() {
+  let r = Math.random() * MIDK_SLOT_WEIGHT.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < MIDK_SLOT_SYMS.length; i++) { r -= MIDK_SLOT_WEIGHT[i]; if (r <= 0) return MIDK_SLOT_SYMS[i]; }
+  return "paw";
+}
 
-const MIDK_COM_PRI = { start: 30, reach: 34, flop: 90, flopBack: 90, vet: 60, overfed: 40, sit: 22, stall: 20, near: 34, snack: 16, rally: 16, pull: 10, generic: 6 };
+const MIDK_COM_PRI = { start: 30, win: 90, cameo: 60, slot: 40, event: 34, near: 34, pull: 10, stall: 14, generic: 6 };
 const MIDK_COM = {
-  start: ["Midknight is on {visitingCove}'s cushion, fully committed to staying there.",
-    "There he is — dug in with {visitingCove}. Your cats are on their way.",
-    "{visitingCove} has Midknight. {playerCove} would like him back."],
-  reach: ["{playerCove}'s cats have reached him!", "Contact! {playerCove} is on the cushion.",
-    "Now the hard part — actually moving him."],
-  pullCove: ["Midknight is coming home!", "{playerCove} has him moving down the lane.",
-    "That's real progress for {playerCove}.", "The rescue is on."],
-  pullVisit: ["{visitingCove} is dragging him back.", "Midknight is heading the wrong way for {playerCove}.",
-    "{visitingCove} won't let go.", "Ground lost. {visitingCove} has the grip."],
-  stall: ["Nobody's moving him. Pure standoff.", "The cushion is wedged. So is Midknight.",
-    "Ten cats pulling, zero cats winning.", "Deadlock. Someone's cats need to tire first."],
-  sit: ["Midknight has exercised his right to sit down.", "And Midknight has stopped. Just… stopped.",
-    "Midknight has decided this spot is fine, actually.", "Everyone pulls. Midknight sits. Physics loses."],
-  eat: ["Midknight is eating. Everything else waits.", "Snack break. Nobody asked for this.",
-    "Midknight has paused the rescue to chew."],
-  overfed: ["Another snack will not help.", "That did not make him easier to move.",
-    "Midknight has become considerably harder to shift.", "He's had enough fish. He'll still accept more."],
-  snackCove: ["{playerCove} feeds him toward home — clever, but he's heavier now.",
-    "Fish from {playerCove}. He noses this way. He also gets slower.",
-    "{playerCove} bribes him down the lane."],
-  snackVisit: ["{visitingCove} is caking him to keep him put.", "A fish from {visitingCove} — the classic defence.",
-    "{visitingCove} would like Midknight too full to rescue."],
-  rally: ["{playerCove} calls every loose cat back to the cushion.", "All paws on Midknight for {playerCove}.",
-    "{playerCove} throws the whole team at it."],
-  vet: ["The festival vet turns up with a scale. Midknight is suddenly very willing to leave.",
-    "A vet. With a clipboard. Midknight has found new energy.",
-    "The vet wants a word — and Midknight wants out."],
-  nearCove: ["Midknight is almost home!", "One good pull, {playerCove}.", "{playerCove} is a whisker from the rescue."],
-  nearVisit: ["He hasn't budged off {visitingCove}'s cushion.", "{playerCove}'s cats can't get him moving.",
-    "Still stuck at the wrong end."],
-  flop: ["Midknight is home. Sniff. Turn. Turn. Turn. Flop.", "{playerCove} got him back. He is not moving again today.",
-    "The rescue is complete. Midknight is appalled and comfortable."],
-  flopBack: ["{visitingCove} has him back. Sniff, turn, flop — on their cushion.",
-    "{visitingCove} reeled him all the way in. Rescue's off.", "Back to square one, and then some. {visitingCove} keeps him."],
-  generic: ["Midknight considers his options.", "The cushion creaks.", "Somewhere, a cat is trying its best."],
+  start: ["Five a side, one yarn ball. {visitingCove} look confident. That'll pass.",
+    "The rope's taut. Nobody's explained the rules to the cats.",
+    "{playerCove} versus {visitingCove}. Winner keeps the yarn."],
+  pullCove: ["{playerCove} has the yarn moving!", "That's {playerCove}'s pull.",
+    "The ball's sliding {playerCove}'s way.", "{playerCove} digging in."],
+  pullVisit: ["{visitingCove} are hauling it back.", "Ground lost — {visitingCove} have the edge.",
+    "{visitingCove} lean into it.", "The yarn's going the wrong way for {playerCove}."],
+  stall: ["Dead even. Ten cats, zero progress.", "Nobody's moving it. Glorious deadlock.",
+    "The rope creaks. The yarn does not move.", "Someone's paws need to tire first."],
+  slotCove: ["{playerCove} hit the slot — that's a real pull now!", "The reels line up for {playerCove}!",
+    "{playerCove} cashed the charge in.", "Lucky spin for {playerCove}."],
+  slotVisit: ["{visitingCove} got a spin off.", "The slot favours {visitingCove} this time.",
+    "{visitingCove} bought themselves a heave."],
+  slotDud: ["The reels don't line up. Nothing for {playerCove}.", "So close. No prize.",
+    "{playerCove} spun a whole lot of nothing."],
+  slotNap: ["{playerCove} spun three naps. One of yours is now asleep.", "The slot backfired — a {playerCove} cat has dozed off."],
+  sleep: ["{name} has found a sunbeam and made a decision.", "{name} is asleep. On the rope. Mid-pull.",
+    "{name} stopped pulling to consider a nap. The nap won."],
+  eat: ["{name} found the buffet. {name} is now considerably larger.", "{name} has doubled in size and doubled in commitment to standing still.",
+    "{name} is eating. {name} is also now furniture."],
+  cameo: ["Midknight has wandered in and sat on the rope. He picked the losing side. Of course he did.",
+    "Midknight is on the rope now. Nobody invited him. Nobody will move him.",
+    "A very large cat has joined {loser}'s end. It's Midknight. He's helping, technically."],
+  rain: ["Rain. Everyone lets go to regroup. The yarn drifts back to the middle.", "A shower. The rope goes slack for a moment."],
+  nearCove: ["{playerCove} are a whisker from the flag!", "One more heave, {playerCove}!"],
+  nearVisit: ["{visitingCove} are about to take it!", "{playerCove} are pinned at their own flag."],
+  win: ["{winner} take the yarn ball. It will be re-lost within the hour.",
+    "{winner} win Tug of Paws. The yarn is theirs. The cats have already moved on.",
+    "{winner} pull it over the line. Somewhere a scoreboard updates."],
+  generic: ["The rope hums.", "A cat reconsiders its life choices.", "The yarn ball wobbles, ominously."],
 };
 function midkSay(key, sub) {
-  const map = { pullCove: "pull", pullVisit: "pull", snackCove: "snack", snackVisit: "snack", nearCove: "near", nearVisit: "near" };
+  const map = { pullCove: "pull", pullVisit: "pull", nearCove: "near", nearVisit: "near",
+    slotCove: "slot", slotVisit: "slot", slotDud: "slot", slotNap: "slot", sleep: "event", eat: "event", rain: "event" };
   const priKey = map[key] || key;
   const pri = MIDK_COM_PRI[priKey] || 6;
   const age = midkT - midkCom.at;
@@ -12169,16 +12169,18 @@ function makeMidkVisitors(playerAvgMood) {
   }
   return { name, cats: out };
 }
-function makeMidknightChar() {
-  // a throwaway Midknight for the festival — real Midknight in the cove is untouched
+function makeMidkYarn() {
+  // the yarn ball — the thing being tugged. y is its position on the rope.
+  return { y: MIDK_START_Y, dir: 0, wob: 0, unravel: 0 };
+}
+function makeMidkCameo(side) {
+  // a throwaway 3x Midknight who flops on the rope for the losing side
   const real = cats.find(c => c.mascot);
   const c = new Cat({ visitor: true, name: real ? real.name : "Midknight",
-    coatKey: real ? real.coatKey : undefined, x: MIDK_X, y: MIDK_START_Y });
+    coatKey: real ? real.coatKey : undefined, x: MIDK_X + (side === "cove" ? -60 : 60), y: side === "cove" ? MIDK_HOME.cove + 30 : MIDK_HOME.visit - 30 });
   if (real) c.star = real.star || 0;
-  c._motion = null; c.state = "loafing"; c.face = 1; c._comfort = MIDK_COMFORT0;
-  c._chonkBase = 2.6;    // he already overate — an absolute unit, ~2.6x a normal cat before you feed him
-  return { cat: c, y: MIDK_START_Y, comfort: MIDK_COMFORT0, state: "resting",
-    _eatUntil: 0, _sitUntil: 0, _sitRollAt: 0, _dir: 0, _bias: 0, _biasUntil: 0, _progress: 0 };
+  c._motion = null; c.state = "seeking"; c.face = 1; c._chonkBase = 2.7;
+  return { cat: c, side, arriveT: midkT + 1.6, leaveAt: midkT + rand(13, 17), gone: false };
 }
 
 function renderMidkPickGrid(roster) {
@@ -12207,7 +12209,7 @@ function renderMidkPickGrid(roster) {
 }
 function enterFestMidk() {
   document.getElementById("festChoose").hidden = true;
-  document.getElementById("festTime").textContent = "midknight's big problem";
+  document.getElementById("festTime").textContent = "tug of paws";
   trackEvent("midk_card_opened");
   if (!_midkTutSeen) { document.getElementById("festMidkTut").hidden = false; return; }
   midkShowPicker();
@@ -12224,27 +12226,25 @@ function startCoveMidk() {
   stopVolleyBed();
   festKind = "midk";
   fitFestCanvas();
-  midkT = 0; midkPhase = "idle"; _midkResultShown = false; _midkWinner = null; _midkFlopAt = 0; _midkReached = false;
-  _midkSnackCd = 0; _midkRallyCd = 0; _midkAiCd = 1.5; _midkAiRallyCd = 4;
-  _midkVetDone = false; _midkVetAt = rand(MIDK_MATCH_LEN * 0.38, MIDK_MATCH_LEN * 0.55); _midkVetUntil = 0;
-  _midkMaxLead = { cove: 0, visit: 0 };
+  midkT = 0; midkPhase = "idle"; _midkResultShown = false; _midkWinner = null; _midkFlopAt = 0;
+  midkStam = 1; _midkHeaving = false; midkCharge = 0;
+  _midkAiHeaveUntil = 0; _midkAiRest = 0; _midkAiChargeT = 0; _midkAiSlotCd = rand(14, 20);
+  midkSlot = null; _midkMidkCameo = null; _midkSlipUntil = 0;
+  _midkEventCd = rand(6, 10);
+  _midkLead = { cove: 0, visit: 0 };
   midkCom = { text: "", at: -99, pri: 0, last: "" };
   particles.length = 0; floaters.length = 0;
-  midk = makeMidknightChar();
+  midk = makeMidkYarn();
   const vc = makeMidkVisitors(midkPickSel.reduce((s, c) => s + (c.mood ?? 60), 0) / 5);
   midkVisitName = vc.name;
   midkParts = [];
   const lay = (list, side) => list.forEach((c, i) => {
-    // the visiting Cove has him, but only 3 are actually holding on — the other 2
-    // are loafing by their cushion and have to be rallied in
-    const holding = side === "visit" && i < 3;
-    const part = { cat: c, side, idx: i, role: "pull", grip: holding, stam: rand(0.78, 1), _stamVar: rand(0.82, 1.2), _feedT: 0, _restT: 0, _rallyUntil: 0, stats: { gripSec: 0, feeds: 0 } };
+    const part = { cat: c, side, idx: i, base: 0.9 + (midkTrait({ cat: c }, "bold", "playful") ? 0.16 : 0) - (midkTrait({ cat: c }, "lazy", "grumpy") ? 0.12 : 0),
+      grip: true, _slotBoost: 0, _sleepUntil: 0, _eatUntil: 0, _chonk: 0, _wanderUntil: 0,
+      stats: { heaveSec: 0, slots: 0, naps: 0 } };
     midkParts.push(part);
-    let x, y;
-    if (holding) { const g0 = midkGripPointFor(part, MIDK_START_Y); x = g0.x + rand(-6, 6); y = g0.y + rand(-6, 6); }
-    else if (side === "visit") { x = MIDK_X + (i - 3.5) * 90 + rand(-8, 8); y = MIDK_HOME.visit - 26 + rand(-8, 8); }
-    else { x = MIDK_X + (i - 2) * 74 + rand(-8, 8); y = MIDK_HOME.cove + 24 + rand(-10, 10); }   // your cats start at home, sprint up
-    Object.assign(c, { x, y, face: 1, state: "seeking", trotting: false, walkAmt: 0, _vbLift: 0 });
+    const gp = midkGripPointFor(part, MIDK_START_Y);
+    Object.assign(c, { x: gp.x + rand(-4, 4), y: gp.y + rand(-4, 4), face: 1, state: "seeking", trotting: false, walkAmt: 0, _vbLift: 0 });
     c._motion = null;
   });
   lay(midkPickSel, "cove");
@@ -12253,7 +12253,6 @@ function startCoveMidk() {
   document.getElementById("midkHud").hidden = false;
   document.getElementById("festBar").hidden = false;
   document.getElementById("festResult").hidden = true;
-  _midkSetBtnCd("midkSnack", 0); _midkSetBtnCd("midkRally", 0);
   runFestCountdown();          // → midkBegin() at "Go!"
   trackEvent("midk_started", { cats: midkPickSel.map(c => c.name), visiting: midkVisitName });
 }
@@ -12262,165 +12261,207 @@ function midkBegin() {
   midkSay("start");
 }
 
-/* ---- grip geometry: cove cats pile on the near (bottom) edge, visitors the top.
-   two rows so 5 cats fit without shoving each other off the cushion ---- */
+/* ---- rope geometry: cats line up along the rope on their own side, staggered
+   left/right of it, at increasing distance from the yarn ball ---- */
 function midkGripPointFor(p, y) {
-  // two rows of 3/2 on each side, fanned wide so the scrum reads as ten cats
-  const row = p.idx < 3 ? 0 : 1;
-  const inRow = p.idx < 3 ? p.idx : p.idx - 3;
-  const spread = (inRow - (row ? 0.5 : 1)) * 64;
-  // sit well off the cushion — he's a huge cat, the scrum rings him, doesn't bury him
-  const edge = (p.side === "cove" ? 108 : -108) + (p.side === "cove" ? row * 36 : -row * 36);
-  return { x: MIDK_X + spread, y: y + edge };
+  const away = 66 + p.idx * 44;                      // how far down the rope from the ball
+  const sx = ((p.idx % 2) * 2 - 1) * (22 + (p.idx > 3 ? 8 : 0));
+  return { x: MIDK_X + sx, y: y + (p.side === "cove" ? away : -away) };
 }
-function midkGripPoint(p) { return midkGripPointFor(p, midk.y); }
-function midkFeedPoint(side) { return { x: MIDK_X + (side === "cove" ? 58 : -58), y: midk.y + (side === "cove" ? 52 : -52) }; }
+function midkPawPoint(p) {   // where this cat's paws meet the rope — near the ball
+  const near = 34 + Math.min(p.idx, 3) * 6;
+  return { x: MIDK_X, y: midk.y + (p.side === "cove" ? near : -near) };
+}
+function midkBusy(p) { return p._sleepUntil > midkT || p._eatUntil > midkT || p._wanderUntil > midkT; }
 
-function midkRestPoint(p) {
-  // catch your breath on the grass by your own cushion — never in the sea or the sky
-  const homeY = p.side === "cove" ? MIDK_HOME.cove + 76 : MIDK_HOME.visit - 12;
-  return { x: 60 + (p.idx % 5) * 96, y: homeY };
-}
 function midkStepCat(p, dt) {
   const c = p.cat;
-  const trotFast = p._rallyUntil > midkT;
-  const sp = (46 + (TRAITS[(c.traits || [])[0]] ? (TRAITS[c.traits[0]].speed - 1) * 12 : 0)) * (trotFast ? 1.4 : 1);
+  const asleep = p._sleepUntil > midkT, eating = p._eatUntil > midkT, wandering = p._wanderUntil > midkT;
+  let tx, ty, sp = 58;
+  if (eating) { const b = MIDK_BOWL[p.side]; tx = b.x; ty = b.y; sp = 66; }
+  else if (wandering) { tx = c._wx || c.x; ty = c._wy || c.y; sp = 74; }
+  else { const gp = midkGripPointFor(p, midk.y); tx = gp.x; ty = gp.y; }
+  const arrived = cafeMoveTo(c, tx, ty, sp, dt);
+  p.grip = arrived && !asleep && !eating && !wandering;
 
-  if (p.role === "feed") {
-    p.grip = false;
-    if (!p._fedGot) {
-      // leg 1 — hop out to the buffet on your sideline and grab a fish
-      c.state = "seeking";
-      const ft = midkFoodFetch(p.side);
-      if (cafeMoveTo(c, ft.x, ft.y, sp * 1.5, dt)) {
-        p._feedT += dt;
-        if (p._feedT > 0.3) { p._fedGot = true; p._feedT = 0; c._carryFish = true; }
-      }
-    } else {
-      // leg 2 — carry it back to his cushion and drop it
-      const fp = midkFeedPoint(p.side);
-      if (cafeMoveTo(c, fp.x, fp.y, sp * 1.5, dt)) {
-        midkFeedLands(p.side, c.name, midkTrait(p, "glutton"));
-        p.stats.feeds++; p.role = "pull"; p._feedT = 0; p._fedGot = false; c._carryFish = false;
-      }
-    }
+  if (asleep) { c.state = "sleeping"; c.trotting = false; }
+  else if (eating) { c.state = "eating"; }
+  else if (wandering) { c.state = "playing"; }
+  else if (p.grip) {
+    c.state = "seeking"; c.trotting = false;
+    c.face = p.side === "cove" ? -1 : 1;   // lean back toward your own flag
+    const heaving = (p.side === "cove" && _midkHeaving && midkStam > 0.02) || (p.side === "visit" && _midkAiHeaveUntil > midkT);
+    if (heaving) { p.stats.heaveSec += dt; c._vbLift = Math.min(1, (c._vbLift || 0) + dt * 3); }
+    else c._vbLift = Math.max(0, (c._vbLift || 0) - dt * 3);
+  } else c.state = "seeking";
+
+  // buffet event: the moment eating finishes, start ballooning
+  if (p._pendChonk && !eating) { p._pendChonk = false; p._chonk = 0.02; }
+  if (p._chonk > 0 && p._chonk < 1) p._chonk = Math.min(1, p._chonk + dt * 1.4);
+  c._chonkBase = p._chonk > 0 ? 1 + p._chonk * 1.55 : 0;
+}
+function midkStepCameo(dt) {
+  const cm = _midkMidkCameo; if (!cm || cm.gone) return;
+  const c = cm.cat;
+  if (midkT > cm.leaveAt) {
+    // amble off toward the nearest sideline
+    const tx = cm.side === "cove" ? -40 : MIDK_W + 40, ty = c.y;
+    if (cafeMoveTo(c, tx, ty, 60, dt)) cm.gone = true;
+    c.state = "seeking";
     return;
   }
-
-  if (p.role === "rest") {
-    p.grip = false;
-    const rp = midkRestPoint(p);
-    cafeMoveTo(c, rp.x, rp.y, sp * 0.7, dt);
-    p.stam = Math.min(1, p.stam + dt * 0.16);
-    c.state = "grooming"; c.trotting = false;
-    if (p.stam > 0.72) { p.role = "pull"; c.state = "seeking"; }
-    return;
-  }
-
-  // role "pull" — get to the cushion on your side and hold
-  const gp = midkGripPoint(p);
-  cafeMoveTo(c, gp.x, gp.y, sp, dt);
-  const dCushion = Math.hypot(c.x - MIDK_X, c.y - midk.y);
-  const onSide = p.side === "cove" ? c.y > midk.y - 22 : c.y < midk.y + 22;
-  p.grip = onSide && dCushion < (p.grip ? MIDK_GRIP_R * 1.35 : MIDK_GRIP_R);
-
-  if (p.grip) {
-    p.stats.gripSec += dt;
-    // holding on tires you — your cats have rescue adrenaline, the visitors were
-    // already lounging; bold/playful burn faster, lazy/grumpy pace themselves
-    const sideK = p.side === "cove" ? 0.9 : 1.18;   // visitors tire faster holding the wall — it cracks in time
-    const drain = 0.034 * sideK * p._stamVar * (midkTrait(p, "bold", "playful") ? 1.3 : midkTrait(p, "lazy", "grumpy") ? 0.72 : 1);
-    p.stam = Math.max(0, p.stam - drain * dt);
-    c.trotting = false; c.walkAmt = Math.max(0, (c.walkAmt || 0) - dt * 4);
-    c.face = c.x >= MIDK_X ? -1 : 1;
-    if (p.stam <= 0.03) { p.role = "rest"; p.grip = false; }   // let go, go recover
-  } else {
-    // trickle back while repositioning — visitors dig deep once he's past halfway
-    const rec = (p.side === "visit" && midk._progress > 0.55) ? 0.09 : 0.06;
-    p.stam = Math.min(1, p.stam + dt * rec);
-  }
+  const near = midkPawPoint({ side: cm.side, idx: 0 });
+  cafeMoveTo(c, near.x + (cm.side === "cove" ? 18 : -18), near.y + (cm.side === "cove" ? 34 : -34), 66, dt);
+  c.state = midkT > cm.arriveT ? "sleeping" : "seeking";
+  c._chonkBase = 2.7;
 }
 
-function midkFeedLands(side, catName, glutton) {
-  const over = midk.comfort > MIDK_STUFFED;
-  midk.comfort = Math.min(1, midk.comfort + MIDK_SNACK_GAIN * (over ? 1.4 : 1) * (glutton ? 1.1 : 1));
-  midk._eatUntil = midkT + (over ? 1.1 : 0.5);
-  midk.state = "eating";
-  // YOUR fish is what makes him willing to walk at all — a ~7s window where the
-  // haul actually works. the visitors' fish only fattens him (see midkNeed).
-  if (side === "cove") midk._fedUntil = midkT + MIDK_FED_WINDOW;
+function midkPull(side) {
+  let sum = 0;
+  for (const p of midkParts) {
+    if (p.side !== side || !p.grip || midkBusy(p)) continue;
+    if (p._chonk >= 1) { sum += 0.75; continue; }          // fat cat = ballast, not an active puller
+    let w = p.base;
+    if (p._slotBoost > midkT) w *= 1.5;
+    sum += w;
+  }
+  if (side === "cove" && _midkHeaving && midkStam > 0.02) sum *= MIDK_HEAVE_MULT;
+  else if (side === "visit" && _midkAiHeaveUntil > midkT) sum *= 1.34;
+  if (side === "cove" && _midkSlipUntil > midkT) sum *= 0.74;               // stamina bottomed out
+  if (_midkMidkCameo && !_midkMidkCameo.gone && _midkMidkCameo.side === side && midkT > _midkMidkCameo.arriveT) sum += 1.8;
+  if (_midkRainUntil > midkT) sum *= 0.5;
+  return sum;
+}
+
+/* ---- HEAVE (hold) ---- */
+function midkHeaveDown() { if (midkPhase === "play") _midkHeaving = true; }
+function midkHeaveUp() { _midkHeaving = false; }
+
+/* ---- the slot ---- */
+function midkSpin() {
+  if (midkPhase !== "play") return;
+  if (!midkSlot) {
+    if (midkCharge < 1) return;
+    midkCharge = 0;
+    midkSlot = { spinning: true, reels: [midkRollSym(), midkRollSym(), midkRollSym()], stopAt: [midkT + 0.55, midkT + 0.95, midkT + 1.4], stopped: [false, false, false], result: null, bannerUntil: 0 };
+    tone(520, 0.05, "square", 0.05);
+    return;
+  }
+  // already spinning — a tap stops the next reel early (a little skill)
+  const i = midkSlot.stopped.indexOf(false);
+  if (i >= 0) { midkSlot.stopAt[i] = midkT; tone(660, 0.04, "square", 0.05); }
+}
+function midkSlotTick(dt) {
+  const s = midkSlot; if (!s) return;
+  if (s.result) { if (midkT > s.bannerUntil) midkSlot = null; return; }
+  for (let i = 0; i < 3; i++) {
+    if (s.stopped[i]) continue;
+    if (midkT >= s.stopAt[i]) { s.stopped[i] = true; s.reels[i] = midkRollSym(); tone(700 + i * 60, 0.05, "triangle", 0.05); }
+    else s.reels[i] = MIDK_SLOT_SYMS[(Math.floor(midkT * 22) + i) % MIDK_SLOT_SYMS.length];   // spin blur
+  }
+  if (s.stopped.every(Boolean)) midkResolveSlot("cove");
+}
+function midkResolveSlot(side) {
+  const s = midkSlot, r = s.reels;
+  const boostAll = (secs) => midkParts.forEach(p => { if (p.side === side) p._slotBoost = midkT + secs; });
   const dir = side === "cove" ? 1 : -1;
-  const kick = over ? 0.45 : (1 - 0.35 * clamp(midk.comfort - MIDK_SCARED, 0, 1));
-  midk._bias = clamp((midk._bias || 0) + dir * 1.4 * kick, -2.2, 2.2);
-  midk._biasUntil = midkT + 5.5;
-  floatText(midkFeedPoint(side).x, midk.y - 40, "🐟", "#e7b06a");
-  spawnParticles(midkFeedPoint(side).x, midk.y - 26, "twinkle", 3);
-  tone(300, 0.08, "sine", 0.05);
-  if (over) midkSay("overfed");
-  else midkSay(side === "cove" ? "snackCove" : "snackVisit");
+  let label;
+  if (r[0] === r[1] && r[1] === r[2]) {
+    const sym = r[0];
+    if (sym === "paw") { boostAll(4.5); label = "ALL PAWS IN!"; }
+    else if (sym === "yarn") { midk.y += dir * 74; label = "YANK!"; }
+    else if (sym === "fish") {
+      const grp = midkParts.filter(p => p.side === side && !midkBusy(p) && p._chonk < 1);
+      const g = grp.length ? midkPick(grp) : null;
+      if (g) { g._eatUntil = midkT + 3; }
+      boostAll(5); label = "SNACK RUN";
+    }
+    else if (sym === "star") { midk.y += dir * 56; boostAll(5); if (side === "cove") midkStam = 1; label = "JACKPOT!"; }
+    else { const grp = midkParts.filter(p => p.side === side && !midkBusy(p)); if (grp.length) { const g = midkPick(grp); g._sleepUntil = midkT + 4; g.stats.naps++; } label = "…zzz"; }
+    midkSay(side === "cove" ? (sym === "nap" ? "slotNap" : "slotCove") : "slotVisit");
+    spawnParticles(MIDK_X, midk.y, sym === "nap" ? "twinkle" : "spark", sym === "star" ? 14 : 8);
+  } else if (r[0] === r[1] || r[1] === r[2] || r[0] === r[2]) {
+    boostAll(2.6); label = "not bad";
+    midkSay(side === "cove" ? "slotCove" : "slotVisit");
+  } else {
+    label = "so close"; if (side === "cove") midkCharge = 0.35;
+    midkSay(side === "cove" ? "slotDud" : "slotVisit");
+  }
+  if (side === "cove") midkParts.forEach(p => { if (p.side === "cove") p.stats.slots++; });
+  s.result = label; s.bannerUntil = midkT + 2.6;
+  tone(side === "cove" ? 880 : 300, 0.12, "triangle", 0.07);
 }
 
+/* ---- visiting Cove AI: heave in bursts with rests, spin their slot on a timer ---- */
 function midkAi(dt) {
-  _midkAiCd -= dt; _midkAiRallyCd -= dt;
-  const visit = midkParts.filter(p => p.side === "visit");
-  const visitGrips = visit.filter(p => p.grip).length;
-  const coveGrips = midkParts.filter(p => p.side === "cove" && p.grip).length;
-  const losing = midk.y > MIDK_START_Y + 20;   // cushion is toward the cove
-  // --- feed: the visitors CAKE him to make him too heavy to rescue — but only
-  //     once you've pried him off their cushion (no point stuffing a cat that's
-  //     already staying put). aim him past STUFFED and your rallies go limp. ---
-  if (_midkAiCd <= 0) {
-    _midkAiCd = rand(6, 9);
-    const feeders = visit.filter(p => p.role === "feed").length;
-    const wantFeed = midk._progress > 0.1 && midk.comfort < MIDK_STUFFED + 0.1;
-    if (wantFeed && feeders < 1 && Math.random() < 0.9) {
-      const spare = visit.filter(p => (p.role === "pull" && !p.grip) || (p.role === "rest" && p.stam < 0.3));
-      const feeder = (spare.length ? spare : visit.filter(p => p.role === "pull")).slice()
-        .sort((a, b) => (midkTrait(b, "glutton") - midkTrait(a, "glutton")) || (a.grip - b.grip))[0];
-      if (feeder) { feeder.role = "feed"; feeder._feedT = 0; feeder._fedGot = false; feeder.cat._carryFish = false; }
+  const behind = midk.y > MIDK_START_Y + 30;   // ball is toward the cove flag → visitors are losing
+  if (_midkAiHeaveUntil < midkT && _midkAiRest < midkT) {
+    // idle & rested → maybe start a heave burst (they tire between bursts, like you)
+    const near = Math.abs(midk.y - MIDK_START_Y) < 170;
+    if (Math.random() < (behind ? 0.8 : near ? 0.5 : 0.3) * dt) {
+      _midkAiHeaveUntil = midkT + rand(2, 3.6);
+      _midkAiRest = _midkAiHeaveUntil + rand(2.2, 4.2);
     }
   }
-  // --- rally: refresh their grip when it's dipped, when it's close, or when
-  // they're losing him down the lane and need one last stand ---
-  const lastStand = losing && midk._progress > 0.55;
-  if (_midkAiRallyCd <= 0 && (visitGrips < 3 || midk._progress < 0.14 || (lastStand && Math.random() < 0.55))) {
-    _midkAiRallyCd = lastStand ? rand(4, 6) : rand(5, 8);
-    visit.forEach(p => { if (p.role === "rest" && p.stam > (lastStand ? 0.22 : 0.28)) { p.role = "pull"; p._rallyUntil = midkT + (lastStand ? 2.8 : 2.4); } });
+  _midkAiChargeT += dt * (_midkAiHeaveUntil > midkT ? 1.7 : 1);
+  _midkAiSlotCd -= dt;
+  if (_midkAiSlotCd <= 0 && _midkAiChargeT > 16) {
+    _midkAiSlotCd = rand(15, 24); _midkAiChargeT = 0;
+    // resolve a quick pseudo-spin for the visitors
+    const roll = Math.random();
+    if (roll < 0.4) { midkParts.forEach(p => { if (p.side === "visit") p._slotBoost = midkT + 4; }); midkSay("slotVisit"); }
+    else if (roll < 0.66) { midk.y -= 60; midkSay("slotVisit"); }
+    else if (roll < 0.8) { const g = midkParts.filter(p => p.side === "visit" && !midkBusy(p)); if (g.length) midkPick(g)._sleepUntil = midkT + 3.5; }
+    else midkSay("slotDud");
+    spawnParticles(MIDK_X, midk.y, "twinkle", 6);
   }
 }
 
-function _midkSetBtnCd(id, frac) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.toggle("cooling", frac > 0.001);
-  const bar = el.querySelector(".mb-cd");
-  if (bar) bar.style.width = (frac * 100) + "%";
+/* ---- random events ---- */
+function midkEvents(dt) {
+  _midkEventCd -= dt;
+  if (_midkEventCd > 0) return;
+  _midkEventCd = rand(7, 13);
+  const roll = Math.random();
+  // the Midknight cameo — once, mid-match, joins whoever's losing
+  if (!_midkMidkCameo && midkT > MIDK_MATCH_LEN * 0.3 && midkT < MIDK_MATCH_LEN * 0.72 && roll < 0.4) {
+    const losing = midk.y > MIDK_START_Y ? "visit" : "cove";
+    _midkMidkCameo = makeMidkCameo(losing);
+    midkSay("cameo", { loser: losing === "cove" ? coveName() : midkVisitName });
+    return;
+  }
+  const side = Math.random() < 0.5 ? "cove" : "visit";
+  const cand = midkParts.filter(p => p.side === side && !midkBusy(p) && p._chonk < 1);
+  if (!cand.length) return;
+  const p = midkPick(cand);
+  if (roll < 0.3) {   // rain — neutral
+    _midkRainUntil = midkT + 3; midkSay("rain");
+    spawnParticles(MIDK_X, MIDK_START_Y, "twinkle", 12);
+  } else if (roll < 0.62) {   // sleep
+    p._sleepUntil = midkT + rand(4.5, 7.5);
+    midkSay("sleep", { name: p.cat.name });
+    floatText(p.cat.x, p.cat.y - 24, "😴", "#8a7fb0");
+  } else {   // found the buffet → balloons up
+    p._eatUntil = midkT + 3;
+    p._pendChonk = true;
+    midkSay("eat", { name: p.cat.name });
+    floatText(p.cat.x, p.cat.y - 24, "🍽️", "#c98f3a");
+  }
 }
-function midkSnack() {
-  if (midkPhase !== "play" || midkT < _midkSnackCd) return;
-  const cove = midkParts.filter(p => p.side === "cove" && p.role !== "feed");
-  // prefer a glutton, then a cat not currently the only gripper, then anyone
-  const pref = cove.slice().sort((a, b) =>
-    (midkTrait(b, "glutton") - midkTrait(a, "glutton")) || (a.grip - b.grip));
-  const f = pref[0];
-  if (!f) return;
-  f.role = "feed"; f._feedT = 0;
-  _midkSnackCd = midkT + MIDK_SNACK_CD;
-  tone(520, 0.05, "square", 0.05);
-}
-function midkRally() {
-  if (midkPhase !== "play" || midkT < _midkRallyCd) return;
-  midkParts.forEach(p => {
-    if (p.side !== "cove") return;
-    if (p.role === "feed" && !p._fedGot) { p.role = "pull"; p._feedT = 0; p.cat._carryFish = false; }
-    if (p.role === "rest" && p.stam > 0.32) p.role = "pull";   // only the ones who've rested enough
-    p._rallyUntil = midkT + 4.0;                                // a burst of extra pull — the key to breaking the early hold
-    if (p.role === "pull") p.cat.state = "seeking";
-  });
-  _midkRallyCd = midkT + MIDK_RALLY_CD;
-  midkSay("rally");
-  tone(660, 0.09, "triangle", 0.07); tone(880, 0.07, "triangle", 0.05, 0.06);
-  spawnParticles(280, MIDK_HOME.cove, "spark", 6);
+
+function _midkUpdateBtns() {
+  const hb = document.getElementById("midkSnack"), sb = document.getElementById("midkRally");
+  if (hb) {
+    hb.classList.toggle("cooling", _midkSlipUntil > midkT);
+    hb.classList.toggle("held", _midkHeaving);
+    const bar = hb.querySelector(".mb-cd"); if (bar) bar.style.width = (midkStam * 100) + "%";
+  }
+  if (sb) {
+    const ready = midkCharge >= 1 || (midkSlot && !midkSlot.result);
+    sb.classList.toggle("ready", ready);
+    sb.classList.toggle("cooling", !ready);
+    const bar = sb.querySelector(".mb-cd"); if (bar) bar.style.width = ((midkSlot ? 1 : midkCharge) * 100) + "%";
+  }
 }
 
 function renderMidk(dt) {
@@ -12440,132 +12481,80 @@ function renderMidk(dt) {
   if (!midk) return;
 
   if (midkPhase === "play") {
-    // --- the vet event ---
-    if (!_midkVetDone && midkT >= _midkVetAt) {
-      _midkVetDone = true; _midkVetUntil = midkT + MIDK_VET_LEN;
-      midk.comfort = Math.max(0.1, midk.comfort - 0.3);
-      midkSay("vet");
-      spawnParticles(MIDK_X, midk.y - 40, "spark", 10);
-      tone(720, 0.14, "triangle", 0.1);
+    // player stamina — held HEAVE drains it; let go and it recovers
+    if (_midkHeaving && midkStam > 0) {
+      midkStam = Math.max(0, midkStam - MIDK_STAM_DRAIN * dt);
+      if (midkStam <= 0) { _midkHeaving = false; _midkSlipUntil = midkT + 1.6; midkSay("stall"); }
+    } else if (!_midkHeaving) {
+      midkStam = Math.min(1, midkStam + MIDK_STAM_RECOVER * dt);
     }
-    // --- comfort drifts down; the occasional sit ---
-    midk.comfort = Math.max(0, midk.comfort - MIDK_COMFORT_DECAY * dt);
-    if (midkT > midk._sitRollAt) {
-      midk._sitRollAt = midkT + 2;
-      if (midk.comfort > MIDK_STUFFED && midk._sitUntil < midkT && midk._eatUntil < midkT && Math.random() < (midk.comfort - MIDK_STUFFED + 0.06) * 1.4) {
-        midk._sitUntil = midkT + rand(2, 4.4); midk.state = "sitting"; midkSay("sit");
-      }
-    }
-    // --- cats ---
+    // slot charge fills as you tug, faster while heaving
+    if (!midkSlot && midkCharge < 1) midkCharge = Math.min(1, midkCharge + MIDK_CHARGE_RATE * (_midkHeaving ? 1.7 : 1) * dt);
+
     for (const p of midkParts) midkStepCat(p, dt);
+    midkStepCameo(dt);
     midkSeparate();
     midkAi(dt);
+    midkSlotTick(dt);
+    midkEvents(dt);
 
     // --- the tug ---
-    // your cats only HEAVE during a Rally; the rest of the time they're just
-    // holding on (light pull). the visitors are dug in the whole match. so the
-    // core loop is: pulse Rally to lurch him forward, Snack to hold the gain.
-    const pullOf = (side) => midkParts.reduce((s, p) => {
-      if (p.side !== side || !p.grip) return s;
-      const rallying = p._rallyUntil > midkT;
-      const w = side === "cove" ? (rallying ? 1.72 : 0.55) : (rallying ? 1.2 : 0.92);
-      return s + w * (midkTrait(p, "bold") ? 1.12 : 1);
-    }, 0);
-    const coveHeaving = _midkVetUntil > midkT || midkParts.some(p => p.side === "cove" && p.grip && p._rallyUntil > midkT);
-    const covePull = pullOf("cove");
-    let visitPull = pullOf("visit"); if (visitPull > 3.2) visitPull = 3.2 + (visitPull - 3.2) * 0.4;
-    if (coveHeaving) visitPull *= 0.68;   // your whole team heaves at once — the visitors stumble
-    const coveGrips = midkParts.filter(p => p.side === "cove" && p.grip).length;
-    const visitGrips = midkParts.filter(p => p.side === "visit" && p.grip).length;
-    const need = midkNeed();
-    // decay the feed-bias — slow enough that a fish's shove is worth spending a
-    // cat on, fast enough that you have to keep feeding to keep advancing
-    if (midk._biasUntil > midkT) midk._bias = (midk._bias || 0) * Math.pow(0.5, dt / 2.6);
-    else midk._bias = 0;
-    const frozen = midk._eatUntil > midkT || midk._sitUntil > midkT;
+    let net = midkPull("cove") - midkPull("visit");
+    // gentle rubber-band so a lead doesn't run away — the trailing side digs in near its own flag
+    const span = MIDK_WIN_Y.cove - MIDK_START_Y;
+    if (net > 0) net *= 1 - 0.32 * clamp((midk.y - MIDK_START_Y) / span, 0, 1);
+    if (net < 0) net *= 1 - 0.32 * clamp((MIDK_START_Y - midk.y) / (MIDK_START_Y - MIDK_WIN_Y.visit), 0, 1);
+    let vel = net * MIDK_PULL_K;
+    if (_midkRainUntil > midkT) vel = (MIDK_START_Y - midk.y) * 1.6;   // everyone regroups → drifts to centre
+    midk.y = clamp(midk.y + vel * dt, MIDK_WIN_Y.visit - 4, MIDK_WIN_Y.cove + 4);
+    midk.dir = vel > 6 ? 1 : vel < -6 ? -1 : 0;
+    midk.wob += dt * (2.4 + Math.abs(vel) * 0.05);
+    _midkLead.cove = Math.max(_midkLead.cove, midk.y - MIDK_START_Y);
+    _midkLead.visit = Math.max(_midkLead.visit, MIDK_START_Y - midk.y);
 
-    let vel = 0;
-    if (!frozen) {
-      const pr = midk._progress || 0;
-      const fed = (midk._fedUntil || 0) > midkT;   // you fed him in the last ~7s → he'll walk
-
-      // ROPE — your Rally heave vs the visitors' hold. Breaks the opening pin;
-      // a light constant give the rest of the way (they never fully let go).
-      let rope = 0;
-      if (coveGrips >= need) rope += covePull;
-      if (visitGrips >= need) rope -= visitPull;
-      if (visitGrips >= need) rope -= (1 - clamp(pr / 0.42, 0, 1)) * 0.7;   // opening wall
-      if (pr > 0.78) rope -= visitPull * (pr - 0.78) * 1.5;                 // goal-line stand
-      rope *= 0.4;
-
-      // BIAS — the fish-lunge toward home. stacks, decays. theirs fades once he's committed.
-      let biasV = (midk._bias || 0) * 2.7;
-      if (biasV < 0) biasV *= 0.5 * (1 - clamp((pr - 0.3) / 0.45, 0, 0.7));
-
-      let move = rope + biasV;
-      // THE GATE — outside the fed window he's a planted 3x cat: rally does almost
-      // nothing and he creeps back toward the visitors. a fish opens him up.
-      if (!fed) move = Math.min(move, 0.05) * 0.18 - 0.055;
-      else if (_midkVetUntil > midkT) move *= 1.25;
-      else if (midk.comfort > MIDK_STUFFED) move *= 0.52 - (midk.comfort - MIDK_STUFFED) * 0.7;   // too full → sluggish
-      vel = move * MIDK_BASE_PULL;
-    }
-    midk._dir = vel > 4 ? 1 : vel < -4 ? -1 : 0;
-    midk.y = clamp(midk.y + vel * dt, MIDK_HOME.visit - 2, MIDK_WIN_Y.cove + 2);
-    midk.state = frozen ? (midk._sitUntil > midkT ? "sitting" : "eating") : midk._dir ? "carried" : "resting";
-    midk.cat.y = midk.y; midk.cat.x = MIDK_X;
-    midk.cat._comfort = midk.comfort;
-
-    // how far the rescue got (0 at start, 1 at home)
-    midk._progress = clamp((midk.y - MIDK_START_Y) / (MIDK_WIN_Y.cove - MIDK_START_Y), 0, 1);
-    _midkMaxLead.cove = Math.max(_midkMaxLead.cove, midk.y - MIDK_START_Y);
-    if (!_midkReached && coveGrips >= 2) { _midkReached = true; midkSay("reach"); }
     if (midkT > 3) {
-      if (midk.y >= MIDK_WIN_Y.cove - 60) midkSay("nearCove");
-      else if (midk._progress < 0.14 && coveGrips >= 2) midkSay("nearVisit");   // still stuck at their end
-      else if (midk._dir === 1) midkSay("pullCove");
-      else if (midk._dir === -1) midkSay("pullVisit");
-      else if (coveGrips + visitGrips >= 3) midkSay("stall");
+      if (midk.y >= MIDK_WIN_Y.cove - 46) midkSay("nearCove");
+      else if (midk.y <= MIDK_WIN_Y.visit + 46) midkSay("nearVisit");
+      else if (midk.dir === 1) midkSay("pullCove");
+      else if (midk.dir === -1) midkSay("pullVisit");
+      else midkSay("stall");
     }
 
-    // win checks — cove wins by getting him home; visit wins by dragging him
-    // all the way back AFTER a real rescue attempt, else it's decided at the timer
-    if (midk.y >= MIDK_WIN_Y.cove) { _midkWinner = "cove"; midkPhase = "finish"; _midkFlopAt = midkT + 2.4; midkSay("flop"); }
-    else if (midk.y <= MIDK_WIN_Y.visit && _midkMaxLead.cove > 240) { _midkWinner = "visit"; midkPhase = "finish"; _midkFlopAt = midkT + 2.4; midkSay("flopBack"); }
-    else if (midkT > MIDK_MATCH_LEN) {
-      _midkWinner = midk.y >= MIDK_HALF_Y ? "cove" : "visit";
-      midkPhase = "finish"; _midkFlopAt = midkT + 2.0; midkSay("flop");
-    }
-    _midkSetBtnCd("midkSnack", clamp((_midkSnackCd - midkT) / MIDK_SNACK_CD, 0, 1));
-    _midkSetBtnCd("midkRally", clamp((_midkRallyCd - midkT) / MIDK_RALLY_CD, 0, 1));
+    if (midk.y >= MIDK_WIN_Y.cove) midkWin("cove");
+    else if (midk.y <= MIDK_WIN_Y.visit) midkWin("visit");
+    else if (midkT > MIDK_MATCH_LEN) midkWin(midk.y >= MIDK_START_Y ? "cove" : "visit");
   } else if (midkPhase === "finish") {
     for (const p of midkParts) midkStepCat(p, dt);
+    midkStepCameo(dt);
     midkSeparate();
-    // walk the cushion the last few px onto the winning cushion + settle
-    const tY = MIDK_HOME[_midkWinner];
-    midk.y += (tY - midk.y) * Math.min(1, dt * 2.2);
-    midk.cat.y = midk.y; midk.cat._comfort = midk.comfort;
-    midk.state = midkT > _midkFlopAt - 1 ? "flop" : "carried";
+    const tY = _midkWinner === "cove" ? MIDK_WIN_Y.cove + 14 : MIDK_WIN_Y.visit - 14;
+    midk.y += (tY - midk.y) * Math.min(1, dt * 2.4);
+    midk.wob += dt * 3;
     if (!_midkResultShown && midkT >= _midkFlopAt) { _midkResultShown = true; _midkResultAt = midkT; showMidkResult(); }
   }
   { const el = document.getElementById("midkCom");
     if (el && !el.hidden) { const age = midkT - midkCom.at; el.classList.toggle("fade", age > 4); if (age > 5) el.hidden = true; } }
+  _midkUpdateBtns();
   if (HL) return;
 
-  // --- draw the scrum depth-sorted, then Midknight on top — he's the star and
-  //     he's enormous; letting a cat draw over him just reads as a bug ---
-  drawMidkCushion(g);
-  const painted = midkParts.slice().sort((a, b) => a.cat.y - b.cat.y);
-  for (const p of painted) {
-    drawCat(g, p.cat, false);
-    if (p.cat._carryFish) {
-      g.font = "12px serif"; g.textAlign = "center";
-      g.fillText("🐟", p.cat.x + (p.cat.face < 0 ? -9 : 9), p.cat.y - 6);
-    }
+  // --- draw: rope + everyone, depth sorted, then the yarn ball on top ---
+  drawMidkRope(g);
+  const painted = midkParts.map(p => p.cat);
+  if (_midkMidkCameo && !_midkMidkCameo.gone) painted.push(_midkMidkCameo.cat);
+  painted.sort((a, b) => a.y - b.y);
+  for (const c of painted) {
+    if (c.y > midk.y && !painted._drewYarn) { drawMidkYarn(g); painted._drewYarn = true; }
+    drawCat(g, c, false);
   }
-  drawMidknight(g);
+  if (!painted._drewYarn) drawMidkYarn(g);
   drawMidkHudCanvas(g);
   if (particles.length || floaters.length) drawFX(g);
+}
+function midkWin(side) {
+  if (midkPhase !== "play") return;
+  _midkWinner = side; midkPhase = "finish"; _midkFlopAt = midkT + 2.2;
+  midkSay("win", { winner: side === "cove" ? coveName() : midkVisitName });
+  spawnParticles(MIDK_X, midk.y, side === "cove" ? "spark" : "twinkle", 16);
 }
 
 // soft separation so the scrum reads as individual cats, not a blob
@@ -12591,157 +12580,179 @@ function drawMidkField(g) {
   const gr = g.createLinearGradient(0, HZ, 0, MIDK_H);
   gr.addColorStop(0, "#cfe0af"); gr.addColorStop(1, "#b3cd8e");
   g.fillStyle = gr; g.fillRect(-260, HZ - 4, MIDK_W + 520, MIDK_H - HZ + 264);
-  // a mown lane down the middle they drag him along
-  g.fillStyle = "rgba(255,255,255,.06)"; roundRect(g, MIDK_X - 118, MIDK_HOME.visit - 40, 236, MIDK_HOME.cove - MIDK_HOME.visit + 80, 30); g.fill();
-  g.strokeStyle = "rgba(74,53,36,.10)"; g.lineWidth = 2;
-  for (let y = MIDK_HOME.visit; y < MIDK_HOME.cove; y += 46) { g.beginPath(); g.moveTo(MIDK_X - 110, y); g.lineTo(MIDK_X + 110, y); g.stroke(); }
   drawBunting(g, 20, 92, MIDK_W - 40, 22, midkT, { posts: true, groundY: HZ + 2 });
   // spectators along both edges, bobbing
-  g.save();
   for (let i = 0; i < 8; i++) {
     const yy = 210 + i * 78, hop = Math.max(0, Math.sin(midkT * 4 + i)) * 5;
-    for (const sx of [30, MIDK_W - 30]) {
+    for (const sx of [28, MIDK_W - 28]) {
       g.fillStyle = ["#8a949e", "#d5813c", "#26232b", "#997c53", "#b7ada0"][i % 5];
-      g.beginPath(); g.ellipse(sx + (sx > 200 ? -6 : 6), yy - hop, 12, 13, 0, 0, 7); g.fill();
-      g.beginPath(); g.moveTo(sx - 4, yy - 12 - hop); g.lineTo(sx, yy - 20 - hop); g.lineTo(sx + 4, yy - 12 - hop); g.fill();
+      g.beginPath(); g.ellipse(sx + (sx > 200 ? -6 : 6), yy - hop, 11, 12, 0, 0, 7); g.fill();
+      g.beginPath(); g.moveTo(sx - 4, yy - 11 - hop); g.lineTo(sx, yy - 18 - hop); g.lineTo(sx + 4, yy - 11 - hop); g.fill();
     }
   }
-  g.restore();
-  // snack tables — a rallied-to-feed cat trots over for a fish
-  for (const side of ["visit", "cove"]) drawMidkSnackTable(g, MIDK_FOOD[side]);
-  // goal band on the cove side — the finish line for the rescue
-  const gpul = 0.5 + Math.sin(midkT * 3) * 0.5;
-  g.fillStyle = `rgba(244,201,93,${0.10 + gpul * 0.08})`;
-  g.fillRect(MIDK_X - 118, MIDK_WIN_Y.cove - 6, 236, MIDK_HOME.cove - MIDK_WIN_Y.cove + 40);
-  g.strokeStyle = "rgba(244,201,93,.5)"; g.lineWidth = 3; g.setLineDash([6, 6]);
-  g.beginPath(); g.moveTo(MIDK_X - 118, MIDK_WIN_Y.cove); g.lineTo(MIDK_X + 118, MIDK_WIN_Y.cove); g.stroke(); g.setLineDash([]);
-  // the two cushions
+  // centre line + the two flag lines
+  g.strokeStyle = "rgba(74,53,36,.18)"; g.lineWidth = 2; g.setLineDash([9, 8]);
+  g.beginPath(); g.moveTo(MIDK_X - 120, MIDK_START_Y); g.lineTo(MIDK_X + 120, MIDK_START_Y); g.stroke(); g.setLineDash([]);
   for (const side of ["visit", "cove"]) {
-    const y = MIDK_HOME[side], win = _midkWinner === side;
-    g.fillStyle = "rgba(36,31,23,.14)"; g.beginPath(); g.ellipse(MIDK_X, y + 20, 104, 22, 0, 0, 7); g.fill();
-    g.fillStyle = side === "cove" ? "#d98b74" : "#8ea6c4";
-    roundRect(g, MIDK_X - 100, y - 30, 200, 60, 24); g.fill();
-    g.fillStyle = "rgba(255,255,255,.2)"; roundRect(g, MIDK_X - 100, y - 30, 200, 18, 24); g.fill();
-    g.fillStyle = "rgba(36,31,23,.45)"; g.font = "700 12px 'IBM Plex Mono', monospace"; g.textAlign = "center";
-    g.fillText((side === "cove" ? coveName() : midkVisitName).toUpperCase(), MIDK_X, y + 1);
-    g.font = "9px 'IBM Plex Mono', monospace"; g.fillStyle = "rgba(36,31,23,.32)";
-    g.fillText(side === "cove" ? "▼ GET HIM HERE" : "▲ HE STARTED HERE", MIDK_X, y + 15);
-    if (win) { g.strokeStyle = "#f4c95d"; g.lineWidth = 5; roundRect(g, MIDK_X - 103, y - 33, 206, 66, 25); g.stroke(); }
+    const y = MIDK_WIN_Y[side], win = _midkWinner === side, lead = side === "cove";
+    g.fillStyle = win ? "rgba(244,201,93,.28)" : "rgba(244,201,93,.12)";
+    g.fillRect(MIDK_X - 120, lead ? y : y - 44, 240, 44);
+    g.strokeStyle = "rgba(214,140,64,.7)"; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(MIDK_X - 120, y); g.lineTo(MIDK_X + 120, y); g.stroke();
+    // a little flag on a post at the edge
+    const px = MIDK_X + 128, dirY = lead ? -1 : 1;
+    g.strokeStyle = "#8a6b45"; g.lineWidth = 3; g.beginPath(); g.moveTo(px, y); g.lineTo(px, y + dirY * 34); g.stroke();
+    g.fillStyle = lead ? "#5a9a5e" : "#8ea6c4";
+    g.beginPath(); g.moveTo(px, y + dirY * 34); g.lineTo(px - 22, y + dirY * 28); g.lineTo(px, y + dirY * 22); g.fill();
+    g.fillStyle = "rgba(36,31,23,.4)"; g.font = "800 9px 'IBM Plex Mono', monospace"; g.textAlign = "center";
+    g.fillText((lead ? coveName() : midkVisitName).toUpperCase().slice(0, 16), MIDK_X, lead ? y + 15 : y - 8);
   }
-  // halfway marker
-  g.strokeStyle = "rgba(74,53,36,.2)"; g.lineWidth = 2; g.setLineDash([10, 8]);
-  g.beginPath(); g.moveTo(MIDK_X - 118, MIDK_HALF_Y); g.lineTo(MIDK_X + 118, MIDK_HALF_Y); g.stroke(); g.setLineDash([]);
-  g.fillStyle = "rgba(74,53,36,.3)"; g.font = "8px 'IBM Plex Mono', monospace"; g.textAlign = "left";
-  g.fillText("HALFWAY", MIDK_X - 112, MIDK_HALF_Y - 5);
+  // the buffet bowls (for the "found the buffet" event)
+  for (const side of ["visit", "cove"]) {
+    const b = MIDK_BOWL[side];
+    g.fillStyle = "rgba(36,31,23,.12)"; g.beginPath(); g.ellipse(b.x, b.y + 7, 16, 5, 0, 0, 7); g.fill();
+    g.fillStyle = "#c98f5a"; g.beginPath(); g.ellipse(b.x, b.y, 15, 8, 0, 0, 7); g.fill();
+    g.fillStyle = "#e8c79a"; g.beginPath(); g.ellipse(b.x, b.y - 1, 12, 5, 0, 0, 7); g.fill();
+  }
 }
 
-function drawMidkSnackTable(g, p) {
-  const w = 52, h = 15;
-  g.fillStyle = "rgba(36,31,23,.13)"; g.beginPath(); g.ellipse(p.x, p.y + h + 5, w * 0.55, 7, 0, 0, 7); g.fill();
-  g.fillStyle = "#9c7b52";
-  g.fillRect(p.x - w / 2 + 4, p.y + 2, 4, h + 9); g.fillRect(p.x + w / 2 - 8, p.y + 2, 4, h + 9);
-  g.fillStyle = "#b89468"; roundRect(g, p.x - w / 2, p.y - 4, w, h, 4); g.fill();
-  g.fillStyle = "rgba(255,255,255,.16)"; roundRect(g, p.x - w / 2, p.y - 4, w, 4, 4); g.fill();
-  // a platter of fish + a checkered cloth
-  g.fillStyle = "#e2ddce"; g.beginPath(); g.ellipse(p.x, p.y - 2, 17, 5.5, 0, 0, 7); g.fill();
-  g.font = "11px serif"; g.textAlign = "center"; g.textBaseline = "middle";
-  g.fillText("🐟", p.x - 5, p.y - 4); g.fillText("🐟", p.x + 6, p.y - 3);
-  g.textBaseline = "alphabetic";
+function drawMidkRope(g) {
+  // the rope, top flag to bottom flag, sagging a touch toward the winning side
+  const y0 = MIDK_WIN_Y.visit + 6, y1 = MIDK_WIN_Y.cove - 6;
+  g.strokeStyle = "#c9a56e"; g.lineWidth = 7; g.lineCap = "round";
+  g.beginPath();
+  g.moveTo(MIDK_X, y0);
+  g.quadraticCurveTo(MIDK_X + Math.sin(midk.wob) * 3, midk.y, MIDK_X, y1);
+  g.stroke();
+  g.strokeStyle = "rgba(255,255,255,.18)"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(MIDK_X - 1, y0); g.quadraticCurveTo(MIDK_X - 1, midk.y, MIDK_X - 1, y1); g.stroke();
+  g.lineCap = "butt";
 }
-function drawMidkCushion(g) {
-  const y = midk.y, hw = 104, hh = 30;   // a great big floor cushion for a great big cat
-  g.fillStyle = "rgba(36,31,23,.16)"; g.beginPath(); g.ellipse(MIDK_X, y + hh - 4, hw + 10, 20, 0, 0, 7); g.fill();
-  g.fillStyle = "#c9a24a"; roundRect(g, MIDK_X - hw, y - hh, hw * 2, hh * 2, 24); g.fill();
-  g.fillStyle = "#dcb968"; roundRect(g, MIDK_X - hw, y - hh, hw * 2, 18, 24); g.fill();
-  g.strokeStyle = "rgba(120,90,40,.35)"; g.lineWidth = 2; roundRect(g, MIDK_X - hw, y - hh, hw * 2, hh * 2, 24); g.stroke();
-}
-function drawMidknight(g) {
-  drawCat(g, midk.cat, false);
-  // state tell — an arrow toward whichever way he's being dragged
-  const em = midk.state === "eating" ? "🐟" : midk.state === "sitting" ? "😤"
-    : midk.state === "flop" ? "😌" : midk._dir === 1 ? "🏠" : midk._dir === -1 ? "⬆️" : "😼";
-  g.font = "17px serif"; g.textAlign = "center"; g.fillStyle = "#000";
-  g.fillText(em, MIDK_X, midk.y - 104);
+function drawMidkYarn(g) {
+  const y = midk.y, r = 30 + Math.sin(midk.wob * 2) * 1.5;
+  g.fillStyle = "rgba(36,31,23,.16)"; g.beginPath(); g.ellipse(MIDK_X, y + r + 4, r * 1.1, 8, 0, 0, 7); g.fill();
+  g.save(); g.translate(MIDK_X, y); g.rotate(Math.sin(midk.wob) * 0.12);
+  g.fillStyle = "#d98b74"; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill();
+  g.strokeStyle = "rgba(255,255,255,.32)"; g.lineWidth = 2.4;
+  for (let i = 0; i < 5; i++) {
+    const a = i * 1.05;
+    g.beginPath(); g.ellipse(0, 0, r * 0.82, r * 0.5, a, 0, 7); g.stroke();
+  }
+  g.strokeStyle = "rgba(120,60,45,.4)"; g.lineWidth = 1.6;
+  for (let i = 0; i < 4; i++) { const a = i * 1.3 + 0.4; g.beginPath(); g.ellipse(0, 0, r * 0.62, r * 0.86, a, 0, 7); g.stroke(); }
+  // a loose strand trailing toward whoever's pulling harder
+  g.strokeStyle = "#d98b74"; g.lineWidth = 3; g.lineCap = "round";
+  const td = midk.dir >= 0 ? 1 : -1;
+  g.beginPath(); g.moveTo(0, td * r * 0.6); g.quadraticCurveTo(td * 10, td * r * 1.4, td * -6 + Math.sin(midkT * 6) * 5, td * r * 2.1); g.stroke();
+  g.lineCap = "butt";
+  g.restore();
 }
 function drawMidkHudCanvas(g) {
-  const bx = 60, bw = MIDK_W - 120, by = 44;
-  g.fillStyle = "rgba(247,245,236,.9)"; roundRect(g, bx - 10, by - 15, bw + 20, 28, 14); g.fill();
-  g.fillStyle = "#e6ddc7"; roundRect(g, bx, by - 4, bw, 9, 5); g.fill();
-  // the WILLING bar — drains after your fish; while it's up, the haul works
-  const fedLeft = clamp(((midk._fedUntil || 0) - midkT) / MIDK_FED_WINDOW, 0, 1);
-  const stuffed = midk.comfort > MIDK_STUFFED;
-  g.fillStyle = fedLeft > 0 ? (stuffed ? "#c98f3a" : "#5a9a5e") : "#c9603a";
-  roundRect(g, bx, by - 4, bw * Math.max(fedLeft, 0.02), 9, 5); g.fill();
-  g.font = "800 9px 'IBM Plex Mono', monospace"; g.fillStyle = "#6b5335"; g.textAlign = "left";
-  g.fillText(fedLeft <= 0 ? "🐟 FEED HIM — HE WON'T WALK" : stuffed ? "😵 WALKING, BUT TOO FULL — EASE OFF" : "🥾 WILLING TO WALK", bx, by - 20);
-  g.textAlign = "right";
-  g.fillText(midkNeed() + " PAWS ON HIM", bx + bw, by - 20);
+  const bx = 54, bw = MIDK_W - 108, by = 40;
+  g.fillStyle = "rgba(247,245,236,.92)"; roundRect(g, bx - 10, by - 16, bw + 20, 40, 14); g.fill();
+  // stamina (left half) + charge/slot (right half)
+  const half = bw / 2 - 8;
+  // stamina
+  g.fillStyle = "#e6ddc7"; roundRect(g, bx, by - 4, half, 9, 5); g.fill();
+  g.fillStyle = _midkSlipUntil > midkT ? "#c9603a" : midkStam > 0.28 ? "#5a9a5e" : "#c98f3a";
+  roundRect(g, bx, by - 4, half * midkStam, 9, 5); g.fill();
+  g.font = "800 8px 'IBM Plex Mono', monospace"; g.fillStyle = "#6b5335"; g.textAlign = "left";
+  g.fillText(_midkSlipUntil > midkT ? "SLIPPED!" : _midkHeaving ? "HEAVING" : "STAMINA", bx, by - 9);
+  // charge
+  const cx = bx + bw - half;
+  g.fillStyle = "#e6ddc7"; roundRect(g, cx, by - 4, half, 9, 5); g.fill();
+  const charged = midkCharge >= 1 || midkSlot;
+  g.fillStyle = charged ? "#e8b45a" : "#b9a988";
+  roundRect(g, cx, by - 4, half * (midkSlot ? 1 : midkCharge), 9, 5); g.fill();
+  g.textAlign = "right"; g.fillStyle = charged ? "#a9701f" : "#6b5335";
+  g.fillText(charged ? "SPIN READY ★" : "SLOT CHARGE", cx + half, by - 9);
   // timer
   const left = Math.max(0, Math.ceil(MIDK_MATCH_LEN - midkT));
-  g.textAlign = "center"; g.font = "700 12px 'Fraunces', serif"; g.fillStyle = _midkVetUntil > midkT ? "#3f8159" : "#5b5343";
-  g.fillText(_midkVetUntil > midkT ? "🩺 VET'S HERE" : left + "s", MIDK_X, by + 26);
-  // rescue progress rail down the right edge
-  const rx = MIDK_W - 22, ry0 = MIDK_HOME.visit, ry1 = MIDK_WIN_Y.cove;
+  g.textAlign = "center"; g.font = "700 12px 'Fraunces', serif"; g.fillStyle = "#5b5343";
+  g.fillText(left + "s", MIDK_X, by + 20);
+
+  // the tug rail — centre-out, shows the yarn ball's position between the flags
+  const rx = MIDK_W - 20, ry0 = MIDK_WIN_Y.visit, ry1 = MIDK_WIN_Y.cove, rc = (ry0 + ry1) / 2;
   g.fillStyle = "rgba(36,31,23,.12)"; roundRect(g, rx - 3, ry0, 6, ry1 - ry0, 3); g.fill();
-  g.fillStyle = "#f4c95d"; roundRect(g, rx - 3, ry0, 6, (ry1 - ry0) * (midk._progress || 0), 3); g.fill();
-  const py = ry0 + (ry1 - ry0) * (midk._progress || 0);
-  g.fillStyle = "#4a3524"; g.beginPath(); g.moveTo(rx - 8, py); g.lineTo(rx - 3, py - 5); g.lineTo(rx - 3, py + 5); g.fill();
+  g.fillStyle = "rgba(36,31,23,.3)"; g.fillRect(rx - 6, rc - 1, 12, 2);
+  const yy = clamp(midk.y, ry0, ry1);
+  g.fillStyle = midk.y > MIDK_START_Y ? "#5a9a5e" : "#8ea6c4";
+  if (yy > rc) roundRect(g, rx - 3, rc, 6, yy - rc, 3); else roundRect(g, rx - 3, yy, 6, rc - yy, 3);
+  g.fill();
+  g.fillStyle = "#4a3524"; g.beginPath(); g.arc(rx, yy, 4, 0, 7); g.fill();
+
+  // slot reels + banner, centred, when a spin is live
+  if (midkSlot) {
+    const s = midkSlot, w = 44, gap = 8, tot = w * 3 + gap * 2, x0 = MIDK_X - tot / 2, sy = 96;
+    g.fillStyle = "rgba(30,24,20,.9)"; roundRect(g, x0 - 10, sy - 10, tot + 20, w + 20, 12); g.fill();
+    for (let i = 0; i < 3; i++) {
+      const rxi = x0 + i * (w + gap);
+      g.fillStyle = s.stopped[i] ? "#f4efe0" : "#d9d2c2"; roundRect(g, rxi, sy, w, w, 8); g.fill();
+      g.font = "26px serif"; g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillStyle = "#26232b";
+      g.fillText(MIDK_SLOT_EMOJI[s.reels[i]] || "🐾", rxi + w / 2, sy + w / 2 + 1);
+      g.textBaseline = "alphabetic";
+    }
+    if (s.result) {
+      g.font = "800 15px 'Fraunces', serif"; g.textAlign = "center"; g.fillStyle = "#f4c95d";
+      g.fillText(s.result, MIDK_X, sy + w + 22);
+    }
+  }
 }
 
 function showMidkResult() {
   const won = _midkWinner === "cove";
   const res = document.getElementById("festResult");
-  res.querySelector("h2").textContent = "Midknight's Big Problem";
-  res.querySelector(".fr-emoji").textContent = "😼";
-  document.getElementById("festAgain").textContent = "Try again";
+  res.querySelector("h2").textContent = "Tug of Paws";
+  res.querySelector(".fr-emoji").textContent = "🧶";
+  document.getElementById("festAgain").textContent = "Rematch";
   const cove = midkParts.filter(p => p.side === "cove");
   const base = goalShells(0.42);
-  const prog = clamp((midk.y - MIDK_START_Y) / (MIDK_WIN_Y.cove - MIDK_START_Y), 0, 1);
-  const quick = won && midkT < MIDK_MATCH_LEN * 0.72;
-  const dragback = _midkWinner === "visit" && _midkMaxLead.cove > 240;   // they reeled a real rescue back in
+  const margin = won ? _midkLead.cove : _midkLead.visit;   // px past centre the winner got
+  const marginK = clamp(margin / (MIDK_WIN_Y.cove - MIDK_START_Y), 0, 1);
+  const close = Math.abs(midk.y - MIDK_START_Y) < 90;
   let rw;
-  if (!won) rw = { shells: Math.round(base * (prog > 0.4 ? 1.4 : prog > 0.15 ? 1.15 : 1.0)) };  // pays for how far you got
+  if (!won) rw = { shells: Math.round(base * (close ? 1.3 : _midkLead.cove > 150 ? 1.15 : 0.9)) };
   else {
-    let m = 2.0 + prog * 0.5 + (quick ? 0.4 : 0);
-    if (_midkMaxLead.cove - (midk.y - MIDK_START_Y) > 200) m += 0.4;   // rescued him after losing ground
-    rw = { shells: Math.round(base * m), pearls: (m > 2.9 && Math.random() < 0.07) ? 1 : 0 };
+    let m = 1.9 + marginK * 0.6 + (close ? 0.3 : 0);
+    rw = { shells: Math.round(base * m), pearls: (marginK > 0.6 && Math.random() < 0.07) ? 1 : 0 };
   }
   grantReward(rw, null); syncHud();
 
-  const hauler = [...cove].sort((a, b) => b.stats.gripSec - a.stats.gripSec)[0];
-  const feeder = [...cove].sort((a, b) => b.stats.feeds - a.stats.feeds)[0];
+  const anchor = [...cove].sort((a, b) => b.stats.heaveSec - a.stats.heaveSec)[0];
+  const lucky = [...cove].sort((a, b) => b.stats.slots - a.stats.slots)[0];
+  const napper = [...cove].sort((a, b) => b.stats.naps - a.stats.naps)[0];
   document.getElementById("festPodium").innerHTML =
     `<div class="vb-final">
-       <div class="vb-final-row${won ? " win" : ""}"><span>${esc(coveName())}</span><b>${won ? "🛏️" : ""}</b></div>
-       <div class="vb-final-row${won ? "" : " win"}"><span>${esc(midkVisitName)}</span><b>${won ? "" : "🛏️"}</b></div>
+       <div class="vb-final-row${won ? " win" : ""}"><span>${esc(coveName())}</span><b>${won ? "🧶" : ""}</b></div>
+       <div class="vb-final-row${won ? "" : " win"}"><span>${esc(midkVisitName)}</span><b>${won ? "" : "🧶"}</b></div>
      </div>
      <div class="vb-stat-rows">${cove.map(p => `
        <div class="vb-stat-row"><canvas width="46" height="42"></canvas>
-         <div class="vb-stat-txt"><div class="vb-sn">${esc(p.cat.name)}</div>
-         <div class="vb-ss">${p.stats.gripSec >= 1 ? Math.round(p.stats.gripSec) + "s on the cushion" : "mostly supervised"}${p.stats.feeds ? ` · fed him ${p.stats.feeds}×` : ""}</div></div>
+         <div class="vb-stat-txt"><div class="vb-sn">${esc(p.cat.name)}${p._chonk >= 1 ? " 🍖" : ""}</div>
+         <div class="vb-ss">${p.stats.heaveSec >= 1 ? Math.round(p.stats.heaveSec) + "s heaving" : "held the rope, mostly"}${p.stats.naps ? " · napped" : ""}</div></div>
        </div>`).join("")}</div>`;
   const cvs = document.querySelectorAll("#festPodium .vb-stat-row canvas");
   cove.forEach((p, i) => miniCat(cvs[i], p.cat.coatKey, p.cat.star, "loafing", false, 0.75));
 
   const line = won
-    ? (quick ? `${coveName()} hauled him all the way home with time to spare.`
-       : `${coveName()} got Midknight back. He is not moving again today.`)
-    : dragback ? `${midkVisitName} reeled him back in. So close.`
-    : prog > 0.35 ? `Time's up with Midknight halfway home. ${midkVisitName} keeps him — for now.`
-    : `${midkVisitName} never let go. Midknight will visit us next year. If there are snacks.`;
+    ? (close ? `${coveName()} take it by a whisker. The yarn is theirs.`
+       : `${coveName()} haul it over the line. ${midkVisitName} let go to go and nap.`)
+    : close ? `${midkVisitName} edge it out. Rematch pending.`
+    : `${midkVisitName} walk it. Your cats seemed more interested in the buffet.`;
   document.getElementById("festPickLine").innerHTML =
     `${esc(line)}<br><span class="vb-reward">+${rw.shells} ◈${rw.pearls ? ` and a pearl ✦` : ""}</span>`;
   document.getElementById("festRestLine").textContent =
-    midk.comfort > 0.82 ? "Final comfort: alarming. He'll sleep it off." :
-    hauler && hauler.stats.gripSec > 14 ? `${hauler.cat.name} did most of the hauling.` :
-    feeder && feeder.stats.feeds >= 2 ? `${feeder.cat.name} fed him more than strictly helped.` : "";
-  logMoment("😼", `Midknight's Big Problem vs ${midkVisitName} — ${won ? coveName() + " got him home" : midkVisitName + " kept him"}.`, "tale");
+    napper && napper.stats.naps ? `${napper.cat.name} slept through most of it.` :
+    lucky && lucky.stats.slots >= 3 ? `${lucky.cat.name} kept hitting the slot.` :
+    anchor && anchor.stats.heaveSec > 12 ? `${anchor.cat.name} did the actual heaving.` : "";
+  logMoment("🧶", `Tug of Paws vs ${midkVisitName} — ${won ? coveName() + " won the yarn" : midkVisitName + " took it"}.`, "tale");
 
   spawnParticles(MIDK_X, midk.y, won ? "spark" : "twinkle", 12);
   document.getElementById("midkHud").hidden = true;
   document.getElementById("festBar").hidden = true;
   res.hidden = false;
-  trackEvent("midk_completed", { visiting: midkVisitName, winner: _midkWinner, duration: Math.round(midkT), comfort: Math.round(midk.comfort * 100) });
+  trackEvent("midk_completed", { visiting: midkVisitName, winner: _midkWinner, duration: Math.round(midkT) });
 }
 
 /* ---------- rendering ---------- */
@@ -17286,32 +17297,36 @@ window.__cove.cafeStep = (n = 1, dt = 0.05) => { for (let i = 0; i < n; i++) if 
 window.__cove.midk = () => { openFestPicker("midk"); return { on: festMode, kind: festKind, eligible: eligibleForVolley().filter(c => !c.mascot).length }; };
 window.__cove.midkState = () => (!midk ? { phase: midkPhase } : {
   phase: midkPhase, t: Math.round(midkT), y: Math.round(midk.y), start: MIDK_START_Y, winY: MIDK_WIN_Y,
-  comfort: +midk.comfort.toFixed(2), need: midkNeed(), state: midk.state, dir: midk._dir, bias: +(midk._bias || 0).toFixed(2), vet: _midkVetUntil > midkT,
-  willing: +Math.max(0, (midk._fedUntil || 0) - midkT).toFixed(1),
-  winner: _midkWinner, resultShown: _midkResultShown,
-  covePull: midkParts.filter(p => p.side === "cove" && p.grip).length,
-  visitPull: midkParts.filter(p => p.side === "visit" && p.grip).length,
-  snackCd: +Math.max(0, _midkSnackCd - midkT).toFixed(1), rallyCd: +Math.max(0, _midkRallyCd - midkT).toFixed(1),
-  parts: midkParts.map(p => ({ n: p.cat.name, side: p.side, role: p.role, grip: p.grip, stam: +p.stam.toFixed(2), gripSec: +p.stats.gripSec.toFixed(1), feeds: p.stats.feeds })),
+  dir: midk.dir, stam: +midkStam.toFixed(2), heaving: _midkHeaving, charge: +midkCharge.toFixed(2),
+  slot: midkSlot ? { reels: midkSlot.reels, stopped: midkSlot.stopped, result: midkSlot.result } : null,
+  cameo: _midkMidkCameo ? { side: _midkMidkCameo.side, gone: _midkMidkCameo.gone } : null,
+  rain: _midkRainUntil > midkT, winner: _midkWinner, resultShown: _midkResultShown,
+  covePull: +midkPull("cove").toFixed(2), visitPull: +midkPull("visit").toFixed(2),
+  parts: midkParts.map(p => ({ n: p.cat.name, side: p.side, grip: p.grip, chonk: +(p._chonk || 0).toFixed(1),
+    asleep: p._sleepUntil > midkT, eating: p._eatUntil > midkT, boost: p._slotBoost > midkT })),
 });
 window.__cove.midkStep = (n = 1, dt = 0.05) => { for (let i = 0; i < n; i++) if (festKind === "midk" && festMode) renderMidk(dt); return window.__cove.midkState(); };
-// headless balance harness: sim `secs` of match, calling snack/rally on cooldown per `opts`
-window.__cove.midkSim = (secs = 100, opts = {}) => {
+// headless balance harness: sim `secs`, holding HEAVE per `opts.heave` (duty 0..1) and spinning when charged
+window.__cove.midkSim = (secs = 90, opts = {}) => {
   if (festKind !== "midk" || !festMode) return { err: "not in midk" };
   const dt = 0.05, steps = Math.round(secs / dt);
+  const heaveDuty = opts.heave == null ? 0.7 : opts.heave;   // fraction of time HEAVE is held (when stamina allows)
   const log = []; window._mkHL = true;
   try {
     for (let i = 0; i < steps; i++) {
+      // heave in bursts: hold while stamina > 0.2, release below 0.12
+      if (opts.heave !== false) {
+        if (_midkHeaving && midkStam < 0.12) _midkHeaving = false;
+        else if (!_midkHeaving && midkStam > 0.55 && Math.random() < heaveDuty) _midkHeaving = true;
+      }
+      if (opts.spin !== false && (midkCharge >= 1 || (midkSlot && !midkSlot.result))) midkSpin();
       renderMidk(dt);
       if (midkPhase !== "play") break;
-      const t = midkT;
-      if (opts.rally && t >= _midkRallyCd) midkRally();
-      if (opts.snack && t >= _midkSnackCd && (opts.snackBelow == null || midk.comfort < opts.snackBelow)) midkSnack();
-      if (i % 40 === 0) log.push([Math.round(t), Math.round(midk.y), +midk.comfort.toFixed(2), midkNeed(),
-        midkParts.filter(p => p.side === "cove" && p.grip).length, midkParts.filter(p => p.side === "visit" && p.grip).length]);
+      if (i % 40 === 0) log.push([Math.round(midkT), Math.round(midk.y), +midkStam.toFixed(2), +midkCharge.toFixed(2),
+        +midkPull("cove").toFixed(1), +midkPull("visit").toFixed(1)]);
     }
-  } finally { window._mkHL = false; }
-  return { winner: _midkWinner, t: Math.round(midkT), y: Math.round(midk.y), prog: +(midk._progress || 0).toFixed(2), log };
+  } finally { window._mkHL = false; _midkHeaving = false; }
+  return { winner: _midkWinner, t: Math.round(midkT), y: Math.round(midk.y), log };
 };
 // perf: read the adaptive-detail state, or pin it (true/false) to preview the lite look
 window.__cove.perfLite = (v) => {
