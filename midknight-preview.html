@@ -1284,10 +1284,9 @@
       <h2>The situation</h2>
       <ul class="vb-tut">
         <li><span class="vt-e">😼</span><span class="vt-t">Midknight overate at a visiting Cove's snack table and settled onto <em>their</em> cushion. He is not walking home.</span></li>
-        <li><span class="vt-e">🐾</span><span class="vt-t">Your five cats run over and drag his cushion back down the field to <em>your</em> cushion. The visitors won't let go — it's a tug the whole way.</span></li>
-        <li><span class="vt-e">🐟</span><span class="vt-t"><b>Snack</b> — a fish noses him your way. But every fish makes him heavier: more paws needed to shift him, and he sits down more.</span></li>
-        <li><span class="vt-e">📣</span><span class="vt-t"><b>Rally</b> — call your tired cats back to the cushion. The tug swings on who has fresher paws.</span></li>
-        <li><span class="vt-e">🛏️</span><span class="vt-t">Get him home before the festival closes. He'll sniff the cushion, turn around three times, and flop.</span></li>
+        <li><span class="vt-e">🐟</span><span class="vt-t"><b>Snack</b> — a cat fetches him a fish. Midknight will not walk for anyone unless he's just been fed: each fish buys a few seconds of <b>willing</b> (watch the top bar). Feed too much and he's too full — he slows down and sits.</span></li>
+        <li><span class="vt-e">📣</span><span class="vt-t"><b>Rally</b> — your cats all heave at once. This is what actually hauls him down the field — but only while he's willing. Rally a planted Midknight and nothing happens.</span></li>
+        <li><span class="vt-e">🛏️</span><span class="vt-t">Snack to make him willing, Rally to haul, over and over. The visitors drag him back and cake him to stall you. Get him home before the festival closes.</span></li>
       </ul>
       <div class="btn-row">
         <button class="btn primary" id="midkTutGo">Right. Let's carry a cat.</button>
@@ -12061,12 +12060,15 @@ const MIDK_HALF_Y = 509;                     // past this toward home at the tim
 const MIDK_FOOD = { cove: { x: MIDK_X + 132, y: MIDK_HALF_Y + 34 }, visit: { x: MIDK_X - 132, y: MIDK_HALF_Y - 34 } };
 function midkFoodFetch(side) { return MIDK_FOOD[side]; }
 const MIDK_MATCH_LEN = 95;                    // seconds, hard cap
-const MIDK_BASE_PULL = 15;                    // px/s per unit of effective pull differential
-const MIDK_GRIP_R = 100;                      // a cat this close to the cushion (on its side) counts as pulling
+const MIDK_BASE_PULL = 10.5;                  // px/s per unit of effective pull differential
+const MIDK_GRIP_R = 156;                      // a cat this close to the cushion (on its side) counts as pulling
 const MIDK_COMFORT0 = 0.4;
 const MIDK_SNACK_GAIN = 0.18;                 // fewer fish land now (table round-trip) so each one counts more
-const MIDK_COMFORT_DECAY = 0.005;             // per sec — a parked Midknight slowly gets lighter
+const MIDK_COMFORT_DECAY = 0.011;             // per sec — he works off a big meal fairly fast, so you keep feeding
 const MIDK_COMFORT_SWEET = 0.5;               // he carries easiest around here; scared OR stuffed = dead weight
+const MIDK_SCARED = 0.3;                      // below this he digs in — a fish is the only thing that moves him
+const MIDK_STUFFED = 0.72;                    // above this he's too full to shift — dead weight, sits down
+const MIDK_FED_WINDOW = 7;                    // sec after YOUR fish that he'll actually walk; outside it he's planted
 const MIDK_SNACK_CD = 5.5, MIDK_RALLY_CD = 8.0;
 const MIDK_VET_LEN = 6;                       // sec the vet keeps him light + eager
 const MIDK_COVE_NAMES = VB_COVE_NAMES;        // reuse volleyball's visiting-cove name pool
@@ -12080,10 +12082,11 @@ let _midkVetDone = false, _midkVetAt = 0, _midkVetUntil = 0;
 let _midkMaxLead = { cove: 0, visit: 0 };     // furthest the cushion got toward each side — for the result read
 let midkCom = { text: "", at: -99, pri: 0, last: "" };
 
-// how many cats a side needs GRIPPING before the cushion budges at all
+// how many cats a side needs GRIPPING before the cushion budges — a stuffed
+// Midknight takes the whole team to shift
 function midkNeed() {
   if (_midkVetUntil > midkT) return 1;
-  return Math.min(3, 1 + Math.floor(midk.comfort * 3.2));   // comfort 0→1, .32→2, .63→3 (capped)
+  return midk.comfort > MIDK_STUFFED ? 3 : 2;
 }
 function midkTrait(p, ...keys) { const T = p.cat.traits || []; return keys.some(k => T.includes(k)); }
 
@@ -12173,6 +12176,7 @@ function makeMidknightChar() {
     coatKey: real ? real.coatKey : undefined, x: MIDK_X, y: MIDK_START_Y });
   if (real) c.star = real.star || 0;
   c._motion = null; c.state = "loafing"; c.face = 1; c._comfort = MIDK_COMFORT0;
+  c._chonkBase = 2.6;    // he already overate — an absolute unit, ~2.6x a normal cat before you feed him
   return { cat: c, y: MIDK_START_Y, comfort: MIDK_COMFORT0, state: "resting",
     _eatUntil: 0, _sitUntil: 0, _sitRollAt: 0, _dir: 0, _bias: 0, _biasUntil: 0, _progress: 0 };
 }
@@ -12264,12 +12268,13 @@ function midkGripPointFor(p, y) {
   // two rows of 3/2 on each side, fanned wide so the scrum reads as ten cats
   const row = p.idx < 3 ? 0 : 1;
   const inRow = p.idx < 3 ? p.idx : p.idx - 3;
-  const spread = (inRow - (row ? 0.5 : 1)) * 58;
-  const edge = (p.side === "cove" ? 44 : -44) + (p.side === "cove" ? row * 30 : -row * 30);
+  const spread = (inRow - (row ? 0.5 : 1)) * 64;
+  // sit well off the cushion — he's a huge cat, the scrum rings him, doesn't bury him
+  const edge = (p.side === "cove" ? 108 : -108) + (p.side === "cove" ? row * 36 : -row * 36);
   return { x: MIDK_X + spread, y: y + edge };
 }
 function midkGripPoint(p) { return midkGripPointFor(p, midk.y); }
-function midkFeedPoint(side) { return { x: MIDK_X + (side === "cove" ? 34 : -34), y: midk.y + (side === "cove" ? 30 : -30) }; }
+function midkFeedPoint(side) { return { x: MIDK_X + (side === "cove" ? 58 : -58), y: midk.y + (side === "cove" ? 52 : -52) }; }
 
 function midkRestPoint(p) {
   // catch your breath on the grass by your own cushion — never in the sea or the sky
@@ -12337,15 +12342,17 @@ function midkStepCat(p, dt) {
 }
 
 function midkFeedLands(side, catName, glutton) {
-  const over = midk.comfort > 0.78;
-  midk.comfort = Math.min(1, midk.comfort + MIDK_SNACK_GAIN * (over ? 1.5 : 1) * (glutton ? 1.1 : 1));
-  midk._eatUntil = midkT + (over ? 1.0 : 0.5);
+  const over = midk.comfort > MIDK_STUFFED;
+  midk.comfort = Math.min(1, midk.comfort + MIDK_SNACK_GAIN * (over ? 1.4 : 1) * (glutton ? 1.1 : 1));
+  midk._eatUntil = midkT + (over ? 1.1 : 0.5);
   midk.state = "eating";
-  // he noses toward whoever just fed him — a real pull, decaying, weaker when he's stuffed
+  // YOUR fish is what makes him willing to walk at all — a ~7s window where the
+  // haul actually works. the visitors' fish only fattens him (see midkNeed).
+  if (side === "cove") midk._fedUntil = midkT + MIDK_FED_WINDOW;
   const dir = side === "cove" ? 1 : -1;
-  const kick = (over ? 0.4 : 1) * (1 - 0.45 * midk.comfort);
-  midk._bias = clamp((midk._bias || 0) + dir * 1.05 * kick, -1.5, 1.5);
-  midk._biasUntil = midkT + 4.2;
+  const kick = over ? 0.45 : (1 - 0.35 * clamp(midk.comfort - MIDK_SCARED, 0, 1));
+  midk._bias = clamp((midk._bias || 0) + dir * 1.4 * kick, -2.2, 2.2);
+  midk._biasUntil = midkT + 5.5;
   floatText(midkFeedPoint(side).x, midk.y - 40, "🐟", "#e7b06a");
   spawnParticles(midkFeedPoint(side).x, midk.y - 26, "twinkle", 3);
   tone(300, 0.08, "sine", 0.05);
@@ -12359,15 +12366,14 @@ function midkAi(dt) {
   const visitGrips = visit.filter(p => p.grip).length;
   const coveGrips = midkParts.filter(p => p.side === "cove" && p.grip).length;
   const losing = midk.y > MIDK_START_Y + 20;   // cushion is toward the cove
-  // --- feed: to push him their way, or to stall a cove lead. skips ~25% of the time (misplays) ---
+  // --- feed: the visitors CAKE him to make him too heavy to rescue — but only
+  //     once you've pried him off their cushion (no point stuffing a cat that's
+  //     already staying put). aim him past STUFFED and your rallies go limp. ---
   if (_midkAiCd <= 0) {
-    _midkAiCd = rand(2.6, 4.2);
+    _midkAiCd = rand(6, 9);
     const feeders = visit.filter(p => p.role === "feed").length;
-    const wantFeed = midk.y > MIDK_START_Y - 40 && midk.comfort < 0.78;   // cake him unless he's already stuck
-    // up to two visitors on caking duty when he's slipping away — snacks are the
-    // only thing that keeps a 5-cat haul from just walking off with him
-    const maxFeeders = losing && midk._progress > 0.3 ? 2 : 1;
-    if (wantFeed && feeders < maxFeeders && Math.random() < 0.92) {
+    const wantFeed = midk._progress > 0.1 && midk.comfort < MIDK_STUFFED + 0.1;
+    if (wantFeed && feeders < 1 && Math.random() < 0.9) {
       const spare = visit.filter(p => (p.role === "pull" && !p.grip) || (p.role === "rest" && p.stam < 0.3));
       const feeder = (spare.length ? spare : visit.filter(p => p.role === "pull")).slice()
         .sort((a, b) => (midkTrait(b, "glutton") - midkTrait(a, "glutton")) || (a.grip - b.grip))[0];
@@ -12446,8 +12452,8 @@ function renderMidk(dt) {
     midk.comfort = Math.max(0, midk.comfort - MIDK_COMFORT_DECAY * dt);
     if (midkT > midk._sitRollAt) {
       midk._sitRollAt = midkT + 2;
-      if (midk.comfort > 0.66 && midk._sitUntil < midkT && midk._eatUntil < midkT && Math.random() < (midk.comfort - 0.6) * 0.5) {
-        midk._sitUntil = midkT + rand(2, 4.2); midk.state = "sitting"; midkSay("sit");
+      if (midk.comfort > MIDK_STUFFED && midk._sitUntil < midkT && midk._eatUntil < midkT && Math.random() < (midk.comfort - MIDK_STUFFED + 0.06) * 1.4) {
+        midk._sitUntil = midkT + rand(2, 4.4); midk.state = "sitting"; midkSay("sit");
       }
     }
     // --- cats ---
@@ -12465,41 +12471,44 @@ function renderMidk(dt) {
       const w = side === "cove" ? (rallying ? 1.72 : 0.55) : (rallying ? 1.2 : 0.92);
       return s + w * (midkTrait(p, "bold") ? 1.12 : 1);
     }, 0);
-    const coveHeaving = midkParts.some(p => p.side === "cove" && p.grip && p._rallyUntil > midkT);
+    const coveHeaving = _midkVetUntil > midkT || midkParts.some(p => p.side === "cove" && p.grip && p._rallyUntil > midkT);
     const covePull = pullOf("cove");
     let visitPull = pullOf("visit"); if (visitPull > 3.2) visitPull = 3.2 + (visitPull - 3.2) * 0.4;
     if (coveHeaving) visitPull *= 0.68;   // your whole team heaves at once — the visitors stumble
     const coveGrips = midkParts.filter(p => p.side === "cove" && p.grip).length;
     const visitGrips = midkParts.filter(p => p.side === "visit" && p.grip).length;
     const need = midkNeed();
-    // decay the feed-bias
-    if (midk._biasUntil > midkT) midk._bias = (midk._bias || 0) * Math.pow(0.5, dt / 1.6);
+    // decay the feed-bias — slow enough that a fish's shove is worth spending a
+    // cat on, fast enough that you have to keep feeding to keep advancing
+    if (midk._biasUntil > midkT) midk._bias = (midk._bias || 0) * Math.pow(0.5, dt / 2.6);
     else midk._bias = 0;
     const frozen = midk._eatUntil > midkT || midk._sitUntil > midkT;
 
     let vel = 0;
     if (!frozen) {
       const pr = midk._progress || 0;
+      const fed = (midk._fedUntil || 0) > midkT;   // you fed him in the last ~7s → he'll walk
+
+      // ROPE — your Rally heave vs the visitors' hold. Breaks the opening pin;
+      // a light constant give the rest of the way (they never fully let go).
       let rope = 0;
       if (coveGrips >= need) rope += covePull;
       if (visitGrips >= need) rope -= visitPull;
-      // visitor home advantage: a flat wall on their own turf that fades to zero
-      // by the time he's carried past their half (they won't chase into enemy grass)
-      if (visitGrips >= need) rope -= (1 - clamp(pr / 0.4, 0, 1)) * 0.8;
-      // a goal-line stand — the visitors dig in hardest with him almost home
-      if (pr > 0.76) rope -= visitPull * (pr - 0.76) * 1.6;
-      rope *= 0.42;
-      // the snack-drift is the real OFFENCE — Midknight noses toward his last fish,
-      // but a side that's out-gripped can't hold that lean as well
-      let biasV = (midk._bias || 0) * 3.2;
-      if (biasV > 0 && visitGrips > coveGrips) biasV *= 0.6;   // they're resisting your pull
-      if (biasV < 0 && coveGrips > visitGrips) biasV *= 0.6;
-      // comfort is a real tradeoff: a scared cat digs in, a stuffed cat is dead
-      // weight — he moves easiest kept around the sweet spot (that's the Snack game)
-      const cd = midk.comfort - MIDK_COMFORT_SWEET;
-      const comfMult = _midkVetUntil > midkT ? 1.15 : clamp(1 - 1.0 * cd * cd, 0.72, 1.05);
-      const eff = (rope + biasV) * comfMult;
-      vel = eff * MIDK_BASE_PULL;
+      if (visitGrips >= need) rope -= (1 - clamp(pr / 0.42, 0, 1)) * 0.7;   // opening wall
+      if (pr > 0.78) rope -= visitPull * (pr - 0.78) * 1.5;                 // goal-line stand
+      rope *= 0.4;
+
+      // BIAS — the fish-lunge toward home. stacks, decays. theirs fades once he's committed.
+      let biasV = (midk._bias || 0) * 2.7;
+      if (biasV < 0) biasV *= 0.5 * (1 - clamp((pr - 0.3) / 0.45, 0, 0.7));
+
+      let move = rope + biasV;
+      // THE GATE — outside the fed window he's a planted 3x cat: rally does almost
+      // nothing and he creeps back toward the visitors. a fish opens him up.
+      if (!fed) move = Math.min(move, 0.05) * 0.18 - 0.055;
+      else if (_midkVetUntil > midkT) move *= 1.25;
+      else if (midk.comfort > MIDK_STUFFED) move *= 0.52 - (midk.comfort - MIDK_STUFFED) * 0.7;   // too full → sluggish
+      vel = move * MIDK_BASE_PULL;
     }
     midk._dir = vel > 4 ? 1 : vel < -4 ? -1 : 0;
     midk.y = clamp(midk.y + vel * dt, MIDK_HOME.visit - 2, MIDK_WIN_Y.cove + 2);
@@ -12543,20 +12552,18 @@ function renderMidk(dt) {
     if (el && !el.hidden) { const age = midkT - midkCom.at; el.classList.toggle("fade", age > 4); if (age > 5) el.hidden = true; } }
   if (HL) return;
 
-  // --- draw everyone, depth sorted, cushion + Midknight in place ---
+  // --- draw the scrum depth-sorted, then Midknight on top — he's the star and
+  //     he's enormous; letting a cat draw over him just reads as a bug ---
   drawMidkCushion(g);
   const painted = midkParts.slice().sort((a, b) => a.cat.y - b.cat.y);
-  const midkYsort = midk.y;
-  let drewMidk = false;
   for (const p of painted) {
-    if (!drewMidk && p.cat.y > midkYsort) { drawMidknight(g); drewMidk = true; }
     drawCat(g, p.cat, false);
     if (p.cat._carryFish) {
       g.font = "12px serif"; g.textAlign = "center";
       g.fillText("🐟", p.cat.x + (p.cat.face < 0 ? -9 : 9), p.cat.y - 6);
     }
   }
-  if (!drewMidk) drawMidknight(g);
+  drawMidknight(g);
   drawMidkHudCanvas(g);
   if (particles.length || floaters.length) drawFX(g);
 }
@@ -12642,33 +12649,33 @@ function drawMidkSnackTable(g, p) {
   g.textBaseline = "alphabetic";
 }
 function drawMidkCushion(g) {
-  const y = midk.y;
-  g.fillStyle = "rgba(36,31,23,.16)"; g.beginPath(); g.ellipse(MIDK_X, y + 18, 74, 16, 0, 0, 7); g.fill();
-  g.fillStyle = "#c9a24a"; roundRect(g, MIDK_X - 66, y - 20, 132, 40, 18); g.fill();
-  g.fillStyle = "#dcb968"; roundRect(g, MIDK_X - 66, y - 20, 132, 13, 18); g.fill();
-  g.strokeStyle = "rgba(120,90,40,.35)"; g.lineWidth = 2; roundRect(g, MIDK_X - 66, y - 20, 132, 40, 18); g.stroke();
+  const y = midk.y, hw = 104, hh = 30;   // a great big floor cushion for a great big cat
+  g.fillStyle = "rgba(36,31,23,.16)"; g.beginPath(); g.ellipse(MIDK_X, y + hh - 4, hw + 10, 20, 0, 0, 7); g.fill();
+  g.fillStyle = "#c9a24a"; roundRect(g, MIDK_X - hw, y - hh, hw * 2, hh * 2, 24); g.fill();
+  g.fillStyle = "#dcb968"; roundRect(g, MIDK_X - hw, y - hh, hw * 2, 18, 24); g.fill();
+  g.strokeStyle = "rgba(120,90,40,.35)"; g.lineWidth = 2; roundRect(g, MIDK_X - hw, y - hh, hw * 2, hh * 2, 24); g.stroke();
 }
 function drawMidknight(g) {
   drawCat(g, midk.cat, false);
   // state tell — an arrow toward whichever way he's being dragged
   const em = midk.state === "eating" ? "🐟" : midk.state === "sitting" ? "😤"
     : midk.state === "flop" ? "😌" : midk._dir === 1 ? "🏠" : midk._dir === -1 ? "⬆️" : "😼";
-  g.font = "15px serif"; g.textAlign = "center"; g.fillStyle = "#000";
-  g.fillText(em, MIDK_X, midk.y - 46);
+  g.font = "17px serif"; g.textAlign = "center"; g.fillStyle = "#000";
+  g.fillText(em, MIDK_X, midk.y - 104);
 }
 function drawMidkHudCanvas(g) {
-  // comfort meter, top
   const bx = 60, bw = MIDK_W - 120, by = 44;
   g.fillStyle = "rgba(247,245,236,.9)"; roundRect(g, bx - 10, by - 15, bw + 20, 28, 14); g.fill();
   g.fillStyle = "#e6ddc7"; roundRect(g, bx, by - 4, bw, 9, 5); g.fill();
-  const cf = clamp(midk.comfort, 0, 1);
-  g.fillStyle = cf > 0.75 ? "#c9603a" : cf > 0.5 ? "#c98f3a" : "#5a9a5e";
-  roundRect(g, bx, by - 4, bw * cf, 9, 5); g.fill();
-  const need = midkNeed();
+  // the WILLING bar — drains after your fish; while it's up, the haul works
+  const fedLeft = clamp(((midk._fedUntil || 0) - midkT) / MIDK_FED_WINDOW, 0, 1);
+  const stuffed = midk.comfort > MIDK_STUFFED;
+  g.fillStyle = fedLeft > 0 ? (stuffed ? "#c98f3a" : "#5a9a5e") : "#c9603a";
+  roundRect(g, bx, by - 4, bw * Math.max(fedLeft, 0.02), 9, 5); g.fill();
   g.font = "800 9px 'IBM Plex Mono', monospace"; g.fillStyle = "#6b5335"; g.textAlign = "left";
-  g.fillText("🍽 COMFORT", bx, by - 20);
+  g.fillText(fedLeft <= 0 ? "🐟 FEED HIM — HE WON'T WALK" : stuffed ? "😵 WALKING, BUT TOO FULL — EASE OFF" : "🥾 WILLING TO WALK", bx, by - 20);
   g.textAlign = "right";
-  g.fillText(need + " PAW" + (need > 1 ? "S" : "") + " TO MOVE HIM", bx + bw, by - 20);
+  g.fillText(midkNeed() + " PAWS ON HIM", bx + bw, by - 20);
   // timer
   const left = Math.max(0, Math.ceil(MIDK_MATCH_LEN - midkT));
   g.textAlign = "center"; g.font = "700 12px 'Fraunces', serif"; g.fillStyle = _midkVetUntil > midkT ? "#3f8159" : "#5b5343";
@@ -14721,18 +14728,22 @@ function drawCat(g, c, isPhoto) {
 
   // --- age: kittens are small, round, big-headed, big-eyed ---
   const kit = c.isKitten;
-  const ag = c.ageScale;                                // 0.5 newborn → 0.8 grown
+  let ag = c.ageScale;                                  // 0.5 newborn → 0.8 grown
+  const chonkBase = c._chonkBase || 0;                  // festival Midknight cameo: a permanent absolute unit (~2.5-3x a normal cat)
+  if (chonkBase > 0) ag *= chonkBase * (1 + 0.12 * clamp(c._comfort || 0, 0, 1));
   // big-head kitten proportions fade out as they grow — a teen is nearly adult-shaped
   const kitK = kit ? clamp(1 - c.growth / 0.72, 0, 1) : 0;
   if (kitK > 0) { P.hr *= 1 + 0.22 * kitK; P.hy *= 1 + 0.05 * kitK; P.bw *= 1 - 0.08 * kitK; P.top *= 1 - 0.1 * kitK; }
 
-  // Midknight's Big Problem: an overfed festival cameo — rounder + lower, never taller
-  const chk = clamp(c._comfort || 0, 0, 1);
+  // Midknight's Big Problem: an overfed festival cameo — big, round, low, never taller
+  const chk = chonkBase > 0
+    ? clamp(chonkBase * 1.5 + (c._comfort || 0) * 0.6, 0, 1.15)
+    : clamp(c._comfort || 0, 0, 1);
   if (chk > 0) {
-    P.bw *= 1 + 0.42 * chk;     // a much rounder middle
-    P.top *= 1 - 0.12 * chk;    // sits lower, legs vanish into the loaf
-    P.hy *= 1 - 0.06 * chk;     // head settles into the mass
-    P.hr *= 1 + 0.05 * chk;     // fuller cheeks
+    P.bw *= 1 + 0.52 * chk;     // a barrel of a middle
+    P.top *= 1 - 0.15 * chk;    // sits low, legs swallowed by the loaf
+    P.hy *= 1 - 0.07 * chk;     // head sinks into the mass
+    P.hr *= 1 + 0.08 * chk;     // full round cheeks
   }
 
   const wk = c.walkAmt || 0;                       // 0..1 eased "is walking"
@@ -17276,6 +17287,7 @@ window.__cove.midk = () => { openFestPicker("midk"); return { on: festMode, kind
 window.__cove.midkState = () => (!midk ? { phase: midkPhase } : {
   phase: midkPhase, t: Math.round(midkT), y: Math.round(midk.y), start: MIDK_START_Y, winY: MIDK_WIN_Y,
   comfort: +midk.comfort.toFixed(2), need: midkNeed(), state: midk.state, dir: midk._dir, bias: +(midk._bias || 0).toFixed(2), vet: _midkVetUntil > midkT,
+  willing: +Math.max(0, (midk._fedUntil || 0) - midkT).toFixed(1),
   winner: _midkWinner, resultShown: _midkResultShown,
   covePull: midkParts.filter(p => p.side === "cove" && p.grip).length,
   visitPull: midkParts.filter(p => p.side === "visit" && p.grip).length,
