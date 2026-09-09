@@ -13146,7 +13146,13 @@ function drawCat(g, c, isPhoto) {
   const sunBreath = sunning ? Math.sin(c.stateT * 1.1) * 0.05 : 0;
 
   const gaitBob = -hop * 3.4;
-  const bobY = asleep ? 0 : Math.sin(c.bob) * (playing ? 2.6 : 1.1) + gaitBob - knead * 2.2;
+  // only a walking or playing cat lifts off the ground. a still cat (sitting,
+  // standing, fishing, at a station) stays planted — its "breathing" is the
+  // `breathe` chest-scale below, not a whole-body hover over a fixed shadow.
+  const airborne = playing || wk > 0.06;
+  const bobY = asleep ? 0
+    : airborne ? Math.sin(c.bob) * (playing ? 2.6 : 1.1) + gaitBob - knead * 2.2
+    : -knead * 2.2;
   const sq = c.squash + knead * 0.16;
   const breathe = 1 + Math.sin(c.bob) * 0.015 + sunBreath;
   const gs = wk * CHARM * air * 0.07;                       // squash on the plant, stretch in the air
