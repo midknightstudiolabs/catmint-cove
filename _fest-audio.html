@@ -42,6 +42,15 @@
     border-radius:9px;padding:7px 3px;font:600 .72rem/1 "Hanken Grotesk";}
   .loops button:hover{border-color:var(--terra);color:var(--ink);}
   .loops button.on{background:var(--terra);color:var(--cream);border-color:var(--terra);}
+  .tbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .tbar>button{border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;
+    border-radius:9px;padding:6px 10px;font:600 .73rem/1 "Hanken Grotesk";}
+  .tbar>button:hover{border-color:var(--terra);}
+  .tbar #t-seam.on{background:var(--green);color:var(--cream);border-color:var(--green);}
+  .nudge{display:flex;align-items:center;gap:3px;font-size:.68rem;color:var(--soft);}
+  .nudge button{width:24px;height:22px;border:1px solid var(--line);background:var(--paper);color:var(--ink);
+    cursor:pointer;border-radius:6px;font:600 .7rem/1 "Hanken Grotesk";padding:0;}
+  .nudge button:hover{border-color:var(--terra);}
   .cfg{margin-top:14px;background:#efe7d4;border-radius:10px;padding:10px 12px;
     font:500 .72rem/1.5 "IBM Plex Mono",ui-monospace,monospace;color:var(--ink);word-break:break-all;}
   .foot{margin-top:14px;font-size:.72rem;color:var(--soft);line-height:1.55;border-top:1px solid var(--line);padding-top:12px;}
@@ -74,8 +83,23 @@
       <button data-s="17.41" data-l="7.06">4-bar</button>
     </div>
   </div>
-  <div class="row"><label>Loop start</label><input type="range" id="ls" min="0" max="120" step="0.01" value="16.53"><output id="ols">16.5s</output></div>
-  <div class="row"><label>Loop length</label><input type="range" id="ll" min="4" max="40" step="0.01" value="14.12"><output id="oll">14.1s</output></div>
+  <div class="row"><label>Loop start</label><input type="range" id="ls" min="0" max="120" step="0.01" value="16.53"><output id="ols">16.53s</output></div>
+  <div class="row"><label>Loop length</label><input type="range" id="ll" min="4" max="40" step="0.01" value="14.12"><output id="oll">14.12s</output></div>
+
+  <div class="row" style="grid-template-columns:76px 1fr;">
+    <label>Timing</label>
+    <div class="tbar">
+      <button id="t-restart" title="restart from the loop start">⟲ restart</button>
+      <button id="t-seam" title="tight loop across the join only">hear seam</button>
+      <span class="nudge">start
+        <button data-k="start" data-d="-0.4412">−¼</button><button data-k="start" data-d="-0.1103">−</button><button data-k="start" data-d="0.1103">+</button><button data-k="start" data-d="0.4412">+¼</button>
+      </span>
+      <span class="nudge">len
+        <button data-k="len" data-d="-1.7647">−bar</button><button data-k="len" data-d="-0.1103">−</button><button data-k="len" data-d="0.1103">+</button><button data-k="len" data-d="1.7647">+bar</button>
+      </span>
+    </div>
+  </div>
+
   <div class="row"><label>Warmth</label><input type="range" id="warm" min="0" max="10" step="0.5" value="4"><output id="owarm">4.0</output></div>
   <div class="row"><label>Brightness</label><input type="range" id="bri" min="3000" max="16000" step="250" value="7500"><output id="obri">7.5k</output></div>
   <div class="row"><label>Space</label><input type="range" id="space" min="0" max="60" step="2" value="14"><output id="ospace">14</output></div>
@@ -152,7 +176,51 @@
   // loop-window edits restart the source cleanly (setting loopStart/End mid-play clicks)
   let _loopTimer = 0;
   function reloop() {
-    if (mode && mode !== "orig") { clearTimeout(_loopTimer); _loopTimer = setTimeout(() => play(mode), 90); }
+    if (!mode || mode === "orig") return;
+    clearTimeout(_loopTimer);
+    _loopTimer = setTimeout(() => (mode === "seam" ? hearSeam() : play(mode)), 90);
+  }
+
+  // a ~5s buffer: [last 2.4s before loopEnd] + [first 2.4s from loopStart],
+  // looped — so the join you're timing repeats every few seconds.
+  function stitchSeam() {
+    const sr = buf.sampleRate, pre = 2.4, post = 2.4;
+    const end = Math.min(buf.duration, S.start + S.len);
+    const a0 = Math.max(0, end - pre), b0 = S.start;
+    const nA = Math.round(Math.min(pre, end) * sr);
+    const nB = Math.round(Math.min(post, buf.duration - b0) * sr);
+    const o = actx.createBuffer(buf.numberOfChannels, nA + nB, sr);
+    const fade = Math.round(0.004 * sr);
+    for (let ch = 0; ch < buf.numberOfChannels; ch++) {
+      const s = buf.getChannelData(ch), d = o.getChannelData(ch);
+      const ia = Math.round(a0 * sr), ib = Math.round(b0 * sr);
+      for (let i = 0; i < nA; i++) d[i] = s[ia + i] || 0;
+      for (let i = 0; i < nB; i++) d[nA + i] = s[ib + i] || 0;
+      // micro-fade the OUTER ends only; the inner join is the seam under test
+      for (let i = 0; i < fade; i++) { d[i] *= i / fade; d[d.length - 1 - i] *= i / fade; }
+    }
+    return o;
+  }
+  async function hearSeam() {
+    $("err").hidden = true;
+    try { await ensure(); } catch (e) { $("err").textContent = String(e.message || e); $("err").hidden = false; return; }
+    await actx.resume();
+    const now = actx.currentTime;
+    if (src) { try { src.stop(now + 0.09); } catch (e) { try { src.stop(); } catch (e2) {} } src = null; }
+    mode = "seam";
+    src = actx.createBufferSource();
+    src.buffer = stitchSeam();
+    src.loop = true;
+    src.connect(lp);
+    try { src.start(now + 0.06); } catch (e) { src.start(); }
+    out.gain.cancelScheduledValues(now);
+    out.gain.setValueAtTime(0.0001, now + 0.05);
+    out.gain.exponentialRampToValueAtTime(Math.max(0.001, S.level / 100), now + 0.16);
+    apply();
+    document.querySelectorAll(".ab button").forEach(b => b.classList.remove("on"));
+    $("t-seam").classList.add("on");
+    $("stop").hidden = false; viz.classList.add("on");
+    cancelAnimationFrame(raf); tick();
   }
 
   async function ensure() {
@@ -165,7 +233,7 @@
     $("ls").max = Math.floor(buf.duration - 6);
   }
 
-  async function play(m) {
+  async function play(m, fromSec) {
     $("err").hidden = true;
     try { await ensure(); } catch (e) { $("err").textContent = String(e.message || e); $("err").hidden = false; return; }
     await actx.resume();
@@ -180,7 +248,8 @@
       const end = Math.min(buf.duration, S.start + S.len);
       src.loopStart = Math.max(0, Math.min(S.start, end - 1));
       src.loopEnd = end;
-      try { src.start(now + 0.06, S.start); } catch (e) { src.start(); }
+      const at = fromSec == null ? S.start : Math.max(0, Math.min(fromSec, end - 0.05));
+      try { src.start(now + 0.06, at); } catch (e) { src.start(); }
     } else {
       try { src.start(now + 0.06); } catch (e) { src.start(); }
     }
@@ -192,6 +261,7 @@
   }
   function mount(m) {
     apply();
+    $("t-seam").classList.remove("on");
     document.querySelectorAll(".ab button").forEach(b => b.classList.toggle("on", b.id === "b-" + m));
     $("stop").hidden = false; viz.classList.add("on");
     cancelAnimationFrame(raf); tick();
@@ -205,6 +275,7 @@
     }
     mode = null;
     document.querySelectorAll(".ab button").forEach(b => b.classList.remove("on"));
+    $("t-seam").classList.remove("on");
     $("stop").hidden = true; viz.classList.remove("on");
     cancelAnimationFrame(raf);
     viz.querySelectorAll("i").forEach(i => i.style.height = "6%");
@@ -234,8 +305,8 @@
     });
   }
   const afterLoop = () => { reloop(); markLoop(); };
-  bind("ls", "start", v => v.toFixed(1) + "s", afterLoop);
-  bind("ll", "len", v => v.toFixed(1) + "s", afterLoop);
+  bind("ls", "start", v => v.toFixed(2) + "s", afterLoop);
+  bind("ll", "len", v => v.toFixed(2) + "s", afterLoop);
   bind("warm", "warm", v => v.toFixed(1));
   bind("bri", "bright", v => (v / 1000).toFixed(1) + "k");
   bind("space", "space", v => String(v | 0));
@@ -260,13 +331,42 @@
     loopBtns.forEach(b => b.classList.toggle("on",
       Math.abs(+b.dataset.s - S.start) < 0.02 && Math.abs(+b.dataset.l - S.len) < 0.02));
   }
-  loopBtns.forEach(b => b.addEventListener("click", () => {
-    S.start = +b.dataset.s; S.len = +b.dataset.l;
-    $("ls").value = S.start; $("ols").textContent = S.start.toFixed(1) + "s";
-    $("ll").value = S.len; $("oll").textContent = S.len.toFixed(1) + "s";
+  // re-audition whatever's playing after a window change
+  function reaudition() {
+    if (!mode || mode === "orig") play("ours");
+    else if (mode === "seam") hearSeam();
+    else play(mode);
+  }
+  function setSL(start, len, go) {
+    if (start != null) S.start = Math.max(0, Math.round(start * 1000) / 1000);
+    if (len != null) S.len = Math.max(4, Math.round(len * 1000) / 1000);
+    if (S.start + S.len > 71.9) S.start = Math.max(0, 71.9 - S.len);
+    $("ls").value = S.start; $("ols").textContent = S.start.toFixed(2) + "s";
+    $("ll").value = S.len; $("oll").textContent = S.len.toFixed(2) + "s";
     markLoop(); apply();
-    if (!mode || mode === "orig") play("ours"); else play(mode);
+    if (go) reaudition();
+  }
+  loopBtns.forEach(b => b.addEventListener("click", () => setSL(+b.dataset.s, +b.dataset.l, true)));
+
+  // sync every control to S on load (S is the source of truth)
+  function syncUI() {
+    $("ls").value = S.start; $("ols").textContent = S.start.toFixed(2) + "s";
+    $("ll").value = S.len; $("oll").textContent = S.len.toFixed(2) + "s";
+    $("warm").value = S.warm; $("owarm").textContent = S.warm.toFixed(1);
+    $("bri").value = S.bright; $("obri").textContent = (S.bright / 1000).toFixed(1) + "k";
+    $("space").value = S.space; $("ospace").textContent = String(S.space | 0);
+    $("lvl").value = S.level; $("olvl").textContent = String(S.level | 0);
+    $("cfg").textContent = `start ${S.start.toFixed(2)} · len ${S.len.toFixed(2)} · warm ${S.warm.toFixed(1)} · bright ${S.bright} · space ${S.space} · level ${S.level}`;
+    markLoop();
+  }
+  syncUI();
+
+  $("t-restart").addEventListener("click", () => play(mode && mode !== "seam" ? mode : "ours"));
+  $("t-seam").addEventListener("click", () => (mode === "seam" ? stop() : hearSeam()));
+  document.querySelectorAll(".nudge button").forEach(b => b.addEventListener("click", () => {
+    const d = +b.dataset.d;
+    if (b.dataset.k === "start") setSL(S.start + d, null, true);
+    else setSL(null, S.len + d, true);
   }));
-  markLoop();
 })();
 </script>
