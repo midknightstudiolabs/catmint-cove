@@ -12963,16 +12963,16 @@ let _sceneLayer = [];   // reused each frame — the y-sorted cats+grass draw li
 function initForeground() {
   foreground = [];
   const hz = H * 0.40, floor = H - 6;
-  const n = Math.round(clamp(W / 13, 34, 90));
+  const n = Math.round(clamp(W / 26, 16, 44));   // sparser — a meadow fringe, not a field
   for (let i = 0; i < n; i++) {
-    // bias toward the very bottom, some scattered up into the mid-ground
-    const t = Math.pow(Math.random(), 0.6);
+    // hug the very bottom band; only the odd tuft drifts up into the mid-ground
+    const t = Math.pow(Math.random(), 0.4);
     const y = clamp(hz + 40 + t * (floor - hz - 40), hz + 30, floor);
     foreground.push({
       x: Math.random() * W, y,
       s: rand(0.6, 1.5) * (0.7 + (y - hz) / (floor - hz) * 0.7),   // closer = bigger
       blades: 3 + (Math.random() * 3 | 0),
-      flower: Math.random() < 0.16 ? pick(["#e78fae", "#e9c85a", "#8fb0e0", "#f0f0ec"]) : null,
+      flower: Math.random() < 0.12 ? pick(["#e78fae", "#e9c85a", "#8fb0e0", "#f0f0ec"]) : null,
       sway: Math.random() * 6,
     });
   }
