@@ -9030,9 +9030,9 @@ function scheduleFestMelody(gen) {
 /* ---- Cove Volleyball's own background: a lazy sunny-beach bed. The crowd
    murmur (festMurmur) keeps going; the fairground calliope steps aside for
    a slow wave wash + a sparse pentatonic marimba figure + the odd gull. ---- */
-// Tug of Paws bed — the festival's cozy track (fest-bed.mp3, fetched once, same
-// file index.html ships). Plays under the whole match; the crowd murmur stays
-// audible under it and the calliope steps aside.
+// Tug of Paws bed — the heavy-drop slice of the festival track (fest-bed-tug.mp3,
+// fetched once). Plays under the whole match; the crowd murmur stays audible
+// under it and the calliope steps aside.
 let _midkBed = null, _midkBedBuf = null;
 let _volleyBed = null;
 function startVolleyBed() {
@@ -9142,9 +9142,9 @@ function stopCafeBed() {
   setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, 1300);
 }
 
-// Tug of Paws music bed — the festival's cozy track, fetched from fest-bed.mp3
-// (same file index.html ships). Plays under the whole match. The crowd murmur
-// stays audible under it; the calliope steps aside (scheduleFestMelody gate).
+// Tug of Paws music bed — the heavy-drop slice (fest-bed-tug.mp3). Plays under
+// the whole match. The crowd murmur stays audible under it; the calliope steps
+// aside (scheduleFestMelody gate).
 function startMidkBed() {
   if (!actx || _midkBed) return;
   stopVolleyBed(); stopCafeBed();
@@ -9162,7 +9162,7 @@ function startMidkBed() {
     bed.src = s;
   };
   if (_midkBedBuf) { spin(); return; }
-  fetch(bust("fest-bed.mp3"))
+  fetch(bust("fest-bed-tug.mp3"))
     .then(r => r.ok ? r.arrayBuffer() : Promise.reject(0))
     .then(ab => actx.decodeAudioData(ab))
     .then(buf => { if (bed.stopped) return; _midkBedBuf = buf; spin(); })
