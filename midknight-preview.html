@@ -803,26 +803,45 @@
   /* --- Tug of Paws HUD --- */
   .midk-hud{position:absolute;left:0;right:0;z-index:66;pointer-events:none;
     bottom:calc(max(.9rem, env(safe-area-inset-bottom)) + 3.1rem);
-    display:flex;flex-direction:column;align-items:center;gap:.55rem;padding:0 12px;}
+    display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:0 12px;}
   .midk-hud[hidden]{display:none;}
   .midk-hud #midkCom{pointer-events:none;}
-  .midk-acts{display:flex;gap:.7rem;width:min(92vw,420px);justify-content:center;}
-  .midk-btn.midk-spin{flex:0 0 auto;min-width:min(70vw,260px);padding:.85rem 1.4rem .7rem;}
-  .midk-btn{pointer-events:auto;flex:1;position:relative;overflow:hidden;border:0;cursor:pointer;
-    border-radius:16px;padding:.7rem .5rem .6rem;background:rgba(17,14,21,.72);color:#f4efe2;
-    font-family:"Hanken Grotesk",sans-serif;display:flex;flex-direction:column;align-items:center;gap:.15rem;
-    box-shadow:0 6px 20px rgba(0,0,0,.3);transition:transform .08s,opacity .15s;}
-  .midk-btn:active{transform:translateY(1px);}
-  .midk-btn .mb-i{font-size:1.35rem;line-height:1;}
-  .midk-btn .mb-l{font-size:.74rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;opacity:.9;}
-  .midk-btn .mb-cd{position:absolute;left:0;bottom:0;height:100%;width:0;background:rgba(255,255,255,.12);
-    pointer-events:none;transition:none;}
-  .midk-btn.cooling{opacity:.5;}
-  .midk-btn.cooling .mb-cd{background:rgba(255,255,255,.10);}
-  #midkRally.ready{background:#6b5320;box-shadow:0 0 0 2px #e8b45a, 0 6px 22px rgba(0,0,0,.32);}
-  #midkRally.ready .mb-cd{background:rgba(232,180,90,.32);}
-  #midkRally.rolling{background:rgba(17,14,21,.9);opacity:.7;}
-  #midkRally.cooling{opacity:.5;}
+  /* what a spin can do */
+  .midk-odds{background:#2a241d;border-radius:14px;padding:.42rem .55rem .5rem;
+    width:min(93vw,362px);box-shadow:0 6px 18px rgba(0,0,0,.28);}
+  .midk-odds .mo-t{display:block;text-align:center;font:600 .58rem/1 "IBM Plex Mono",monospace;
+    letter-spacing:.09em;text-transform:uppercase;color:#d9b877;margin-bottom:.38rem;}
+  .midk-odds .mo-row{display:flex;gap:.32rem;justify-content:center;}
+  .midk-odds .mo-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:.03rem;
+    background:#f4efe0;border-radius:9px;padding:.3rem .1rem .26rem;
+    font:600 .58rem/1.05 "Hanken Grotesk",sans-serif;color:#4a3c28;}
+  .midk-odds .mo-i b{font-size:1.15rem;font-weight:400;}
+  .midk-odds .mo-i i{font-size:.5rem;font-style:normal;color:#9a8f74;}
+  .midk-odds .mo-i.rare{background:#fbf1d8;color:#9a6b16;}
+  .midk-odds .mo-i.rare i{color:#c19a4d;}
+  /* the spin console — reels + button, one unit */
+  .midk-console{pointer-events:auto;background:#f7f5ec;border:2.5px solid #d8c9a6;border-radius:18px;
+    padding:.6rem;width:min(93vw,362px);display:flex;flex-direction:column;align-items:center;gap:.4rem;
+    box-shadow:0 10px 26px rgba(0,0,0,.3);transition:border-color .18s,box-shadow .18s;}
+  .midk-console.ready{border-color:#f2b43e;box-shadow:0 0 0 3px rgba(242,180,62,.24),0 10px 26px rgba(0,0,0,.32);}
+  .midk-console .mc-reels{display:flex;gap:.4rem;}
+  .midk-console .mc-reels span{width:3rem;height:3rem;display:flex;align-items:center;justify-content:center;
+    background:#fffdf6;border-radius:11px;font-size:1.65rem;box-shadow:inset 0 2px 5px rgba(0,0,0,.09);}
+  .midk-console.rolling .mc-reels span{animation:mcReel .16s linear infinite;}
+  @keyframes mcReel{50%{transform:translateY(-3px);}}
+  .midk-console .mc-msg{font:600 .66rem/1 "Hanken Grotesk",sans-serif;color:#7a6f58;min-height:.85rem;}
+  .midk-console.result .mc-msg{font:800 .98rem/1 "Fraunces",serif;color:#c98a1e;}
+  .midk-spin{position:relative;border:0;cursor:pointer;width:100%;border-radius:15px;padding:.66rem 1rem;
+    background:linear-gradient(#ffd766,#f2b43e);color:#4a2f10;
+    font:500 1.12rem/1 "Fraunces",serif;letter-spacing:.03em;
+    display:flex;align-items:center;justify-content:center;gap:.5rem;
+    box-shadow:0 4px 0 #c98a1e,0 8px 16px rgba(0,0,0,.22);transition:transform .07s,box-shadow .07s,filter .15s;}
+  .midk-spin .ms-paw{font-size:1.25rem;}
+  .midk-spin:active{transform:translateY(3px);box-shadow:0 1px 0 #c98a1e,0 4px 10px rgba(0,0,0,.2);}
+  .midk-console.ready .midk-spin{animation:mcPulse 1.1s ease-in-out infinite;}
+  @keyframes mcPulse{50%{filter:brightness(1.09);box-shadow:0 4px 0 #c98a1e,0 0 18px rgba(242,180,62,.6);}}
+  .midk-console:not(.ready) .midk-spin{filter:grayscale(.5) brightness(.93);cursor:default;}
+  .midk-console.rolling .midk-spin{filter:grayscale(.7) brightness(.84);}
   /* trait chips in the volleyball / picker cells */
   .fp-cell .fp-tr{display:flex;gap:.2rem;flex-wrap:wrap;justify-content:center;margin-top:.1rem;}
   .fp-cell .fp-tr span{background:#e2e6d5;border-radius:999px;padding:.02rem .34rem;font-size:.56rem;
@@ -1318,8 +1337,19 @@
     <div class="volley-banner" id="volleyBanner" hidden>MATCH POINT</div>
     <div class="midk-hud" id="midkHud" hidden>
       <div class="volley-com" id="midkCom" hidden><span class="vc-mic">🎙️</span><span id="midkComText"></span></div>
-      <div class="midk-acts">
-        <button class="midk-btn midk-spin" id="midkRally" type="button"><span class="mb-i">🎰</span><span class="mb-l">Spin</span><span class="mb-cd" id="midkRallyCd"></span></button>
+      <div class="midk-odds">
+        <span class="mo-t">A spin can land on</span>
+        <div class="mo-row">
+          <span class="mo-i"><b>🐈</b>Bigger<i>common</i></span>
+          <span class="mo-i"><b>💪</b>Heave<i>common</i></span>
+          <span class="mo-i rare"><b>⭐</b>7·7·7<i>rare</i></span>
+          <span class="mo-i rare"><b>😴</b>Nap<i>rare</i></span>
+        </div>
+      </div>
+      <div class="midk-console" id="midkConsole">
+        <div class="mc-reels" id="midkReels"><span>🐈</span><span>💪</span><span>⭐</span></div>
+        <div class="mc-msg" id="midkMsg">charging…</div>
+        <button class="midk-spin" id="midkRally" type="button"><span class="ms-paw">🐾</span>Spin!</button>
       </div>
     </div>
     <div class="fest-countdown" id="festCountdown" hidden>
@@ -12064,7 +12094,7 @@ const MIDK_MATCH_LEN = 60;                    // seconds, hard cap
 const MIDK_PULL_K = 14;                       // px/s per unit of net pull differential
 const MIDK_GRIP_R = 150;
 const MIDK_AURA_MULT = 1.6;
-const MIDK_CHARGE_RATE = 0.088;               // slot meter fill / sec → your spin is ready ~every 11s
+const MIDK_CHARGE_RATE = 0.132;               // slot meter fill / sec → spin ready ~every 7.5s (50% faster)
 const MIDK_COVE_NAMES = VB_COVE_NAMES;
 const MIDK_CAT_NAMES = VB_CAT_NAMES;
 // each spin lands on ONE weighted outcome; the reels just animate to it
@@ -12079,7 +12109,7 @@ let midkPickSel = [], _midkTutSeen = false;
 let _midkResultShown = false, _midkResultAt = 0, _midkWinner = null, _midkFlopAt = 0;
 let midkCharge = 0, _midkAuraUntil = 0, _midkAiAuraUntil = 0;
 let _midkAiChargeT = 0, _midkAiSlotCd = 0;
-let midkSlot = null;                          // { reels, outcome, rollUntil, resolved, bannerUntil }
+let midkSlot = null;                          // { reels, outcome, rollUntil, resolved, result, showUntil }
 let _midkEventCd = 0;
 let _midkLead = { cove: 0, visit: 0 };        // furthest the ball got toward each flag — for the result read
 let midkCom = { text: "", at: -99, pri: 0, last: "" };
@@ -12301,16 +12331,18 @@ function midkPull(side) {
 
 /* ---- the slot — one button, one weighted outcome, reels roll to it ---- */
 function midkSpin() {
-  if (midkPhase !== "play" || midkSlot) return;
+  if (midkPhase !== "play" || (midkSlot && !midkSlot.resolved)) return;
   if (midkCharge < 1) return;
   midkCharge = 0;
   const outcome = midkRollOutcome("cove");
-  midkSlot = { outcome, reels: ["grow", "push", "aura"], rollUntil: midkT + 1.5, resolved: false, result: null, bannerUntil: 0 };
+  midkSlot = { outcome, reels: ["grow", "push", "aura"], rollUntil: midkT + 0.75, resolved: false, result: null, showUntil: 0 };
   tone(440, 0.06, "square", 0.05);
 }
 function midkSlotTick(dt) {
   const s = midkSlot; if (!s) return;
-  if (s.resolved) { if (midkT > s.bannerUntil) midkSlot = null; return; }
+  // once resolved, the reels linger a beat to be read — but the meter is already
+  // recharging (see renderMidk), so there's no dead time staring at the result.
+  if (s.resolved) { if (midkT > s.showUntil) midkSlot = null; return; }
   if (midkT < s.rollUntil) {
     // rolling blur
     for (let i = 0; i < 3; i++) s.reels[i] = _midkReelSyms[(Math.floor(midkT * 26) + i * 2) % _midkReelSyms.length];
@@ -12320,6 +12352,7 @@ function midkSlotTick(dt) {
   // land: the winning outcome fills all three reels
   s.reels = [s.outcome, s.outcome, s.outcome];
   s.resolved = true;
+  s.showUntil = midkT + 1.3;
   midkResolveSlot("cove", s.outcome);
 }
 function midkResolveSlot(side, outcome) {
@@ -12355,15 +12388,15 @@ function midkResolveSlot(side, outcome) {
   midkSay(side === "cove" ? (outcome === "nap" ? "slotNap" : outcome === "aura" ? "slotCove" : "slotCove") : "slotVisit");
   if (side === "cove") { midkParts.forEach(p => { if (p.side === "cove") p.stats.slots++; }); tone(880, 0.12, "triangle", 0.07); }
   else tone(300, 0.1, "triangle", 0.06);
-  if (midkSlot && side === "cove") { midkSlot.result = MIDK_SLOT_LABEL[outcome] || label; midkSlot.bannerUntil = midkT + 2.4; }
+  if (midkSlot && side === "cove") { midkSlot.result = MIDK_SLOT_LABEL[outcome] || label; midkSlot.showUntil = midkT + 1.7; }
 }
 
 /* ---- visiting Cove AI: spins its own slot on a timer, same odds ---- */
 function midkAi(dt) {
   _midkAiChargeT += dt;
   _midkAiSlotCd -= dt;
-  if (_midkAiSlotCd <= 0 && _midkAiChargeT > 9 && !midkSlot) {
-    _midkAiSlotCd = rand(9, 13); _midkAiChargeT = 0;
+  if (_midkAiSlotCd <= 0 && _midkAiChargeT > 5.5 && !midkSlot) {
+    _midkAiSlotCd = rand(5.5, 7.5); _midkAiChargeT = 0;
     midkResolveSlot("visit", midkRollOutcome("visit"));
     spawnParticles(MIDK_X, midk.y, "twinkle", 6);
   }
@@ -12384,15 +12417,26 @@ function midkEvents(dt) {
 }
 
 function _midkUpdateBtns() {
+  const con = document.getElementById("midkConsole");
   const sb = document.getElementById("midkRally");
-  if (!sb) return;
+  if (!con || !sb) return;
   const rolling = midkSlot && !midkSlot.resolved;
-  const ready = midkCharge >= 1 && !midkSlot;
-  sb.classList.toggle("ready", ready);
-  sb.classList.toggle("cooling", !ready && !rolling);
-  sb.classList.toggle("rolling", !!rolling);
-  const lbl = sb.querySelector(".mb-l"); if (lbl) lbl.textContent = rolling ? "…" : "Spin";
-  const bar = sb.querySelector(".mb-cd"); if (bar) bar.style.width = ((midkSlot ? 1 : midkCharge) * 100) + "%";
+  const resolved = midkSlot && midkSlot.resolved;
+  const ready = midkCharge >= 1 && !rolling;
+  con.classList.toggle("ready", ready);
+  con.classList.toggle("rolling", !!rolling);
+  con.classList.toggle("result", !!resolved);
+  sb.disabled = !ready;
+  const reels = document.getElementById("midkReels");
+  if (reels) {
+    const syms = midkSlot ? midkSlot.reels : ["grow", "push", "aura"];
+    for (let i = 0; i < 3; i++) if (reels.children[i]) reels.children[i].textContent = MIDK_SLOT_EMOJI[syms[i]] || "🐈";
+  }
+  const msg = document.getElementById("midkMsg");
+  if (msg) msg.textContent = resolved ? (midkSlot.result || "")
+    : rolling ? "spinning…"
+    : ready ? "tap to spin!"
+    : Math.round(midkCharge * 100) + "%";
 }
 
 function renderMidk(dt) {
@@ -12413,7 +12457,7 @@ function renderMidk(dt) {
 
   if (midkPhase === "play") {
     // the slot meter charges steadily; when it's full you can SPIN
-    if (!midkSlot && midkCharge < 1) midkCharge = Math.min(1, midkCharge + MIDK_CHARGE_RATE * dt);
+    if ((!midkSlot || midkSlot.resolved) && midkCharge < 1) midkCharge = Math.min(1, midkCharge + MIDK_CHARGE_RATE * dt);
 
     for (const p of midkParts) midkStepCat(p, dt);
     midkSeparate();
@@ -12562,16 +12606,16 @@ function drawMidkYarn(g) {
 }
 function drawMidkHudCanvas(g) {
   const bx = 54, bw = MIDK_W - 108, by = 40;
-  g.fillStyle = "rgba(247,245,236,.92)"; roundRect(g, bx - 10, by - 16, bw + 20, 34, 14); g.fill();
-  g.fillStyle = "#e6ddc7"; roundRect(g, bx, by - 4, bw, 8, 4); g.fill();
-  const charged = midkCharge >= 1 && !midkSlot;
-  g.fillStyle = charged ? "#e8b45a" : "#b9a988";
-  roundRect(g, bx, by - 4, bw * (midkSlot ? 1 : midkCharge), 8, 4); g.fill();
-  g.font = "800 8px 'IBM Plex Mono', monospace"; g.fillStyle = charged ? "#a9701f" : "#6b5335"; g.textAlign = "left";
-  g.fillText(midkSlot && !midkSlot.resolved ? "ROLLING…" : charged ? "★ SPIN READY" : "SLOT CHARGING…", bx, by - 9);
+  g.fillStyle = "rgba(247,245,236,.92)"; roundRect(g, bx - 10, by - 16, bw + 20, 30, 14); g.fill();
+  // a slim depleting round timer
+  const frac = clamp(1 - midkT / MIDK_MATCH_LEN, 0, 1);
+  g.fillStyle = "#e6ddc7"; roundRect(g, bx, by - 3, bw, 6, 3); g.fill();
+  g.fillStyle = frac < 0.2 ? "#d9884f" : "#7ba46b"; roundRect(g, bx, by - 3, bw * frac, 6, 3); g.fill();
+  g.font = "800 8px 'IBM Plex Mono', monospace"; g.fillStyle = "#6b5335"; g.textAlign = "left";
+  g.fillText("TUG OF PAWS", bx, by - 8);
   const left = Math.max(0, Math.ceil(MIDK_MATCH_LEN - midkT));
   g.textAlign = "right"; g.font = "700 12px 'Fraunces', serif"; g.fillStyle = "#5b5343";
-  g.fillText(left + "s", bx + bw, by - 9);
+  g.fillText(left + "s", bx + bw, by - 8);
 
   // the tug rail — centre-out, shows the yarn ball's position between the flags
   const rx = MIDK_W - 20, ry0 = MIDK_WIN_Y.visit, ry1 = MIDK_WIN_Y.cove, rc = (ry0 + ry1) / 2;
@@ -12585,35 +12629,7 @@ function drawMidkHudCanvas(g) {
   if (yy > rc) roundRect(g, rx - 3, rc, 6, yy - rc, 3); else roundRect(g, rx - 3, yy, 6, rc - yy, 3);
   g.fill();
   g.fillStyle = "#4a3524"; g.beginPath(); g.arc(rx, yy, 4, 0, 7); g.fill();
-
-  // ---- the slot machine, sat low centre like a real cabinet ----
-  const rolling = midkSlot && !midkSlot.resolved;
-  const cw = 46, cgap = 10, ctot = cw * 3 + cgap * 2;
-  const cx0 = MIDK_X - ctot / 2, cy = MIDK_H - 302;
-  // cabinet
-  g.fillStyle = "rgba(30,22,16,.92)"; roundRect(g, cx0 - 16, cy - 30, ctot + 32, cw + 62, 14); g.fill();
-  g.strokeStyle = charged || rolling ? "#e8b45a" : "rgba(255,255,255,.14)"; g.lineWidth = charged || rolling ? 3 : 1.5;
-  roundRect(g, cx0 - 16, cy - 30, ctot + 32, cw + 62, 14); g.stroke();
-  g.fillStyle = "#e8b45a"; g.font = "800 10px 'IBM Plex Mono', monospace"; g.textAlign = "center";
-  g.fillText("TUG-O-TRON", MIDK_X, cy - 14);
-  for (let i = 0; i < 3; i++) {
-    const rxi = cx0 + i * (cw + cgap);
-    g.fillStyle = "#f4efe0"; roundRect(g, rxi, cy, cw, cw, 8); g.fill();
-    const sym = midkSlot ? midkSlot.reels[i] : ["grow", "push", "aura"][i];
-    g.font = "27px serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = "#26232b";
-    if (rolling) {   // motion blur
-      g.globalAlpha = 0.35; g.fillText(MIDK_SLOT_EMOJI[_midkReelSyms[(Math.floor(midkT * 30) + i) % 4]], rxi + cw / 2, cy + cw / 2 - 9);
-      g.globalAlpha = 1; g.fillText(MIDK_SLOT_EMOJI[sym], rxi + cw / 2, cy + cw / 2 + 1);
-    } else g.fillText(MIDK_SLOT_EMOJI[sym] || "🐈", rxi + cw / 2, cy + cw / 2 + 1);
-    g.textBaseline = "alphabetic";
-  }
-  if (midkSlot && midkSlot.result) {
-    g.font = "800 16px 'Fraunces', serif"; g.textAlign = "center"; g.fillStyle = "#f4c95d";
-    g.fillText(midkSlot.result, MIDK_X, cy + cw + 22);
-  } else {
-    g.font = "700 9px 'IBM Plex Mono', monospace"; g.textAlign = "center"; g.fillStyle = "rgba(255,255,255,.5)";
-    g.fillText(charged ? "TAP SPIN" : `${Math.round(midkCharge * 100)}%`, MIDK_X, cy + cw + 20);
-  }
+  // the reels + SPIN button live in the DOM console (.midk-console) below.
 }
 
 function showMidkResult() {
@@ -17221,6 +17237,16 @@ window.__cove.midkState = () => (!midk ? { phase: midkPhase } : {
     asleep: p._sleepUntil > midkT })),
 });
 window.__cove.midkStep = (n = 1, dt = 0.05) => { for (let i = 0; i < n; i++) if (festKind === "midk" && festMode) renderMidk(dt); return window.__cove.midkState(); };
+// dev: jump straight into a running Tug of Paws match (fills the cove, auto-picks 5, skips the countdown)
+window.__cove.midkGo = () => {
+  devFillCove(5); openFestPicker("midk");
+  midkPickSel = eligibleForVolley().filter(c => !c.mascot).slice(0, 5);
+  startCoveMidk();
+  _festCdSeq++;                                       // abandon the 3-2-1 countdown chain
+  const cd = document.getElementById("festCountdown"); if (cd) cd.hidden = true;
+  midkBegin();
+  return window.__cove.midkState();
+};
 // headless harness: sim `secs`, auto-spinning whenever charged (opts.spin:false = never spin)
 window.__cove.midkSim = (secs = 70, opts = {}) => {
   if (festKind !== "midk" || !festMode) return { err: "not in midk" };
