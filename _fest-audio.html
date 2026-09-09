@@ -111,6 +111,7 @@
     out = actx.createGain();
     analyser = actx.createAnalyser(); analyser.fftSize = 128;
     // src -> lp -> ls1 -> hs -> [dry -> out] and [conv -> convWet -> out]
+    lp.connect(ls1); ls1.connect(hs);
     hs.connect(dry); dry.connect(out);
     hs.connect(conv); conv.connect(convWet); convWet.connect(out);
     out.connect(analyser); analyser.connect(actx.destination);
