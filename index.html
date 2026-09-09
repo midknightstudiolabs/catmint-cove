@@ -1092,16 +1092,17 @@
   #placeBar{
     position:absolute;left:50%;transform:translateX(-50%);
     bottom:max(1.1rem,calc(env(safe-area-inset-bottom) + .5rem));
-    z-index:23;display:flex;align-items:center;gap:.6rem;
-    padding:.5rem .6rem .5rem 1rem;border-radius:999px;
-    background:rgba(24,21,15,.62);color:#f3efe4;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
-    font:600 .82rem/1.2 "Hanken Grotesk",-apple-system,sans-serif;
-    box-shadow:var(--shadow);max-width:92vw;
+    z-index:23;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.45rem .55rem;
+    padding:.6rem .85rem;border-radius:18px;
+    background:rgba(24,21,15,.7);color:#f3efe4;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+    font:600 .82rem/1.35 "Hanken Grotesk",-apple-system,sans-serif;
+    box-shadow:var(--shadow);width:max-content;max-width:min(90vw,320px);
   }
   #placeBar[hidden]{display:none;}
   #placeBar b{color:#fff;}
+  #placeBarTxt{flex:1 1 100%;text-align:center;text-wrap:balance;}
   #placeBar button{flex:0 0 auto;font:inherit;font-weight:700;font-size:.78rem;cursor:pointer;border:0;
-    border-radius:999px;padding:.4rem .8rem;background:rgba(247,245,236,.94);color:var(--ink-soft);}
+    border-radius:999px;padding:.4rem .95rem;background:rgba(247,245,236,.94);color:var(--ink-soft);}
   #placeBar button.ok{background:var(--accent-bright);color:#fff;}
 </style>
 
@@ -4143,6 +4144,8 @@ let _lpTimer = 0, _lpFired = false;
 let _placing = null;
 let _placeGhost = null;     // { x, y } world pos the ghost follows
 let _arranging = false;
+const PLACE_LIFT = 42;      // world px the ghost floats above the finger so a thumb never hides it
+function _ghostAt(cx, cy) { const w = screenToWorld(cx, cy); w.y -= PLACE_LIFT; return w; }
 const DECOR_LABEL = { cottage: "cottage", tree: "tree", flowers: "flower patch", station: "spot",
   food: "food bowl", toy: "toy", bed: "bed", scratch: "scratching post" };
 const DECOR_CLEAR = { cottage: 40, tree: 30, flowers: 22, station: 40,
@@ -4154,7 +4157,7 @@ function _beginPlace(spec) {
   _placing = spec;
   const start = spec._start || { x: W * 0.5, y: catFloor() - 60 };
   _placeGhost = { x: start.x, y: clamp(start.y, H * 0.62 + 20, catFloor() - 20) };
-  document.getElementById("placeBarTxt").innerHTML = `Moving the <b>${spec.label}</b> — drag it, or tap a spot`;
+  document.getElementById("placeBarTxt").innerHTML = `Moving the <b>${spec.label}</b> — drag it, or tap a spot. It settles into the nearest open patch.`;
   document.getElementById("placeBar").hidden = false;
   document.getElementById("placeBarCancel").textContent = _arranging ? "Back" : "Cancel";
 }
@@ -4186,11 +4189,27 @@ function _placeOK(x, y) {
   if (_placing.kind === "decor") return validDecorSpot(x, y, _placing.dtype, _placing.key);
   return validPropSpot(x, y);   // props and comforts: on the grass, clear of water / the sign / stations
 }
+// small-screen kindness: never reject a drop — nudge it to the nearest spot that
+// works (spiral out from the finger). null only if nowhere nearby is any good.
+function _nearestValidSpot(x, y) {
+  if (_placeOK(x, y)) return { x, y };
+  for (let r = 14; r <= 170; r += 14) {
+    for (let a = 0; a < 14; a++) {
+      const ang = (a / 14) * Math.PI * 2 + r * 0.4;
+      const nx = clamp(x + Math.cos(ang) * r, 38, W - 38);
+      const ny = clamp(y + Math.sin(ang) * r, H * 0.48, catFloor() - 4);
+      if (_placeOK(nx, ny)) return { x: nx, y: ny };
+    }
+  }
+  return null;
+}
 function finishPlacing() {
   if (!_placing) return;
   const { kind, key } = _placing;
-  if (!_placeOK(_placeGhost.x, _placeGhost.y)) { toast("That spot won't work — try the open grass.", 3); return; }
-  const spot = { x: Math.round(_placeGhost.x), y: Math.round(_placeGhost.y) };
+  const near = _nearestValidSpot(_placeGhost.x, _placeGhost.y);
+  if (!near) { toast("Nowhere nearby works for that — try more open grass.", 3); return; }
+  const spot = { x: Math.round(near.x), y: Math.round(near.y) };
+  _placeGhost.x = spot.x; _placeGhost.y = spot.y;
   if (kind === "prop") {
     G.cosmetics.propPos = G.cosmetics.propPos || {};
     G.cosmetics.propPos[key] = spot;
@@ -4281,7 +4300,7 @@ function dropComfortPos(type, newCount) {
 // milling around the piece) checks only the object's core so a dead-centre press
 // still grabs the cottage; the arrange-mode tap uses the full generous radius.
 function movableAt(x, y, tight) {
-  const f = tight ? 0.78 : 1;
+  const f = tight ? 0.95 : 1.15;   // generous hit area — small screens, fat thumbs
   for (const d of decor) {
     if (!DECOR_LABEL[d.type]) continue;
     if (Math.hypot(x - d.x, y - (d.y - 8)) < ((DECOR_CLEAR[d.type] || 26) + 6) * f) return { kind: "decor", d };
@@ -4328,7 +4347,7 @@ document.getElementById("fest").addEventListener("pointerdown", (e) => {
 canvas.addEventListener("pointerdown", (e) => {
   ensureAudio();
   if (festMode) { if (festKind === "volley") volleyPointer(e); return; }   // festival modes own their taps; race/box use HTML buttons
-  if (_placing) { _placeGhost = screenToWorld(e.clientX, e.clientY); _tpX = e.clientX; _tpY = e.clientY; _tpMoved = false; return; }
+  if (_placing) { _placeGhost = _ghostAt(e.clientX, e.clientY); _tpX = e.clientX; _tpY = e.clientY; _tpMoved = false; return; }
   _tpX = e.clientX; _tpY = e.clientY; _tpScroll = stage.scrollLeft; _tpMoved = false; _lpFired = false;
   clearTimeout(_lpTimer);
   if (!_focus && !_arranging) _lpTimer = setTimeout(() => {
@@ -4346,24 +4365,23 @@ canvas.addEventListener("pointerdown", (e) => {
     }
     const c = catAt(w.x, w.y, 46);
     if (c) { enterFocus(c); _lpFired = true; buzz(); return; }
-  }, 430);
+  }, 360);
 });
 canvas.addEventListener("pointermove", (e) => {
   if (festMode) return;
-  if (_placing) { if (_tpX != null) { _placeGhost = screenToWorld(e.clientX, e.clientY); if (Math.hypot(e.clientX - _tpX, e.clientY - _tpY) > 6) _tpMoved = true; } return; }
+  if (_placing) { if (_tpX != null) { _placeGhost = _ghostAt(e.clientX, e.clientY); if (Math.hypot(e.clientX - _tpX, e.clientY - _tpY) > 6) _tpMoved = true; } return; }
   if (_tpX != null && Math.hypot(e.clientX - _tpX, e.clientY - _tpY) > 9) { _tpMoved = true; clearTimeout(_lpTimer); }
 });
 canvas.addEventListener("pointerup", (e) => {
   if (festMode) return;   // volleyball acts on pointerdown; race/box ignore canvas taps
   if (_placing) {
-    _placeGhost = screenToWorld(e.clientX, e.clientY);
+    _placeGhost = _ghostAt(e.clientX, e.clientY);
     const draggedOut = _tpMoved;
     _tpX = _tpY = null;
     // a long-press just picked this up on THIS gesture — hold it, let the next tap set it down
     if (_lpFired && !draggedOut) { _lpFired = false; return; }
     _lpFired = false;
-    if (!draggedOut && !_placeOK(_placeGhost.x, _placeGhost.y)) { toast("Tap the open grass to set it there.", 2); return; }
-    finishPlacing();
+    finishPlacing();   // snaps to the nearest workable spot on its own
     return;
   }
   clearTimeout(_lpTimer);
