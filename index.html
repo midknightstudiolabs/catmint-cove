@@ -7627,7 +7627,7 @@ function applySound() {
   if (ambience) rampParam(ambience.master.gain, S.on && !restMode && !festMode ? AMB_MASTER : 0, 0.3);
   if (restBus)  rampParam(restBus.gain, S.on && restOpts.rain ? 0.9 : 0.0001, 0.3);
   if (festBus)  rampParam(festBus.gain, S.on ? 0.85 : 0.0001, 0.3);
-  if (_festBed) rampParam(_festBed.g.gain, S.on ? 0.55 : 0.0001, 0.3);
+  if (_festBed) rampParam(_festBed.g.gain, S.on ? (_volleyBed ? 0.34 : 0.55) : 0.0001, 0.3);
   const mb = document.getElementById("muteBtn");
   if (mb) { const ic = mb.querySelector(".ico"); if (ic) ic.textContent = S.on ? "🔊" : "🔇"; }
 }
@@ -8861,7 +8861,6 @@ function renderFestPickGrid(roster) {
 function startFestRace() {
   document.getElementById("festPanel").hidden = true;
   festKind = "race"; _festG = null;   // the track appears now that the race is actually on
-  stopFestBed();                      // the race is on — hand the grounds back to the calliope
   const mk = cats.find(c => c.mascot);
   const others = cats.filter(c => c !== mk && c !== festPickedCat && !c.visitor);
   for (let i = others.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [others[i], others[j]] = [others[j], others[i]]; }
@@ -9008,8 +9007,8 @@ function startFestAudio() {
   festMurmur = murmur;
 
   _festMelodyBeat = 0;
-  scheduleFestMelody(gen);
-  startFestBed();                    // the hub's cozy track bed (no-ops off the hub / if the file won't load)
+  scheduleFestMelody(gen);           // fallback only — no-ops itself unless fest-bed.mp3 fails to load
+  startFestBed();                    // the festival's music, for the whole session
 }
 function stopFestAudio(keepGen) {
   if (!keepGen) _festAudioGen++;    // invalidate any in-flight startFestAudio()
@@ -9037,8 +9036,7 @@ const FEST_TUNE = [
 ].map(n => ({ len: 0.5, ...n }));
 function scheduleFestMelody(gen) {
   if (gen !== _festAudioGen || !festBus) return;   // a newer startFestAudio() superseded this loop
-  if (_volleyBed) { setTimeout(() => scheduleFestMelody(gen), 900); return; }   // volleyball runs its own beach bed; calliope steps aside
-  if (_festBed || (festKind === "hub" && festBedBuffer !== false)) { setTimeout(() => scheduleFestMelody(gen), 900); return; }   // hub plays the cozy track bed; calliope steps aside (unless the file failed to load)
+  if (festBedBuffer !== false) { setTimeout(() => scheduleFestMelody(gen), 1200); return; }   // fest-bed.mp3 is the festival's music now; the calliope only plays if the file failed to load
   const root = 523.25;   // C5 — bright calliope register
   let beatT = 0.05;
   for (const note of FEST_TUNE) {
@@ -9067,13 +9065,15 @@ function scheduleFestMelody(gen) {
 }
 
 /* ---- Cove Volleyball's own background: a lazy sunny-beach bed. The crowd
-   murmur (festMurmur) keeps going; the fairground calliope steps aside for
-   a slow wave wash + a sparse pentatonic marimba figure + the odd gull. ---- */
+   murmur (festMurmur) and the fest-bed.mp3 track both keep going; this layers
+   a slow wave wash + a sparse pentatonic marimba figure + the odd gull on top
+   (and ducks the music track a little so they read). ---- */
 let _volleyBed = null;
 function startVolleyBed() {
   if (!actx || !festBus || _volleyBed) return;
   const g = actx.createGain(); g.gain.value = 0.0001; g.connect(festBus);
   rampParam(g.gain, muted ? 0.0001 : 1, 1.6);
+  if (_festBed) rampParam(_festBed.g.gain, muted ? 0.0001 : FEST_BED_LVL_VOLLEY, 1.6);   // duck the music under the beach layer
   // wave wash — pink noise, a lowpass that breathes open and shut on a ~6s swell
   const surf = loopNoise("pink", 5);
   const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 520; lp.Q.value = 0.3;
@@ -9137,16 +9137,21 @@ function stopVolleyBed() {
   try { rampParam(b.g.gain, 0.0001, 1); } catch (e) {}
   try { b.surf.stop(t + 1.2); b.swell.stop(t + 1.2); } catch (e) {}
   setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, 1600);
+  if (_festBed) rampParam(_festBed.g.gain, festBedTarget(), 1.4);   // beach layer gone → music back up to full
 }
 
-/* ---- The festival hub's music bed — the "pick an activity" screen and the
-   race / volleyball picker grids that sit on the grounds. A warm, bass-light,
-   seam-faded loop of the fair's own track (fest-bed.mp3, fetched once). Rides
-   festBus, so the Sound panel's Music slider and mute already reach it. The
-   calliope steps aside while it plays (scheduleFestMelody); starting an
-   activity stops it and hands back to the calliope / beach bed. If the file
-   won't load the calliope just carries on as before. ---- */
+/* ---- The festival's music bed — the fair's own track (fest-bed.mp3, a warm,
+   bass-light, seam-faded loop, fetched once). Plays unbroken across the whole
+   festival session: the chooser, the race, volleyball — one continuous piece
+   so nothing lurches when you pick an activity. Rides festBus, so the Sound
+   panel's Music slider and mute reach it. Volleyball's beach layer (wave wash
+   / marimba / gulls) fades in on top and ducks this a little; the crowd
+   murmur (festMurmur) runs under everything the whole time. The procedural
+   calliope (scheduleFestMelody) is now only a fallback for when the file
+   won't load. ---- */
+const FEST_BED_LVL = 0.55, FEST_BED_LVL_VOLLEY = 0.34;   // ducked while the beach layer is up
 let festBedBuffer = null, _festBed = null, _festBedGen = 0;
+function festBedTarget() { return muted ? 0.0001 : (_volleyBed ? FEST_BED_LVL_VOLLEY : FEST_BED_LVL); }
 async function loadFestBed() {
   if (festBedBuffer !== null || !actx) return;   // loaded (buffer) or tried and failed (false)
   try {
@@ -9156,15 +9161,14 @@ async function loadFestBed() {
   } catch (e) { festBedBuffer = false; }
 }
 async function startFestBed() {
-  if (!actx || _festBed || festKind !== "hub") return;
+  if (!actx || _festBed) return;
   const gen = ++_festBedGen;
   await loadFestBed();
-  // superseded, left the hub, the whole fest session ended, or the file failed
-  if (gen !== _festBedGen || !festBus || !festMode || festKind !== "hub" || !festBedBuffer) return;
+  if (gen !== _festBedGen || !festBus || !festMode || !festBedBuffer) return;   // superseded, session ended, or the file failed
   const g = actx.createGain();
   g.gain.value = 0.0001;
   g.connect(festBus);
-  rampParam(g.gain, muted ? 0.0001 : 0.55, 1.8);
+  rampParam(g.gain, festBedTarget(), 1.8);
   const src = actx.createBufferSource();
   src.buffer = festBedBuffer; src.loop = true;
   src.connect(g); src.start();
@@ -9620,7 +9624,7 @@ document.getElementById("festAgain").addEventListener("click", () => {
   const roster = cats.filter(c => !c.visitor);
   if (festKind === "box") {
     boxParts = []; boxPhase = "picker"; festKind = "hub"; festGroundsCats(roster);
-    startFestBed();
+    startFestBed();                    // no-ops if it's already playing (it is, unless it failed to load first time)
     renderBoxPickGrid(roster);
     document.getElementById("festBoxPanel").hidden = false;
     trackEvent("box_challenge_replayed");
@@ -9628,7 +9632,8 @@ document.getElementById("festAgain").addEventListener("click", () => {
   }
   if (festKind === "volley") {
     volleyParts = []; volleyBall = null; volleyPhase = "idle"; festKind = "hub"; festGroundsCats(roster);
-    stopVolleyBed(); startFestBed();   // back to the hub → the cozy track bed resumes
+    stopVolleyBed();                   // beach layer off → stopVolleyBed lifts the music duck
+    startFestBed();
     document.getElementById("volleyHud").hidden = true;
     document.getElementById("volleyCom").hidden = true;
     document.getElementById("volleyBanner").hidden = true;
@@ -9638,7 +9643,7 @@ document.getElementById("festAgain").addEventListener("click", () => {
     return;
   }
   festKind = "hub"; festGroundsCats(roster);
-  startFestBed();   // back to the picker on the grounds → cozy bed
+  startFestBed();
   raceCats = []; raceWinner = null; racePick = null; racePhase = "picker"; festCheerUntil = 0;
   renderFestPickGrid(roster);
   document.getElementById("festPanel").hidden = false;
@@ -9827,7 +9832,6 @@ function startBoxChallenge() {
   if (boxPickedCats.length < need) return;
   document.getElementById("festBoxPanel").hidden = true;
   festKind = "box";
-  stopFestBed();
   fitFestCanvas();
   boxT = 0; boxPhase = "settle"; boxWinner = null;
   particles.length = 0; floaters.length = 0;
@@ -10317,7 +10321,6 @@ function startCoveVolley() {
   if (volleyPickSel.length !== 3) return;
   if (!volleyPickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats just wandered off."); return; }
   festKind = "volley";
-  stopFestBed();                      // volleyball brings its own beach bed
   fitFestCanvas();
   matchT = 0; volleyScore = { cove: 0, visit: 0 }; volleyBall = null;
   _vbServeAt = 0; _vbPointAt = 0; _vbResultAt = 0; _vbServer = Math.random() < 0.5 ? "cove" : "visit";
@@ -15653,7 +15656,9 @@ window.__cove = {
   audio(){ return { ctx: actx && actx.state, ambience: !!ambience, dayFactor,
     layers: ambience ? { water: ambience.waterGain.gain.value, wind: ambience.windGain.gain.value,
       crick: ambience.crickGain.gain.value, bird: ambience.birdGain.gain.value, master: ambience.master.gain.value } : null,
-    fest: festBus ? { on: festMode, gain: festBus.gain.value, beat: _festMelodyBeat } : null,
+    fest: festBus ? { on: festMode, gain: festBus.gain.value, beat: _festMelodyBeat,
+      bed: _festBed ? +_festBed.g.gain.value.toFixed(3) : (festBedBuffer === false ? "failed→calliope" : "off"),
+      beach: !!_volleyBed } : null,
     samples: Object.fromEntries(Object.entries(SFX_FILES).map(([k,v]) => [k, v.filter(u => _sfxBuf[u]).length + "/" + v.length])) }; },
   meow(pool = "meow"){ ensureAudio(); return playSample(pool, { vol: 0.6 }); },
   chime(){ ensureAudio(); setTimeout(purchaseChime, 40); return "played the purchase chime"; },
