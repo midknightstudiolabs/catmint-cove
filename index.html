@@ -2999,7 +2999,7 @@ function goalDef(id) { return GOAL_POOL.find(g => g.id === id); }
 const STATE_LABEL = {
   arriving:"finding a spot", loafing:"loafing", sleeping:"fast asleep", eating:"at the food bowl", drinking:"having a drink",
   playing:"playing", socializing:"socializing", exploring:"exploring", knocking:"knocking things over",
-  sulking:"sulking", being_pet:"being petted", seeking:"heading somewhere", grooming:"washing up",
+  sulking:"sulking", being_pet:"being petted", wantpet:"asking for a fuss", seeking:"heading somewhere", grooming:"washing up",
   scratching:"having a good scratch", stretching:"having a big stretch", zooming:"got the zoomies", chasing:"on the hunt",
   tag:"having a good chase", fishing:"fishing off the dock", baking:"helping at the bakery", sunbathing:"in the sunbeam", rolling:"rolling in the catmint",
 };
@@ -3196,6 +3196,20 @@ function decide(c) {
     return a ? go(c, "knocking", rand(3, 5), { x: a.x, y: a.y }) : go(c, "loafing", 8, null);
   });
 
+  // a cat that wants a fuss — trots to the front of the cove and asks to be noticed
+  if (!c.mascot && G.tutorialDone && c.mood >= 42) {
+    const sincePet = performance.now() - (c._petAt || -1e9);
+    const cuddly = c.traits.includes("cuddly") || c.traits.includes("chatty") || c.traits.includes("clingy");
+    let pw = (cuddly ? 3.2 : 1.1) + (c.mood > 62 ? 0.8 : 0) + ((c.bond || 0) > 30 ? 0.7 : 0);
+    if (sincePet < 55000) pw *= 0.12;          // just had one — leave it be
+    add(pw, () => {
+      const tx = clamp(c.x + rand(-110, 110), W * 0.2, W * 0.8);
+      const ty = rand(catFloor() - 66, catFloor() - 28);
+      c._pmT = rand(0.5, 1.3);
+      return go(c, "wantpet", rand(7, 12), { x: tx, y: ty });
+    });
+  }
+
   // just loaf
   add(2.2, () => go(c, "loafing", rand(12, 22), null));
 
@@ -3238,6 +3252,13 @@ function go(c, state, dur, target) {
     if (c.vx !== undefined) { c.vx *= 0.3; c.vy *= 0.3; }
   }
   return c;
+}
+// a quick springy pop — a happy hop in place. drawCat plays the arc off _jumpT.
+const CAT_JUMP_DUR = 0.46;
+function catHop(c, h) {
+  if (c._jumpT > 0 || c.state === "sleeping" || c.state === "being_pet") return;
+  c._jumpT = CAT_JUMP_DUR; c._jumpH = h || 15;
+  spawnParticles(c.x, c.y - 2, "dust", 2);
 }
 
 // per-cat idle-motion flavour, derived once from personality: a lazy cat's tail
@@ -3336,11 +3357,18 @@ function updateCat(c, dt) {
   c.bob += dt * (c.state === "playing" ? 12 : 3) * kittenBounce;
   if (c.squash > 0) c.squash = Math.max(0, c.squash - dt * 4);
   if (c.petCount > 0) c.petCount -= dt * 0.15;
+  if (c._jumpT > 0) c._jumpT = Math.max(0, c._jumpT - dt);
+  // a happy little pop — bouncy cats and kittens, now and then, when at ease
+  if (!c._jumpT && !c.mascot && c.mood > 55
+      && (c.isKitten || (c.traits && (c.traits.includes("playful") || c.traits.includes("bold") || c.traits.includes("curious") || c.traits.includes("cuddly"))))
+      && ["loafing", "exploring", "playing", "grooming", "wantpet"].includes(c.state) && Math.random() < dt * 0.09) {
+    catHop(c, rand(12, 20));
+  }
   if (c.stateDur >= 1e6) return;          // audit freeze: hold pose, keep idle anim
   if (c.petBuff > 0) c.petBuff -= dt;
 
   /* -------- steering: velocity-based, damped, no teleporting -------- */
-  const travelling = ["arriving", "seeking", "exploring", "socializing", "knocking", "zooming", "chasing", "tag"].includes(c.state);
+  const travelling = ["arriving", "seeking", "exploring", "socializing", "knocking", "zooming", "chasing", "tag", "wantpet"].includes(c.state);
   // "held" cats hold their chosen spot — they still push others away but aren't pushed themselves
   const HELD_STATES = ["being_pet", "sleeping", "eating", "drinking", "baking", "sunbathing", "fishing", "grooming", "rolling", "scratching", "stretching", "indoors"];
   const held = HELD_STATES.includes(c.state);
@@ -3760,7 +3788,35 @@ function updateCat(c, dt) {
     return;
   }
   if (c.state === "being_pet") {
-    if (c.stateT > 0.7) decide(c);
+    if (c.stateT > 0.7) {
+      // a petted cat settles right where it is — a contented loaf, and often
+      // melts into a nap. a prickly / low-mood one just carries on.
+      const happy = c.mood > 48 && c.petAffinity() > 0.3;
+      if (happy && Math.random() < (c._gotFuss ? 0.9 : 0.6)) {
+        c._gotFuss = false;
+        const sleepy = c.traits.includes("lazy") || c.traits.includes("cuddly") || Math.random() < 0.4;
+        return go(c, sleepy ? "sleeping" : "loafing", sleepy ? rand(18, 34) : rand(10, 20), null);
+      }
+      c._gotFuss = false;
+      decide(c);
+    }
+    return;
+  }
+  if (c.state === "wantpet") {
+    // trotted to a visible spot; now sit and ask — a little hop, a heart, a soft meow
+    const there = Math.hypot(c.tx - c.x, c.ty - c.y) < 12;
+    if (there) {
+      c.vx *= 0.6; c.vy *= 0.6; c.tx = c.x; c.ty = c.y;   // settle in place, stop the walk
+      c._pmT = (c._pmT || rand(0.6, 1.4)) - dt;
+      if (c._pmT <= 0) {
+        c._pmT = rand(1.6, 2.8);
+        catHop(c, rand(11, 17));
+        spawnParticles(c.x + rand(-6, 6), c.y - 30, "heart", 1);
+        floatText(c.x, c.y - 40, pick(["pet me?", "♥", "over here", "hi"]), "#d6688a");
+        if (Math.random() < 0.35) sfx("arrive", c);
+      }
+    }
+    if (c.stateT > c.stateDur) { c._pmT = 0; decide(c); }   // nobody came — wander off, no harm done
     return;
   }
   if (c.state === "zooming") {
@@ -4603,6 +4659,10 @@ function petCat(c) {
   c._petAt = _now;
   c.petCount += 1;
   c.squash = 1;
+  if (c.state === "wantpet") {   // you noticed! — extra hearts, and it'll melt down after
+    c._gotFuss = true;
+    spawnParticles(c.x, c.y - 26, "heart", 10);
+  }
   c.state = "being_pet";
   c.stateT = 0;
   c.vx = 0; c.vy = 0;          // stop in place to enjoy the pets
@@ -13103,8 +13163,9 @@ function drawCat(g, c, isPhoto) {
 
   // walking uses the normal loaf body — the lean, stretch, bob and legs carry the motion,
   // so the shape never pops between a "trot" pose and a "rest" pose as the gait eases in/out
+  const asking = c.state === "wantpet" && (c.walkAmt || 0) < 0.06;
   const pose = asleep ? "sleep" : playing ? "play"
-             : (c.state === "socializing" || grooming || scratching) ? "sit" : "rest";
+             : (c.state === "socializing" || grooming || scratching || asking) ? "sit" : "rest";
   const sleepStyle = asleep ? ((c.markSeed || 0) % 3) : 0;   // 0 loaf · 1 curl · 2 side-flop (stable per cat)
   const P = poseParams(pose, sleepStyle);
   if (strK > 0.05) { P.hy += strK * 11; P.hr *= 1 - strK * 0.06; }  // stretch: chin & chest sink toward the ground
@@ -13146,14 +13207,18 @@ function drawCat(g, c, isPhoto) {
   const sunBreath = sunning ? Math.sin(c.stateT * 1.1) * 0.05 : 0;
 
   const gaitBob = -hop * 3.4;
+  // a happy hop — a 0→1→0 arc off _jumpT, with a squish on takeoff and landing
+  const jt = c._jumpT > 0 ? 1 - c._jumpT / CAT_JUMP_DUR : 0;
+  const jumpUp = jt > 0 ? Math.sin(jt * Math.PI) * (c._jumpH || 15) : 0;
+  const jumpSq = jt > 0 ? (jt < 0.18 ? jt / 0.18 : jt > 0.82 ? (1 - jt) / 0.18 : 0) * 0.5 : 0;
   // only a walking or playing cat lifts off the ground. a still cat (sitting,
   // standing, fishing, at a station) stays planted — its "breathing" is the
   // `breathe` chest-scale below, not a whole-body hover over a fixed shadow.
   const airborne = playing || wk > 0.06;
-  const bobY = asleep ? 0
+  const bobY = (asleep ? 0
     : airborne ? Math.sin(c.bob) * (playing ? 2.6 : 1.1) + gaitBob - knead * 2.2
-    : -knead * 2.2;
-  const sq = c.squash + knead * 0.16;
+    : -knead * 2.2) - jumpUp;
+  const sq = c.squash + knead * 0.16 + jumpSq;
   const breathe = 1 + Math.sin(c.bob) * 0.015 + sunBreath;
   const gs = wk * CHARM * air * 0.07;                       // squash on the plant, stretch in the air
   const scaleX = ag * (1 + sq * 0.18) * (1 + wk * 0.05 - gs * 0.7) * (1 + strK * 0.34);   // stretch: long
@@ -13204,12 +13269,13 @@ function drawCat(g, c, isPhoto) {
   }
 
   // warm contact shadow — anchored at the ground, unaffected by the body bob; a dense core + a soft halo
-  const shW = ag * (P.bw + 3) * (1 + wk * 0.1 - hop * 0.22);
+  const jumpShrink = Math.min(0.4, jumpUp * 0.022);   // the shadow pulls in as the cat leaves the ground
+  const shW = ag * (P.bw + 3) * (1 + wk * 0.1 - hop * 0.22 - jumpShrink);
   g.save();
   g.translate(0, 3 - bobY);
   g.fillStyle = catShadowGrad(g, shW);
   g.beginPath();
-  g.ellipse(0, 0, shW, ag * 5 * (1 - hop * 0.2), 0, 0, 7);
+  g.ellipse(0, 0, shW, ag * 5 * (1 - hop * 0.2 - jumpShrink), 0, 0, 7);
   g.fill();
   g.restore();
 
