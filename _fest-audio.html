@@ -37,6 +37,11 @@
   .presets button{flex:1;border:1px dashed var(--line);background:none;color:var(--soft);cursor:pointer;
     border-radius:10px;padding:8px 4px;font:600 .74rem/1 "Hanken Grotesk";}
   .presets button:hover{border-color:var(--terra);color:var(--ink);}
+  .loops{display:flex;gap:6px;}
+  .loops button{flex:1;border:1px solid var(--line);background:var(--paper);color:var(--soft);cursor:pointer;
+    border-radius:9px;padding:7px 3px;font:600 .72rem/1 "Hanken Grotesk";}
+  .loops button:hover{border-color:var(--terra);color:var(--ink);}
+  .loops button.on{background:var(--terra);color:var(--cream);border-color:var(--terra);}
   .cfg{margin-top:14px;background:#efe7d4;border-radius:10px;padding:10px 12px;
     font:500 .72rem/1.5 "IBM Plex Mono",ui-monospace,monospace;color:var(--ink);word-break:break-all;}
   .foot{margin-top:14px;font-size:.72rem;color:var(--soft);line-height:1.55;border-top:1px solid var(--line);padding-top:12px;}
@@ -47,9 +52,9 @@
 
 <div class="card">
   <h1>Cove Festival — pick-an-activity music</h1>
-  <p class="sub">The track you found, warmed toward the game's world. Drag the
-    <b>loop window</b> to a section that loops well, then dial the vibe. Hit a
-    preset to start, tweak, and read me the line at the bottom.</p>
+  <p class="sub">The track's ~136&nbsp;BPM (1.765&nbsp;s a bar). The <b>Loop pick</b>
+    buttons are beat-aligned windows that hard-cut cleanly — start there, then
+    nudge the vibe and read me the line at the bottom.</p>
 
   <div class="ab">
     <button id="b-orig">Original<small>full, no filters</small></button>
@@ -60,8 +65,17 @@
 
   <div class="viz" id="viz"></div>
 
-  <div class="row"><label>Loop start</label><input type="range" id="ls" min="0" max="120" step="0.5" value="32"><output id="ols">32.0s</output></div>
-  <div class="row"><label>Loop length</label><input type="range" id="ll" min="6" max="40" step="0.5" value="16"><output id="oll">16.0s</output></div>
+  <div class="row" style="grid-template-columns:76px 1fr;">
+    <label>Loop pick</label>
+    <div class="loops" id="loops">
+      <button data-s="16.53" data-l="14.12">8-bar A</button>
+      <button data-s="30.21" data-l="14.12">8-bar B</button>
+      <button data-s="16.53" data-l="28.24">16-bar</button>
+      <button data-s="17.41" data-l="7.06">4-bar</button>
+    </div>
+  </div>
+  <div class="row"><label>Loop start</label><input type="range" id="ls" min="0" max="120" step="0.01" value="16.53"><output id="ols">16.5s</output></div>
+  <div class="row"><label>Loop length</label><input type="range" id="ll" min="4" max="40" step="0.01" value="14.12"><output id="oll">14.1s</output></div>
   <div class="row"><label>Warmth</label><input type="range" id="warm" min="0" max="10" step="0.5" value="4"><output id="owarm">4.0</output></div>
   <div class="row"><label>Brightness</label><input type="range" id="bri" min="3000" max="16000" step="250" value="7500"><output id="obri">7.5k</output></div>
   <div class="row"><label>Space</label><input type="range" id="space" min="0" max="60" step="2" value="14"><output id="ospace">14</output></div>
@@ -73,7 +87,7 @@
     <button data-p="soft">Very soft</button>
   </div>
 
-  <div class="cfg" id="cfg">start 32.0 · len 16.0 · warm 4.0 · bright 7500 · space 14 · level 60</div>
+  <div class="cfg" id="cfg">start 16.53 · len 14.12 · warm 5.0 · bright 6500 · space 18 · level 55</div>
 
   <div class="foot">When it feels right, read me the line above — I'll bake that
     exact loop + treatment into <b><code>FEST_BED_DATA</code></b> and play it at the
@@ -86,7 +100,7 @@
   const $ = id => document.getElementById(id);
   let actx = null, buf = null, src = null, raf = 0, mode = null;
   let lp, ls1, hs, conv, convWet, dry, out, analyser;
-  const S = { start: 32, len: 16, warm: 4, bright: 7500, space: 14, level: 60 };
+  const S = { start: 16.53, len: 14.12, warm: 5, bright: 6500, space: 18, level: 55 };
 
   const viz = $("viz");
   for (let i = 0; i < 32; i++) viz.appendChild(document.createElement("i"));
@@ -119,19 +133,26 @@
   }
 
   function apply() {
+    $("cfg").textContent = `start ${S.start.toFixed(2)} · len ${S.len.toFixed(2)} · warm ${S.warm.toFixed(1)} · bright ${S.bright} · space ${S.space} · level ${S.level}`;
     if (!actx) return;
     const filtered = mode !== "orig";
-    lp.frequency.value = filtered ? S.bright : 20000;
-    ls1.gain.value = filtered ? S.warm : 0;
-    hs.gain.value = filtered ? -(S.warm * 0.5) : 0;
-    convWet.gain.value = filtered ? S.space / 100 : 0;
-    dry.gain.value = filtered ? 1 - (S.space / 260) : 1;
-    out.gain.value = S.level / 100;
-    if (src && src.loop && mode !== "orig") {
-      src.loopStart = S.start;
-      src.loopEnd = Math.min(buf.duration, S.start + S.len);
-    }
-    $("cfg").textContent = `start ${S.start.toFixed(1)} · len ${S.len.toFixed(1)} · warm ${S.warm.toFixed(1)} · bright ${S.bright} · space ${S.space} · level ${S.level}`;
+    const t = actx.currentTime, R = (p, v) => { try { p.setTargetAtTime(v, t, 0.04); } catch (e) { p.value = v; } };
+    R(lp.frequency, filtered ? S.bright : 20000);
+    R(ls1.gain, filtered ? S.warm : 0);
+    R(hs.gain, filtered ? -(S.warm * 0.5) : 0);
+    R(convWet.gain, filtered ? S.space / 100 : 0);
+    R(dry.gain, filtered ? 1 - (S.space / 260) : 1);
+  }
+  function setLevel() {
+    if (!actx || !mode) { return; }
+    const t = actx.currentTime;
+    out.gain.cancelScheduledValues(t);
+    out.gain.setTargetAtTime(Math.max(0.001, S.level / 100), t, 0.05);
+  }
+  // loop-window edits restart the source cleanly (setting loopStart/End mid-play clicks)
+  let _loopTimer = 0;
+  function reloop() {
+    if (mode && mode !== "orig") { clearTimeout(_loopTimer); _loopTimer = setTimeout(() => play(mode), 90); }
   }
 
   async function ensure() {
@@ -148,20 +169,25 @@
     $("err").hidden = true;
     try { await ensure(); } catch (e) { $("err").textContent = String(e.message || e); $("err").hidden = false; return; }
     await actx.resume();
-    if (src) { try { src.stop(); } catch (e) {} src = null; }
+    const now = actx.currentTime;
+    if (src) { try { src.stop(now + 0.09); } catch (e) { try { src.stop(); } catch (e2) {} } src = null; }
     mode = m;
     src = actx.createBufferSource();
     src.buffer = buf;
+    src.loop = true;
     src.connect(lp);
-    if (m === "orig") { src.loop = true; }
-    else {
-      src.loop = true;
-      src.loopStart = S.start;
-      src.loopEnd = Math.min(buf.duration, S.start + S.len);
-      try { src.start(0, S.start); } catch (e) { src.start(); }
-      mount(m); return;
+    if (m !== "orig") {
+      const end = Math.min(buf.duration, S.start + S.len);
+      src.loopStart = Math.max(0, Math.min(S.start, end - 1));
+      src.loopEnd = end;
+      try { src.start(now + 0.06, S.start); } catch (e) { src.start(); }
+    } else {
+      try { src.start(now + 0.06); } catch (e) { src.start(); }
     }
-    src.start();
+    // fade the new source in so restarts don't click
+    out.gain.cancelScheduledValues(now);
+    out.gain.setValueAtTime(0.0001, now + 0.05);
+    out.gain.exponentialRampToValueAtTime(Math.max(0.001, S.level / 100), now + 0.16);
     mount(m);
   }
   function mount(m) {
@@ -171,7 +197,12 @@
     cancelAnimationFrame(raf); tick();
   }
   function stop() {
-    if (src) { try { src.stop(); } catch (e) {} src = null; }
+    if (src) {
+      const now = actx ? actx.currentTime : 0;
+      try { out.gain.cancelScheduledValues(now); out.gain.setTargetAtTime(0.0001, now, 0.03); } catch (e) {}
+      try { src.stop(now + 0.12); } catch (e) { try { src.stop(); } catch (e2) {} }
+      src = null;
+    }
     mode = null;
     document.querySelectorAll(".ab button").forEach(b => b.classList.remove("on"));
     $("stop").hidden = true; viz.classList.remove("on");
@@ -193,20 +224,22 @@
   }));
   $("stop").addEventListener("click", stop);
 
-  function bind(id, key, fmt) {
+  function bind(id, key, fmt, after) {
     const el = $(id), o = $("o" + id);
     el.addEventListener("input", () => {
       S[key] = parseFloat(el.value);
       o.textContent = fmt ? fmt(S[key]) : el.value;
       apply();
+      if (after) after();
     });
   }
-  bind("ls", "start", v => v.toFixed(1) + "s");
-  bind("ll", "len", v => v.toFixed(1) + "s");
+  const afterLoop = () => { reloop(); markLoop(); };
+  bind("ls", "start", v => v.toFixed(1) + "s", afterLoop);
+  bind("ll", "len", v => v.toFixed(1) + "s", afterLoop);
   bind("warm", "warm", v => v.toFixed(1));
   bind("bri", "bright", v => (v / 1000).toFixed(1) + "k");
   bind("space", "space", v => String(v | 0));
-  bind("lvl", "level", v => String(v | 0));
+  bind("lvl", "level", v => String(v | 0), setLevel);
 
   const PRE = {
     fair: { warm: 3, bright: 9000, space: 10, level: 62 },
@@ -219,7 +252,21 @@
     $("bri").value = S.bright; $("obri").textContent = (S.bright / 1000).toFixed(1) + "k";
     $("space").value = S.space; $("ospace").textContent = String(S.space | 0);
     $("lvl").value = S.level; $("olvl").textContent = String(S.level | 0);
-    if (!mode || mode === "orig") play("ours"); else apply();
+    if (!mode || mode === "orig") play("ours"); else { apply(); setLevel(); }
   }));
+
+  const loopBtns = document.querySelectorAll("#loops button");
+  function markLoop() {
+    loopBtns.forEach(b => b.classList.toggle("on",
+      Math.abs(+b.dataset.s - S.start) < 0.02 && Math.abs(+b.dataset.l - S.len) < 0.02));
+  }
+  loopBtns.forEach(b => b.addEventListener("click", () => {
+    S.start = +b.dataset.s; S.len = +b.dataset.l;
+    $("ls").value = S.start; $("ols").textContent = S.start.toFixed(1) + "s";
+    $("ll").value = S.len; $("oll").textContent = S.len.toFixed(1) + "s";
+    markLoop(); apply();
+    if (!mode || mode === "orig") play("ours"); else play(mode);
+  }));
+  markLoop();
 })();
 </script>
