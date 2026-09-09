@@ -1875,6 +1875,8 @@ function load() {
     // pre-existing owners: a station bought in the old shop counts as its project already restored
     if (!G.projects.woodland && G.stations && G.stations.garden > 0)
       G.projects.woodland = { stage: "done", paid: { shells: 0, driftwood: 0 } };
+    if (!G.projects.bakery && G.stations && G.stations.bakery > 0)
+      G.projects.bakery = { stage: "done", paid: { shells: 0, driftwood: 0 } };
     syncProjectUnlocks();   // dock already done on an older save → open the woodland path now
     // one-time: the economy was rebalanced (Phase A). Testers are sitting on huge
     // old-economy balances that hide the new pacing — give shells a clean start.
@@ -2122,6 +2124,17 @@ const PROJECTS = [{
   hint: "The path into the trees is walkable now. Tap the brambles to see what clearing them takes.",
   done: "The path's clear to the treeline. The catmint's grown back thick, and someone is already face-down in it.",
   next: "Past the catmint there's a lean-to with a cold oven — the little bakery, when you're ready.",
+}, {
+  id: "bakery", label: "The lean-to bakery", station: "bakery",
+  requires: "woodland",                 // opens once the catmint path is clear
+  home: { x: 0.86, y: 0.44 }, marker: "leanto",
+  blurb: "A cold clay oven under a sagging lean-to at the far edge of the cove. Get it warm again and cats will bake here — kneading, shaping, and carrying warm buns round to share.",
+  cost: { shells: 3200, driftwood: 14 },
+  buildMin: 480,
+  unlock: "a warm bakery + room for more cats",
+  hint: "The lean-to's oven is stone-cold. Tap it to see what firing it back up would take.",
+  done: "The oven's lit and the whole corner smells of fresh bread. A cat is already asleep against the warm clay.",
+  next: "That's the cove whole again — the dock, the path, and the bakery. Thank you for bringing it back.",
 }];
 const PROJECT_BY_ID = Object.fromEntries(PROJECTS.map(p => [p.id, p]));
 function projectStage(id) { const p = G.projects && G.projects[id]; return p ? p.stage : "hidden"; }
@@ -2988,7 +3001,7 @@ const STATE_LABEL = {
   playing:"playing", socializing:"socializing", exploring:"exploring", knocking:"knocking things over",
   sulking:"sulking", being_pet:"being petted", seeking:"heading somewhere", grooming:"washing up",
   scratching:"having a good scratch", stretching:"having a big stretch", zooming:"got the zoomies", chasing:"on the hunt",
-  fishing:"fishing off the dock", baking:"helping at the bakery", sunbathing:"in the sunbeam", rolling:"rolling in the catmint",
+  tag:"having a good chase", fishing:"fishing off the dock", baking:"helping at the bakery", sunbathing:"in the sunbeam", rolling:"rolling in the catmint",
 };
 
 function nearestAttractor(c, type) {
@@ -3029,6 +3042,7 @@ function decide(c) {
   c.stateT = 0;
   c.partner = null;
   c._station = null;
+  c._tag = c._tagOther = c._tagRole = null;
 
   // Labubu just mooches around near Midknight while he's visiting
   if (c.visitor) {
@@ -3326,7 +3340,7 @@ function updateCat(c, dt) {
   if (c.petBuff > 0) c.petBuff -= dt;
 
   /* -------- steering: velocity-based, damped, no teleporting -------- */
-  const travelling = ["arriving", "seeking", "exploring", "socializing", "knocking", "zooming", "chasing"].includes(c.state);
+  const travelling = ["arriving", "seeking", "exploring", "socializing", "knocking", "zooming", "chasing", "tag"].includes(c.state);
   // "held" cats hold their chosen spot — they still push others away but aren't pushed themselves
   const HELD_STATES = ["being_pet", "sleeping", "eating", "drinking", "baking", "sunbathing", "fishing", "grooming", "rolling", "scratching", "stretching", "indoors"];
   const held = HELD_STATES.includes(c.state);
@@ -3336,11 +3350,12 @@ function updateCat(c, dt) {
     const dx = c.tx - c.x, dy = c.ty - c.y;
     const dd = Math.hypot(dx, dy);
     const zoomN = c.state === "zooming";
+    const tagN = c.state === "tag";
     if (dd > 1.5) {
-      const top = 46 * c.speedMul() * (c.state === "exploring" ? 0.8 : zoomN ? 3.6 : 1);
-      const slowR = zoomN ? 12 : 60;                     // zoomies don't ease in — flat out
+      const top = 46 * c.speedMul() * (c.state === "exploring" ? 0.8 : zoomN ? 3.6 : tagN ? 2.7 : 1);
+      const slowR = zoomN ? 12 : tagN ? 24 : 60;         // zoomies don't ease in — flat out
       const want = dd < slowR ? Math.max(top * 0.18, top * (dd / slowR)) : top;
-      const gain = zoomN ? 12 : 6.5;
+      const gain = (zoomN || tagN) ? 11 : 6.5;
       ax += ((dx / dd) * want - c.vx) * gain;            // steer toward the desired velocity
       ay += ((dy / dd) * want - c.vy) * gain;
     }
@@ -3351,7 +3366,7 @@ function updateCat(c, dt) {
   // on a small screen has them all endlessly micro-drifting ("sleeping cat is
   // moving"). Once a held cat has room it goes perfectly still.
   let crowded = false, hardStacked = false, crowdPush = 0;
-  if (c.state !== "being_pet" && c.state !== "zooming") {
+  if (c.state !== "being_pet" && c.state !== "zooming" && c.state !== "tag") {
     let sx = 0, sy = 0, hits = 0;
     const R = held ? 34 : 52;
     for (const o of cats) {
@@ -3414,14 +3429,14 @@ function updateCat(c, dt) {
   // integrate + damp. a hard-stacked held cat loosens up briefly to slide clear;
   // otherwise held = clamped tight so it doesn't drift.
   c.vx += ax * dt; c.vy += ay * dt;
-  const damp = c.state === "zooming" ? 1.1 : held ? (hardStacked ? 5 : 24) : shoving ? 4 : travelling ? 2.4 : 9;
+  const damp = c.state === "zooming" ? 1.1 : c.state === "tag" ? 1.8 : held ? (hardStacked ? 5 : 24) : shoving ? 4 : travelling ? 2.4 : 9;
   const dk = Math.min(1, damp * dt);
   c.vx -= c.vx * dk; c.vy -= c.vy * dk;
 
   // cap speed, and kill sub-pixel drift so idle cats are perfectly still
   // (but let a stacked cat keep its slow untangle crawl)
   let spd = Math.hypot(c.vx, c.vy);
-  const spCap = c.state === "zooming" ? 165 : 62;
+  const spCap = c.state === "zooming" ? 165 : c.state === "tag" ? 132 : 62;
   if (spd > spCap) { const s = spCap / spd; c.vx *= s; c.vy *= s; spd = spCap; }
   // held + not hard-stacked → dead still. idle non-held → still unless actively
   // shoving clear of a real overlap (a light edge-touch is allowed to settle).
@@ -3766,6 +3781,53 @@ function updateCat(c, dt) {
       c._zoomCD = performance.now() + rand(150, 340) * 1000;
       if (!c.mascot && Math.random() < 0.35) floatText(c.x, c.y - 30, "!", "#e08a3c");
     }
+    return;
+  }
+  if (c.state === "tag") {
+    // two friends tearing round the cove taking turns being "it". the runner
+    // laps a loose loop; the chaser cuts straight at them. a catch flips who's
+    // "it", with a short grace so they actually get a chase in between.
+    const loop = c._tag, other = c._tagOther;
+    if (!loop || !other || other._gone || other.state !== "tag" || c.stateT > c.stateDur) {
+      for (const p of [c, other]) if (p) p._tag = p._tagOther = p._tagRole = null;
+      c.partner = other && !other._gone ? other : null;
+      go(c, "grooming", rand(2.6, 4.2), null);
+      return;
+    }
+    if (c._tagRole === "runner") {
+      const prev = loop.ang;
+      loop.ang += loop.dir * dt * 1.3;                 // ~a lap every 5s — a cat at full tilt can just about track it
+      loop.travel = (loop.travel || 0) + Math.abs(loop.ang - prev);   // radians run this leg
+      if (loop.grace > 0) loop.grace -= dt;
+      c.tx = clamp(loop.cx + Math.cos(loop.ang) * loop.rx, 28, W - 28);
+      c.ty = clamp(loop.cy + Math.sin(loop.ang) * loop.ry, H * 0.5, catFloor() - 8);
+      const caught = loop.grace <= 0 && loop.travel > 1.1 && Math.hypot(other.x - c.x, other.y - c.y) < 26;
+      if (caught) {
+        c.squash = 1; other.squash = 1;
+        spawnParticles((c.x + other.x) / 2, (c.y + other.y) / 2 - 3, "dust", 5);
+        floatText(c.x, c.y - 26, "!", "#e8b45a");
+        c.mood = clamp(c.mood + 2, 0, 100); other.mood = clamp(other.mood + 2, 0, 100);
+        loop.laps++;
+        if (loop.laps >= loop.maxLaps) {
+          for (const p of [c, other]) { p._tag = p._tagOther = p._tagRole = null; }
+          c.partner = other; other.partner = c;
+          go(c, "grooming", rand(3, 5), null);
+          go(other, "grooming", rand(3, 5), { x: c.x + (other.x < c.x ? -1 : 1) * rand(24, 34), y: c.y + rand(-8, 8) });
+          if (Math.random() < 0.4) { gainBond(c, 0.3, true); gainBond(other, 0.3, true); }
+          _tagCD = performance.now() + rand(170, 340) * 1000;
+          return;
+        }
+        c._tagRole = "chaser"; other._tagRole = "runner";
+        loop.ang = Math.atan2((other.y - loop.cy) / loop.ry, (other.x - loop.cx) / loop.rx);
+        loop.travel = 0; loop.grace = 0.9;
+        if (Math.random() < 0.4) loop.dir *= -1;
+      }
+    } else {
+      c.tx = clamp(other.x, 26, W - 26);
+      c.ty = clamp(other.y, H * 0.5, catFloor() - 8);
+    }
+    if (Math.abs(c.vx) > 6) c.face = c.vx >= 0 ? 1 : -1;
+    if (Math.random() < dt * 3 && Math.hypot(c.vx, c.vy) > 78) spawnParticles(c.x, c.y - 3, "dust", 1);
     return;
   }
   if (c.stateT >= c.stateDur) {
@@ -11424,6 +11486,45 @@ function maybeGiveChase(dt) {
   }
 }
 
+// now and then two friends break into a chase round the cove — one runs a loose
+// loop, the other cuts at them, and each catch flips who's "it". a few laps,
+// then they flop down together. cosmetic; skipped under reduce-motion.
+let _tagCD = 0;
+function maybeStartTag(dt) {
+  if (_reduceMotion || !G || !G.tutorialDone || restMode) return;
+  if (performance.now() < _tagCD || cats.length < 3) return;
+  if (Math.random() > dt * 0.085) return;
+  const free = c => !c.visitor && !c.mascot && !c._gone && !c._tag
+    && ["loafing", "exploring", "grooming", "socializing", "stretching"].includes(c.state)
+    && c.mood > 46;
+  const pool = cats.filter(free);
+  for (const a of pool) {
+    const b = pool.find(o => o !== a && o.name === a.friend && a.name === o.friend
+      && Math.hypot(o.x - a.x, o.y - a.y) < 220);
+    if (!b) continue;
+    const playful = a.traits.includes("playful") || b.traits.includes("playful") || a.isKitten || b.isKitten;
+    if (Math.random() > (playful ? 0.9 : 0.4)) return;
+    startTag(a, b);
+    return;
+  }
+}
+function startTag(runner, chaser) {
+  const cx = clamp((runner.x + chaser.x) / 2, W * 0.26, W * 0.74);
+  const cy = clamp((runner.y + chaser.y) / 2, H * 0.58, catFloor() - 26);
+  const loop = {
+    cx, cy, rx: rand(90, 130), ry: rand(36, 52),
+    ang: Math.atan2(runner.y - cy, runner.x - cx),
+    dir: Math.random() < 0.5 ? 1 : -1, laps: 0, maxLaps: 3 + ((Math.random() * 3) | 0),   // 3–5 tags
+    travel: 0, grace: 0.6,
+  };
+  for (const [c, role] of [[runner, "runner"], [chaser, "chaser"]]) {
+    c._tag = loop; c._tagRole = role; c._tagOther = role === "runner" ? chaser : runner;
+    c.partner = null;
+    go(c, "tag", rand(11, 16), null);
+  }
+  if (Math.random() < 0.6) floatText(runner.x, runner.y - 28, "!", "#7aa86a");
+}
+
 /* ---------- a bird visits the cove sign now and then ---------- */
 let _bird = null, _birdTimer = rand(40, 110);
 function updateBird(dt) {
@@ -11806,6 +11907,7 @@ function drawProjectMarker(g, pid) {
   const t = performance.now() / 1000;
   const def = PROJECT_BY_ID[pid];
   if (def && def.marker === "brambles") drawBrambleScene(g, st, prog, t);
+  else if (def && def.marker === "leanto") drawLeanToScene(g, st, prog, t);
   else drawDockScene(g, st, prog, t);
   // hand-lettered sign
   g.save(); g.translate(-30, -18); g.rotate(-0.08);
@@ -11897,6 +11999,52 @@ function drawBrambleScene(g, st, prog, t) {
   if (clear > 0.12) {
     g.strokeStyle = "#8a6a44"; g.lineWidth = 1.6;
     for (const sx of [-13, -3, 7]) { g.beginPath(); g.moveTo(sx, 14); g.lineTo(sx, 14 - 6 * clear); g.stroke(); }
+  }
+}
+// the lean-to bakery: a cold clay oven under a sagging roof, roped off. as it's
+// restored the roof straightens and the first warmth creeps back into the oven mouth.
+function drawLeanToScene(g, st, prog, t) {
+  const warm = st === "building" ? prog : st === "done" ? 1 : 0;
+  g.fillStyle = "rgba(30,26,20,0.10)";
+  g.beginPath(); g.ellipse(2, 14, 42, 12, 0, 0, 7); g.fill();
+  // lean-to posts + a plank roof that sags while it's still broken
+  const sag = (1 - warm) * 6;
+  g.strokeStyle = "#7d6039"; g.lineWidth = 3; g.lineCap = "round";
+  g.beginPath(); g.moveTo(-26, 14); g.lineTo(-25, -20); g.stroke();
+  g.beginPath(); g.moveTo(26, 14); g.lineTo(24, -12); g.stroke();
+  g.strokeStyle = "#8a6a44"; g.lineWidth = 4;
+  g.beginPath(); g.moveTo(-28, -20); g.quadraticCurveTo(-1, -12 + sag, 26, -12); g.stroke();
+  // clay oven — warms in colour as it comes back to life
+  g.fillStyle = warm > 0.5 ? "#c98b5f" : "#a58a72";
+  g.beginPath();
+  g.moveTo(-15, 12); g.bezierCurveTo(-19, -18, -8, -26, 2, -26);
+  g.bezierCurveTo(12, -26, 21, -18, 17, 12); g.closePath(); g.fill();
+  g.fillStyle = "rgba(255,255,255,0.08)"; g.beginPath(); g.ellipse(-6, -12, 5, 9, -0.3, 0, 7); g.fill();
+  // oven mouth — dark and cold, or a growing ember glow
+  g.fillStyle = "#241b15";
+  g.beginPath(); g.moveTo(-8, 12); g.lineTo(-8, 0); g.bezierCurveTo(-8, -7, 12, -7, 12, 0); g.lineTo(12, 12); g.closePath(); g.fill();
+  if (warm > 0.05) {
+    const pulse = 0.42 + Math.sin(t * 4) * 0.12;
+    const og = g.createRadialGradient(2, 4, 1, 2, 4, 16);
+    og.addColorStop(0, `rgba(255,190,110,${(warm * pulse).toFixed(3)})`);
+    og.addColorStop(1, "rgba(255,150,80,0)");
+    g.fillStyle = og; g.beginPath(); g.ellipse(2, 3, 13, 10, 0, 0, 7); g.fill();
+  }
+  // chimney
+  g.fillStyle = "#8a6a44"; g.fillRect(-24, -22, 6, 10);
+  if (st === "open") {
+    // a rope strung across + a lean plank propped against the oven
+    g.save(); g.translate(-1, 4); g.rotate(-0.42);
+    g.fillStyle = "#8a6a44"; roundRect(g, -14, -3, 28, 6, 1); g.fill(); g.restore();
+    g.strokeStyle = "#b9a074"; g.lineWidth = 2; g.setLineDash([3, 3]);
+    g.beginPath(); g.moveTo(-27, -4); g.quadraticCurveTo(-1, -12, 26, -4); g.stroke(); g.setLineDash([]);
+  } else if (st === "building" && !_reduceMotion) {
+    // a thin wisp climbing from the chimney as the oven comes back to life
+    g.fillStyle = `rgba(180,170,160,${(0.16 + 0.12 * warm).toFixed(2)})`;
+    for (let s = 0; s < 3; s++) {
+      const sy = -24 - ((t * 8 + s * 9) % 26);
+      g.beginPath(); g.arc(-21 + Math.sin((t + s) * 1.3) * 4, sy, 2 + (-(sy + 24) / 26) * 4, 0, 7); g.fill();
+    }
   }
 }
 function drawStation(g, kind, seed) {
@@ -11997,10 +12145,12 @@ function drawStation(g, kind, seed) {
     // a little clay oven on a stone hearth, a cooling shelf beside it
     const t = performance.now() / 1000;
     const lit = _bakeOvenLit > 0;
-    const gl = g.createRadialGradient(0, 2, 3, 0, 2, 40);
-    gl.addColorStop(0, `rgba(255,208,140,${lit ? 0.4 : 0.2})`);
+    const breathe = 1 + Math.sin(t * 1.6) * 0.05;
+    const gl = g.createRadialGradient(0, 2, 3, 0, 2, 44 * breathe);
+    gl.addColorStop(0, `rgba(255,210,146,${lit ? 0.44 : 0.28})`);
+    gl.addColorStop(0.55, `rgba(255,190,120,${lit ? 0.16 : 0.09})`);
     gl.addColorStop(1, "rgba(255,208,140,0)");
-    g.fillStyle = gl; g.beginPath(); g.ellipse(0, 2, 40, 16, 0, 0, 7); g.fill();
+    g.fillStyle = gl; g.beginPath(); g.ellipse(0, 2, 44 * breathe, 18 * breathe, 0, 0, 7); g.fill();
     // stone base
     g.fillStyle = "#8f8474"; roundRect(g, -27, -14, 54, 16, 3); g.fill();
     g.fillStyle = "#a29684"; roundRect(g, -27, -14, 54, 5, 3); g.fill();
@@ -12028,6 +12178,15 @@ function drawStation(g, kind, seed) {
         const sx = 14 + Math.sin((t + s) * 1.3) * 5;
         g.beginPath(); g.arc(sx, sy, 2 + (-(sy + 61) / 30) * 5, 0, 7); g.fill();
       }
+      // slow warm motes rising off the hearth — a touch busier while it's baking
+      const motes = lit ? 5 : 3;
+      for (let m = 0; m < motes; m++) {
+        const life = (t * 0.34 + m / motes) % 1;
+        const mx = -14 + m * 7 + Math.sin(t * 0.9 + m * 2) * 4;
+        const my = -6 - life * 34;
+        g.fillStyle = `rgba(255,${190 + (m % 2) * 30},${120 + (m % 2) * 30},${(0.5 * (1 - life) * (lit ? 1 : 0.6)).toFixed(3)})`;
+        g.beginPath(); g.arc(mx, my, 1 + (1 - life) * 1.2, 0, 7); g.fill();
+      }
     }
     // oven mouth + inner glow
     g.fillStyle = "#2c211a";
@@ -12046,10 +12205,18 @@ function drawStation(g, kind, seed) {
     }
     g.fillStyle = lit ? "#7a4a26" : "#4a3524"; g.fillRect(-9, -14, 18, 2.8);
     if (lit) { g.fillStyle = "#f2a740"; for (let e = 0; e < 3; e++) g.fillRect(-7 + e * 6, -14, 2, 2.8); }
-    // cooling shelf with two buns on the far side
-    g.fillStyle = "#8a6b4a"; g.fillRect(-38, -10, 12, 3);
+    // cooling shelf with a few fresh buns on the far side
+    g.fillStyle = "#8a6b4a"; g.fillRect(-40, -10, 15, 3);
     g.fillStyle = "#d9a35c";
-    g.beginPath(); g.ellipse(-33, -12, 3.2, 2.4, 0, 0, 7); g.ellipse(-29, -12, 2.8, 2.1, 0, 0, 7); g.fill();
+    g.beginPath();
+    g.ellipse(-35, -12, 3.2, 2.4, 0, 0, 7); g.ellipse(-31, -12, 2.8, 2.1, 0, 0, 7); g.ellipse(-27, -12.4, 2.6, 2, 0, 0, 7);
+    g.fill();
+    g.fillStyle = "rgba(214,120,60,0.9)";
+    g.beginPath(); g.ellipse(-35, -13.4, 1.2, 0.8, 0, 0, 7); g.ellipse(-31, -13.2, 1, 0.7, 0, 0, 7); g.fill();
+    if (!_reduceMotion) {
+      g.strokeStyle = `rgba(235,225,210,${(0.16 + Math.sin(t * 2) * 0.06).toFixed(3)})`; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(-33, -15); g.quadraticCurveTo(-31 + Math.sin(t * 3) * 2, -20, -33, -25); g.stroke();
+    }
   } else if (kind === "sunbeam") {
     // a bright woven mat catching a soft shaft of warm light from above
     g.save();
@@ -13001,7 +13168,7 @@ function drawCat(g, c, isPhoto) {
   const purrBuzz = purring ? Math.sin(t * 74) * 0.4 * purrFade : 0;
 
   // zoom streak — a couple of soft trailing arcs opposite the direction of travel
-  if (c.state === "zooming") {
+  if (c.state === "zooming" || c.state === "tag") {
     const sp = Math.hypot(c.vx || 0, c.vy || 0);
     if (sp > 40) {
       const nx = -(c.vx || 0) / sp, ny = -(c.vy || 0) / sp;
@@ -13065,7 +13232,7 @@ function drawCat(g, c, isPhoto) {
     drawWings(g, P, c.state === "zooming" ? 13 : (c.trotting ? 6 : 3), kit);
 
   // ears (behind head) — a little flop on the bounce; pinned back mid-zoom
-  const zoom = c.state === "zooming";
+  const zoom = c.state === "zooming" || c.state === "tag";
   drawEar(g, -1, P, coat, sulk || zoom, earFlop, kit);
   drawEar(g, 1, P, coat, sulk || zoom, earFlop, kit);
 
@@ -13918,6 +14085,7 @@ function simulate(dt) {
   updateButterfly(dt);
   updateBird(dt);
   maybeGiveChase(dt);
+  maybeStartTag(dt);
   updateWeather(dt);
   if (toastTimer > 0) { toastTimer -= dt; if (toastTimer <= 0) toastEl.classList.remove("on"); }
   if (cardTimer > 0) { cardTimer -= dt; if (cardTimer <= 0) hideCatCard(); }
@@ -15220,6 +15388,14 @@ window.__cove = {
       for (const c of res) c.friend = null; save();
     }
     return res.map(x => `${x.name}: ${x.friend ? "friends with " + x.friend : "—"}`); },
+  tag(a, b){
+    const res = cats.filter(c => !c.visitor && !c.mascot);
+    const ca = a ? res.find(x => x.name === a) : res[0];
+    const cb = b ? res.find(x => x.name === b) : res.find(x => x !== ca);
+    if (!ca || !cb) return "need two cats";
+    _tagCD = 0; startTag(ca, cb);
+    return `${ca.name} + ${cb.name} → chase (${ca.state}/${cb.state})`; },
+  simN(n = 60){ for (let i = 0; i < n; i++) simulate(SIM_DT); return cats.map(c => `${c.name}:${c.state}`); },
   labubu(cmd){
     if (cmd === "come") { G.labubu.nextAt = Date.now() - 1; G.labubu.dayKey = ""; labubuArrive(); }
     else if (cmd === "go") { const l = cats.find(c => c.visitor); if (l) labubuLeave(l); }
