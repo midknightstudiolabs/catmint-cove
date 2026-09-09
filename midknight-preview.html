@@ -820,7 +820,7 @@
     box-shadow:inset 0 1px 3px rgba(36,31,23,.09);}
   .midk-console.rolling .mc-reels span{animation:mcReel .18s ease-in-out infinite;}
   @keyframes mcReel{50%{transform:translateY(-2px);}}
-  .midk-console .mc-bar{position:absolute;left:.55rem;right:.55rem;bottom:.24rem;height:3px;
+  .midk-console .mc-bar{position:absolute;left:.5rem;width:6.6rem;bottom:.24rem;height:3px;
     border-radius:2px;background:#e7e0cd;overflow:hidden;}
   .midk-console .mc-bar i{display:block;height:100%;width:0;border-radius:2px;background:var(--shell);
     transition:width .14s linear;}
@@ -12100,6 +12100,7 @@ let midkPickSel = [], _midkTutSeen = false;
 let _midkResultShown = false, _midkResultAt = 0, _midkWinner = null, _midkFlopAt = 0;
 let midkCharge = 0, _midkAuraUntil = 0, _midkAiAuraUntil = 0;
 let _midkAiChargeT = 0, _midkAiSlotCd = 0;
+let _midkHeave = 0;                           // shared heave rhythm — cats lean + dig in on the pull beat
 let midkSlot = null;                          // { reels, outcome, rollUntil, resolved, result, showUntil }
 let _midkEventCd = 0;
 let _midkLead = { cove: 0, visit: 0 };        // furthest the ball got toward each flag — for the result read
@@ -12257,7 +12258,7 @@ function startCoveMidk() {
       stats: { heaveSec: 0, slots: 0, naps: 0 } };
     midkParts.push(part);
     const gp = midkGripPointFor(part, MIDK_START_Y);
-    Object.assign(c, { x: gp.x + rand(-4, 4), y: gp.y + rand(-4, 4), face: 1, state: "seeking", trotting: false, walkAmt: 0, _vbLift: 0 });
+    Object.assign(c, { x: gp.x + rand(-4, 4), y: gp.y + rand(-4, 4), face: 1, state: "seeking", trotting: false, walkAmt: 0, walk: rand(0, 6), _vbLift: 0, _tugLean: 0, squash: 0, _chonkBase: 0 });
     c._motion = null;
   });
   lay(midkPickSel, "cove");
@@ -12292,19 +12293,45 @@ function midkStepCat(p, dt) {
   const c = p.cat;
   const asleep = p._sleepUntil > midkT;
   const gp = midkGripPointFor(p, midk.y);
-  const arrived = cafeMoveTo(c, gp.x, gp.y, 58, dt);
-  p.grip = arrived && !asleep;
 
-  if (asleep) { c.state = "sleeping"; c.trotting = false; }
-  else if (p.grip) {
-    c.state = "seeking"; c.trotting = false;
-    c.face = p.side === "cove" ? -1 : 1;   // lean back toward your own flag
+  // move toward the grip spot ourselves so the gait can track the actual motion
+  const dx = gp.x - c.x, dy = gp.y - c.y, dist = Math.hypot(dx, dy);
+  if (dist > 0.4) { const step = Math.min(dist, 62 * dt); c.x += dx / dist * step; c.y += dy / dist * step; }
+  c.face = p.side === "cove" ? -1 : 1;          // always face your own flag
+  p.grip = dist < 7 && !asleep;
+
+  const live = (midkPhase === "play") && !asleep;
+  const relocating = dist > 9;                  // the rope just dragged them a real distance → take steps
+  const beat = Math.sin(_midkHeave + p.idx * 0.9);
+  const yank = Math.max(0, beat);               // 0..1 — the pulling half of the rhythm
+
+  // gait: real stepping when relocating, a small braced shuffle while just holding
+  c.walk = (c.walk || 0) + dt * (relocating ? 7.5 : 3);
+  const wantWalk = asleep ? 0 : relocating ? 0.9 : live && p.grip ? 0.16 : 0.05;
+  c.walkAmt = (c.walkAmt || 0) + (wantWalk - (c.walkAmt || 0)) * Math.min(1, dt * 8);
+  c.trotting = c.walkAmt > 0.05;
+  c.bob = (c.bob || 0) + dt * (relocating ? 9 : 4);
+
+  if (asleep) {
+    c.state = "sleeping"; c.walkAmt = 0; c.trotting = false;
+    c._tugLean = (c._tugLean || 0) * (1 - Math.min(1, dt * 5));
+    c._vbLift = Math.max(0, (c._vbLift || 0) - dt * 3);
+    c.squash = Math.max(0, (c.squash || 0) - dt * 4);
+  } else {
+    c.state = "seeking";
+    // heave: lean back on the rope, a touch more on the yank beat — a soft tug-of-war stance
+    const wantLean = live && p.grip ? -(0.07 + 0.07 * yank) : 0;
+    c._tugLean = (c._tugLean || 0) + (wantLean - (c._tugLean || 0)) * Math.min(1, dt * 6);
+    c.squash = live && p.grip ? 0.03 + 0.1 * yank : Math.max(0, (c.squash || 0) - dt * 4);
     const digging = midkAura(p.side) || p._chonk > 0.4;
     c._vbLift = digging ? Math.min(1, (c._vbLift || 0) + dt * 3) : Math.max(0, (c._vbLift || 0) - dt * 3);
-  } else c.state = "seeking";
+  }
 
-  // a "BIGGER!" spin grows a puller in place — bigger, rounder, hauls harder
-  if (p._chonkT != null && p._chonk < p._chonkT) p._chonk = Math.min(p._chonkT, p._chonk + dt * 1.1);
+  // a "BIGGER!" spin grows a puller in place — a slow, visible swell + a settle wobble
+  if (p._chonkT != null && p._chonk < p._chonkT) {
+    p._chonk = Math.min(p._chonkT, p._chonk + dt * 0.55);
+    c.squash = Math.max(c.squash || 0, 0.16 + Math.sin(midkT * 20) * 0.05);
+  }
   c._chonkBase = p._chonk > 0 ? 1 + p._chonk * 0.95 : 0;
 }
 
@@ -12435,6 +12462,7 @@ function _midkUpdateBtns() {
 
 function renderMidk(dt) {
   midkT += dt;
+  _midkHeave += dt * (3.4 + (midk ? Math.min(2.4, Math.abs(midk.dir) * 1.6) : 0));
   const HL = window._mkHL;   // headless: run the sim, skip every canvas draw (balance testing)
   updateFX(Math.min(dt, 0.05));
   const g = ctx;
@@ -14714,6 +14742,7 @@ function drawCat(g, c, isPhoto) {
   const scaleY = ag * (1 - sq * 0.14) * breathe * (1 + gs) * (1 - strK * 0.20);           // stretch: low and flat
   const lean = wk * 0.06 + wk * CHARM * Math.sin(gp * 2) * 0.02 + strK * 0.09             // stretch: a gentle chest tip (chest drop carries the pose, rear stays down)
              - (scratching ? 0.20 : 0)                                                    // scratch: reared back, chest up toward the pole
+             + (c._tugLean || 0)                                                          // tug of war: heels dug in, leaning back on the rope
              + wriggle * 0.05;                                                            // catmint: a happy wriggle
   const walkLift = wk * (3.5 + CHARM * 1.5) + (scratching ? 5 : 0);   // scratch: up onto the hind feet
   const earFlop = wk * CHARM * Math.sin(gp * 2 + 0.6) * 0.11;
