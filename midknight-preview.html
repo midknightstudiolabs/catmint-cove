@@ -800,40 +800,46 @@
     box-shadow:0 10px 30px rgba(0,0,0,.32);animation:vbBannerIn .5s ease both;}
   .volley-banner[hidden]{display:none;}
   @keyframes vbBannerIn{from{opacity:0;transform:translate(-50%,-40%) scale(.9);}}
-  /* --- Tug of Paws HUD --- */
+  /* --- Tug of Paws HUD — a small, hand-made fair game, not a slot cabinet --- */
   .midk-hud{position:absolute;left:0;right:0;z-index:66;pointer-events:none;
-    bottom:calc(max(.9rem, env(safe-area-inset-bottom)) + 3.1rem);
-    display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:0 12px;}
+    bottom:calc(max(.7rem, env(safe-area-inset-bottom)) + 2.7rem);
+    display:flex;flex-direction:column;align-items:center;gap:.38rem;padding:0 12px;}
   .midk-hud[hidden]{display:none;}
-  .midk-hud #midkCom{pointer-events:none;}
-  /* the spin console — reels + charge bar + button, one unit */
-  .midk-console{pointer-events:auto;background:#f7f5ec;border:2.5px solid #d8c9a6;border-radius:18px;
-    padding:.6rem;width:min(93vw,362px);display:flex;flex-direction:column;align-items:center;gap:.4rem;
-    box-shadow:0 10px 26px rgba(0,0,0,.3);transition:border-color .18s,box-shadow .18s;}
-  .midk-console.ready{border-color:#f2b43e;box-shadow:0 0 0 3px rgba(242,180,62,.24),0 10px 26px rgba(0,0,0,.32);}
-  .midk-console .mc-reels{display:flex;gap:.4rem;}
-  .midk-console .mc-reels span{width:3rem;height:3rem;display:flex;align-items:center;justify-content:center;
-    background:#fffdf6;border-radius:11px;font-size:1.65rem;box-shadow:inset 0 2px 5px rgba(0,0,0,.09);}
-  .midk-console.rolling .mc-reels span{animation:mcReel .16s linear infinite;}
-  @keyframes mcReel{50%{transform:translateY(-3px);}}
-  .midk-console .mc-bar{width:100%;height:8px;border-radius:5px;background:#e6ddc7;overflow:hidden;}
-  .midk-console .mc-bar i{display:block;height:100%;width:0;border-radius:5px;background:#c9a24a;
-    transition:width .12s linear;}
-  .midk-console.ready .mc-bar i{background:#f2b43e;box-shadow:0 0 8px rgba(242,180,62,.7);}
-  .midk-console.rolling .mc-bar i,.midk-console.result .mc-bar i{width:100%!important;background:#d8c9a6;}
-  .midk-console .mc-msg{font:600 .66rem/1 "Hanken Grotesk",sans-serif;color:#7a6f58;min-height:.85rem;}
-  .midk-console.result .mc-msg{font:800 .98rem/1 "Fraunces",serif;color:#c98a1e;}
-  .midk-spin{position:relative;border:0;cursor:pointer;width:100%;border-radius:15px;padding:.66rem 1rem;
-    background:linear-gradient(#ffd766,#f2b43e);color:#4a2f10;
-    font:500 1.12rem/1 "Fraunces",serif;letter-spacing:.03em;
-    display:flex;align-items:center;justify-content:center;gap:.5rem;
-    box-shadow:0 4px 0 #c98a1e,0 8px 16px rgba(0,0,0,.22);transition:transform .07s,box-shadow .07s,filter .15s;}
-  .midk-spin .ms-paw{font-size:1.25rem;}
-  .midk-spin:active{transform:translateY(3px);box-shadow:0 1px 0 #c98a1e,0 4px 10px rgba(0,0,0,.2);}
-  .midk-console.ready .midk-spin{animation:mcPulse 1.1s ease-in-out infinite;}
-  @keyframes mcPulse{50%{filter:brightness(1.09);box-shadow:0 4px 0 #c98a1e,0 0 18px rgba(242,180,62,.6);}}
-  .midk-console:not(.ready) .midk-spin{filter:grayscale(.5) brightness(.93);cursor:default;}
-  .midk-console.rolling .midk-spin{filter:grayscale(.7) brightness(.84);}
+  .midk-hud #midkCom{pointer-events:none;background:rgba(247,245,236,.94);color:var(--ink-soft);
+    border:1px solid var(--panel-line);text-shadow:none;box-shadow:0 4px 14px rgba(36,31,23,.16);
+    font-size:.76rem;padding:.4rem .85rem;}
+  .midk-hud #midkCom .vc-mic{opacity:.55;}
+  /* the spin console — three little charms + a soft SPIN key, one compact row */
+  .midk-console{pointer-events:auto;position:relative;display:flex;align-items:center;gap:.5rem;
+    background:var(--panel);border:1.5px solid var(--panel-line);border-radius:16px;
+    padding:.4rem .5rem .46rem;box-shadow:var(--shadow);transition:box-shadow .2s;}
+  .midk-console.ready{box-shadow:0 0 0 3px rgba(232,180,90,.3),var(--shadow);}
+  .midk-console .mc-reels{display:flex;gap:.3rem;}
+  .midk-console .mc-reels span{width:2rem;height:2rem;display:flex;align-items:center;justify-content:center;
+    background:#fffdf6;border:1px solid var(--panel-line);border-radius:9px;font-size:1.15rem;
+    box-shadow:inset 0 1px 3px rgba(36,31,23,.09);}
+  .midk-console.rolling .mc-reels span{animation:mcReel .18s ease-in-out infinite;}
+  @keyframes mcReel{50%{transform:translateY(-2px);}}
+  .midk-console .mc-bar{position:absolute;left:.55rem;right:.55rem;bottom:.24rem;height:3px;
+    border-radius:2px;background:#e7e0cd;overflow:hidden;}
+  .midk-console .mc-bar i{display:block;height:100%;width:0;border-radius:2px;background:var(--shell);
+    transition:width .14s linear;}
+  .midk-console.rolling .mc-bar i,.midk-console.result .mc-bar i{width:100%!important;background:var(--panel-line);}
+  .midk-console .mc-msg{position:absolute;left:.5rem;top:.4rem;bottom:.4rem;width:7rem;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--panel);border-radius:10px;white-space:nowrap;
+    font:700 .78rem/1 "Fraunces",serif;color:var(--apricot);letter-spacing:.01em;
+    opacity:0;pointer-events:none;transition:opacity .2s;}
+  .midk-console.result .mc-msg{opacity:1;}
+  .midk-console.result .mc-reels{opacity:.15;}
+  .midk-spin{border:0;cursor:pointer;border-radius:12px;padding:.5rem .95rem .52rem;
+    background:var(--shell);color:var(--ink);font:600 .95rem/1 "Fraunces",serif;letter-spacing:.02em;
+    display:flex;align-items:center;gap:.35rem;box-shadow:0 2px 6px rgba(36,31,23,.2);
+    transition:transform .08s,background .2s,color .2s,box-shadow .2s;}
+  .midk-spin .ms-paw{font-size:1rem;}
+  .midk-spin:active{transform:translateY(1px);}
+  .midk-console:not(.ready) .midk-spin{background:#e7e0cd;color:var(--ink-faint);box-shadow:none;cursor:default;}
+  .midk-console.rolling .midk-spin{background:#e7e0cd;color:var(--ink-faint);box-shadow:none;}
   /* trait chips in the volleyball / picker cells */
   .fp-cell .fp-tr{display:flex;gap:.2rem;flex-wrap:wrap;justify-content:center;margin-top:.1rem;}
   .fp-cell .fp-tr span{background:#e2e6d5;border-radius:999px;padding:.02rem .34rem;font-size:.56rem;
