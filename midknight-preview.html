@@ -8878,6 +8878,24 @@ function runFestCountdown() {
     }, 500);
   })();
 }
+// clear every festival-only pose/size flag off the real cats — otherwise a cat
+// that grew in Tug of Paws (or lifted in volleyball, etc.) carries it back to the
+// cove and reads as floating / oversized.
+function _festResetCatVisuals() {
+  for (const c of cats) {
+    c._chonkBase = 0; c._tugLean = 0; c._vbLift = 0;
+    c._slotBoost = 0; c.squash = 0;
+    c._calledUntil = 0; c._sharpUntil = 0; c._callFlash = 0;
+    c.walkAmt = 0; c.trotting = false; c.vx = 0; c.vy = 0;
+    // festival fields run taller/wider than the cove — a cat left out at a tug
+    // grip point ends up below the grass. tuck any stray back onto the cove floor.
+    if (c.y > catFloor() - 6 || c.y < H * 0.46 || c.x < 20 || c.x > W - 20) {
+      c.x = rand(W * 0.22, W * 0.78);
+      c.y = rand(H * 0.58, catFloor() - 22);
+      c.tx = c.x; c.ty = c.y;
+    }
+  }
+}
 // the only exit — wipes back to the cove the same way we arrived, so leaving
 // is one clean motion rather than a cut
 function closeFest() {
@@ -8897,6 +8915,7 @@ function closeFest() {
   volleyPhase = "idle"; volleyParts = []; volleyBall = null; _vbNoDrowse = false; _vbFast = false;
   cafeStaff = []; cafeCust = []; _cafeRunning = false; _cafeResultShown = false; cafePick = null;
   midkParts = []; midk = null; midkPhase = "idle"; _midkResultShown = false;
+  _festResetCatVisuals();
   document.getElementById("cafeBoard").hidden = true;
   document.getElementById("festCafePanel").hidden = true;
   document.getElementById("festCafeTut").hidden = true;
@@ -9545,6 +9564,7 @@ document.getElementById("festHub").addEventListener("click", () => {
   volleyParts = []; volleyBall = null; volleyPhase = "idle";
   cafeStaff = []; cafeCust = []; _cafeRunning = false;
   midkParts = []; midk = null; midkPhase = "idle";
+  _festResetCatVisuals();
   stopVolleyBed();
   festKind = "hub"; festGroundsCats(roster);
   for (const id of ["festPanel", "festBoxPanel", "festVolleyPanel", "festVolleyTut", "festCafePanel", "festCafeTut",
