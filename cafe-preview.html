@@ -819,7 +819,12 @@
   #cafeBoard{position:absolute;left:0;right:0;bottom:0;z-index:66;background:var(--panel);border-top:1px solid var(--panel-line);
     padding:.5rem .6rem calc(env(safe-area-inset-bottom) + .7rem);pointer-events:auto;}
   #cafeBoard[hidden]{display:none;}
-  #cafeHint{text-align:center;font:700 .7rem/1.3 "Hanken Grotesk",sans-serif;color:var(--ink-soft);margin-bottom:.4rem;}
+  .cb-leave{position:absolute;top:.4rem;right:.5rem;z-index:2;background:rgba(17,14,21,.06);border:1px solid var(--panel-line);
+    border-radius:999px;padding:.16rem .5rem .16rem .4rem;font:800 .58rem/1 "IBM Plex Mono",monospace;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;gap:.15rem;}
+  .cb-leave span{font-size:.8rem;line-height:1;}
+  .cb-leave:active{transform:scale(.96);}
+  #cafeHint{text-align:center;font:700 .7rem/1.3 "Hanken Grotesk",sans-serif;color:var(--ink-soft);margin-bottom:.4rem;padding:0 3.4rem;}
   #cafeHint b{color:var(--accent);}
   #cafeSlots{display:flex;gap:.5rem;}
   .cafe-slot{flex:1 1 0;min-width:0;border:2px dashed #cfc7ae;border-radius:.85rem;padding:.25rem;
@@ -1295,6 +1300,7 @@
       <span class="rb-time" id="festTime">the cove festival</span>
     </div>
     <div id="cafeBoard" hidden>
+      <button class="cb-leave" id="cafeLeave"><span>‹</span> Cove</button>
       <div id="cafeHint"></div>
       <div id="cafeSlots"></div>
     </div>
@@ -9555,6 +9561,7 @@ document.getElementById("boxCancel").addEventListener("click", closeFest);
 document.getElementById("boxStart").addEventListener("click", startBoxChallenge);
 document.getElementById("volleyCancel").addEventListener("click", closeFest);
 document.getElementById("cafeCancel").addEventListener("click", closeFest);
+document.getElementById("cafeLeave").addEventListener("click", closeFest);   // bail out of a running shift, same as the other games' bottom bar
 document.getElementById("cafeTutGo").addEventListener("click", () => { _cafeTutSeen = true; cafeShowPicker(); });
 document.getElementById("cafeStart").addEventListener("click", () => { if (cafePickSel.length === 3) startCoveCafe(); });
 // first match of the session gets a quick deadpan how-to; after that, straight in
