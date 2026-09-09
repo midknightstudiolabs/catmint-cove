@@ -7562,6 +7562,7 @@ function _rebuildAudioBeds() {
     startFestAudio();
     if (festKind === "volley" && volleyPhase === "play") startVolleyBed();
     else if (festKind === "cafe") startCafeBed();
+    else if (festKind === "midk") startMidkBed();
   }
   applySound();
 }
@@ -7572,12 +7573,13 @@ function _resetAudioContext() {
   try { stopRestAudio(); } catch (e) {}
   try { stopFestAudio(); } catch (e) {}
   try { stopVolleyBed(); } catch (e) {}
+  try { stopMidkBed(); } catch (e) {}
   try { actx && actx.close(); } catch (e) {}
   catsGain = coveGain = musicGain = null;
   // AudioBuffers are bound to the context that decoded them — drop every cached
   // one so loadSfx() / loadRainLoop() re-decode into the fresh context
   for (const k in _sfxBuf) delete _sfxBuf[k];
-  _sfxLoading = false; rainBuffer = null; _cafeBedBuf = null;
+  _sfxLoading = false; rainBuffer = null; _cafeBedBuf = null; _midkBedBuf = null;
   actx = null; _audioWasRunning = false; _resumeFails = 0; _audioStale = true;
 }
 // bring audio back after iOS suspends/interrupts it (screen lock, backgrounding,
@@ -8936,6 +8938,7 @@ function closeFest() {
     document.getElementById("festBar").hidden = true;
     _festDPR = 0; resize();
     stopVolleyBed();
+    stopMidkBed();
     stopFestAudio();
     for (const c of cats) { c.stateDur = 0; decide(c); }
   }, 560);
@@ -8996,7 +8999,7 @@ const FEST_TUNE = [
 ].map(n => ({ len: 0.5, ...n }));
 function scheduleFestMelody(gen) {
   if (gen !== _festAudioGen || !festBus) return;   // a newer startFestAudio() superseded this loop
-  if (_volleyBed || _cafeBed) { setTimeout(() => scheduleFestMelody(gen), 900); return; }   // volleyball / café run their own bed; the calliope steps aside
+  if (_volleyBed || _cafeBed || _midkBed) { setTimeout(() => scheduleFestMelody(gen), 900); return; }   // volleyball / café / tug run their own bed; the calliope steps aside
   const root = 523.25;   // C5 — bright calliope register
   let beatT = 0.05;
   for (const note of FEST_TUNE) {
@@ -9027,9 +9030,14 @@ function scheduleFestMelody(gen) {
 /* ---- Cove Volleyball's own background: a lazy sunny-beach bed. The crowd
    murmur (festMurmur) keeps going; the fairground calliope steps aside for
    a slow wave wash + a sparse pentatonic marimba figure + the odd gull. ---- */
+// Tug of Paws bed — paste a seamless-loop data URI into MIDK_BED_DATA to give the
+// game its own music (like the café bed); empty = the festival calliope plays.
+let MIDK_BED_DATA = "";
+let _midkBed = null, _midkBedBuf = null;
 let _volleyBed = null;
 function startVolleyBed() {
   if (!actx || !festBus || _volleyBed) return;
+  stopMidkBed(); stopCafeBed();
   const g = actx.createGain(); g.gain.value = 0.0001; g.connect(festBus);
   rampParam(g.gain, muted ? 0.0001 : 1, 1.6);
   // wave wash — pink noise, a lowpass that breathes open and shut on a ~6s swell
@@ -9103,7 +9111,7 @@ function stopVolleyBed() {
 let _cafeBed = null, _cafeBedBuf = null;
 function startCafeBed() {
   if (!actx || _cafeBed) return;
-  stopVolleyBed();   // _cafeBed is still null here, so this only clears a stale beach bed
+  stopVolleyBed(); stopMidkBed();   // _cafeBed is still null here, so this only clears a stale bed from another game
   const g = actx.createGain(); g.gain.value = 0.0001;
   g.connect(festBus || musicGain || actx.destination);
   rampParam(g.gain, muted ? 0.0001 : 0.85, 1.8);
@@ -9129,6 +9137,42 @@ function stopCafeBed() {
   if (!_cafeBed || !actx) { _cafeBed = null; return; }
   const b = _cafeBed; _cafeBed = null; b.stopped = true;
   if (festMurmurGain) { try { rampParam(festMurmurGain.gain, 0.16, 1.4); } catch (e) {} }   // murmur back up when the café music leaves
+  try { rampParam(b.g.gain, 0.0001, 0.9); } catch (e) {}
+  try { b.src && b.src.stop(actx.currentTime + 1); } catch (e) {}
+  setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, 1300);
+}
+
+// Tug of Paws music bed — same wiring as the café bed (MIDK_BED_DATA is declared
+// up by _volleyBed). Paste a short seamless loop as a data URI into MIDK_BED_DATA
+// ("data:audio/mpeg;base64,…"). Empty = no bed, calliope keeps playing underneath.
+function startMidkBed() {
+  if (!actx || _midkBed || !MIDK_BED_DATA) return;
+  stopVolleyBed(); stopCafeBed();
+  const g = actx.createGain(); g.gain.value = 0.0001;
+  g.connect(festBus || musicGain || actx.destination);
+  rampParam(g.gain, muted ? 0.0001 : 0.8, 1.6);
+  const bed = { g, src: null, stopped: false };
+  _midkBed = bed;
+  if (festMurmurGain) rampParam(festMurmurGain.gain, 0.05, 1.4);
+  const spin = () => {
+    if (bed.stopped || !actx || !_midkBedBuf) return;
+    const s = actx.createBufferSource();
+    s.buffer = _midkBedBuf; s.loop = true;
+    s.connect(g); s.start();
+    bed.src = s;
+  };
+  if (_midkBedBuf) { spin(); return; }
+  try {
+    const b64 = MIDK_BED_DATA.slice(MIDK_BED_DATA.indexOf(",") + 1);
+    const bin = atob(b64), u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    actx.decodeAudioData(u8.buffer).then(buf => { if (bed.stopped) return; _midkBedBuf = buf; spin(); }).catch(() => {});
+  } catch (e) {}
+}
+function stopMidkBed() {
+  if (!_midkBed || !actx) { _midkBed = null; return; }
+  const b = _midkBed; _midkBed = null; b.stopped = true;
+  if (festMurmurGain) { try { rampParam(festMurmurGain.gain, 0.16, 1.4); } catch (e) {} }
   try { rampParam(b.g.gain, 0.0001, 0.9); } catch (e) {}
   try { b.src && b.src.stop(actx.currentTime + 1); } catch (e) {}
   setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, 1300);
@@ -9565,7 +9609,7 @@ document.getElementById("festHub").addEventListener("click", () => {
   cafeStaff = []; cafeCust = []; _cafeRunning = false;
   midkParts = []; midk = null; midkPhase = "idle";
   _festResetCatVisuals();
-  stopVolleyBed();
+  stopVolleyBed(); stopMidkBed();
   festKind = "hub"; festGroundsCats(roster);
   for (const id of ["festPanel", "festBoxPanel", "festVolleyPanel", "festVolleyTut", "festCafePanel", "festCafeTut",
                     "festMidkPanel", "festMidkTut", "midkHud", "midkCom",
@@ -9614,7 +9658,7 @@ document.getElementById("festAgain").addEventListener("click", () => {
   }
   if (festKind === "midk") {
     midkParts = []; midk = null; midkPhase = "idle"; festKind = "hub"; festGroundsCats(roster);
-    stopVolleyBed();
+    stopVolleyBed(); stopMidkBed();
     document.getElementById("midkHud").hidden = true;
     document.getElementById("midkCom").hidden = true;
     renderMidkPickGrid(eligibleForVolley().filter(c => !c.mascot));
@@ -12258,6 +12302,7 @@ function startCoveMidk() {
   if (midkPickSel.length !== 5) return;
   if (!midkPickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats wandered off."); return; }
   stopVolleyBed();
+  startMidkBed();
   festKind = "midk";
   fitFestCanvas();
   midkT = 0; midkPhase = "idle"; _midkResultShown = false; _midkWinner = null; _midkFlopAt = 0;
