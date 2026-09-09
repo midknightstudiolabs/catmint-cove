@@ -1,0 +1,224 @@
+<title>Cove Festival — the loop</title>
+<style>
+  :root{
+    --cream:#f6efe0;--paper:#fbf7ee;--ink:#2e241b;--soft:#6f5942;
+    --terra:#c47a35;--green:#3f8159;--line:#e7dcc6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;color:var(--ink);
+    background:radial-gradient(120% 90% at 50% 0%,#fffdf6,#eef0e0);
+    font-family:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    display:flex;align-items:center;justify-content:center;padding:26px;}
+  .card{width:min(94vw,460px);background:var(--paper);border:1px solid var(--line);
+    border-radius:22px;padding:26px 24px 20px;box-shadow:0 18px 44px rgba(74,53,36,.14);}
+  h1{font-family:"Fraunces","Georgia",serif;font-weight:600;font-size:1.3rem;margin:0 0 4px;}
+  .sub{margin:0 0 18px;color:var(--soft);font-size:.85rem;line-height:1.5;}
+  .ab{display:flex;gap:8px;}
+  .ab button{flex:1;border:1px solid var(--line);background:var(--paper);cursor:pointer;
+    border-radius:12px;padding:12px 6px;font:600 .84rem/1.2 "Hanken Grotesk",sans-serif;
+    color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:3px;transition:.14s;}
+  .ab button small{font-weight:500;color:var(--soft);font-size:.68rem;}
+  .ab button:hover{border-color:var(--terra);}
+  .ab button.on{background:var(--green);color:var(--cream);border-color:var(--green);}
+  .ab button.on small{color:#dcebd9;}
+  .stop{width:100%;margin-top:10px;border:0;background:none;color:var(--soft);
+    cursor:pointer;font:600 .8rem/1 "Hanken Grotesk";padding:8px;text-decoration:underline;}
+  .stop[hidden]{display:none;}
+  .viz{height:44px;margin:14px 0 2px;display:flex;align-items:flex-end;gap:3px;opacity:.35;transition:opacity .3s;}
+  .viz.on{opacity:1;}
+  .viz i{flex:1;background:linear-gradient(var(--terra),var(--green));border-radius:2px;height:6%;transition:height .09s;}
+  .row{display:grid;grid-template-columns:76px 1fr 52px;align-items:center;gap:10px;margin-top:12px;}
+  .row label{font-size:.76rem;color:var(--soft);}
+  .row output{font-size:.7rem;color:var(--soft);text-align:right;font-variant-numeric:tabular-nums;}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--line);outline:none;width:100%;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+    background:var(--terra);cursor:pointer;border:2px solid var(--paper);box-shadow:0 1px 4px rgba(74,53,36,.3);}
+  .presets{display:flex;gap:8px;margin-top:16px;}
+  .presets button{flex:1;border:1px dashed var(--line);background:none;color:var(--soft);cursor:pointer;
+    border-radius:10px;padding:8px 4px;font:600 .74rem/1 "Hanken Grotesk";}
+  .presets button:hover{border-color:var(--terra);color:var(--ink);}
+  .cfg{margin-top:14px;background:#efe7d4;border-radius:10px;padding:10px 12px;
+    font:500 .72rem/1.5 "IBM Plex Mono",ui-monospace,monospace;color:var(--ink);word-break:break-all;}
+  .foot{margin-top:14px;font-size:.72rem;color:var(--soft);line-height:1.55;border-top:1px solid var(--line);padding-top:12px;}
+  .foot b{color:var(--ink);}
+  .err{color:#b23b3b;font-size:.8rem;margin-top:10px;}
+  .err[hidden]{display:none;}
+</style>
+
+<div class="card">
+  <h1>Cove Festival — pick-an-activity music</h1>
+  <p class="sub">The track you found, warmed toward the game's world. Drag the
+    <b>loop window</b> to a section that loops well, then dial the vibe. Hit a
+    preset to start, tweak, and read me the line at the bottom.</p>
+
+  <div class="ab">
+    <button id="b-orig">Original<small>full, no filters</small></button>
+    <button id="b-loop">Looped<small>window only</small></button>
+    <button id="b-ours">Ours<small>window + vibe</small></button>
+  </div>
+  <button class="stop" id="stop" hidden>stop</button>
+
+  <div class="viz" id="viz"></div>
+
+  <div class="row"><label>Loop start</label><input type="range" id="ls" min="0" max="120" step="0.5" value="32"><output id="ols">32.0s</output></div>
+  <div class="row"><label>Loop length</label><input type="range" id="ll" min="6" max="40" step="0.5" value="16"><output id="oll">16.0s</output></div>
+  <div class="row"><label>Warmth</label><input type="range" id="warm" min="0" max="10" step="0.5" value="4"><output id="owarm">4.0</output></div>
+  <div class="row"><label>Brightness</label><input type="range" id="bri" min="3000" max="16000" step="250" value="7500"><output id="obri">7.5k</output></div>
+  <div class="row"><label>Space</label><input type="range" id="space" min="0" max="60" step="2" value="14"><output id="ospace">14</output></div>
+  <div class="row"><label>Level</label><input type="range" id="lvl" min="10" max="100" step="2" value="60"><output id="olvl">60</output></div>
+
+  <div class="presets">
+    <button data-p="fair">Fair band</button>
+    <button data-p="cozy">Cozy</button>
+    <button data-p="soft">Very soft</button>
+  </div>
+
+  <div class="cfg" id="cfg">start 32.0 · len 16.0 · warm 4.0 · bright 7500 · space 14 · level 60</div>
+
+  <div class="foot">When it feels right, read me the line above — I'll bake that
+    exact loop + treatment into <b><code>FEST_BED_DATA</code></b> and play it at the
+    festival chooser (the calliope steps aside). ~150–300&nbsp;KB, same as the café bed.</div>
+  <div id="err" class="err" hidden></div>
+</div>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  let actx = null, buf = null, src = null, raf = 0, mode = null;
+  let lp, ls1, hs, conv, convWet, dry, out, analyser;
+  const S = { start: 32, len: 16, warm: 4, bright: 7500, space: 14, level: 60 };
+
+  const viz = $("viz");
+  for (let i = 0; i < 32; i++) viz.appendChild(document.createElement("i"));
+
+  function makeImpulse(ctx, seconds, decay) {
+    const rate = ctx.sampleRate, len = rate * seconds;
+    const imp = ctx.createBuffer(2, len, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = imp.getChannelData(ch);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+    return imp;
+  }
+
+  function buildGraph() {
+    lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = 0.6;
+    ls1 = actx.createBiquadFilter(); ls1.type = "lowshelf"; ls1.frequency.value = 160;
+    hs = actx.createBiquadFilter(); hs.type = "highshelf"; hs.frequency.value = 4200;
+    conv = actx.createConvolver(); conv.buffer = makeImpulse(actx, 1.6, 3.2);
+    convWet = actx.createGain();
+    dry = actx.createGain();
+    out = actx.createGain();
+    analyser = actx.createAnalyser(); analyser.fftSize = 128;
+    // src -> lp -> ls1 -> hs -> [dry -> out] and [conv -> convWet -> out]
+    hs.connect(dry); dry.connect(out);
+    hs.connect(conv); conv.connect(convWet); convWet.connect(out);
+    out.connect(analyser); analyser.connect(actx.destination);
+    apply();
+  }
+
+  function apply() {
+    if (!actx) return;
+    const filtered = mode !== "orig";
+    lp.frequency.value = filtered ? S.bright : 20000;
+    ls1.gain.value = filtered ? S.warm : 0;
+    hs.gain.value = filtered ? -(S.warm * 0.5) : 0;
+    convWet.gain.value = filtered ? S.space / 100 : 0;
+    dry.gain.value = filtered ? 1 - (S.space / 260) : 1;
+    out.gain.value = S.level / 100;
+    if (src && src.loop && mode !== "orig") {
+      src.loopStart = S.start;
+      src.loopEnd = Math.min(buf.duration, S.start + S.len);
+    }
+    $("cfg").textContent = `start ${S.start.toFixed(1)} · len ${S.len.toFixed(1)} · warm ${S.warm.toFixed(1)} · bright ${S.bright} · space ${S.space} · level ${S.level}`;
+  }
+
+  async function ensure() {
+    if (actx) return;
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    buildGraph();
+    const r = await fetch("_fest-orig.mp3?v=" + Date.now());
+    if (!r.ok) throw new Error("HTTP " + r.status + " for _fest-orig.mp3");
+    buf = await actx.decodeAudioData(await r.arrayBuffer());
+    $("ls").max = Math.floor(buf.duration - 6);
+  }
+
+  async function play(m) {
+    $("err").hidden = true;
+    try { await ensure(); } catch (e) { $("err").textContent = String(e.message || e); $("err").hidden = false; return; }
+    await actx.resume();
+    if (src) { try { src.stop(); } catch (e) {} src = null; }
+    mode = m;
+    src = actx.createBufferSource();
+    src.buffer = buf;
+    src.connect(lp);
+    if (m === "orig") { src.loop = true; }
+    else {
+      src.loop = true;
+      src.loopStart = S.start;
+      src.loopEnd = Math.min(buf.duration, S.start + S.len);
+      try { src.start(0, S.start); } catch (e) { src.start(); }
+      mount(m); return;
+    }
+    src.start();
+    mount(m);
+  }
+  function mount(m) {
+    apply();
+    document.querySelectorAll(".ab button").forEach(b => b.classList.toggle("on", b.id === "b-" + m));
+    $("stop").hidden = false; viz.classList.add("on");
+    cancelAnimationFrame(raf); tick();
+  }
+  function stop() {
+    if (src) { try { src.stop(); } catch (e) {} src = null; }
+    mode = null;
+    document.querySelectorAll(".ab button").forEach(b => b.classList.remove("on"));
+    $("stop").hidden = true; viz.classList.remove("on");
+    cancelAnimationFrame(raf);
+    viz.querySelectorAll("i").forEach(i => i.style.height = "6%");
+  }
+  function tick() {
+    if (!analyser) return;
+    const d = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(d);
+    const bars = viz.children;
+    for (let i = 0; i < bars.length; i++) bars[i].style.height = (6 + (d[Math.min(i, d.length - 1)] / 255) * 90) + "%";
+    raf = requestAnimationFrame(tick);
+  }
+
+  document.querySelectorAll(".ab button").forEach(b => b.addEventListener("click", () => {
+    const m = b.id.slice(2);
+    if (mode === m) stop(); else play(m);
+  }));
+  $("stop").addEventListener("click", stop);
+
+  function bind(id, key, fmt) {
+    const el = $(id), o = $("o" + id);
+    el.addEventListener("input", () => {
+      S[key] = parseFloat(el.value);
+      o.textContent = fmt ? fmt(S[key]) : el.value;
+      apply();
+    });
+  }
+  bind("ls", "start", v => v.toFixed(1) + "s");
+  bind("ll", "len", v => v.toFixed(1) + "s");
+  bind("warm", "warm", v => v.toFixed(1));
+  bind("bri", "bright", v => (v / 1000).toFixed(1) + "k");
+  bind("space", "space", v => String(v | 0));
+  bind("lvl", "level", v => String(v | 0));
+
+  const PRE = {
+    fair: { warm: 3, bright: 9000, space: 10, level: 62 },
+    cozy: { warm: 5, bright: 6500, space: 18, level: 55 },
+    soft: { warm: 6.5, bright: 5000, space: 28, level: 46 },
+  };
+  document.querySelectorAll(".presets button").forEach(b => b.addEventListener("click", () => {
+    Object.assign(S, PRE[b.dataset.p]);
+    $("warm").value = S.warm; $("owarm").textContent = S.warm.toFixed(1);
+    $("bri").value = S.bright; $("obri").textContent = (S.bright / 1000).toFixed(1) + "k";
+    $("space").value = S.space; $("ospace").textContent = String(S.space | 0);
+    $("lvl").value = S.level; $("olvl").textContent = String(S.level | 0);
+    if (!mode || mode === "orig") play("ours"); else apply();
+  }));
+})();
+</script>

@@ -9339,7 +9339,8 @@ function showFestPodium() {
    shore. Portrait space, contain-fit; the fairground sits low so it reads as a
    strip below the centred event card. */
 const HUB_W = 560, HUB_H = 1000;
-let _hubT = 0, _hubCats = [];
+let _hubT = 0, _hubBeat = 0, _hubCats = [];
+const HUB_BPS = 1.9;   // festival beat — the grounds cats bounce to it
 function hubFit() {
   const { vw, vh } = restViewportPx();
   const rd = _festDPR || DPR;
@@ -9350,14 +9351,16 @@ function festGroundsCats(roster) {
   const spots = [{ x: 120, y: 876 }, { x: 300, y: 906 }, { x: 448, y: 872 }, { x: 206, y: 930 }, { x: 378, y: 936 }];
   _hubCats = (roster || cats.filter(c => !c.visitor)).slice(0, 5).map((c, i) => {
     Object.assign(c, { x: spots[i].x, y: spots[i].y, face: i % 2 ? 1 : -1,
-      state: i === 0 ? "loafing" : i === 3 ? "grooming" : "seeking",
-      trotting: false, walkAmt: 0, _vbLift: 0, _hx: spots[i].x, _hy: spots[i].y, _wanderAt: rand(2.5, 9) });
+      state: "seeking",
+      trotting: false, walkAmt: 0, _vbLift: 0, _jumpT: 0, _hx: spots[i].x, _hy: spots[i].y,
+      _wanderAt: rand(7, 16), _danceOff: i * 1.31 + Math.random() * 0.4 });
     c._motion = null;
     return c;
   });
 }
 function renderFestGrounds(dt) {
   _hubT += dt;
+  _hubBeat += dt;
   updateFX(Math.min(dt, 0.05));
   const g = ctx;
   { const px = restViewportPx();
@@ -9368,27 +9371,39 @@ function renderFestGrounds(dt) {
   g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
   drawFestGroundsScene(g);
   for (const c of _hubCats) {
+    if (c._jumpT > 0) c._jumpT = Math.max(0, c._jumpT - dt);
     c._wanderAt -= dt;
     if (c._wanderAt <= 0) {
-      c._wanderAt = rand(5, 12);
-      c._hx = clamp(c._hx + rand(-44, 44), 96, 468);
-      c._hy = clamp(c._hy + rand(-18, 18), 852, 958);
+      c._wanderAt = rand(9, 20);
+      c._hx = clamp(c._hx + rand(-40, 40), 110, 452);
+      c._hy = clamp(c._hy + rand(-16, 16), 856, 952);
     }
     const dx = c._hx - c.x, dy = c._hy - c.y, dist = Math.hypot(dx, dy);
     const m = catMotion(c);
     if (dist > 4) {
-      const step = Math.min(dist, 24 * dt);
+      const step = Math.min(dist, 26 * dt);
       c.x += dx / dist * step; c.y += dy / dist * step;
       c.face = dx >= 0 ? 1 : -1; c.state = "exploring"; c.trotting = true;
       c.walk += dt * 4; c.walkAmt = Math.min(1, (c.walkAmt || 0) + dt * 5); c.bob += dt * 7;
     } else {
-      c.walkAmt = Math.max(0, (c.walkAmt || 0) - dt * 3); c.trotting = c.walkAmt > 0.05;
-      if (c.state === "exploring") c.state = "seeking";
-      c.bob += dt * 2; c.tail += dt * 2 * m.tailRate;
+      // dance — bounce on the beat, a shuffle underneath, a groove in the tail
+      c.state = "seeking"; c.trotting = true;
+      const groove = Math.abs(Math.sin(_hubBeat * Math.PI * HUB_BPS + c._danceOff));
+      c.walkAmt = 0.16 + groove * 0.14;
+      c.walk += dt * 7; c.bob += dt * 11; c.tail += dt * 8 * m.tailRate;
+      const beatPh = (_hubBeat * HUB_BPS + c._danceOff * 0.16) % 1;
+      if (beatPh < dt * HUB_BPS && !c._jumpT) catHop(c, rand(9, 16));
+      if (c._faceFlipT > 0) c._faceFlipT -= dt;
+      else if (Math.random() < dt * 0.3) { c.face *= -1; c._faceFlipT = rand(2.5, 5); }   // a groove turn now and then
     }
     c.blink -= dt; if (c.blink < -0.12) c.blink = rand(2, 6) * m.blinkEvery;
   }
-  _hubCats.slice().sort((a, b) => a.y - b.y).forEach(c => drawCat(g, c, false));
+  _hubCats.slice().sort((a, b) => a.y - b.y).forEach(c => {
+    const sx = c.x;
+    c.x += Math.sin(_hubBeat * Math.PI * HUB_BPS * 0.5 + c._danceOff) * 2.4;   // a side-to-side sway
+    drawCat(g, c, false);
+    c.x = sx;
+  });
   if (particles.length || floaters.length) drawFX(g);
 }
 // a lantern on a shepherd's-hook pole — hangs off the hook, doesn't float.
