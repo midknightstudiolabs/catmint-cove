@@ -1,0 +1,85 @@
+<title>Cove Festival — start-at-0 loops</title>
+<style>
+  :root{--cream:#f6efe0;--paper:#fbf7ee;--ink:#2e241b;--soft:#6f5942;--terra:#c47a35;--green:#3f8159;--line:#e7dcc6;}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;color:var(--ink);
+    background:radial-gradient(120% 90% at 50% 0%,#fffdf6,#eef0e0);
+    font-family:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    display:flex;align-items:center;justify-content:center;padding:26px;}
+  .card{width:min(94vw,460px);background:var(--paper);border:1px solid var(--line);
+    border-radius:22px;padding:26px 24px 20px;box-shadow:0 18px 44px rgba(74,53,36,.14);}
+  h1{font-family:"Fraunces","Georgia",serif;font-weight:600;font-size:1.3rem;margin:0 0 4px;}
+  .sub{margin:0 0 18px;color:var(--soft);font-size:.85rem;line-height:1.5;}
+  .opt{border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin-top:12px;background:var(--cream);}
+  .opt.on{border-color:var(--green);box-shadow:0 0 0 3px rgba(63,129,89,.14);}
+  .opt h2{margin:0 0 3px;font:600 .95rem/1.2 "Hanken Grotesk";}
+  .opt p{margin:0 0 10px;font-size:.76rem;color:var(--soft);line-height:1.5;}
+  .opt .meta{font:500 .68rem/1 "IBM Plex Mono",ui-monospace,monospace;color:var(--soft);}
+  .opt button{border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;
+    border-radius:10px;padding:9px 16px;font:600 .82rem/1 "Hanken Grotesk";}
+  .opt button:hover{border-color:var(--terra);}
+  .opt.on button{background:var(--green);color:var(--cream);border-color:var(--green);}
+  .foot{margin-top:16px;font-size:.72rem;color:var(--soft);line-height:1.55;border-top:1px solid var(--line);padding-top:12px;}
+  .foot b{color:var(--ink);}
+</style>
+
+<div class="card">
+  <h1>Start-at-0 loops</h1>
+  <p class="sub">All three begin at the very top of the track — the riser you
+    liked — and loop seamlessly (short crossfade baked into the wrap). Same warm
+    treatment. Pick the length that holds up on repeat.</p>
+
+  <div class="opt" id="o-build">
+    <h2>Build</h2>
+    <p>Just the riser and the first groove, then straight back to the top. Tight,
+      always climbing — but the shortest, so the repeat is most noticeable.</p>
+    <div class="meta">12.2&nbsp;s · 197&nbsp;KB</div>
+    <button data-k="build" data-src="_loop_build.mp3">play ▸</button>
+  </div>
+
+  <div class="opt" id="o-drop">
+    <h2>Drop</h2>
+    <p>Riser all the way into the full beat, holds it, then resets to the top.
+      There's a small energy bump at the wrap (full → riser).</p>
+    <div class="meta">28.1&nbsp;s · 440&nbsp;KB</div>
+    <button data-k="drop" data-src="_loop_drop.mp3">play ▸</button>
+  </div>
+
+  <div class="opt" id="o-arc">
+    <h2>Full arc</h2>
+    <p>The whole journey — riser, groove, full drop, breakdown — and the
+      breakdown winds down right into the riser again. Smoothest wrap, least
+      repetitive, but the biggest file.</p>
+    <div class="meta">56.4&nbsp;s · 900&nbsp;KB</div>
+    <button data-k="arc" data-src="_loop_arc.mp3">play ▸</button>
+  </div>
+
+  <div class="foot">Tell me <b>build / drop / arc</b> (or "arc but shorter" etc.)
+    and I'll bake it into <b><code>FEST_BED_DATA</code></b> for the festival chooser.</div>
+</div>
+
+<script>
+(function () {
+  let cur = null, curK = null;
+  document.querySelectorAll(".opt button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const k = btn.dataset.k;
+      if (curK === k && cur && !cur.paused) {
+        cur.pause(); cur.currentTime = 0;
+        document.getElementById("o-" + k).classList.remove("on");
+        btn.textContent = "play ▸"; curK = null; return;
+      }
+      if (cur) { cur.pause(); }
+      document.querySelectorAll(".opt").forEach(o => o.classList.remove("on"));
+      document.querySelectorAll(".opt button").forEach(b => b.textContent = "play ▸");
+      cur = new Audio(btn.dataset.src);
+      cur.loop = true;
+      cur.volume = 0.9;
+      cur.play();
+      curK = k;
+      document.getElementById("o-" + k).classList.add("on");
+      btn.textContent = "■ stop";
+    });
+  });
+})();
+</script>
