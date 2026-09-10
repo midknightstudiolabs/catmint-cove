@@ -1,0 +1,164 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Activity BGM — cozy pass</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>
+  :root{
+    --ground:#EEF0E7; --panel:#F7F8F2; --line:#D8DAC8; --ink:#221D16; --soft:#5B5343;
+    --accent:#356b4c; --accent-bright:#3f8159; --apricot:#c47a35;
+    --serif:"Fraunces","Georgia",serif;
+    --sans:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --ground:#14120C; --panel:#1D1A12; --line:#332E22; --ink:#ECE4D5; --soft:#B4AA97;
+    --accent:#6bbf8e; --accent-bright:#7fd3a2;
+  }}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);
+    font:16px/1.55 var(--sans);padding:26px 18px 60px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:640px;margin:0 auto}
+  h1{font:600 1.5rem/1.15 var(--serif);margin:0 0 .3rem;letter-spacing:-.01em}
+  h1 b{color:var(--accent-bright);font-style:italic}
+  p.lede{color:var(--soft);margin:0 0 1.9rem;max-width:44rem}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;
+    padding:16px 16px 18px;margin-bottom:16px}
+  .card h2{font:600 1.12rem/1.2 var(--serif);margin:0 0 .1rem}
+  .card .desc{font-size:.85rem;color:var(--soft);margin:0 0 .9rem}
+  .seg{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .seg button{
+    flex:1 1 0;min-width:88px;font:600 .82rem/1 var(--sans);cursor:pointer;
+    padding:.62rem .5rem;border-radius:11px;border:1px solid var(--line);
+    background:var(--ground);color:var(--ink);transition:.12s}
+  .seg button.on{background:var(--accent);color:#fff;border-color:transparent}
+  .seg button small{display:block;font-weight:500;font-size:.68rem;opacity:.75;margin-top:2px}
+  .seg button.on small{opacity:.9}
+  .row{display:flex;align-items:center;gap:12px}
+  .play{
+    flex:0 0 auto;width:54px;height:54px;border-radius:50%;cursor:pointer;
+    border:1px solid var(--line);background:var(--accent);color:#fff;
+    font-size:1.2rem;display:grid;place-items:center;transition:.12s}
+  .play:hover{background:var(--accent-bright)}
+  .play.playing{background:var(--apricot)}
+  .bar{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+  .bar span{display:block;height:100%;width:0;background:var(--accent-bright)}
+  .now{font-size:.78rem;color:var(--soft);margin-top:8px;font-variant-numeric:tabular-nums}
+  .now b{color:var(--ink)}
+  .note{margin-top:1.6rem;font-size:.82rem;color:var(--soft);line-height:1.6;
+    border-top:1px solid var(--line);padding-top:14px}
+  .note b{color:var(--ink)}
+  code{font:.82em ui-monospace,"SF Mono",Menlo,monospace;background:var(--line);
+    padding:.05rem .3rem;border-radius:5px}
+</style>
+
+<div class="wrap">
+  <h1>Activity BGM — <b>cozy pass</b></h1>
+  <p class="lede">New direction: every festival activity gets its own track, the
+    way Catmint Café has its own coffee-shop loop — no more slicing one song.
+    Here are the two you sent, warmed for the cove. Pick a treatment for each
+    (they can differ), then I'll cut the loops and wire them in.</p>
+
+  <div class="card" id="c-race">
+    <h2>Cove Race</h2>
+    <p class="desc">Drives the sprint to the finish line.</p>
+    <div class="seg">
+      <button data-t="orig" class="on">Original<small>as you sent it</small></button>
+      <button data-t="warm">Warm<small>light touch</small></button>
+      <button data-t="cozy">Cozy<small>full warm-down</small></button>
+    </div>
+    <div class="row">
+      <button class="play">▶</button>
+      <div class="bar"><span></span></div>
+    </div>
+    <div class="now">playing: <b class="lbl">Original</b> · loops · 30s of the middle of the track</div>
+  </div>
+
+  <div class="card" id="c-volley">
+    <h2>Cove Volleyball</h2>
+    <p class="desc">The rally on the sand.</p>
+    <div class="seg">
+      <button data-t="orig" class="on">Original<small>as you sent it</small></button>
+      <button data-t="warm">Warm<small>light touch</small></button>
+      <button data-t="cozy">Cozy<small>full warm-down</small></button>
+    </div>
+    <div class="row">
+      <button class="play">▶</button>
+      <div class="bar"><span></span></div>
+    </div>
+    <div class="now">playing: <b class="lbl">Original</b> · loops · 30s of the middle of the track</div>
+  </div>
+
+  <p class="note">
+    <b>Warm</b> = highs eased off at 7&nbsp;kHz, a hair of low-mid tucked in, a
+    touch of room, gentle 2:1 leveling. Barely there — it just takes the edge off.<br>
+    <b>Cozy</b> = highs rolled off at 5.8&nbsp;kHz, presence &amp; sibilance
+    pulled down, low end firmed, more room, 2.4:1 leveling. The full
+    "warmed down for the cove" treatment — matches the festival direction.<br><br>
+    Tell me e.g. <i>"race warm, volley cozy"</i> and whether the level feels
+    right sitting under the crowd. Then I bake the full loops, embed them for
+    iOS (<code>FEST_AUDIO_DATA</code>), and each activity plays its own after
+    the countdown.
+  </p>
+</div>
+
+<script>
+(() => {
+  const clips = {};
+  function setup(cardId, key){
+    const card = document.getElementById(cardId);
+    const seg = card.querySelectorAll('.seg button');
+    const playBtn = card.querySelector('.play');
+    const barFill = card.querySelector('.bar span');
+    const lbl = card.querySelector('.lbl');
+    const LABELS = { orig:'Original', warm:'Warm', cozy:'Cozy' };
+    let treat = 'orig';
+    let audio = null;
+
+    function src(){ return `_bgm-${key}-${treat}.mp3`; }
+
+    function stopAll(){
+      Object.values(clips).forEach(a => { if (a && !a.paused) { a.pause(); a.currentTime = 0; } });
+      document.querySelectorAll('.play').forEach(b => { b.classList.remove('playing'); b.textContent = '▶'; });
+    }
+
+    function makeAudio(){
+      const a = new Audio(src());
+      a.loop = true;
+      a.preload = 'auto';
+      a.addEventListener('timeupdate', () => {
+        if (a.duration) barFill.style.width = (a.currentTime / a.duration * 100) + '%';
+      });
+      return a;
+    }
+
+    seg.forEach(b => b.addEventListener('click', () => {
+      seg.forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      treat = b.dataset.t;
+      lbl.textContent = LABELS[treat];
+      const wasPlaying = audio && !audio.paused;
+      const at = audio ? audio.currentTime : 0;
+      if (audio) { audio.pause(); }
+      audio = makeAudio();
+      clips[cardId] = audio;
+      if (wasPlaying) {
+        audio.addEventListener('canplay', function once(){
+          audio.removeEventListener('canplay', once);
+          try { audio.currentTime = at % (audio.duration || 30); } catch(e){}
+          audio.play();
+        });
+      }
+    }));
+
+    playBtn.addEventListener('click', () => {
+      if (audio && !audio.paused) { stopAll(); return; }
+      stopAll();
+      if (!audio) { audio = makeAudio(); clips[cardId] = audio; }
+      audio.play().then(() => {
+        playBtn.classList.add('playing'); playBtn.textContent = '❚❚';
+      }).catch(() => {});
+    });
+  }
+  setup('c-race', 'race');
+  setup('c-volley', 'volley');
+})();
+</script>
