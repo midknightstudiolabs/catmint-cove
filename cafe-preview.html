@@ -818,17 +818,21 @@
   .vb-sn{font-weight:700;font-size:.8rem;}
   .vb-ss{font-size:.72rem;color:var(--ink-soft);}
   .vb-reward{display:inline-block;margin-top:.3rem;color:var(--accent);font-weight:700;}
-  #cafeBoard{position:absolute;left:0;right:0;bottom:0;z-index:66;background:var(--panel);border-top:1px solid var(--panel-line);
-    padding:.5rem .6rem calc(env(safe-area-inset-bottom) + .7rem);pointer-events:auto;}
+  #cafeBoard{position:absolute;left:50%;transform:translateX(-50%);bottom:0;z-index:66;
+    width:min(94vw,400px);background:var(--panel);border:1px solid var(--panel-line);border-bottom:none;
+    border-radius:16px 16px 0 0;box-shadow:0 -10px 28px rgba(22,18,12,.16);
+    padding:.55rem .6rem calc(env(safe-area-inset-bottom) + .5rem);pointer-events:auto;}
   #cafeBoard[hidden]{display:none;}
-  .cb-leave{position:absolute;top:.4rem;right:.5rem;z-index:2;background:rgba(17,14,21,.06);border:1px solid var(--panel-line);
-    border-radius:999px;padding:.16rem .5rem .16rem .4rem;font:800 .58rem/1 "IBM Plex Mono",monospace;letter-spacing:.06em;
-    text-transform:uppercase;color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;gap:.15rem;}
-  .cb-leave span{font-size:.8rem;line-height:1;}
-  .cb-leave:active{transform:scale(.96);}
-  #cafeHint{text-align:center;font:700 .7rem/1.3 "Hanken Grotesk",sans-serif;color:var(--ink-soft);margin-bottom:.4rem;padding:0 3.4rem;}
+  #cafeHint{text-align:center;font:700 .7rem/1.3 "Hanken Grotesk",sans-serif;color:var(--ink-soft);margin-bottom:.4rem;padding:0 .3rem;}
   #cafeHint b{color:var(--accent);}
-  #cafeSlots{display:flex;gap:.5rem;}
+  #cafeSlots{display:flex;gap:.4rem;}
+  .cb-exit{display:flex;gap:.4rem;margin-top:.5rem;}
+  .cb-exit button{flex:1;border:1px solid var(--panel-line);background:rgba(17,14,21,.045);color:var(--ink-soft);
+    border-radius:.7rem;padding:.5rem .3rem;font:700 .72rem/1 "Hanken Grotesk",sans-serif;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:.28rem;}
+  .cb-exit button:hover{border-color:var(--accent);color:var(--ink);}
+  .cb-exit button:active{transform:scale(.97);}
+  .cb-exit .cbx-ico{font-size:.95rem;line-height:1;opacity:.6;}
   .cafe-slot{flex:1 1 0;min-width:0;border:2px dashed #cfc7ae;border-radius:.85rem;padding:.25rem;
     display:flex;flex-direction:column;gap:.25rem;transition:border-color .12s ease,background .12s ease;}
   .cafe-slot .cs-head{display:flex;align-items:center;justify-content:center;gap:.3rem;padding-top:.1rem;}
@@ -1302,9 +1306,12 @@
       <span class="rb-time" id="festTime">the cove festival</span>
     </div>
     <div id="cafeBoard" hidden>
-      <button class="cb-leave" id="cafeLeave"><span>‹</span> Cove</button>
       <div id="cafeHint"></div>
       <div id="cafeSlots"></div>
+      <div class="cb-exit">
+        <button id="cafeToCove"><span class="cbx-ico">‹</span> The cove</button>
+        <button id="cafeToFest">The festival <span class="cbx-ico">›</span></button>
+      </div>
     </div>
   </div>
   <div id="festWipe">
@@ -9563,7 +9570,9 @@ document.getElementById("boxCancel").addEventListener("click", closeFest);
 document.getElementById("boxStart").addEventListener("click", startBoxChallenge);
 document.getElementById("volleyCancel").addEventListener("click", closeFest);
 document.getElementById("cafeCancel").addEventListener("click", closeFest);
-document.getElementById("cafeLeave").addEventListener("click", closeFest);   // bail out of a running shift, same as the other games' bottom bar
+// bail out of a running shift — either all the way back to the cove, or up to the festival chooser
+document.getElementById("cafeToCove").addEventListener("click", (e) => { e.stopPropagation(); closeFest(); });
+document.getElementById("cafeToFest").addEventListener("click", (e) => { e.stopPropagation(); document.getElementById("festHub").click(); });
 document.getElementById("cafeTutGo").addEventListener("click", () => { _cafeTutSeen = true; cafeShowPicker(); });
 document.getElementById("cafeStart").addEventListener("click", () => { if (cafePickSel.length === 3) startCoveCafe(); });
 // first match of the session gets a quick deadpan how-to; after that, straight in
