@@ -8380,9 +8380,7 @@ function updateGlassDrops(dt) {
 async function loadRainLoop() {
   if (rainBuffer || !actx) return;
   try {
-    const res = await fetch(bust("rain-loop.opus"));
-    if (!res.ok) throw 0;
-    rainBuffer = await actx.decodeAudioData(await res.arrayBuffer());
+    rainBuffer = await actx.decodeAudioData(await _festAudioBuf("rain-loop.mp3"));   // embedded on native, fetch() on web (iOS won't fetch a bundled asset)
   } catch (e) { rainBuffer = null; }
 }
 let _restAudioGen = 0;
