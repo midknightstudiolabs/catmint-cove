@@ -9405,12 +9405,26 @@ function stopVolleyBed() {
 const FEST_BED_LVL = 0.55, FEST_BED_LVL_VOLLEY = 0.4;   // volley slice is already mellow — just a touch back for the surf
 let _festBedBufs = {}, _festBed = null, _festBedGen = 0;   // section -> AudioBuffer|false ; _festBed = { g, src, section }
 function festBedTarget() { return muted ? 0.0001 : (_volleyBed ? FEST_BED_LVL_VOLLEY : FEST_BED_LVL); }
+// iOS WKWebView won't fetch() a bundled capacitor:// asset (same reason SFX_DATA
+// exists). build-www.mjs fills this with base64 of each fest-*.mp3 for the native
+// build; on the web it stays {} and the fetch() path runs.
+const FEST_AUDIO_DATA = {};   /* @native-fest-audio */
+async function _festAudioBuf(file) {
+  const d = FEST_AUDIO_DATA[file];
+  if (d) {
+    const bin = atob(d.slice(d.indexOf(",") + 1));
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return u8.buffer;
+  }
+  const res = await fetch(bust(file));
+  if (!res.ok) throw 0;
+  return await res.arrayBuffer();
+}
 async function loadFestBed(section) {
   if (_festBedBufs[section] !== undefined || !actx) return;   // loaded, or tried and failed (false)
   try {
-    const res = await fetch(bust("fest-bed-" + section + ".mp3"));
-    if (!res.ok) throw 0;
-    _festBedBufs[section] = await actx.decodeAudioData(await res.arrayBuffer());
+    _festBedBufs[section] = await actx.decodeAudioData(await _festAudioBuf("fest-bed-" + section + ".mp3"));
   } catch (e) { _festBedBufs[section] = false; }
 }
 function _fadeOutFestBed(fast) {
@@ -9473,8 +9487,7 @@ function playFestWinSting() {
   };
   if (_festWinBuf) { go(); return true; }
   if (_festWinBuf === false) return false;   // tried and failed
-  fetch(bust("fest-win.mp3"))
-    .then(r => r.ok ? r.arrayBuffer() : Promise.reject(0))
+  _festAudioBuf("fest-win.mp3")
     .then(ab => actx.decodeAudioData(ab))
     .then(buf => { _festWinBuf = buf; go(); })
     .catch(() => { _festWinBuf = false; try { purchaseChime(); } catch (e) {} });
@@ -9516,8 +9529,7 @@ async function startCafeBed() {
     bed.src = s;
   };
   if (_cafeBedBuf) { spin(); return; }
-  fetch(bust("fest-bed-cafe.mp3"))
-    .then(r => r.ok ? r.arrayBuffer() : Promise.reject(0))
+  _festAudioBuf("fest-bed-cafe.mp3")
     .then(ab => actx.decodeAudioData(ab))
     .then(buf => { if (bed.stopped) return; _cafeBedBuf = buf; spin(); })
     .catch(() => {});
@@ -17765,6 +17777,7 @@ window.__cove = {
       crick: ambience.crickGain.gain.value, bird: ambience.birdGain.gain.value, master: ambience.master.gain.value } : null,
     fest: festBus ? { on: festMode, gain: festBus.gain.value, beat: _festMelodyBeat,
       bed: _festBed ? (_festBed.section + "@" + _festBed.g.gain.value.toFixed(2)) : (_festBedBufs.hub === false ? "failed→calliope" : "off"),
+      src: Object.keys(FEST_AUDIO_DATA).length ? "embed" : "fetch", loaded: Object.keys(_festBedBufs).map(k => k + ":" + (_festBedBufs[k] === false ? "x" : "ok")).join(",") || "none",
       beach: !!_volleyBed, cafeBed: !!_cafeBed, winSting: !!_festWin } : null,
     samples: Object.fromEntries(Object.entries(SFX_FILES).map(([k,v]) => [k, v.filter(u => _sfxBuf[u]).length + "/" + v.length])) }; },
   meow(pool = "meow"){ ensureAudio(); return playSample(pool, { vol: 0.6 }); },
