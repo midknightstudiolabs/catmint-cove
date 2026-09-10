@@ -1,0 +1,86 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Catmint Cove — the lab</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Playable prototypes for Catmint Cove — festival games still in development.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#EEF0E7; --surface:#F7F8F2; --surface-2:#E4E7D8;
+    --ink:#221D16; --ink-soft:#4C4536; --ink-faint:#7B7263;
+    --rule:#D3D6C4; --accent:#356B4C; --accent-bright:#2F7A50; --apricot:#BE7734;
+    --shadow:0 1px 0 rgba(255,255,255,.6), 20px 30px 55px -30px rgba(34,29,22,.26);
+    --serif:"Fraunces","Georgia",serif;
+    --sans:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#14120C; --surface:#1D1A12; --surface-2:#262016;
+      --ink:#ECE4D5; --ink-soft:#B8AE9A; --ink-faint:#8B8171;
+      --rule:#332E22; --accent:#6FBF8E; --accent-bright:#82D3A1; --apricot:#D98F4E;
+      --shadow:0 1px 0 rgba(255,255,255,.04), 20px 30px 55px -30px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#14120C; --surface:#1D1A12; --surface-2:#262016;
+    --ink:#ECE4D5; --ink-soft:#B8AE9A; --ink-faint:#8B8171;
+    --rule:#332E22; --accent:#6FBF8E; --accent-bright:#82D3A1; --apricot:#D98F4E;
+    --shadow:0 1px 0 rgba(255,255,255,.04), 20px 30px 55px -30px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.6 var(--sans);
+    -webkit-font-smoothing:antialiased;padding:clamp(24px,6vw,72px) clamp(20px,5vw,40px);}
+  .wrap{max-width:46rem;margin:0 auto;}
+  .eyebrow{font:600 .74rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+    color:var(--apricot);margin:0 0 14px;}
+  h1{font:600 clamp(2rem,6vw,2.9rem)/1.08 var(--serif);margin:0 0 .5rem;text-wrap:balance;}
+  .lede{font-size:1.05rem;color:var(--ink-soft);margin:0 0 2.6rem;max-width:34rem;}
+  .lede a{color:var(--accent-bright);text-decoration-thickness:1px;text-underline-offset:2px;}
+  .cards{display:grid;gap:18px;}
+  .card{display:block;text-decoration:none;color:inherit;background:var(--surface);
+    border:1px solid var(--rule);border-radius:18px;padding:22px 22px 20px;box-shadow:var(--shadow);
+    transition:transform .16s ease,border-color .16s ease;}
+  .card:hover{transform:translateY(-2px);border-color:var(--accent);}
+  .card .top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px;}
+  .card h2{font:600 1.35rem/1.15 var(--serif);margin:0;}
+  .tag{font:600 .66rem/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-faint);border:1px solid var(--rule);border-radius:999px;padding:5px 9px;}
+  .card p{margin:.4rem 0 .9rem;color:var(--ink-soft);font-size:.95rem;}
+  .go{font:600 .82rem/1 var(--sans);color:var(--accent-bright);}
+  .go::after{content:" \2192";}
+  .foot{margin-top:2.8rem;padding-top:1.4rem;border-top:1px solid var(--rule);
+    font-size:.85rem;color:var(--ink-faint);}
+  .foot a{color:var(--ink-soft);}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Catmint Cove · the lab</p>
+  <h1>Festival games in progress</h1>
+  <p class="lede">Two new activities for the Cove Festival, still being built and
+    balanced. They're not in <a href="./">the game</a> yet — play them here and
+    tell us what feels good. Best on a phone, held upright.</p>
+
+  <div class="cards">
+    <a class="card" href="./midknight-preview.html">
+      <div class="top"><h2>Tug of Paws</h2><span class="tag">Playtest</span></div>
+      <p>Five cats on a rope against a visiting cove. Work the paw-spin, brace,
+        and heave — bigger cats pull harder, and a little luck decides the rest.
+        Whoever loses gets pulled toward the water.</p>
+      <span class="go">Take the rope</span>
+    </a>
+
+    <a class="card" href="./cafe-preview.html">
+      <div class="top"><h2>Catmint Café</h2><span class="tag">Prototype</span></div>
+      <p>You're the manager; your staff are cats. Three of them run a pop-up café
+        on the festival grounds — barista, server, host. The only lever you pull
+        is the shift change: who's on which job when the queue backs up.</p>
+      <span class="go">Open the café</span>
+    </a>
+  </div>
+
+  <p class="foot">Rough edges expected — these are prototypes.
+    · <a href="./">Back to Catmint Cove</a></p>
+</div>
