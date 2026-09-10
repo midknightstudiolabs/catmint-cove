@@ -797,6 +797,46 @@
     box-shadow:0 10px 30px rgba(0,0,0,.32);animation:vbBannerIn .5s ease both;}
   .volley-banner[hidden]{display:none;}
   @keyframes vbBannerIn{from{opacity:0;transform:translate(-50%,-40%) scale(.9);}}
+  /* --- Tug of Paws HUD — a small, hand-made fair game, not a slot cabinet --- */
+  .midk-hud{position:absolute;left:0;right:0;z-index:66;pointer-events:none;
+    bottom:calc(max(.7rem, env(safe-area-inset-bottom)) + 2.7rem);
+    display:flex;flex-direction:column;align-items:center;gap:.38rem;padding:0 12px;}
+  .midk-hud[hidden]{display:none;}
+  .midk-hud #midkCom{pointer-events:none;background:rgba(247,245,236,.94);color:var(--ink-soft);
+    border:1px solid var(--panel-line);text-shadow:none;box-shadow:0 4px 14px rgba(36,31,23,.16);
+    font-size:.76rem;padding:.4rem .85rem;}
+  .midk-hud #midkCom .vc-mic{opacity:.55;}
+  /* the spin console — three little charms + a soft SPIN key, one compact row */
+  .midk-console{pointer-events:auto;position:relative;display:flex;align-items:center;gap:.5rem;
+    background:var(--panel);border:1.5px solid var(--panel-line);border-radius:16px;
+    padding:.4rem .5rem .46rem;box-shadow:var(--shadow);transition:box-shadow .2s;}
+  .midk-console.ready{box-shadow:0 0 0 3px rgba(232,180,90,.3),var(--shadow);}
+  .midk-console .mc-reels{display:flex;gap:.3rem;}
+  .midk-console .mc-reels span{width:2rem;height:2rem;display:flex;align-items:center;justify-content:center;
+    background:#fffdf6;border:1px solid var(--panel-line);border-radius:9px;font-size:1.15rem;
+    box-shadow:inset 0 1px 3px rgba(36,31,23,.09);}
+  .midk-console.rolling .mc-reels span{animation:mcReel .18s ease-in-out infinite;}
+  @keyframes mcReel{50%{transform:translateY(-2px);}}
+  .midk-console .mc-bar{position:absolute;left:.5rem;width:6.6rem;bottom:.24rem;height:3px;
+    border-radius:2px;background:#e7e0cd;overflow:hidden;}
+  .midk-console .mc-bar i{display:block;height:100%;width:0;border-radius:2px;background:var(--shell);
+    transition:width .14s linear;}
+  .midk-console.rolling .mc-bar i,.midk-console.result .mc-bar i{width:100%!important;background:var(--panel-line);}
+  .midk-console .mc-msg{position:absolute;left:.5rem;top:.4rem;bottom:.4rem;width:7rem;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--panel);border-radius:10px;white-space:nowrap;
+    font:700 .78rem/1 "Fraunces",serif;color:var(--apricot);letter-spacing:.01em;
+    opacity:0;pointer-events:none;transition:opacity .2s;}
+  .midk-console.result .mc-msg{opacity:1;}
+  .midk-console.result .mc-reels{opacity:.15;}
+  .midk-spin{border:0;cursor:pointer;border-radius:12px;padding:.5rem .95rem .52rem;
+    background:var(--shell);color:var(--ink);font:600 .95rem/1 "Fraunces",serif;letter-spacing:.02em;
+    display:flex;align-items:center;gap:.35rem;box-shadow:0 2px 6px rgba(36,31,23,.2);
+    transition:transform .08s,background .2s,color .2s,box-shadow .2s;}
+  .midk-spin .ms-paw{font-size:1rem;}
+  .midk-spin:active{transform:translateY(1px);}
+  .midk-console:not(.ready) .midk-spin{background:#e7e0cd;color:var(--ink-faint);box-shadow:none;cursor:default;}
+  .midk-console.rolling .midk-spin{background:#e7e0cd;color:var(--ink-faint);box-shadow:none;}
   /* trait chips in the volleyball / picker cells */
   .fp-cell .fp-tr{display:flex;gap:.2rem;flex-wrap:wrap;justify-content:center;margin-top:.1rem;}
   .fp-cell .fp-tr span{background:#e2e6d5;border-radius:999px;padding:.02rem .34rem;font-size:.56rem;
@@ -1230,6 +1270,38 @@
       <div class="volley-com" id="volleyCom" hidden><span class="vc-mic">🎙️</span><span id="vbComText"></span></div>
     </div>
     <div class="volley-banner" id="volleyBanner" hidden>MATCH POINT</div>
+    <div class="fest-panel" id="festMidkPanel" hidden>
+      <div class="fp-art">🧶</div>
+      <h2>Tug of Paws</h2>
+      <p>Pick your five for the rope. <span id="midkPickCount">(0 / 5)</span></p>
+      <div class="fp-grid" id="midkPickGrid"></div>
+      <div class="btn-row">
+        <button class="btn primary" id="midkStart" disabled>Take the rope</button>
+        <button class="btn" id="midkCancel">Maybe later</button>
+      </div>
+    </div>
+    <div class="fest-panel" id="festMidkTut" hidden>
+      <div class="fp-art">🎰</div>
+      <h2>The rope, briefly</h2>
+      <ul class="vb-tut">
+        <li><span class="vt-e">🧶</span><span class="vt-t">Five of your cats, five of a visiting Cove's, one yarn ball. Pull it past your flag. It's all down to the <b>slot</b>.</span></li>
+        <li><span class="vt-e">🎰</span><span class="vt-t">The meter charges. Hit <b>SPIN</b> and the reels roll. Mostly you'll get <b>🐈 BIGGER</b> (a random cat swells up and hauls harder) or <b>💪 HEAVE</b> (the ball jumps your way).</span></li>
+        <li><span class="vt-e">⭐</span><span class="vt-t"><b>⭐ 7 7 7 ⭐</b> is rare (~1 in 10) — a huge shove toward your flag. And if the ball's already a third of the way home when you hit it, that's the match.</span></li>
+        <li><span class="vt-e">😴</span><span class="vt-t">Sometimes it backfires and a cat nods off. The visiting Cove spins too — best luck wins.</span></li>
+      </ul>
+      <div class="btn-row">
+        <button class="btn primary" id="midkTutGo">Take the rope</button>
+      </div>
+    </div>
+    <div class="midk-hud" id="midkHud" hidden>
+      <div class="volley-com" id="midkCom" hidden><span class="vc-mic">🎙️</span><span id="midkComText"></span></div>
+      <div class="midk-console" id="midkConsole">
+        <div class="mc-reels" id="midkReels"><span>🐈</span><span>💪</span><span>⭐</span></div>
+        <div class="mc-bar" id="midkBar"><i></i></div>
+        <div class="mc-msg" id="midkMsg">charging the spin…</div>
+        <button class="midk-spin" id="midkRally" type="button"><span class="ms-paw">🐾</span>Spin!</button>
+      </div>
+    </div>
     <div class="fest-countdown" id="festCountdown" hidden>
       <div class="cd-ring" id="festCdRing"></div>
       <span id="festCdNum">3</span>
@@ -1282,6 +1354,7 @@
       <button id="dev-fest">🎪 festival</button>
       <button id="dev-box">📦 box challenge</button>
       <button id="dev-volley">🏐 volleyball</button>
+      <button id="dev-midk">🧶 tug of paws</button>
       <button id="dev-day">skip a day</button>
       <button id="dev-name">name cove</button>
       <button id="dev-ad">show ad</button>
@@ -4467,7 +4540,7 @@ document.getElementById("placeBarCancel").onclick = cancelPlacing;
 document.getElementById("fest").addEventListener("pointerdown", (e) => {
   ensureAudio();
   if (!festMode || festKind !== "volley" || volleyPhase !== "play") return;
-  if (e.target.closest("button, .fest-panel, .fest-result, .volley-hud, .volley-com, .fest-bar, .fest-skip")) return;
+  if (e.target.closest("button, .fest-panel, .fest-result, .volley-hud, .volley-com, .midk-hud, .fest-bar, .fest-skip")) return;
   volleyPointer(e);
 });
 canvas.addEventListener("pointerdown", (e) => {
@@ -6815,6 +6888,7 @@ document.getElementById("dev-cat").addEventListener("click", () => { spawnCat({ 
 document.getElementById("dev-fest").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker(); });
 document.getElementById("dev-box").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("box"); });
 document.getElementById("dev-volley").addEventListener("click", () => { openFestPicker("volley"); });
+document.getElementById("dev-midk").addEventListener("click", () => { openFestPicker("midk"); });
 document.getElementById("dev-day").addEventListener("click", () => {
   G.opens++; G.streakDay = today() - 1; G.goalDay = 0; rollDailyGoals();
   for (const c of cats) { c.acc += aggregateRate() * 120; c.bornAt -= DAY_MS; }   // age the kittens too
@@ -8808,6 +8882,9 @@ function openFestPicker(kind) {
   document.getElementById("festVolleyTut").hidden = true;
   document.getElementById("volleyHud").hidden = true;
   document.getElementById("volleyBanner").hidden = true;
+  document.getElementById("festMidkPanel").hidden = true;
+  document.getElementById("festMidkTut").hidden = true;
+  document.getElementById("midkHud").hidden = true;
   document.getElementById("festCountdown").hidden = true;
   document.getElementById("festSkip").hidden = true;
 
@@ -8828,6 +8905,7 @@ function openFestPicker(kind) {
     document.getElementById("app").classList.add("festing");
     document.getElementById("fest").classList.add("on");
     document.getElementById("festBar").hidden = false;
+    startFestAudio();   // festBus up before any activity starts its own bed
     if (_festPickKind === "box") {
       boxPhase = "picker"; renderBoxPickGrid(roster);
       document.getElementById("festBoxPanel").hidden = false;
@@ -8840,13 +8918,16 @@ function openFestPicker(kind) {
       document.getElementById("festTime").textContent = "cove race";
       renderFestPickGrid(roster);
       document.getElementById("festPanel").hidden = false;
+    } else if (_festPickKind === "midk") {
+      festKind = "hub"; festGroundsCats(roster);
+      document.getElementById("festTime").textContent = "tug of paws";
+      enterFestMidk();
     } else {
       festKind = "hub"; festGroundsCats(roster);
       document.getElementById("festTime").textContent = "cove festival";
       renderFestChooser();
       document.getElementById("festChoose").hidden = false;
     }
-    startFestAudio();
   }, 560);
   setTimeout(() => w.classList.add("out"), 1250);
   setTimeout(() => w.classList.remove("in", "out"), 1850);
@@ -8953,6 +9034,7 @@ function runFestCountdown() {
       if (mySeq !== _festCdSeq) return;
       el.hidden = true;
       if (festKind === "volley") { volleyBegin(); return; }
+      if (festKind === "midk") { midkBegin(); return; }
       racePhase = "run";
       document.getElementById("festSkip").hidden = false;
     }, 500);
@@ -8969,12 +9051,18 @@ function closeFest() {
   document.getElementById("volleyHud").hidden = true;
   document.getElementById("volleyCom").hidden = true;
   document.getElementById("volleyBanner").hidden = true;
+  document.getElementById("festMidkPanel").hidden = true;
+  document.getElementById("festMidkTut").hidden = true;
+  document.getElementById("midkHud").hidden = true;
+  document.getElementById("midkCom").hidden = true;
   document.getElementById("festResult").hidden = true;
   document.getElementById("festCountdown").hidden = true;
   document.getElementById("festSkip").hidden = true;
   document.getElementById("festSkip").textContent = "Skip to the finish ›";
   festKind = "race"; boxParts = []; boxPhase = "idle"; _hubCats = [];
   volleyPhase = "idle"; volleyParts = []; volleyBall = null; _vbNoDrowse = false; _vbFast = false;
+  midkPhase = "idle"; midkParts = []; midk = null; midkCharge = 0; midkSlot = null;
+  for (const c of cats) { c._chonkBase = 0; c._tugLean = 0; c._vbLift = 0; c.squash = 0; }   // Tug of Paws: any cat that ballooned or braced goes back to normal
   particles.length = 0; floaters.length = 0;   // a live "zoomies!" or confetti spark shouldn't follow you back to the cove
   _festQuietUntil = Date.now() + 1800;   // ...and none land the instant the wipe clears back at the cove
   const w = document.getElementById("festWipe");
@@ -9538,6 +9626,7 @@ function renderFest(dt) {
   if (festKind === "hub") { renderFestGrounds(dt); return; }
   if (festKind === "box") { renderBox(dt); return; }
   if (festKind === "volley") { renderVolley(dt); return; }
+  if (festKind === "midk") { renderMidk(dt); return; }
   raceT += dt;
   const g = ctx;
   { // a resize() elsewhere restores the full pannable canvas — put the fest canvas back
@@ -9641,6 +9730,17 @@ document.getElementById("festAgain").addEventListener("click", () => {
     trackEvent("volleyball_replayed");
     return;
   }
+  if (festKind === "midk") {
+    midkParts = []; midk = null; midkPhase = "idle"; midkCharge = 0; midkSlot = null; festKind = "hub"; festGroundsCats(roster);
+    for (const c of cats) { c._chonkBase = 0; c._tugLean = 0; c._vbLift = 0; c.squash = 0; }
+    startFestBed("tug");              // stay on the tug slice for the rematch picker
+    document.getElementById("midkHud").hidden = true;
+    document.getElementById("midkCom").hidden = true;
+    renderMidkPickGrid(eligibleForVolley().filter(c => !c.mascot));
+    document.getElementById("festMidkPanel").hidden = false;
+    trackEvent("midk_replayed");
+    return;
+  }
   festKind = "hub"; festGroundsCats(roster);
   startFestBed("hub");                 // crossfade the race slice back to the hub groove
   raceCats = []; raceWinner = null; racePick = null; racePhase = "picker"; festCheerUntil = 0;
@@ -9671,6 +9771,9 @@ const FEST_EVENTS = [
   { key: "volley", emoji: "🏐", name: "Cove Volleyball",
     desc: "Three cats. One visiting Cove. Keep them awake and hope they remember how volleyball works.",
     lock: () => volleyReady() ? null : "You need 3 cats at the Cove to play.", enter: enterFestVolley },
+  { key: "midk", emoji: "🧶", name: "Tug of Paws",
+    desc: "Five cats on the rope against a visiting Cove. Work the paw-spin and haul the yarn home.",
+    lock: () => midkReady() ? null : "You need 5 cats at the Cove for the rope.", enter: enterFestMidk },
 ];
 function renderFestChooser() {
   const wrap = document.getElementById("festEventCards");
@@ -9704,6 +9807,11 @@ document.getElementById("volleyTutGo").addEventListener("click", () => {
   document.getElementById("festVolleyTut").hidden = true;
   startCoveVolley();
 });
+// Tug of Paws
+document.getElementById("midkCancel").addEventListener("click", closeFest);
+document.getElementById("midkTutGo").addEventListener("click", () => { _midkTutSeen = true; midkShowPicker(); });
+document.getElementById("midkStart").addEventListener("click", () => { if (midkPickSel.length === 5) startCoveMidk(); });
+document.getElementById("midkRally").addEventListener("click", midkSpin);
 document.getElementById("festSkip").addEventListener("click", () => {
   if (festKind === "box") {
     if (boxPhase !== "play" && boxPhase !== "settle") return;
@@ -11156,6 +11264,653 @@ function showVolleyResult() {
     player_naps: naps, opponent_naps: vnaps, duration: Math.round(matchT),
   });
 }
+
+/* ============================================================================
+   TUG OF PAWS  —  a slot-machine tug-of-war over the big festival yarn ball.
+   Five of your cats on the rope, five of a visiting Cove's. No heaving — it's
+   all the SLOT. A meter charges; when it's full you SPIN three reels (tap to
+   stop them). Three paws = the whole team auras up and pulls hard, three yarn
+   = a yank, cat food = a random cat balloons into a heavy anchor, three naps
+   = someone dozes off. The visiting Cove spins too. Best luck wins the yarn.
+   (Internals stay named `midk*` from the old prototype — same wiring hooks.)
+   ============================================================================ */
+const MIDK_W = 560, MIDK_H = 980;
+const MIDK_X = 280;                           // the rope runs straight down the middle
+const MIDK_HOME = { cove: 852, visit: 168 };  // the two flag lines
+const MIDK_START_Y = 512;                     // the yarn ball starts dead centre
+const MIDK_WIN_Y = { cove: 812, visit: 176 };
+const MIDK_MATCH_LEN = 60;                    // seconds, hard cap
+const MIDK_PULL_K = 14;                       // px/s per unit of net pull differential
+const MIDK_GRIP_R = 150;
+const MIDK_AURA_MULT = 1.6;
+const MIDK_CHARGE_RATE = 0.185;               // slot meter fill / sec → spin ready ~every 5.4s
+const MIDK_SHORE = 122;                       // cats never walk above this y (the sea is up there)
+const MIDK_COVE_NAMES = VB_COVE_NAMES;
+const MIDK_CAT_NAMES = VB_CAT_NAMES;
+// each spin lands on ONE weighted outcome; the reels just animate to it
+const MIDK_SLOT_EMOJI = { grow: "🐈", push: "💪", aura: "⭐", nap: "😴" };
+const MIDK_SLOT_LABEL = { grow: "BIGGER!", push: "HEAVE!", aura: "⭐ 7 7 7 ⭐", nap: "…zzz" };
+const MIDK_OUTCOMES = [["grow", 42], ["push", 38], ["aura", 10], ["nap", 10]];
+const MIDK_THIRD = 108;                       // ball this far past centre toward your flag → a 777 is an auto-win
+const MIDK_AURA_PUSH = 128;                   // a plain 777 shoves the ball this far toward your flag
+
+let midkPhase = "idle", midkT = 0, midkParts = [], midk = null, midkVisitName = "Sunbeam Cove";
+let midkPickSel = [], _midkTutSeen = false;
+let _midkResultShown = false, _midkResultAt = 0, _midkWinner = null, _midkFlopAt = 0;
+let midkCharge = 0, _midkAuraUntil = 0, _midkAiAuraUntil = 0;
+let _midkAiChargeT = 0, _midkAiSlotCd = 0;
+let _midkHeave = 0;                           // shared heave rhythm — cats lean + dig in on the pull beat
+let midkSlot = null;                          // { reels, outcome, rollUntil, resolved, result, showUntil }
+let _midkEventCd = 0;
+let _midkLead = { cove: 0, visit: 0 };        // furthest the ball got toward each flag — for the result read
+let midkCom = { text: "", at: -99, pri: 0, last: "" };
+
+function midkTrait(p, ...keys) { const T = p.cat.traits || []; return keys.some(k => T.includes(k)); }
+function midkPick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+function midkRollOutcome(kind) {
+  // kind "cove" gets a small kindness: nap becomes push
+  const tot = MIDK_OUTCOMES.reduce((a, o) => a + o[1], 0);
+  let r = Math.random() * tot;
+  for (const [o, w] of MIDK_OUTCOMES) { r -= w; if (r <= 0) return (kind === "cove" && o === "nap" && Math.random() < 0.35) ? "push" : o; }
+  return "push";
+}
+const _midkReelSyms = ["grow", "push", "aura", "nap"];
+
+const MIDK_COM_PRI = { start: 30, win: 90, cameo: 60, slot: 40, event: 34, near: 34, pull: 10, stall: 14, generic: 6 };
+const MIDK_COM = {
+  start: ["Five a side, one yarn ball. {visitingCove} look confident. That'll pass.",
+    "The rope's taut. Nobody's explained the rules to the cats.",
+    "{playerCove} versus {visitingCove}. Winner keeps the yarn."],
+  pullCove: ["{playerCove} has the yarn moving!", "That's {playerCove}'s pull.",
+    "The ball's sliding {playerCove}'s way.", "{playerCove} digging in."],
+  pullVisit: ["{visitingCove} are hauling it back.", "Ground lost — {visitingCove} have the edge.",
+    "{visitingCove} lean into it.", "The yarn's going the wrong way for {playerCove}."],
+  stall: ["Dead even. Ten cats, zero progress.", "Nobody's moving it. Glorious deadlock.",
+    "The rope creaks. The yarn does not move.", "Someone's paws need to tire first."],
+  slotCove: ["{playerCove} hit the slot — that's a real pull now!", "The reels line up for {playerCove}!",
+    "{playerCove} cashed the charge in.", "Lucky spin for {playerCove}."],
+  slotVisit: ["{visitingCove} got a spin off.", "The slot favours {visitingCove} this time.",
+    "{visitingCove} bought themselves a heave."],
+  slotDud: ["The reels don't line up. Nothing for {playerCove}.", "So close. No prize.",
+    "{playerCove} spun a whole lot of nothing."],
+  slotNap: ["{playerCove} spun three naps. One of yours is now asleep.", "The slot backfired — a {playerCove} cat has dozed off."],
+  sleep: ["{name} has found a sunbeam and made a decision.", "{name} is asleep. On the rope. Mid-pull.",
+    "{name} stopped pulling to consider a nap. The nap won."],
+  eat: ["{name} found the buffet. {name} is now considerably larger.", "{name} has doubled in size and doubled in commitment to standing still.",
+    "{name} is eating. {name} is also now furniture."],
+  cameo: ["Midknight has wandered in and sat on the rope. He picked the losing side. Of course he did.",
+    "Midknight is on the rope now. Nobody invited him. Nobody will move him.",
+    "A very large cat has joined {loser}'s end. It's Midknight. He's helping, technically."],
+  rain: ["Rain. Everyone lets go to regroup. The yarn drifts back to the middle.", "A shower. The rope goes slack for a moment."],
+  nearCove: ["{playerCove} are a whisker from the flag!", "One more heave, {playerCove}!"],
+  nearVisit: ["{visitingCove} are about to take it!", "{playerCove} are pinned at their own flag."],
+  win: ["{winner} take the yarn ball. It will be re-lost within the hour.",
+    "{winner} win Tug of Paws. The yarn is theirs. The cats have already moved on.",
+    "{winner} pull it over the line. Somewhere a scoreboard updates."],
+  generic: ["The rope hums.", "A cat reconsiders its life choices.", "The yarn ball wobbles, ominously."],
+};
+function midkSay(key, sub) {
+  const map = { pullCove: "pull", pullVisit: "pull", nearCove: "near", nearVisit: "near",
+    slotCove: "slot", slotVisit: "slot", slotDud: "slot", slotNap: "slot", sleep: "event", eat: "event", rain: "event" };
+  const priKey = map[key] || key;
+  const pri = MIDK_COM_PRI[priKey] || 6;
+  const age = midkT - midkCom.at;
+  if (age < 1.8 && midkCom.pri > pri) return;
+  if (pri < 30 && age < rand(3.5, 5.5)) return;
+  const pool = MIDK_COM[key] || MIDK_COM.generic;
+  let line = pick(pool), guard = 0;
+  while (line === midkCom.last && guard++ < 4) line = pick(pool);
+  line = line.replace(/\{playerCove\}/g, coveName()).replace(/\{visitingCove\}/g, midkVisitName);
+  if (sub) for (const k in sub) line = line.replace(new RegExp("\\{" + k + "\\}", "g"), sub[k]);
+  midkCom = { text: line, at: midkT, pri, last: line };
+  const el = document.getElementById("midkCom");
+  document.getElementById("midkComText").textContent = line;
+  el.hidden = false; el.classList.remove("fade");
+  el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";
+}
+
+function midkReady() { return eligibleForVolley().filter(c => !c.mascot).length >= 5; }
+function midkFit() {
+  const { vw, vh } = restViewportPx();
+  const rd = _festDPR || DPR;
+  const sc = Math.min((vw * rd) / MIDK_W, (vh * rd) / MIDK_H);
+  return { sc, ox: (vw * rd - MIDK_W * sc) / 2, oy: (vh * rd - MIDK_H * sc) / 2 };
+}
+
+function makeMidkVisitors(playerAvgMood) {
+  const name = pick(MIDK_COVE_NAMES);
+  const used = new Set(cats.map(c => c.name));
+  const pool = MIDK_CAT_NAMES.filter(n => !used.has(n));
+  const base = clamp(playerAvgMood || 66, 50, 88);
+  const out = [];
+  for (let i = 0; i < 5; i++) {
+    const n = pool.length ? pool.splice((Math.random() * pool.length) | 0, 1)[0] : "Guest " + roman(i + 2);
+    const c = new Cat({ visitor: true, name: n, mood: clamp(base + rand(-12, 12), 40, 96), x: -999, y: -999 });
+    c._motion = null;
+    out.push(c);
+  }
+  return { name, cats: out };
+}
+function makeMidkYarn() {
+  // the yarn ball — the thing being tugged. y is its position on the rope.
+  return { y: MIDK_START_Y, dir: 0, wob: 0, unravel: 0 };
+}
+
+function renderMidkPickGrid(roster) {
+  midkPickSel = [];
+  const grid = document.getElementById("midkPickGrid");
+  grid.innerHTML = "";
+  for (const c of roster) {
+    const cell = document.createElement("button");
+    cell.type = "button"; cell.className = "fp-cell";
+    const tr = (c.traits || []).slice(0, 2).map(k => `<span>${esc(TRAITS[k] ? TRAITS[k].label : k)}</span>`).join("");
+    cell.innerHTML = `<canvas width="56" height="48"></canvas><span class="nm"></span><span class="fp-tr">${tr}</span>`;
+    cell.querySelector(".nm").textContent = c.name;
+    cell.addEventListener("click", () => {
+      const at = midkPickSel.indexOf(c);
+      if (at >= 0) { midkPickSel.splice(at, 1); cell.classList.remove("picked"); }
+      else { if (midkPickSel.length >= 5) return; midkPickSel.push(c); cell.classList.add("picked"); }
+      document.getElementById("midkPickCount").textContent = `(${midkPickSel.length} / 5)`;
+      document.getElementById("midkStart").disabled = midkPickSel.length !== 5;
+    });
+    grid.appendChild(cell);
+    miniCat(cell.querySelector("canvas"), c.coatKey, c.star, "loafing", false, 1);
+  }
+  // exactly five available → pre-select them all
+  if (roster.length === 5) roster.forEach((c, i) => grid.children[i].click());
+  else { document.getElementById("midkPickCount").textContent = "(0 / 5)"; document.getElementById("midkStart").disabled = true; }
+}
+function enterFestMidk() {
+  document.getElementById("festChoose").hidden = true;
+  document.getElementById("festTime").textContent = "tug of paws";
+  trackEvent("midk_card_opened");
+  startFestBed("tug");
+  if (!_midkTutSeen) { document.getElementById("festMidkTut").hidden = false; return; }
+  midkShowPicker();
+}
+function midkShowPicker() {
+  document.getElementById("festMidkTut").hidden = true;
+  renderMidkPickGrid(eligibleForVolley().filter(c => !c.mascot));
+  document.getElementById("festMidkPanel").hidden = false;
+}
+
+function startCoveMidk() {
+  if (midkPickSel.length !== 5) return;
+  if (!midkPickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats wandered off."); return; }
+  stopVolleyBed();
+  startFestBed("tug");
+  festKind = "midk";
+  fitFestCanvas();
+  midkT = 0; midkPhase = "idle"; _midkResultShown = false; _midkWinner = null; _midkFlopAt = 0;
+  midkCharge = 0; _midkAuraUntil = 0; _midkAiAuraUntil = 0;
+  _midkAiChargeT = 0; _midkAiSlotCd = rand(7, 12);
+  midkSlot = null;
+  _midkEventCd = rand(10, 16);
+  _midkLead = { cove: 0, visit: 0 };
+  midkCom = { text: "", at: -99, pri: 0, last: "" };
+  particles.length = 0; floaters.length = 0;
+  midk = makeMidkYarn();
+  const vc = makeMidkVisitors(midkPickSel.reduce((s, c) => s + (c.mood ?? 60), 0) / 5);
+  midkVisitName = vc.name;
+  midkParts = [];
+  const lay = (list, side) => list.forEach((c, i) => {
+    const part = { cat: c, side, idx: i, base: 0.9 + (midkTrait({ cat: c }, "bold", "playful") ? 0.16 : 0) - (midkTrait({ cat: c }, "lazy", "grumpy") ? 0.12 : 0),
+      grip: true, _slotBoost: 0, _sleepUntil: 0, _chonk: 0,
+      stats: { heaveSec: 0, slots: 0, naps: 0 } };
+    midkParts.push(part);
+    const gp = midkGripPointFor(part, MIDK_START_Y);
+    Object.assign(c, { x: gp.x + rand(-4, 4), y: gp.y + rand(-4, 4), face: 1, state: "seeking", trotting: false, walkAmt: 0, walk: rand(0, 6), _vbLift: 0, _tugLean: 0, squash: 0, _chonkBase: 0 });
+    c._motion = null;
+  });
+  lay(midkPickSel, "cove");
+  lay(vc.cats, "visit");
+  document.getElementById("festMidkPanel").hidden = true;
+  document.getElementById("midkHud").hidden = false;
+  document.getElementById("festBar").hidden = false;
+  document.getElementById("festResult").hidden = true;
+  runFestCountdown();          // → midkBegin() at "Go!"
+  trackEvent("midk_started", { cats: midkPickSel.map(c => c.name), visiting: midkVisitName });
+}
+function midkBegin() {
+  midkPhase = "play"; midkT = 0;
+  midkCharge = 1;               // first spin is ready the instant "Go!" lands — no waiting out the meter
+  midkSay("start");
+}
+
+/* ---- rope geometry: cats line up along the rope on their own side, staggered
+   left/right of it, at increasing distance from the yarn ball ---- */
+function midkGripPointFor(p, y) {
+  const away = 66 + p.idx * 44;                      // how far down the rope from the ball
+  const sx = ((p.idx % 2) * 2 - 1) * (22 + (p.idx > 3 ? 8 : 0));
+  const ty = y + (p.side === "cove" ? away : -away);
+  return { x: MIDK_X + sx, y: clamp(ty, MIDK_SHORE, MIDK_H - 44) };   // never on the sea / off the field
+}
+function midkPawPoint(p) {   // where this cat's paws meet the rope — near the ball
+  const near = 34 + Math.min(p.idx, 3) * 6;
+  return { x: MIDK_X, y: midk.y + (p.side === "cove" ? near : -near) };
+}
+function midkBusy(p) { return p._sleepUntil > midkT; }
+
+function midkStepCat(p, dt) {
+  const c = p.cat;
+  const asleep = p._sleepUntil > midkT;
+  const gp = midkGripPointFor(p, midk.y);
+
+  // move toward the grip spot ourselves so the gait can track the actual motion
+  const dx = gp.x - c.x, dy = gp.y - c.y, dist = Math.hypot(dx, dy);
+  if (dist > 0.4) { const step = Math.min(dist, 62 * dt); c.x += dx / dist * step; c.y += dy / dist * step; }
+  c.face = p.side === "cove" ? -1 : 1;          // always face your own flag
+  p.grip = dist < 7 && !asleep;
+
+  const live = (midkPhase === "play") && !asleep;
+  const relocating = dist > 9;                  // the rope just dragged them a real distance → take steps
+  const beat = Math.sin(_midkHeave + p.idx * 0.9);
+  const yank = Math.max(0, beat);               // 0..1 — the pulling half of the rhythm
+
+  // gait: real stepping when relocating, a small braced shuffle while just holding
+  c.walk = (c.walk || 0) + dt * (relocating ? 7.5 : 3);
+  const wantWalk = asleep ? 0 : relocating ? 0.9 : live && p.grip ? 0.16 : 0.05;
+  c.walkAmt = (c.walkAmt || 0) + (wantWalk - (c.walkAmt || 0)) * Math.min(1, dt * 8);
+  c.trotting = c.walkAmt > 0.05;
+  c.bob = (c.bob || 0) + dt * (relocating ? 9 : 4);
+
+  if (asleep) {
+    c.state = "sleeping"; c.walkAmt = 0; c.trotting = false;
+    c._tugLean = (c._tugLean || 0) * (1 - Math.min(1, dt * 5));
+    c._vbLift = Math.max(0, (c._vbLift || 0) - dt * 3);
+    c.squash = Math.max(0, (c.squash || 0) - dt * 4);
+  } else {
+    c.state = "seeking";
+    // heave: lean back on the rope, a touch more on the yank beat — a soft tug-of-war stance
+    const wantLean = live && p.grip ? -(0.07 + 0.07 * yank) : 0;
+    c._tugLean = (c._tugLean || 0) + (wantLean - (c._tugLean || 0)) * Math.min(1, dt * 6);
+    c.squash = live && p.grip ? 0.03 + 0.1 * yank : Math.max(0, (c.squash || 0) - dt * 4);
+    const digging = midkAura(p.side) || p._chonk > 0.4;
+    c._vbLift = digging ? Math.min(1, (c._vbLift || 0) + dt * 3) : Math.max(0, (c._vbLift || 0) - dt * 3);
+  }
+
+  // a "BIGGER!" spin grows a puller in place — a slow, visible swell + a settle wobble
+  if (p._chonkT != null && p._chonk < p._chonkT) {
+    p._chonk = Math.min(p._chonkT, p._chonk + dt * 0.55);
+    c.squash = Math.max(c.squash || 0, 0.16 + Math.sin(midkT * 20) * 0.05);
+  }
+  c._chonkBase = p._chonk > 0 ? 1 + p._chonk * 0.95 : 0;
+}
+
+function midkAura(side) { return (side === "cove" ? _midkAuraUntil : _midkAiAuraUntil) > midkT; }
+function midkPull(side) {
+  let sum = 0;
+  const aura = midkAura(side);
+  for (const p of midkParts) {
+    if (p.side !== side || !p.grip || midkBusy(p)) continue;
+    let w = p.base * (1 + (p._chonk || 0) * 0.8);           // a bigger cat pulls noticeably harder
+    if (aura) w *= MIDK_AURA_MULT;
+    sum += w;
+  }
+  return sum;
+}
+
+/* ---- the slot — one button, one weighted outcome, reels roll to it ---- */
+function midkSpin() {
+  if (midkPhase !== "play" || (midkSlot && !midkSlot.resolved)) return;
+  if (midkCharge < 1) return;
+  midkCharge = 0;
+  const outcome = midkRollOutcome("cove");
+  midkSlot = { outcome, reels: ["grow", "push", "aura"], rollUntil: midkT + 0.6, resolved: false, result: null, showUntil: 0 };
+  tone(440, 0.06, "square", 0.05);
+}
+function midkSlotTick(dt) {
+  const s = midkSlot; if (!s) return;
+  // once resolved, the reels linger a beat to be read — but the meter is already
+  // recharging (see renderMidk), so there's no dead time staring at the result.
+  if (s.resolved) { if (midkT > s.showUntil) midkSlot = null; return; }
+  if (midkT < s.rollUntil) {
+    // rolling blur
+    for (let i = 0; i < 3; i++) s.reels[i] = _midkReelSyms[(Math.floor(midkT * 26) + i * 2) % _midkReelSyms.length];
+    if (Math.random() < dt * 9) tone(560 + Math.random() * 120, 0.02, "square", 0.03);
+    return;
+  }
+  // land: the winning outcome fills all three reels
+  s.reels = [s.outcome, s.outcome, s.outcome];
+  s.resolved = true;
+  s.showUntil = midkT + 1.1;
+  midkResolveSlot("cove", s.outcome);
+}
+function midkResolveSlot(side, outcome) {
+  const dir = side === "cove" ? 1 : -1;
+  const setAura = (secs) => { if (side === "cove") _midkAuraUntil = midkT + secs; else _midkAiAuraUntil = midkT + secs; };
+  const growOne = () => {
+    const grp = midkParts.filter(p => p.side === side && !midkBusy(p) && (p._chonk || 0) < 1.4);
+    if (!grp.length) return null;
+    const g = grp.sort((a, b) => (a._chonk || 0) - (b._chonk || 0))[0];
+    g._chonk = g._chonk || 0; g._chonkT = Math.min(1.5, (g._chonk || 0) + rand(0.5, 0.75));
+    floatText(g.cat.x, g.cat.y - 26, "🍖", "#c98f3a");
+    spawnParticles(g.cat.x, g.cat.y - 14, "twinkle", 4);
+    return g;
+  };
+  let label;
+  if (outcome === "grow") {
+    const g = growOne(); setAura(2.2);
+    label = g ? (g.cat.name + " — BIGGER!").toUpperCase() : "BIGGER!";
+  } else if (outcome === "push") {
+    midk.y += dir * rand(42, 60); setAura(2.4); label = "HEAVE!";
+  } else if (outcome === "aura") {
+    // 7 7 7 — a massive shove, and an auto-win if the ball's already a third of the way home
+    const homeAlready = side === "cove" ? midk.y >= MIDK_START_Y + MIDK_THIRD : midk.y <= MIDK_START_Y - MIDK_THIRD;
+    if (homeAlready) { midk.y = side === "cove" ? MIDK_WIN_Y.cove : MIDK_WIN_Y.visit; label = "⭐ 7 7 7 — AUTO WIN! ⭐"; }
+    else { midk.y += dir * MIDK_AURA_PUSH; setAura(4.5); label = "⭐ 7 7 7 — HUGE! ⭐"; }
+    spawnParticles(MIDK_X, midk.y, "spark", 18); shake(4);
+  } else {   // nap
+    const grp = midkParts.filter(p => p.side === side && !midkBusy(p));
+    if (grp.length) { const g = midkPick(grp); g._sleepUntil = midkT + 4; g.stats.naps++; floatText(g.cat.x, g.cat.y - 24, "😴", "#8a7fb0"); }
+    label = "…zzz";
+  }
+  midk.y = clamp(midk.y, MIDK_WIN_Y.visit - 4, MIDK_WIN_Y.cove + 4);
+  midkSay(side === "cove" ? (outcome === "nap" ? "slotNap" : outcome === "aura" ? "slotCove" : "slotCove") : "slotVisit");
+  if (side === "cove") { midkParts.forEach(p => { if (p.side === "cove") p.stats.slots++; }); tone(880, 0.12, "triangle", 0.07); }
+  else tone(300, 0.1, "triangle", 0.06);
+  if (midkSlot && side === "cove") { midkSlot.result = MIDK_SLOT_LABEL[outcome] || label; midkSlot.showUntil = midkT + 1.5; }
+}
+
+/* ---- visiting Cove AI: spins its own slot on a timer, same odds ---- */
+function midkAi(dt) {
+  _midkAiChargeT += dt;
+  _midkAiSlotCd -= dt;
+  if (_midkAiSlotCd <= 0 && _midkAiChargeT > 5.5 && !midkSlot) {
+    _midkAiSlotCd = rand(5.5, 8); _midkAiChargeT = 0;
+    midkResolveSlot("visit", midkRollOutcome("visit"));
+    spawnParticles(MIDK_X, midk.y, "twinkle", 6);
+  }
+}
+
+/* ---- random event: an occasional cat nods off on the rope ---- */
+function midkEvents(dt) {
+  _midkEventCd -= dt;
+  if (_midkEventCd > 0) return;
+  _midkEventCd = rand(11, 17);
+  const side = Math.random() < 0.5 ? "cove" : "visit";
+  const cand = midkParts.filter(p => p.side === side && !midkBusy(p));
+  if (!cand.length) return;
+  const p = midkPick(cand);
+  p._sleepUntil = midkT + rand(3.5, 5.5);
+  midkSay("sleep", { name: p.cat.name });
+  floatText(p.cat.x, p.cat.y - 24, "😴", "#8a7fb0");
+}
+
+function _midkUpdateBtns() {
+  const con = document.getElementById("midkConsole");
+  const sb = document.getElementById("midkRally");
+  if (!con || !sb) return;
+  const rolling = midkSlot && !midkSlot.resolved;
+  const resolved = midkSlot && midkSlot.resolved;
+  const ready = midkCharge >= 1 && !rolling;
+  con.classList.toggle("ready", ready);
+  con.classList.toggle("rolling", !!rolling);
+  con.classList.toggle("result", !!resolved);
+  sb.disabled = !ready;
+  const reels = document.getElementById("midkReels");
+  if (reels) {
+    const syms = midkSlot ? midkSlot.reels : ["grow", "push", "aura"];
+    for (let i = 0; i < 3; i++) if (reels.children[i]) reels.children[i].textContent = MIDK_SLOT_EMOJI[syms[i]] || "🐈";
+  }
+  const bar = document.getElementById("midkBar");
+  if (bar && bar.firstElementChild && !rolling && !resolved) bar.firstElementChild.style.width = Math.min(100, midkCharge * 100) + "%";
+  const msg = document.getElementById("midkMsg");
+  if (msg) msg.textContent = resolved ? (midkSlot.result || "")
+    : rolling ? "spinning…"
+    : ready ? "tap to spin!"
+    : "charging the spin…";
+}
+
+function renderMidk(dt) {
+  midkT += dt;
+  _midkHeave += dt * (3.4 + (midk ? Math.min(2.4, Math.abs(midk.dir) * 1.6) : 0));
+  const HL = window._mkHL;   // headless: run the sim, skip every canvas draw (balance testing)
+  updateFX(Math.min(dt, 0.05));
+  const g = ctx;
+  if (!HL) {
+    { const px = restViewportPx();
+      if (Math.abs(canvas.width - Math.round(px.vw * (_festDPR || DPR))) > 2) fitFestCanvas(); }
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, canvas.width, canvas.height);
+    const V = midkFit();
+    g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
+    drawMidkField(g);
+  }
+  if (!midk) return;
+
+  if (midkPhase === "play") {
+    // the slot meter charges steadily; when it's full you can SPIN
+    if ((!midkSlot || midkSlot.resolved) && midkCharge < 1) midkCharge = Math.min(1, midkCharge + MIDK_CHARGE_RATE * dt);
+
+    for (const p of midkParts) midkStepCat(p, dt);
+    midkSeparate();
+    midkAi(dt);
+    midkSlotTick(dt);
+    midkEvents(dt);
+
+    // --- the tug ---
+    let net = midkPull("cove") - midkPull("visit");
+    // gentle rubber-band so a lead doesn't run away — the trailing side digs in near its own flag
+    const span = MIDK_WIN_Y.cove - MIDK_START_Y;
+    if (net > 0) net *= 1 - 0.32 * clamp((midk.y - MIDK_START_Y) / span, 0, 1);
+    if (net < 0) net *= 1 - 0.32 * clamp((MIDK_START_Y - midk.y) / (MIDK_START_Y - MIDK_WIN_Y.visit), 0, 1);
+    const vel = net * MIDK_PULL_K;
+    midk.y = clamp(midk.y + vel * dt, MIDK_WIN_Y.visit - 4, MIDK_WIN_Y.cove + 4);
+    midk.dir = vel > 6 ? 1 : vel < -6 ? -1 : 0;
+    midk.wob += dt * (2.4 + Math.abs(vel) * 0.05);
+    _midkLead.cove = Math.max(_midkLead.cove, midk.y - MIDK_START_Y);
+    _midkLead.visit = Math.max(_midkLead.visit, MIDK_START_Y - midk.y);
+
+    if (midkT > 3) {
+      if (midk.y >= MIDK_WIN_Y.cove - 46) midkSay("nearCove");
+      else if (midk.y <= MIDK_WIN_Y.visit + 46) midkSay("nearVisit");
+      else if (midk.dir === 1) midkSay("pullCove");
+      else if (midk.dir === -1) midkSay("pullVisit");
+      else midkSay("stall");
+    }
+
+    if (midk.y >= MIDK_WIN_Y.cove) midkWin("cove");
+    else if (midk.y <= MIDK_WIN_Y.visit) midkWin("visit");
+    else if (midkT > MIDK_MATCH_LEN) midkWin(midk.y >= MIDK_START_Y ? "cove" : "visit");
+  } else if (midkPhase === "finish") {
+    for (const p of midkParts) midkStepCat(p, dt);
+    midkSeparate();
+    const tY = _midkWinner === "cove" ? MIDK_WIN_Y.cove + 14 : MIDK_WIN_Y.visit - 14;
+    midk.y += (tY - midk.y) * Math.min(1, dt * 2.4);
+    midk.wob += dt * 3;
+    if (!_midkResultShown && midkT >= _midkFlopAt) { _midkResultShown = true; _midkResultAt = midkT; showMidkResult(); }
+  }
+  { const el = document.getElementById("midkCom");
+    if (el && !el.hidden) { const age = midkT - midkCom.at; el.classList.toggle("fade", age > 4); if (age > 5) el.hidden = true; } }
+  _midkUpdateBtns();
+  if (HL) return;
+
+  // --- draw: rope + everyone, depth sorted, then the yarn ball on top ---
+  drawMidkRope(g);
+  const painted = midkParts.map(p => p.cat);
+  painted.sort((a, b) => a.y - b.y);
+  for (const c of painted) {
+    if (c.y > midk.y && !painted._drewYarn) { drawMidkYarn(g); painted._drewYarn = true; }
+    drawCat(g, c, false);
+  }
+  if (!painted._drewYarn) drawMidkYarn(g);
+  drawMidkHudCanvas(g);
+  if (particles.length || floaters.length) drawFX(g);
+}
+function midkWin(side) {
+  if (midkPhase !== "play") return;
+  _midkWinner = side; midkPhase = "finish"; _midkFlopAt = midkT + 2.2;
+  midkSay("win", { winner: side === "cove" ? coveName() : midkVisitName });
+  spawnParticles(MIDK_X, midk.y, side === "cove" ? "spark" : "twinkle", 16);
+}
+
+// soft separation so the scrum reads as individual cats, not a blob
+function midkSeparate() {
+  const B = 38;
+  for (let i = 0; i < midkParts.length; i++) for (let j = i + 1; j < midkParts.length; j++) {
+    const a = midkParts[i].cat, b = midkParts[j].cat;
+    let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+    if (d >= B) continue;
+    if (d < 0.01) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d = Math.hypot(dx, dy); }
+    const push = (B - d) / 2, ux = dx / d, uy = dy / d;
+    a.x -= ux * push; a.y -= uy * push; b.x += ux * push; b.y += uy * push;
+  }
+  for (const p of midkParts) { p.cat.x = clamp(p.cat.x, 24, MIDK_W - 24); p.cat.y = clamp(p.cat.y, MIDK_SHORE, MIDK_H - 30); }
+}
+
+function drawMidkField(g) {
+  const HZ = 92;
+  const sky = g.createLinearGradient(0, -260, 0, HZ);
+  sky.addColorStop(0, "#c8e0e6"); sky.addColorStop(1, "#eef0e0");
+  g.fillStyle = sky; g.fillRect(-260, -260, MIDK_W + 520, HZ + 260);
+  g.fillStyle = "#7ec3cf"; g.fillRect(-260, HZ - 26, MIDK_W + 520, 30);
+  const gr = g.createLinearGradient(0, HZ, 0, MIDK_H);
+  gr.addColorStop(0, "#cfe0af"); gr.addColorStop(1, "#b3cd8e");
+  g.fillStyle = gr; g.fillRect(-260, HZ - 4, MIDK_W + 520, MIDK_H - HZ + 264);
+  drawBunting(g, 20, 92, MIDK_W - 40, 22, midkT, { posts: true, groundY: HZ + 2 });
+  // spectators along both edges, bobbing
+  for (let i = 0; i < 8; i++) {
+    const yy = 210 + i * 78, hop = Math.max(0, Math.sin(midkT * 4 + i)) * 5;
+    for (const sx of [28, MIDK_W - 28]) {
+      g.fillStyle = ["#8a949e", "#d5813c", "#26232b", "#997c53", "#b7ada0"][i % 5];
+      g.beginPath(); g.ellipse(sx + (sx > 200 ? -6 : 6), yy - hop, 11, 12, 0, 0, 7); g.fill();
+      g.beginPath(); g.moveTo(sx - 4, yy - 11 - hop); g.lineTo(sx, yy - 18 - hop); g.lineTo(sx + 4, yy - 11 - hop); g.fill();
+    }
+  }
+  // centre line + the two flag lines
+  g.strokeStyle = "rgba(74,53,36,.18)"; g.lineWidth = 2; g.setLineDash([9, 8]);
+  g.beginPath(); g.moveTo(MIDK_X - 120, MIDK_START_Y); g.lineTo(MIDK_X + 120, MIDK_START_Y); g.stroke(); g.setLineDash([]);
+  for (const side of ["visit", "cove"]) {
+    const y = MIDK_WIN_Y[side], win = _midkWinner === side, lead = side === "cove";
+    g.fillStyle = win ? "rgba(244,201,93,.28)" : "rgba(244,201,93,.12)";
+    g.fillRect(MIDK_X - 120, lead ? y : y - 44, 240, 44);
+    g.strokeStyle = "rgba(214,140,64,.7)"; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(MIDK_X - 120, y); g.lineTo(MIDK_X + 120, y); g.stroke();
+    // a little flag on a post at the edge
+    const px = MIDK_X + 128, dirY = lead ? -1 : 1;
+    g.strokeStyle = "#8a6b45"; g.lineWidth = 3; g.beginPath(); g.moveTo(px, y); g.lineTo(px, y + dirY * 34); g.stroke();
+    g.fillStyle = lead ? "#5a9a5e" : "#8ea6c4";
+    g.beginPath(); g.moveTo(px, y + dirY * 34); g.lineTo(px - 22, y + dirY * 28); g.lineTo(px, y + dirY * 22); g.fill();
+    g.fillStyle = "rgba(36,31,23,.4)"; g.font = "800 9px 'IBM Plex Mono', monospace"; g.textAlign = "center";
+    g.fillText((lead ? coveName() : midkVisitName).toUpperCase().slice(0, 16), MIDK_X, lead ? y + 15 : y - 8);
+  }
+}
+
+function drawMidkRope(g) {
+  // the rope, top flag to bottom flag, sagging a touch toward the winning side
+  const y0 = MIDK_WIN_Y.visit + 6, y1 = MIDK_WIN_Y.cove - 6;
+  g.strokeStyle = "#c9a56e"; g.lineWidth = 7; g.lineCap = "round";
+  g.beginPath();
+  g.moveTo(MIDK_X, y0);
+  g.quadraticCurveTo(MIDK_X + Math.sin(midk.wob) * 3, midk.y, MIDK_X, y1);
+  g.stroke();
+  g.strokeStyle = "rgba(255,255,255,.18)"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(MIDK_X - 1, y0); g.quadraticCurveTo(MIDK_X - 1, midk.y, MIDK_X - 1, y1); g.stroke();
+  g.lineCap = "butt";
+}
+function drawMidkYarn(g) {
+  const y = midk.y, r = 30 + Math.sin(midk.wob * 2) * 1.5;
+  g.fillStyle = "rgba(36,31,23,.16)"; g.beginPath(); g.ellipse(MIDK_X, y + r + 4, r * 1.1, 8, 0, 0, 7); g.fill();
+  g.save(); g.translate(MIDK_X, y); g.rotate(Math.sin(midk.wob) * 0.12);
+  g.fillStyle = "#d98b74"; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill();
+  g.strokeStyle = "rgba(255,255,255,.32)"; g.lineWidth = 2.4;
+  for (let i = 0; i < 5; i++) {
+    const a = i * 1.05;
+    g.beginPath(); g.ellipse(0, 0, r * 0.82, r * 0.5, a, 0, 7); g.stroke();
+  }
+  g.strokeStyle = "rgba(120,60,45,.4)"; g.lineWidth = 1.6;
+  for (let i = 0; i < 4; i++) { const a = i * 1.3 + 0.4; g.beginPath(); g.ellipse(0, 0, r * 0.62, r * 0.86, a, 0, 7); g.stroke(); }
+  // a loose strand trailing toward whoever's pulling harder
+  g.strokeStyle = "#d98b74"; g.lineWidth = 3; g.lineCap = "round";
+  const td = midk.dir >= 0 ? 1 : -1;
+  g.beginPath(); g.moveTo(0, td * r * 0.6); g.quadraticCurveTo(td * 10, td * r * 1.4, td * -6 + Math.sin(midkT * 6) * 5, td * r * 2.1); g.stroke();
+  g.lineCap = "butt";
+  g.restore();
+}
+function drawMidkHudCanvas(g) {
+  const bx = 54, bw = MIDK_W - 108, by = 40;
+  g.fillStyle = "rgba(247,245,236,.92)"; roundRect(g, bx - 10, by - 16, bw + 20, 30, 14); g.fill();
+  // a slim depleting round timer
+  const frac = clamp(1 - midkT / MIDK_MATCH_LEN, 0, 1);
+  g.fillStyle = "#e6ddc7"; roundRect(g, bx, by - 3, bw, 6, 3); g.fill();
+  g.fillStyle = frac < 0.2 ? "#d9884f" : "#7ba46b"; roundRect(g, bx, by - 3, bw * frac, 6, 3); g.fill();
+  g.font = "800 8px 'IBM Plex Mono', monospace"; g.fillStyle = "#6b5335"; g.textAlign = "left";
+  g.fillText("TUG OF PAWS", bx, by - 8);
+  const left = Math.max(0, Math.ceil(MIDK_MATCH_LEN - midkT));
+  g.textAlign = "right"; g.font = "700 12px 'Fraunces', serif"; g.fillStyle = "#5b5343";
+  g.fillText(left + "s", bx + bw, by - 8);
+
+  // the tug rail — centre-out, shows the yarn ball's position between the flags
+  const rx = MIDK_W - 20, ry0 = MIDK_WIN_Y.visit, ry1 = MIDK_WIN_Y.cove, rc = (ry0 + ry1) / 2;
+  g.fillStyle = "rgba(36,31,23,.12)"; roundRect(g, rx - 3, ry0, 6, ry1 - ry0, 3); g.fill();
+  g.fillStyle = "rgba(36,31,23,.3)"; g.fillRect(rx - 6, rc - 1, 12, 2);
+  // mark the 777 auto-win line (a third of the way from centre to the cove flag)
+  const tline = rc + (MIDK_THIRD / (MIDK_WIN_Y.cove - MIDK_START_Y)) * (ry1 - rc);
+  g.strokeStyle = "#e8b45a"; g.lineWidth = 2; g.beginPath(); g.moveTo(rx - 7, tline); g.lineTo(rx + 7, tline); g.stroke();
+  const yy = clamp(midk.y, ry0, ry1);
+  g.fillStyle = midk.y > MIDK_START_Y ? "#5a9a5e" : "#8ea6c4";
+  if (yy > rc) roundRect(g, rx - 3, rc, 6, yy - rc, 3); else roundRect(g, rx - 3, yy, 6, rc - yy, 3);
+  g.fill();
+  g.fillStyle = "#4a3524"; g.beginPath(); g.arc(rx, yy, 4, 0, 7); g.fill();
+  // the reels + SPIN button live in the DOM console (.midk-console) below.
+}
+
+function showMidkResult() {
+  const won = _midkWinner === "cove";
+  const res = document.getElementById("festResult");
+  res.querySelector("h2").textContent = "Tug of Paws";
+  res.querySelector(".fr-emoji").textContent = "🧶";
+  document.getElementById("festAgain").textContent = "Rematch";
+  const cove = midkParts.filter(p => p.side === "cove");
+  const base = goalShells(0.42);
+  const margin = won ? _midkLead.cove : _midkLead.visit;   // px past centre the winner got
+  const marginK = clamp(margin / (MIDK_WIN_Y.cove - MIDK_START_Y), 0, 1);
+  const close = Math.abs(midk.y - MIDK_START_Y) < 90;
+  let rw;
+  if (!won) rw = { shells: Math.round(base * (close ? 1.3 : _midkLead.cove > 150 ? 1.15 : 0.9)) };
+  else {
+    let m = 1.9 + marginK * 0.6 + (close ? 0.3 : 0);
+    rw = { shells: Math.round(base * m), pearls: (marginK > 0.6 && Math.random() < 0.07) ? 1 : 0 };
+  }
+  grantReward(rw, null); syncHud();
+
+  const napper = [...cove].sort((a, b) => b.stats.naps - a.stats.naps)[0];
+  const bigOne = [...cove].sort((a, b) => (b._chonk || 0) - (a._chonk || 0))[0];
+  const spins = cove[0] ? cove[0].stats.slots : 0;
+  document.getElementById("festPodium").innerHTML =
+    `<div class="vb-final">
+       <div class="vb-final-row${won ? " win" : ""}"><span>${esc(coveName())}</span><b>${won ? "🧶" : ""}</b></div>
+       <div class="vb-final-row${won ? "" : " win"}"><span>${esc(midkVisitName)}</span><b>${won ? "" : "🧶"}</b></div>
+     </div>
+     <div class="vb-stat-rows">${cove.map(p => `
+       <div class="vb-stat-row"><canvas width="46" height="42"></canvas>
+         <div class="vb-stat-txt"><div class="vb-sn">${esc(p.cat.name)}${(p._chonk || 0) >= 0.5 ? " 🍖" : ""}</div>
+         <div class="vb-ss">${(p._chonk || 0) >= 0.9 ? "an absolute unit by the end" : (p._chonk || 0) >= 0.4 ? "put on a few pounds" : p.stats.naps ? "napped on the rope" : "held the rope"}</div></div>
+       </div>`).join("")}</div>`;
+  const cvs = document.querySelectorAll("#festPodium .vb-stat-row canvas");
+  cove.forEach((p, i) => miniCat(cvs[i], p.cat.coatKey, p.cat.star, "loafing", false, 0.75));
+
+  const line = won
+    ? (close ? `${coveName()} take it by a whisker. The yarn is theirs.`
+       : `${coveName()} spin better and haul it home.`)
+    : close ? `${midkVisitName} edge it out on a lucky spin. Rematch?`
+    : `${midkVisitName} walk it. The reels were not kind to ${coveName()}.`;
+  document.getElementById("festPickLine").innerHTML =
+    `${esc(line)}<br><span class="vb-reward">+${rw.shells} ◈${rw.pearls ? ` and a pearl ✦` : ""}</span>`;
+  document.getElementById("festRestLine").textContent =
+    bigOne && (bigOne._chonk || 0) >= 0.9 ? `${bigOne.cat.name} spun 🐈 one too many times and is now load-bearing.` :
+    napper && napper.stats.naps ? `${napper.cat.name} slept through a spin or two.` :
+    spins >= 4 ? `${spins} spins. Pure luck, in the end.` : "";
+  logMoment("🧶", `Tug of Paws vs ${midkVisitName} — ${won ? coveName() + " won the yarn" : midkVisitName + " took it"}.`, "tale");
+
+  spawnParticles(MIDK_X, midk.y, won ? "spark" : "twinkle", 12);
+  document.getElementById("midkHud").hidden = true;
+  document.getElementById("festBar").hidden = true;
+  res.hidden = false;
+  trackEvent("midk_completed", { visiting: midkVisitName, winner: _midkWinner, duration: Math.round(midkT) });
+}
+
 
 /* ---------- rendering ---------- */
 let clouds = [];
@@ -13247,7 +14002,7 @@ function drawCat(g, c, isPhoto) {
 
   // --- age: kittens are small, round, big-headed, big-eyed ---
   const kit = c.isKitten;
-  const ag = c.ageScale;                                // 0.5 newborn → 0.8 grown
+  const ag = c.ageScale * (c._chonkBase || 1);          // 0.5 newborn → 0.8 grown; _chonkBase balloons a cat that spun BIGGER in Tug of Paws
   // big-head kitten proportions fade out as they grow — a teen is nearly adult-shaped
   const kitK = kit ? clamp(1 - c.growth / 0.72, 0, 1) : 0;
   if (kitK > 0) { P.hr *= 1 + 0.22 * kitK; P.hy *= 1 + 0.05 * kitK; P.bw *= 1 - 0.08 * kitK; P.top *= 1 - 0.1 * kitK; }
@@ -13293,7 +14048,8 @@ function drawCat(g, c, isPhoto) {
   const scaleY = ag * (1 - sq * 0.14) * breathe * (1 + gs) * (1 - strK * 0.20);           // stretch: low and flat
   const lean = wk * 0.06 + wk * CHARM * Math.sin(gp * 2) * 0.02 + strK * 0.09             // stretch: a gentle chest tip (chest drop carries the pose, rear stays down)
              - (scratching ? 0.20 : 0)                                                    // scratch: reared back, chest up toward the pole
-             + wriggle * 0.05;                                                            // catmint: a happy wriggle
+             + wriggle * 0.05                                                             // catmint: a happy wriggle
+             + (c._tugLean || 0);                                                         // Tug of Paws: brace-and-heave on the rope
   const walkLift = wk * (3.5 + CHARM * 1.5) + (scratching ? 5 : 0);   // scratch: up onto the hind feet
   const earFlop = wk * CHARM * Math.sin(gp * 2 + 0.6) * 0.11;
 
@@ -15921,6 +16677,11 @@ window.__cove.box = () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); open
 window.__cove.boxState = () => ({ kind: festKind, phase: boxPhase, t: Math.round(boxT), parts: boxParts.map(p => ({ n: p.cat.name, st: p.state, box: p.box, score: p.score, nap: p.napping, log: p.log })) });
 // Cove Volleyball — opens the team picker (needs 3 cats at the cove)
 window.__cove.volley = () => { openFestPicker("volley"); return { on: festMode, kind: festKind, eligible: eligibleForVolley().length }; };
+window.__cove.midk = () => { openFestPicker("midk"); return { on: festMode, kind: festKind, ready: midkReady() }; };
+window.__cove.midkState = () => ({ phase: midkPhase, t: Math.round(midkT), charge: +midkCharge.toFixed(2),
+  ballY: midk ? Math.round(midk.y) : null, lead: { ..._midkLead }, winner: _midkWinner,
+  parts: midkParts.map(p => ({ n: p.cat.name, side: p.side, chonk: +(p._chonk || 0).toFixed(2), naps: p.stats.naps, asleep: p._sleepUntil > midkT })) });
+window.__cove.midkStep = (n = 1, dt = 0.05) => { for (let i = 0; i < n; i++) if (festKind === "midk" && festMode) renderMidk(dt); return window.__cove.midkState(); };
 window.__cove.volleyState = () => ({ phase: volleyPhase, t: Math.round(matchT), score: { ...volleyScore },
   wakeCd: Math.max(0, +(_vbWakeCd - matchT).toFixed(1)), com: vbCom.text, visit: volleyVisitName,
   ball: volleyBall && volleyBall.live ? { side: volleyBall.side, touches: volleyBall.touches,
