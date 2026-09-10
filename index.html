@@ -837,6 +837,50 @@
   .midk-spin:active{transform:translateY(1px);}
   .midk-console:not(.ready) .midk-spin{background:#e7e0cd;color:var(--ink-faint);box-shadow:none;cursor:default;}
   .midk-console.rolling .midk-spin{background:#e7e0cd;color:var(--ink-faint);box-shadow:none;}
+  /* --- Catmint Café — the shift-change board + the café emblem --- */
+  img.cafe-emblem{display:inline-block;vertical-align:middle;filter:drop-shadow(0 2px 4px rgba(74,53,36,.22));}
+  .fest-result .fr-emoji img.cafe-emblem{margin-bottom:.15rem;}
+  .fc-card .fc-emoji img.cafe-emblem{filter:none;}
+  #cafeBoard{position:absolute;left:50%;transform:translateX(-50%);bottom:0;z-index:66;
+    width:min(94vw,400px);background:var(--panel);border:1px solid var(--panel-line);border-bottom:none;
+    border-radius:16px 16px 0 0;box-shadow:0 -10px 28px rgba(22,18,12,.16);
+    padding:.55rem .6rem calc(env(safe-area-inset-bottom) + .5rem);pointer-events:auto;}
+  #cafeBoard[hidden]{display:none;}
+  #cafeHint{text-align:center;font:700 .7rem/1.3 "Hanken Grotesk",sans-serif;color:var(--ink-soft);margin-bottom:.4rem;padding:0 .3rem;}
+  #cafeHint b{color:var(--accent);}
+  #cafeSlots{display:flex;gap:.4rem;}
+  .cb-exit{display:flex;gap:.4rem;margin-top:.5rem;}
+  .cb-exit button{flex:1;border:1px solid var(--panel-line);background:rgba(17,14,21,.045);color:var(--ink-soft);
+    border-radius:.7rem;padding:.5rem .3rem;font:700 .72rem/1 "Hanken Grotesk",sans-serif;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:.28rem;}
+  .cb-exit button:hover{border-color:var(--accent);color:var(--ink);}
+  .cb-exit button:active{transform:scale(.97);}
+  .cb-exit .cbx-ico{font-size:.95rem;line-height:1;opacity:.6;}
+  .cafe-slot{flex:1 1 0;min-width:0;border:2px dashed #cfc7ae;border-radius:.85rem;padding:.25rem;
+    display:flex;flex-direction:column;gap:.25rem;transition:border-color .12s ease,background .12s ease;}
+  .cafe-slot .cs-head{display:flex;align-items:center;justify-content:center;gap:.3rem;padding-top:.1rem;}
+  .cafe-slot .cs-ji{font-size:.82rem;line-height:1;}
+  .cafe-slot .cs-jn{font:800 .52rem/1 "IBM Plex Mono",monospace;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-faint);}
+  .cafe-slot .cs-cat{display:flex;flex-direction:column;align-items:center;gap:.05rem;background:#fffdf6;border:1.5px solid var(--panel-line);
+    border-radius:.7rem;padding:.35rem .2rem .4rem;box-shadow:0 2px 5px rgba(36,31,23,.12);touch-action:none;cursor:grab;position:relative;
+    transition:transform .12s ease,box-shadow .12s ease;flex:1 1 auto;}
+  .cafe-slot .cs-nm{font:800 .8rem/1.05 "Hanken Grotesk",sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  .cafe-slot .cs-tr{font:600 .5rem/1 "IBM Plex Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);}
+  .cafe-slot .cs-st{font-size:.62rem;font-weight:700;color:var(--ink-soft);min-height:.7rem;margin-top:.05rem;}
+  .cafe-slot.picked{border-color:var(--accent);background:rgba(53,107,76,.08);}
+  .cafe-slot.picked .cs-cat{transform:translateY(-3px) scale(1.04);box-shadow:0 12px 22px -6px rgba(36,31,23,.4);border-color:var(--accent);}
+  .cafe-slot.target{border-color:var(--accent-bright);background:#eef4ec;}
+  .cafe-slot.target .cs-st{visibility:hidden;}
+  .cafe-slot.target .cs-swap{position:absolute;left:0;right:0;bottom:.35rem;text-align:center;font:800 .58rem/1 "Hanken Grotesk",sans-serif;color:var(--accent-bright);}
+  .cafe-slot.choke{border-style:solid;border-color:var(--shell);}
+  .cafe-slot.choke .cs-jn{color:var(--apricot);}
+  .cafe-slot .cs-cat.lifted{box-shadow:0 14px 26px -6px rgba(36,31,23,.45);border-color:var(--accent);}
+  @keyframes cafeTokBounce{0%{transform:scale(.86);}55%{transform:scale(1.07);}100%{transform:scale(1);}}
+  .cafe-slot.swapped .cs-cat{animation:cafeTokBounce .32s ease;}
+  .cafe-eots{margin:.6rem 0 .2rem;background:linear-gradient(#fbf1dc,#f6e6c6);border:1px solid #e7d3a6;border-radius:.8rem;padding:.5rem .6rem;display:flex;flex-direction:column;gap:.1rem;}
+  .cafe-eots .ce-k{font:800 .52rem/1 "IBM Plex Mono",monospace;letter-spacing:.12em;text-transform:uppercase;color:#9a7327;}
+  .cafe-eots .ce-n{font-family:"Fraunces",serif;font-weight:600;font-size:1rem;}
+  .cafe-eots .ce-r{font-size:.72rem;font-style:italic;color:var(--ink-soft);}
   /* trait chips in the volleyball / picker cells */
   .fp-cell .fp-tr{display:flex;gap:.2rem;flex-wrap:wrap;justify-content:center;margin-top:.1rem;}
   .fp-cell .fp-tr span{background:#e2e6d5;border-radius:999px;padding:.02rem .34rem;font-size:.56rem;
@@ -1302,6 +1346,38 @@
         <button class="midk-spin" id="midkRally" type="button"><span class="ms-paw">🐾</span>Spin!</button>
       </div>
     </div>
+    <div class="fest-panel" id="festCafePanel" hidden>
+      <div class="fp-art">🎀</div>
+      <h2>Who's on shift?</h2>
+      <p>Pick three cats to run the pop-up café. <span id="cafePickCount">(0 / 3)</span></p>
+      <div class="fp-grid" id="cafePickGrid"></div>
+      <div class="btn-row">
+        <button class="btn primary" id="cafeStart" disabled>Open the café</button>
+        <button class="btn" id="cafeCancel">Maybe later</button>
+      </div>
+    </div>
+    <div class="fest-panel" id="festCafeTut" hidden>
+      <div class="fp-art">🐈‍⬛☕</div>
+      <h2>Running the café</h2>
+      <ul class="vb-tut">
+        <li><span class="vt-e">🐈</span><span class="vt-t">Three cats have agreed to run a pop-up café. None of them asked what that involves.</span></li>
+        <li><span class="vt-e">☕🍰🤵</span><span class="vt-t"><b>Barista</b> makes it, <b>Server</b> carries it, <b>Host</b> seats the guests. That's the whole plan.</span></li>
+        <li><span class="vt-e">🔀</span><span class="vt-t">Someone clearly not coping? <b>Drag their card to another role.</b> The swap's instant. The improvement is a hope, not a promise.</span></li>
+        <li><span class="vt-e">⏳</span><span class="vt-t">The shift runs itself — opening, coffee rush, festival rush, last orders. Serve guests before they give up and keep the <b>Café Mood</b> up.</span></li>
+        <li><span class="vt-e">😼</span><span class="vt-t">It will not go smoothly. Perfect chaos is the target.</span></li>
+      </ul>
+      <div class="btn-row">
+        <button class="btn primary" id="cafeTutGo">Start brewing</button>
+      </div>
+    </div>
+    <div id="cafeBoard" hidden>
+      <div id="cafeHint"></div>
+      <div id="cafeSlots"></div>
+      <div class="cb-exit">
+        <button id="cafeToCove"><span class="cbx-ico">‹</span> The cove</button>
+        <button id="cafeToFest">The festival <span class="cbx-ico">›</span></button>
+      </div>
+    </div>
     <div class="fest-countdown" id="festCountdown" hidden>
       <div class="cd-ring" id="festCdRing"></div>
       <span id="festCdNum">3</span>
@@ -1355,6 +1431,7 @@
       <button id="dev-box">📦 box challenge</button>
       <button id="dev-volley">🏐 volleyball</button>
       <button id="dev-midk">🧶 tug of paws</button>
+      <button id="dev-cafe">🎀 café</button>
       <button id="dev-day">skip a day</button>
       <button id="dev-name">name cove</button>
       <button id="dev-ad">show ad</button>
@@ -4541,7 +4618,7 @@ document.getElementById("placeBarCancel").onclick = cancelPlacing;
 document.getElementById("fest").addEventListener("pointerdown", (e) => {
   ensureAudio();
   if (!festMode || festKind !== "volley" || volleyPhase !== "play") return;
-  if (e.target.closest("button, .fest-panel, .fest-result, .volley-hud, .volley-com, .midk-hud, .fest-bar, .fest-skip")) return;
+  if (e.target.closest("button, .fest-panel, .fest-result, .volley-hud, .volley-com, .midk-hud, #cafeBoard, .fest-bar, .fest-skip")) return;
   volleyPointer(e);
 });
 canvas.addEventListener("pointerdown", (e) => {
@@ -6890,6 +6967,7 @@ document.getElementById("dev-fest").addEventListener("click", () => { G.opens = 
 document.getElementById("dev-box").addEventListener("click", () => { G.opens = Math.max(G.opens || 0, 5); syncHud(); openFestPicker("box"); });
 document.getElementById("dev-volley").addEventListener("click", () => { openFestPicker("volley"); });
 document.getElementById("dev-midk").addEventListener("click", () => { openFestPicker("midk"); });
+document.getElementById("dev-cafe").addEventListener("click", () => { openFestPicker("cafe"); });
 document.getElementById("dev-day").addEventListener("click", () => {
   G.opens++; G.streakDay = today() - 1; G.goalDay = 0; rollDailyGoals();
   for (const c of cats) { c.acc += aggregateRate() * 120; c.bornAt -= DAY_MS; }   // age the kittens too
@@ -8863,6 +8941,7 @@ function openFestPicker(kind) {
   if (festMode || restMode || !cats.length) return;
   if (!festUnlocked() && !volleyReady()) return;   // nothing available yet (race/box are day-5; volleyball needs 3 cats)
   if (kind === "volley" && !volleyReady()) { toast("You need 3 cats at the Cove to play."); return; }
+  if (kind === "cafe" && !cafeReadyToPlay()) { toast("You need 3 cats at the Cove for the café."); return; }
   if ((kind === "race" || kind === "box") && !festUnlocked()) return;
   if (_placing || _arranging) exitPlacement();
   ensureAudio();   // a real tap — safe to unlock/start audio here, same as opening rest
@@ -8886,6 +8965,9 @@ function openFestPicker(kind) {
   document.getElementById("festMidkPanel").hidden = true;
   document.getElementById("festMidkTut").hidden = true;
   document.getElementById("midkHud").hidden = true;
+  document.getElementById("festCafePanel").hidden = true;
+  document.getElementById("festCafeTut").hidden = true;
+  document.getElementById("cafeBoard").hidden = true;
   document.getElementById("festCountdown").hidden = true;
   document.getElementById("festSkip").hidden = true;
 
@@ -8923,6 +9005,10 @@ function openFestPicker(kind) {
       festKind = "hub"; festGroundsCats(roster);
       document.getElementById("festTime").textContent = "tug of paws";
       enterFestMidk();
+    } else if (_festPickKind === "cafe") {
+      festKind = "hub"; festGroundsCats(roster);
+      document.getElementById("festTime").textContent = "catmint café";
+      enterFestCafe();
     } else {
       festKind = "hub"; festGroundsCats(roster);
       document.getElementById("festTime").textContent = "cove festival";
@@ -9036,6 +9122,7 @@ function runFestCountdown() {
       el.hidden = true;
       if (festKind === "volley") { volleyBegin(); return; }
       if (festKind === "midk") { midkBegin(); return; }
+      if (festKind === "cafe") { cafeBegin(); return; }
       racePhase = "run";
       document.getElementById("festSkip").hidden = false;
     }, 500);
@@ -9056,6 +9143,9 @@ function closeFest() {
   document.getElementById("festMidkTut").hidden = true;
   document.getElementById("midkHud").hidden = true;
   document.getElementById("midkCom").hidden = true;
+  document.getElementById("festCafePanel").hidden = true;
+  document.getElementById("festCafeTut").hidden = true;
+  document.getElementById("cafeBoard").hidden = true;
   document.getElementById("festResult").hidden = true;
   document.getElementById("festCountdown").hidden = true;
   document.getElementById("festSkip").hidden = true;
@@ -9063,6 +9153,7 @@ function closeFest() {
   festKind = "race"; boxParts = []; boxPhase = "idle"; _hubCats = [];
   volleyPhase = "idle"; volleyParts = []; volleyBall = null; _vbNoDrowse = false; _vbFast = false;
   midkPhase = "idle"; midkParts = []; midk = null; midkCharge = 0; midkSlot = null;
+  cafeStaff = []; cafeCust = []; _cafeRunning = false; cafePick = null; _cafeDrag = null;
   for (const c of cats) { c._chonkBase = 0; c._tugLean = 0; c._vbLift = 0; c.squash = 0; }   // Tug of Paws: any cat that ballooned or braced goes back to normal
   particles.length = 0; floaters.length = 0;   // a live "zoomies!" or confetti spark shouldn't follow you back to the cove
   _festQuietUntil = Date.now() + 1800;   // ...and none land the instant the wipe clears back at the cove
@@ -9086,7 +9177,7 @@ function closeFest() {
 }
 
 /* ---------- festival ambience — the grounds' own audio bed, mirrors rest's rain ---------- */
-let festBus = null, festMurmur = null, _festAudioGen = 0, _festMelodyBeat = 0;
+let festBus = null, festMurmur = null, festMurmurGain = null, _festAudioGen = 0, _festMelodyBeat = 0;
 function startFestAudio() {
   if (!actx) return;
   const gen = ++_festAudioGen;
@@ -9107,7 +9198,8 @@ function startFestAudio() {
   const breatheAmt = actx.createGain(); breatheAmt.gain.value = 0.06;
   breathe.connect(breatheAmt); breatheAmt.connect(murmurGain.gain); breathe.start();
   murmur.connect(murmurBP); murmurBP.connect(murmurGain); murmurGain.connect(festBus);
-  festMurmur = murmur;
+  festMurmur = murmur; festMurmurGain = murmurGain;
+  if (_cafeBed) rampParam(murmurGain.gain, 0.03, 1.2);   // café already running: keep the fairground murmur low under its music
 
   _festMelodyBeat = 0;
   scheduleFestMelody(gen);           // fallback only — no-ops itself unless the hub clip fails to load
@@ -9116,10 +9208,11 @@ function startFestAudio() {
 function stopFestAudio(keepGen) {
   if (!keepGen) _festAudioGen++;    // invalidate any in-flight startFestAudio()
   stopFestBed();
+  if (!keepGen) stopCafeBed();
   if (!actx) return;
   const t = actx.currentTime;
   const bus = festBus, src = festMurmur;
-  festBus = null; festMurmur = null;
+  festBus = null; festMurmur = null; festMurmurGain = null;
   if (bus) rampParam(bus.gain, 0.0001, 1);
   if (src) { try { src.stop(t + 1.2); } catch (e) {} }
   setTimeout(() => { try { src && src.disconnect(); } catch (e) {} try { bus && bus.disconnect(); } catch (e) {} }, 1600);
@@ -9270,6 +9363,43 @@ async function startFestBed(section) {
 function stopFestBed() {
   _festBedGen++;                       // cancel any in-flight startFestBed()
   _fadeOutFestBed();
+}
+
+/* ---- Catmint Café's own bed — a warmed no-copyright coffee-shop loop
+   (fest-bed-cafe.mp3, fetched once). A café should sound like a café, not the
+   fairground, so this REPLACES the festival slice while a shift is on; the
+   crowd murmur ducks low under it. Leaving the café brings the hub slice back. ---- */
+let _cafeBed = null, _cafeBedBuf = null;
+async function startCafeBed() {
+  if (!actx || _cafeBed) return;
+  stopVolleyBed(); stopFestBed();      // the café bed stands alone
+  const g = actx.createGain(); g.gain.value = 0.0001;
+  g.connect(festBus || musicGain || actx.destination);
+  rampParam(g.gain, muted ? 0.0001 : 0.85, 1.8);
+  const bed = { g, src: null, stopped: false };
+  _cafeBed = bed;
+  if (festMurmurGain) rampParam(festMurmurGain.gain, 0.03, 1.4);   // fairground murmur ducks under the café music
+  const spin = () => {
+    if (bed.stopped || !actx || !_cafeBedBuf) return;
+    const s = actx.createBufferSource();
+    s.buffer = _cafeBedBuf; s.loop = true;
+    s.connect(g); s.start();
+    bed.src = s;
+  };
+  if (_cafeBedBuf) { spin(); return; }
+  fetch(bust("fest-bed-cafe.mp3"))
+    .then(r => r.ok ? r.arrayBuffer() : Promise.reject(0))
+    .then(ab => actx.decodeAudioData(ab))
+    .then(buf => { if (bed.stopped) return; _cafeBedBuf = buf; spin(); })
+    .catch(() => {});
+}
+function stopCafeBed() {
+  if (!_cafeBed || !actx) { _cafeBed = null; return; }
+  const b = _cafeBed; _cafeBed = null; b.stopped = true;
+  if (festMurmurGain) { try { rampParam(festMurmurGain.gain, 0.16, 1.4); } catch (e) {} }
+  try { rampParam(b.g.gain, 0.0001, 0.9); } catch (e) {}
+  try { b.src && b.src.stop(actx.currentTime + 1); } catch (e) {}
+  setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, 1300);
 }
 
 function syncRacerCat(r, dt, freeze) {
@@ -9628,6 +9758,7 @@ function renderFest(dt) {
   if (festKind === "box") { renderBox(dt); return; }
   if (festKind === "volley") { renderVolley(dt); return; }
   if (festKind === "midk") { renderMidk(dt); return; }
+  if (festKind === "cafe") { renderCafe(dt); return; }
   raceT += dt;
   const g = ctx;
   { // a resize() elsewhere restores the full pannable canvas — put the fest canvas back
@@ -9742,6 +9873,15 @@ document.getElementById("festAgain").addEventListener("click", () => {
     trackEvent("midk_replayed");
     return;
   }
+  if (festKind === "cafe") {
+    cafeStaff = []; cafeCust = []; _cafeRunning = false; cafePick = null; festKind = "hub"; festGroundsCats(roster);
+    stopCafeBed(); startFestBed("hub");
+    document.getElementById("cafeBoard").hidden = true;
+    renderCafePickGrid(eligibleForVolley());
+    document.getElementById("festCafePanel").hidden = false;
+    trackEvent("cafe_replayed");
+    return;
+  }
   festKind = "hub"; festGroundsCats(roster);
   startFestBed("hub");                 // crossfade the race slice back to the hub groove
   raceCats = []; raceWinner = null; racePick = null; racePhase = "picker"; festCheerUntil = 0;
@@ -9775,6 +9915,9 @@ const FEST_EVENTS = [
   { key: "midk", emoji: "🧶", name: "Tug of Paws",
     desc: "Five cats on the rope against a visiting Cove. Work the paw-spin and haul the yarn home.",
     lock: () => midkReady() ? null : "You need 5 cats at the Cove for the rope.", enter: enterFestMidk },
+  { key: "cafe", emoji: "🎀", name: "Catmint Café",
+    desc: "Three cats staff a pop-up café. You don't take orders — you decide who works which job as it all falls apart.",
+    lock: () => cafeReadyToPlay() ? null : "You need 3 cats at the Cove for the café.", enter: enterFestCafe },
 ];
 function renderFestChooser() {
   const wrap = document.getElementById("festEventCards");
@@ -9791,6 +9934,29 @@ function renderFestChooser() {
     const ev = FEST_EVENTS.find(e => e.key === el.dataset.ev);
     if (ev && !ev.lock()) ev.enter();
   }));
+}
+// back to the activity list without leaving the grounds — for an activity's own
+// "pick something else" exit (café's board has one)
+function festBackToChooser() {
+  const roster = cats.filter(c => !c.visitor);
+  document.getElementById("festResult").hidden = true;
+  document.getElementById("festBar").hidden = false;
+  particles.length = 0; floaters.length = 0;
+  raceCats = []; raceWinner = null; racePick = null; racePhase = "picker"; festCheerUntil = 0;
+  volleyParts = []; volleyBall = null; volleyPhase = "idle";
+  midkParts = []; midk = null; midkPhase = "idle"; midkCharge = 0;
+  cafeStaff = []; cafeCust = []; _cafeRunning = false; cafePick = null;
+  for (const c of cats) { c._chonkBase = 0; c._tugLean = 0; c._vbLift = 0; c.squash = 0; }
+  stopVolleyBed(); stopCafeBed();
+  festKind = "hub"; festGroundsCats(roster);
+  startFestBed("hub");
+  for (const id of ["festPanel", "festBoxPanel", "festVolleyPanel", "festVolleyTut", "festMidkPanel", "festMidkTut",
+                    "festCafePanel", "festCafeTut", "volleyHud", "midkHud", "cafeBoard", "volleyCom", "midkCom", "volleyBanner", "festCountdown"]) {
+    document.getElementById(id).hidden = true;
+  }
+  document.getElementById("festTime").textContent = "cove festival";
+  renderFestChooser();
+  document.getElementById("festChoose").hidden = false;
 }
 document.getElementById("festChooseBack").addEventListener("click", closeFest);
 document.getElementById("boxCancel").addEventListener("click", closeFest);
@@ -9813,6 +9979,12 @@ document.getElementById("midkCancel").addEventListener("click", closeFest);
 document.getElementById("midkTutGo").addEventListener("click", () => { _midkTutSeen = true; midkShowPicker(); });
 document.getElementById("midkStart").addEventListener("click", () => { if (midkPickSel.length === 5) startCoveMidk(); });
 document.getElementById("midkRally").addEventListener("click", midkSpin);
+// Catmint Café
+document.getElementById("cafeCancel").addEventListener("click", closeFest);
+document.getElementById("cafeTutGo").addEventListener("click", () => { _cafeTutSeen = true; cafeShowPicker(); });
+document.getElementById("cafeStart").addEventListener("click", () => { if (cafePickSel.length === 3) startCoveCafe(); });
+document.getElementById("cafeToCove").addEventListener("click", (e) => { e.stopPropagation(); closeFest(); });
+document.getElementById("cafeToFest").addEventListener("click", (e) => { e.stopPropagation(); festBackToChooser(); });
 document.getElementById("festSkip").addEventListener("click", () => {
   if (festKind === "box") {
     if (boxPhase !== "play" && boxPhase !== "settle") return;
@@ -11911,6 +12083,938 @@ function showMidkResult() {
   res.hidden = false;
   trackEvent("midk_completed", { visiting: midkVisitName, winner: _midkWinner, duration: Math.round(midkT) });
 }
+
+
+
+/* ============================================================================
+   CATMINT CAFÉ  —  a festival pop-up your cats staff. You don't take orders or
+   make coffee; you decide who works Barista / Server / Host, and rotate them
+   as bottlenecks and demand shift. The catch: they are cats — bored most of the
+   time, occasionally worse. Ported from the standalone prototype (cafe-test.html).
+   ============================================================================ */
+const CAFE_W = 560, CAFE_H = 980;
+// Catmint Café emblem — a cat peering over a coffee cup, steam curling up as a
+// catmint sprig. One round badge, reused for the picker header, the result
+// screen, the festival card and the sandwich-board sign in the scene. Kept as a
+// standalone SVG so it travels if the café ever becomes its own game.
+const CAFE_EMBLEM_SVG =
+  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>" +
+  "<circle cx='50' cy='50' r='47' fill='#f4ead6'/>" +
+  "<circle cx='50' cy='50' r='47' fill='none' stroke='#4a3524' stroke-width='3.6'/>" +
+  "<circle cx='50' cy='50' r='39.5' fill='none' stroke='#c47a35' stroke-width='1.5' opacity='0.55'/>" +
+  "<ellipse cx='50' cy='75' rx='25' ry='4.6' fill='#6f5942'/>" +
+  "<path d='M31 52 h38 l-3.6 18.5 a6 6 0 0 1 -6 5 h-18.8 a6 6 0 0 1 -6 -5 Z' fill='#5a4632'/>" +
+  "<path d='M69 55 a9 9 0 0 1 0 15' fill='none' stroke='#5a4632' stroke-width='4.2'/>" +
+  "<g fill='none' stroke='#7c8a5e' stroke-width='2.7' stroke-linecap='round'>" +
+  "<path d='M56 49 q7 -12 2 -24'/><path d='M57 36 q-6 -2 -7 -8'/><path d='M57.5 30 q6 -2 8 -8'/></g>" +
+  "<ellipse cx='50' cy='52' rx='19' ry='3.8' fill='#6f5942'/>" +
+  "<path d='M35 50 l3 -11 6 8 Z' fill='#e7d7b8'/><path d='M65 50 l-3 -11 -6 8 Z' fill='#e7d7b8'/>" +
+  "<path d='M32 52 q18 -18 36 0 q-3 -13.5 -18 -13.5 q-15 0 -18 13.5 Z' fill='#e7d7b8'/>" +
+  "<circle cx='43' cy='45.5' r='2.1' fill='#3a2b1d'/><circle cx='57' cy='45.5' r='2.1' fill='#3a2b1d'/>" +
+  "<path d='M46 41 l-6 -2 M54 41 l6 -2' stroke='#c9b08a' stroke-width='1' stroke-linecap='round'/>" +
+  "<path d='M48.5 49.5 q1.5 1.6 3 0' stroke='#3a2b1d' stroke-width='1.7' fill='none' stroke-linecap='round'/>" +
+  "</svg>";
+const CAFE_EMBLEM_URI = "data:image/svg+xml;utf8," + encodeURIComponent(CAFE_EMBLEM_SVG);
+let _cafeEmblemImg = null;
+function cafeEmblemImg() {
+  if (!_cafeEmblemImg) { _cafeEmblemImg = new Image(); _cafeEmblemImg.src = CAFE_EMBLEM_URI; }
+  return _cafeEmblemImg;
+}
+function cafeEmblemHTML(px) { return `<img class="cafe-emblem" src="${CAFE_EMBLEM_URI}" alt="Catmint Café" width="${px}" height="${px}">`; }
+const CAFE_JOBS = ["barista", "server", "host"];
+const CAFE_JICON = { barista: "☕", server: "🍰", host: "🤵" };
+const CAFE_JNAME = { barista: "Barista", server: "Server", host: "Host" };
+const CAFE_POS  = { barista: { x: 120, y: 402 }, server: { x: 288, y: 500 }, host: { x: 432, y: 690 } };
+const CAFE_IDLE = { barista: { x: 120, y: 452 }, server: { x: 300, y: 524 }, host: { x: 406, y: 706 } };
+// where staff actually stand while working — below their counter so they read
+// in front of it, never on top
+const CAFE_WORK = { barista: { x: 120, y: 448 }, host: { x: 416, y: 700 } };
+// the pass: barista carries finished orders here, server collects from here
+const CAFE_PASS = { x: 240, y: 470 };
+const CAFE_PASTRIES = [ ["#e7b95c", 0], ["#d98b53", 1], ["#e7c99a", 0], ["#c96f4a", 2], ["#efd9a6", 0] ];
+const CAFE_DOOR   = { x: 496, y: 788 };
+const CAFE_PODIUM = { x: 452, y: 724 };
+// two rows; back-row tables sit in the GAPS of the front row so a cat walking
+// up the aisle to a back table never has to cross a front one
+const CAFE_TABLES = [ {x:102,y:580},{x:224,y:580},{x:350,y:580},{x:150,y:706},{x:298,y:706} ];
+const CAFE_SIT_DY = 20;   // a seated cat sits this far below its table centre — in front of it in the depth sort
+const CAFE_PHASES = [
+  { id:"opening", label:"opening",       emoji:"🌤️", dur:24, every:6.5, foodP:.35 },
+  { id:"coffee",  label:"coffee rush",   emoji:"☕",  dur:48, every:3.4, foodP:.15 },
+  { id:"rush",    label:"festival rush", emoji:"🎪", dur:42, every:2.0, foodP:.4  },
+  { id:"last",    label:"last orders",   emoji:"🌅", dur:30, every:4.2, foodP:.4  },
+  { id:"closed",  label:"closed",        emoji:"🔔", dur:999, every:999, foodP:.3 },
+];
+const CAFE_SHIFT_TOTAL = CAFE_PHASES.filter(p => p.id !== "closed").reduce((s,p)=>s+p.dur,0);
+const CAFE_PHASE_HINT = { coffee:"The coffee crowd is arriving.", rush:"Festival's spilling in — the door's about to get busy.", last:"Last orders. Winding down." };
+const CAFE_DAWDLE_NOTES = ["{c} is considering the job.", "{c} has other priorities.",
+  "{c} paused to look at nothing.", "{c} is taking their time.", "No urgency was displayed.",
+  "{c} acknowledged the work exists."];
+const CAFE_NOTES = {
+  break:   ["{c} is taking an unauthorised break.", "{c} has stepped away from the counter.", "{c} needed a moment."],
+  wake:    ["{c} is back on the clock.", "{c} has resumed duties."],
+  inspect: ["{c} is conducting quality control.", "{c} is inspecting an order.", "{c} is verifying a pastry."],
+  ate:     ["Quality confirmed. Replacement required.", "{c} has consumed the evidence.", "An order did not survive inspection."],
+  chat:    ["{c} is building a meaningful customer relationship.", "{c} is deep in conversation.", "{c} has a lot to say."],
+  linger:  ["{c} has joined a table.", "{c} is still at a table."],
+  zoom:    ["{c} has zoomies.", "{c} is moving with purpose.", "{c} briefly forgot the job."],
+  cuddle:  ["{c} is being cuddled by a guest.", "{c} has been adopted by table {n}, briefly."],
+  lost:    ["A guest gave up on the queue.", "Someone's decided to try somewhere else."],
+  good:    ["Someone left very happy.", "That table went well."],
+  quiet:   ["Everything is going suspiciously well.", "No notes.", "This seemed like a good idea earlier."],
+};
+let cafePhaseIx = 0, cafeShiftT = 0, cafePhaseT = 0, cafeMood = 0.6, cafeShellTips = 0;
+let cafeStaff = [], cafeCust = [], cafeOrderQ = [], cafeReady = [], cafeSeats = [];
+let cafeServed = 0, cafeLost = 0, cafeSpawnT = 0, _cafePhaseHinted = "", _cafeQuietT = 0;
+let cafePick = null, _cafeResultShown = false, _cafeDrag = null, _cafeVp = null, _cafeLastNote = "";
+let cafePickSel = [], _cafeCustPool = [], _cafeRunning = false, _cafePassWaitT = 0;
+
+function cafeReadyToPlay() { return eligibleForVolley().length >= 3; }
+function cafeFit() {
+  const { vw, vh } = restViewportPx();
+  const rd = _festDPR || DPR;
+  const sc = Math.min((vw * rd) / CAFE_W, (vh * rd) / CAFE_H);
+  return { sc, ox: (vw * rd - CAFE_W * sc) / 2, oy: (vh * rd - CAFE_H * sc) / 2 };
+}
+function cafeNote(key, vars) {
+  const pool = CAFE_NOTES[key]; if (!pool) return;
+  let opts = pool.filter(t => t !== _cafeLastNote); if (!opts.length) opts = pool;
+  let t = opts[Math.random() * opts.length | 0];
+  _cafeLastNote = t;
+  t = t.replace("{c}", (vars && vars.c) || "").replace("{n}", (vars && vars.n) || "");
+  const el = document.getElementById("volleyCom");
+  document.getElementById("vbComText").textContent = t;
+  el.hidden = false; el.classList.remove("fade");
+  clearTimeout(cafeNote._t); cafeNote._t = setTimeout(() => el.classList.add("fade"), 3400);
+}
+function cafeBanner(txt) {
+  const b = document.getElementById("volleyBanner");
+  b.textContent = txt; b.hidden = false;
+  b.style.animation = "none"; void b.offsetWidth; b.style.animation = "";
+  _cafeBannerUntil = cafeShiftT + 2.4;
+}
+let _cafeBannerUntil = 0;
+
+/* ---- picker ---- */
+function renderCafePickGrid(roster) {
+  cafePickSel = [];
+  const art = document.querySelector("#festCafePanel .fp-art");
+  if (art && !art.querySelector("img")) art.innerHTML = cafeEmblemHTML(64);
+  const grid = document.getElementById("cafePickGrid");
+  grid.innerHTML = "";
+  for (const c of roster) {
+    const cell = document.createElement("button");
+    cell.type = "button"; cell.className = "fp-cell";
+    const tr = (c.traits || []).slice(0, 2).map(k => `<span>${esc(TRAITS[k] ? TRAITS[k].label : k)}</span>`).join("");
+    cell.innerHTML = `<canvas width="56" height="48"></canvas><span class="nm"></span><span class="fp-tr">${tr}</span>`;
+    cell.querySelector(".nm").textContent = c.name;
+    cell.addEventListener("click", () => {
+      const at = cafePickSel.indexOf(c);
+      if (at >= 0) { cafePickSel.splice(at, 1); cell.classList.remove("picked"); }
+      else { if (cafePickSel.length >= 3) return; cafePickSel.push(c); cell.classList.add("picked"); }
+      document.getElementById("cafePickCount").textContent = `(${cafePickSel.length} / 3)`;
+      document.getElementById("cafeStart").disabled = cafePickSel.length !== 3;
+    });
+    grid.appendChild(cell);
+    miniCat(cell.querySelector("canvas"), c.coatKey, c.star, "loafing", false, 1);
+  }
+  document.getElementById("cafePickCount").textContent = "(0 / 3)";
+  document.getElementById("cafeStart").disabled = true;
+}
+let _cafeTutSeen = false;
+function enterFestCafe() {
+  document.getElementById("festChoose").hidden = true;
+  document.getElementById("festTime").textContent = "catmint café";
+  trackEvent("cafe_card_opened");
+  if (!_cafeTutSeen) { document.getElementById("festCafeTut").hidden = false; return; }
+  renderCafePickGrid(eligibleForVolley());
+  document.getElementById("festCafePanel").hidden = false;
+}
+function cafeShowPicker() {
+  document.getElementById("festCafeTut").hidden = true;
+  renderCafePickGrid(eligibleForVolley());
+  document.getElementById("festCafePanel").hidden = false;
+}
+
+/* ---- start ---- */
+function startCoveCafe() {
+  if (cafePickSel.length !== 3) return;
+  if (!cafePickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats just wandered off."); return; }
+  stopVolleyBed();   // any prior game's bed (beach / café) stops before this shift's music starts
+  festKind = "cafe";
+  fitFestCanvas();
+  cafeShiftT = 0; cafePhaseIx = 0; cafePhaseT = 0; cafeMood = 0.6; cafeShellTips = 0;
+  cafeServed = 0; cafeLost = 0; cafeSpawnT = 2; _cafePhaseHinted = ""; _cafeQuietT = 0;
+  cafePick = null; _cafeResultShown = false; _cafeDrag = null; _cafeLastNote = ""; _cafeBannerUntil = 0;
+  cafeCust = []; cafeOrderQ = []; cafeReady = []; _cafeCustPool = []; _cafePassWaitT = 0;
+  cafeSeats = CAFE_TABLES.map(t => ({ x: t.x, y: t.y, cust: null }));
+  particles.length = 0; floaters.length = 0;
+  const jobs = [...CAFE_JOBS];
+  cafeStaff = cafePickSel.map((c, i) => {
+    Object.assign(c, { x: CAFE_IDLE[jobs[i]].x, y: CAFE_IDLE[jobs[i]].y, face: 1, state: "seeking",
+      walkAmt: 0, walk: 0, trotting: false, squash: 0, blink: rand(1, 4), bob: Math.random() * 6, _fx: null, _vbLift: 0 });
+    c._motion = null;
+    return { cat: c, job: jobs[i], tx: 0, ty: 0, act: null, actT: 0, ramp: 1, carry: null,
+      incident: null, incT: 0, transiting: false, boredom: rand(0.15, 0.4), dawdleT: 0, dawdling: false,
+      _land: 0, _lastSwap: 0, _lastSwapWith: "", enjoyFor: null,
+      stats: { drinks:0, delivered:0, greeted:0, breaks:0, inspects:0, ate:0, chats:0, zooms:0, cuddles:0, dawdles:0 }, log: [] };
+  });
+  cafeSetPhase(0, true);
+  renderCafeBoard();
+  document.getElementById("festCafePanel").hidden = true;
+  document.getElementById("cafeBoard").hidden = false;
+  document.getElementById("festBar").hidden = false;
+  document.getElementById("festTime").textContent = "catmint café";
+  document.getElementById("festResult").hidden = true;
+  startCafeBed();            // the café's own coffee-shop loop
+  runFestCountdown();        // → cafeBegin() at "Go!"
+  trackEvent("cafe_started", { cats: cafePickSel.map(c => c.name), traits: cafePickSel.map(c => (c.traits || []).slice(0, 2)) });
+}
+function cafeBegin() {
+  cafePhaseIx = 0; cafePhaseT = 0; cafeShiftT = 0; _cafeRunning = true;
+  cafeBanner("☀️  " + coveName() + " Café — open");
+}
+
+/* ---- phases ---- */
+function cafeSetPhase(ix, silent) {
+  cafePhaseIx = ix; cafePhaseT = 0;
+  if (silent) return;
+  const p = CAFE_PHASES[ix];
+  cafeBanner(p.emoji + "  " + p.label.toUpperCase());
+}
+
+/* ---- staff board (HTML in #fest) ---- */
+function cafeChokeJob() {
+  const q = cafeCust.filter(c => c.state === "queue").length;
+  const un = cafeSeats.filter(s => s.cust && s.cust.state === "seated").length;
+  const scores = {
+    host: q >= 2 ? q : 0,
+    barista: cafeOrderQ.length >= 3 ? cafeOrderQ.length : 0,
+    server: (cafeReady.length + un) >= 3 ? cafeReady.length + un : 0,
+  };
+  let best = null, bv = 0; for (const k in scores) if (scores[k] > bv) { bv = scores[k]; best = k; }
+  return best;
+}
+function cafeStatus(s) {
+  if (s.transiting) return "🚶 walking over";
+  if (s.incident === "break") return "💤 on a break";
+  if (s.incident === "inspect") return "👃 checking a plate";
+  if (s.incident === "chat") return "💬 chatting";
+  if (s.incident === "zoom") return "✨ zoomies";
+  if (s.incident === "linger") return "❤️ at a table";
+  if (s.incident === "cuddle") return "😽 being cuddled";
+  if (s.dawdling) return "😾 dawdling";
+  if (s.boredom > 0.62) return "😑 unbothered";
+  if (s.boredom > 0.35) return "going through the motions";
+  return "on it, sort of";
+}
+function renderCafeBoard() {
+  const slots = document.getElementById("cafeSlots");
+  const hint = document.getElementById("cafeHint");
+  const ck = festKind === "cafe" ? cafeChokeJob() : null;
+  slots.innerHTML = "";
+  for (const job of CAFE_JOBS) {
+    const s = cafeStaff.find(x => x.job === job);
+    const isPick = cafePick === s, isTarget = !!cafePick && cafePick !== s;
+    const el = document.createElement("div");
+    el.className = "cafe-slot" + (isPick ? " picked" : "") + (isTarget ? " target" : "")
+      + (ck === job && !cafePick ? " choke" : "")
+      + (s._land && Date.now() - s._land < 400 ? " swapped" : "");
+    el.dataset.job = job;
+    el.innerHTML = `<span class="cs-head"><span class="cs-ji">${CAFE_JICON[job]}</span><span class="cs-jn">${CAFE_JNAME[job]}</span></span>
+      <span class="cs-cat"><span class="cs-nm">${esc(s.cat.name)}</span>
+        <span class="cs-tr">${esc(((s.cat.traits || [])[0] && TRAITS[s.cat.traits[0]] ? TRAITS[s.cat.traits[0]].label : (s.cat.traits || [])[0] || ""))}</span>
+        <span class="cs-st">${cafeStatus(s)}</span></span>
+      ${isTarget ? `<span class="cs-swap">↔ move ${esc(cafePick.cat.name)} here</span>` : ""}`;
+    const tok = el.querySelector(".cs-cat");
+    tok.addEventListener("pointerdown", (e) => cafeTokDown(e, s));
+    tok.addEventListener("pointermove", cafeTokMove);
+    tok.addEventListener("pointerup", cafeTokUp);
+    tok.addEventListener("pointercancel", cafeTokUp);
+    el.addEventListener("click", (e) => { e.stopPropagation(); if (cafePick && cafePick.job !== job) cafeSwapTo(job); });
+    slots.appendChild(el);
+  }
+  if (festKind !== "cafe") { hint.textContent = ""; return; }
+  if (cafePick) hint.innerHTML = `Drop <b>${esc(cafePick.cat.name)}</b> on a role — or tap one.`;
+  else hint.innerHTML = `Drag a cat to a different role. Whoever's there swaps in.`;
+}
+function cafeSwap(a, b) {
+  if (!a || !b || a === b) return;
+  const aj = a.job, bj = b.job;
+  a.job = bj; b.job = aj;
+  for (const w of [a, b]) {
+    w.transiting = true; w.ramp = 0.6; w.act = null; w.actT = 0;
+    if (w.carry && w.carry.items) cafeReady.push(...w.carry.items);
+    w.carry = null;
+    if (w.incident) { w.incident = null; w.incT = 0; }
+    w.boredom = rand(0.08, 0.22); w.dawdleT = 0; w.dawdling = false;
+    w.tx = CAFE_POS[w.job].x; w.ty = CAFE_POS[w.job].y; w._land = Date.now();
+  }
+  if (cafeShiftT - a._lastSwap < 11 && a._lastSwapWith === b.cat.name) cafeNote("quiet");
+  a._lastSwap = b._lastSwap = cafeShiftT; a._lastSwapWith = b.cat.name; b._lastSwapWith = a.cat.name;
+  cafePick = null; renderCafeBoard();
+  setTimeout(renderCafeBoard, 420);
+}
+function cafeTapCat(s) {
+  if (festKind !== "cafe") return;
+  if (!cafePick) { cafePick = s; renderCafeBoard(); return; }
+  if (cafePick === s) { cafePick = null; renderCafeBoard(); return; }
+  cafeSwap(cafePick, s);
+}
+function cafeSwapTo(job) {
+  if (!cafePick) return;
+  if (cafePick.job === job) { cafePick = null; renderCafeBoard(); return; }
+  cafeSwap(cafePick, cafeStaff.find(x => x.job === job));
+}
+function cafeTokDown(ev, s) {
+  if (festKind !== "cafe" || ev.button) return;
+  _cafeDrag = { s, tok: ev.currentTarget, x0: ev.clientX, y0: ev.clientY, moved: false };
+  try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
+}
+function cafeTokMove(ev) {
+  if (!_cafeDrag) return;
+  const dx = ev.clientX - _cafeDrag.x0, dy = ev.clientY - _cafeDrag.y0;
+  if (!_cafeDrag.moved && Math.hypot(dx, dy) > 7) { _cafeDrag.moved = true; _cafeDrag.tok.classList.add("lifted"); cafePick = _cafeDrag.s; renderCafeBoardHint(); }
+  if (_cafeDrag.moved) {
+    _cafeDrag.tok.style.transform = `translate(${dx}px, ${dy}px)`;
+    const el = document.elementFromPoint(ev.clientX, ev.clientY);
+    const slot = el && el.closest(".cafe-slot");
+    document.querySelectorAll("#cafeSlots .cafe-slot").forEach(sl => sl.classList.toggle("drop", sl === slot && sl.dataset.job !== _cafeDrag.s.job));
+  }
+}
+function cafeTokUp(ev) {
+  if (!_cafeDrag) return;
+  const d = _cafeDrag; _cafeDrag = null;
+  d.tok.classList.remove("lifted"); d.tok.style.transform = "";
+  if (!d.moved) { cafeTapCat(d.s); return; }
+  const el = document.elementFromPoint(ev.clientX, ev.clientY);
+  const slot = el && el.closest(".cafe-slot");
+  document.querySelectorAll("#cafeSlots .cafe-slot").forEach(sl => sl.classList.remove("drop"));
+  if (slot && slot.dataset.job !== d.s.job) cafeSwap(d.s, cafeStaff.find(x => x.job === slot.dataset.job));
+  else { cafePick = null; renderCafeBoard(); }
+}
+function renderCafeBoardHint() {
+  const hint = document.getElementById("cafeHint");
+  if (cafePick) hint.innerHTML = `Drop <b>${esc(cafePick.cat.name)}</b> on a role — or tap one.`;
+  else hint.innerHTML = `Drag a cat to a different role. Whoever's there swaps in.`;
+}
+
+/* ---- customers ---- */
+function cafeSpawnCust() {
+  const p = CAFE_PHASES[cafePhaseIx];
+  let c = _cafeCustPool.pop();
+  if (!c) { c = new Cat({ visitor: true }); }
+  Object.assign(c, {
+    x: CAFE_DOOR.x + rand(6, 20), y: CAFE_DOOR.y + rand(-4, 12), face: -1,
+    state: "queue", _ct: 0, seat: null, wants: Math.random() < p.foodP ? "food" : "drink",
+    order: null, patience: 1, walkAmt: 0, walk: 0, trotting: true, squash: 0, bob: Math.random() * 6, enjoyFor: null, _lined: false, _out: false,
+  });
+  c._motion = null;
+  cafeCust.push(c);
+}
+// a seat isn't free until the last guest has actually stepped away from it, so a
+// new cat is never routed onto a table someone's still leaving
+function cafeFreeSeat() { return cafeSeats.find(s => !s.cust && !s._clearing); }
+function cafeSeatNum(seat) { return cafeSeats.indexOf(seat) + 1; }
+function cafeMoveTo(o, tx, ty, sp, dt) {
+  const dx = tx - o.x, dy = ty - o.y, d = Math.hypot(dx, dy);
+  if (d < 2) { o.x = tx; o.y = ty; return true; }
+  const m = Math.min(d, sp * dt);
+  o.x += dx / d * m; o.y += dy / d * m; o.face = dx >= 0 ? 1 : -1;
+  o.walk += dt * 6; o.walkAmt = Math.min(1, (o.walkAmt || 0) + dt * 5); o.bob += dt * 10; o.trotting = true;
+  return false;
+}
+function cafeCustLost(c, atSeat) {
+  cafeLost++; cafeMood = Math.max(0, cafeMood - 0.045);
+  if (Math.random() < 0.5) cafeNote("lost");
+  if (atSeat) { const s = cafeSeats.find(x => x.cust === c); if (s) s.cust = null; }
+  _cafeCustPool.push(c);
+}
+function cafeStepCust(c, dt) {
+  c._ct += dt;
+  if (c.state === "queue") {
+    // straight line down the right of the deck (front of it = nearest the podium)
+    const ahead = cafeCust.filter(o => o.state === "queue" && o._ct > c._ct).length;
+    cafeMoveTo(c, CAFE_PODIUM.x + 8, CAFE_PODIUM.y + 16 + ahead * 44, 46, dt);
+    c.patience -= dt * (0.5 / 40);
+    if (c.patience <= 0) { cafeCustLost(c); return true; }
+  } else if (c.state === "toSeat") {
+    // approach in two legs: along the front aisle to line up with the table, then up to it
+    if (!c._lined) {
+      if (cafeMoveTo(c, c.seat.x, 760, 54, dt)) c._lined = true;
+    } else if (cafeMoveTo(c, c.seat.x, c.seat.y + CAFE_SIT_DY, 50, dt)) {
+      c.state = "seated"; c._ct = 0; c.trotting = false; c.walkAmt = 0; c._lined = false;
+    }
+  } else if (c.state === "seated") {
+    c.trotting = false; c.walkAmt = Math.max(0, c.walkAmt - dt * 3);
+    c.patience -= dt * (0.5 / 52); if (c.patience <= 0) { cafeCustLost(c, true); return true; }
+  } else if (c.state === "wait") {
+    c.patience -= dt * (0.5 / 58); if (c.patience <= 0) { cafeCustLost(c, true); return true; }
+  } else if (c.state === "enjoy") {
+    if (c.enjoyFor == null) c.enjoyFor = rand(6, 10);
+    if (c._ct > c.enjoyFor) {
+      cafeServed++;
+      const tipped = Math.random() < 0.35; if (tipped) cafeShellTips += 1;
+      cafeMood = Math.min(1, cafeMood + 0.035);
+      if (Math.random() < 0.22) cafeNote("good");
+      // a little parting reaction on the way out — bigger if they tipped / the café's humming
+      c._bye = (tipped || cafeMood > 0.72) ? "😻" : cafeMood > 0.45 ? "😺" : "🙂";
+      c.state = "leave"; c._ct = 0; c._out = false;
+      const s = cafeSeats.find(x => x.cust === c); if (s) { s.cust = null; s._clearing = c; }
+    }
+  } else if (c.state === "leave") {
+    // free the table only once we've stepped clear of it
+    for (const st of cafeSeats) if (st._clearing === c && Math.hypot(st.x - c.x, st.y - c.y) > 44) st._clearing = null;
+    if (!c._out) { if (cafeMoveTo(c, c.x, 764, 52, dt)) c._out = true; return false; }
+    cafeMoveTo(c, CAFE_DOOR.x + 8, CAFE_DOOR.y + 44, 50, dt);
+    if (c.y > 812) {   // off the deck and heading out — that's gone enough
+      for (const st of cafeSeats) if (st._clearing === c) st._clearing = null;
+      _cafeCustPool.push(c); return true;
+    }
+  }
+  return false;
+}
+
+/* ---- staff behaviour ---- */
+function cafeTrait(s, ...keys) { const T = s.cat.traits || []; return keys.some(k => T.includes(k)); }
+function cafeMaybeIncident(s, dt) {
+  const j = s.job;
+  let key = null, chance = 0, dur = [3, 6];
+  if (cafeTrait(s, "lazy") && j !== "host")            { key = "break";   chance = 0.075; dur = [4, 8]; }
+  else if (cafeTrait(s, "chatty", "clingy") && j === "host")   { key = "chat";   chance = 0.05; dur = [2.5, 4.5]; }
+  else if (cafeTrait(s, "chatty") && j === "server")   { key = "linger";  chance = 0.045; dur = [2.5, 4]; }
+  else if (cafeTrait(s, "glutton") && j === "server" && s.carry) { key = "inspect"; chance = 0.09; dur = [2, 3.5]; }
+  else if (cafeTrait(s, "playful") && j === "server")  { key = "zoom";    chance = 0.04; dur = [2, 3.5]; }
+  else if (cafeTrait(s, "playful") && j === "barista") { key = "zoom";    chance = 0.03; dur = [1.5, 3]; }
+  else if (cafeTrait(s, "cuddly", "clingy") && j === "host")  { key = "cuddle"; chance = 0.045; dur = [3, 5]; }
+  else if (cafeTrait(s, "curious") && j !== "barista") { key = "zoom";    chance = 0.03; dur = [1.5, 3]; }
+  if (!key) return;
+  if (Math.random() < chance * dt) {
+    s.incident = key; s.incT = rand(dur[0], dur[1]); s.log.push(key);
+    if (key === "break")   { s.stats.breaks++;   cafeNote("break",   { c: s.cat.name }); }
+    else if (key === "chat"){ s.stats.chats++;    cafeNote("chat",    { c: s.cat.name }); }
+    else if (key === "linger"){ s.stats.chats++;  cafeNote("linger",  { c: s.cat.name }); }
+    else if (key === "inspect"){ s.stats.inspects++; cafeNote("inspect", { c: s.cat.name }); }
+    else if (key === "zoom"){ s.stats.zooms++;    cafeNote("zoom",    { c: s.cat.name }); }
+    else if (key === "cuddle"){ s.stats.cuddles++; cafeMood = Math.min(1, cafeMood + 0.03); cafeNote("cuddle", { c: s.cat.name, n: 1 + (Math.random() * 5 | 0) }); }
+  }
+}
+function cafeDawdleAfter(s) {
+  const P = CAFE_PHASES[cafePhaseIx];
+  const calm = P.id === "opening" || P.id === "last" || P.id === "closed";
+  let ch = 0.38 + s.boredom * 0.4 + (calm ? 0.18 : -0.12) + (cafeTrait(s, "lazy") ? 0.18 : 0);
+  ch = Math.max(0.08, Math.min(0.82, ch));
+  if (Math.random() < ch) {
+    s.dawdleT = rand(0.7, 1.6 + s.boredom * 1.8); s.dawdling = true; s.stats.dawdles++;
+    if (Math.random() < 0.2) {
+      const t = CAFE_DAWDLE_NOTES[Math.random() * CAFE_DAWDLE_NOTES.length | 0].replace("{c}", s.cat.name);
+      const el = document.getElementById("volleyCom");
+      document.getElementById("vbComText").textContent = t;
+      el.hidden = false; el.classList.remove("fade");
+      clearTimeout(cafeNote._t); cafeNote._t = setTimeout(() => el.classList.add("fade"), 3200);
+    }
+  }
+}
+function cafeStepStaff(s, dt) {
+  const c = s.cat;
+  if (s.squash > 0) s.squash = Math.max(0, s.squash - dt * 3);
+  if (s.ramp < 1) s.ramp = Math.min(1, s.ramp + dt * 0.5);
+  const speed = 94 * (cafeTrait(s, "lazy") && s.job !== "host" ? 0.82 : 1) * (s.incident === "zoom" ? 1.7 : 1);
+
+  if (s.transiting) {
+    c.state = "seeking";
+    if (cafeMoveTo(c, s.tx, s.ty, speed, dt)) { s.transiting = false; s.act = null; }
+    return;
+  }
+  if (s.incident) {
+    s.incT -= dt;
+    if (s.incident === "break") {
+      c.state = "loafing"; c.trotting = false; c.walkAmt = Math.max(0, c.walkAmt - dt * 3);
+      if (s.incT <= 0) { s.incident = null; cafeNote("wake", { c: c.name }); renderCafeBoard(); }
+      return;
+    }
+    cafeMoveTo(c, CAFE_IDLE[s.job].x, CAFE_IDLE[s.job].y, speed * 0.5, dt);
+    if (s.incT <= 0) {
+      if (s.incident === "inspect" && Math.random() < 0.45 && s.carry && s.carry.items && s.carry.items.length) {
+        s.stats.ate++; s.log.push("ate"); s.carry.items.shift(); cafeNote("ate", { c: c.name });
+      }
+      s.incident = null; renderCafeBoard();
+    }
+    return;
+  }
+
+  const busy = cafeCust.filter(x => x.state !== "leave").length;
+  s.boredom = Math.max(0, Math.min(1, s.boredom + dt * (busy < 4 ? 0.022 : busy > 7 ? -0.05 : 0.003)));
+
+  if (s.dawdleT > 0) {
+    s.dawdleT -= dt; s.dawdling = true;
+    cafeMoveTo(c, CAFE_IDLE[s.job].x, CAFE_IDLE[s.job].y, speed * 0.35, dt);
+    if (s.dawdleT <= 0) { s.dawdling = false; renderCafeBoard(); }
+    return;
+  }
+  s.dawdling = false;
+
+  cafeMaybeIncident(s, dt);
+  if (s.incident) { renderCafeBoard(); return; }
+
+  if (s.job === "barista") cafeStepBarista(s, dt, speed);
+  else if (s.job === "server") cafeStepServer(s, dt, speed);
+  else cafeStepHost(s, dt, speed);
+}
+function cafeStepBarista(s, dt, speed) {
+  const c = s.cat, home = CAFE_WORK.barista;
+  // finished an order — carry it round to the BACK of the pass and set it down
+  // (kitchen side; the counter itself hides the barista's body, head reaches over)
+  if (s.done) {
+    if (!cafeMoveTo(c, CAFE_PASS.x + 22, CAFE_PASS.y - 6, speed, dt)) return;
+    c.trotting = false; c.walkAmt = Math.max(0, c.walkAmt - dt * 3);
+    cafeReady.push(s.done); s.done = null; s.squash = 0.4; cafeDawdleAfter(s);
+    return;
+  }
+  if (!s.act) {
+    if (cafeOrderQ.length) s.act = { order: cafeOrderQ.shift(), t: 0 };
+    else { c.state = "loafing"; cafeMoveTo(c, CAFE_IDLE.barista.x, CAFE_IDLE.barista.y, speed * 0.5, dt); return; }
+  }
+  if (!cafeMoveTo(c, home.x, home.y, speed, dt)) return;
+  c.state = "seeking"; c.trotting = false; c.walkAmt = Math.max(0, c.walkAmt - dt * 3);
+  s.act.t += dt * s.ramp;
+  const need = s.act.order.wants === "food" ? 5.2 : 2.8;
+  if (s.act.t >= need) {
+    s.done = { wants: s.act.order.wants, seat: s.act.order.seat };
+    s.stats.drinks++; s.squash = 0.5; s.act = null;
+  }
+}
+function cafeStepServer(s, dt, speed) {
+  const c = s.cat;
+  if (s.carry && s.carry.items && s.carry.items.length) {
+    const it = s.carry.items[0];
+    if (!it.seat || !it.seat.cust || it.seat.cust.state === "leave") { s.carry.items.shift(); return; }
+    // approach the table from the top (same side the server comes from); hand
+    // the drink over as soon as we're close, never standing on the guest
+    cafeMoveTo(c, it.seat.x, it.seat.y - 30, speed, dt);
+    if (Math.hypot(c.x - it.seat.x, c.y - it.seat.y) > 46) return;
+    it.seat.cust.state = "enjoy"; it.seat.cust._ct = 0;
+    s.stats.delivered++; s.squash = 0.4; s.carry.items.shift();
+    if (!s.carry.items.length) {
+      if (cafeTrait(s, "chatty") && Math.random() < 0.4) { s.incident = "linger"; s.incT = rand(2, 3.5); s.stats.chats++; cafeNote("linger", { c: c.name }); }
+      else cafeDawdleAfter(s);
+    }
+    renderCafeBoard(); return;
+  }
+  if (s.carry) s.carry = null;
+  if (cafeReady.length) {
+    if (!cafeMoveTo(c, CAFE_PASS.x + 44, CAFE_PASS.y + 48, speed, dt)) return;
+    s.carry = { items: cafeReady.splice(0) }; s.squash = 0.3; return;
+  }
+  const need = cafeSeats.find(s2 => s2.cust && s2.cust.state === "seated");
+  if (need) {
+    cafeMoveTo(c, need.x, need.y - 30, speed, dt);
+    if (Math.hypot(c.x - need.x, c.y - need.y) > 46) return;
+    for (const seat of cafeSeats) {
+      if (seat.cust && seat.cust.state === "seated" && Math.hypot(seat.x - c.x, seat.y - c.y) < 90) {
+        seat.cust.state = "wait"; seat.cust._ct = 0;
+        seat.cust.order = { wants: seat.cust.wants, seat };
+        cafeOrderQ.push(seat.cust.order);
+      }
+    }
+    s.squash = 0.3; cafeDawdleAfter(s); return;
+  }
+  c.state = "loafing"; cafeMoveTo(c, CAFE_IDLE.server.x, CAFE_IDLE.server.y, speed * 0.5, dt);
+}
+// soft-body separation so no two cats ever sit inside each other. Every cat is
+// solid; a "fixed" cat (seated guest, a cat that's basically out the door) holds
+// its ground and only the other one is pushed.
+const CAFE_BODY = 38;
+function cafeSeparate() {
+  const all = [];
+  for (const c of cafeCust) {
+    const fixed = c.state === "seated" || c.state === "enjoy" || c.state === "wait" || (c.state === "leave" && c.y >= 800);
+    all.push({ c, fixed });
+  }
+  for (const s of cafeStaff) all.push({ c: s.cat, fixed: false });
+  for (let i = 0; i < all.length; i++) {
+    for (let j = i + 1; j < all.length; j++) {
+      const A = all[i], B = all[j];
+      if (A.fixed && B.fixed) continue;
+      let dx = B.c.x - A.c.x, dy = B.c.y - A.c.y;
+      let d = Math.hypot(dx, dy);
+      if (d >= CAFE_BODY) continue;
+      if (d < 0.01) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d = Math.hypot(dx, dy); }
+      const over = CAFE_BODY - d, ux = dx / d, uy = dy / d;
+      if (A.fixed) { B.c.x += ux * over; B.c.y += uy * over; }
+      else if (B.fixed) { A.c.x -= ux * over; A.c.y -= uy * over; }
+      else { A.c.x -= ux * over / 2; A.c.y -= uy * over / 2; B.c.x += ux * over / 2; B.c.y += uy * over / 2; }
+    }
+  }
+  for (const e of all) if (!e.fixed) { e.c.x = Math.max(12, Math.min(CAFE_W - 12, e.c.x)); e.c.y = Math.max(340, Math.min(CAFE_H - 12, e.c.y)); }
+}
+function cafeStepHost(s, dt, speed) {
+  const c = s.cat;
+  const q = cafeCust.filter(x => x.state === "queue").sort((a, b) => b._ct - a._ct)[0];
+  const seat = cafeFreeSeat();
+  if (q && seat) {
+    if (!cafeMoveTo(c, CAFE_WORK.host.x, CAFE_WORK.host.y, speed, dt)) return;
+    c.state = "seeking"; c.trotting = false; c.walkAmt = Math.max(0, c.walkAmt - dt * 3);
+    if (Math.hypot(q.x - CAFE_PODIUM.x, q.y - CAFE_PODIUM.y) > 24) return;
+    s.act = s.act || { t: 0 };
+    s.act.t += dt * s.ramp;
+    const gm = 0.7 * (cafeTrait(s, "chatty") ? 1.9 : cafeTrait(s, "grumpy") ? 0.55 : 1);
+    if (s.act.t >= gm) {
+      q.state = "toSeat"; q.seat = seat; seat.cust = q;
+      s.stats.greeted++; s.squash = 0.35; s.act = null;
+      if (cafeTrait(s, "chatty", "cuddly")) cafeMood = Math.min(1, cafeMood + 0.02);
+      if (cafeTrait(s, "grumpy")) cafeMood = Math.max(0, cafeMood - 0.006);
+      cafeDawdleAfter(s); renderCafeBoard();
+    }
+    return;
+  }
+  s.act = null; c.state = "loafing";
+  cafeMoveTo(c, CAFE_IDLE.host.x, CAFE_IDLE.host.y, speed * 0.5, dt);
+}
+
+/* ---- sim step ---- */
+function cafeStep(dt) {
+  cafeShiftT += dt; cafePhaseT += dt; _cafeQuietT += dt;
+  const P = CAFE_PHASES[cafePhaseIx];
+  if (cafePhaseIx < CAFE_PHASES.length - 1 && cafePhaseT >= P.dur) cafeSetPhase(cafePhaseIx + 1);
+  const nx = CAFE_PHASES[cafePhaseIx + 1];
+  if (nx && CAFE_PHASE_HINT[nx.id] && _cafePhaseHinted !== nx.id && cafePhaseT >= P.dur - 5) {
+    _cafePhaseHinted = nx.id;
+    const el = document.getElementById("volleyCom"); document.getElementById("vbComText").textContent = CAFE_PHASE_HINT[nx.id];
+    el.hidden = false; el.classList.remove("fade");
+    clearTimeout(cafeNote._t); cafeNote._t = setTimeout(() => el.classList.add("fade"), 3400);
+  }
+  if (cafePhaseIx < 4) {
+    cafeSpawnT -= dt;
+    if (cafeSpawnT <= 0) {
+      let e = P.every; if (P.id === "last") e *= 1 + cafePhaseT / P.dur;
+      cafeSpawnT = e * rand(0.7, 1.3);
+      if (cafeCust.filter(x => x.state !== "leave").length < 9) cafeSpawnCust();
+    }
+  }
+  _cafePassWaitT = cafeReady.length ? _cafePassWaitT + dt : 0;
+  for (const s of cafeStaff) cafeStepStaff(s, dt);
+  for (let i = cafeCust.length - 1; i >= 0; i--) if (cafeStepCust(cafeCust[i], dt)) cafeCust.splice(i, 1);
+  cafeSeparate();
+  cafeMood += (0.5 - cafeMood) * dt * 0.02; cafeMood = Math.max(0, Math.min(1, cafeMood));
+  if (_cafeQuietT > 26 && cafePhaseIx > 0 && cafePhaseIx < 4 && !cafeStaff.some(s => s.incident)
+      && cafeOrderQ.length < 2 && cafeCust.filter(c => c.state === "queue").length === 0) { cafeNote("quiet"); _cafeQuietT = rand(-6, 0); }
+  if (cafePhaseIx === 4 && cafeCust.length === 0 && !cafeStaff.some(s => s.carry || s.act || s.done)) cafeEndShift();
+}
+function cafeEndShift() {
+  if (_cafeResultShown) return;
+  _cafeResultShown = true; _cafeRunning = false;
+  cafeBanner("🔔  Café closed");
+  setTimeout(showCafeResult, 1500);
+}
+
+/* ---- render ---- */
+function drawCafeScene(g) {
+  const HZ = 300;
+  const sky = g.createLinearGradient(0, -200, 0, HZ);
+  sky.addColorStop(0, "#c3dfe8"); sky.addColorStop(1, "#eaefdf");
+  g.fillStyle = sky; g.fillRect(-260, -260, CAFE_W + 520, HZ + 260);
+  g.fillStyle = "#7ec3cf"; g.fillRect(-260, HZ - 40, CAFE_W + 520, 40);
+  const gr = g.createLinearGradient(0, HZ - 10, 0, CAFE_H);
+  gr.addColorStop(0, "#cfe0af"); gr.addColorStop(1, "#b6cf92");
+  g.fillStyle = gr; g.fillRect(-260, HZ - 12, CAFE_W + 520, CAFE_H - HZ + 260);
+  // seating deck
+  g.fillStyle = "#d8c9a6"; roundRect(g, 20, 540, 400, 250, 16); g.fill();
+  g.strokeStyle = "rgba(120,95,60,.15)"; g.lineWidth = 2;
+  for (let x = 40; x < 420; x += 30) { g.beginPath(); g.moveTo(x, 540); g.lineTo(x, 790); g.stroke(); }
+  // bunting on two poles
+  drawBunting(g, 30, 96, CAFE_W - 60, 26, cafeShiftT, { posts: true, groundY: HZ + 6 });
+  // furniture (bar / pass / podium / tables) is drawn later, depth-sorted with
+  // the cats so nobody sits or stands on top of it — see renderCafe
+  // sandwich-board sign by the entrance to the pitch — the café's emblem
+  {
+    g.save(); g.translate(42, 486);
+    g.fillStyle = "rgba(36,31,23,.14)"; g.beginPath(); g.ellipse(0, 40, 30, 7, 0, 0, 7); g.fill();
+    g.strokeStyle = "#6b5335"; g.lineWidth = 4; g.lineCap = "round";
+    g.beginPath(); g.moveTo(-16, 40); g.lineTo(-6, -2); g.moveTo(16, 40); g.lineTo(6, -2); g.stroke();   // easel legs
+    g.beginPath(); g.moveTo(-13, 20); g.lineTo(13, 20); g.stroke();                                       // cross-brace
+    g.save(); g.rotate(-0.05);
+    g.fillStyle = "#3c3a30"; roundRect(g, -27, -34, 54, 60, 5); g.fill();                                 // board
+    g.strokeStyle = "#6b5335"; g.lineWidth = 3; roundRect(g, -27, -34, 54, 60, 5); g.stroke();
+    const em = cafeEmblemImg();
+    if (em.complete && em.naturalWidth) g.drawImage(em, -17, -30, 34, 34);
+    else { g.fillStyle = "#f4ead6"; g.beginPath(); g.arc(0, -13, 15, 0, 7); g.fill(); }
+    g.fillStyle = "#f1e8d4"; g.font = "700 8px 'Fraunces', serif"; g.textAlign = "center";
+    g.fillText("CATMINT", 0, 12); g.fillText("CAFÉ", 0, 21);
+    g.restore();
+    g.restore();
+  }
+  // OPEN / LAST CALL / CLOSED sign
+  {
+    const p = CAFE_PHASES[cafePhaseIx];
+    const txt = _cafeResultShown ? "CLOSED" : p.id === "last" ? "LAST CALL" : p.id === "closed" ? "CLOSED" : "OPEN";
+    const col = txt === "OPEN" ? "#3f8159" : txt === "LAST CALL" ? "#c47a35" : "#8a8072";
+    const t = performance.now() / 1000;
+    g.save(); g.translate(CAFE_DOOR.x + 4, CAFE_DOOR.y - 54);
+    g.strokeStyle = "#7c6142"; g.lineWidth = 2.5; g.beginPath(); g.moveTo(0, -12); g.lineTo(0, 0); g.stroke();
+    g.rotate(Math.sin(t * 1.4) * 0.045);
+    g.strokeStyle = "#6b5335"; g.lineWidth = 1.4; g.beginPath(); g.moveTo(-12, 0); g.lineTo(-8, 9); g.moveTo(12, 0); g.lineTo(8, 9); g.stroke();
+    g.fillStyle = "#f4ead6"; roundRect(g, -26, 8, 52, 18, 3); g.fill();
+    g.strokeStyle = "rgba(74,53,36,.4)"; g.lineWidth = 1.2; roundRect(g, -26, 8, 52, 18, 3); g.stroke();
+    g.fillStyle = col; g.font = "800 9.5px 'Hanken Grotesk', sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(txt, 0, 18); g.restore();
+  }
+  // shift "day" bar + Café Mood, top of scene
+  {
+    const f = Math.max(0, Math.min(1, cafeShiftT / CAFE_SHIFT_TOTAL));
+    const p = CAFE_PHASES[cafePhaseIx], closing = p.id === "last" || p.id === "closed";
+    const bx = 60, bw = CAFE_W - 120, by = 38;
+    g.fillStyle = "rgba(247,245,236,.9)"; roundRect(g, bx - 10, by - 16, bw + 46, 30, 15); g.fill();
+    g.fillStyle = "#e6e0cb"; roundRect(g, bx, by - 4, bw, 8, 4); g.fill();
+    g.fillStyle = closing ? "#c47a35" : "#356b4c"; roundRect(g, bx, by - 4, bw * f, 8, 4); g.fill();
+    let cum = 0;
+    g.fillStyle = "rgba(74,53,36,.2)";
+    for (const ph of CAFE_PHASES) { if (ph.id === "closed") break; cum += ph.dur; if (cum >= CAFE_SHIFT_TOTAL) break; g.fillRect(bx + bw * (cum / CAFE_SHIFT_TOTAL), by - 6, 2, 12); }
+    g.font = "13px serif"; g.textAlign = "center"; g.fillText("☀️", bx + bw * f, by);
+    g.fillText("🔔", bx + bw + 14, by);
+    g.font = "800 9px 'IBM Plex Mono', monospace"; g.fillStyle = closing ? "#c47a35" : "#356b4c";
+    g.textAlign = "left"; g.fillText((p.emoji + " " + p.label).toUpperCase(), bx, by - 22);
+    // café mood
+    const mE = cafeMood > .75 ? "😻" : cafeMood > .55 ? "😺" : cafeMood > .35 ? "🙂" : "😐";
+    g.textAlign = "right"; g.font = "12px serif"; g.fillStyle = "#5b5343";
+    g.fillText(mE + "  ◈ " + (cafeShellTips), bx + bw + 14, by - 20);
+  }
+}
+function renderCafe(dt) {
+  updateFX(Math.min(dt, 0.05));
+  if (festKind === "cafe" && _cafeRunning) cafeStep(dt);
+  const g = ctx;
+  { const px = restViewportPx();
+    if (Math.abs(canvas.width - Math.round(px.vw * (_festDPR || DPR))) > 2) fitFestCanvas(); }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  const V = cafeFit(); _cafeVp = V;
+  g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
+  drawCafeScene(g);
+  // furniture + cats in ONE depth-sorted pass (by base-y): a cat lower on screen
+  // than a table / counter draws in front of it, a cat higher up is occluded by
+  // it. No overlays, no cat standing on the furniture.
+  const items = [];
+  items.push({ y: CAFE_POS.barista.y + 32, fn: () => drawCafeBar(g) });
+  items.push({ y: CAFE_PASS.y + 34, fn: () => drawCafePass(g) });
+  items.push({ y: CAFE_POS.host.y + 30, fn: () => drawCafePodium(g) });
+  for (const s of cafeSeats) items.push({ y: s.y + 4, fn: () => drawCafeTable(g, s) });
+  for (const c of cafeCust) { if (["queue", "toSeat", "leave"].includes(c.state)) c.trotting = true; items.push({ y: c.y, fn: () => drawCafeCustomer(g, c) }); }
+  for (const s of cafeStaff) items.push({ y: s.cat.y, fn: () => drawCafeStaffCat(g, s) });
+  items.sort((a, b) => a.y - b.y);
+  for (const it of items) it.fn();
+  if (particles.length || floaters.length) drawFX(g);
+  if (_cafeBannerUntil && cafeShiftT > _cafeBannerUntil) { document.getElementById("volleyBanner").hidden = true; _cafeBannerUntil = 0; }
+}
+function drawCafeCustomer(g, c) {
+  drawCat(g, c, false);
+  g.textAlign = "center";
+  if (["queue", "seated", "wait"].includes(c.state)) {
+    const fe = c.patience > .6 ? "😺" : c.patience > .35 ? "🙂" : c.patience > .15 ? "😐" : "🫥";
+    g.font = "13px serif"; g.fillStyle = "#000"; g.fillText(fe, c.x, c.y - 34);
+  } else if (c.state === "leave" && c._bye) {
+    const a = Math.max(0, 1 - c._ct / 2.4);           // fades over the first ~2.4s of the walk out
+    if (a > 0) { g.save(); g.globalAlpha = a; g.font = "15px serif"; g.fillText(c._bye, c.x, c.y - 36 - (1 - a) * 8); g.restore(); }
+  }
+}
+function drawCafeStaffCat(g, s) {
+  drawCat(g, s.cat, false);
+  g.font = "13px serif"; g.textAlign = "center"; g.fillStyle = "#000";
+  g.fillText(CAFE_JICON[s.job], s.cat.x, s.cat.y - 34);
+  const ib = s.incident === "break" ? "💤" : s.incident === "inspect" ? "👃" : s.incident === "chat" ? "💬"
+    : s.incident === "zoom" ? "✨" : s.incident === "linger" ? "❤️" : s.incident === "cuddle" ? "😽"
+    : s.transiting ? "🚶" : s.dawdling ? "💭" : s.boredom > 0.7 ? "😑" : "";
+  if (ib) { g.font = "13px serif"; g.fillText(ib, s.cat.x + 16, s.cat.y - 30); }
+  if (s.carry && s.carry.items && s.carry.items.length) {
+    g.fillStyle = "#c9b48a"; roundRect(g, s.cat.x - 8, s.cat.y - 24, 16, 4, 1); g.fill();
+    for (let i = 0; i < Math.min(s.carry.items.length, 3); i++) { g.fillStyle = "#f3ede0"; roundRect(g, s.cat.x - 7 + i * 5, s.cat.y - 30, 4, 5, 1); g.fill(); }
+  }
+}
+function drawCafeTable(g, s) {
+  g.fillStyle = "rgba(36,31,23,.12)"; g.beginPath(); g.ellipse(s.x, s.y + 12, 22, 7, 0, 0, 7); g.fill();
+  g.fillStyle = "#b98e63"; g.beginPath(); g.arc(s.x, s.y + 3, 18, 0, 7); g.fill();
+  g.fillStyle = "#caa477"; g.beginPath(); g.arc(s.x, s.y + 3, 18, Math.PI, Math.PI * 2); g.fill();
+  g.fillStyle = "rgba(36,31,23,.08)"; g.fillRect(s.x - 18, s.y + 2, 36, 1.4);
+  if (s.cust && s.cust.state === "enjoy") {
+    g.fillStyle = "rgba(255,255,255,.72)"; g.beginPath(); g.ellipse(s.x, s.y + 1, 7, 3.4, 0, 0, 7); g.fill();
+    g.fillStyle = s.cust.wants === "food" ? "#e7c99a" : "#f3ede0";
+    roundRect(g, s.x - 4, s.y - 5, 8, s.cust.wants === "food" ? 8 : 11, 2); g.fill();
+  }
+}
+function drawCafeBar(g) {
+  g.save(); g.translate(CAFE_POS.barista.x, CAFE_POS.barista.y);
+  g.fillStyle = "rgba(36,31,23,.12)"; g.beginPath(); g.ellipse(0, 40, 62, 12, 0, 0, 7); g.fill();
+  g.fillStyle = "#8a6f4e"; roundRect(g, -58, -8, 116, 40, 4); g.fill();
+  g.fillStyle = "#a4855f"; roundRect(g, -58, -8, 116, 8, 4); g.fill();
+  g.fillStyle = "#6f5942"; roundRect(g, -44, -36, 88, 12, 3); g.fill();
+  g.fillStyle = "#c98f57"; roundRect(g, -50, -4, 22, 12, 2); g.fill();
+  for (let i = 0; i < Math.min(cafeOrderQ.length, 6); i++) { g.save(); g.translate(-46 + i * 10, -2); g.rotate(rand(-.12, .12)); g.fillStyle = "#fffdf3"; g.fillRect(0, 0, 9, 11); g.strokeStyle = "#e0d6bb"; g.strokeRect(0, 0, 9, 11); g.restore(); }
+  {
+    const working = cafeStaff.some(s => s.job === "barista" && s.act);
+    g.save(); g.translate(26, -9); g.scale(1.12, 1.12);
+    g.fillStyle = "#c4c9ce"; roundRect(g, -22, -26, 44, 26, 3); g.fill();
+    g.fillStyle = "#dde1e4"; roundRect(g, -22, -26, 44, 8, 3); g.fill();
+    g.fillStyle = "#aeb4ba"; roundRect(g, -22, -8, 44, 8, 3); g.fill();
+    g.fillStyle = "#8f7a53"; g.beginPath(); g.arc(0, -17, 4, 0, 7); g.fill();
+    g.fillStyle = "#6f5d3f"; g.beginPath(); g.arc(0, -17, 1.6, 0, 7); g.fill();
+    g.fillStyle = working ? "#7ad07a" : "#d8a24a"; g.beginPath(); g.arc(15, -22, 1.7, 0, 7); g.fill();
+    g.fillStyle = "#5b6068";
+    for (const gx of [-10, 10]) { roundRect(g, gx - 5, -4, 10, 5, 1); g.fill(); g.fillRect(gx - 1.5, 1, 3, 3); }
+    g.fillStyle = "#3f3a33"; roundRect(g, -18, 0, 8, 3, 1); g.fill(); g.fillRect(-24, 0.5, 6, 2);
+    g.strokeStyle = "#9aa0a6"; g.lineWidth = 2; g.beginPath(); g.moveTo(22, -14); g.lineTo(27, -4); g.stroke();
+    if (working) {
+      g.fillStyle = "#f1ece0"; roundRect(g, -13, 2, 6, 6, 1); g.fill(); roundRect(g, 7, 2, 6, 6, 1); g.fill();
+      const t = performance.now() / 1000;
+      g.strokeStyle = "rgba(255,255,255,.5)"; g.lineWidth = 1.4;
+      for (const sx of [-2, 24]) { g.beginPath(); for (let k = 0; k < 3; k++) { const yy = -26 - k * 5 - (t * 9 % 5); g.moveTo(sx + Math.sin((t * 3) + k) * 2, yy); g.lineTo(sx + Math.sin((t * 3) + k + 1) * 2, yy - 4); } g.stroke(); }
+    }
+    g.restore();
+  }
+  g.font = "10px 'IBM Plex Mono', monospace"; g.fillStyle = "rgba(36,31,23,.45)"; g.textAlign = "center"; g.fillText("BAR", 0, 52);
+  g.restore();
+}
+function drawCafePodium(g) {
+  g.save(); g.translate(CAFE_POS.host.x, CAFE_POS.host.y);
+  g.fillStyle = "rgba(36,31,23,.12)"; g.beginPath(); g.ellipse(0, 32, 22, 8, 0, 0, 7); g.fill();
+  g.fillStyle = "#8a6f4e"; roundRect(g, -13, -4, 26, 34, 3); g.fill();
+  g.fillStyle = "#efe3cb"; roundRect(g, -16, -22, 32, 20, 3); g.fill();
+  g.fillStyle = "#c47a35"; g.font = "700 9px 'Fraunces', serif"; g.textAlign = "center"; g.fillText("CAFÉ", 0, -9);
+  g.restore();
+}
+function drawCafePass(g) {
+  g.save(); g.translate(CAFE_PASS.x, CAFE_PASS.y);
+  g.fillStyle = "rgba(36,31,23,.12)"; g.beginPath(); g.ellipse(0, 34, 66, 12, 0, 0, 7); g.fill();
+  g.fillStyle = "#8a6f4e"; roundRect(g, -64, 4, 128, 34, 5); g.fill();
+  g.fillStyle = "#7c6142"; roundRect(g, -64, 30, 128, 8, 5); g.fill();
+  g.fillStyle = "#a4855f"; roundRect(g, -64, 4, 128, 7, 5); g.fill();
+  g.fillStyle = "rgba(36,31,23,.10)"; g.fillRect(-64, 20, 128, 1.5);
+  g.fillStyle = "#5f4b38"; roundRect(g, -60, -30, 62, 34, 3); g.fill();
+  g.fillStyle = "#efe6d2"; roundRect(g, -58, -6, 58, 8, 2); g.fill();
+  for (let i = 0; i < CAFE_PASTRIES.length; i++) {
+    const [col, sh] = CAFE_PASTRIES[i]; g.fillStyle = col;
+    const px = -52 + i * 10.5, by = -6;
+    if (sh === 1) { g.beginPath(); g.moveTo(px - 1, by); g.quadraticCurveTo(px + 5, by - 13, px + 11, by); g.closePath(); g.fill(); }
+    else if (sh === 2) { g.beginPath(); g.arc(px + 5, by - 5, 5, 0, 7); g.fill(); g.fillStyle = "rgba(255,255,255,.35)"; g.beginPath(); g.arc(px + 3, by - 7, 1.6, 0, 7); g.fill(); }
+    else { roundRect(g, px, by - 9, 9, 9, 2); g.fill(); }
+  }
+  g.fillStyle = "rgba(200,232,240,.22)"; roundRect(g, -60, -30, 62, 34, 3); g.fill();
+  g.strokeStyle = "rgba(255,255,255,.45)"; g.lineWidth = 1.2; roundRect(g, -60, -30, 62, 34, 3); g.stroke();
+  g.beginPath(); g.moveTo(-52, -26); g.lineTo(-34, -26); g.strokeStyle = "rgba(255,255,255,.5)"; g.lineWidth = 2; g.stroke();
+  for (let i = 0; i < Math.min(cafeReady.length, 5); i++) {
+    const food = cafeReady[i].wants === "food", ox = 12 + i * 11;
+    g.fillStyle = "rgba(36,31,23,.10)"; g.beginPath(); g.ellipse(ox + 4, 2, 6, 2, 0, 0, 7); g.fill();
+    g.fillStyle = food ? "#e7c99a" : "#f3ede0"; roundRect(g, ox, food ? -6 : -11, 9, food ? 8 : 13, 2); g.fill();
+    if (!food) { g.fillStyle = "#d8ccb2"; roundRect(g, ox, -11, 9, 3.5, 2); g.fill(); }
+  }
+  const ring = _cafePassWaitT > 2.5, wob = ring ? Math.sin(performance.now() / 55) * 0.28 : 0;
+  g.save(); g.translate(56, 0); g.rotate(wob);
+  g.fillStyle = ring ? "#eab53c" : "#c9a24a"; g.beginPath(); g.arc(0, -5, 6, Math.PI, 0); g.fill();
+  g.fillRect(-6, -5, 12, 3.5); g.fillStyle = "#7c6142"; g.fillRect(-1.2, -12, 2.4, 4);
+  if (ring) { g.strokeStyle = "rgba(234,181,60,.5)"; g.lineWidth = 1.4; g.beginPath(); g.arc(0, -5, 11, Math.PI * 1.15, Math.PI * 1.85); g.stroke(); }
+  g.restore();
+  g.font = "9.5px 'IBM Plex Mono', monospace"; g.fillStyle = "rgba(36,31,23,.42)"; g.textAlign = "center"; g.fillText("PICK-UP", 0, 51);
+  g.restore();
+}
+
+/* ---- result ---- */
+function cafeCatLine(s) {
+  const L = s.log, st = s.stats;
+  const n = k => L.filter(x => x === k).length;
+  const work = st.drinks + st.delivered + st.greeted;
+  if (n("ate") >= 1) return "Conducted rigorous quality control.";
+  if (n("break") >= 3) return "Was, at various points, resting.";
+  if (st.cuddles >= 2) return "Prioritised the guests. Physically.";
+  if (n("chat") + n("linger") >= 4) return "Built lasting customer relationships.";
+  if (n("zoom") >= 2) return "Brought unexpected energy to the role.";
+  if (st.dawdles >= 8) return "Did the job around a busy schedule of pausing.";
+  if (st.dawdles >= 4 && work >= 4) return "Got there in the end, mostly.";
+  if (work >= 8 && L.length === 0 && st.dawdles < 3) return "Uncharacteristically committed.";
+  if (work <= 2) return "Was, broadly, in the building.";
+  return pick(["Met the minimum.", "Did what was asked, eventually.", "Present. Unbothered.", "Had a shift."]);
+}
+function cafeEmployeeOfShift() {
+  let best = cafeStaff[0], bestScore = -1, bestReason = "Remained employed for the entire shift.";
+  for (const s of cafeStaff) {
+    const st = s.stats;
+    const work = st.drinks + st.delivered + st.greeted;
+    const chaos = st.breaks + st.inspects + st.ate + st.zooms + st.chats + st.cuddles;
+    let score = work * 2 - chaos * 0.5 - st.dawdles * 0.15;
+    let reason = "Remained employed for the entire shift.";
+    if (st.drinks >= 7 && st.ate === 0) { score += 4; reason = `Made ${st.drinks} drinks and didn't touch one.`; }
+    if (st.dawdles >= 6 && work >= 5) { score += 4; reason = `Paused ${st.dawdles} times and still did the most work.`; }
+    if (st.dawdles <= 2 && work >= 4) { score += 3; reason = "Was engaged. We're keeping an eye on them."; }
+    if (st.cuddles >= 3) { score += 3; reason = `Cuddled ${st.cuddles} guests. Regulars now.`; }
+    if (st.breaks >= 4) { score += 3; reason = `Rested ${st.breaks} times and it worked out.`; }
+    if (st.ate >= 1) { score += 3; reason = `Ate ${st.ate} of the orders. Employee of the shift.`; }
+    if (chaos >= 5 && work >= 6) { score += 7; reason = `Caused ${chaos} incidents and still did the most work.`; }
+    if (work <= 2) { score = 0.1; reason = "Was, at all times, technically present."; }
+    if (score > bestScore) { bestScore = score; best = s; bestReason = reason; }
+  }
+  return { name: best.cat.name, reason: bestReason };
+}
+function showCafeResult() {
+  const res = document.getElementById("festResult");
+  res.querySelector("h2").textContent = "Catmint Café";
+  res.querySelector(".fr-emoji").innerHTML = cafeEmblemHTML(58);
+  document.getElementById("festAgain").textContent = "Another shift";
+  const moodWord = cafeMood > .75 ? "😻 Cozy" : cafeMood > .55 ? "😺 Warm" : cafeMood > .35 ? "🙂 Fine" : "😐 Quiet";
+  const base = goalShells(0.42);
+  const rate = Math.max(0, cafeServed - cafeLost * 1.5);
+  let mult = (0.5 + rate * 0.075) * (0.7 + cafeMood * 0.6);
+  mult = Math.max(0.35, Math.min(2.6, mult));
+  const bonus = Math.round(base * mult);
+  const great = cafeMood > 0.7 && cafeLost <= 2 && cafeServed >= 14;
+  const rw = { shells: cafeShellTips + bonus };
+  if (great && Math.random() < 0.06) rw.pearls = 1;
+  const eots = cafeEmployeeOfShift();
+  grantReward(rw, null); syncHud();
+
+  const rows = cafeStaff.map(s => {
+    const chips = [];
+    if (s.stats.drinks) chips.push(`☕ ${s.stats.drinks}`);
+    if (s.stats.delivered) chips.push(`🍰 ${s.stats.delivered}`);
+    if (s.stats.greeted) chips.push(`🤵 ${s.stats.greeted}`);
+    if (s.stats.breaks) chips.push(`💤 ${s.stats.breaks}`);
+    if (s.stats.ate) chips.push(`🍽️ ${s.stats.ate}`);
+    if (s.stats.cuddles) chips.push(`😽 ${s.stats.cuddles}`);
+    if (s.stats.chats) chips.push(`💬 ${s.stats.chats}`);
+    if (s.stats.zooms) chips.push(`✨ ${s.stats.zooms}`);
+    if (s.stats.dawdles) chips.push(`💭 ${s.stats.dawdles}`);
+    return `<div class="vb-stat-row"><canvas width="46" height="42"></canvas>
+      <div class="vb-stat-txt"><div class="vb-sn">${esc(s.cat.name)}</div>
+      <div class="vb-ss">${chips.slice(0, 4).join("  ")} · ${esc(cafeCatLine(s))}</div></div></div>`;
+  }).join("");
+  document.getElementById("festPodium").innerHTML =
+    `<div class="vb-final">
+       <div class="vb-final-row win"><span>Guests served</span><b>${cafeServed}</b></div>
+       <div class="vb-final-row"><span>Guests lost</span><b>${cafeLost}</b></div>
+       <div class="vb-final-row"><span>Café Mood</span><b>${moodWord}</b></div>
+     </div>
+     <div class="vb-stat-rows">${rows}</div>
+     <div class="cafe-eots"><span class="ce-k">🏆 Employee of the shift</span><span class="ce-n">${esc(eots.name)}</span><span class="ce-r">“${esc(eots.reason)}”</span></div>`;
+  const cvs = document.querySelectorAll("#festPodium .vb-stat-row canvas");
+  cafeStaff.forEach((s, i) => miniCat(cvs[i], s.cat.coatKey, s.cat.star, "loafing", false, 0.75));
+
+  const headline = cafeLost === 0 ? "The café ran itself. Somehow."
+    : cafeLost <= 2 ? "A cozy shift. A couple slipped away."
+    : cafeServed >= cafeLost * 3 ? "Busy, a bit ragged, but it held."
+    : "The coffee never quite caught up.";
+  document.getElementById("festPickLine").innerHTML =
+    `${esc(headline)}<br><span class="vb-reward">+${rw.shells} ◈${rw.pearls ? ` and a keepsake ✦` : ""}</span>`;
+  document.getElementById("festRestLine").textContent = great && rw.pearls
+    ? `${eots.name} pocketed a pastry on the way out. It's yours now, technically.` : "";
+  logMoment("🎀", `Catmint Café — ${cafeServed} served, ${cafeLost} lost, ${moodWord}. Employee of the shift: ${eots.name}.`, "tale");
+  for (const s of cafeStaff) if (!s.cat.visitor) s.cat.mood = clamp((s.cat.mood ?? 60) + 4, 0, 100);
+
+  spawnParticles(CAFE_W / 2, 300, cafeLost <= 2 ? "spark" : "twinkle", 10);
+  document.getElementById("cafeBoard").hidden = true;
+  document.getElementById("volleyCom").hidden = true;
+  document.getElementById("volleyBanner").hidden = true;
+  document.getElementById("festBar").hidden = true;
+  res.hidden = false;
+  trackEvent("cafe_completed", { served: cafeServed, lost: cafeLost, mood: Math.round(cafeMood * 100), shells: rw.shells });
+}
+
 
 
 /* ---------- rendering ---------- */
@@ -16683,6 +17787,11 @@ window.__cove.midkState = () => ({ phase: midkPhase, t: Math.round(midkT), charg
   ballY: midk ? Math.round(midk.y) : null, lead: { ..._midkLead }, winner: _midkWinner,
   parts: midkParts.map(p => ({ n: p.cat.name, side: p.side, chonk: +(p._chonk || 0).toFixed(2), naps: p.stats.naps, asleep: p._sleepUntil > midkT })) });
 window.__cove.midkStep = (n = 1, dt = 0.05) => { for (let i = 0; i < n; i++) if (festKind === "midk" && festMode) renderMidk(dt); return window.__cove.midkState(); };
+window.__cove.cafe = () => { openFestPicker("cafe"); return { on: festMode, kind: festKind, eligible: eligibleForVolley().length }; };
+window.__cove.cafeState = () => ({ kind: festKind, phase: CAFE_PHASES[cafePhaseIx] && CAFE_PHASES[cafePhaseIx].id, t: Math.round(cafeShiftT),
+  served: cafeServed, lost: cafeLost, mood: +cafeMood.toFixed(2), running: _cafeRunning, cust: cafeCust.length,
+  staff: cafeStaff.map(s => ({ n: s.cat.name, job: s.job, bored: +s.boredom.toFixed(2), dawdle: s.dawdling, inc: s.incident })) });
+window.__cove.cafeStep = (n = 1, dt = 0.05) => { for (let i = 0; i < n; i++) if (festKind === "cafe" && festMode) renderCafe(dt); return window.__cove.cafeState(); };
 window.__cove.volleyState = () => ({ phase: volleyPhase, t: Math.round(matchT), score: { ...volleyScore },
   wakeCd: Math.max(0, +(_vbWakeCd - matchT).toFixed(1)), com: vbCom.text, visit: volleyVisitName,
   ball: volleyBall && volleyBall.live ? { side: volleyBall.side, touches: volleyBall.touches,
