@@ -12672,6 +12672,8 @@ function cafeCustLost(c, atSeat) {
   cafeLost++; cafeMood = Math.max(0, cafeMood - 0.045);
   if (Math.random() < 0.5) cafeNote("lost");
   if (atSeat) { const s = cafeSeats.find(x => x.cust === c); if (s) s.cust = null; }
+  if (!playSample("grumpy", { vol: 0.6, rate: rand(0.92, 1.05), jitter: 0.1 })) meow(false, 0.7);   // stormed out — a cross meow
+  try { floatText(c.x, c.y - 24, "😾", "#c46a6a"); } catch (e) {}
   _cafeCustPool.push(c);
 }
 function cafeStepCust(c, dt) {
@@ -12703,6 +12705,9 @@ function cafeStepCust(c, dt) {
       if (Math.random() < 0.22) cafeNote("good");
       // a little parting reaction on the way out — bigger if they tipped / the café's humming
       c._bye = (tipped || cafeMood > 0.72) ? "😻" : cafeMood > 0.45 ? "😺" : "🙂";
+      // and a soft parting meow to match — a bright mrrp if they loved it, a quiet one if it was just fine
+      const glad = c._bye !== "🙂";
+      if (!playSample("meow", { vol: glad ? 0.42 : 0.3, rate: glad ? rand(1.0, 1.12) : rand(0.9, 0.98), jitter: 0.1 })) meow(true, glad ? 0.4 : 0.28);
       c.state = "leave"; c._ct = 0; c._out = false;
       const s = cafeSeats.find(x => x.cust === c); if (s) { s.cust = null; s._clearing = c; }
     }
