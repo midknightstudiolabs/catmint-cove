@@ -5900,13 +5900,14 @@ function composePhoto() {
   drawCoveSign(pctx, W, H);
   drawCairn(pctx, W, H);
   drawDecorLayer(pctx);
-  for (const a of attractors) drawAttractor(pctx, a);
   const pgt = performance.now() / 1000, pnight = window._sky ? 1 - window._sky.df : 0;
   const players = [];
   for (const c of cats) players.push({ y: c.y, c });
   for (const f of foreground) players.push({ y: f.y, f });
+  for (const a of attractors) if (COMFORT_TYPES.has(a.type)) players.push({ y: a.y, a });
   players.sort((p, q) => p.y - q.y);
   for (const it of players) {
+    if (it.a) { drawAttractor(pctx, it.a); continue; }
     if (it.c) { drawCat(pctx, it.c, true); if (it.c.state === "fishing" && it.c._station === "fishing" && it.c._fx) drawFishingRig(pctx, it.c); if (it.c.state === "baking" && it.c._station === "bakery" && it.c._fx) drawBakeryRig(pctx, it.c); }
     else drawGrassTuft(pctx, it.f, pgt, pnight);
   }
@@ -14243,7 +14244,6 @@ function renderScene(dt) {
   drawDecorLayer(ctx);
   drawProps(ctx);
   const _skipA = _placing && _placing.kind === "comfort" ? _placing.key : null;   // the bowl/bed being dragged is drawn as the ghost, not here
-  for (const a of attractors) { if (_skipA && a.key === _skipA) continue; drawAttractor(ctx, a); }
   drawTrails(ctx);   // v3: rainbow-trail cosmetic — behind the cats
   const _pt1 = performance.now();
   // interleave cats and grass tufts by y so nearer grass covers farther cats and
@@ -14256,8 +14256,15 @@ function renderScene(dt) {
   const layer = _sceneLayer; layer.length = 0;
   for (const c of cats) { if (c.state === "indoors" || (c.x >= cullL && c.x <= cullR)) layer.push({ y: c.y, c }); }
   for (const f of foreground) { if (f.x >= cullL && f.x <= cullR) layer.push({ y: f.y, f }); }
+  // bowls / beds / toys / scratchers ride the y-sort too, so grass and cats in
+  // front of one cover it and it covers what's behind it
+  for (const a of attractors) {
+    if (!COMFORT_TYPES.has(a.type) || (_skipA && a.key === _skipA)) continue;
+    if (a.x >= cullL && a.x <= cullR) layer.push({ y: a.y, a });
+  }
   layer.sort((a, b) => a.y - b.y);
   for (const it of layer) {
+    if (it.a) { drawAttractor(ctx, it.a); continue; }
     if (it.c) {
       if (it.c.state === "indoors") { drawCottageFace(ctx, it.c); continue; }   // it's inside — just a face at the door
       if (it.c._ill && !_perfLite) drawIllAura(ctx, it.c);
