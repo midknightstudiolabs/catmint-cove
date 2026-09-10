@@ -678,6 +678,8 @@
      content centred explicitly (align-items alone only centres it vertically). */
   .btn-row{display:flex;gap:.5rem;margin-top:.3rem;}
   .btn-row .btn{flex:1;justify-content:center;}
+  .fest-result .btn-row{flex-wrap:wrap;}
+  .fest-result .btn-row .btn.primary{flex-basis:100%;}   /* "again" full width; "The festival" + "Back to cove" share the row below */
 
   /* ---- cove festival (prototype) ---- */
   #fest{position:absolute;inset:0;z-index:65;display:none;pointer-events:none;}
@@ -1392,6 +1394,7 @@
         <p id="festRestLine"></p>
         <div class="btn-row">
           <button class="btn primary" id="festAgain">Race again</button>
+          <button class="btn" id="festToHub">The festival</button>
           <button class="btn" id="festClaim">Back to cove</button>
         </div>
       </div>
@@ -9336,25 +9339,28 @@ async function loadFestBed(section) {
     _festBedBufs[section] = await actx.decodeAudioData(await res.arrayBuffer());
   } catch (e) { _festBedBufs[section] = false; }
 }
-function _fadeOutFestBed() {
+function _fadeOutFestBed(fast) {
   if (!_festBed || !actx) { _festBed = null; return; }
   const b = _festBed; _festBed = null;
   const t = actx.currentTime;
-  try { rampParam(b.g.gain, 0.0001, 0.9); } catch (e) {}
-  try { b.src.stop(t + 1.1); } catch (e) {}
-  setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, 1500);
+  const dur = fast ? 0.32 : 0.8;
+  try { rampParam(b.g.gain, 0.0001, dur); } catch (e) {}
+  try { b.src.stop(t + dur + 0.06); } catch (e) {}          // hard-stop the source so the old slice is truly gone
+  setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, (dur + 0.4) * 1000);
 }
 async function startFestBed(section) {
   section = section || "hub";
   if (!actx || (_festBed && _festBed.section === section)) return;
-  if (_festBed) _fadeOutFestBed();          // crossfade: old slice fades out while the new one fades in
+  const switching = !!_festBed;
+  if (_festBed) _fadeOutFestBed(true);      // clean reset — old slice fades out fast, then a beat of silence, then the new one
   const gen = ++_festBedGen;
   await loadFestBed(section);
+  if (switching) await new Promise(r => setTimeout(r, 380));   // no overlap — the two slices (different sections / tempos) never play at once
   if (gen !== _festBedGen || !festBus || !festMode || !_festBedBufs[section]) return;   // superseded, session ended, or the clip failed
   const g = actx.createGain();
   g.gain.value = 0.0001;
   g.connect(festBus);
-  rampParam(g.gain, festBedTarget(), 1.4);
+  rampParam(g.gain, festBedTarget(), 0.7);
   const src = actx.createBufferSource();
   src.buffer = _festBedBufs[section]; src.loop = true;
   src.connect(g); src.start();
@@ -9397,9 +9403,9 @@ function stopCafeBed() {
   if (!_cafeBed || !actx) { _cafeBed = null; return; }
   const b = _cafeBed; _cafeBed = null; b.stopped = true;
   if (festMurmurGain) { try { rampParam(festMurmurGain.gain, 0.16, 1.4); } catch (e) {} }
-  try { rampParam(b.g.gain, 0.0001, 0.9); } catch (e) {}
-  try { b.src && b.src.stop(actx.currentTime + 1); } catch (e) {}
-  setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, 1300);
+  try { rampParam(b.g.gain, 0.0001, 0.35); } catch (e) {}
+  try { b.src && b.src.stop(actx.currentTime + 0.42); } catch (e) {}   // gone quick so the festival slice can come back clean
+  setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, 700);
 }
 
 function syncRacerCat(r, dt, freeze) {
@@ -9834,6 +9840,7 @@ function renderFest(dt) {
 }
 document.getElementById("festBack").addEventListener("click", closeFest);
 document.getElementById("festClaim").addEventListener("click", closeFest);
+document.getElementById("festToHub").addEventListener("click", festBackToChooser);
 document.getElementById("festCancel").addEventListener("click", closeFest);
 document.getElementById("festStart").addEventListener("click", startFestRace);
 // stays on the grounds — reopens the picker in place, no wipe either direction
@@ -9875,7 +9882,7 @@ document.getElementById("festAgain").addEventListener("click", () => {
   }
   if (festKind === "cafe") {
     cafeStaff = []; cafeCust = []; _cafeRunning = false; cafePick = null; festKind = "hub"; festGroundsCats(roster);
-    stopCafeBed(); startFestBed("hub");
+    stopCafeBed(); setTimeout(() => { if (festKind === "hub") startFestBed("hub"); }, 420);
     document.getElementById("cafeBoard").hidden = true;
     renderCafePickGrid(eligibleForVolley());
     document.getElementById("festCafePanel").hidden = false;
@@ -9915,7 +9922,7 @@ const FEST_EVENTS = [
   { key: "midk", emoji: "🧶", name: "Tug of Paws",
     desc: "Five cats on the rope against a visiting Cove. Work the paw-spin and haul the yarn home.",
     lock: () => midkReady() ? null : "You need 5 cats at the Cove for the rope.", enter: enterFestMidk },
-  { key: "cafe", emoji: "🎀", name: "Catmint Café",
+  { key: "cafe", emoji: "🎀", art: () => cafeEmblemHTML(30), name: "Catmint Café",
     desc: "Three cats staff a pop-up café. You don't take orders — you decide who works which job as it all falls apart.",
     lock: () => cafeReadyToPlay() ? null : "You need 3 cats at the Cove for the café.", enter: enterFestCafe },
 ];
@@ -9924,7 +9931,7 @@ function renderFestChooser() {
   wrap.innerHTML = FEST_EVENTS.map(ev => {
     const locked = ev.lock();
     return `<button class="fc-card${locked ? " locked" : ""}" data-ev="${ev.key}" type="button">
-      <span class="fc-emoji">${ev.emoji}</span>
+      <span class="fc-emoji">${ev.art ? ev.art() : ev.emoji}</span>
       <span class="fc-name">${esc(ev.name)}</span>
       <span class="fc-desc">${esc(ev.desc)}</span>
       ${locked ? `<span class="fc-lock">${esc(locked)}</span>` : ""}
@@ -9949,7 +9956,7 @@ function festBackToChooser() {
   for (const c of cats) { c._chonkBase = 0; c._tugLean = 0; c._vbLift = 0; c.squash = 0; }
   stopVolleyBed(); stopCafeBed();
   festKind = "hub"; festGroundsCats(roster);
-  startFestBed("hub");
+  setTimeout(() => { if (festKind === "hub" && festMode) startFestBed("hub"); }, 420);
   for (const id of ["festPanel", "festBoxPanel", "festVolleyPanel", "festVolleyTut", "festMidkPanel", "festMidkTut",
                     "festCafePanel", "festCafeTut", "volleyHud", "midkHud", "cafeBoard", "volleyCom", "midkCom", "volleyBanner", "festCountdown"]) {
     document.getElementById(id).hidden = true;
