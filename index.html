@@ -11666,7 +11666,7 @@ let midkPhase = "idle", midkT = 0, midkParts = [], midk = null, midkVisitName = 
 let midkPickSel = [], _midkTutSeen = false;
 let _midkResultShown = false, _midkResultAt = 0, _midkWinner = null, _midkFlopAt = 0;
 let midkCharge = 0, _midkAuraUntil = 0, _midkAiAuraUntil = 0;
-let _midkAiChargeT = 0, _midkAiSlotCd = 0;
+let _midkAiChargeT = 0, _midkAiSlotCd = 0, _midkAiSpins = 0;
 let _midkHeave = 0;                           // shared heave rhythm — cats lean + dig in on the pull beat
 let midkSlot = null;                          // { reels, outcome, rollUntil, resolved, result, showUntil }
 let _midkEventCd = 0;
@@ -11811,7 +11811,7 @@ function startCoveMidk() {
   fitFestCanvas();
   midkT = 0; midkPhase = "idle"; _midkResultShown = false; _midkWinner = null; _midkFlopAt = 0;
   midkCharge = 0; _midkAuraUntil = 0; _midkAiAuraUntil = 0;
-  _midkAiChargeT = 0; _midkAiSlotCd = rand(7, 12);
+  _midkAiChargeT = 0; _midkAiSlotCd = rand(3.5, 6); _midkAiSpins = 0;   // the visiting Cove opens with a quick one-two
   midkSlot = null;
   _midkEventCd = rand(10, 16);
   _midkLead = { cove: 0, visit: 0 };
@@ -12001,9 +12001,16 @@ function midkResolveSlot(side, outcome) {
 function midkAi(dt) {
   _midkAiChargeT += dt;
   _midkAiSlotCd -= dt;
-  if (_midkAiSlotCd <= 0 && _midkAiChargeT > 5.5 && !midkSlot) {
-    _midkAiSlotCd = rand(5.5, 8); _midkAiChargeT = 0;
-    midkResolveSlot("visit", midkRollOutcome("visit"));
+  // opening pressure: the visiting Cove gets a quick one-two at the start of the
+  // match, so you begin on the back foot and have to claw the yarn back
+  const opener = _midkAiSpins < 2;
+  if (_midkAiSlotCd <= 0 && (opener || _midkAiChargeT > 5.5) && !midkSlot) {
+    _midkAiSpins++;
+    _midkAiSlotCd = _midkAiSpins < 2 ? rand(1.6, 2.6) : rand(5.5, 8);
+    _midkAiChargeT = 0;
+    let out = midkRollOutcome("visit");
+    if (opener && out === "aura") out = "push";   // no instant-win 777 in the opening one-two
+    midkResolveSlot("visit", out);
     spawnParticles(MIDK_X, midk.y, "twinkle", 6);
   }
 }
