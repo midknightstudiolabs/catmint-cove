@@ -1908,7 +1908,7 @@ function newGame() {
     lastCatAt: 0,          // when a resident last joined — the "coax" hint only nudges after a long quiet stretch
     bowls: 1, toys: 0, beds: 0, scratch: 0,
     food: 30,              // v3: cove-wide food store (servings). cats eat it down; refill for shells. empty → hunger climbs
-    decor: { tree: 0, cottage: 0, flowers: 0 },
+    decor: { tree: 0, cottage: 0, flowers: 0, cattree: 0 },
     stations: { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 },   // activity stations cats "work"
     trinkets: 0,           // (legacy) kept for save back-compat — accessories are per-cat now (c.owned)
     econReset1: true,      // new games already start clean — skip the one-time tester shell reset
@@ -1966,7 +1966,8 @@ function load() {
     if (!s || !SAVE_VERSIONS.includes(s.v)) { G = newGame(); return; }
     G = s;
     G.v = 9;                                                  // v9 saves only — the guards below just backfill any missing field
-    if (!G.decor) G.decor = { tree: 0, cottage: 0, flowers: 0 };
+    if (!G.decor) G.decor = { tree: 0, cottage: 0, flowers: 0, cattree: 0 };
+    if (G.decor.cattree == null) G.decor.cattree = 0;
     if (!G.stations) G.stations = { fishing: 0, bakery: 0, sunbeam: 0, garden: 0 };
     if (G.trinkets === undefined) G.trinkets = 0;
     if (G.scratch === undefined) G.scratch = 0;
@@ -2165,6 +2166,7 @@ function rebuildDecor() {
   const wants = [];
   for (let i = 0; i < G.decor.cottage; i++) wants.push({ type: "cottage", idx: i, r: 48, seed: 7001 + i * 13, yBand: [lo + 30, hi - 54] });
   for (let i = 0; i < G.decor.tree; i++)    wants.push({ type: "tree",    idx: i, r: 42, seed: 9001 + i * 13, yBand: [lo,      hi - 40] });
+  for (let i = 0; i < (G.decor.cattree || 0); i++) wants.push({ type: "cattree", idx: i, r: 44, seed: 11001 + i * 13, yBand: [lo + 20, hi - 46] });
   for (let i = 0; i < G.decor.flowers; i++) wants.push({ type: "flowers", idx: i, r: 28, seed: 5001 + i * 13, yBand: [lo + 60, hi - 16] });
   // a player-placed piece (G.cosmetics.decorPos["type:idx"]) keeps its spot; the
   // rest auto-place around them, avoiding their footprints. absent → all auto,
@@ -2192,6 +2194,7 @@ function rebuildAttractors() {
   obstacles = [];
   for (const d of decor) {
     if (d.type === "tree")    obstacles.push({ x: d.x, y: d.y - 2,  rx: 15, ry: 13 });
+    if (d.type === "cattree") obstacles.push({ x: d.x, y: d.y - 8,  rx: 22, ry: 15 });
     if (d.type === "cottage") obstacles.push({ x: d.x, y: d.y - 12, rx: 28, ry: 22 });
     if (d.type === "flowers") obstacles.push({ x: d.x, y: d.y - 2,  rx: 20, ry: 12 });
     // the fishing pond is drawn at station-local (64, 24), ~92×34 — cover it, and
@@ -2213,7 +2216,7 @@ function rebuildAttractors() {
     obstacles.push({ x: pp.x, y: pp.y - r[1] * 0.4, rx: r[0], ry: r[1] });
   }
   // food / toy / bed — placed clear of decor, stations, water and each other
-  const avoid = decor.map(d => ({ x: d.x, y: d.y, r: d.type === "cottage" ? 46 : d.type === "station" || d.type === "project" ? 44 : d.type === "tree" ? 38 : 24 }))
+  const avoid = decor.map(d => ({ x: d.x, y: d.y, r: d.type === "cottage" ? 46 : d.type === "station" || d.type === "project" ? 44 : d.type === "cattree" ? 40 : d.type === "tree" ? 38 : 24 }))
     .concat(obstacles.map(o => ({ x: o.x, y: o.y, r: Math.max(o.rx, o.ry) * 0.95 })));
   const comforts = [], cKeys = [];
   const addC = (n, type, r, seed0, lo) => { for (let i = 0; i < n; i++) { comforts.push({ type, r, seed: seed0 + i * 7, yBand: [lo, catFloor() - 8] }); cKeys.push(type + ":" + i); } };
@@ -2242,6 +2245,7 @@ function rebuildAttractors() {
   });
   for (const d of decor) {
     if (d.type === "tree")    attractors.push({ type: "tree",    x: clamp(d.x + 14, 32, W - 32), y: clamp(d.y + 34, H * 0.44, catFloor()) });
+    if (d.type === "cattree") attractors.push({ type: "cattree", x: clamp(d.x + 18, 32, W - 32), y: clamp(d.y + 26, H * 0.44, catFloor()) });
     if (d.type === "cottage") attractors.push({ type: "cottage", x: clamp(d.x,      32, W - 32), y: clamp(d.y + 34, H * 0.44, catFloor()) });
     if (d.type === "station") {
       const off = d.station === "fishing" ? { x: -36, y: 6 }    // the shore/campfire end of the dock — clear of the pond, so cats walk TO the dock, not across the water
@@ -2438,7 +2442,7 @@ function stationCount() { const s = G.stations || {}; return (s.fishing||0) + (s
 // A dedicated player can buy the Cove Charter (full Catdex + a steep price) to
 // push it to 24; "Find them a new home" on the cat card is the release valve.
 function maxCats() { return G.coveCharter ? 30 : 16; }
-function capacity() { return Math.min(maxCats(), 4 + (G.bowls - 1) * 2 + G.toys + G.beds + (G.scratch || 0) + G.decor.cottage * 2 + stationCount() * 2); }
+function capacity() { return Math.min(maxCats(), 4 + (G.bowls - 1) * 2 + G.toys + G.beds + (G.scratch || 0) + G.decor.cottage * 2 + (G.decor.cattree || 0) * 3 + stationCount() * 2); }
 // cats on an adventure are spliced out of `cats` but still belong to the cove —
 // count them so sending a party out doesn't free up slots for new arrivals that
 // would then overflow capacity when the party comes home. (Labubu never counts.)
@@ -3204,6 +3208,7 @@ function decide(c) {
   c.stateT = 0;
   c.partner = null;
   c._station = null;
+  c._perchKind = null; c._faceY = null;   // clear any stale cat-tree slot before a fresh pick
   c._tag = c._tagOther = c._tagRole = null;
 
   // Labubu just mooches around near Midknight while he's visiting
@@ -3237,7 +3242,7 @@ function decide(c) {
   }
 
   // --- SLEEPING is the dominant pastime — this is a game about cats napping ---
-  const bedish = nearestAttractor(c, "bed") || nearestAttractor(c, "cottage") || nearestAttractor(c, "tree");
+  const bedish = nearestAttractor(c, "bed") || nearestAttractor(c, "cottage") || nearestAttractor(c, "cattree") || nearestAttractor(c, "tree");
   add((lazyish ? 4 : 2.6) + (c.mood < 55 ? 1.5 : 0) + (bedish ? 1.2 : 0), () => {
     return go(c, "sleeping", rand(bedish ? 22 : 16, bedish ? 38 : 28), napSpot(c));
   });
@@ -3245,9 +3250,25 @@ function decide(c) {
   // --- some cats would rather nap out of sight, inside the cottage ---
   const cotD = decor.find(d => d.type === "cottage" && !cats.some(o => o !== c && o.state === "indoors" && o._cotX === d.x));
   if (cotD) add((lazyish || c.traits.includes("shy") ? 2.4 : 1.1) + (c.mood < 62 ? 0.7 : 0), () => {
-    c._arriveState = "indoors"; c._arriveDur = rand(28, 56); c._cotX = cotD.x; c._cotY = cotD.y;
+    c._arriveState = "indoors"; c._arriveDur = rand(28, 56); c._cotX = cotD.x; c._cotY = cotD.y; c._perchKind = null;
     return go(c, "seeking", 16, { x: cotD.x, y: cotD.y + 10 });
   });
+
+  // --- the cat tree: three levels — a step to loaf on, a cubby to hide in, a perch on top ---
+  const CATTREE_SLOTS = ["step", "cubby", "perch"];
+  const treeFree = (d, k) => !cats.some(o => o !== c && o.state === "indoors" && o._cotX === d.x && o._perchKind === k);
+  const treeD = decor.find(d => d.type === "cattree" && CATTREE_SLOTS.some(k => treeFree(d, k)));
+  if (treeD) {
+    const clim = c.traits.includes("climber");
+    add((clim ? 3.2 : lazyish ? 1.8 : 1.2) + (c.mood < 62 ? 0.5 : 0), () => {
+      const open = CATTREE_SLOTS.filter(k => treeFree(treeD, k));
+      const kind = clim && open.includes("perch") ? "perch"
+        : (c.traits.includes("shy") || lazyish) && open.includes("cubby") ? "cubby"
+        : open[(Math.random() * open.length) | 0];
+      c._arriveState = "indoors"; c._arriveDur = rand(24, 50); c._cotX = treeD.x; c._cotY = treeD.y; c._perchKind = kind;
+      return go(c, "seeking", 16, { x: treeD.x + (kind === "step" ? -22 : 6), y: treeD.y + 8 });
+    });
+  }
 
   // --- grooming: a cat washing itself. short, common, adorable ---
   add(kitten ? 5 : 4, () => go(c, "grooming", rand(5, 10), null));
@@ -3380,6 +3401,14 @@ function decide(c) {
   for (const [w, fn] of opts) { r -= w; if (r <= 0) return fn(); }
   return go(c, "loafing", 8, null);
 }
+// where a cat sits once it's reached its indoor spot — cottage door, or one of the
+// cat tree's three levels. dx/dy are offsets from the piece's base (_cotX/_cotY).
+function indoorSpot(kind) {
+  if (kind === "step")  return { dx: -32, dy: -26,  face: 1,  faceDy: null };
+  if (kind === "cubby") return { dx: 0,   dy: -82,  face: -1, faceDy: -82 };   // drawn as a face peeking from the cubby
+  if (kind === "perch") return { dx: 4,   dy: -152, face: 1,  faceDy: null };
+  return { dx: 0, dy: -1, face: -1, faceDy: null };   // cottage
+}
 function napSpot(c) {
   // a friend who's already settled → curl up right next to them (a nap pile)
   if (c.friend) {
@@ -3387,7 +3416,7 @@ function napSpot(c) {
       && (o.state === "sleeping" || o.state === "loafing"));
     if (f) return { x: f.x + (f.x < W / 2 ? 1 : -1) * rand(16, 26), y: f.y + rand(-4, 6) };
   }
-  const a = nearestAttractor(c, "cottage") || nearestAttractor(c, "bed") || nearestAttractor(c, "tree");
+  const a = nearestAttractor(c, "cottage") || nearestAttractor(c, "bed") || nearestAttractor(c, "cattree") || nearestAttractor(c, "tree");
   return a ? { x: a.x + rand(-14, 14), y: a.y + rand(-4, 6) } : null;
 }
 function go(c, state, dur, target) {
@@ -3902,9 +3931,10 @@ function updateCat(c, dt) {
   const atTarget = Math.hypot(c.tx - c.x, c.ty - c.y) < 7;
 
   // a comfort was sold out from under the cat — don't scratch / hide in thin air
-  if ((c.state === "scratching" && !nearestAttractor(c, "scratch")) ||
-      (c.state === "indoors" && !(G.decor && G.decor.cottage > 0))) {
-    c._arriveState = null; c._cotX = null;
+  const _indoorGone = c.state === "indoors" && !(G.decor && (c._perchKind ? (G.decor.cattree || 0) > 0 : G.decor.cottage > 0));
+  if ((c.state === "scratching" && !nearestAttractor(c, "scratch")) || _indoorGone) {
+    if (_indoorGone && c._cotY != null) c.y = c._cotY;   // was up the tree — back to the ground
+    c._arriveState = null; c._cotX = null; c._perchKind = null; c._faceY = null;
     go(c, "grooming", rand(1.2, 2.6), null);
     return;
   }
@@ -3918,7 +3948,7 @@ function updateCat(c, dt) {
     if (atTarget) {
       let arr = c._arriveState || "loafing";
       if (arr === "scratching" && !nearestAttractor(c, "scratch")) arr = "loafing";
-      if (arr === "indoors" && !(G.decor && G.decor.cottage > 0)) arr = "loafing";
+      if (arr === "indoors" && !(G.decor && (c._perchKind ? (G.decor.cattree || 0) > 0 : G.decor.cottage > 0))) { arr = "loafing"; c._perchKind = null; c._faceY = null; }
       if (arr === "drinking" && !anyWaterSource()) arr = "loafing";
       if (arr === "eating" && G.food <= 0) arr = "loafing";   // ran dry mid-approach
       go(c, arr, c._arriveDur || 8, null);
@@ -3926,15 +3956,28 @@ function updateCat(c, dt) {
       c._station = c._pendStation || null;
       c._pendStation = null;
       if (c.state === "scratching") c.face = 1;   // always stand left of the post, rake toward it
-      if (c.state === "indoors") { c.x = c._cotX; c.y = c._cotY - 1; c.vx = 0; c.vy = 0; c.face = -1; }
+      if (c.state === "indoors") {
+        const sp = indoorSpot(c._perchKind);
+        c.x = c._cotX + sp.dx; c.y = c._cotY + sp.dy;
+        c._faceY = sp.faceDy != null ? c._cotY + sp.faceDy : null;
+        c.vx = 0; c.vy = 0; c.face = sp.face;
+      }
       if (c._station === "garden") spawnParticles(c.x, c.y - 10, "leaf", 5);
     }
     else if (c.stateT > (c._arriveState === "drinking" ? 32 : 14)) { c._pendStation = null; decide(c); }   // the pond can be a long walk
     return;
   }
   if (c.state === "indoors") {
+    if (c._cotX != null) {   // stay put — perched or tucked in, nothing shoves a hidden cat around
+      const sp = indoorSpot(c._perchKind);
+      c.x = c._cotX + sp.dx; c.y = c._cotY + sp.dy;
+      c._faceY = sp.faceDy != null ? c._cotY + sp.faceDy : null;
+      c.vx = 0; c.vy = 0;
+    }
     if (c.stateT > c.stateDur) {
-      const cx = c._cotX, cy = c._cotY; c._cotX = null;
+      const cx = c._cotX, cy = c._cotY, wasUp = c._perchKind === "perch" || c._perchKind === "cubby" || c._perchKind === "step";
+      c._cotX = null; c._perchKind = null; c._faceY = null;
+      if (wasUp) { c.x = cx + rand(-8, 8); c.y = cy + rand(24, 40); }   // hop down off the tree first, not a mid-air loaf
       go(c, "loafing", rand(3, 6), { x: cx + rand(-26, 26), y: cy + 42 });
     }
     return;
@@ -4426,9 +4469,9 @@ let _placeGhost = null;     // { x, y } world pos the ghost follows
 let _arranging = false;
 const PLACE_LIFT = 42;      // world px the ghost floats above the finger so a thumb never hides it
 function _ghostAt(cx, cy) { const w = screenToWorld(cx, cy); w.y -= PLACE_LIFT; return w; }
-const DECOR_LABEL = { cottage: "cottage", tree: "tree", flowers: "flower patch", station: "spot",
+const DECOR_LABEL = { cottage: "cottage", tree: "tree", cattree: "cat tree", flowers: "flower patch", station: "spot",
   food: "food bowl", toy: "toy", bed: "bed", scratch: "scratching post" };
-const DECOR_CLEAR = { cottage: 40, tree: 30, flowers: 22, station: 40,
+const DECOR_CLEAR = { cottage: 40, tree: 30, cattree: 36, flowers: 22, station: 40,
   food: 22, toy: 20, bed: 26, scratch: 20 };   // how much open space each needs
 const STATION_LABEL = { fishing: "fishing dock", bakery: "bakery oven", sunbeam: "sunbeam", garden: "catmint patch" };
 const COMFORT_TYPES = new Set(["food", "toy", "bed", "scratch"]);
@@ -4502,10 +4545,11 @@ function finishPlacing() {
     G.cosmetics.decorPos = G.cosmetics.decorPos || {};
     G.cosmetics.decorPos[key] = spot;
     rebuildAttractors();                 // re-derive obstacles / nap + work spots
-    if (_placing.dtype === "cottage") {  // a cat napping in the cottage that just moved: wake it, let it wander out
+    if (_placing.dtype === "cottage" || _placing.dtype === "cattree") {  // a cat tucked into the piece that just moved: wake it, let it wander out
       for (const c of cats) if (c.state === "indoors") {
         c.state = "loafing"; c.stateT = 0; c.stateDur = rand(2, 5);
-        c._arriveState = null; c._cotX = null; c._cotY = null; c.tx = c.x; c.ty = c.y;
+        if (c._cotY != null) c.y = c._cotY;   // a cat up on the tree hops back down to the ground
+        c._arriveState = null; c._cotX = null; c._cotY = null; c._perchKind = null; c._faceY = null; c.tx = c.x; c.ty = c.y;
       }
     }
   }
@@ -5250,6 +5294,10 @@ const FISH_LABEL = { cast:"casting a line", wait:"waiting for a bite", bite:"got
 function updateCatCard() {
   if (!cardCat || cc.el.hidden) return;
   let s = STATE_LABEL[cardCat.state] || cardCat.state;
+  if (cardCat.state === "indoors") s = cardCat._perchKind === "perch" ? "up on the cat tree"
+    : cardCat._perchKind === "cubby" ? "tucked in the cat tree"
+    : cardCat._perchKind === "step" ? "loafing on the cat tree"
+    : "curled up in the cottage";
   if (cardCat._station === "fishing" && cardCat._fx) s = FISH_LABEL[cardCat._fx.p] || s;
   if (cardCat._purredThisRun && cardCat.state === "being_pet" && performance.now() - (cardCat._purring || 0) < 2000) s = "purring 🧡";
   cc.state.textContent = s;
@@ -5487,6 +5535,8 @@ const SHOP = [
     base:30, mul:1.7, get:()=>G.decor.tree, buy:()=>{ G.decor.tree++; rebuildAttractors(); }, remove:()=>{ G.decor.tree--; dropDecorPos("tree", G.decor.tree); rebuildAttractors(); } },
   { key:"cottage", cat:"comforts", type:"cottage", name:"Cat cottage", desc:"A little house cats curl up inside to sleep. +2 capacity.",
     base:55, mul:1.8, get:()=>G.decor.cottage, buy:()=>{ G.decor.cottage++; rebuildAttractors(); }, remove:()=>{ G.decor.cottage--; dropDecorPos("cottage", G.decor.cottage); rebuildAttractors(); } },
+  { key:"cattree", cat:"comforts", type:"cattree", name:"Cat tree", desc:"Three levels — a low step to loaf on, a cubby to hide in, and a perch on top to survey the whole cove from. Climbers love it. +3 capacity.",
+    base:52, mul:1.75, get:()=>G.decor.cattree, buy:()=>{ G.decor.cattree++; rebuildAttractors(); }, remove:()=>{ G.decor.cattree--; dropDecorPos("cattree", G.decor.cattree); rebuildAttractors(); } },
   { key:"flowers", cat:"comforts", type:"flowers", name:"Flower patch", desc:"Just pretty. Raises everyone's baseline mood a little.",
     base:14, mul:1.5, get:()=>G.decor.flowers, buy:()=>{ G.decor.flowers++; rebuildAttractors(); }, remove:()=>{ G.decor.flowers--; dropDecorPos("flowers", G.decor.flowers); rebuildAttractors(); } },
   { key:"fishing", cat:"stations", name:"Fishing dock", desc:"Not for sale — repair the old dock down at the shore. Tap it in the cove.",
@@ -5519,6 +5569,7 @@ const COMFORT_STATE = { food:"eating", toy:"playing", bed:"sleeping", cottage:"s
   fishing:"fishing", bakery:"baking", sunbeam:"sunbathing", garden:"rolling" };
 // send a couple of free cats straight over to a freshly placed comfort
 function welcomeToComfort(type) {
+  if (type === "cattree") { welcomeToCattree(); return; }
   const spots = attractors.filter(a => a.type === type);
   if (!spots.length) return;
   const a = spots[spots.length - 1];
@@ -5533,6 +5584,21 @@ function welcomeToComfort(type) {
     c._pendStation = isStation ? type : null;
     go(c, "seeking", 18, { x: a.x + rand(-14, 14), y: a.y + rand(-8, 8) });
   }
+}
+// a freshly placed cat tree: send a cat to each level so all three read at once
+function welcomeToCattree() {
+  const d = [...decor].reverse().find(x => x.type === "cattree");
+  if (!d) return;
+  const free = cats
+    .filter(c => !["arriving", "being_pet", "sulking", "indoors"].includes(c.state))
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3);
+  ["perch", "cubby", "step"].slice(0, free.length).forEach((kind, i) => {
+    const c = free[i];
+    c._arriveState = "indoors"; c._arriveDur = rand(24, 46);
+    c._cotX = d.x; c._cotY = d.y; c._perchKind = kind;
+    go(c, "seeking", 18, { x: d.x + (kind === "step" ? -22 : 6), y: d.y + 8 });
+  });
 }
 function priceOf(item) { return Math.round(item.base * Math.pow(item.mul, item.get())); }
 function boostPrice() { return Math.round(180 * Math.pow(1.3, G.boostBuys || 0)); }
@@ -5682,7 +5748,7 @@ function shopItemRow(item) {
     } else if (item.type) {
       welcomeToComfort(item.type);
       const verb = item.type === "food" ? "eat" : item.type === "toy" ? "play" : item.type === "scratch" ? "have a scratch"
-        : item.type === "tree" ? "doze in the shade" : item.type === "fishing" ? "fish" : item.type === "bakery" ? "help out"
+        : item.type === "tree" ? "doze in the shade" : item.type === "cattree" ? "climb it" : item.type === "fishing" ? "fish" : item.type === "bakery" ? "help out"
         : item.type === "sunbeam" ? "sunbathe" : item.type === "garden" ? "roll in the catmint" : "nap";
       toast(`New ${item.name.toLowerCase()} — cats are heading over to ${verb}`);
     }
@@ -13733,6 +13799,39 @@ function drawDecor(g, d) {
     g.beginPath(); g.arc(16, -14, 5, 0, 7); g.fill();
     g.strokeStyle = "rgba(0,0,0,0.2)"; g.lineWidth = 1;
     g.beginPath(); g.moveTo(16, -19); g.lineTo(16, -9); g.moveTo(11, -14); g.lineTo(21, -14); g.stroke();
+  } else if (d.type === "cattree") {
+    // three levels: a low step, a cubby, a top perch — flat sticker style, sisal + felt + warm wood
+    const sway = Math.sin(performance.now() / 900 + (d.seed % 10)) * 3;
+    g.fillStyle = "rgba(36,31,23,0.14)";
+    g.beginPath(); g.ellipse(0, 9, 34, 10, 0, 0, 7); g.fill();
+    g.fillStyle = "#7d6039"; g.beginPath(); g.ellipse(0, 3, 26, 9, 0, 0, 7); g.fill();
+    g.fillStyle = "#8f6f4a"; g.beginPath(); g.ellipse(0, -3, 20, 6, 0, 0, 7); g.fill();
+    const post = (px, top, bot, w) => {
+      g.fillStyle = "#c9b487"; roundRect(g, px - w / 2, top, w, bot - top, 4); g.fill();
+      g.fillStyle = "#bda676"; roundRect(g, px - w / 2, top, w, 6, 4); g.fill();
+      g.strokeStyle = "rgba(120,95,55,0.28)"; g.lineWidth = 1.2;
+      for (let y = top + 8; y < bot - 3; y += 5) { g.beginPath(); g.moveTo(px - w / 2 + 1.5, y); g.lineTo(px + w / 2 - 1.5, y - 1.5); g.stroke(); }
+    };
+    const plat = (px, py, rw) => {
+      g.fillStyle = "#9a7040"; g.beginPath(); g.ellipse(px, py + 3, rw + 2, (rw + 2) * 0.32, 0, 0, 7); g.fill();
+      g.fillStyle = "#b98a52"; g.beginPath(); g.ellipse(px, py, rw, rw * 0.32, 0, 0, 7); g.fill();
+      g.fillStyle = "#cda06a"; g.beginPath(); g.ellipse(px, py - 2, rw * 0.8, rw * 0.26, 0, 0, 7); g.fill();
+    };
+    post(-32, -26, 2, 12);            // level 1 — low step stub
+    plat(-32, -26, 15);
+    post(2, -152, 2, 16);             // main post up the middle
+    g.fillStyle = "#a5794c"; roundRect(g, -24, -100, 48, 38, 7); g.fill();      // level 2 — cubby box
+    g.fillStyle = "rgba(0,0,0,0.06)"; roundRect(g, -24, -74, 48, 12, 7); g.fill();
+    g.fillStyle = "#6f5136"; g.beginPath(); g.ellipse(0, -82, 13, 12, 0, 0, 7); g.fill();
+    g.fillStyle = "#b98a52"; roundRect(g, -26, -104, 52, 8, 4); g.fill();
+    plat(5, -152, 23);               // level 3 — top perch
+    g.strokeStyle = "#bda676"; g.lineWidth = 3.5; g.lineCap = "round";
+    g.beginPath(); g.moveTo(-13, -153); g.quadraticCurveTo(-15, -167, -1, -167); g.lineTo(17, -167); g.stroke();
+    g.strokeStyle = "#9a8258"; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(25, -150); g.quadraticCurveTo(27 + sway, -140, 25 + sway, -130); g.stroke();
+    g.fillStyle = "#d98b3f"; g.beginPath(); g.arc(25 + sway, -126, 5.5, 0, 7); g.fill();
+    g.strokeStyle = "rgba(0,0,0,0.12)"; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(20 + sway, -126); g.quadraticCurveTo(25 + sway, -131, 30 + sway, -126); g.stroke();
   } else if (d.type === "flowers") {         // flower patch
     const r = mulberry32(d.seed >>> 0);
     g.fillStyle = "rgba(36,31,23,0.08)";
@@ -13762,7 +13861,7 @@ function drawCottageFace(g, c) {
   const t = performance.now() / 1000;
   const peek = Math.sin(c.stateT * 0.6 + (c.markSeed || 0)) > 0.5;   // brief awake windows
   g.save();
-  g.translate(c.x, (c._cotY || c.y) - 1);
+  g.translate(c.x, c._faceY != null ? c._faceY : (c._cotY || c.y) - 1);
   g.fillStyle = "rgba(18,14,10,0.55)";
   g.beginPath();
   g.moveTo(-8.5, 9); g.lineTo(-8.5, -9); g.quadraticCurveTo(0, -19, 8.5, -9); g.lineTo(8.5, 9); g.closePath(); g.fill();
@@ -16245,7 +16344,10 @@ function renderScene(dt) {
   for (const it of layer) {
     if (it.a) { drawAttractor(ctx, it.a); continue; }
     if (it.c) {
-      if (it.c.state === "indoors") { drawCottageFace(ctx, it.c); continue; }   // it's inside — just a face at the door
+      if (it.c.state === "indoors") {
+        if (it.c._perchKind === "perch" || it.c._perchKind === "step") { drawCat(ctx, it.c, false); continue; }   // out in the open on the cat tree
+        drawCottageFace(ctx, it.c); continue;   // tucked in the cottage / cat-tree cubby — a face peeking out
+      }
       if (it.c._ill && !_perfLite) drawIllAura(ctx, it.c);
       drawCat(ctx, it.c, false);
       if (it.c.state === "fishing" && it.c._station === "fishing" && it.c._fx) drawFishingRig(ctx, it.c);
