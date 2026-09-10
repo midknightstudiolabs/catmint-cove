@@ -1,0 +1,173 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Cat tree — mock</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{ --ground:#EEF0E7; --panel:#F7F8F2; --line:#D3D6C4; --ink:#221D16; --soft:#4C4536;
+    --serif:"Fraunces","Georgia",serif; --sans:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ --ground:#14120C; --panel:#1D1A12; --line:#332E22; --ink:#ECE4D5; --soft:#B8AE9A; } }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.5 var(--sans);padding:28px 20px 48px;}
+  .wrap{max-width:900px;margin:0 auto;}
+  h1{font:600 1.5rem/1.15 var(--serif);margin:0 0 .3rem;}
+  p.lede{color:var(--soft);margin:0 0 1.8rem;max-width:44rem;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 14px 16px;text-align:center;}
+  .card canvas{width:100%;height:auto;display:block;background:
+    linear-gradient(#dfe7d6,#e9efdf);border-radius:12px;}
+  .card h2{font:600 1rem/1.2 var(--sans);margin:.7rem 0 .15rem;}
+  .card p{font-size:.82rem;color:var(--soft);margin:0;line-height:1.45;}
+  .note{margin-top:2rem;font-size:.82rem;color:var(--soft);line-height:1.6;border-top:1px solid var(--line);padding-top:14px;}
+  .note b{color:var(--ink);}
+</style>
+
+<div class="wrap">
+  <h1>Cat tree — how it could look</h1>
+  <p class="lede">Same flat sticker style as the bowls, beds and the scratch pad — wood posts,
+    sisal wrap, felt platforms, the game's terracotta / cream / warm-wood palette. A cat loafs
+    on the top perch (new "perched up high" spot). Three shapes to pick from.</p>
+
+  <div class="grid">
+    <div class="card"><canvas id="c1" width="440" height="480"></canvas>
+      <h2>A · The simple perch</h2>
+      <p>One post, one round top platform, a dangling felt ball. Smallest footprint — reads clearly at any size. +1 capacity.</p></div>
+    <div class="card"><canvas id="c2" width="440" height="480"></canvas>
+      <h2>B · Two-tier</h2>
+      <p>A mid step and a top perch, offset posts. A cat can nap on the lower one while another watches from the top. +2 capacity.</p></div>
+    <div class="card"><canvas id="c3" width="440" height="480"></canvas>
+      <h2>C · Perch + cubby</h2>
+      <p>An open box cats curl up inside, a platform on top. The cosiest — closest to the cat cottage but vertical. +2 capacity.</p></div>
+  </div>
+
+  <p class="note">These are quick vector mocks in the game's style, not final art. Pick a shape
+    (or mix — "B but with C's cubby") and I'll draw it properly in <b>drawAttractor</b>, add the
+    Comforts shop entry, the <b>type</b>, and a "perched up high" cat state (climb up, loaf on top,
+    survey the cove, hop down). Cats with the <b>climber</b> trait would favour it.</p>
+</div>
+
+<script>
+(() => {
+  const W = 440, H = 480;
+  // palette — pulled from index.html's drawAttractor / drawDecor
+  const P = {
+    shadow:"rgba(36,31,23,0.13)",
+    baseDark:"#7d6039", baseMid:"#8f6f4a",
+    postFelt:"#c9b487", postFeltDark:"#bda676", sisal:"rgba(120,95,55,0.28)",
+    plat:"#b98a52", platTop:"#cda06a", platRim:"#9a7040",
+    cubby:"#a5794c", cubbyIn:"#6f5136",
+    ballStr:"#9a8258", ball:"#d98b3f",
+    catBody:"#8a949e", catBelly:"#c7cac9", catStripe:"#67717b",
+    catEar:"#6d7681", catInner:"#c99a9a", eye:"#2e241b", nose:"#c98f8f",
+  };
+  const R = (g,x,y,w,h,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();};
+
+  // a small seated loaf cat, centred at (0,0) = its feet/base
+  function loafCat(g, s = 1, sleeping = false) {
+    g.save(); g.scale(s, s);
+    g.fillStyle = P.shadow; g.beginPath(); g.ellipse(0, 2, 30, 8, 0, 0, 7); g.fill();
+    // ears (behind)
+    g.fillStyle = P.catEar;
+    g.beginPath(); g.moveTo(-15,-30); g.lineTo(-22,-46); g.lineTo(-6,-34); g.closePath();
+    g.moveTo(15,-30); g.lineTo(22,-46); g.lineTo(6,-34); g.closePath(); g.fill();
+    // body — wide loaf
+    g.fillStyle = P.catBody;
+    R(g,-27,-38,54,42,20); g.fill();
+    // belly
+    g.fillStyle = P.catBelly; g.globalAlpha=.75;
+    g.beginPath(); g.ellipse(2,-6,20,9,0,0,7); g.fill(); g.globalAlpha=1;
+    // tabby stripes
+    g.strokeStyle = P.catStripe; g.lineWidth=2.4; g.lineCap="round"; g.globalAlpha=.5;
+    for (const x of [-14,-4,6,16]) { g.beginPath(); g.moveTo(x,-34); g.lineTo(x+2,-20); g.stroke(); }
+    g.globalAlpha=1;
+    // tail curling round the front
+    g.strokeStyle = P.catBody; g.lineWidth=8; g.lineCap="round";
+    g.beginPath(); g.moveTo(24,-4); g.quadraticCurveTo(30,4,10,4); g.stroke();
+    // face
+    g.fillStyle = P.catInner;
+    g.beginPath(); g.moveTo(-13,-30) ; g.lineTo(-18,-42); g.lineTo(-7,-33); g.closePath();
+    g.moveTo(13,-30); g.lineTo(18,-42); g.lineTo(7,-33); g.closePath(); g.fill();
+    g.fillStyle = P.eye;
+    if (sleeping) {
+      g.strokeStyle=P.eye; g.lineWidth=1.6;
+      g.beginPath(); g.moveTo(-9,-24); g.quadraticCurveTo(-6,-22,-3,-24);
+      g.moveTo(3,-24); g.quadraticCurveTo(6,-22,9,-24); g.stroke();
+    } else {
+      g.beginPath(); g.arc(-6,-24,2.1,0,7); g.arc(6,-24,2.1,0,7); g.fill();
+    }
+    g.fillStyle = P.nose; g.beginPath(); g.moveTo(-2,-20); g.lineTo(2,-20); g.lineTo(0,-18); g.closePath(); g.fill();
+    g.restore();
+  }
+
+  function base(g) {
+    g.fillStyle = P.shadow; g.beginPath(); g.ellipse(0, 6, 92, 20, 0, 0, 7); g.fill();
+    g.fillStyle = P.baseDark; g.beginPath(); g.ellipse(0, 0, 78, 17, 0, 0, 7); g.fill();
+    g.fillStyle = P.baseMid;  g.beginPath(); g.ellipse(0, -5, 66, 14, 0, 0, 7); g.fill();
+  }
+  function post(g, x, topY, botY) {
+    g.fillStyle = P.postFelt; R(g, x-13, topY, 26, botY-topY, 8); g.fill();
+    g.fillStyle = P.postFeltDark; R(g, x-13, topY, 26, 10, 8); g.fill();
+    g.strokeStyle = P.sisal; g.lineWidth = 1.4;
+    for (let y = topY+8; y < botY-4; y += 7) { g.beginPath(); g.moveTo(x-11, y); g.lineTo(x+11, y-2); g.stroke(); }
+  }
+  function platform(g, x, y, rw) {
+    g.fillStyle = P.platRim; g.beginPath(); g.ellipse(x, y+6, rw+4, (rw+4)*0.34, 0, 0, 7); g.fill();
+    g.fillStyle = P.plat;    g.beginPath(); g.ellipse(x, y,   rw,   rw*0.34, 0, 0, 7); g.fill();
+    g.fillStyle = P.platTop; g.beginPath(); g.ellipse(x, y-3, rw*0.82, rw*0.28, 0, 0, 7); g.fill();
+  }
+  function danglyBall(g, x, y) {
+    g.strokeStyle = P.ballStr; g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x+6, y+14, x+3, y+26); g.stroke();
+    g.fillStyle = P.ball; g.beginPath(); g.arc(x+3, y+29, 5.5, 0, 7); g.fill();
+    g.strokeStyle = "rgba(0,0,0,.12)"; g.lineWidth = 1.1;
+    g.beginPath(); g.moveTo(x-2, y+29); g.quadraticCurveTo(x+3, y+24, x+8, y+29); g.stroke();
+  }
+
+  function drawA(g) {
+    g.translate(W/2, 360);
+    base(g);
+    post(g, 0, -170, -6);
+    platform(g, 0, -178, 52);
+    danglyBall(g, 40, -172);
+    g.save(); g.translate(0, -190); loafCat(g, 1.05); g.restore();
+  }
+  function drawB(g) {
+    g.translate(W/2, 372);
+    base(g);
+    post(g, -22, -110, -6);
+    platform(g, -22, -118, 44);
+    post(g, 18, -210, -100);
+    platform(g, 18, -218, 46);
+    danglyBall(g, -52, -112);
+    g.save(); g.translate(-24, -132); loafCat(g, 0.9, true); g.restore();   // napper on the low step
+    g.save(); g.translate(18, -230); loafCat(g, 1.0); g.restore();          // watcher up top
+  }
+  function drawC(g) {
+    g.translate(W/2, 372);
+    base(g);
+    post(g, 0, -96, -6);
+    // cubby
+    g.fillStyle = P.cubby; R(g, -50, -150, 100, 66, 12); g.fill();
+    g.fillStyle = P.cubbyIn; g.beginPath(); g.ellipse(0, -112, 26, 22, 0, 0, 7); g.fill();
+    g.fillStyle = P.cubby; R(g, -50, -150, 100, 12, 12); g.fill();
+    // a face peeking from the cubby
+    g.save(); g.translate(0, -100); g.scale(0.62, 0.62);
+    g.fillStyle = P.catEar; g.beginPath();
+    g.moveTo(-15,-30); g.lineTo(-22,-46); g.lineTo(-6,-34); g.closePath();
+    g.moveTo(15,-30); g.lineTo(22,-46); g.lineTo(6,-34); g.closePath(); g.fill();
+    g.fillStyle = P.catBody; R(g,-24,-36,48,34,18); g.fill();
+    g.fillStyle = P.eye; g.beginPath(); g.arc(-6,-22,2.3,0,7); g.arc(6,-22,2.3,0,7); g.fill();
+    g.fillStyle = P.nose; g.beginPath(); g.moveTo(-2,-18); g.lineTo(2,-18); g.lineTo(0,-16); g.closePath(); g.fill();
+    g.restore();
+    // top platform + cat
+    platform(g, 8, -180, 48);
+    danglyBall(g, -42, -150);
+    g.save(); g.translate(8, -192); loafCat(g, 1.0); g.restore();
+  }
+
+  for (const [id, fn] of [["c1", drawA], ["c2", drawB], ["c3", drawC]]) {
+    const cv = document.getElementById(id), g = cv.getContext("2d");
+    g.clearRect(0,0,W,H);
+    g.save(); fn(g); g.restore();
+  }
+})();
+</script>
