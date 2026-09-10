@@ -9124,13 +9124,14 @@ function runFestCountdown() {
     else setTimeout(() => {
       if (mySeq !== _festCdSeq) return;
       el.hidden = true;
-      // volleyball / tug / café: the bed starts HERE, on "Go!" — the picker + countdown
-      // run over just the crowd murmur, so you're not soaking in the loop before you play
-      if (festKind === "volley") { startFestBed("volley"); volleyBegin(); return; }
-      if (festKind === "midk") { startFestBed("tug"); midkBegin(); return; }
-      if (festKind === "cafe") { startCafeBed(); cafeBegin(); return; }
-      racePhase = "run";
-      document.getElementById("festSkip").hidden = false;
+      // play starts on "Go!"; the bed swells in ~0.9s later so the horn lands
+      // clean and there's a beat of gameplay before the music arrives
+      let bedFor = null;
+      if (festKind === "volley") { volleyBegin(); bedFor = () => startFestBed("volley"); }
+      else if (festKind === "midk") { midkBegin(); bedFor = () => startFestBed("tug"); }
+      else if (festKind === "cafe") { cafeBegin(); bedFor = () => startCafeBed(); }
+      else { racePhase = "run"; document.getElementById("festSkip").hidden = false; }
+      if (bedFor) setTimeout(() => { if (mySeq === _festCdSeq && festMode) bedFor(); }, 900);
     }, 500);
   })();
 }
