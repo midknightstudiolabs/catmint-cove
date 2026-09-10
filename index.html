@@ -9407,7 +9407,7 @@ function stopVolleyBed() {
    track it reads as the music moving, not cutting. Rides festBus for the
    Sound panel + mute. Crowd murmur (festMurmur) runs under all of it; the
    calliope (scheduleFestMelody) is a fallback for when a clip won't load. ---- */
-const FEST_BED_LVL = 0.28, FEST_BED_LVL_VOLLEY = 0.2;   // every activity track is loudness-matched (~-18 LUFS) and sits well back — the crowd/room stays on top
+const FEST_BED_LVL = 0.44, FEST_BED_LVL_VOLLEY = 0.32;   // every activity track is loudness-matched (~-18 LUFS); this sits it under the crowd/room without burying it
 let _festBedBufs = {}, _festBed = null, _festBedGen = 0;   // section -> AudioBuffer|false ; _festBed = { g, src, section }
 function festBedTarget() { return muted ? 0.0001 : (_volleyBed ? FEST_BED_LVL_VOLLEY : FEST_BED_LVL); }
 // iOS WKWebView won't fetch() a bundled capacitor:// asset (same reason SFX_DATA
