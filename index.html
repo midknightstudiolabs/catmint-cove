@@ -1654,7 +1654,9 @@ const NAMES = ["Biscuit","Miso","Pixel","Tofu","Clover","Waffle","Sardine","Pebb
   "Heuna","Vicas","Astra","Hampiyah","Marcel","Victor","Boots","Pickle","Shadow","Melon",
   "Caramel","Choco","Cream","Fluff","Coco","Milk","Berry","Moon","Blue","Milo",
   "Pillow","Strawberry","Black","Cutie","Snowball","Bambi","Twinkle","Star","Heart","Princess",
-  "Duke","Prince","Spot","Sparkle","Vanilla","Coffee","Blanket"];
+  "Duke","Prince","Spot","Sparkle","Vanilla","Coffee","Blanket","Happy"];
+// a few names arrive with a fixed coat, no matter what the roll said
+const NAME_COAT = { Happy: "black" };   // Happy is always a black cat
 
 /* ---------- game state ---------- */
 let G = null;
@@ -2430,6 +2432,7 @@ class Cat {
     this.name = o.name || uniqueName();
     this.traits = o.traits || rollTraits();
     this.coatKey = o.coatKey || (COAT_BY_KEY[o.coat] ? o.coat : weightedCoat());
+    if (NAME_COAT[this.name]) this.coatKey = NAME_COAT[this.name];   // name-locked coats — Happy is always a black cat, no exceptions
     this.mascot = o.mascot || !!(COAT_BY_KEY[this.coatKey] && COAT_BY_KEY[this.coatKey].mascot);
     this.visitor = !!o.visitor || !!(COAT_BY_KEY[this.coatKey] && COAT_BY_KEY[this.coatKey].visitor);   // a guest, not a resident
     this.markSeed = o.markSeed ?? (this.mascot ? 424242 : (Math.random() * 1e9 | 0));
