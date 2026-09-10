@@ -2194,7 +2194,7 @@ function rebuildAttractors() {
   obstacles = [];
   for (const d of decor) {
     if (d.type === "tree")    obstacles.push({ x: d.x, y: d.y - 2,  rx: 15, ry: 13 });
-    if (d.type === "cattree") obstacles.push({ x: d.x, y: d.y - 8,  rx: 22, ry: 15 });
+    if (d.type === "cattree") obstacles.push({ x: d.x, y: d.y - 10, rx: 19, ry: 12 });
     if (d.type === "cottage") obstacles.push({ x: d.x, y: d.y - 12, rx: 28, ry: 22 });
     if (d.type === "flowers") obstacles.push({ x: d.x, y: d.y - 2,  rx: 20, ry: 12 });
     // the fishing pond is drawn at station-local (64, 24), ~92×34 — cover it, and
@@ -3585,11 +3585,11 @@ function updateCat(c, dt) {
   // on a small screen has them all endlessly micro-drifting ("sleeping cat is
   // moving"). Once a held cat has room it goes perfectly still.
   let crowded = false, hardStacked = false, crowdPush = 0;
-  if (c.state !== "being_pet" && c.state !== "zooming" && c.state !== "tag") {
+  if (c.state !== "being_pet" && c.state !== "zooming" && c.state !== "tag" && !c._perchKind) {
     let sx = 0, sy = 0, hits = 0;
     const R = held ? 34 : 52;
     for (const o of cats) {
-      if (o === c || o === c.partner) continue;   // sit close to a friend on purpose
+      if (o === c || o === c.partner || o._perchKind) continue;   // sit close to a friend on purpose; a cat up the cat tree is out of everyone's way
       let ox = c.x - o.x, oy = (c.y - o.y) * 0.55;   // vertical proximity matters less — the y-sort layers them by depth
       let od = Math.hypot(ox, oy);
       if (od < 0.001) { ox = (Math.random() - 0.5); oy = (Math.random() - 0.5); od = Math.hypot(ox, oy) || 1; }  // exact overlap → break the tie
@@ -13854,18 +13854,21 @@ function drawDecor(g, d) {
   }
   g.restore();
 }
-// a cat napping inside the cottage — a face (or, for a dark cat, just eyes) at the door
-function drawCottageFace(g, c) {
+// a cat napping inside the cottage / cat-tree cubby — a face (or, for a dark cat
+// in the cottage, just eyes) at the opening. `cubby` cats always show a full head
+// so the level reads even for a black cat, and are lit a touch brighter.
+function drawCottageFace(g, c, cubby) {
   const coat = c.coat;
   const dark = coatLum(coat.base) < 0.30;
   const t = performance.now() / 1000;
   const peek = Math.sin(c.stateT * 0.6 + (c.markSeed || 0)) > 0.5;   // brief awake windows
+  const showHead = cubby || !dark;
   g.save();
   g.translate(c.x, c._faceY != null ? c._faceY : (c._cotY || c.y) - 1);
-  g.fillStyle = "rgba(18,14,10,0.55)";
+  g.fillStyle = cubby ? "rgba(24,17,10,0.4)" : "rgba(18,14,10,0.55)";
   g.beginPath();
   g.moveTo(-8.5, 9); g.lineTo(-8.5, -9); g.quadraticCurveTo(0, -19, 8.5, -9); g.lineTo(8.5, 9); g.closePath(); g.fill();
-  if (dark) {
+  if (!showHead) {
     if (peek) {
       g.fillStyle = coat.eye || "#e0b24b";
       g.beginPath(); g.ellipse(-3, -1, 1.7, 1.3, 0, 0, 7); g.ellipse(3, -1, 1.7, 1.3, 0, 0, 7); g.fill();
@@ -13876,14 +13879,15 @@ function drawCottageFace(g, c) {
     g.fillStyle = coat.base;
     g.beginPath(); g.ellipse(0, -1, 8.5, 7.5, 0, 0, 7); g.fill();
     for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s * 3.5, -6); g.lineTo(s * 8, -13); g.lineTo(s * 8, -4); g.closePath(); g.fill(); }
+    if (dark) { g.strokeStyle = "rgba(255,255,255,0.14)"; g.lineWidth = 1; g.beginPath(); g.ellipse(0, -1, 8.5, 7.5, 0, 0, 7); g.stroke(); }
     g.fillStyle = coat.white && coat.white.includes("muzzle") ? "#f8f5ee" : coat.base;
     g.beginPath(); g.ellipse(0, 3, 4.2, 3.2, 0, 0, 7); g.fill();
     if (peek) {
       g.fillStyle = coat.eye || "#c98b4b";
       g.beginPath(); g.ellipse(-3, -1, 1.5, 1.7, 0, 0, 7); g.ellipse(3, -1, 1.5, 1.7, 0, 0, 7); g.fill();
     } else {
-      g.strokeStyle = "#3a322a"; g.lineWidth = 1.1; g.lineCap = "round";
-      g.beginPath(); g.moveTo(-4.5, -1); g.quadraticCurveTo(-3, 0.6, -1.5, -1); g.moveTo(1.5, -1); g.quadraticCurveTo(3, 0.6, 4.5, -1); g.stroke();
+      g.strokeStyle = dark ? "rgba(240,235,225,0.5)" : "#3a322a"; g.lineWidth = 1.2; g.lineCap = "round";
+      g.beginPath(); g.moveTo(-4.5, -1); g.quadraticCurveTo(-3, 0.9, -1.5, -1); g.moveTo(1.5, -1); g.quadraticCurveTo(3, 0.9, 4.5, -1); g.stroke();
     }
     g.fillStyle = coat.nose || "#c77f86";
     g.beginPath(); g.moveTo(-1, 2); g.lineTo(1, 2); g.lineTo(0, 3.4); g.closePath(); g.fill();
@@ -14423,7 +14427,9 @@ function drawStation(g, kind, seed) {
 }
 function drawDecorLayer(g) {
   const skip = _placing && _placing.kind === "decor" ? _placing.key : null;
-  for (const d of decor) { if (skip && d.dkey === skip) continue; drawDecor(g, d); }   // kept y-sorted by rebuildDecor()
+  // the cat tree is tall and cats sit on it — it rides the main y-sort instead
+  // (see renderScene) so cats pass in front of / behind it at the right depth
+  for (const d of decor) { if ((skip && d.dkey === skip) || d.type === "cattree") continue; drawDecor(g, d); }
 }
 function drawFish(g, x, y, rot, col, sc) {
   g.save(); g.translate(x, y); g.rotate(rot); g.scale(sc, sc);
@@ -15260,7 +15266,9 @@ function tabbyMarks(g, c, P, coat) {
 function drawCat(g, c, isPhoto) {
   const t = performance.now() / 1000;
   const coat = c.coat;
-  const asleep = c.state === "sleeping";
+  // a cat up on the cat tree's step or perch is settled in for a nap — draw it asleep
+  const onTreeNap = c.state === "indoors" && (c._perchKind === "perch" || c._perchKind === "step");
+  const asleep = c.state === "sleeping" || onTreeNap;
   // adaptive detail: on a struggling device, non-focused cats lose the extras
   // (fine coat markings, whiskers, auras). Also always for a curled sleeping cat
   // in a big rest-mode nap pile — the markings are invisible there anyway and
@@ -15281,7 +15289,9 @@ function drawCat(g, c, isPhoto) {
   const asking = c.state === "wantpet" && (c.walkAmt || 0) < 0.06;
   const pose = asleep ? "sleep" : playing ? "play"
              : (c.state === "socializing" || grooming || scratching || asking) ? "sit" : "rest";
-  const sleepStyle = asleep ? ((c.markSeed || 0) % 3) : 0;   // 0 loaf · 1 curl · 2 side-flop (stable per cat)
+  // 0 loaf · 1 curl · 2 side-flop (stable per cat). on the tree always the loaf —
+  // it fits the platform and keeps the face out over the cove.
+  const sleepStyle = !asleep ? 0 : onTreeNap ? 0 : ((c.markSeed || 0) % 3);
   const P = poseParams(pose, sleepStyle);
   if (strK > 0.05) { P.hy += strK * 11; P.hr *= 1 - strK * 0.06; }  // stretch: chin & chest sink toward the ground
   if (c._boop > 0 && c.partner) {   // lean the head in for a nose boop
@@ -16332,8 +16342,23 @@ function renderScene(dt) {
   // than the viewport, so up to a third of the cast can be scrolled out of view
   const vx = visibleWorldX(), cullL = vx.l - 90, cullR = vx.r + 90;
   const layer = _sceneLayer; layer.length = 0;
-  for (const c of cats) { if (c.state === "indoors" || (c.x >= cullL && c.x <= cullR)) layer.push({ y: c.y, c }); }
+  for (const c of cats) {
+    if (!(c.state === "indoors" || (c.x >= cullL && c.x <= cullR))) continue;
+    // a cat up the cat tree draws at the TREE's depth (just after its post), not
+    // its own lifted screen-y — so cats passing in front cover it and cats behind
+    // stay behind, and the three levels never sort into each other
+    const sy = c._perchKind ? c._cotY - (c._perchKind === "perch" ? 5 : c._perchKind === "cubby" ? 3 : 1) : c.y;
+    layer.push({ y: sy, c });
+  }
   for (const f of foreground) { if (f.x >= cullL && f.x <= cullR) layer.push({ y: f.y, f }); }
+  // the cat tree y-sorts with the cast: it draws just behind whatever cats are on
+  // its levels (their sort-y is d.y − a few px), so a cat in front covers it and
+  // a cat behind stays behind
+  { const dskip = _placing && _placing.kind === "decor" ? _placing.key : null;
+    for (const d of decor) {
+      if (d.type !== "cattree" || (dskip && d.dkey === dskip)) continue;
+      if (d.x >= cullL - 40 && d.x <= cullR + 40) layer.push({ y: d.y - 9, d });
+    } }
   // bowls / beds / toys / scratchers ride the y-sort too, so grass and cats in
   // front of one cover it and it covers what's behind it
   for (const a of attractors) {
@@ -16343,10 +16368,11 @@ function renderScene(dt) {
   layer.sort((a, b) => a.y - b.y);
   for (const it of layer) {
     if (it.a) { drawAttractor(ctx, it.a); continue; }
+    if (it.d) { drawDecor(ctx, it.d); continue; }
     if (it.c) {
       if (it.c.state === "indoors") {
-        if (it.c._perchKind === "perch" || it.c._perchKind === "step") { drawCat(ctx, it.c, false); continue; }   // out in the open on the cat tree
-        drawCottageFace(ctx, it.c); continue;   // tucked in the cottage / cat-tree cubby — a face peeking out
+        if (it.c._perchKind === "perch" || it.c._perchKind === "step") { drawCat(ctx, it.c, false); continue; }   // asleep out in the open on the cat tree
+        drawCottageFace(ctx, it.c, it.c._perchKind === "cubby"); continue;   // tucked in the cottage / cat-tree cubby — a face at the opening
       }
       if (it.c._ill && !_perfLite) drawIllAura(ctx, it.c);
       drawCat(ctx, it.c, false);
