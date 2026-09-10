@@ -7814,7 +7814,8 @@ function _rebuildAudioBeds() {
   if (restMode) startRestAudio();
   else if (festMode) {
     startFestAudio();
-    startFestBed(festKind === "race" ? "race" : festKind === "volley" ? "volley" : "hub");   // restore the slice for wherever we are
+    if (festKind === "cafe" && _cafeRunning) startCafeBed();
+    else startFestBed(festKind === "race" ? "race" : festKind === "volley" ? "volley" : festKind === "midk" ? "tug" : "hub");   // restore the slice for wherever we are
     if (festKind === "volley" && volleyPhase === "play") startVolleyBed();
   }
   applySound();
@@ -7831,7 +7832,7 @@ function _resetAudioContext() {
   // AudioBuffers are bound to the context that decoded them — drop every cached
   // one so loadSfx() / loadRainLoop() re-decode into the fresh context
   for (const k in _sfxBuf) delete _sfxBuf[k];
-  _sfxLoading = false; rainBuffer = null; _festBedBufs = {}; _festWinBuf = null; _cafeBedBuf = null;
+  _sfxLoading = false; rainBuffer = null; _festBedBufs = {}; _festWinBuf = null; _festWin = null; _cafeBedBuf = null;
   actx = null; _audioWasRunning = false; _resumeFails = 0; _audioStale = true;
 }
 // bring audio back after iOS suspends/interrupts it (screen lock, backgrounding,
@@ -9123,9 +9124,11 @@ function runFestCountdown() {
     else setTimeout(() => {
       if (mySeq !== _festCdSeq) return;
       el.hidden = true;
-      if (festKind === "volley") { volleyBegin(); return; }
-      if (festKind === "midk") { midkBegin(); return; }
-      if (festKind === "cafe") { cafeBegin(); return; }
+      // volleyball / tug / café: the bed starts HERE, on "Go!" — the picker + countdown
+      // run over just the crowd murmur, so you're not soaking in the loop before you play
+      if (festKind === "volley") { startFestBed("volley"); volleyBegin(); return; }
+      if (festKind === "midk") { startFestBed("tug"); midkBegin(); return; }
+      if (festKind === "cafe") { startCafeBed(); cafeBegin(); return; }
       racePhase = "run";
       document.getElementById("festSkip").hidden = false;
     }, 500);
@@ -9134,6 +9137,7 @@ function runFestCountdown() {
 // the only exit — wipes back to the cove the same way we arrived, so leaving
 // is one clean motion rather than a cut
 function closeFest() {
+  stopFestWinSting();                       // cut the fanfare the moment you leave
   document.getElementById("festChoose").hidden = true;
   document.getElementById("festPanel").hidden = true;
   document.getElementById("festBoxPanel").hidden = true;
@@ -9171,6 +9175,7 @@ function closeFest() {
     document.getElementById("app").classList.remove("festing");
     document.getElementById("festBar").hidden = true;
     _festDPR = 0; resize();
+    stopFestWinSting();
     stopVolleyBed();
     stopFestAudio();
     for (const c of cats) { c.stateDur = 0; decide(c); }
@@ -9351,6 +9356,7 @@ function _fadeOutFestBed(fast) {
 async function startFestBed(section) {
   section = section || "hub";
   if (!actx || (_festBed && _festBed.section === section)) return;
+  stopFestWinSting();                       // moving on — kill any winner fanfare still ringing
   const switching = !!_festBed;
   if (_festBed) _fadeOutFestBed(true);      // clean reset — old slice fades out fast, then a beat of silence, then the new one
   const gen = ++_festBedGen;
@@ -9373,17 +9379,28 @@ function stopFestBed() {
 // the winning moment — cut the looping bed so the result screen doesn't drone
 // on under an endless loop; a warm flourish + the crowd carry the celebration.
 // The bed comes back when you pick "again" / "The festival" (startFestBed there).
-let _festWinAt = 0, _festWinBuf = null;
+let _festWinAt = 0, _festWinBuf = null, _festWin = null;
+function stopFestWinSting() {
+  if (!_festWin || !actx) { _festWin = null; return; }
+  const w = _festWin; _festWin = null;
+  const t = actx.currentTime;
+  try { rampParam(w.g.gain, 0.0001, 0.25); } catch (e) {}
+  try { w.src.stop(t + 0.3); } catch (e) {}
+  setTimeout(() => { try { w.g.disconnect(); } catch (e) {} }, 500);
+}
 function playFestWinSting() {
   if (!actx) return false;
   const go = () => {
     if (!_festWinBuf) return;
+    stopFestWinSting();
     const g = actx.createGain();
     g.gain.value = muted ? 0.0001 : 0.9;
     g.connect(festBus || musicGain || actx.destination);
     const s = actx.createBufferSource();
     s.buffer = _festWinBuf;
     s.connect(g); s.start();
+    _festWin = { g, src: s };
+    s.onended = () => { if (_festWin && _festWin.src === s) _festWin = null; };
   };
   if (_festWinBuf) { go(); return true; }
   if (_festWinBuf === false) return false;   // tried and failed
@@ -9414,6 +9431,7 @@ function festWinFanfare() {
 let _cafeBed = null, _cafeBedBuf = null;
 async function startCafeBed() {
   if (!actx || _cafeBed) return;
+  stopFestWinSting();
   stopVolleyBed(); stopFestBed();      // the café bed stands alone
   const g = actx.createGain(); g.gain.value = 0.0001;
   g.connect(festBus || musicGain || actx.destination);
@@ -9883,6 +9901,7 @@ document.getElementById("festCancel").addEventListener("click", closeFest);
 document.getElementById("festStart").addEventListener("click", startFestRace);
 // stays on the grounds — reopens the picker in place, no wipe either direction
 document.getElementById("festAgain").addEventListener("click", () => {
+  stopFestWinSting();                       // starting over — cut the fanfare
   document.getElementById("festResult").hidden = true;
   document.getElementById("festBar").hidden = false;   // back to the picker — restore the bottom exit bar
   particles.length = 0; floaters.length = 0;   // last round's zoomies text / confetti shouldn't bleed into this one
@@ -9910,7 +9929,7 @@ document.getElementById("festAgain").addEventListener("click", () => {
   if (festKind === "midk") {
     midkParts = []; midk = null; midkPhase = "idle"; midkCharge = 0; midkSlot = null; festKind = "hub"; festGroundsCats(roster);
     for (const c of cats) { c._chonkBase = 0; c._tugLean = 0; c._vbLift = 0; c.squash = 0; }
-    startFestBed("tug");              // stay on the tug slice for the rematch picker
+    startFestBed("hub");              // rematch picker → back to the hub groove; the tug bed waits for "Go!"
     document.getElementById("midkHud").hidden = true;
     document.getElementById("midkCom").hidden = true;
     renderMidkPickGrid(eligibleForVolley().filter(c => !c.mascot));
@@ -9983,6 +10002,7 @@ function renderFestChooser() {
 // back to the activity list without leaving the grounds — for an activity's own
 // "pick something else" exit (café's board has one)
 function festBackToChooser() {
+  stopFestWinSting();
   const roster = cats.filter(c => !c.visitor);
   document.getElementById("festResult").hidden = true;
   document.getElementById("festBar").hidden = false;
@@ -10646,7 +10666,7 @@ function startCoveVolley() {
   if (volleyPickSel.length !== 3) return;
   if (!volleyPickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats just wandered off."); return; }
   festKind = "volley";
-  startFestBed("volley");              // crossfade down to the mellow breakdown slice
+  stopFestBed();                       // quiet through the countdown — the volley bed starts on "Go!"
   fitFestCanvas();
   matchT = 0; volleyScore = { cove: 0, visit: 0 }; volleyBall = null;
   _vbServeAt = 0; _vbPointAt = 0; _vbResultAt = 0; _vbServer = Math.random() < 0.5 ? "cove" : "visit";
@@ -11643,7 +11663,7 @@ function enterFestMidk() {
   document.getElementById("festChoose").hidden = true;
   document.getElementById("festTime").textContent = "tug of paws";
   trackEvent("midk_card_opened");
-  startFestBed("tug");
+  startFestBed("hub");                 // the picker stays on the hub groove; the tug bed waits for "Go!"
   if (!_midkTutSeen) { document.getElementById("festMidkTut").hidden = false; return; }
   midkShowPicker();
 }
@@ -11657,7 +11677,7 @@ function startCoveMidk() {
   if (midkPickSel.length !== 5) return;
   if (!midkPickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats wandered off."); return; }
   stopVolleyBed();
-  startFestBed("tug");
+  stopFestBed();                       // quiet through the countdown — the tug bed starts on "Go!"
   festKind = "midk";
   fitFestCanvas();
   midkT = 0; midkPhase = "idle"; _midkResultShown = false; _midkWinner = null; _midkFlopAt = 0;
@@ -12331,8 +12351,8 @@ function startCoveCafe() {
   document.getElementById("festBar").hidden = false;
   document.getElementById("festTime").textContent = "catmint café";
   document.getElementById("festResult").hidden = true;
-  startCafeBed();            // the café's own coffee-shop loop
-  runFestCountdown();        // → cafeBegin() at "Go!"
+  stopFestBed();             // quiet through the countdown — the café bed starts on "Go!"
+  runFestCountdown();        // → startCafeBed() + cafeBegin() at "Go!"
   trackEvent("cafe_started", { cats: cafePickSel.map(c => c.name), traits: cafePickSel.map(c => (c.traits || []).slice(0, 2)) });
 }
 function cafeBegin() {
@@ -17614,7 +17634,7 @@ window.__cove = {
       crick: ambience.crickGain.gain.value, bird: ambience.birdGain.gain.value, master: ambience.master.gain.value } : null,
     fest: festBus ? { on: festMode, gain: festBus.gain.value, beat: _festMelodyBeat,
       bed: _festBed ? (_festBed.section + "@" + _festBed.g.gain.value.toFixed(2)) : (_festBedBufs.hub === false ? "failed→calliope" : "off"),
-      beach: !!_volleyBed } : null,
+      beach: !!_volleyBed, cafeBed: !!_cafeBed, winSting: !!_festWin } : null,
     samples: Object.fromEntries(Object.entries(SFX_FILES).map(([k,v]) => [k, v.filter(u => _sfxBuf[u]).length + "/" + v.length])) }; },
   meow(pool = "meow"){ ensureAudio(); return playSample(pool, { vol: 0.6 }); },
   chime(){ ensureAudio(); setTimeout(purchaseChime, 40); return "played the purchase chime"; },
