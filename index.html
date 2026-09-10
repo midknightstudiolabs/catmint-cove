@@ -9394,13 +9394,17 @@ function playFestWinSting() {
     .catch(() => { _festWinBuf = false; try { purchaseChime(); } catch (e) {} });
   return true;
 }
+// the win is decided — cut the looping bed so the cheer / flop plays clean.
 function festWinBreak() {
-  if (performance.now() - _festWinAt < 2500) return;   // one sting per win
-  _festWinAt = performance.now();
   _festBedGen++;                       // don't let an in-flight startFestBed() bring it back
   _fadeOutFestBed(true);               // fast fade + hard stop
   try { stopCafeBed(); } catch (e) {}
-  if (!playFestWinSting()) { try { purchaseChime(); } catch (e) {} }   // the winner's fanfare (fest-win.mp3), warm chime as fallback
+}
+// the result card appears — now the winner's fanfare.
+function festWinFanfare() {
+  if (performance.now() - _festWinAt < 3000) return;   // one per win
+  _festWinAt = performance.now();
+  if (!playFestWinSting()) { try { purchaseChime(); } catch (e) {} }   // fest-win.mp3, warm chime as fallback
 }
 
 /* ---- Catmint Café's own bed — a warmed no-copyright coffee-shop loop
@@ -9587,6 +9591,7 @@ function festReward(place) {
   return { shells: base };
 }
 function showFestPodium() {
+  festWinFanfare();
   const order = festRanking();
   { // the result card is shared with the Box Challenge — put its race face back
     const rc = document.getElementById("festResult");
@@ -11413,6 +11418,7 @@ function vbStatLine(p) {
 }
 function showVolleyResult() {
   _vbResultShown = true;
+  festWinFanfare();
   const won = volleyScore.cove >= 3;
   const res = document.getElementById("festResult");
   res.querySelector("h2").textContent = "Cove Volleyball";
@@ -12088,6 +12094,7 @@ function drawMidkHudCanvas(g) {
 }
 
 function showMidkResult() {
+  festWinFanfare();
   const won = _midkWinner === "cove";
   const res = document.getElementById("festResult");
   res.querySelector("h2").textContent = "Tug of Paws";
@@ -13012,6 +13019,7 @@ function cafeEmployeeOfShift() {
   return { name: best.cat.name, reason: bestReason };
 }
 function showCafeResult() {
+  festWinFanfare();
   const res = document.getElementById("festResult");
   res.querySelector("h2").textContent = "Catmint Café";
   res.querySelector(".fr-emoji").innerHTML = cafeEmblemHTML(58);
