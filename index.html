@@ -7831,7 +7831,7 @@ function _resetAudioContext() {
   // AudioBuffers are bound to the context that decoded them — drop every cached
   // one so loadSfx() / loadRainLoop() re-decode into the fresh context
   for (const k in _sfxBuf) delete _sfxBuf[k];
-  _sfxLoading = false; rainBuffer = null; _festBedBufs = {};
+  _sfxLoading = false; rainBuffer = null; _festBedBufs = {}; _festWinBuf = null; _cafeBedBuf = null;
   actx = null; _audioWasRunning = false; _resumeFails = 0; _audioStale = true;
 }
 // bring audio back after iOS suspends/interrupts it (screen lock, backgrounding,
@@ -9373,14 +9373,34 @@ function stopFestBed() {
 // the winning moment — cut the looping bed so the result screen doesn't drone
 // on under an endless loop; a warm flourish + the crowd carry the celebration.
 // The bed comes back when you pick "again" / "The festival" (startFestBed there).
-let _festWinAt = 0;
+let _festWinAt = 0, _festWinBuf = null;
+function playFestWinSting() {
+  if (!actx) return false;
+  const go = () => {
+    if (!_festWinBuf) return;
+    const g = actx.createGain();
+    g.gain.value = muted ? 0.0001 : 0.9;
+    g.connect(festBus || musicGain || actx.destination);
+    const s = actx.createBufferSource();
+    s.buffer = _festWinBuf;
+    s.connect(g); s.start();
+  };
+  if (_festWinBuf) { go(); return true; }
+  if (_festWinBuf === false) return false;   // tried and failed
+  fetch(bust("fest-win.mp3"))
+    .then(r => r.ok ? r.arrayBuffer() : Promise.reject(0))
+    .then(ab => actx.decodeAudioData(ab))
+    .then(buf => { _festWinBuf = buf; go(); })
+    .catch(() => { _festWinBuf = false; try { purchaseChime(); } catch (e) {} });
+  return true;
+}
 function festWinBreak() {
-  if (performance.now() - _festWinAt < 2500) return;   // one flourish per win
+  if (performance.now() - _festWinAt < 2500) return;   // one sting per win
   _festWinAt = performance.now();
   _festBedGen++;                       // don't let an in-flight startFestBed() bring it back
   _fadeOutFestBed(true);               // fast fade + hard stop
   try { stopCafeBed(); } catch (e) {}
-  try { purchaseChime(); } catch (e) {}   // the game's "something good happened" flourish
+  if (!playFestWinSting()) { try { purchaseChime(); } catch (e) {} }   // the winner's fanfare (fest-win.mp3), warm chime as fallback
 }
 
 /* ---- Catmint Café's own bed — a warmed no-copyright coffee-shop loop
@@ -11696,30 +11716,47 @@ function midkStepCat(p, dt) {
   p.grip = dist < 7 && !asleep;
 
   const live = (midkPhase === "play") && !asleep;
-  const relocating = dist > 9;                  // the rope just dragged them a real distance → take steps
+  const relocating = dist > 9;                  // pushed out of position — trudge back
+  // which way is the rope going for MY side?  gain = toward my flag, loss = being dragged back
+  const myGain = live && ((p.side === "cove" && midk.dir === 1) || (p.side === "visit" && midk.dir === -1));
+  const myLoss = live && ((p.side === "cove" && midk.dir === -1) || (p.side === "visit" && midk.dir === 1));
   const beat = Math.sin(_midkHeave + p.idx * 0.9);
   const yank = Math.max(0, beat);               // 0..1 — the pulling half of the rhythm
 
-  // gait: real stepping when relocating, a small braced shuffle while just holding
-  c.walk = (c.walk || 0) + dt * (relocating ? 7.5 : 3);
-  const wantWalk = asleep ? 0 : relocating ? 0.9 : live && p.grip ? 0.16 : 0.05;
-  c.walkAmt = (c.walkAmt || 0) + (wantWalk - (c.walkAmt || 0)) * Math.min(1, dt * 8);
-  c.trotting = c.walkAmt > 0.05;
-  c.bob = (c.bob || 0) + dt * (relocating ? 9 : 4);
+  c.walk = (c.walk || 0) + dt * (myGain ? 9 : relocating ? 7.5 : 3);
+  c.bob = (c.bob || 0) + dt * (myGain ? 10 : relocating ? 9 : 4);
 
   if (asleep) {
     c.state = "sleeping"; c.walkAmt = 0; c.trotting = false;
     c._tugLean = (c._tugLean || 0) * (1 - Math.min(1, dt * 5));
-    c._vbLift = Math.max(0, (c._vbLift || 0) - dt * 3);
+    c._vbLift = 0;
     c.squash = Math.max(0, (c.squash || 0) - dt * 4);
   } else {
     c.state = "seeking";
-    // heave: lean back on the rope, a touch more on the yank beat — a soft tug-of-war stance
-    const wantLean = live && p.grip ? -(0.07 + 0.07 * yank) : 0;
+    c._vbLift = 0;                               // tug cats keep their feet on the ground — no float
+
+    // gait: WALK forward when our side is winning the tug; SKID (feet planted, sliding)
+    // when we're being dragged toward the other flag
+    let wantWalk;
+    if (myGain && p.grip) wantWalk = 0.85;       // striding the rope home
+    else if (myLoss && p.grip) wantWalk = 0.05;  // dug in and skidding, not stepping
+    else if (live && p.grip) wantWalk = 0.14;    // a braced hold on the stall
+    else wantWalk = relocating ? 0.7 : 0.05;
+    c.walkAmt = (c.walkAmt || 0) + (wantWalk - (c.walkAmt || 0)) * Math.min(1, dt * 9);
+    c.trotting = c.walkAmt > 0.05;
+
+    // lean: dig in HARD when losing (heels down, body back), a lighter lean when winning
+    const wantLean = !p.grip ? 0
+      : myLoss ? -(0.17 + 0.10 * yank)
+      : myGain ? -(0.05 + 0.04 * yank)
+      : -(0.08 + 0.07 * yank);
     c._tugLean = (c._tugLean || 0) + (wantLean - (c._tugLean || 0)) * Math.min(1, dt * 6);
-    c.squash = live && p.grip ? 0.03 + 0.1 * yank : Math.max(0, (c.squash || 0) - dt * 4);
-    const digging = midkAura(p.side) || p._chonk > 0.4;
-    c._vbLift = digging ? Math.min(1, (c._vbLift || 0) + dt * 3) : Math.max(0, (c._vbLift || 0) - dt * 3);
+    c.squash = (myLoss && p.grip) ? 0.06 + 0.12 * yank
+      : (live && p.grip) ? 0.03 + 0.08 * yank
+      : Math.max(0, (c.squash || 0) - dt * 4);
+
+    // a little skid dust kicks up behind a cat being dragged
+    if (myLoss && p.grip && Math.random() < dt * 7) spawnParticles(c.x + (p.side === "cove" ? 5 : -5), c.y + 4, "dust", 1);
   }
 
   // a "BIGGER!" spin grows a puller in place — a slow, visible swell + a settle wobble
