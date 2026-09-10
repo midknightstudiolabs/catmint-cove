@@ -54,7 +54,7 @@
   <h1>Activity BGM — <b>cozy pass</b></h1>
   <p class="lede">New direction: every festival activity gets its own track, the
     way Catmint Café has its own coffee-shop loop — no more slicing one song.
-    Here are the two you sent, warmed for the cove. Pick a treatment for each
+    Here are the three you sent, warmed for the cove. Pick a treatment for each
     (they can differ), then I'll cut the loops and wire them in.</p>
 
   <div class="card" id="c-race">
@@ -75,6 +75,21 @@
   <div class="card" id="c-volley">
     <h2>Cove Volleyball</h2>
     <p class="desc">The rally on the sand.</p>
+    <div class="seg">
+      <button data-t="orig" class="on">Original<small>as you sent it</small></button>
+      <button data-t="warm">Warm<small>light touch</small></button>
+      <button data-t="cozy">Cozy<small>full warm-down</small></button>
+    </div>
+    <div class="row">
+      <button class="play">▶</button>
+      <div class="bar"><span></span></div>
+    </div>
+    <div class="now">playing: <b class="lbl">Original</b> · loops · 30s of the middle of the track</div>
+  </div>
+
+  <div class="card" id="c-tug">
+    <h2>Tug of Paws</h2>
+    <p class="desc">Heave against the visiting cove for the rope.</p>
     <div class="seg">
       <button data-t="orig" class="on">Original<small>as you sent it</small></button>
       <button data-t="warm">Warm<small>light touch</small></button>
@@ -160,5 +175,6 @@
   }
   setup('c-race', 'race');
   setup('c-volley', 'volley');
+  setup('c-tug', 'tug');
 })();
 </script>
