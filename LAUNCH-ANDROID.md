@@ -1,6 +1,6 @@
 # Catmint Cove — Google Play launch runbook
 
-The one ordered checklist to get **Catmint Cove v1.0.0** onto Google Play.
+The one ordered checklist to get **Catmint Cove v2.0.0** onto Google Play.
 Deep detail on the CI / keystore lives in **`STORE-SETUP.md`**; store copy in
 **`STORE-SETUP.md` §2**; the privacy policy text in **`PRIVACY.md`**.
 
@@ -19,7 +19,7 @@ Legend for IDs used throughout:
 - [done] `.github/workflows/android.yml` — builds → signs → optional Play upload.
 - [done] RevenueCat billing wired in `index.html` + `scripts/capacitor-bridge.js`
   (falls back to a simulated purchase until the SDK key is pasted — step 3).
-- [done] Version = **1.0.0** (`package.json`); first tag will be `android-v1.0.0`.
+- [done] Version = **2.0.0** (`package.json`); first tag will be `android-v2.0.0`.
 - [you, have it] Google Play Console developer account, verified.
 - [you, done] RevenueCat account.
 
@@ -114,7 +114,7 @@ the next upload.
 > is `key0`**. Keystore lives on the dev's Google Drive (PKCS12 format, store
 > pw == key pw).
 
-Later builds: `git tag android-v1.0.5 && git push --tags` (or Actions → Run
+Later builds: `git tag android-v2.0.1 && git push --tags` (or Actions → Run
 workflow with a track). Version code = the run number (always increases).
 
 1. GitHub → Actions → **Android build** → *Run workflow* → `track = none` → Run.
@@ -133,7 +133,7 @@ workflow with a track). Version code = the run number (always increases).
 
 Builds `1.0.4` then `1.0.5` (billing) uploaded to Internal testing; tester
 opt-in link + license-test Gmail set up (Play → Settings → License testing,
-`RESPOND_NORMALLY`). Later builds: `git tag android-v1.0.6 && git push --tags`.
+`RESPOND_NORMALLY`). Later builds: `git tag android-v2.0.1 && git push --tags`.
 
 ---
 

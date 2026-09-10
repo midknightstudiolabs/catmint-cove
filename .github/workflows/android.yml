@@ -1,6 +1,6 @@
 name: Android build
 
-# Manual trigger, or push a tag like  android-v1.0.0
+# Manual trigger, or push a tag like  android-v2.0.0
 on:
   workflow_dispatch:
     inputs:
@@ -39,7 +39,7 @@ jobs:
         id: ver
         run: |
           NAME="${GITHUB_REF_NAME#android-v}"
-          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="1.0.$GITHUB_RUN_NUMBER"; fi
+          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="2.0.$GITHUB_RUN_NUMBER"; fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "code=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
 
@@ -83,7 +83,7 @@ jobs:
         run: |
           G=android/app/build.gradle
           sed -i "s/versionCode 1$/versionCode ${{ steps.ver.outputs.code }}/" "$G"
-          sed -i "s/versionName \"1.0\"/versionName \"${{ steps.ver.outputs.name }}\"/" "$G"
+          sed -i -E "s/versionName \"[^\"]*\"/versionName \"${{ steps.ver.outputs.name }}\"/" "$G"
           grep -q "versionCode ${{ steps.ver.outputs.code }}$" "$G" || { echo "::error::versionCode not stamped — Capacitor template format changed, fix the sed"; exit 1; }
           grep -q "versionName \"${{ steps.ver.outputs.name }}\"" "$G" || { echo "::error::versionName not stamped"; exit 1; }
           grep -nE "versionCode|versionName" "$G"

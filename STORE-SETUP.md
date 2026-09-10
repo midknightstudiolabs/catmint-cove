@@ -176,7 +176,7 @@ and paste the whole file into `PLAY_SERVICE_ACCOUNT_JSON`.
    key — use Play App Signing, it's the default).
    - Get that first `.aab`: run the **Android build** workflow (Actions tab ▸
      *Run workflow*, track = `none`), download the artifact, upload it manually.
-2. After that, every release is: `git tag android-v1.0.1 && git push --tags`
+2. After that, every release is: `git tag android-v2.0.1 && git push --tags`
    (or run the workflow with a track picked). New Play requirement: a new
    personal developer account must run **12 testers × 14 days** of closed
    testing before Production unlocks — start that clock early.
@@ -215,7 +215,7 @@ before signing.
 
 ### First iOS release
 
-`git tag ios-v1.0.1 && git push --tags` (or run the **iOS build** workflow).
+`git tag ios-v2.0.1 && git push --tags` (or run the **iOS build** workflow).
 It archives on a GitHub macOS runner and uploads to **TestFlight**. From TestFlight
 you add testers (your own iPhone/iPad works), then submit for App Store review
 (1–3 days; first apps sometimes
@@ -306,10 +306,10 @@ The launch build ships **ad-free** (`ADS_ENABLED = false`).
 
 ```bash
 # Android
-git tag android-v1.0.1 && git push origin android-v1.0.1
+git tag android-v2.0.1 && git push origin android-v2.0.1
 
 # iOS
-git tag ios-v1.0.1 && git push origin ios-v1.0.1
+git tag ios-v2.0.1 && git push origin ios-v2.0.1
 
 # or: Actions tab ▸ pick the workflow ▸ Run workflow
 ```

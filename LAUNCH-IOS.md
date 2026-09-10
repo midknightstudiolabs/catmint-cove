@@ -272,7 +272,7 @@ On approval → **Release** (manual) → live on the App Store.
 
 ```bash
 # tag a specific version
-git tag ios-v1.0.1 && git push origin ios-v1.0.1
+git tag ios-v2.0.1 && git push origin ios-v2.0.1
 
 # or: Actions ▸ iOS build (TestFlight) ▸ Run workflow
 ```

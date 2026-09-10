@@ -5,7 +5,20 @@ changes first shipped in.
 
 ---
 
-## 2026-09-10 — iOS 1.0 (17) · Android 1.0.20
+## 2026-09-10 — v2.0 · the big pre-launch build
+
+The festival grew from one activity into three, the whole soundtrack was
+rebuilt, and the cove picked up a bakery, new cat behaviours, a Sound panel,
+and two mythic cats. Everything below is v2.0.
+
+### Festival — now three activities
+- **Tug of Paws** — five of your cats on the rope against a visiting Cove.
+  Work the paw-spin: mostly a random cat balloons bigger and hauls harder, or
+  the yarn jumps your way; a rare ⭐7 7 7⭐ is a huge shove (and an auto-win if
+  the ball's already a third of the way home). The visiting Cove spins too —
+  best luck takes the yarn. Needs 5 cats at the cove.
+- The festival chooser now offers **Cove Race**, **Cove Volleyball** and
+  **Tug of Paws**.
 
 ### Festival music
 - The Cove Festival grounds have their own soundtrack now — a warm, cosy

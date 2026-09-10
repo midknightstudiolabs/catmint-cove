@@ -1,6 +1,6 @@
 name: iOS build (TestFlight)
 
-# Manual trigger, or push a tag like  ios-v1.0.0
+# Manual trigger, or push a tag like  ios-v2.0.0
 #
 # No Mac needed. This runs on a GitHub-hosted macOS runner and uses an
 # App Store Connect API key for BOTH code signing (xcodebuild manages the
@@ -56,9 +56,9 @@ jobs:
         run: |
           # marketing version (CFBundleShortVersionString) = the App Store version
           # users see; must match the version on the App Store Connect version page.
-          # tag ios-v1.2.3 -> 1.2.3 ; a plain run -> 1.0. Build number always = run number.
+          # tag ios-v1.2.3 -> 1.2.3 ; a plain run -> 2.0. Build number always = run number.
           NAME="${GITHUB_REF_NAME#ios-v}"
-          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="1.0"; fi
+          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="2.0"; fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "build=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
 
