@@ -9118,7 +9118,8 @@ function renderFestPickGrid(roster) {
 // building the field + the countdown.
 function startFestRace() {
   document.getElementById("festPanel").hidden = true;
-  festKind = "race"; _festG = null;   // the picker + countdown stay on the hub groove; the race slice waits for "Go!"
+  festKind = "race"; _festG = null;
+  stopFestBed();                       // quiet through the countdown — the race slice starts on "Go!" (matches volley/tug/cafe)
   const mk = cats.find(c => c.mascot);
   const others = cats.filter(c => c !== mk && c !== festPickedCat && !c.visitor);
   for (let i = others.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [others[i], others[j]] = [others[j], others[i]]; }
