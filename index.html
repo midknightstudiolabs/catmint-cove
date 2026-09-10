@@ -7883,7 +7883,12 @@ function _rebuildAudioBeds() {
   else if (festMode) {
     startFestAudio();
     if (festKind === "cafe" && _cafeRunning) startCafeBed();
-    else startFestBed(festKind === "race" ? "race" : festKind === "volley" ? "volley" : festKind === "midk" ? "tug" : "hub");   // restore the slice for wherever we are
+    else {   // restore the slice for where we actually are — the activity bed only once its play has begun, otherwise the hub groove
+      const playing = (festKind === "race" && ["run", "finish", "podium"].includes(racePhase))
+        || (festKind === "volley" && ["play", "point", "result"].includes(volleyPhase))
+        || (festKind === "midk" && ["play", "finish"].includes(midkPhase));
+      startFestBed(!playing ? "hub" : festKind === "race" ? "race" : festKind === "volley" ? "volley" : "tug");
+    }
     if (festKind === "volley" && volleyPhase === "play") startVolleyBed();
   }
   applySound();
@@ -7900,7 +7905,7 @@ function _resetAudioContext() {
   // AudioBuffers are bound to the context that decoded them — drop every cached
   // one so loadSfx() / loadRainLoop() re-decode into the fresh context
   for (const k in _sfxBuf) delete _sfxBuf[k];
-  _sfxLoading = false; rainBuffer = null; _festBedBufs = {}; _festWinBuf = null; _festWin = null; _cafeBedBuf = null;
+  _sfxLoading = false; rainBuffer = null; _festBedBufs = {}; _festBedBody = {}; _festWinBuf = null; _festWin = null; _cafeBedBuf = null;
   actx = null; _audioWasRunning = false; _resumeFails = 0; _audioStale = true;
 }
 // bring audio back after iOS suspends/interrupts it (screen lock, backgrounding,
@@ -8380,8 +8385,10 @@ function updateGlassDrops(dt) {
 async function loadRainLoop() {
   if (rainBuffer || !actx) return;
   try {
-    rainBuffer = await actx.decodeAudioData(await _festAudioBuf("rain-loop.mp3"));   // embedded on native, fetch() on web (iOS won't fetch a bundled asset)
-  } catch (e) { rainBuffer = null; }
+    const res = await fetch(bust("rain-loop.opus"));
+    if (!res.ok) throw 0;
+    rainBuffer = await actx.decodeAudioData(await res.arrayBuffer());
+  } catch (e) { rainBuffer = null; }   // iOS that can't decode/fetch this falls back to the synthesised rain in startRestAudio
 }
 let _restAudioGen = 0;
 async function startRestAudio() {
@@ -9111,8 +9118,7 @@ function renderFestPickGrid(roster) {
 // building the field + the countdown.
 function startFestRace() {
   document.getElementById("festPanel").hidden = true;
-  festKind = "race"; _festG = null;   // the track appears now that the race is actually on
-  startFestBed("race");               // crossfade up to the sped-up peak slice
+  festKind = "race"; _festG = null;   // the picker + countdown stay on the hub groove; the race slice waits for "Go!"
   const mk = cats.find(c => c.mascot);
   const others = cats.filter(c => c !== mk && c !== festPickedCat && !c.visitor);
   for (let i = others.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [others[i], others[j]] = [others[j], others[i]]; }
@@ -9196,7 +9202,7 @@ function runFestCountdown() {
       if (festKind === "volley") { volleyBegin(); bedFor = () => startFestBed("volley"); }
       else if (festKind === "midk") { midkBegin(); bedFor = () => startFestBed("tug"); }
       else if (festKind === "cafe") { cafeBegin(); bedFor = () => startCafeBed(); }
-      else { racePhase = "run"; document.getElementById("festSkip").hidden = false; }
+      else { racePhase = "run"; document.getElementById("festSkip").hidden = false; bedFor = () => startFestBed("race"); }
       if (bedFor) setTimeout(() => { if (mySeq === _festCdSeq && festMode) bedFor(); }, 900);
     }, 500);
   })();
@@ -9419,39 +9425,81 @@ async function _festAudioBuf(file) {
   if (!res.ok) throw 0;
   return await res.arrayBuffer();
 }
+let _festBedBody = {};   // section -> { start, end } of the musical body (minus the clip's baked head/tail fades)
 async function loadFestBed(section) {
   if (_festBedBufs[section] !== undefined || !actx) return;   // loaded, or tried and failed (false)
   try {
-    _festBedBufs[section] = await actx.decodeAudioData(await _festAudioBuf("fest-bed-" + section + ".mp3"));
+    const buf = await actx.decodeAudioData(await _festAudioBuf("fest-bed-" + section + ".mp3"));
+    _festBedBufs[section] = buf;
+    _festBedBody[section] = _festBedBodySpan(buf);
   } catch (e) { _festBedBufs[section] = false; }
+}
+// each clip fades up ~0.9s and back down ~1.1s at its own loop point. find where
+// it's back to full so the loop can run full-volume -> full-volume (loopStart /
+// loopEnd) instead of dipping through the two fades every pass.
+function _festBedBodySpan(buf) {
+  const sr = buf.sampleRate, win = Math.max(1, Math.round(sr * 0.03));
+  const a = buf.getChannelData(0), b = buf.numberOfChannels > 1 ? buf.getChannelData(1) : a;
+  const env = [];
+  for (let i = 0; i + win <= buf.length; i += win) {
+    let s = 0; for (let j = 0; j < win; j++) { const v = (a[i + j] + b[i + j]) * 0.5; s += v * v; }
+    env.push(Math.sqrt(s / win));
+  }
+  let peak = 0; for (const e of env) peak = Math.max(peak, e);
+  if (peak <= 0) return null;
+  const thr = peak * 0.62;   // "essentially at full level"
+  let lo = 0, hi = env.length - 1;
+  while (lo < env.length && env[lo] < thr) lo++;
+  while (hi > lo && env[hi] < thr) hi--;
+  const per = win / sr;
+  const span = { start: lo * per, end: (hi + 1) * per };
+  return (span.end - span.start) > 2 ? span : null;
+}
+// spin up one looping source. loopStart/loopEnd skip the clip's baked head/tail
+// fades so the loop point is full-volume → full-volume — no dip, no "awkward
+// stop". A short overlapping tail on each pass smooths the seam itself.
+function _festBedSpin(bed) {
+  if (bed.stopped || _festBed !== bed || bed.gen !== _festBedGen || !actx) return;
+  const buf = _festBedBufs[bed.section];
+  if (!buf) return;
+  const span = _festBedBody[bed.section];
+  const s = actx.createBufferSource();
+  s.buffer = buf;
+  s.loop = true;
+  if (span) { s.loopStart = span.start; s.loopEnd = span.end; }
+  s.connect(bed.g);
+  try { s.start(actx.currentTime + 0.03); } catch (e) { return; }
+  bed.srcs.push(s);
 }
 function _fadeOutFestBed(fast) {
   if (!_festBed || !actx) { _festBed = null; return; }
   const b = _festBed; _festBed = null;
+  b.stopped = true;
+  if (b.timer) clearTimeout(b.timer);
   const t = actx.currentTime;
   const dur = fast ? 0.32 : 0.8;
   try { rampParam(b.g.gain, 0.0001, dur); } catch (e) {}
-  try { b.src.stop(t + dur + 0.06); } catch (e) {}          // hard-stop the source so the old slice is truly gone
+  for (const s of (b.srcs || [])) { try { s.stop(t + dur + 0.06); } catch (e) {} }   // hard-stop every play so the old slice is truly gone
   setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, (dur + 0.4) * 1000);
 }
 async function startFestBed(section) {
   section = section || "hub";
   if (!actx || (_festBed && _festBed.section === section)) return;
   stopFestWinSting();                       // moving on — kill any winner fanfare still ringing
-  const switching = !!_festBed;
-  if (_festBed) _fadeOutFestBed(true);      // clean reset — old slice fades out fast, then a beat of silence, then the new one
   const gen = ++_festBedGen;
   await loadFestBed(section);
-  if (switching) await new Promise(r => setTimeout(r, 380));   // no overlap — the two slices (different sections / tempos) never play at once
   if (gen !== _festBedGen || !festBus || !festMode || !_festBedBufs[section]) return;   // superseded, session ended, or the clip failed
+  // same track, so hub -> activity is a quick crossfade, not a stop: the old
+  // slice fades out as the new one fades in (~0.5s — tight enough that two
+  // tempos never smear, long enough that there's no silent beat)
+  if (_festBed) _fadeOutFestBed(true);
   const g = actx.createGain();
   g.gain.value = 0.0001;
   g.connect(festBus);
-  rampParam(g.gain, festBedTarget(), 0.7);
-  const src = actx.createBufferSource();
-  src.buffer = _festBedBufs[section]; src.loop = true;
-  src.connect(g); src.start();
-  _festBed = { g, src, section };
+  rampParam(g.gain, festBedTarget(), 0.5);
+  const bed = { g, section, gen, srcs: [], timer: 0, stopped: false };
+  _festBed = bed;
+  _festBedSpin(bed);
 }
 function stopFestBed() {
   _festBedGen++;                       // cancel any in-flight startFestBed()

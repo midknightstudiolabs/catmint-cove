@@ -23,7 +23,7 @@ html = html.replace(marker, '<script src="capacitor-bridge.js"></script>\n$&');
 // iOS WKWebView won't fetch() a bundled capacitor:// asset, so the festival
 // music never loads on device (calliope fallback plays instead). Inline the
 // clips as base64 for the native build — the web index.html keeps fetch()ing.
-const festAudio = ["fest-bed-hub.mp3", "fest-bed-race.mp3", "fest-bed-volley.mp3", "fest-bed-tug.mp3", "fest-bed-cafe.mp3", "fest-win.mp3", "rain-loop.mp3"];
+const festAudio = ["fest-bed-hub.mp3", "fest-bed-race.mp3", "fest-bed-volley.mp3", "fest-bed-tug.mp3", "fest-bed-cafe.mp3", "fest-win.mp3"];
 const fa = {};
 for (const f of festAudio) {
   if (await exists(join(root, f))) fa[f] = "data:audio/mpeg;base64," + (await readFile(join(root, f))).toString("base64");
@@ -35,7 +35,7 @@ html = html.replace(faMarker, "const FEST_AUDIO_DATA = " + JSON.stringify(fa) + 
 await writeFile(join(www, "index.html"), html);
 
 // 2. runtime assets the game fetch()es by relative path
-for (const asset of ["rain-loop.mp3", "fest-bed-hub.mp3", "fest-bed-race.mp3", "fest-bed-volley.mp3", "fest-bed-tug.mp3", "fest-bed-cafe.mp3", "fest-win.mp3", "sfx"]) {
+for (const asset of ["rain-loop.opus", "fest-bed-hub.mp3", "fest-bed-race.mp3", "fest-bed-volley.mp3", "fest-bed-tug.mp3", "fest-bed-cafe.mp3", "fest-win.mp3", "sfx"]) {
   if (await exists(join(root, asset))) await cp(join(root, asset), join(www, asset), { recursive: true });
 }
 
