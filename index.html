@@ -9370,6 +9370,18 @@ function stopFestBed() {
   _festBedGen++;                       // cancel any in-flight startFestBed()
   _fadeOutFestBed();
 }
+// the winning moment — cut the looping bed so the result screen doesn't drone
+// on under an endless loop; a warm flourish + the crowd carry the celebration.
+// The bed comes back when you pick "again" / "The festival" (startFestBed there).
+let _festWinAt = 0;
+function festWinBreak() {
+  if (performance.now() - _festWinAt < 2500) return;   // one flourish per win
+  _festWinAt = performance.now();
+  _festBedGen++;                       // don't let an in-flight startFestBed() bring it back
+  _fadeOutFestBed(true);               // fast fade + hard stop
+  try { stopCafeBed(); } catch (e) {}
+  try { purchaseChime(); } catch (e) {}   // the game's "something good happened" flourish
+}
 
 /* ---- Catmint Café's own bed — a warmed no-copyright coffee-shop loop
    (fest-bed-cafe.mp3, fetched once). A café should sound like a café, not the
@@ -9513,6 +9525,7 @@ function festRanking() { return [...raceCats].sort((a, b) => a.doneAt - b.doneAt
 // the winning moment — confetti at the line, a couple of seconds of crowd hop
 function festCelebrateWinner(w) {
   raceWinner = w;
+  festWinBreak();                       // cut the bed — the finish-line cheer takes over
   festCheerUntil = raceT + 2.4;
   spawnParticles(raceX(1) - 10, laneY(w.lane) - 6, "spark", 8);
   spawnParticles(raceX(1) - 10, laneY(w.lane) - 16, "heart", 3);
@@ -11125,13 +11138,13 @@ function renderVolley(dt) {
     for (const p of volleyParts) { vbTickDrowse(p, dt); vbMovePart(p, dt); }
     if (matchT > 175) {   // safety net for a pathological stall — settle on the leader
       volleyScore[volleyScore.cove >= volleyScore.visit ? "cove" : "visit"] = 3;
-      volleyBall = null; volleyPhase = "result"; _vbResultAt = matchT; updateVolleyHud();
+      volleyBall = null; volleyPhase = "result"; _vbResultAt = matchT; festWinBreak(); updateVolleyHud();
     }
   } else if (volleyPhase === "point") {
     for (const p of volleyParts) { vbTickDrowse(p, dt); vbMovePart(p, dt); }
     if (volleyBall && volleyBall._satOn) { volleyBall.x = volleyBall._satOn.cat.x + 14; volleyBall.y = volleyBall._satOn.cat.y - 6; }
     if (matchT - _vbPointAt > 1.1) {
-      if (volleyScore.cove >= 3 || volleyScore.visit >= 3) { volleyPhase = "result"; _vbResultAt = matchT; }
+      if (volleyScore.cove >= 3 || volleyScore.visit >= 3) { volleyPhase = "result"; _vbResultAt = matchT; festWinBreak(); }
       else {
         volleyPhase = "play"; _vbServeAt = matchT + 0.55;
         // rally scoring: the side that WON the point serves. Serving puts you on
@@ -11921,6 +11934,7 @@ function renderMidk(dt) {
 function midkWin(side) {
   if (midkPhase !== "play") return;
   _midkWinner = side; midkPhase = "finish"; _midkFlopAt = midkT + 2.2;
+  festWinBreak();                       // cut the bed on the win
   midkSay("win", { winner: side === "cove" ? coveName() : midkVisitName });
   spawnParticles(MIDK_X, midk.y, side === "cove" ? "spark" : "twinkle", 16);
 }
@@ -12711,6 +12725,7 @@ function cafeStep(dt) {
 function cafeEndShift() {
   if (_cafeResultShown) return;
   _cafeResultShown = true; _cafeRunning = false;
+  festWinBreak();                       // the shift's done — cut the coffee-shop loop
   cafeBanner("🔔  Café closed");
   setTimeout(showCafeResult, 1500);
 }
