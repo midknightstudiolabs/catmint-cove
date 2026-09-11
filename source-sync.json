@@ -1,0 +1,19 @@
+{
+  "source": "https://github.com/midknightstudiolabs/catmint-cove",
+  "sourceCommit": "5993452",
+  "sourceIndexSha256": "3d50957de662386c26c2878f0a5d90208bf5f13dbda0d5d642b8b3f420225213",
+  "syncedOn": "2026-09-12",
+  "preservedNeo": [
+    "Scenery, camera, foreground and menu updates",
+    "Calm MP3 rain and guarded audio loader",
+    "Native embedded audio packaging"
+  ],
+  "assets": {
+    "fest-bed-hub.mp3": "a46df4cd7056e2e0bd4c5e114dd603389e6321a01522bbdd03720d8911ae7c5f",
+    "fest-bed-race.mp3": "cca305b473fa26dfd745eccae6c39a675a4e7249ae74342ceb35aff595fe2207",
+    "fest-bed-tug.mp3": "dd148ea9d5733c85c125bb66743bcafde2672faf0d8112691506449cd5e320b0",
+    "fest-bed-volley.mp3": "75c5a00432c55a6cad1546253070ae9fcef50a9fe223c21e3604f14d56b9d802",
+    "fest-bed-cafe.mp3": "371259132acaeed9a927f475ad71f929f8440d794dc94e5c5a7c1cfecbab1769",
+    "fest-win.mp3": "17a83e7630df9c37f4ce63318f5036dabfb6efa34773f7e2d7cdde5bee608f9f"
+  }
+}

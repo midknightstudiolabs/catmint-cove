@@ -883,6 +883,26 @@
   .cafe-eots .ce-k{font:800 .52rem/1 "IBM Plex Mono",monospace;letter-spacing:.12em;text-transform:uppercase;color:#9a7327;}
   .cafe-eots .ce-n{font-family:"Fraunces",serif;font-weight:600;font-size:1rem;}
   .cafe-eots .ce-r{font-size:.72rem;font-style:italic;color:var(--ink-soft);}
+  /* phones: the role-swap board was eating a fifth of the screen — pack it down
+     to a slim strip (drop the trait line, tighten everything, translucent so the
+     café floor still reads behind it) */
+  @media (max-width:600px){
+    #cafeBoard{width:min(98vw,420px);padding:.32rem .4rem calc(env(safe-area-inset-bottom) + .3rem);
+      background:rgba(247,245,236,.94);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
+    #cafeHint{font-size:.6rem;line-height:1.25;margin-bottom:.28rem;}
+    #cafeSlots{gap:.32rem;}
+    .cafe-slot{padding:.16rem;}
+    .cafe-slot .cs-head{gap:.22rem;padding-top:0;}
+    .cafe-slot .cs-ji{font-size:.72rem;}
+    .cafe-slot .cs-jn{font-size:.46rem;letter-spacing:.08em;}
+    .cafe-slot .cs-cat{padding:.14rem .16rem;gap:0;}
+    .cafe-slot .cs-nm{font-size:.7rem;}
+    .cafe-slot .cs-tr{display:none;}
+    .cafe-slot .cs-st{font-size:.5rem;min-height:.6rem;margin-top:0;}
+    .cafe-slot .cs-swap{font-size:.5rem;bottom:.22rem;}
+    .cb-exit{margin-top:.32rem;gap:.32rem;}
+    .cb-exit button{padding:.34rem .3rem;font-size:.62rem;}
+  }
   /* trait chips in the volleyball / picker cells */
   .fp-cell .fp-tr{display:flex;gap:.2rem;flex-wrap:wrap;justify-content:center;margin-top:.1rem;}
   .fp-cell .fp-tr span{background:#e2e6d5;border-radius:999px;padding:.02rem .34rem;font-size:.56rem;
@@ -7921,7 +7941,12 @@ function _rebuildAudioBeds() {
   else if (festMode) {
     startFestAudio();
     if (festKind === "cafe" && _cafeRunning) startCafeBed();
-    else startFestBed(festKind === "race" ? "race" : festKind === "volley" ? "volley" : festKind === "midk" ? "tug" : "hub");   // restore the slice for wherever we are
+    else {   // restore the slice for where we actually are — the activity bed only once its play has begun, otherwise the hub groove
+      const playing = (festKind === "race" && ["run", "finish", "podium"].includes(racePhase))
+        || (festKind === "volley" && ["play", "point", "result"].includes(volleyPhase))
+        || (festKind === "midk" && ["play", "finish"].includes(midkPhase));
+      startFestBed(!playing ? "hub" : festKind === "race" ? "race" : festKind === "volley" ? "volley" : "tug");
+    }
     if (festKind === "volley" && volleyPhase === "play") startVolleyBed();
   }
   applySound();
@@ -7938,7 +7963,7 @@ function _resetAudioContext() {
   // AudioBuffers are bound to the context that decoded them — drop every cached
   // one so loadSfx() / loadRainLoop() re-decode into the fresh context
   for (const k in _sfxBuf) delete _sfxBuf[k];
-  _sfxLoading = false; rainBuffer = null; _festBedBufs = {}; _festWinBuf = null; _festWin = null; _cafeBedBuf = null;
+  _sfxLoading = false; rainBuffer = null; _festBedBufs = {}; _festBedBody = {}; _festWinBuf = null; _festWin = null; _cafeBedBuf = null;
   actx = null; _audioWasRunning = false; _resumeFails = 0; _audioStale = true;
 }
 // bring audio back after iOS suspends/interrupts it (screen lock, backgrounding,
@@ -9173,8 +9198,8 @@ function renderFestPickGrid(roster) {
 // building the field + the countdown.
 function startFestRace() {
   document.getElementById("festPanel").hidden = true;
-  festKind = "race"; _festG = null;   // the track appears now that the race is actually on
-  startFestBed("race");               // crossfade up to the sped-up peak slice
+  festKind = "race"; _festG = null;
+  stopFestBed();                       // quiet through the countdown — the race slice starts on "Go!" (matches volley/tug/cafe)
   const mk = cats.find(c => c.mascot);
   const others = cats.filter(c => c !== mk && c !== festPickedCat && !c.visitor);
   for (let i = others.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [others[i], others[j]] = [others[j], others[i]]; }
@@ -9258,7 +9283,7 @@ function runFestCountdown() {
       if (festKind === "volley") { volleyBegin(); bedFor = () => startFestBed("volley"); }
       else if (festKind === "midk") { midkBegin(); bedFor = () => startFestBed("tug"); }
       else if (festKind === "cafe") { cafeBegin(); bedFor = () => startCafeBed(); }
-      else { racePhase = "run"; document.getElementById("festSkip").hidden = false; }
+      else { racePhase = "run"; document.getElementById("festSkip").hidden = false; bedFor = () => startFestBed("race"); }
       if (bedFor) setTimeout(() => { if (mySeq === _festCdSeq && festMode) bedFor(); }, 900);
     }, 500);
   })();
@@ -9462,7 +9487,7 @@ function stopVolleyBed() {
    track it reads as the music moving, not cutting. Rides festBus for the
    Sound panel + mute. Crowd murmur (festMurmur) runs under all of it; the
    calliope (scheduleFestMelody) is a fallback for when a clip won't load. ---- */
-const FEST_BED_LVL = 0.55, FEST_BED_LVL_VOLLEY = 0.4;   // volley slice is already mellow — just a touch back for the surf
+const FEST_BED_LVL = 0.44, FEST_BED_LVL_VOLLEY = 0.32;   // latest original activity tracks are loudness-matched
 let _festBedBufs = {}, _festBed = null, _festBedGen = 0;   // section -> AudioBuffer|false ; _festBed = { g, src, section }
 function festBedTarget() { return muted ? 0.0001 : (_volleyBed ? FEST_BED_LVL_VOLLEY : FEST_BED_LVL); }
 // iOS WKWebView won't fetch() a bundled capacitor:// asset (same reason SFX_DATA
@@ -9482,39 +9507,81 @@ async function _festAudioBuf(file, signal) {
   if (!res.ok) throw 0;
   return await res.arrayBuffer();
 }
+let _festBedBody = {};   // section -> { start, end } of the musical body (minus the clip's baked head/tail fades)
 async function loadFestBed(section) {
   if (_festBedBufs[section] !== undefined || !actx) return;   // loaded, or tried and failed (false)
   try {
-    _festBedBufs[section] = await actx.decodeAudioData(await _festAudioBuf("fest-bed-" + section + ".mp3"));
+    const buf = await actx.decodeAudioData(await _festAudioBuf("fest-bed-" + section + ".mp3"));
+    _festBedBufs[section] = buf;
+    _festBedBody[section] = _festBedBodySpan(buf);
   } catch (e) { _festBedBufs[section] = false; }
+}
+// each clip fades up ~0.9s and back down ~1.1s at its own loop point. find where
+// it's back to full so the loop can run full-volume -> full-volume (loopStart /
+// loopEnd) instead of dipping through the two fades every pass.
+function _festBedBodySpan(buf) {
+  const sr = buf.sampleRate, win = Math.max(1, Math.round(sr * 0.03));
+  const a = buf.getChannelData(0), b = buf.numberOfChannels > 1 ? buf.getChannelData(1) : a;
+  const env = [];
+  for (let i = 0; i + win <= buf.length; i += win) {
+    let s = 0; for (let j = 0; j < win; j++) { const v = (a[i + j] + b[i + j]) * 0.5; s += v * v; }
+    env.push(Math.sqrt(s / win));
+  }
+  let peak = 0; for (const e of env) peak = Math.max(peak, e);
+  if (peak <= 0) return null;
+  const thr = peak * 0.62;   // "essentially at full level"
+  let lo = 0, hi = env.length - 1;
+  while (lo < env.length && env[lo] < thr) lo++;
+  while (hi > lo && env[hi] < thr) hi--;
+  const per = win / sr;
+  const span = { start: lo * per, end: (hi + 1) * per };
+  return (span.end - span.start) > 2 ? span : null;
+}
+// spin up one looping source. loopStart/loopEnd skip the clip's baked head/tail
+// fades so the loop point is full-volume → full-volume — no dip, no "awkward
+// stop". A short overlapping tail on each pass smooths the seam itself.
+function _festBedSpin(bed) {
+  if (bed.stopped || _festBed !== bed || bed.gen !== _festBedGen || !actx) return;
+  const buf = _festBedBufs[bed.section];
+  if (!buf) return;
+  const span = _festBedBody[bed.section];
+  const s = actx.createBufferSource();
+  s.buffer = buf;
+  s.loop = true;
+  if (span) { s.loopStart = span.start; s.loopEnd = span.end; }
+  s.connect(bed.g);
+  try { s.start(actx.currentTime + 0.03); } catch (e) { return; }
+  bed.srcs.push(s);
 }
 function _fadeOutFestBed(fast) {
   if (!_festBed || !actx) { _festBed = null; return; }
   const b = _festBed; _festBed = null;
+  b.stopped = true;
+  if (b.timer) clearTimeout(b.timer);
   const t = actx.currentTime;
   const dur = fast ? 0.32 : 0.8;
   try { rampParam(b.g.gain, 0.0001, dur); } catch (e) {}
-  try { b.src.stop(t + dur + 0.06); } catch (e) {}          // hard-stop the source so the old slice is truly gone
+  for (const s of (b.srcs || [])) { try { s.stop(t + dur + 0.06); } catch (e) {} }   // hard-stop every play so the old slice is truly gone
   setTimeout(() => { try { b.g.disconnect(); } catch (e) {} }, (dur + 0.4) * 1000);
 }
 async function startFestBed(section) {
   section = section || "hub";
   if (!actx || (_festBed && _festBed.section === section)) return;
   stopFestWinSting();                       // moving on — kill any winner fanfare still ringing
-  const switching = !!_festBed;
-  if (_festBed) _fadeOutFestBed(true);      // clean reset — old slice fades out fast, then a beat of silence, then the new one
   const gen = ++_festBedGen;
   await loadFestBed(section);
-  if (switching) await new Promise(r => setTimeout(r, 380));   // no overlap — the two slices (different sections / tempos) never play at once
   if (gen !== _festBedGen || !festBus || !festMode || !_festBedBufs[section]) return;   // superseded, session ended, or the clip failed
+  // same track, so hub -> activity is a quick crossfade, not a stop: the old
+  // slice fades out as the new one fades in (~0.5s — tight enough that two
+  // tempos never smear, long enough that there's no silent beat)
+  if (_festBed) _fadeOutFestBed(true);
   const g = actx.createGain();
   g.gain.value = 0.0001;
   g.connect(festBus);
-  rampParam(g.gain, festBedTarget(), 0.7);
-  const src = actx.createBufferSource();
-  src.buffer = _festBedBufs[section]; src.loop = true;
-  src.connect(g); src.start();
-  _festBed = { g, src, section };
+  rampParam(g.gain, festBedTarget(), 0.5);
+  const bed = { g, section, gen, srcs: [], timer: 0, stopped: false };
+  _festBed = bed;
+  _festBedSpin(bed);
 }
 function stopFestBed() {
   _festBedGen++;                       // cancel any in-flight startFestBed()
@@ -9578,7 +9645,7 @@ async function startCafeBed() {
   stopVolleyBed(); stopFestBed();      // the café bed stands alone
   const g = actx.createGain(); g.gain.value = 0.0001;
   g.connect(festBus || musicGain || actx.destination);
-  rampParam(g.gain, muted ? 0.0001 : 0.85, 1.8);
+  rampParam(g.gain, muted ? 0.0001 : FEST_BED_LVL, 1.8);   // same level as every other activity bed
   const bed = { g, src: null, stopped: false };
   _cafeBed = bed;
   if (festMurmurGain) rampParam(festMurmurGain.gain, 0.03, 1.4);   // fairground murmur ducks under the café music
@@ -11688,10 +11755,11 @@ let midkPhase = "idle", midkT = 0, midkParts = [], midk = null, midkVisitName = 
 let midkPickSel = [], _midkTutSeen = false;
 let _midkResultShown = false, _midkResultAt = 0, _midkWinner = null, _midkFlopAt = 0;
 let midkCharge = 0, _midkAuraUntil = 0, _midkAiAuraUntil = 0;
-let _midkAiChargeT = 0, _midkAiSlotCd = 0;
+let _midkAiChargeT = 0, _midkAiSlotCd = 0, _midkAiSpins = 0;
 let _midkHeave = 0;                           // shared heave rhythm — cats lean + dig in on the pull beat
 let midkSlot = null;                          // { reels, outcome, rollUntil, resolved, result, showUntil }
 let _midkEventCd = 0;
+let _midkPanicAt = -99, _midkPanicSide = null;   // the losing side yowls when the yarn's nearly at their flag
 let _midkLead = { cove: 0, visit: 0 };        // furthest the ball got toward each flag — for the result read
 let midkCom = { text: "", at: -99, pri: 0, last: "" };
 
@@ -11832,8 +11900,9 @@ function startCoveMidk() {
   festKind = "midk";
   fitFestCanvas();
   midkT = 0; midkPhase = "idle"; _midkResultShown = false; _midkWinner = null; _midkFlopAt = 0;
+  _midkPanicAt = -99; _midkPanicSide = null;
   midkCharge = 0; _midkAuraUntil = 0; _midkAiAuraUntil = 0;
-  _midkAiChargeT = 0; _midkAiSlotCd = rand(7, 12);
+  _midkAiChargeT = 0; _midkAiSlotCd = rand(3.5, 6); _midkAiSpins = 0;   // the visiting Cove opens with a quick one-two
   midkSlot = null;
   _midkEventCd = rand(10, 16);
   _midkLead = { cove: 0, visit: 0 };
@@ -12023,11 +12092,32 @@ function midkResolveSlot(side, outcome) {
 function midkAi(dt) {
   _midkAiChargeT += dt;
   _midkAiSlotCd -= dt;
-  if (_midkAiSlotCd <= 0 && _midkAiChargeT > 5.5 && !midkSlot) {
-    _midkAiSlotCd = rand(5.5, 8); _midkAiChargeT = 0;
-    midkResolveSlot("visit", midkRollOutcome("visit"));
+  // opening pressure: the visiting Cove gets a quick one-two at the start of the
+  // match, so you begin on the back foot and have to claw the yarn back
+  const opener = _midkAiSpins < 2;
+  if (_midkAiSlotCd <= 0 && (opener || _midkAiChargeT > 5.5) && !midkSlot) {
+    _midkAiSpins++;
+    _midkAiSlotCd = _midkAiSpins < 2 ? rand(1.6, 2.6) : rand(5.5, 8);
+    _midkAiChargeT = 0;
+    let out = midkRollOutcome("visit");
+    if (opener && out === "aura") out = "push";   // no instant-win 777 in the opening one-two
+    midkResolveSlot("visit", out);
     spawnParticles(MIDK_X, midk.y, "twinkle", 6);
   }
+}
+
+/* ---- the yarn's nearly at your flag → the whole side yowls in a panic ---- */
+function midkPanic(side) {
+  const n = 2 + (Math.random() < 0.55 ? 1 : 0);   // 2 or 3
+  for (let i = 0; i < n; i++) {
+    const when = i * rand(0.16, 0.34);
+    if (!playSample(Math.random() < 0.3 ? "kitten" : "meow", { vol: 0.95, rate: rand(1.12, 1.34), jitter: 0.14, when }))
+      setTimeout(() => { if (midkPhase === "play") meow(true, 0.9); }, when * 1000);
+  }
+  const scared = midkParts.filter(p => p.side === side && !midkBusy(p)).slice(0, 2);
+  scared.forEach((p, k) => setTimeout(() => {
+    if (midkPhase === "play" && p.cat) floatText(p.cat.x, p.cat.y - 26, k ? "😾" : "!", "#d98f8f");
+  }, k * 130));
 }
 
 /* ---- random event: an occasional cat nods off on the rope ---- */
@@ -12116,6 +12206,13 @@ function renderMidk(dt) {
       else if (midk.dir === -1) midkSay("pullVisit");
       else midkSay("stall");
     }
+
+    // panic! the losing side's cats yowl when the yarn's nearly at their flag
+    const dz = 84;
+    const scaredSide = midk.y >= MIDK_WIN_Y.cove - dz ? "cove" : midk.y <= MIDK_WIN_Y.visit + dz ? "visit" : null;
+    if (scaredSide) {
+      if (_midkPanicSide !== scaredSide || midkT - _midkPanicAt > 5.5) { midkPanic(scaredSide); _midkPanicAt = midkT; _midkPanicSide = scaredSide; }
+    } else _midkPanicSide = null;
 
     if (midk.y >= MIDK_WIN_Y.cove) midkWin("cove");
     else if (midk.y <= MIDK_WIN_Y.visit) midkWin("visit");
@@ -12412,8 +12509,12 @@ function cafeReadyToPlay() { return eligibleForVolley().length >= 3; }
 function cafeFit() {
   const { vw, vh } = restViewportPx();
   const rd = _festDPR || DPR;
-  const sc = Math.min((vw * rd) / CAFE_W, (vh * rd) / CAFE_H);
-  return { sc, ox: (vw * rd - CAFE_W * sc) / 2, oy: (vh * rd - CAFE_H * sc) / 2 };
+  // keep the whole café above the role-swap strip so it never sits behind it
+  const bd = document.getElementById("cafeBoard");
+  const reserve = (bd && !bd.hidden) ? bd.offsetHeight + 6 : 0;
+  const availH = Math.max(vh * 0.45, vh - reserve);
+  const sc = Math.min((vw * rd) / CAFE_W, (availH * rd) / CAFE_H);
+  return { sc, ox: (vw * rd - CAFE_W * sc) / 2, oy: (availH * rd - CAFE_H * sc) / 2 };
 }
 function cafeNote(key, vars) {
   const pool = CAFE_NOTES[key]; if (!pool) return;
@@ -12667,6 +12768,8 @@ function cafeCustLost(c, atSeat) {
   cafeLost++; cafeMood = Math.max(0, cafeMood - 0.045);
   if (Math.random() < 0.5) cafeNote("lost");
   if (atSeat) { const s = cafeSeats.find(x => x.cust === c); if (s) s.cust = null; }
+  if (!playSample("grumpy", { vol: 0.6, rate: rand(0.92, 1.05), jitter: 0.1 })) meow(false, 0.7);   // stormed out — a cross meow
+  try { floatText(c.x, c.y - 24, "😾", "#c46a6a"); } catch (e) {}
   _cafeCustPool.push(c);
 }
 function cafeStepCust(c, dt) {
@@ -12698,6 +12801,9 @@ function cafeStepCust(c, dt) {
       if (Math.random() < 0.22) cafeNote("good");
       // a little parting reaction on the way out — bigger if they tipped / the café's humming
       c._bye = (tipped || cafeMood > 0.72) ? "😻" : cafeMood > 0.45 ? "😺" : "🙂";
+      // and a soft parting meow to match — a bright mrrp if they loved it, a quiet one if it was just fine
+      const glad = c._bye !== "🙂";
+      if (!playSample("meow", { vol: glad ? 0.42 : 0.3, rate: glad ? rand(1.0, 1.12) : rand(0.9, 0.98), jitter: 0.1 })) meow(true, glad ? 0.4 : 0.28);
       c.state = "leave"; c._ct = 0; c._out = false;
       const s = cafeSeats.find(x => x.cust === c); if (s) { s.cust = null; s._clearing = c; }
     }
