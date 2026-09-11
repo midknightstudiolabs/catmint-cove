@@ -9468,7 +9468,8 @@ async function _festAudioBuf(file, signal) {
     for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
     return u8.buffer;
   }
-  const res = await fetch(bust(file), { signal });
+  const url = file === "rain-loop.mp3" ? file + "?mix=calm-2" : file;
+  const res = await fetch(bust(url), { signal });
   if (!res.ok) throw 0;
   return await res.arrayBuffer();
 }
