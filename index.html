@@ -6164,6 +6164,7 @@ function composePhoto() {
     if (it.c) { drawCat(pctx, it.c, true); if (it.c.state === "fishing" && it.c._station === "fishing" && it.c._fx) drawFishingRig(pctx, it.c); if (it.c.state === "baking" && it.c._station === "bakery" && it.c._fx) drawBakeryRig(pctx, it.c); }
     else drawGrassTuft(pctx, it.f, pgt, pnight);
   }
+  neoCoveForeground(pctx,0);
   pctx.restore();
 
   pctx.restore(); // unclip
@@ -9989,7 +9990,7 @@ function renderFest(dt) {
   g.fillStyle = _festG.sky; g.fillRect(0, 0, RACE_W, 380);
   g.fillStyle = _festG.track; g.fillRect(0, 380, RACE_W, RACE_H - 380);
   }
-  neoOutdoor(g,RACE_W,RACE_H,380,0);
+  neoRaceMeadow(g,RACE_W,RACE_H);
   drawBunting(g, 0, 26, RACE_W, 34, raceT);
 
   g.strokeStyle = "rgba(255,255,255,0.4)"; g.lineWidth = 2; g.setLineDash([10, 10]);
@@ -16486,6 +16487,7 @@ function renderScene(dt) {
       drawGrassTuft(ctx, it.f, gt, gnight, clamp(push, -7, 7));
     }
   }
+  neoCoveForeground(ctx);
   const _pt2 = performance.now();
   drawCatBadges(ctx);   // v3: status glyphs over cats that need something
   drawDepartures(ctx);
@@ -18468,6 +18470,46 @@ function neoExtendCove(g){
     }
     g.restore();
   }
+}
+
+// Inland festival lawn: the furthest spectator row stands at y=291 or below.
+// Keep a generous bank of solid grass behind it, independent of crowd size.
+function neoRaceMeadow(g,w,h){
+  if(!art2dReady(ART2D.cove))return;
+  const im=ART2D.cove,iw=im.naturalWidth,ih=im.naturalHeight,bank=170;
+  g.save();
+  const sky=g.createLinearGradient(0,0,0,bank);
+  sky.addColorStop(0,'#91d0ed');sky.addColorStop(1,'#d2e8d7');
+  g.fillStyle=sky;g.fillRect(0,0,w,h);
+  g.fillStyle='#91b798';g.beginPath();g.moveTo(0,bank);
+  g.bezierCurveTo(w*.18,80,w*.27,155,w*.43,130);
+  g.bezierCurveTo(w*.65,95,w*.8,145,w,105);
+  g.lineTo(w,bank+30);g.lineTo(0,bank+30);g.fill();
+  g.drawImage(im,iw*.20,ih*.40,iw*.60,ih*.38,0,bank,w,h-bank);
+  const light=neoLight(nowHours()),day=timeOfDay();
+  g.fillStyle='rgba(9,19,43,'+Math.min(.84,(1-day.df)*.36+light.night*.48)+')';
+  g.fillRect(0,0,w,h);
+  g.save();g.beginPath();g.moveTo(0,0);g.lineTo(w,0);g.lineTo(w,105);
+  g.bezierCurveTo(w*.8,145,w*.65,95,w*.43,130);
+  g.bezierCurveTo(w*.27,155,w*.18,80,0,bank);g.closePath();g.clip();
+  neoSky(g,day,w,bank,0);g.restore();
+  g.restore();
+}
+
+// Repaint only the near-bank foliage silhouette over the inhabitants. These
+// curves follow the existing corner plants and rocks, in source-art units.
+// No new bitmap, image processing, or per-frame pixel reads are needed.
+const NEO_FOREGROUND_PATH=new Path2D(
+  'M0 790 Q18 749 41 757 Q61 770 40 817 Q68 823 73 790 Q79 769 86 784 Q110 762 121 770 Q132 783 110 809 Q151 794 132 836 L139 856 Q174 819 185 838 Q200 861 179 891 Q208 866 209 885 Q247 865 269 876 Q280 891 252 920 Q291 913 300 931 Q299 950 278 962 L303 976 L317 1024 L0 1024 Z '+
+  'M1536 735 Q1510 751 1509 788 Q1487 734 1462 731 Q1438 746 1462 801 Q1421 777 1411 793 Q1410 814 1449 835 Q1422 835 1408 849 Q1414 811 1392 795 Q1374 781 1389 820 Q1400 835 1384 847 Q1364 859 1361 883 Q1350 825 1328 828 Q1307 839 1322 873 Q1282 855 1286 879 Q1289 899 1312 912 Q1273 900 1277 931 Q1255 931 1248 945 Q1239 908 1224 891 Q1206 889 1217 923 Q1186 908 1182 918 Q1179 931 1210 947 Q1176 940 1169 955 Q1188 975 1217 981 L1200 1024 L1536 1024 Z');
+function neoCoveForeground(g,over=_overX){
+  if(!art2dReady(ART2D.cove))return;
+  g.save();g.translate(-over,0);g.scale((W+2*over)/1536,H/1024);
+  g.clip(NEO_FOREGROUND_PATH);g.drawImage(ART2D.cove,0,0,1536,1024);
+  // Match the background's base night tint; the scene-wide wash comes later.
+  const light=neoLight(nowHours()),sky=timeOfDay();
+  g.fillStyle='rgba(9,19,43,'+Math.min(.84,(1-sky.df)*.36+light.night*.48)+')';
+  g.fillRect(0,0,1536,1024);g.restore();
 }
 
 /* NEO_SCENERY_END */
