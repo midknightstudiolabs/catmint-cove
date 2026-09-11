@@ -1241,6 +1241,31 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 @media(max-height:650px){#fest .fest-panel--hub{padding:.65rem;max-height:calc(100dvh - 90px);}#fest .fc-card{padding:.45rem .6rem;min-height:56px;}}
 @media(prefers-reduced-motion:reduce){.btn,.fc-card,.shop-tabs button{transition:none;}}
 </style>
+<style id="neo-home-style">/* Soft coastal interface: clear hierarchy, comfortable text and stable layout. */
+.neo-secondary-action{display:none!important}
+#actions{gap:8px;padding-bottom:max(10px,env(safe-area-inset-bottom));}
+#dexBtn .badge{display:none}
+.neo-story-x{position:sticky;top:0;float:right;z-index:2;min-height:44px;min-width:44px}
+#actions>.btn{min-height:48px;min-width:88px;justify-content:center}
+#neo-explore{max-width:650px}
+.neo-explore-grid,.neo-cat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
+.neo-destination,.neo-cat-tile{border:1px solid #d7ddc9;border-radius:20px;background:#fffdf4;color:#384c3e;padding:20px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;font:inherit;cursor:pointer}
+.neo-destination>span{font-size:30px}.neo-destination b{font-size:18px}.neo-destination small,.neo-cat-tile span,.neo-cat-tile small{font-size:14px;line-height:1.5;color:#5c6c5f}
+.neo-destination:hover,.neo-cat-tile:hover{background:#edf2e1;border-color:#8fac8a}
+.neo-cat-tile{align-items:center;text-align:center;padding:8px 12px 16px}.neo-cat-tile canvas{width:110px;height:100px}
+.neo-roster-actions,.neo-journal-tools,.neo-journal-pins{display:flex;gap:10px;flex-wrap:wrap}
+.neo-section-label{font-size:15px;color:#52604e;margin:28px 0 12px}
+.neo-journal-cover{padding:28px 24px;border-radius:22px;background:linear-gradient(130deg,#e6efda,#f8edce);border:1px solid #d7dfc7;position:relative;margin:16px 0}
+.neo-journal-cover h3{font-family:Fraunces,serif;font-size:30px;line-height:1.15;margin:12px 0;color:#38543f}.neo-journal-cover p{line-height:1.6}
+.neo-promise{font-size:14px;color:#566a54}.neo-journal-pins:empty{display:none}.neo-journal-tools{margin:16px 0 24px}
+.neo-story{text-align:center}.neo-story canvas{display:block;margin:auto;width:180px;height:148px}.neo-story h2{margin:0}.neo-story-sub{color:#65745b}
+.neo-story-facts{background:#eef2e5;border-radius:18px;padding:12px 20px;text-align:left;line-height:1.5;margin:20px 0}
+.neo-note-label{display:block;text-align:left;font-weight:600;margin-bottom:8px}.neo-story textarea{width:100%;min-height:90px;background:#fffdf6;border:1px solid #c6d1bd;border-radius:12px;padding:12px;color:#3b493d;font:inherit;resize:vertical;margin-bottom:12px}
+.neo-memory-list{text-align:left;border-left:2px solid #ccd7be;padding-left:18px;margin:24px 4px}.neo-memory-list article{padding:8px 0}.neo-memory-list span{font-size:12px;color:#738067}.neo-memory-list p{margin:6px 0;line-height:1.5}
+.goal .linkbtn{min-height:44px}.sheet .x{min-width:44px;min-height:44px}.sheet:focus-visible,button:focus-visible{outline:3px solid #a16c31;outline-offset:3px}
+@media(max-width:600px){#actions{gap:5px;left:8px;right:8px}#actions>.btn{min-width:0;flex:1;font-size:14px;padding:10px 8px}.neo-explore-grid{gap:9px}.neo-destination{padding:16px 12px}.neo-destination b{font-size:16px}.neo-destination small{font-size:13px}#cafeBoard .cs-jn,#cafeBoard .cs-st,#cafeBoard .cs-swap{font-size:11px}#cafeBoard .cs-nm{font-size:14px}#cafeHint{font-size:12px}#cafeBoard button{min-height:44px}#cafeBoard{max-height:34vh;overflow:auto}.neo-journal-cover{padding:20px}.neo-journal-cover h3{font-size:26px}}
+@media(prefers-reduced-motion:reduce){.neo-destination,.neo-cat-tile{transition:none}}
+</style>
 
 <div id="app">
   <!-- the first thing anyone sees — covers the cove (already ticking away
@@ -1514,12 +1539,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <!-- today: daily goals + streak -->
   <div class="sheet" id="today" hidden>
     <button class="x" data-close="today">✕</button>
-    <h2>Today</h2>
+    <h2>Your journal</h2>
+    <div id="neoJournal"></div>
     <div id="checkinCard"></div>
     <div id="projectCard"></div>
     <div id="advCard"></div>
     <div id="findsCard"></div>
-    <div class="streak"><span class="flame">🔥</span><b id="streakN">0</b><span class="muted" style="margin:0">day streak — finish all 3 goals to keep it</span></div>
+    <div class="streak"><span class="flame">🔥</span><b id="streakN">0</b><span class="muted" style="margin:0">lovely days collected — take these at your own pace</span></div>
     <div id="goalList"></div>
     <div class="moments-wrap">
       <div class="moments-h">Moments</div>
@@ -1625,7 +1651,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 // migrated — the economy, the restoration projects and cat data all changed
 // enough that a fresh cove is the right call for testers. Old blobs just sit
 // unused in localStorage.
-const SAVE_KEY = "catmintCove.save.v9";
+const SAVE_KEY = "catmintCove.neo.save.v9";
 const OLD_SAVE_KEYS = [];
 const SAVE_VERSIONS = [9];
 // a cache key that changes on every deploy (the file's Last-Modified moves) —
@@ -1890,7 +1916,7 @@ const IAP_PRODUCTS = {
   sparkle_pack:        { price: "$2.99", label: "Sparkle Pack",        type: "non-consumable" },   // unlocks the effect cosmetics for the whole cove
 };
 function newIapState() { return { owned: {}, grants: {} }; }
-const IAP_STORE_KEY = "catmintCove.iap.v1";
+const IAP_STORE_KEY = "catmintCove.neo.iap.v1";
 const iapStore = {
   load() {
     try {
@@ -2004,13 +2030,7 @@ function newGame() {
 
 function load() {
   // sets up G only — cats are created afterwards by restoreCats()
-  let raw = null;
-  try {
-    // tidy up pre-v9 blobs — they're never loaded again
-    for (const k of ["catmintCove.save.v8", "catmintCove.save.v7", "catmintCove.save.v6", "catmintCove.save.v5"]) localStorage.removeItem(k);
-    raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) for (const k of OLD_SAVE_KEYS) { raw = localStorage.getItem(k); if (raw) break; }
-  } catch (e) {}
+  const raw = neoReadSave();
   if (!raw) { G = newGame(); return; }
   try {
     const s = JSON.parse(raw);
@@ -2121,6 +2141,11 @@ function save() {
       health:Math.round(c.health ?? 100), sick:c.sick ? { since:c.sick.since } : null,
       _criticalSince:c._criticalSince || 0, _leaveSince:c._leaveSince || 0
     }));
+    const previous = localStorage.getItem(SAVE_KEY);
+    if (previous && !sessionStorage.getItem("neo.backedUp")) {
+      localStorage.setItem("catmintCove.neo.previous-save", previous);
+      sessionStorage.setItem("neo.backedUp", "1");
+    }
     localStorage.setItem(SAVE_KEY, JSON.stringify(G));
   } catch (e) {}
 }
@@ -2508,11 +2533,11 @@ function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // 
 const WELCOME_SEC = 2700;   // ~45 min of active playtime
 function welcomeBoost() {
   const t = G.allTimeSec || 0;
-  return t >= WELCOME_SEC ? 0 : 0.42 * (1 - t / WELCOME_SEC);   // +0.42 → 0 over the window
+  return t >= WELCOME_SEC ? 0 : 0.22 * (1 - t / WELCOME_SEC);   // +0.22 → 0 over the window
 }
 function boostActive() { return !!(G.boostUntil && Date.now() < G.boostUntil); }
 function earnMult() {
-  let m = 0.46 + welcomeBoost();      // baseline 0.46, up to ~0.88 for a fresh cove — active-idle pace, not a firehose
+  let m = 0.62 + welcomeBoost();      // baseline .62, up to .84 for a fresh Cove; a softer introduction
   if (boostActive()) m *= 2;          // a purchased "fresh catnip" boost
   return m;
 }
@@ -2549,7 +2574,7 @@ function foodLeftText() {
   const days = Math.floor(d), hrs = Math.round((d - days) * 24);
   return `≈ ${days} day${days === 1 ? "" : "s"}${hrs ? ` ${hrs} hr${hrs === 1 ? "" : "s"}` : ""} of food left`;
 }
-function foodServingCost(){ return (12 + residentCount() * 4) / 22; }     // per serving — matches the old sack's rate
+function foodServingCost(){ return 0.8; }     // per serving — matches the old sack's rate
 // a bulk buy sized to feed the current cove for `days`
 function foodBulk(days) {
   const servings = Math.max(1, Math.ceil(foodPerDay() * days));
@@ -2737,7 +2762,7 @@ class Cat {
     if (this._station && STATION[this._station]) s *= STATION[this._station].rate;   // working a station
     if (this.zoomies > 0) s *= 1.45;              // fresh from the catmint garden
     if (this.petBuff > 0) s *= 1.5;
-    if (this.sick) s *= 0.15;                     // v3: a sick cat barely produces
+    if (this.sick) s *= 0.65;                     // care is recoverable without a production spiral
     else { const need = Math.max(this.hunger || 0, this.thirst || 0);
       if (need > 60) s *= clamp(1 - (need - 60) * 0.02, 0.3, 1); }   // hungry/thirsty → tapers off
     return s;
@@ -2890,6 +2915,8 @@ function openFoodRefill() {
     closeModal();
     toast(foodDaysLeft() >= 1 ? `Larder stocked — ${foodLeftText().replace("≈ ", "")}.` : "Bowls topped up.", 3);
   });
+  const help=document.createElement('button');help.className='btn';help.textContent='Community pantry · free basic care';
+  help.onclick=()=>{neoCommunityCare();closeModal();};document.getElementById('food-close').before(help);
   document.getElementById("food-close").onclick = closeModal;
 }
 function sickCats() { return cats.filter(c => c.sick && !c.visitor); }
@@ -3020,25 +3047,8 @@ function checkVetReturns() {
 let _neglectLeftAt = [];   // real timestamps of recent neglect departures — a hard blast-radius cap
 let _foodLowWarned = false; // one-shot "food's getting low" toast, re-arms once the larder's comfortable again
 function neglectLeave(c) {
-  if (c._leaving || c.mascot) return;
-  const now = Date.now();
-  _neglectLeftAt = _neglectLeftAt.filter(t => now - t < 90 * 60 * 1000);   // 90-min rolling window
-  if (_neglectLeftAt.length >= 2) {                                        // never more than 2 close together, however the clocks landed
-    c._leaveSince = now;                                                   // fresh full window — it can still go on a later session if still neglected
-    return;
-  }
-  _neglectLeftAt.push(now);
-  c._leaving = true; c._gone = true;
-  breakFriendship(c);
-  const dir = c.x > W / 2 ? 1 : -1;
-  c.sick = null;
-  c.state = "exploring"; c.stateDur = 1e6; c.vx = dir * 20; c.walkAmt = 0.4;
-  _departures.push({ c, dir, life: 0 });
-  markLeftInDex(c);
-  logMoment("💔", `${c.name} moved on — the cove had gone too long without looking after them.`, "care");
-  toast(`${c.name} has left the cove.`, 6);
-  sfx("grumpy");
-  setTimeout(() => { rebuildAttractors(); syncHud(); save(); }, 200);
+  // This remains callable by old integrations, but care never removes a cat.
+  c._criticalSince = 0; c._leaveSince = 0;
 }
 function spawnCat(o) {
   if (residentCount() >= capacity() && !o) return null;
@@ -3190,11 +3200,14 @@ const GOAL_POOL = [
 function rpick(a){ return a[(Math.random()*a.length)|0]; }
 function rollDailyGoals() {
   const d = today();
-  if (G.goalDay === d && G.goals) return;
-  // streak bookkeeping: continued only if yesterday was completed
-  if (G.streakDay !== d - 1 && G.streakDay !== d) G.streak = 0;
+  if (G.goalDay === d && G.goals) {
+    for (const g of [...G.goals]) if(!g.done && !neoGoalEligible(goalDef(g.id))) neoReplaceGoal(g, false);
+    return;
+  }
+  // A cumulative count of completed days, not a consecutive streak.
+  // Completed days accumulate. Missing a day never erases a player's progress.
   G.goalDay = d;
-  const pool = [...GOAL_POOL].sort(() => Math.random() - 0.5).slice(0, 3);
+  const pool = GOAL_POOL.filter(neoGoalEligible).sort(() => Math.random() - 0.5).slice(0, 3);
   G.goals = pool.map(g => ({ id:g.id, target:g.gen(), prog:0, done:false, claimed:false,
     reward: (typeof g.reward === "function" ? g.reward() : g.reward) }));
 }
@@ -3832,23 +3845,8 @@ function updateCat(c, dt) {
     else if (c.health < 45) target = Math.min(target, 30 + c.health * 0.5);
     else if (need > 55) target = Math.min(target, 78 - (need - 55) * 0.9);
 
-    // the leave clock — two stages so it's never a gotcha:
-    //   1) sick or maxed-out on a need → a long GRACE with only soft "needs you" signals
-    //   2) after grace, the 🎒 warning goes up (c._leaveSince) and a shorter clock runs to the leave
-    const critical = c.sick || c.hunger >= 100 || c.thirst >= 100;
-    if (critical) {
-      if (!c._criticalSince) c._criticalSince = Date.now();
-      const crit = Date.now() - c._criticalSince;
-      if (crit > LEAVE_GRACE_MS && !c._leaveSince) {
-        c._leaveSince = Date.now();
-        logMoment("🎒", `${c.name} is thinking about moving on. Tend to them today and they'll stay.`, "care");
-        toast(`${c.name} may leave the cove soon — they need looking after.`, 6);
-      }
-      if (c._leaveSince && !c.mascot && Date.now() - c._leaveSince > LEAVE_AFTER_MS) neglectLeave(c);
-    } else if (c._criticalSince && !c.sick && need < 88) {
-      c._criticalSince = 0; c._leaveSince = 0;
-    }
-
+    // Home is permanent. Needs invite care; they never threaten abandonment.
+    c._criticalSince = 0; c._leaveSince = 0;
     // one glyph describing what this cat needs right now (drives the in-world badge + roster)
     c._need = catNeed(c);
     c._ill = !!c.sick || c.health < 32;
@@ -4928,6 +4926,7 @@ function petCat(c) {
   c.mood = clamp(c.mood + gain, 8, 100);
   c.petBuff = Math.max(c.petBuff, 18);
   G.metrics.pets += 1;
+  neoRemember(c,"hello",`The first hello. ${c.name} made a little room for you.`);
   bumpGoal("pet", 1);
   spawnParticles(c.x, c.y - 30, "heart", c.petAffinity() > 1.2 ? 9 : 5);
   spawnParticles(c.x, c.y - 24, "spark", 6);
@@ -4962,6 +4961,7 @@ function gainBond(c, amt, quiet) {
 }
 function onBondMilestone(c, lvl, quiet) {
   const nm = BOND_LEVELS[lvl].name.toLowerCase();
+  neoRemember(c,"bond-"+lvl,`You and ${c.name}: ${BOND_LEVELS[lvl].name.toLowerCase()}.`);
   logMoment("💛", lvl >= 4 ? `${c.name} is fully at home with you now.` : `You and ${c.name} are ${nm} now.`, "bond");
   if (!quiet && cats.includes(c)) {
     spawnParticles(c.x, c.y - 24, "heart", 9);
@@ -5072,7 +5072,7 @@ const NEED_META = {
 function wellClass(h) { return h >= 70 ? "" : h >= 40 ? "mid" : "lo"; }
 function catNeed(c) {
   if (!c || c.visitor) return null;
-  return c._leaveSince ? "leave" : c.sick ? "sick"
+  return c.sick ? "sick"
     : (c.hunger > HUNGER_HI && G.food <= 0) || c.hunger > 82 ? "hungry"
     : (c.thirst > THIRST_HI && !anyWaterSource()) || c.thirst > 84 ? "thirsty" : null;
 }
@@ -5249,7 +5249,7 @@ function renderWardrobe(c) {
   }));
 }
 function rehomeReward(c) {
-  return { shells: 15 + c.star * 18, pearls: c.star >= 3 ? c.star - 2 : 0 };
+  return { shells: 0, pearls: 0 }; // rehoming is a personal choice, never a currency farm
 }
 cc.rehomeBtn.addEventListener("click", () => {
   const c = cardCat;
@@ -5261,7 +5261,7 @@ cc.rehomeBtn.addEventListener("click", () => {
     <canvas width="200" height="185"></canvas>
     <h2>${c.name}</h2>
     <p class="sub">Send them off to a loving home? They'll always stay in your Catdex.
-      You'll receive <b>◈ ${rw.shells}</b>${rw.pearls ? ` and <b>✦ ${rw.pearls}</b>` : ""}.</p>
+      Your shared memories stay in the journal. This is a goodbye, not a sale.</p>
     <div class="row">
       <button class="btn primary" id="rh-yes">Wave goodbye</button>
       <button class="btn" id="rh-no">Keep them</button>
@@ -5275,7 +5275,8 @@ cc.rehomeBtn.addEventListener("click", () => {
     G.shells += rw.shells; G.pearls += rw.pearls;
     spawnParticles(c.x, c.y - 20, "heart", 6);
     sfx("coax"); syncHud(); hideCatCard(); closeModal();
-    toast(`${c.name} found a wonderful home. +◈ ${rw.shells}`);
+    logMoment("🏡",`${c.name} found a loving new home. Your shared memories stay.`,"bond");
+    save();toast(`${c.name} found a wonderful home.`);
   };
 });
 function starGlyphs(n) {
@@ -5306,10 +5307,11 @@ function showCatCard(c) {
     ? "Follows Midknight around and turns up with things. Won't stay long — he never does."
     : c.t1.desc + " " + c.t2.desc;
   renderCatPref(c);
+  neoCatStoryLink(c);
   renderCatCare(c);
   const rw = rehomeReward(c);
   cc.rehomeBtn.hidden = c.mascot || c.visitor || cats.length <= 3;   // only once the cove is comfortably full
-  cc.rehomeBtn.textContent = `Find them a new home  ·  ◈ ${rw.shells}${rw.pearls ? ` ✦ ${rw.pearls}` : ""}`;
+  cc.rehomeBtn.textContent = "Find them a new home";
   renderWardrobe(c);
   clearTimeout(cc.el._hideT); cc.el.classList.remove("leaving");
   cc.el.hidden = false;
@@ -6053,7 +6055,7 @@ function renderShop() {
     const items = SHOP.filter(i => i.cat === shopTab);
     const isSoon = i => i.soon && i.get() === 0;     // a retired item you own stays in the main list
     for (const item of items.filter(i => !isSoon(i))) list.appendChild(shopItemRow(item));
-    const soon = items.filter(isSoon);
+    const soon = []; // unfinished products stay out of the player shop
     if (soon.length) {
       list.appendChild(shopHead("Coming soon"));
       for (const item of soon) list.appendChild(shopItemRow(item));
@@ -6066,7 +6068,7 @@ function renderShop() {
    so rehoming a cat genuinely brings the next coax back down, and letting cats
    wander in for free still nudges the price up (a fuller cove is harder to add
    to). G.coax stays as a lifetime stat. */
-function coaxPrice() { return Math.round(12 * Math.pow(1.38, residentCount())); }
+function coaxPrice() { const n=residentCount(); return Math.min(1800, Math.round(12+5*n+2.8*Math.pow(Math.max(0,n-3),2))); }
 function doCoax(free) {
   if (!free) { G.shells -= coaxPrice(); }
   G.coax++;
@@ -6290,7 +6292,7 @@ function syncHud() {
   if(todayBadge.textContent!==noticeText)todayBadge.textContent=noticeText;
   todayBadge.classList.toggle('gift-ready',giftReady);
   todayBadge.setAttribute('aria-hidden','true');
-  const todayLabel=giftReady?'Today — daily welcome ready':(gReady||advBack||projReady?'Today — updates ready':'Today');
+  const todayLabel=giftReady?'Journal — daily welcome ready':(gReady||advBack||projReady?'Journal — updates ready':'Journal');
   if(todayButton.getAttribute('aria-label')!==todayLabel){todayButton.setAttribute('aria-label',todayLabel);todayButton.title=todayLabel;}
   // driftwood pill — only while something needs it
   const dw = (G.materials && G.materials.driftwood) || 0;
@@ -6413,12 +6415,12 @@ function togglePanel(name) {
     hideCatCard(); hideToast(); hidePropCard();   // clear anything floating over the cove before the panel comes up
     panels[name].hidden = false;
     if (name === "shop") renderShop();
-    if (name === "dex") renderDex();
+    if (name === "dex") { renderDex(); neoRenderCats(); }
     if (name === "today") {
-      renderCheckinCard(); renderProjectCard(); renderAdventureCard(); renderFindsCard(); renderGoals(); renderMoments();
+      neoRenderJournal(); renderCheckinCard(); renderProjectCard(); renderAdventureCard(); renderFindsCard(); renderGoals(); renderMoments();
       if (G.tips && !G.tips.includes("today_seen")) {
         G.tips.push("today_seen");
-        toast("A little welcome each day, three small goals, your streak. Miss a day and nothing's lost.", 5);
+        toast("A little welcome each day, three optional rituals, your memories. Miss a day and nothing's lost.", 5);
       }
     }
   }
@@ -6627,6 +6629,8 @@ function renderGoals() {
         ${g.claimed ? "Claimed" : g.done ? `Claim ${rw}` : `Reward: ${rw}`}
       </button>`;
     if (g.done && !g.claimed) row.querySelector("button").addEventListener("click", () => claimGoal(g));
+    if(!g.done){const swap=document.createElement('button');swap.className='linkbtn';swap.textContent='Try something else';
+      swap.onclick=()=>neoReplaceGoal(g,true);row.append(swap);}
     list.appendChild(row);
   }
 }
@@ -6641,9 +6645,9 @@ function claimGoal(g) {
     G.streakDay = today();
     G.streak = (G.streak || 0) + 1;
     G.pearls += 2;
-    openModal(`<div class="reveal"><div class="kicker">Daily streak</div>
+    openModal(`<div class="reveal"><div class="kicker">A lovely day</div>
       <h2>🔥 ${G.streak} ${G.streak === 1 ? "day" : "days"}</h2>
-      <p class="sub">All three goals done. +2 bonus pearls. Come back tomorrow to keep the streak.</p>
+      <p class="sub">Three little moments, one lovely day. +2 bonus pearls. Your progress stays, even when you take a break.</p>
       <button class="btn primary" id="rv-ok">Nice</button></div>`);
     document.getElementById("rv-ok").onclick = closeModal;
   }
@@ -6666,7 +6670,7 @@ function flushReveal() {
     <canvas width="220" height="205"></canvas>
     <h2>${rv.name}</h2>
     <div class="stars" style="color:${STAR_COL[rv.star]}">${"★".repeat(rv.star)}${'<span style="color:#d8d2bd">'+"★".repeat(4-rv.star)+"</span>"}</div>
-    <p class="sub">${rv.coatName} · ${STAR_NAME[rv.star]}${rv.star>=2?` — produces ${Math.round((1+(rv.star-1)*0.3)*100)}% shells`:""}</p>
+    <p class="sub">${rv.coatName} · ${STAR_NAME[rv.star]}<br>A new face. A little story waiting to happen.</p>
     <button class="btn primary" id="rv-ok">${revealQueue.length ? "Next" : "Welcome them in"}</button>
   </div>`);
   miniCat(document.querySelector("#modal canvas"), rv.coatKey, rv.star, "loafing", false, 2.7);
@@ -6904,7 +6908,7 @@ const GUIDE = [
   ["Collect the drops", "Cats leave a shell every so often. Tap it, or leave it — it banks itself. Earnings run fast your first hour, then settle."],
   ["Grow the cove", "Coax a cat, or open the Shop for bowls, beds and toys — each one makes room for more. Fresh catnip doubles earnings for 20 minutes."],
   ["Restore the cove", "Down at the shore, places like the old dock come back over time — shells plus driftwood the cats turn up. Tap one to see what it needs."],
-  ["Today", "A welcome gift each day, three small goals, your streak. Miss a day and nothing's lost — there's no way to fall behind here."],
+  ["Today", "A welcome gift each day, optional rituals, your shared memories. Miss a day and nothing's lost — there's no way to fall behind here."],
   ["Send a cat exploring", "Once a day, pick a trip and a cat. Postcards arrive while they're away; they come home with finds and a story. Midknight never leaves."],
   ["Rainy days", "Tap 🌙 any time — everyone pads inside, real rain plays. Leave it running while you work, or sleep to it."],
   ["The Cove Festival", "Tap 🎪 any time — the grounds have a few things on: a Cove Race, Cove Volleyball, and Tug of Paws against a visiting Cove. No stakes: everyone who plays comes away with a little something."],
@@ -7408,13 +7412,14 @@ async function runPurchase(productId, label, priceStr) {
     }
     return false;
   }
-  return confirm(`Confirm purchase — ${label}, ${priceStr}?\n(simulated: no charge)`);
+  toast("This collection is a preview. Purchases will open when store billing is ready.",5);
+  return false;
 }
 // footer line for the offer modals — honest in both the app and the web build
 function billingNote(lead) {
   return `${lead || "Purely cosmetic"} — no effect on your cove, your cats or your progress. `
-    + (nativeIap() ? "Tied to your Google account, so it carries across devices."
-                   : "(Simulated in this web build.)");
+    + (nativeIap() ? "Tied to your store account. Restore purchases on supported devices."
+                   : "Preview only on the web; no payment is taken.");
 }
 
 /* ---------- Founding Covekeeper — cosmetic + support only ---------- */
@@ -7613,7 +7618,7 @@ function offlineArrivals(elapsed) {
 function offlineEarnings(elapsed, then) {
   const done = () => { try { then && then(); } catch (e) {} };
   if (elapsed < 45 || !(G.ratePerSec > 0)) return done();
-  const capped = Math.min(elapsed, 4 * 3600);          // earnings stop accruing after 4h away
+  const capped = Math.min(elapsed, 4 * 3600) + Math.min(Math.max(0,elapsed-4*3600),20*3600)*0.2;          // full trickle for 4h, then a slower trickle up to 24h
   let base = Math.floor(G.ratePerSec * capped * 0.18); // the cove ticks over — it doesn't grind for you
   base = Math.max(0, Math.min(base, 280 + cats.length * 260));   // soft cap: a return is 1-2 nice purchases, not a windfall
   if (base <= 0) return done();
@@ -7644,107 +7649,21 @@ let _wywaReport = null;
 function offlineCare(elapsed) {
   _wywaReport = null;
   if (elapsed < 120 || !cats.length) return;
-  const consume = foodPerSec();                         // servings/sec — the same steady rate the "days left" estimate shows
-  const foodSecs = (G.food || 0) / consume;             // how long the store lasted
-  const starveSecs = Math.max(0, elapsed - foodSecs);
-  G.food = Math.max(0, G.food - consume * elapsed);
-  const watered = anyWaterSource();
-  const now = Date.now();
-  const before = new Map();
-  for (const c of cats) if (!c.visitor) before.set(c, { health: c.health ?? 100, sick: !!c.sick });
-  const left = [];
+  // The community takes over basic care during absence. The player's stock
+  // remains available on return; no illness, lost cat or debt is generated.
   for (const c of cats) {
-    if (c.visitor) continue;
-    const fed = Math.min(elapsed, foodSecs);
-    c.hunger = clamp(c.hunger - fed * 0.02 + starveSecs * HUNGER_RATE * 0.5, 0, 100);
-    c.thirst = watered ? clamp(c.thirst - elapsed * 0.012, 0, 100)
-                       : clamp(c.thirst + elapsed * THIRST_RATE * 0.5, 0, 100);
-    // health buffer across the away window. only the time actually spent strained
-    // drains it, and offline drain is gentler than live (the cove muddles through).
-    if (c.health == null) c.health = 100;
-    const hungryFor = Math.max(0, starveSecs - 90 * 60);            // ~90 min of stored food-fat before it bites
-    const thirstyFor = watered ? 0 : Math.max(0, elapsed - 3 * 3600); // a dry cove takes a while to matter
-    const strainSecs = Math.min(elapsed, Math.max(hungryFor, thirstyFor));
-    const easySecs = Math.max(0, elapsed - strainSecs);
-    if (c.sick) { c.health = Math.min(c.health, SICK_FLOOR); }
-    else {
-      const drain = strainSecs * HEALTH_DRAIN * 0.55, regen = easySecs * HEALTH_REGEN * 0.5;
-      const overdraft = drain - regen - c.health;    // how far past empty the neglect went
-      // sick onset is a per-cat roll scaled by the overdraft, so a rough spell
-      // leaves a few unwell and the rest just run-down — not the whole cove at once
-      if (overdraft > 0 && Math.random() < clamp(overdraft / 90, 0.08, 0.85))
-        c.sick = { since: now - Math.min(strainSecs, 36000) * 1000 };
-      c.health = c.sick ? SICK_FLOOR : clamp(c.health - drain + regen, 8, 100);
-    }
-
-    // leave clock. offline is forgiving: it does NOT start a fresh 🎒 warning — that
-    // only happens once you're back and still haven't helped. an EXISTING warning
-    // keeps ticking, and a cat left critical for days on end can still go (capped 2).
-    const critical = c.sick || c.hunger >= 100 || c.thirst >= 100;
-    if (critical) {
-      if (!c._criticalSince) c._criticalSince = now - Math.min(strainSecs, 6 * 24 * 3600) * 1000;
-      const crit = now - c._criticalSince;
-      if (crit > LEAVE_GRACE_MS + LEAVE_AFTER_MS && !c.mascot) { if (!c._leaveSince) c._leaveSince = c._criticalSince + LEAVE_GRACE_MS; left.push(c); }
-      else if (c._leaveSince && !c.mascot && now - c._leaveSince > LEAVE_AFTER_MS) left.push(c);
-    } else if (!c.sick && Math.max(c.hunger, c.thirst) < 88) { c._criticalSince = 0; c._leaveSince = 0; }
-    c._need = catNeed(c);
-    c._ill = !!c.sick || c.health < 32;
+    if(c.visitor)continue;
+    c.hunger = Math.min(c.hunger || 0, 35);
+    c.thirst = Math.min(c.thirst || 0, 30);
+    c._criticalSince = 0; c._leaveSince = 0;
+    if(c.sick && elapsed >= 2*3600){c.sick=null;c.health=Math.max(c.health||0,70);}
+    else if(!c.sick)c.health=Math.min(100,(c.health??100)+elapsed*.002);
+    c._need=catNeed(c);c._ill=!!c.sick;
   }
-  // at most two actually leave on any one return — the rest are on the leave clock
-  const leaving = left.slice(0, 2);
-  for (const c of leaving) {
-    breakFriendship(c); markLeftInDex(c);
-    const i = cats.indexOf(c); if (i >= 0) cats.splice(i, 1);
-  }
-  if (leaving.length) {
-    for (let i = 0; i < leaving.length; i++) _neglectLeftAt.push(now);   // count against the live blast-radius cap too
-    const nm = leaving.map(c => c.name);
-    setTimeout(() => {
-      logMoment("💔", `${joinNice(nm)} moved on while you were away — the cove had gone too long without care.`, "care");
-    }, 2400);
-    rebuildAttractors();
-  }
-  // everyone still here gets a fresh, visible window before the live sim can act —
-  // so a long absence never means "opened the game, half the cove was already gone"
-  for (const c of cats) {
-    if (c.visitor || !c._leaveSince) continue;
-    c._leaveSince = Math.max(c._leaveSince, now - LEAVE_AFTER_MS * 0.4);
-  }
-
-  // build the return roster
-  const rows = [];
-  for (const c of leaving) rows.push({ name: c.name, coatKey: c.coatKey, star: c.star, need: "gone", sev: 5,
-    mood: 0, health: 0, line: `Moved on while you were away. Kept in the Catdex — another may wander in.` });
-  for (const c of cats) {
-    if (c.visitor || c.mascot) continue;
-    const b = before.get(c) || {};
-    const need = c._need;
-    let sev = 0, line;
-    if (need === "leave") { sev = 4; line = `Unwell and close to leaving — <b>treat them today</b> and they'll stay.`; }
-    else if (need === "sick") { sev = 3; line = b.sick ? `Still unwell — medicine sorts it.` : `Came down with something while you were away. Medicine sorts it.`; }
-    else if (need === "hungry") { sev = 2; line = `Hungry — the bowls ran out. Fine once refilled.`; }
-    else if (need === "thirsty") { sev = 2; line = watered ? `Thirsty — heading for water.` : `Thirsty, and there's no water source yet.`; }
-    else if ((b.health ?? 100) - (c.health ?? 100) > 14 && (c.health ?? 100) < 78) { sev = 1; line = `Ran a little down — on the mend now.`; }
-    else { sev = 0; line = pick(["Kept out of trouble.", "Doing just fine.", "Held the fort.", "No complaints."]); }
-    rows.push({ name: c.name, coatKey: c.coatKey, star: c.star, need: need || "ok", sev,
-      mood: Math.round(c.mood), health: Math.round(c.health ?? 100), line });
-  }
-  rows.sort((a, b) => b.sev - a.sev || (b.health < a.health ? -1 : 1));
-  const unwell = rows.filter(r => r.need === "sick" || r.need === "leave").length;
-  const hungry = rows.filter(r => r.need === "hungry").length;
-  const thirsty = rows.filter(r => r.need === "thirsty").length;
-  let headline;
-  if (leaving.length)
-    headline = `${joinNice(leaving.map(c => c.name))} moved on — the cove had gone too long without care.`;
-  else if (unwell)
-    headline = `${unwell === 1 ? "One cat is" : unwell + " cats are"} unwell and ${unwell === 1 ? "needs" : "need"} medicine.` + (hungry ? ` The bowls ran out, too.` : "");
-  else if (hungry >= 3 || G.food <= 0)
-    headline = `The food bowls ran out — everyone's hungry, but a refill sets it right.`;
-  else if (hungry || thirsty)
-    headline = `A couple of cats need a top-up, nothing serious.`;
-  else
-    headline = `The cove looked after itself. Everyone's well.`;
-  _wywaReport = { awaySec: elapsed, headline, foodEmpty: G.food <= 0, rows, leaving: leaving.map(c => c.name) };
+  _wywaReport={awaySec:elapsed,headline:"Welcome home. Your cats were looked after.",foodEmpty:false,
+    rows:cats.filter(c=>!c.visitor).map(c=>({name:c.name,coatKey:c.coatKey,star:c.star,
+      need:c.sick?'sick':'ok',sev:c.sick?1:0,mood:Math.round(c.mood),health:Math.round(c.health),
+      line:c.sick?'Resting comfortably. Free community care is available.':'Safe, settled, and still very much themselves.'})),leaving:[]};
 }
 // coming back: arrivals, then a NARRATIVE beat, then the earnings summary, then `then`
 function checkOffline(then) {
@@ -9013,7 +8932,7 @@ function renderRest(dt) {
    something the cove builds up to rather than a button that's just always
    been there. The dev panel's "🎪 festival" button / window.__cove.fest()
    bypass the lock, same as they bypass everything else, for testing. */
-function festUnlocked() { return G.opens >= 5; }
+function festUnlocked() { return !!G.tutorialDone && residentCount() >= 2; }
 // Cove Volleyball has its OWN gate — no day requirement, just 3 cats actually
 // standing in the cove right now (adventurers are spliced out of `cats`, so
 // this naturally drops and recovers as trips leave and return).
@@ -9026,7 +8945,7 @@ let festMode = false, _festDPR = 0, _festG = null;
 let festKind = "race", _festPickKind = null, _festRoster = [];
 // tiny fire-and-forget analytics seam: no library, just a labelled console line
 // in dev builds. Swap the body for a real sink later without touching callers.
-function trackEvent(name, params) { if (DEV_BUILD) console.debug("[analytics]", name, params || {}); }
+function trackEvent(name, params) { neoEvent(name); if (DEV_BUILD) console.debug("[analytics]", name, params || {}); }
 const RACE_W = 1400, RACE_H = 640, MAX_RACE_T = 20;
 let raceCats = [], festSpectators = [], racePick = null, raceWinner = null;
 let raceT = 0, racePhase = "run", _festFinishAt = 0, festPickedCat = null, festCheerUntil = 0;
@@ -9210,6 +9129,7 @@ function startFestRace() {
   // a visiting guest fills a lane when the cove's small — the festival always has a full field of 5
   while (field.length < 5) field.push(new Cat({ visitor: true }));
   racePick = festPickedCat || field[0];
+  for(const c of field)neoRemember(c,"first-race",`${c.name} joined you at the Cove Race. A little chaos, shared.`);
   raceCats = field.slice(0, 5).map((c, i) => {
     const bias = (c.traits || []).some(t => ["bold", "playful", "curious"].includes(t)) ? 1.7
       : (c.traits || []).some(t => ["lazy", "shy"].includes(t)) ? 0.55 : 1;
@@ -9717,6 +9637,7 @@ function drawBunting(g, x0, y, w, h, t, opts = {}) {
     g.beginPath(); g.moveTo(-11, 0); g.lineTo(11, 0); g.lineTo(0, h * 0.92); g.closePath(); g.fill();
     g.restore();
   }
+  neoFestivalLanterns(g,x0,y,w,sagAt);
   g.restore();
 }
 // start = a plain coloured pennant; finish = a small checkerboard (reads at a
@@ -10187,7 +10108,7 @@ function enterFestVolley() {
 const FEST_EVENTS = [
   { key: "race", emoji: "🚩", name: "Cove Race",
     desc: "Pick a cat and cheer them all the way to the finish.",
-    lock: () => festUnlocked() ? null : "Opens on day 5.", enter: enterFestRace },
+    lock: () => festUnlocked() ? null : "Welcome two cats and finish meeting Midknight.", enter: enterFestRace },
   { key: "volley", emoji: "🏐", name: "Cove Volleyball",
     desc: "Keep three cats awake and rally against a visiting Cove.",
     lock: () => volleyReady() ? null : "You need 3 cats at the Cove to play.", enter: enterFestVolley },
@@ -18261,10 +18182,188 @@ Object.defineProperty(window.__cove, "cam", { get: () => ({
   aim: _focus && [Math.round(_focus.x), Math.round(_focus.y)],
 }) });
 
+/* NEO_HOME_BEGIN */
+// Neo home layer: bounded local data, existing cats, no new per-frame DOM work.
+function neoReadSave(){
+  let raw = null;
+  try {
+    // One-time copy only: Neo never writes to or deletes the original save.
+    raw = localStorage.getItem(SAVE_KEY);
+    if (!raw && !localStorage.getItem("catmintCove.neo.migrated")) {
+      const legacy = localStorage.getItem("catmintCove.save.v9");
+      if (legacy) {
+        const candidate = JSON.parse(legacy);
+        if (candidate && candidate.v === 9 && Array.isArray(candidate.cats)) {
+          localStorage.setItem("catmintCove.neo.original-backup", legacy);
+          localStorage.setItem(SAVE_KEY, legacy); raw = legacy;
+          const rights = localStorage.getItem("catmintCove.iap.v1");
+          if (rights) localStorage.setItem(IAP_STORE_KEY, rights);
+        }
+      }
+      localStorage.setItem("catmintCove.neo.migrated", "1");
+    }
+    if (!raw) for (const k of OLD_SAVE_KEYS) { raw = localStorage.getItem(k); if (raw) break; }
+  } catch (e) {}
+  return raw;
+}
+function neoHome(){
+  if(!G.neoHome)G.neoHome={cats:{},visits:[],events:[],metrics:false};
+  return G.neoHome;
+}
+function neoCatKey(c){return String(c.markSeed)+'|'+c.coatKey+'|'+String(c.bornAt);}
+function neoRecord(c){
+  const h=neoHome(),key=neoCatKey(c);
+  if(!h.cats[key])h.cats[key]={memories:[],note:'',favorite:false};
+  Object.assign(h.cats[key],{name:c.name,coatKey:c.coatKey,markSeed:c.markSeed});
+  return h.cats[key];
+}
+function neoRemember(c,id,text){
+  if(!G||!c||c.visitor)return;
+  const r=neoRecord(c);if(r.memories.some(m=>m.id===id))return;
+  r.memories.push({id,text,t:Date.now()});if(r.memories.length>32)r.memories.shift();
+}
+function neoGoalEligible(g){
+  if(!g)return false;
+  // Discovery depends on luck; never make it a required daily ritual.
+  if(g.id==='discover')return false;
+  if(g.id==='coax')return residentCount()<capacity() && G.shells>=coaxPrice();
+  return true;
+}
+function neoReplaceGoal(g,notify){
+  if(g.done||g.claimed)return;
+  const used=G.goals.filter(x=>x!==g).map(x=>x.id);
+  const choices=GOAL_POOL.filter(d=>neoGoalEligible(d)&&!used.includes(d.id)&&d.id!==g.id);
+  const d=choices[0];if(!d){if(notify)toast('These are the available rituals for your Cove today.');return;}
+  Object.assign(g,{id:d.id,target:d.gen(),prog:0,done:false,claimed:false,reward:typeof d.reward==='function'?d.reward():{...d.reward}});
+  if(notify){save();renderGoals();toast('A fresh little ritual. No cost, no penalty.');}
+}
+function neoCommunityCare(){
+  G.food=Math.max(G.food||0,foodPerDay());
+  for(const c of cats){if(c.visitor)continue;c.hunger=Math.min(c.hunger||0,30);c.thirst=Math.min(c.thirst||0,25);
+    if(c.sick)clearSick(c,70);c.health=Math.max(c.health||0,70);c._criticalSince=0;c._leaveSince=0;}
+  syncHud();save();toast('The community pantry has covered the basics. Everyone is safe.');
+  neoEvent('community_care');
+}
+function neoRestoreHome(){
+  const h=neoHome();const day=todayKey();if(!h.visits.includes(day)){h.visits.push(day);h.visits=h.visits.slice(-90);}
+  for(const c of cats){c._criticalSince=0;c._leaveSince=0;if(!c.visitor)neoRecord(c);}
+  neoBuildNavigation();
+}
+function neoEvent(name){
+  if(!G)return;const h=neoHome();if(!h.metrics)return;
+  if(!/^[a-z_]{1,60}$/.test(name))return;h.events.push({name,t:Date.now()});if(h.events.length>400)h.events.shift();
+}
+function neoPortrait(canvasEl,c,scale){
+  const g=canvasEl.getContext('2d');g.clearRect(0,0,canvasEl.width,canvasEl.height);
+  const portrait=new Cat({coatKey:c.coatKey,star:c.star,markSeed:c.markSeed,mascot:c.mascot,bornAt:c.bornAt,x:0,y:0});
+  portrait.worn=[...(c.worn||[])];portrait.state='loafing';portrait.blink=3;portrait.bob=.6;portrait.tail=.3;portrait.trotting=false;
+  g.save();g.translate(canvasEl.width/2,canvasEl.height-6);g.scale(scale,scale);drawCat(g,portrait,true);g.restore();
+}
+function neoCatStoryLink(c){
+  let b=document.getElementById('neo-story-link');
+  if(!b){b=document.createElement('button');b.id='neo-story-link';b.className='btn small';cc.prefEl.after(b);}
+  b.hidden=c.visitor;b.textContent='Our story';b.onclick=()=>neoOpenStory(c);
+}
+function neoOpenStory(c){
+  const r=neoRecord(c);
+  openModal(`<div class="neo-story" role="dialog" aria-label="Cat story"><button class="x neo-story-x" id="neo-story-x" aria-label="Close cat story">✕</button><div class="kicker">A little life, shared with you</div>
+    <canvas id="neo-portrait" width="220" height="180"></canvas>
+    <h2>${esc(c.name)}</h2><p class="neo-story-sub">${esc(c.title||bondName(c.bond||0))}</p>
+    <div class="neo-story-facts"><p><b>Loves</b> ${esc(catPrefLine(c))}</p>
+    <p><b>Company</b> ${c.friend?esc(c.friend)+' is a familiar friend.':'Still finding their favorite company.'}</p>
+    <p>${c.quirkKnown?esc(catQuirkLine(c)):'There are still little habits to discover together.'}</p></div>
+    <label class="neo-note-label" for="neo-note">What makes ${esc(c.name)} special to you?</label>
+    <textarea id="neo-note" maxlength="240" placeholder="A nickname, a real-life resemblance, a little thing you love…">${esc(r.note)}</textarea>
+    <button class="btn" id="neo-pin">${r.favorite?'♥ Pinned to your journal':'♡ Pin to your journal'}</button>
+    <div class="neo-memory-list">${r.memories.length?r.memories.map(m=>`<article><span>${new Date(m.t).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><p>${esc(m.text)}</p></article>`).join(''):'<p>Your shared memories begin with a hello. Spend time together; the little things will stay here.</p>'}</div>
+    <div class="row"><button class="btn primary" id="neo-story-save">Keep this memory</button><button class="btn" id="neo-story-close">Close</button></div>
+    </div>`);
+  neoPortrait(document.getElementById('neo-portrait'),c,2.4);
+  document.getElementById('neo-pin').onclick=()=>{r.favorite=!r.favorite;document.getElementById('neo-pin').textContent=r.favorite?'♥ Pinned to your journal':'♡ Pin to your journal';save();};
+  document.getElementById('neo-story-save').onclick=()=>{r.note=document.getElementById('neo-note').value.trim().slice(0,240);save();neoEvent('personal_note_saved');closeModal();if(!panels.today.hidden)neoRenderJournal();};
+  document.getElementById('neo-story-close').onclick=closeModal;
+  document.getElementById('neo-story-x').onclick=closeModal;
+  document.getElementById('neo-story-x').focus();
+  neoEvent('cat_story_open');
+}
+function neoRenderCats(){
+  let root=document.getElementById('neo-cat-roster');if(!root){root=document.createElement('div');root.id='neo-cat-roster';panels.dex.querySelector('h2').after(root);}
+  root.innerHTML=`<p class="muted">A familiar face, a favorite spot, a story of their own.</p><div class="neo-cat-grid"></div><div class="neo-roster-actions"><button class="btn primary" id="neo-invite">Invite a cat · ◈ ${coaxPrice()}</button><button class="btn" id="neo-care">Free basic care</button></div><h3 class="neo-section-label">Coats you have met</h3>`;
+  const grid=root.querySelector('.neo-cat-grid');
+  for(const c of cats.filter(c=>!c.visitor)){
+    const b=document.createElement('button');b.className='neo-cat-tile';
+    b.innerHTML=`<canvas width="120" height="110"></canvas><b>${esc(c.name)}</b><span>${esc(c.title||bondName(c.bond||0))}</span>${c.friend?`<small>Often with ${esc(c.friend)}</small>`:''}`;
+    b.onclick=()=>neoOpenStory(c);grid.append(b);neoPortrait(b.querySelector('canvas'),c,1.6);
+  }
+  document.getElementById('neo-invite').onclick=()=>{closeAllPanels();document.getElementById('coaxBtn').click();};
+  document.getElementById('neo-care').onclick=()=>{neoCommunityCare();neoRenderCats();};
+}
+function neoRenderJournal(){
+  const root=document.getElementById('neoJournal');if(!root)return;
+  const home=neoHome(),residents=cats.filter(c=>!c.visitor);
+  root.innerHTML=`<div class="neo-journal-cover"><span class="kicker">THE LITTLE THINGS STAY</span><h3>${esc(coveName())}</h3><p>${residents.length} familiar faces. A place to come back to.</p><p class="neo-promise">Your cats are cared for while you are away. Lovely days never reset.</p></div><div class="neo-journal-pins"></div><div class="neo-journal-tools"><button class="btn" id="neo-journal-photo">Capture a moment</button><button class="btn" id="neo-journal-cats">Their stories</button></div>`;
+  const pins=root.querySelector('.neo-journal-pins');
+  for(const c of residents.filter(c=>neoRecord(c).favorite).slice(0,6)){const b=document.createElement('button');b.className='btn';b.textContent='♥ '+c.name;b.onclick=()=>neoOpenStory(c);pins.append(b);}
+  const activeKeys=new Set(residents.map(neoCatKey));
+  for(const [key,r] of Object.entries(home.cats)){if(activeKeys.has(key)||!r.name)continue;
+    const entry=document.createElement('details');entry.className='neo-memory-list';const title=document.createElement('summary');title.textContent=r.name+' · always part of the story';entry.append(title);
+    for(const text of [r.note,...r.memories.map(m=>m.text)].filter(Boolean)){const line=document.createElement('p');line.textContent=text;entry.append(line);}root.append(entry);
+  }
+  document.getElementById('neo-journal-photo').onclick=()=>{closeAllPanels();document.getElementById('photoBtn').click();};
+  document.getElementById('neo-journal-cats').onclick=()=>togglePanel('dex');
+}
+function neoOpenExplore(){
+  const b=document.getElementById('neo-go-festival'),ready=festUnlocked()||volleyReady();
+  b.disabled=!ready;b.querySelector('small').textContent=ready?'Your familiar cats. A little friendly chaos.':'Welcome two cats and finish meeting Midknight.';
+  togglePanel('explore');neoEvent('explore_open');
+}
+function neoBuildNavigation(){
+  const actions=document.getElementById('actions');
+  const originals=['coaxBtn','shopBtn','photoBtn'];
+  for(const id of originals){document.getElementById(id).classList.add('neo-secondary-action');}
+  const home=document.createElement('button');home.className='btn';home.id='neo-home-nav';home.textContent='⌂ Cove';
+  home.onclick=()=>{closeAllPanels();hideCatCard(true);};actions.prepend(home);
+  const catsBtn=document.getElementById('dexBtn');catsBtn.setAttribute('aria-label','Your cats');catsBtn.querySelector('.lbl').textContent='Cats';
+  const journal=document.getElementById('todayBtn');journal.querySelector('.lbl').textContent='Journal';
+  const explore=document.createElement('button');explore.className='btn';explore.textContent='✧ Explore';explore.onclick=neoOpenExplore;journal.before(explore);
+  const sheet=document.createElement('div');sheet.className='sheet';sheet.hidden=true;sheet.id='neo-explore';
+  sheet.innerHTML=`<button class="x" id="neo-explore-close" aria-label="Close Explore">✕</button><div class="kicker">A LITTLE ADVENTURE, AT YOUR PACE</div><h2>Beyond the everyday</h2><p class="muted">Stay for a game, send a postcard, or settle in somewhere quiet.</p><div class="neo-explore-grid">
+  <button class="neo-destination" id="neo-go-festival"><span>🎏</span><b>Cove Festival</b><small>Your familiar cats. A little friendly chaos.</small></button>
+  <button class="neo-destination" id="neo-go-adventure"><span>✉</span><b>Adventures</b><small>A little trip. Something to bring home.</small></button>
+  <button class="neo-destination" id="neo-go-rest"><span>☾</span><b>Rainy retreat</b><small>No chores. Just rain and company.</small></button>
+  <button class="neo-destination" id="neo-go-shop"><span>❀</span><b>Tideline Shop</b><small>Make a corner of the Cove your own.</small></button></div>
+  <details class="neo-feedback"><summary>Help shape the Cove</summary><p>Your feedback can help us make this little home better.</p><button class="btn" id="neo-playtest">Private playtest notebook</button></details>`;
+  document.getElementById('app').append(sheet);panels.explore=sheet;
+  document.getElementById('neo-explore-close').onclick=closeAllPanels;
+  document.getElementById('neo-go-festival').onclick=()=>{closeAllPanels();document.getElementById('festBtn').click();};
+  document.getElementById('neo-go-adventure').onclick=()=>{closeAllPanels();openAdventurePicker();};
+  document.getElementById('neo-go-rest').onclick=()=>{closeAllPanels();document.getElementById('restBtn').click();};
+  document.getElementById('neo-go-shop').onclick=()=>togglePanel('shop');
+  document.getElementById('neo-playtest').onclick=neoPlaytest;
+  panels.dex.querySelector('h2').textContent='Your cats';panels.shop.querySelector('h2').textContent='Tideline Shop';
+}
+function neoPlaytest(){
+  const h=neoHome();openModal(`<h2>Your private playtest notebook</h2><p>Optional interaction counts stay on this device. No names, notes, or memories are exported. Nothing is sent automatically.</p><button class="btn" id="neo-metrics">${h.metrics?'Stop':'Start'} recording interactions</button><button class="btn" id="neo-export">Download anonymous counts</button><button class="btn" id="neo-metrics-close">Close</button>`);
+  document.getElementById('neo-metrics').onclick=()=>{h.metrics=!h.metrics;save();neoPlaytest();};
+  document.getElementById('neo-export').onclick=()=>{const counts={};for(const e of h.events)counts[e.name]=(counts[e.name]||0)+1;const blob=new Blob([JSON.stringify({build:'neo-home-1',counts},null,2)],{type:'application/json'});const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download='cove-playtest.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+  document.getElementById('neo-metrics-close').onclick=closeModal;
+}
+function neoFestivalLanterns(g,x0,y,w,sagAt){
+  const night=neoLight(nowHours()).night;if(night<.05)return;
+  g.save();for(let i=0;i<Math.min(12,Math.ceil(w/120));i++){
+    const f=(i+.5)/Math.min(12,Math.ceil(w/120)),x=x0+f*w,yy=sagAt(f)+13;
+    const glow=g.createRadialGradient(x,yy,2,x,yy,34);glow.addColorStop(0,'rgba(255,210,128,'+(night*.26)+')');glow.addColorStop(1,'rgba(255,210,128,0)');
+    g.fillStyle=glow;g.fillRect(x-34,yy-34,68,68);g.strokeStyle='#796649';g.lineWidth=1;g.beginPath();g.moveTo(x,yy-13);g.lineTo(x,yy-5);g.stroke();
+    g.fillStyle='#ffdda0';g.beginPath();g.ellipse(x,yy,5,7,0,0,Math.PI*2);g.fill();
+  }g.restore();
+}
+
+/* NEO_HOME_END */
 resize();
 _lastViewBottom = _viewBottomY;
 load();
 restoreCats();
+neoRestoreHome();
 loadEntitlements();                    // pull purchases from the dedicated iapStore — runs whatever load() did
 applyEntitlements();                   // re-derive perks from the cached entitlements immediately
 // Hooks the native billing bridge (scripts/capacitor-bridge.js) calls back into.
@@ -18422,6 +18521,12 @@ drawBackground = function(dt) {
 function neoOutdoor(g,w,h,horizon,over,sand=false) {
   if(!art2dReady(ART2D.cove)) return;
   const im=ART2D.cove,iw=im.naturalWidth,ih=im.naturalHeight;
+  // Cover the visible world even when a portrait activity fits a wide screen.
+  const tr=g.getTransform();
+  if(tr.a>0 && tr.d>0){
+    over=Math.max(over, tr.e/tr.a+2, (g.canvas.width-tr.e)/tr.a-w+2,
+      tr.f/tr.d+2, (g.canvas.height-tr.f)/tr.d-h+2);
+  }
   g.save();
   g.fillStyle='#c2dfe7';g.fillRect(-over,-over,w+over*2,h+over*2);
   g.drawImage(im,0,0,iw,ih*.38,-over,0,w+over*2,horizon);
@@ -18429,7 +18534,7 @@ function neoOutdoor(g,w,h,horizon,over,sand=false) {
   if(sand){g.fillStyle='#ebddba';g.fillRect(-over,horizon,w+over*2,h-horizon+over);}
   const sky=timeOfDay();
   neoClearSky(g,w,horizon*(300/1024)/.38,over);
-  neoAtmosphere(g,sky,w,h,horizon*(300/1024)/.38,over);
+  neoAtmosphere(g,sky,w,h,horizon*(300/1024)/.38,over,true);
   neoSky(g,sky,w,horizon*(300/1024)/.38,over);
   g.restore();
 }
@@ -18501,9 +18606,9 @@ function neoLight(hour){
   const n=Math.max(0,-altitude);
   return {night:n*n*(3-2*n),twilight:Math.pow(Math.max(0,1-Math.abs(altitude)/.5),2)};
 }
-function neoAtmosphere(g,sky,w,h,hz,over){
+function neoAtmosphere(g,sky,w,h,hz,over,festival=false){
   const light=neoLight(nowHours());
-  const darkness=Math.min(.84,(1-sky.df)*.36+light.night*.48);
+  const darkness=Math.min(festival?.38:.84,(1-sky.df)*.36+light.night*.48);
   g.save();g.fillStyle=`rgba(9,19,43,${darkness})`;g.fillRect(-10000,-10000,20000,h+20000);
   if(light.twilight>.005){
     const warmth=g.createLinearGradient(0,0,0,hz*1.4);
@@ -18594,7 +18699,7 @@ function neoRaceMeadow(g,w,h){
   g.lineTo(w,bank+30);g.lineTo(0,bank+30);g.fill();
   g.drawImage(im,iw*.20,ih*.40,iw*.60,ih*.38,0,bank,w,h-bank);
   const light=neoLight(nowHours()),day=timeOfDay();
-  g.fillStyle='rgba(9,19,43,'+Math.min(.84,(1-day.df)*.36+light.night*.48)+')';
+  g.fillStyle='rgba(9,19,43,'+Math.min(.38,(1-day.df)*.36+light.night*.48)+')';
   g.fillRect(0,0,w,h);
   g.save();g.beginPath();g.moveTo(0,0);g.lineTo(w,0);g.lineTo(w,105);
   g.bezierCurveTo(w*.8,145,w*.65,95,w*.43,130);

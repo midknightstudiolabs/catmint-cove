@@ -37,6 +37,12 @@ drawBackground = function(dt) {
 function neoOutdoor(g,w,h,horizon,over,sand=false) {
   if(!art2dReady(ART2D.cove)) return;
   const im=ART2D.cove,iw=im.naturalWidth,ih=im.naturalHeight;
+  // Cover the visible world even when a portrait activity fits a wide screen.
+  const tr=g.getTransform();
+  if(tr.a>0 && tr.d>0){
+    over=Math.max(over, tr.e/tr.a+2, (g.canvas.width-tr.e)/tr.a-w+2,
+      tr.f/tr.d+2, (g.canvas.height-tr.f)/tr.d-h+2);
+  }
   g.save();
   g.fillStyle='#c2dfe7';g.fillRect(-over,-over,w+over*2,h+over*2);
   g.drawImage(im,0,0,iw,ih*.38,-over,0,w+over*2,horizon);
@@ -44,7 +50,7 @@ function neoOutdoor(g,w,h,horizon,over,sand=false) {
   if(sand){g.fillStyle='#ebddba';g.fillRect(-over,horizon,w+over*2,h-horizon+over);}
   const sky=timeOfDay();
   neoClearSky(g,w,horizon*(300/1024)/.38,over);
-  neoAtmosphere(g,sky,w,h,horizon*(300/1024)/.38,over);
+  neoAtmosphere(g,sky,w,h,horizon*(300/1024)/.38,over,true);
   neoSky(g,sky,w,horizon*(300/1024)/.38,over);
   g.restore();
 }
@@ -116,9 +122,9 @@ function neoLight(hour){
   const n=Math.max(0,-altitude);
   return {night:n*n*(3-2*n),twilight:Math.pow(Math.max(0,1-Math.abs(altitude)/.5),2)};
 }
-function neoAtmosphere(g,sky,w,h,hz,over){
+function neoAtmosphere(g,sky,w,h,hz,over,festival=false){
   const light=neoLight(nowHours());
-  const darkness=Math.min(.84,(1-sky.df)*.36+light.night*.48);
+  const darkness=Math.min(festival?.38:.84,(1-sky.df)*.36+light.night*.48);
   g.save();g.fillStyle=`rgba(9,19,43,${darkness})`;g.fillRect(-10000,-10000,20000,h+20000);
   if(light.twilight>.005){
     const warmth=g.createLinearGradient(0,0,0,hz*1.4);
@@ -209,7 +215,7 @@ function neoRaceMeadow(g,w,h){
   g.lineTo(w,bank+30);g.lineTo(0,bank+30);g.fill();
   g.drawImage(im,iw*.20,ih*.40,iw*.60,ih*.38,0,bank,w,h-bank);
   const light=neoLight(nowHours()),day=timeOfDay();
-  g.fillStyle='rgba(9,19,43,'+Math.min(.84,(1-day.df)*.36+light.night*.48)+')';
+  g.fillStyle='rgba(9,19,43,'+Math.min(.38,(1-day.df)*.36+light.night*.48)+')';
   g.fillRect(0,0,w,h);
   g.save();g.beginPath();g.moveTo(0,0);g.lineTo(w,0);g.lineTo(w,105);
   g.bezierCurveTo(w*.8,145,w*.65,95,w*.43,130);
