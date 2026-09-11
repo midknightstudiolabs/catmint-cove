@@ -225,7 +225,7 @@
     #dev{bottom:calc(4.4rem + env(safe-area-inset-bottom));}
   }
 
-  #stage{position:absolute;inset:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior:contain;
+  #stage{position:absolute;inset:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior:none;
     -webkit-overflow-scrolling:touch;touch-action:pan-x;display:flex;background:#171310;}
   #stage::-webkit-scrollbar{display:none;}
   #c{margin:auto;display:block;flex:0 0 auto;}
@@ -4317,7 +4317,7 @@ let _ovHold = null;                       // once the zoom is fully settled with
 const OV_MAX_OUT = 1.7;                   // hard cap: never pull back further than 1.7x the normal view
 function ovComputeFit() {                 // scale (relative to _ovBaseScale) at full zoom-out — computed ONCE at entry
   // Cover the held viewport with real scenery, without letterbox margins.
-  const fit = Math.max(_ovVpW / (W + 2 * _overX), _ovVpH / H);
+  const fit = Math.max((_ovVpW + 4) / (W + 2 * _overX), (_ovVpH + 4) / H);
   return Math.max(1 / OV_MAX_OUT, fit / Math.max(0.001, _ovBaseScale));
 }
 function ovSnapViewport() {                 // ONE read of the viewport, held until the next real resize
@@ -4409,9 +4409,10 @@ function updateCamera(dt) {
     // zoomed-out view is wider/taller than the cove there's nothing to pan — lock to centre.
     // _ovVpW/_ovVpH are a held snapshot, not live window.innerWidth (which jitters every frame).
     const halfW = (_ovVpW / 2) / _camScale, halfH = (_ovVpH / 2) / _camScale;
-    const loX = -_overX + halfW, hiX = W + _overX - halfW;
+    const edgeGuard = 2 / _camScale; // keep raster edges outside the visible screen
+    const loX = -_overX + halfW + edgeGuard, hiX = W + _overX - halfW - edgeGuard;
     _ovCamX = loX >= hiX ? W / 2 : clamp(_ovCamX, loX, hiX);
-    const loY = halfH, hiY = H - halfH;
+    const loY = halfH + edgeGuard, hiY = H - halfH - edgeGuard;
     _ovCamY = loY >= hiY ? H / 2 : clamp(_ovCamY, loY, hiY);
     _camX = Math.round(_ovCamX * 4) / 4; _camY = Math.round(_ovCamY * 4) / 4;   // quarter-px snap kills sub-pixel shimmer
     _camTx = Math.round((_ovVpW / 2 - _camX * _camScale) * 2) / 2;
@@ -16528,8 +16529,8 @@ function renderScene(dt) {
   }
   ctx.restore();
 
-  // focus camera: darken the surrounds so it's just you and the cat
-  if (_focusT > 0.01) {
+  // Only a cat close-up gets dark surrounds; overview should remain an open landscape.
+  if (_focusT > 0.01 && !_ovActive) {
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
     const cw = canvas.width, ch = canvas.height;
     const g = ctx.createRadialGradient(cw / 2, ch / 2, Math.min(cw, ch) * 0.30, cw / 2, ch / 2, Math.max(cw, ch) * 0.66);
