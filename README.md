@@ -42,3 +42,6 @@ Sun, moon and stars clip against the painted mountain silhouette using the same 
 
 ### Calm moving clouds
 Replaced the baked cloud sky at render time with a clean gradient clipped to the mountain skyline; the original image file, terrain and shoreline remain intact. Four clouds use the original three-ellipse puff shape and drift horizontally at 1.8–3.2 world pixels/second. They wrap beyond the viewport, never bob or pulse, and remain still with reduced motion enabled. The shared renderer applies to Cove, outdoor festivals and photos. No new bitmap or per-frame noise texture was introduced.
+
+### Overview edge continuity
+The overview now paints sky and meadow beyond the play rectangle. The night wash covers the entire camera view, avoiding bright bars at the original canvas boundary. Side scenery reflects across its edge with matching skyline clipping; the lower edge continues its final grass color into a quiet meadow rather than repeating upside-down shrubs. A light mist band softens the sea horizon. Checked wide and 900x1000 overview views locally.

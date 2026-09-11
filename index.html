@@ -16509,13 +16509,13 @@ function renderScene(dt) {
   if (sky && sky.df < 0.9) {
     const n = 1 - sky.df;
     ctx.fillStyle = `rgba(30,36,64,${n * 0.26})`;
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(-10000, -10000, 20000, 20000);
     // a soft pool of warmth around the cove sign / centre so it never goes fully bleak
     if (!_warmWash) {
       _warmWash = ctx.createRadialGradient(W*0.5, H*0.62, 20, W*0.5, H*0.62, Math.max(W,H)*0.55);
       _warmWash.addColorStop(0, "rgba(255,214,150,1)"); _warmWash.addColorStop(1, "rgba(255,214,150,0)");
     }
-    ctx.save(); ctx.globalAlpha = n * 0.10; ctx.fillStyle = _warmWash; ctx.fillRect(0, 0, W, H); ctx.restore();
+    ctx.save(); ctx.globalAlpha = n * 0.10; ctx.fillStyle = _warmWash; ctx.fillRect(-10000, -10000, 20000, 20000); ctx.restore();
   }
   ctx.restore();
 
@@ -18283,6 +18283,7 @@ drawBackground = function(dt) {
   const sky = timeOfDay(); window._sky = sky;
   ctx.save();
   ctx.drawImage(ART2D.cove, -_overX, 0, W + _overX * 2, H);
+  neoExtendCove(ctx);
   neoClearSky(ctx,W,H*300/1024,_overX);
   neoAtmosphere(ctx,sky,W,H,H*300/1024,_overX);
   drawCelestial(ctx, sky);
@@ -18370,10 +18371,16 @@ function neoCatDepth(c){
 // The same transform is used for each outdoor scene, including extra side coverage.
 const NEO_SKYLINE=[[0,194],[28,200],[54,213],[86,241],[111,244],[145,244],[168,253],[193,272],[223,275],[253,279],[274,286],[298,299],[1208,299],[1224,287],[1248,283],[1270,286],[1302,274],[1332,275],[1365,274],[1391,271],[1410,260],[1433,263],[1454,247],[1482,247],[1504,233],[1524,228],[1536,228]];
 function neoSkyClip(g,w,hz,over){
-  const sx=(w+2*over)/1536,sy=hz/300;
-  g.beginPath();g.moveTo(-over,-1000);g.lineTo(w+over,-1000);
-  for(let i=NEO_SKYLINE.length-1;i>=0;i--){const [x,y]=NEO_SKYLINE[i];g.lineTo(-over+x*sx,(y-1)*sy);}
-  g.closePath();g.clip();
+  const span=w+2*over,sx=span/1536,sy=hz/300;
+  g.beginPath();g.moveTo(-10000,-10000);g.lineTo(10000,-10000);g.lineTo(10000,193*sy);
+  for(let col=1;col>=-1;col--){
+    const flip=col!==0;
+    for(let j=0;j<NEO_SKYLINE.length;j++){
+      const i=flip?j:NEO_SKYLINE.length-1-j,[x,y]=NEO_SKYLINE[i];
+      g.lineTo(-over+col*span+(flip?span-x*sx:x*sx),(y-1)*sy);
+    }
+  }
+  g.lineTo(-10000,227*sy);g.closePath();g.clip();
 }
 function neoLight(hour){
   const altitude=Math.sin((hour-6)*Math.PI/12);
@@ -18383,7 +18390,7 @@ function neoLight(hour){
 function neoAtmosphere(g,sky,w,h,hz,over){
   const light=neoLight(nowHours());
   const darkness=Math.min(.84,(1-sky.df)*.36+light.night*.48);
-  g.save();g.fillStyle=`rgba(9,19,43,${darkness})`;g.fillRect(-over,-over,w+2*over,h+2*over);
+  g.save();g.fillStyle=`rgba(9,19,43,${darkness})`;g.fillRect(-10000,-10000,20000,h+20000);
   if(light.twilight>.005){
     const warmth=g.createLinearGradient(0,0,0,hz*1.4);
     warmth.addColorStop(0,`rgba(99,77,141,${light.twilight*.16})`);
@@ -18410,7 +18417,11 @@ function neoClearSky(g,w,hz,over){
   g.save();neoSkyClip(g,w,hz,over);
   const fill=g.createLinearGradient(0,0,0,hz);
   fill.addColorStop(0,'#91d0ed');fill.addColorStop(1,'#b2def0');
-  g.fillStyle=fill;g.fillRect(-over,-1000,w+2*over,hz+1000);g.restore();
+  g.fillStyle=fill;g.fillRect(-10000,-10000,20000,hz+10000);g.restore();
+  g.save();
+  const haze=g.createLinearGradient(0,hz-8,0,hz+18);
+  haze.addColorStop(0,'rgba(207,229,227,0)');haze.addColorStop(.32,'rgba(207,229,227,.20)');haze.addColorStop(1,'rgba(207,229,227,0)');
+  g.fillStyle=haze;g.fillRect(-10000,hz-8,20000,26);g.restore();
 }
 let neoCloudTime=0,neoCloudLast=performance.now();
 function neoCloudPose(i,t,w,hz,over){
@@ -18430,6 +18441,27 @@ function neoMovingClouds(g,w,hz,over){
     g.beginPath();g.ellipse(x,y,34*s,16*s,0,0,7);
     g.ellipse(x+26*s,y+4*s,24*s,13*s,0,0,7);
     g.ellipse(x-24*s,y+5*s,20*s,11*s,0,0,7);g.fill();
+  }
+}
+
+// Continue the actual image edge beyond the play area; the camera never reveals a card.
+function neoExtendCove(g){
+  const im=ART2D.cove,left=-_overX,width=W+2*_overX;
+  for(let row=0;row<=1;row++)for(let col=-1;col<=1;col++){
+    if(row===0&&col===0)continue;
+    g.save();
+    const flipX=col!==0;
+    g.translate(left+col*width+(flipX?width:0),row*H);
+    g.scale(flipX?-1:1,1);
+    if(row===0)g.drawImage(im,0,0,width+.25,H+.25);
+    else {
+      // Only continue the last grass strip: do not repeat upside-down rocks or shrubs.
+      g.drawImage(im,0,im.naturalHeight-2,im.naturalWidth,2,0,0,width+.25,H+.25);
+      const fade=g.createLinearGradient(0,0,0,120);
+      fade.addColorStop(0,'rgba(166,192,111,0)');fade.addColorStop(1,'#a6c06f');
+      g.fillStyle=fade;g.fillRect(0,0,width+.25,H+.25);
+    }
+    g.restore();
   }
 }
 
