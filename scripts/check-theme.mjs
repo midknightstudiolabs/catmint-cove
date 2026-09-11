@@ -25,3 +25,13 @@ assert(depth({state:'indoors',y:48,_cotY:200,_perchKind:'perch'})>191);
 assert(depth({state:'indoors',y:48,_cotY:200,_perchKind:'perch'})<depth({state:'walking',y:205}));
 assert(depth({state:'baking',y:280,_station:'bakery'})>300);
 console.log('PASS: behind/in-front order, cottage doorway, elevated perch, and working-station depth.');
+const lightSource=art.match(/function neoLight\([\s\S]*?\n}/)[0];
+const light=vm.runInNewContext('('+lightSource+')');
+assert(light(0).night>light(21).night && light(21).night>light(18).night);
+assert(light(6).twilight>light(12).twilight && light(18).twilight>light(0).twilight);
+const ridge=JSON.parse(art.match(/const NEO_SKYLINE=(\[[^;]+\]);/)[1]);
+function ridgeAt(x){for(let i=1;i<ridge.length;i++){if(x<=ridge[i][0]){const a=ridge[i-1],b=ridge[i];return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0]);}}return ridge.at(-1)[1];}
+const rising=orbit(6,6,1536,300),setting=orbit(18,6,1536,300),high=orbit(12,6,1536,300);
+assert(rising.y>ridgeAt(rising.x) && setting.y>ridgeAt(setting.x));
+assert(high.y<ridgeAt(high.x));
+console.log('PASS: mountain occlusion geometry, twilight timing, and deepest night at moon apex.');

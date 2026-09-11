@@ -12,9 +12,7 @@ drawBackground = function(dt) {
   const sky = timeOfDay(); window._sky = sky;
   ctx.save();
   ctx.drawImage(ART2D.cove, -_overX, 0, W + _overX * 2, H);
-  // Preserve the original clock and night palette, including the moon and stars.
-  const night = 1 - sky.df;
-  if (night > .01) { ctx.fillStyle = `rgba(25,36,66,${night*.65})`; ctx.fillRect(-_overX,0,W+_overX*2,H); }
+  neoAtmosphere(ctx,sky,W,H,H*300/1024,_overX);
   drawCelestial(ctx, sky);
   for (const cl of clouds) { cl.x += cl.v * dt; if (cl.x - 90 > W) cl.x = -90; }
   // Slow 2D water glints, not a reflective or volumetric surface.
@@ -43,8 +41,8 @@ function neoOutdoor(g,w,h,horizon,over,sand=false) {
   g.drawImage(im,iw*.20,ih*.40,iw*.60,ih*.38,-over,horizon,w+over*2,h-horizon+over);
   if(sand){g.fillStyle='#ebddba';g.fillRect(-over,horizon,w+over*2,h-horizon+over);}
   const sky=timeOfDay();
-  if(sky.df<.99){g.fillStyle=`rgba(25,36,66,${(1-sky.df)*.48})`;g.fillRect(-over,-over,w+over*2,h+over*2);}
-  neoSky(g,sky,w,horizon*.76,over);
+  neoAtmosphere(g,sky,w,h,horizon*(300/1024)/.38,over);
+  neoSky(g,sky,w,horizon*(300/1024)/.38,over);
   g.restore();
 }
 
@@ -52,11 +50,11 @@ function neoOutdoor(g,w,h,horizon,over,sand=false) {
 // This is an art clock, not a location-specific astronomical ephemeris.
 function neoOrbit(hour,rise,w,horizon) {
   const phase=((hour-rise)%24+24)%24;
-  return {x:w*(.5-.42*Math.cos(Math.PI*phase/12)),y:horizon-Math.sin(Math.PI*phase/12)*horizon*.82,visible:Math.sin(Math.PI*phase/12)>-.15};
+  return {x:w*(.5-.42*Math.cos(Math.PI*phase/12)),y:horizon-Math.sin(Math.PI*phase/12)*horizon*.55,visible:Math.sin(Math.PI*phase/12)>-.15};
 }
 function neoSky(g,sky,w,hz,over){
-  g.save();g.beginPath();g.rect(-over,0,w+2*over,hz);g.clip();
-  const night=1-sky.df;
+  g.save();neoSkyClip(g,w,hz,over);
+  const night=neoLight(nowHours()).night;
   if(night>.1){
     g.fillStyle=`rgba(255,247,220,${night*.65})`;
     for(let i=0;i<38;i++){const x=((i*137.51)%w),y=12+((i*71.37)%(hz*.72));g.beginPath();g.arc(x,y,i%4===0?1.3:.7,0,Math.PI*2);g.fill();}
@@ -64,7 +62,13 @@ function neoSky(g,sky,w,hz,over){
   for(const [rise,isSun] of [[6,true],[18,false]]){
     const p=neoOrbit(nowHours(),rise,w,hz);if(!p.visible)continue;
     const r=isSun?20:15;
-    g.fillStyle=isSun?'#ffe7a4':'#f4efd4';
+    const light=neoLight(nowHours());
+    const glowR=isSun?65:48+light.night*45;
+    const glow=g.createRadialGradient(p.x,p.y,r*.4,p.x,p.y,glowR);
+    glow.addColorStop(0,isSun?'rgba(255,204,113,.38)':`rgba(196,222,255,${.12+light.night*.24})`);
+    glow.addColorStop(1,isSun?'rgba(255,184,100,0)':'rgba(177,208,255,0)');
+    g.fillStyle=glow;g.fillRect(p.x-glowR,p.y-glowR,glowR*2,glowR*2);
+    g.fillStyle=isSun?(light.twilight>.4?'#ffd398':'#fff0b8'):'#f3f6e9';
     g.beginPath();g.arc(p.x,p.y,r,0,Math.PI*2);g.fill();
     if(!isSun){
       // Surface details stay inside the moon; never erase the scene beneath it.
@@ -75,7 +79,7 @@ function neoSky(g,sky,w,hz,over){
   g.restore();
 };
 
-drawCelestial=function(g,sky){neoSky(g,sky,W,H*.29,_overX);};
+drawCelestial=function(g,sky){neoSky(g,sky,W,H*300/1024,_overX);};
 
 // Sort by ground contact, keeping elevated/working cats attached to their furniture.
 function neoCatDepth(c){
@@ -86,4 +90,43 @@ function neoCatDepth(c){
     if(d)return Math.max(c.y,d.y+.1);
   }
   return c.y;
+}
+
+// Upper edge of the painted mountains, in original 1536 x 1024 art coordinates.
+// The same transform is used for each outdoor scene, including extra side coverage.
+const NEO_SKYLINE=[[0,194],[28,200],[54,213],[86,241],[111,244],[145,244],[168,253],[193,272],[223,275],[253,279],[274,286],[298,299],[1208,299],[1224,287],[1248,283],[1270,286],[1302,274],[1332,275],[1365,274],[1391,271],[1410,260],[1433,263],[1454,247],[1482,247],[1504,233],[1524,228],[1536,228]];
+function neoSkyClip(g,w,hz,over){
+  const sx=(w+2*over)/1536,sy=hz/300;
+  g.beginPath();g.moveTo(-over,-1000);g.lineTo(w+over,-1000);
+  for(let i=NEO_SKYLINE.length-1;i>=0;i--){const [x,y]=NEO_SKYLINE[i];g.lineTo(-over+x*sx,(y-1)*sy);}
+  g.closePath();g.clip();
+}
+function neoLight(hour){
+  const altitude=Math.sin((hour-6)*Math.PI/12);
+  const n=Math.max(0,-altitude);
+  return {night:n*n*(3-2*n),twilight:Math.pow(Math.max(0,1-Math.abs(altitude)/.5),2)};
+}
+function neoAtmosphere(g,sky,w,h,hz,over){
+  const light=neoLight(nowHours());
+  const darkness=Math.min(.84,(1-sky.df)*.36+light.night*.48);
+  g.save();g.fillStyle=`rgba(9,19,43,${darkness})`;g.fillRect(-over,-over,w+2*over,h+2*over);
+  if(light.twilight>.005){
+    const warmth=g.createLinearGradient(0,0,0,hz*1.4);
+    warmth.addColorStop(0,`rgba(99,77,141,${light.twilight*.16})`);
+    warmth.addColorStop(.65,`rgba(236,153,144,${light.twilight*.29})`);
+    warmth.addColorStop(.87,`rgba(255,190,117,${light.twilight*.52})`);
+    warmth.addColorStop(1,'rgba(255,192,131,0)');
+    g.fillStyle=warmth;g.fillRect(-over,0,w+2*over,hz*1.4);
+  }
+  if(light.night>.15){
+    const moon=neoOrbit(nowHours(),18,w,hz);
+    g.save();g.beginPath();g.rect(0,hz+2,w,hz*.28);g.clip();
+    for(let i=0;i<12;i++){
+      const y=hz+5+i*hz*.022,spread=5+i*2.3;
+      g.strokeStyle=`rgba(190,215,244,${light.night*.17*(1-i/14)})`;
+      g.lineWidth=1+i*.12;g.beginPath();g.moveTo(moon.x-spread,y);g.lineTo(moon.x+spread,y);g.stroke();
+    }
+    g.restore();
+  }
+  g.restore();
 }

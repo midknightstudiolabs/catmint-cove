@@ -36,3 +36,6 @@ Run `node scripts/check-rain.mjs` for loader lifecycle tests. The separate local
 
 ### Calmer rain mix
 Softened the upper-mid drop transients and high-frequency hiss, removed low rumble, applied gentle compression and reduced overall level. Approximate encoded average -33 dBFS and peak -14 dBFS. Processing uses the middle repeat of a cyclic master so filter/compressor startup does not create a loop-boundary artifact. The 90-second stereo loop, 192 kbps MP3 and native embedding remain unchanged; a rain-specific URL revision refreshes browser caches.
+
+### Mountain-aware sky lighting
+Sun, moon and stars clip against the painted mountain silhouette using the same image coordinates in Cove, festival scenes and photos. Dawn/dusk have a gentle peach/gold horizon gradient. Night darkens smoothly toward the moon's apex with a cool moon halo and subtle water highlights. The arc stays low enough to keep its apex visible through the game camera. Tested dawn, dusk and midnight lighting locally; geometry and timing checks are in check-theme.mjs.
