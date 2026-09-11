@@ -1191,6 +1191,33 @@
     border-radius:999px;padding:.4rem .95rem;background:rgba(247,245,236,.94);color:var(--ink-soft);}
   #placeBar button.ok{background:var(--accent-bright);color:#fff;}
 </style>
+<style id="neo-theme">
+:root{--panel:#faf6e9;--panel-line:#d6d9bf;--ink:#343d31;--ink-soft:#58604f;--ink-faint:#69715d;--accent:#3f7152;--accent-bright:#508363;}
+.sheet,.modal,.fest-panel,.fest-result{border:1px solid var(--panel-line);box-shadow:0 10px 30px #293f302b;}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #487c63;outline-offset:3px;}
+.btn,.shop-tabs button,.sheet .x{min-height:44px;}
+.sheet .x{min-width:44px;background:#eee9d8;color:#454e3c;}
+.shop-tabs{gap:.35rem;}
+.shop-tabs button.on{background:#e8eedc;border-radius:10px 10px 0 0;}
+#fest .fest-panel{background:var(--panel);color:var(--ink);}
+#fest .fest-panel--hub{width:min(93vw,440px);padding:1rem;max-height:calc(100dvh - 110px);}
+#fest .fest-panel--hub h2{font-size:1.25rem;}
+#fest .fest-panel--hub p{font-size:.85rem;margin:.2rem 0 .8rem;}
+#fest .fc-cards{gap:.5rem;}
+#fest .fc-card{background:#eff2e4;border:1px solid #d5ddc5;padding:.65rem .75rem;min-height:66px;}
+#fest .fc-card .fc-name{font-size:1rem;}
+#fest .fc-card .fc-desc{font-size:.8rem;line-height:1.4;}
+#fest .fc-card .fc-lock{font-size:.76rem;color:#68604d;}
+#fest .fc-card.locked{opacity:1;background:#eeecdf;border-style:dashed;}
+#fest .fc-card.locked .fc-emoji{opacity:.55;}
+#fest .fc-card:not(.locked):hover{background:#e1ecd5;border-color:#829f74;}
+#fest .fp-cell.picked{background:#e5efd9;box-shadow:inset 0 0 0 1px var(--accent);}
+#fest .fp-cell .nm{font-size:.75rem;}
+#fest .fest-bar{background:#f4efdf;color:#414c3c;border:1px solid #d6d9bf;box-shadow:0 4px 14px #263c3026;}
+#fest .fest-bar .rb-back,#fest .fest-bar .rb-time{color:#47503e;}
+@media(max-height:650px){#fest .fest-panel--hub{padding:.65rem;max-height:calc(100dvh - 90px);}#fest .fc-card{padding:.45rem .6rem;min-height:56px;}}
+@media(prefers-reduced-motion:reduce){.btn,.fc-card,.shop-tabs button{transition:none;}}
+</style>
 
 <div id="app">
   <!-- the first thing anyone sees — covers the cove (already ticking away
@@ -1226,7 +1253,7 @@
       <button class="pill title-pill" id="titlePill" data-tip="Your cove's name. Tap to rename it.">Catmint <b>Cove</b></button>
       <button class="btn" id="helpBtn" data-tip="How the cove works — a quick guide to everything."><span class="ico">?</span></button>
       <button class="btn" id="restBtn" data-tip="Rainy-day rest — everyone naps inside with real rain. Tap any time, good to work or sleep to."><span class="ico">🌙</span></button>
-      <button class="btn" id="festBtn" hidden data-tip="The Cove Festival — a friendly race down at the track. Tap any time."><span class="ico">🎪</span></button>
+      <button class="btn" id="festBtn" aria-label="Cove Festival" hidden data-tip="The Cove Festival — a friendly race down at the track. Tap any time."><span class="ico">🎪</span></button>
       <button class="btn" id="muteBtn" data-tip="Sounds — tap to mute or unmute."><span class="ico">🔊</span></button>
     </div>
   </div>
@@ -1267,7 +1294,7 @@
       <h2>Cove Festival</h2>
       <p>Pick an event. The cats will handle the rest.</p>
       <div class="fc-cards" id="festEventCards"></div>
-      <div class="btn-row"><button class="btn" id="festChooseBack">Maybe later</button></div>
+      <div class="btn-row"><button class="btn" id="festChooseBack">Back to the Cove</button></div>
     </div>
     <div class="fest-panel" id="festPanel" hidden>
       <div class="fp-art">🎪</div>
@@ -6105,18 +6132,6 @@ function composePhoto() {
   if (sky) { g.addColorStop(0, sky.top); g.addColorStop(0.55, sky.mid); g.addColorStop(1, sky.bot); }
   else { g.addColorStop(0, "#bfe0d6"); g.addColorStop(1, "#eef3e6"); }
   pctx.fillStyle = g; pctx.fillRect(0, 0, S, S);
-  // a soft sun (or moon) in the upper-right of the frame
-  const sunLit = !sky || sky.df > 0.34;
-  const sxp = S * 0.74, syp = S * 0.16, rad = sunLit ? 150 : 95;
-  const lightC = sky ? sky.light : "rgb(255,248,225)";
-  const glow = pctx.createRadialGradient(sxp, syp, 3, sxp, syp, rad);
-  glow.addColorStop(0, lightC.replace("rgb", "rgba").replace(")", `,${sunLit ? 0.5 : 0.32})`));
-  glow.addColorStop(1, lightC.replace("rgb", "rgba").replace(")", ",0)"));
-  pctx.fillStyle = glow; pctx.beginPath(); pctx.arc(sxp, syp, rad, 0, 7); pctx.fill();
-  pctx.fillStyle = sunLit ? "rgba(255,249,229,0.95)" : "rgba(238,240,228,0.95)";
-  pctx.beginPath(); pctx.arc(sxp, syp, sunLit ? 24 : 16, 0, 7); pctx.fill();
-  if (!sunLit) { pctx.save(); pctx.globalCompositeOperation = "destination-out";
-    pctx.beginPath(); pctx.arc(sxp + 7, syp - 3, 14, 0, 7); pctx.fill(); pctx.restore(); }
   // ground follows the scaled horizon
   pctx.fillStyle = sky ? sky.ground : "#d8d2bd";
   pctx.beginPath();
@@ -6127,16 +6142,23 @@ function composePhoto() {
   pctx.save();
   pctx.translate(offX, offY);
   pctx.scale(s, s);
+  if(art2dReady(ART2D.cove)){
+    pctx.drawImage(ART2D.cove,-_overX,0,W+2*_overX,H);
+    if(sky){pctx.fillStyle=`rgba(25,36,66,${(1-sky.df)*.65})`;pctx.fillRect(-_overX,0,W+2*_overX,H);drawCelestial(pctx,sky);}
+  }
   drawCoveSign(pctx, W, H);
   drawCairn(pctx, W, H);
-  drawDecorLayer(pctx);
+  // Match the live scene depth order in exported photographs.
   const pgt = performance.now() / 1000, pnight = window._sky ? 1 - window._sky.df : 0;
   const players = [];
-  for (const c of cats) players.push({ y: c.y, c });
+  for (const c of cats) players.push({ y: neoCatDepth(c), c });
+  for (const d of decor) players.push({y:d.y-(d.type==="cattree"?9:0),d});
   for (const f of foreground) players.push({ y: f.y, f });
   for (const a of attractors) if (COMFORT_TYPES.has(a.type)) players.push({ y: a.y, a });
   players.sort((p, q) => p.y - q.y);
   for (const it of players) {
+    if(it.d){drawDecor(pctx,it.d);continue;}
+    if(it.c && it.c.state==="indoors" && it.c._perchKind!=="perch" && it.c._perchKind!=="step"){drawCottageFace(pctx,it.c,it.c._perchKind==="cubby");continue;}
     if (it.a) { drawAttractor(pctx, it.a); continue; }
     if (it.c) { drawCat(pctx, it.c, true); if (it.c.state === "fishing" && it.c._station === "fishing" && it.c._fx) drawFishingRig(pctx, it.c); if (it.c.state === "baking" && it.c._station === "bakery" && it.c._fx) drawBakeryRig(pctx, it.c); }
     else drawGrassTuft(pctx, it.f, pgt, pnight);
@@ -9830,6 +9852,7 @@ function drawHubLantern(g, x, groundY) {
 }
 function drawFestGroundsScene(g) {
   const HZ = 232, OV = 460;
+  if(!art2dReady(ART2D.cove)){
   const sky = g.createLinearGradient(0, -OV, 0, HZ);
   sky.addColorStop(0, "#c3dfe8"); sky.addColorStop(1, "#eaefdf");
   g.fillStyle = sky; g.fillRect(-OV, -OV, HUB_W + OV * 2, HZ + OV);
@@ -9840,6 +9863,8 @@ function drawFestGroundsScene(g) {
   const gr = g.createLinearGradient(0, HZ - 10, 0, HUB_H + OV);
   gr.addColorStop(0, "#cfe0af"); gr.addColorStop(0.5, "#bcd398"); gr.addColorStop(1, "#aecb8a");
   g.fillStyle = gr; g.fillRect(-OV, HZ - 12, HUB_W + OV * 2, HUB_H - HZ + OV);
+  }
+  neoOutdoor(g,HUB_W,HUB_H,HZ,OV);
   g.fillStyle = "rgba(232,214,170,0.42)";                                  // a sandy patch = "the festival area"
   g.beginPath(); g.ellipse(HUB_W / 2, 916, 330, 138, 0, 0, 7); g.fill();
   // bunting — one run strung between two poles across the grounds
@@ -9920,9 +9945,12 @@ function renderFest(dt) {
     g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
   }
 
+  if(!art2dReady(ART2D.cove)){
   if (!_festG) _festG = buildFestGrads(g);
   g.fillStyle = _festG.sky; g.fillRect(0, 0, RACE_W, 380);
   g.fillStyle = _festG.track; g.fillRect(0, 380, RACE_W, RACE_H - 380);
+  }
+  neoOutdoor(g,RACE_W,RACE_H,380,0);
   drawBunting(g, 0, 26, RACE_W, 34, raceT);
 
   g.strokeStyle = "rgba(255,255,255,0.4)"; g.lineWidth = 2; g.setLineDash([10, 10]);
@@ -10053,20 +10081,20 @@ const FEST_EVENTS = [
     desc: "Pick a cat and cheer them all the way to the finish.",
     lock: () => festUnlocked() ? null : "Opens on day 5.", enter: enterFestRace },
   { key: "volley", emoji: "🏐", name: "Cove Volleyball",
-    desc: "Three cats. One visiting Cove. Keep them awake and hope they remember how volleyball works.",
+    desc: "Keep three cats awake and rally against a visiting Cove.",
     lock: () => volleyReady() ? null : "You need 3 cats at the Cove to play.", enter: enterFestVolley },
   { key: "midk", emoji: "🧶", name: "Tug of Paws",
-    desc: "Five cats on the rope against a visiting Cove. Work the paw-spin and haul the yarn home.",
+    desc: "Work the paw-spin and help five cats haul the yarn home.",
     lock: () => midkReady() ? null : "You need 5 cats at the Cove for the rope.", enter: enterFestMidk },
   { key: "cafe", emoji: "🎀", art: () => cafeEmblemHTML(30), name: "Catmint Café",
-    desc: "Three cats staff a pop-up café. You don't take orders — you decide who works which job as it all falls apart.",
+    desc: "Assign three cats to café jobs and keep the orders moving.",
     lock: () => cafeReadyToPlay() ? null : "You need 3 cats at the Cove for the café.", enter: enterFestCafe },
 ];
 function renderFestChooser() {
   const wrap = document.getElementById("festEventCards");
   wrap.innerHTML = FEST_EVENTS.map(ev => {
     const locked = ev.lock();
-    return `<button class="fc-card${locked ? " locked" : ""}" data-ev="${ev.key}" type="button">
+    return `<button class="fc-card${locked ? " locked" : ""}" data-ev="${ev.key}" aria-disabled="${!!locked}" type="button">
       <span class="fc-emoji">${ev.art ? ev.art() : ev.emoji}</span>
       <span class="fc-name">${esc(ev.name)}</span>
       <span class="fc-desc">${esc(ev.desc)}</span>
@@ -10425,9 +10453,9 @@ function syncBoxCat(p, dt) {
 }
 function drawBoxRoom(g) {
   g.fillStyle = "#ece3d1"; g.fillRect(0, 0, BOX_W, BOX_H);
-  g.fillStyle = "#ddd0b7"; g.fillRect(0, 0, BOX_W, 190);            // back wall
+  g.fillStyle = "#e7e8d7"; g.fillRect(0, 0, BOX_W, 190);            // back wall
   g.fillStyle = "#e4d9c2"; g.fillRect(0, 190, BOX_W, 12);           // skirting
-  g.fillStyle = "rgba(150,120,88,0.13)";                            // a rug the boxes sit on
+  g.fillStyle = "rgba(119,151,112,0.22)";                            // a rug the boxes sit on
   g.beginPath(); g.ellipse(BOX_W / 2, 560, 300, 380, 0, 0, 7); g.fill();
   g.strokeStyle = "rgba(150,120,88,0.18)"; g.lineWidth = 3;
   g.beginPath(); g.ellipse(BOX_W / 2, 560, 276, 356, 0, 0, 7); g.stroke();
@@ -11309,6 +11337,7 @@ function renderVolley(dt) {
 }
 function drawVolleyCourt(g) {
   const HZ = 128, OV = 360;                                             // horizon; overdraw to fill the letterbox
+  if(!art2dReady(ART2D.cove)){
   const sky = g.createLinearGradient(0, -OV, 0, HZ);
   sky.addColorStop(0, "#c6e2ea"); sky.addColorStop(1, "#e9efe2");
   g.fillStyle = sky; g.fillRect(-OV, -OV, VB_W + OV * 2, HZ + OV);
@@ -11320,6 +11349,8 @@ function drawVolleyCourt(g) {
   const sand = g.createLinearGradient(0, HZ, 0, VB_H + OV);
   sand.addColorStop(0, "#ecdcb8"); sand.addColorStop(1, "#d8bf88");
   g.fillStyle = sand; g.fillRect(-OV, HZ - 10, VB_W + OV * 2, VB_H - HZ + OV);
+  }
+  neoOutdoor(g,VB_W,VB_H,HZ,OV,true);
   // a couple of gulls
   g.strokeStyle = "rgba(90,100,110,0.5)"; g.lineWidth = 1.6;
   for (let i = 0; i < 2; i++) { const gx = 120 + i * 260 + Math.sin(matchT * 0.3 + i * 2) * 40, gy = 44 + i * 22;
@@ -12097,6 +12128,7 @@ function midkSeparate() {
 
 function drawMidkField(g) {
   const HZ = 92;
+  if(!art2dReady(ART2D.cove)){
   const sky = g.createLinearGradient(0, -260, 0, HZ);
   sky.addColorStop(0, "#c8e0e6"); sky.addColorStop(1, "#eef0e0");
   g.fillStyle = sky; g.fillRect(-260, -260, MIDK_W + 520, HZ + 260);
@@ -12104,6 +12136,8 @@ function drawMidkField(g) {
   const gr = g.createLinearGradient(0, HZ, 0, MIDK_H);
   gr.addColorStop(0, "#cfe0af"); gr.addColorStop(1, "#b3cd8e");
   g.fillStyle = gr; g.fillRect(-260, HZ - 4, MIDK_W + 520, MIDK_H - HZ + 264);
+  }
+  neoOutdoor(g,MIDK_W,MIDK_H,HZ,260);
   drawBunting(g, 20, 92, MIDK_W - 40, 22, midkT, { posts: true, groundY: HZ + 2 });
   // spectators along both edges, bobbing
   for (let i = 0; i < 8; i++) {
@@ -12876,6 +12910,7 @@ function cafeEndShift() {
 /* ---- render ---- */
 function drawCafeScene(g) {
   const HZ = 300;
+  if(!art2dReady(ART2D.cove)){
   const sky = g.createLinearGradient(0, -200, 0, HZ);
   sky.addColorStop(0, "#c3dfe8"); sky.addColorStop(1, "#eaefdf");
   g.fillStyle = sky; g.fillRect(-260, -260, CAFE_W + 520, HZ + 260);
@@ -12883,6 +12918,8 @@ function drawCafeScene(g) {
   const gr = g.createLinearGradient(0, HZ - 10, 0, CAFE_H);
   gr.addColorStop(0, "#cfe0af"); gr.addColorStop(1, "#b6cf92");
   g.fillStyle = gr; g.fillRect(-260, HZ - 12, CAFE_W + 520, CAFE_H - HZ + 260);
+  }
+  neoOutdoor(g,CAFE_W,CAFE_H,HZ,260);
   // seating deck
   g.fillStyle = "#d8c9a6"; roundRect(g, 20, 540, 400, 250, 16); g.fill();
   g.strokeStyle = "rgba(120,95,60,.15)"; g.lineWidth = 2;
@@ -13920,6 +13957,7 @@ function drawProps(g) {
   const placingProp = _placing && _placing.kind === "prop" ? _placing.key : null;
   for (const p of DECOR_PROPS) {
     if (!G.cosmetics.props[p.id]) continue;
+    if (p.movable && p.id !== "stones") continue; // raised props are depth-sorted
     if (p.movable && (propBoxed(p.id) || placingProp === p.id)) continue;  // boxed / being placed → drawn elsewhere
     try {
       if (p.movable) { const pos = propPos(p.id); p.render(g, t, pos.x, pos.y, pos.s); }
@@ -16341,7 +16379,7 @@ function renderScene(dt) {
   drawBackground(dt);
   drawCoveSign(ctx, W, H);
   drawCairn(ctx, W, H);
-  drawDecorLayer(ctx);
+  // Raised scenery participates in the same ground-depth ordering as cats.
   drawProps(ctx);
   const _skipA = _placing && _placing.kind === "comfort" ? _placing.key : null;   // the bowl/bed being dragged is drawn as the ghost, not here
   drawTrails(ctx);   // v3: rainbow-trail cosmetic — behind the cats
@@ -16359,7 +16397,7 @@ function renderScene(dt) {
     // a cat up the cat tree draws at the TREE's depth (just after its post), not
     // its own lifted screen-y — so cats passing in front cover it and cats behind
     // stay behind, and the three levels never sort into each other
-    const sy = c._perchKind ? c._cotY - (c._perchKind === "perch" ? 5 : c._perchKind === "cubby" ? 3 : 1) : c.y;
+    const sy = neoCatDepth(c);
     layer.push({ y: sy, c });
   }
   for (const f of foreground) { if (f.x >= cullL && f.x <= cullR) layer.push({ y: f.y, f }); }
@@ -16368,8 +16406,8 @@ function renderScene(dt) {
   // a cat behind stays behind
   { const dskip = _placing && _placing.kind === "decor" ? _placing.key : null;
     for (const d of decor) {
-      if (d.type !== "cattree" || (dskip && d.dkey === dskip)) continue;
-      if (d.x >= cullL - 40 && d.x <= cullR + 40) layer.push({ y: d.y - 9, d });
+      if (dskip && d.dkey === dskip) continue;
+      if (d.x >= cullL - 40 && d.x <= cullR + 40) layer.push({ y: d.y - (d.type === "cattree" ? 9 : 0), d });
     } }
   // bowls / beds / toys / scratchers ride the y-sort too, so grass and cats in
   // front of one cover it and it covers what's behind it
@@ -16377,8 +16415,13 @@ function renderScene(dt) {
     if (!COMFORT_TYPES.has(a.type) || (_skipA && a.key === _skipA)) continue;
     if (a.x >= cullL && a.x <= cullR) layer.push({ y: a.y, a });
   }
+  if (G.cosmetics && G.cosmetics.props) for (const p of DECOR_PROPS) {
+    if (!p.movable || p.id === "stones" || !G.cosmetics.props[p.id] || propBoxed(p.id) || (_placing && _placing.kind === "prop" && _placing.key === p.id)) continue;
+    const pos=propPos(p.id);if(pos.x>=cullL-80&&pos.x<=cullR+80)layer.push({y:pos.y,p,pos});
+  }
   layer.sort((a, b) => a.y - b.y);
   for (const it of layer) {
+    if(it.p){ctx.save();ctx._nightGlow=gnight;it.p.render(ctx,gt,it.pos.x,it.pos.y,it.pos.s);ctx.restore();continue;}
     if (it.a) { drawAttractor(ctx, it.a); continue; }
     if (it.d) { drawDecor(ctx, it.d); continue; }
     if (it.c) {
@@ -18228,6 +18271,61 @@ drawBackground = function(dt) {
 
 
 
+
+// Shared outdoor plate: one existing image, no per-frame texture generation.
+function neoOutdoor(g,w,h,horizon,over,sand=false) {
+  if(!art2dReady(ART2D.cove)) return;
+  const im=ART2D.cove,iw=im.naturalWidth,ih=im.naturalHeight;
+  g.save();
+  g.fillStyle='#c2dfe7';g.fillRect(-over,-over,w+over*2,h+over*2);
+  g.drawImage(im,0,0,iw,ih*.38,-over,0,w+over*2,horizon);
+  g.drawImage(im,iw*.20,ih*.40,iw*.60,ih*.38,-over,horizon,w+over*2,h-horizon+over);
+  if(sand){g.fillStyle='#ebddba';g.fillRect(-over,horizon,w+over*2,h-horizon+over);}
+  const sky=timeOfDay();
+  if(sky.df<.99){g.fillStyle=`rgba(25,36,66,${(1-sky.df)*.48})`;g.fillRect(-over,-over,w+over*2,h+over*2);}
+  neoSky(g,sky,w,horizon*.76,over);
+  g.restore();
+}
+
+// Stylized game-time sky: continuous east-to-west arcs, twelve-hour days.
+// This is an art clock, not a location-specific astronomical ephemeris.
+function neoOrbit(hour,rise,w,horizon) {
+  const phase=((hour-rise)%24+24)%24;
+  return {x:w*(.5-.42*Math.cos(Math.PI*phase/12)),y:horizon-Math.sin(Math.PI*phase/12)*horizon*.82,visible:Math.sin(Math.PI*phase/12)>-.15};
+}
+function neoSky(g,sky,w,hz,over){
+  g.save();g.beginPath();g.rect(-over,0,w+2*over,hz);g.clip();
+  const night=1-sky.df;
+  if(night>.1){
+    g.fillStyle=`rgba(255,247,220,${night*.65})`;
+    for(let i=0;i<38;i++){const x=((i*137.51)%w),y=12+((i*71.37)%(hz*.72));g.beginPath();g.arc(x,y,i%4===0?1.3:.7,0,Math.PI*2);g.fill();}
+  }
+  for(const [rise,isSun] of [[6,true],[18,false]]){
+    const p=neoOrbit(nowHours(),rise,w,hz);if(!p.visible)continue;
+    const r=isSun?20:15;
+    g.fillStyle=isSun?'#ffe7a4':'#f4efd4';
+    g.beginPath();g.arc(p.x,p.y,r,0,Math.PI*2);g.fill();
+    if(!isSun){
+      // Surface details stay inside the moon; never erase the scene beneath it.
+      g.fillStyle='rgba(164,177,169,.22)';
+      for(const [x,y,s]of [[-5,-3,3],[4,6,2], [5,-7,1.5]]){g.beginPath();g.arc(p.x+x,p.y+y,s,0,Math.PI*2);g.fill();}
+    }
+  }
+  g.restore();
+};
+
+drawCelestial=function(g,sky){neoSky(g,sky,W,H*.29,_overX);};
+
+// Sort by ground contact, keeping elevated/working cats attached to their furniture.
+function neoCatDepth(c){
+  if(c._perchKind)return c._cotY-(c._perchKind==='perch'?5:c._perchKind==='cubby'?3:1);
+  if(c.state==='indoors'&&c._cotY!=null)return c._cotY+.1;
+  if(c.state==='fishing'||c.state==='baking'){
+    const d=decor.find(d=>d.type==='station'&&d.station===c._station);
+    if(d)return Math.max(c.y,d.y+.1);
+  }
+  return c.y;
+}
 
 /* NEO_SCENERY_END */
 })();
