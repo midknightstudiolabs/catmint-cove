@@ -23,3 +23,13 @@ The sun and full moon follow continuous projected circular arcs on the existing 
 Raised decor and movable props now sort with cats by ground contact. Indoor and perched cats retain their furniture depth; working cats stay visible at their stations. Photo exports use the Cove art and corrected sky, with furniture/cat depth ordering.
 
 Validation: `node scripts/check-theme.mjs` checks script syntax and sky continuity. Local visual checks covered Cove, festival selection, volleyball/tug/cafe scenery, shop, and a completed race, including a 390px phone viewport. Original cat rendering and animation section compared unchanged against the prior release. No device-wide FPS guarantee is implied; this update reuses one existing image and avoids per-frame asset generation. Test-only artwork review pages remain outside the published repository.
+
+## Sleep rain — September 12, 2026
+
+Replaced `rain-loop.mp3` using the supplied Rain V1 recording. Selected a steadier 96-second section beginning at 13:15, made a 90-second cyclic master with a six-second equal-power overlap, and encoded stereo MP3 at 44.1 kHz / 192 kbps. Release file is approximately 2.2 MB; decoded Web Audio memory is about 32–35 MB depending on device sample rate. The original 48-minute file was not uploaded or modified.
+
+Encoded analysis: average approximately -28.3 dBFS, peak -5.6 dBFS, no clipping or decode errors. Chrome decoded exactly 90 seconds in stereo and played the actual recording with looping enabled. The seam is blended in the asset, with the game's existing gentle entry/exit fades retained. Thunder remains optional and defaults off.
+
+Loading now shares a single in-flight request, times out stalled network fetches, ignores results from replaced audio contexts, and exposes Retry rain when the recording fails. Begin resumes audio within its tap handler for iOS. Existing interruption recovery and native base64 asset loading remain intact. Stale thunder callbacks are cancelled when a rest session is replaced.
+
+Run `node scripts/check-rain.mjs` for loader lifecycle tests. The separate local Neo native payload was rebuilt and its embedded/copy audio bytes verified against this MP3. This is not an App Store submission or an on-device iOS certification. Safari/WKWebView may suspend Web Audio when the screen locks or the app backgrounds; uninterrupted screen-locked sleep playback still requires device testing and potentially native background-audio support.

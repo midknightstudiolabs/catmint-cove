@@ -1,0 +1,20 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const h=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const start=h.indexOf('let _rainLoad = null'),end=h.indexOf('let _restAudioGen',start);
+let requests=0,decodes=0,resolveFetch;
+const bytes=new ArrayBuffer(8),decoded={duration:90};
+const context={decodeAudioData:async()=>{decodes++;return decoded;}};
+const sandbox={actx:context,rainBuffer:null,Promise,AbortController,setTimeout,clearTimeout,console,
+ _festAudioBuf:()=>{requests++;return new Promise(resolve=>{resolveFetch=resolve});}};
+vm.createContext(sandbox);vm.runInContext(h.slice(start,end),sandbox);
+const first=sandbox.loadRainLoop(),second=sandbox.loadRainLoop();
+assert.equal(first,second);assert.equal(requests,1);resolveFetch(bytes);await first;
+assert.equal(decodes,1);assert.equal(sandbox.rainBuffer,decoded);
+await sandbox.loadRainLoop();assert.equal(requests,1);
+sandbox.rainBuffer=null;const stale=sandbox.loadRainLoop();sandbox.actx={decodeAudioData:context.decodeAudioData};resolveFetch(bytes);await stale;
+assert.equal(sandbox.rainBuffer,null);
+sandbox._festAudioBuf=async()=>{throw new Error('offline')};assert.equal(await sandbox.loadRainLoop(),null);
+sandbox._festAudioBuf=async()=>bytes;assert.equal(await sandbox.loadRainLoop(),decoded);
+console.log('PASS: concurrent load deduplication, decoded cache, context replacement, failed-load retry.');

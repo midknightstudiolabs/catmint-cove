@@ -1282,6 +1282,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <div class="rest-bar" id="restBar" hidden>
       <button class="rb-back" id="restWake"><span>‹</span> Back to the cove</button>
       <span class="rb-time" id="restTime">resting</span>
+      <button class="rb-back" id="restRetryRain" hidden>Retry rain</button>
       <button class="rb-fs" id="restFs" title="Fullscreen">⤢</button>
     </div>
   </div>
@@ -7008,6 +7009,11 @@ document.querySelectorAll("#restTimer button").forEach(b => b.addEventListener("
 document.getElementById("restBegin").addEventListener("click", () => beginRest(false));
 document.getElementById("restCancel").addEventListener("click", closeRestPanel);
 document.getElementById("restWake").addEventListener("click", endRest);
+document.getElementById("restRetryRain").addEventListener("click", () => {
+  ensureAudio();
+  document.getElementById("restRetryRain").hidden = true;
+  if(restMode) startRestAudio();
+});
 document.getElementById("restFs").addEventListener("click", () => {
   try { if (document.fullscreenElement) document.exitFullscreen(); else document.getElementById("app").requestFullscreen(); } catch (e) {}
 });
@@ -8399,22 +8405,44 @@ function updateGlassDrops(dt) {
   }
 }
 
-async function loadRainLoop() {
-  if (rainBuffer || !actx) return;
-  try {
-    rainBuffer = await actx.decodeAudioData(await _festAudioBuf("rain-loop.mp3"));   // embedded on native, fetch() on web (iOS won't fetch a bundled asset)
-  } catch (e) { rainBuffer = null; }
+let _rainLoad = null, _rainLoadContext = null;
+function loadRainLoop() {
+  const context = actx;
+  if (rainBuffer || !context) return Promise.resolve(rainBuffer);
+  if (_rainLoad && _rainLoadContext === context) return _rainLoad;
+  _rainLoadContext = context;
+  const pending = (async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    try {
+      const bytes = await _festAudioBuf("rain-loop.mp3", controller.signal);
+      const decoded = await context.decodeAudioData(bytes);
+      if (actx !== context) return null; // an interrupted iOS context was replaced
+      rainBuffer = decoded;
+      return decoded;
+    } catch (error) {
+      console.warn("Rain recording could not load; retry is available.", error.name || "AudioError");
+      return null;
+    } finally {
+      clearTimeout(timeout);
+      if (_rainLoad === pending) { _rainLoad = null; _rainLoadContext = null; }
+    }
+  })();
+  _rainLoad = pending;
+  return pending;
 }
 let _restAudioGen = 0;
 async function startRestAudio() {
   if (!actx) return;
+  const context = actx;
   const gen = ++_restAudioGen;          // any earlier start() is now stale
   stopRestAudio(true);                  // tear down anything already playing (keeps gen)
   _restAudioGen = gen;
   // the cove's own ambient bed goes fully silent in rest mode — rain only
   if (ambience) rampParam(ambience.master.gain, 0, 1.2);
   await loadRainLoop();
-  if (gen !== _restAudioGen || !restMode) return;   // superseded, or we already left rest
+  if (gen !== _restAudioGen || !restMode || actx !== context) return;   // superseded, or we already left rest
+  document.getElementById("restRetryRain").hidden = !!rainBuffer;
   restBus = actx.createGain();
   restBus.gain.value = 0.0001;
   restBus.connect(musicGain || actx.destination);
@@ -8446,11 +8474,12 @@ function stopRestAudio(keepGen) {
 function scheduleRestThunder(gen) {
   if (!restMode || gen !== _restAudioGen) return;   // a newer startRestAudio() superseded this loop
   setTimeout(() => {
+    if (!restMode || gen !== _restAudioGen) return;
     if (restMode && restOpts.thunder && !muted && actx && restBus) {
       _restFlash = 1;
       const delay = 1.4 + Math.random() * 4;         // sound follows the flash
       setTimeout(() => {
-        if (!actx || !restBus) return;
+        if (!actx || !restBus || !restMode || gen !== _restAudioGen) return;
         const t = actx.currentTime, L = Math.floor(actx.sampleRate * 2.2);
         const b = actx.createBuffer(1, L, actx.sampleRate), d = b.getChannelData(0);
         let last = 0;
@@ -8647,6 +8676,7 @@ function closeRestPanel() {
   for (const c of cats) { c.stateDur = 0; decide(c); }
 }
 function beginRest(resumed) {
+  ensureAudio(); // unlock/resume synchronously in the Begin tap, before loading awaits
   document.getElementById("restPanel").hidden = true;
   document.getElementById("restBar").hidden = false;
   if (!resumed) { restStartedAt = Date.now(); restEndsAt = restOpts.hours > 0 ? restStartedAt + restOpts.hours * 3600e3 : 0; }
@@ -9429,7 +9459,7 @@ function festBedTarget() { return muted ? 0.0001 : (_volleyBed ? FEST_BED_LVL_VO
 // exists). build-www.mjs fills this with base64 of each fest-*.mp3 for the native
 // build; on the web it stays {} and the fetch() path runs.
 const FEST_AUDIO_DATA = {};   /* @native-fest-audio */
-async function _festAudioBuf(file) {
+async function _festAudioBuf(file, signal) {
   const d = FEST_AUDIO_DATA[file];
   if (d) {
     const bin = atob(d.slice(d.indexOf(",") + 1));
@@ -9437,7 +9467,7 @@ async function _festAudioBuf(file) {
     for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
     return u8.buffer;
   }
-  const res = await fetch(bust(file));
+  const res = await fetch(bust(file), { signal });
   if (!res.ok) throw 0;
   return await res.arrayBuffer();
 }
