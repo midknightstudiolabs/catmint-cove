@@ -39,3 +39,6 @@ Softened the upper-mid drop transients and high-frequency hiss, removed low rumb
 
 ### Mountain-aware sky lighting
 Sun, moon and stars clip against the painted mountain silhouette using the same image coordinates in Cove, festival scenes and photos. Dawn/dusk have a gentle peach/gold horizon gradient. Night darkens smoothly toward the moon's apex with a cool moon halo and subtle water highlights. The arc stays low enough to keep its apex visible through the game camera. Tested dawn, dusk and midnight lighting locally; geometry and timing checks are in check-theme.mjs.
+
+### Calm moving clouds
+Replaced the baked cloud sky at render time with a clean gradient clipped to the mountain skyline; the original image file, terrain and shoreline remain intact. Four clouds use the original three-ellipse puff shape and drift horizontally at 1.8–3.2 world pixels/second. They wrap beyond the viewport, never bob or pulse, and remain still with reduced motion enabled. The shared renderer applies to Cove, outdoor festivals and photos. No new bitmap or per-frame noise texture was introduced.

@@ -35,3 +35,12 @@ const rising=orbit(6,6,1536,300),setting=orbit(18,6,1536,300),high=orbit(12,6,15
 assert(rising.y>ridgeAt(rising.x) && setting.y>ridgeAt(setting.x));
 assert(high.y<ridgeAt(high.x));
 console.log('PASS: mountain occlusion geometry, twilight timing, and deepest night at moon apex.');
+const cloudSource=art.match(/function neoCloudPose\([\s\S]*?\n}/)[0];
+const cloudPose=vm.runInNewContext('('+cloudSource+')');
+for(let i=0;i<4;i++){
+ const a=cloudPose(i,10,1200,300,100),b=cloudPose(i,11,1200,300,100);
+ assert(b.x>a.x && b.x-a.x<4);assert.equal(a.y,b.y);assert.equal(a.s,b.s);
+}
+assert(art.includes('if(!art2dStill)neoCloudTime+='));
+assert(art.includes('neoMovingClouds(g,w,hz,over);'));
+console.log('PASS: steady slow cloud drift, fixed height/scale, reduced-motion guard and render integration.');

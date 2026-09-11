@@ -12,9 +12,10 @@ drawBackground = function(dt) {
   const sky = timeOfDay(); window._sky = sky;
   ctx.save();
   ctx.drawImage(ART2D.cove, -_overX, 0, W + _overX * 2, H);
+  neoClearSky(ctx,W,H*300/1024,_overX);
   neoAtmosphere(ctx,sky,W,H,H*300/1024,_overX);
   drawCelestial(ctx, sky);
-  for (const cl of clouds) { cl.x += cl.v * dt; if (cl.x - 90 > W) cl.x = -90; }
+
   // Slow 2D water glints, not a reflective or volumetric surface.
   if (!art2dStill && !_perfLite) {
     const t = performance.now()/1000;
@@ -41,6 +42,7 @@ function neoOutdoor(g,w,h,horizon,over,sand=false) {
   g.drawImage(im,iw*.20,ih*.40,iw*.60,ih*.38,-over,horizon,w+over*2,h-horizon+over);
   if(sand){g.fillStyle='#ebddba';g.fillRect(-over,horizon,w+over*2,h-horizon+over);}
   const sky=timeOfDay();
+  neoClearSky(g,w,horizon*(300/1024)/.38,over);
   neoAtmosphere(g,sky,w,h,horizon*(300/1024)/.38,over);
   neoSky(g,sky,w,horizon*(300/1024)/.38,over);
   g.restore();
@@ -76,6 +78,7 @@ function neoSky(g,sky,w,hz,over){
       for(const [x,y,s]of [[-5,-3,3],[4,6,2], [5,-7,1.5]]){g.beginPath();g.arc(p.x+x,p.y+y,s,0,Math.PI*2);g.fill();}
     }
   }
+  neoMovingClouds(g,w,hz,over);
   g.restore();
 };
 
@@ -129,4 +132,32 @@ function neoAtmosphere(g,sky,w,h,hz,over){
     g.restore();
   }
   g.restore();
+}
+
+// Replace only the sky at render time: the source mountains/shore stay untouched.
+function neoClearSky(g,w,hz,over){
+  g.save();neoSkyClip(g,w,hz,over);
+  const fill=g.createLinearGradient(0,0,0,hz);
+  fill.addColorStop(0,'#91d0ed');fill.addColorStop(1,'#b2def0');
+  g.fillStyle=fill;g.fillRect(-over,-1000,w+2*over,hz+1000);g.restore();
+}
+let neoCloudTime=0,neoCloudLast=performance.now();
+function neoCloudPose(i,t,w,hz,over){
+  const span=w+2*over+200;
+  const speed=[2.1,3.2,2.5,1.8][i];
+  return {x:-over-100+((span*[.12,.40,.68,.88][i]+t*speed)%span),y:hz*[.24,.52,.34,.68][i],s:[1.15,.8,1.3,.7][i]};
+}
+function neoMovingClouds(g,w,hz,over){
+  const now=performance.now();
+  if(!art2dStill)neoCloudTime+=Math.min(.05,Math.max(0,(now-neoCloudLast)/1000));
+  neoCloudLast=now;
+  const light=neoLight(nowHours());
+  const c=Math.round(250-light.night*174);
+  g.fillStyle=`rgba(${c},${c+2},${Math.min(255,c+8)},${.55-light.night*.17})`;
+  for(let i=0;i<4;i++){
+    const {x,y,s}=neoCloudPose(i,neoCloudTime,w,hz,over);
+    g.beginPath();g.ellipse(x,y,34*s,16*s,0,0,7);
+    g.ellipse(x+26*s,y+4*s,24*s,13*s,0,0,7);
+    g.ellipse(x-24*s,y+5*s,20*s,11*s,0,0,7);g.fill();
+  }
 }
