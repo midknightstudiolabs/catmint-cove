@@ -1192,6 +1192,8 @@
   #placeBar button.ok{background:var(--accent-bright);color:#fff;}
 </style>
 <style id="neo-theme">
+#todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
+#hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
 #restRetryRain[hidden]{display:none;}
 :root{--panel:#faf6e9;--panel-line:#d6d9bf;--ink:#343d31;--ink-soft:#58604f;--ink-faint:#69715d;--accent:#3f7152;--accent-bright:#508363;}
 .sheet,.modal,.fest-panel,.fest-result{border:1px solid var(--panel-line);box-shadow:0 10px 30px #293f302b;}
@@ -6263,7 +6265,14 @@ function syncHud() {
   const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
   const advBack = anyAdvBack();
   const projReady = PROJECTS.some(p => { if (projectStage(p.id) !== "open") return false; const n = projectNeed(p.id); return n.shells === 0 && n.driftwood === 0; });
-  document.getElementById("todayBadge").hidden = !(gReady || advBack || checkinAvailable() || projReady);
+  const giftReady=checkinAvailable(),todayBadge=document.getElementById("todayBadge"),todayButton=document.getElementById("todayBtn");
+  const noticeHidden=!(gReady||advBack||giftReady||projReady),noticeText=giftReady?'🎁':'•';
+  if(todayBadge.hidden!==noticeHidden)todayBadge.hidden=noticeHidden;
+  if(todayBadge.textContent!==noticeText)todayBadge.textContent=noticeText;
+  todayBadge.classList.toggle('gift-ready',giftReady);
+  todayBadge.setAttribute('aria-hidden','true');
+  const todayLabel=giftReady?'Today — daily welcome ready':(gReady||advBack||projReady?'Today — updates ready':'Today');
+  if(todayButton.getAttribute('aria-label')!==todayLabel){todayButton.setAttribute('aria-label',todayLabel);todayButton.title=todayLabel;}
   // driftwood pill — only while something needs it
   const dw = (G.materials && G.materials.driftwood) || 0;
   const dp = document.getElementById("driftPill");
@@ -6304,9 +6313,7 @@ function nextAction() {
     return { t: `Cove's full — add a comfort in the Shop for more room.`, go: "Shop", act: () => togglePanel("shop") };
   }
 
-  // a daily welcome to claim
-  if (checkinAvailable())
-    return { t: `A daily welcome is waiting in Today.`, go: "Open Today", act: () => togglePanel("today") };
+  // Daily welcome is discoverable in Today; no interrupting banner.
 
   // a restoration you haven't looked at yet — one gentle breadcrumb per project
   for (const def of PROJECTS) {
@@ -6332,23 +6339,25 @@ function nextAction() {
 
   return null;
 }
-let _hintT = 0;
+let _hintT = 0, _hintShownAt = 0;
+const _hintSeenThisVisit = new Set();
 function renderHint() {
   const now = performance.now();
   if (now - _hintT < 400) return;      // syncHud runs every frame — this doesn't need to
   _hintT = now;
   const el = document.getElementById("hint");
   if (!el) return;
-  const a = nextAction();
+  const a = (anyPanelOpen() || festMode || _focusT > .01 || _ovT > .01) ? null : nextAction();
   const txt = a ? a.t : null;
-  if (!txt || (txt === _hintDismissedText && Date.now() - _hintDismissedAt < 180000)) {
+  if (_hintCur && now-_hintShownAt>10000 && !el.matches(':hover') && !el.contains(document.activeElement)) _hintSeenThisVisit.add(_hintCur);
+  if (!txt || _hintSeenThisVisit.has(txt) || (txt === _hintDismissedText && Date.now() - _hintDismissedAt < 180000)) {
     if (!el.hidden) el.hidden = true;
     _hintCur = null;
     document.getElementById("app").classList.remove("has-hint");
     return;
   }
   if (txt !== _hintCur) {
-    _hintCur = txt;
+    _hintCur = txt; _hintShownAt = now;
     document.getElementById("hintText").textContent = txt;
     const go = document.getElementById("hintGo");
     if (a.go && a.act) { go.hidden = false; go.textContent = a.go; go._act = a.act; }
@@ -6361,6 +6370,7 @@ document.getElementById("hintGo").addEventListener("click", (e) => { e.stopPropa
 document.getElementById("hintX").addEventListener("click", (e) => {
   e.stopPropagation(); ensureAudio();
   if (e.currentTarget._skip || _cold) { endColdOpen(true); return; }   // ✕ = skip the intro while it's running
+  _hintSeenThisVisit.add(_hintCur);
   _hintDismissedText = _hintCur; _hintDismissedAt = Date.now();
   document.getElementById("hint").hidden = true; _hintCur = null;
   document.getElementById("app").classList.remove("has-hint");
@@ -17587,9 +17597,7 @@ function pickAdventureCat(dest, tier) {
 // runs LAST, after checkOffline's narrative beat + the earnings summary have closed
 function afterReturn(awaySec) {
   syncHud();
-  if (checkinAvailable() && G.tutorialDone) {
-    setTimeout(() => { if (checkinAvailable()) toast("A daily welcome is waiting in Today. 📅", 5); }, 700);
-  }
+
   setTimeout(() => { try { maybeOfferWelcome(); } catch (e) {} }, 4200);
 }
 

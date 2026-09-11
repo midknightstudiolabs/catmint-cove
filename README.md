@@ -45,3 +45,6 @@ Replaced the baked cloud sky at render time with a clean gradient clipped to the
 
 ### Overview edge continuity
 The overview now paints sky and meadow beyond the play rectangle. The night wash covers the entire camera view, avoiding bright bars at the original canvas boundary. Side scenery reflects across its edge with matching skyline clipping; the lower edge continues its final grass color into a quiet meadow rather than repeating upside-down shrubs. A light mist band softens the sea horizon. Checked wide and 900x1000 overview views locally.
+
+### Quieter daily reminders
+Daily welcome uses a gift badge on Today instead of the persistent floating action hint and duplicate return toast. Claiming remains inside Today. Other contextual hints auto-hide after ten seconds (paused while hovered/focused), dismissed hints stay dismissed for the visit, and hints do not intrude over panels, festival, focus or overview. The introductory guided flow remains separate. Verified Today gift badge and claim discoverability in the browser without changing reward logic.
