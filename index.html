@@ -1349,6 +1349,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #stage canvas{touch-action:pan-x}
 
 .neo-postcard-front{background:#bddbd9;isolation:isolate;overflow:hidden}.neo-postcard-front>svg{position:absolute;inset:0;width:100%;height:100%;z-index:-1}.neo-postcard-mark{height:60px}.neo-postcard-front>small{font-size:9px}
+
+.neo-little-hello{position:fixed;bottom:64px;transform:translateX(-50%);z-index:55;pointer-events:none;text-align:center;animation:neo-hello-arrive 5s ease both}.neo-little-hello canvas{position:static!important;display:block;width:100%;height:auto}.neo-little-hello p{font-size:14px;line-height:1.4;color:#43543f;background:#fff9e9;border:1px solid #d9dec7;border-radius:18px;padding:10px 14px;margin:0 0 -6px;box-shadow:0 3px 10px #334c4112}@keyframes neo-hello-arrive{0%{opacity:0;translate:0 12px}12%,85%{opacity:1;translate:0 0}100%{opacity:0;translate:0 8px}}@media(prefers-reduced-motion:reduce){.neo-little-hello{animation:none}}
 </style>
 
 <div id="app">
@@ -4893,7 +4895,7 @@ canvas.addEventListener("pointerup", (e) => {
     else exitFocus();                                     // tap the surrounds → step back
     return;
   }
-  handleTap(w.x, w.y);
+  handleTap(w.x, w.y, e.clientX, e.clientY);
 });
 canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeout(_lpTimer); _lpFired = false; });
 canvas.addEventListener("dblclick", e => e.preventDefault());
@@ -4960,7 +4962,7 @@ function tokenAt(x, y, rad) {
   for (const t of fieldTokens) { const d = dist2(x, y, t.x, t.y); if (d < bd) { bd = d; bt = t; } }
   return bt;
 }
-function handleTap(x, y) {
+function handleTap(x, y, screenX, screenY) {
   // tokens first — they're the payout, and they win over everything under them
   const bt = tokenAt(x, y);
   if (bt) { hidePropCard(); collectToken(bt); return; }
@@ -4996,6 +4998,7 @@ function handleTap(x, y) {
   if (tapCairn(x, y)) return;
 
   hideCatCard(); hidePropCard();
+  neoHelloTap(x,y,screenX,screenY);
 }
 function tapCairn(x, y) {
   const cn = G && G.cairn;
@@ -5046,11 +5049,7 @@ function petCat(c) {
     const dim = 1 / (1 + (c._petRun || 1) * 0.9);
     gainBond(c, (c.petAffinity() > 0.7 ? 1.5 : 0.35) * dim);
   }
-  // once they know the tap, tell them about the hold
-  if (!_focus && G && G.tutorialDone && G.tips && !G.tips.includes("focus_hinted")) {
-    G.tips.push("focus_hinted"); save();
-    setTimeout(() => { if (!_focus && !anyPanelOpen()) toast("Press and hold a cat to sit with it a while. 🐾", 6); }, 1500);
-  }
+
 }
 /* ---------- bonds ---------- */
 function gainBond(c, amt, quiet) {
@@ -18559,6 +18558,29 @@ function neoFestivalLanterns(g,x0,y,w,sagAt){
     g.globalAlpha=night;g.fillStyle='#ffdda0';g.beginPath();g.ellipse(x,yy,5,7,0,0,Math.PI*2);g.fill();
   }g.restore();
 }
+// A Little Hello: empty foreground taps, no rewards or camera changes.
+let neoHelloCount=0,neoHelloTarget=3+Math.floor(Math.random()*3),neoHelloLast=0,neoHelloUntil=0,neoHelloPrevious=null;
+function neoHelloTap(x,y,sx,sy){
+  const now=performance.now();
+  if(!Number.isFinite(sx)||sy<innerHeight*.68||_focus||_placing||_arranging||restMode||festMode||anyPanelOpen()||now<neoHelloUntil||movableAt(x,y))return;
+  if(now-neoHelloLast>2500)neoHelloCount=0;
+  neoHelloLast=now;if(++neoHelloCount<neoHelloTarget)return;
+  neoHelloCount=0;neoHelloTarget=3+Math.floor(Math.random()*3);
+  const available=cats.filter(c=>!c.visitor&&!c.sick&&c.state!=='sleeping');if(!available.length)return;
+  const choices=available.filter(c=>c!==neoHelloPrevious),pool=choices.length?choices:available;
+  const c=pool[Math.floor(Math.random()*pool.length)];neoHelloPrevious=c;neoHelloUntil=now+30000;
+  const shell=document.createElement('div');shell.className='neo-little-hello';shell.setAttribute('role','status');shell.setAttribute('aria-live','polite');
+  const size=Math.min(300,innerWidth*.68),center=clamp(sx,size/2+12,innerWidth-size/2-12);
+  shell.style.width=size+'px';shell.style.left=center+'px';
+  const portrait=document.createElement('canvas');portrait.width=400;portrait.height=320;portrait.setAttribute('aria-hidden','true');
+  const line=document.createElement('p');line.textContent=c.name+[' noticed your tapping.',' has come to investigate.',' heard there might be snacks.',' would like a word.'][Math.floor(Math.random()*4)];
+  shell.append(line,portrait);document.getElementById('app').append(shell);
+  const copy=new Cat({coatKey:c.coatKey,star:c.star,markSeed:c.markSeed,mascot:c.mascot,bornAt:c.bornAt,x:0,y:0});copy.worn=[...(c.worn||[])];Object.assign(copy,{mood:75,face:1,squash:0,bob:.6,tail:.3,blink:3,walk:0,walkAmt:0,state:'wantpet',stateT:0,stateDur:12});
+  const g=portrait.getContext('2d');g.save();g.translate(200,435.2);g.scale(6,6);drawCat(g,copy,true);g.restore();
+  let step=0;const lines=['Sniff… sniff.','No snacks? Just you? Perfect.'];
+  const timer=setInterval(()=>{if(anyPanelOpen()||restMode||festMode||_placing||_arranging){clearInterval(timer);shell.remove();return;}step++;if(step===3)line.textContent=lines[0];if(step===6)line.textContent=lines[1];if(step>=10){clearInterval(timer);shell.remove();}},500);
+}
+
 /* NEO_HOME_END */
 resize();
 _lastViewBottom = _viewBottomY;

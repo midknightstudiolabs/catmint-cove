@@ -2,6 +2,8 @@
 
 ## After V3 — 2026-09-12
 
+- Enabled A Little Hello: 3–5 empty foreground taps show a resident cat close-up with personalized playful captions. Five-second duration, 30-second cooldown, tap-position placement, reduced-motion support, and no resource rewards. Existing cats and accessories are reused.
+
 - Six destination-specific flat postcard illustrations replace the shared Cove picture.
 - New delivered cards save a random art seed and one of four palettes; consecutive cards for the same destination avoid repeating the palette. Scene details, greetings, and sign-offs vary. Reopening a saved card preserves its appearance.
 - Existing postcards retain their text and receive a deterministic illustration without changing saves.

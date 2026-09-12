@@ -201,3 +201,25 @@ function neoFestivalLanterns(g,x0,y,w,sagAt){
     g.globalAlpha=night;g.fillStyle='#ffdda0';g.beginPath();g.ellipse(x,yy,5,7,0,0,Math.PI*2);g.fill();
   }g.restore();
 }
+// A Little Hello: empty foreground taps, no rewards or camera changes.
+let neoHelloCount=0,neoHelloTarget=3+Math.floor(Math.random()*3),neoHelloLast=0,neoHelloUntil=0,neoHelloPrevious=null;
+function neoHelloTap(x,y,sx,sy){
+  const now=performance.now();
+  if(!Number.isFinite(sx)||sy<innerHeight*.68||_focus||_placing||_arranging||restMode||festMode||anyPanelOpen()||now<neoHelloUntil||movableAt(x,y))return;
+  if(now-neoHelloLast>2500)neoHelloCount=0;
+  neoHelloLast=now;if(++neoHelloCount<neoHelloTarget)return;
+  neoHelloCount=0;neoHelloTarget=3+Math.floor(Math.random()*3);
+  const available=cats.filter(c=>!c.visitor&&!c.sick&&c.state!=='sleeping');if(!available.length)return;
+  const choices=available.filter(c=>c!==neoHelloPrevious),pool=choices.length?choices:available;
+  const c=pool[Math.floor(Math.random()*pool.length)];neoHelloPrevious=c;neoHelloUntil=now+30000;
+  const shell=document.createElement('div');shell.className='neo-little-hello';shell.setAttribute('role','status');shell.setAttribute('aria-live','polite');
+  const size=Math.min(300,innerWidth*.68),center=clamp(sx,size/2+12,innerWidth-size/2-12);
+  shell.style.width=size+'px';shell.style.left=center+'px';
+  const portrait=document.createElement('canvas');portrait.width=400;portrait.height=320;portrait.setAttribute('aria-hidden','true');
+  const line=document.createElement('p');line.textContent=c.name+[' noticed your tapping.',' has come to investigate.',' heard there might be snacks.',' would like a word.'][Math.floor(Math.random()*4)];
+  shell.append(line,portrait);document.getElementById('app').append(shell);
+  const copy=new Cat({coatKey:c.coatKey,star:c.star,markSeed:c.markSeed,mascot:c.mascot,bornAt:c.bornAt,x:0,y:0});copy.worn=[...(c.worn||[])];Object.assign(copy,{mood:75,face:1,squash:0,bob:.6,tail:.3,blink:3,walk:0,walkAmt:0,state:'wantpet',stateT:0,stateDur:12});
+  const g=portrait.getContext('2d');g.save();g.translate(200,435.2);g.scale(6,6);drawCat(g,copy,true);g.restore();
+  let step=0;const lines=['Sniff… sniff.','No snacks? Just you? Perfect.'];
+  const timer=setInterval(()=>{if(anyPanelOpen()||restMode||festMode||_placing||_arranging){clearInterval(timer);shell.remove();return;}step++;if(step===3)line.textContent=lines[0];if(step===6)line.textContent=lines[1];if(step>=10){clearInterval(timer);shell.remove();}},500);
+}
