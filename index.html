@@ -8390,15 +8390,15 @@ function restGrads() {
   if (_restG && _restG.key === key) return _restG;
   const g = ctx, L = restLayout();
   const wall = g.createLinearGradient(0, 0, 0, H * 0.58);
-  wall.addColorStop(0, "#667566"); wall.addColorStop(1, "#8b977e");
+  wall.addColorStop(0, "#28352f"); wall.addColorStop(1, "#3b473b");
   const floor = g.createLinearGradient(0, H * 0.58, 0, H);
-  floor.addColorStop(0, "#ad8e68"); floor.addColorStop(1, "#78634e");
+  floor.addColorStop(0, "#514534"); floor.addColorStop(1, "#302d26");
   const sky = g.createLinearGradient(0, L.wy, 0, L.wy + L.wh);
-  sky.addColorStop(0, "#344e60"); sky.addColorStop(1, "#698894");
+  sky.addColorStop(0, "#172735"); sky.addColorStop(1, "#304b56");
   const glow = g.createRadialGradient(L.hx, L.hbase - 18, 6, L.hx, L.hbase - 18, L.hw * 2.2);
-  glow.addColorStop(0, "rgba(255,165,75,0.32)"); glow.addColorStop(1, "rgba(255,165,75,0)");
+  glow.addColorStop(0, "rgba(255,165,75,0.16)"); glow.addColorStop(1, "rgba(255,165,75,0)");
   const vig = g.createRadialGradient(W / 2, H * 0.55, Math.min(W, H) * 0.25, W / 2, H * 0.55, Math.max(W, H) * 0.75);
-  vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(24,34,29,0.28)");
+  vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(12,19,17,0.40)");
   _restG = { key, wall, floor, sky, glow, vig, L };
   return _restG;
 }
@@ -8817,11 +8817,11 @@ function renderRest(dt) {
   g.fillStyle="rgba(230,229,207,.12)";g.fillRect(0,wallY*.76,W,wallY*.24);
   g.strokeStyle="rgba(233,230,204,.18)";g.lineWidth=1;
   for(let x=24;x<W;x+=72){g.beginPath();g.moveTo(x,wallY*.78);g.lineTo(x,wallY-4);g.stroke();}
-  g.fillStyle="#aeb499";g.fillRect(0,wallY*.76,W,3);
+  g.fillStyle="#59624e";g.fillRect(0,wallY*.76,W,3);
 
   // --- window
   const { wx, wy, ww, wh } = L;
-  g.fillStyle = "#d4c6a4"; roundRect(g, wx - 9, wy - 9, ww + 18, wh + 18, 6); g.fill();
+  g.fillStyle = "#766e59"; roundRect(g, wx - 9, wy - 9, ww + 18, wh + 18, 6); g.fill();
   g.save();
   roundRect(g, wx, wy, ww, wh, 3); g.clip();
   g.fillStyle = R.sky; g.fillRect(wx, wy, ww, wh);
@@ -8849,18 +8849,18 @@ function renderRest(dt) {
       g.strokeStyle = `rgba(214,228,244,${0.18 * d.trail})`; g.lineWidth = d.r * 0.8;
       g.beginPath(); g.moveTo(px, py); g.lineTo(px, py - d.r * 7 - d.v * 4); g.stroke();
     }
-    g.fillStyle = "rgba(228,240,252,0.62)";
+    g.fillStyle = "rgba(195,213,224,0.32)";
     g.beginPath(); g.ellipse(px, py, d.r * 0.82, d.r * 1.15, 0, 0, 7); g.fill();
   }
   g.fillStyle = "rgba(255,255,255,0.06)"; g.fillRect(wx, wy, ww, wh * 0.14);
   g.restore();
-  g.strokeStyle = "#d4c6a4"; g.lineWidth = 5;
+  g.strokeStyle = "#766e59"; g.lineWidth = 5;
   g.beginPath(); g.moveTo(wx + ww / 2, wy); g.lineTo(wx + ww / 2, wy + wh);
   g.moveTo(wx, wy + wh / 2); g.lineTo(wx + ww, wy + wh / 2); g.stroke();
-  g.fillStyle = "#b9a180"; g.fillRect(wx - 12, wy + wh + 2, ww + 24, 7);   // sill
+  g.fillStyle = "#66573f"; g.fillRect(wx - 12, wy + wh + 2, ww + 24, 7);   // sill
 
   // Linen curtains frame the rain without covering the view or sill cats.
-  g.fillStyle="#d9d2b6";
+  g.fillStyle="#8b8771";
   for(const side of [-1,1]){
     const cx=side<0?wx-18:wx+ww+2;
     g.beginPath();g.moveTo(cx,wy-14);g.lineTo(cx+16,wy-14);
@@ -8868,7 +8868,7 @@ function renderRest(dt) {
     g.lineTo(cx-2,wy+wh*.9);g.quadraticCurveTo(cx+4,wy+wh*.4,cx,wy-14);g.fill();
     g.strokeStyle="rgba(108,117,91,.28)";g.lineWidth=1;g.beginPath();g.moveTo(cx+7,wy-8);g.lineTo(cx+9,wy+wh*.82);g.stroke();
   }
-  g.strokeStyle="#a78c67";g.lineWidth=4;g.beginPath();g.moveTo(wx-23,wy-17);g.lineTo(wx+ww+24,wy-17);g.stroke();
+  g.strokeStyle="#736046";g.lineWidth=4;g.beginPath();g.moveTo(wx-23,wy-17);g.lineTo(wx+ww+24,wy-17);g.stroke();
 
   // --- wall clock: a cat-silhouette pendulum clock, its tail swinging like the
   //     pendulum. Off the visible strip on a phone, so skip it there.
@@ -8922,8 +8922,8 @@ function renderRest(dt) {
   // --- fireplace (bottom-left) — stone surround, a short wide firebox opening, tall flames
   const { hx, hw, htop, hbase } = L;
   const surH = hbase - htop;
-  g.fillStyle = "#a69f89"; roundRect(g, hx - hw / 2, htop, hw, surH, 5); g.fill();
-  g.fillStyle = "#c8bda1"; g.fillRect(hx - hw / 2 - 7, htop - 9, hw + 14, 13);   // mantle
+  g.fillStyle = "#57584b"; roundRect(g, hx - hw / 2, htop, hw, surH, 5); g.fill();
+  g.fillStyle = "#77715c"; g.fillRect(hx - hw / 2 - 7, htop - 9, hw + 14, 13);   // mantle
   if (!dim) {
     g.strokeStyle = "rgba(0,0,0,0.14)"; g.lineWidth = 1; g.beginPath();
     for (let sy = htop + 14; sy < hbase - 8; sy += 16) { g.moveTo(hx - hw / 2, sy); g.lineTo(hx + hw / 2, sy); }
@@ -8939,6 +8939,7 @@ function renderRest(dt) {
   g.lineTo(ox + ow / 2, hbase - 8);
   g.closePath(); g.fill();
   if (restOpts.fire) {
+    g.save();g.globalAlpha=.65;
     // gentle, slow flicker — no fast strobe
     const flick = 0.78 + 0.14 * Math.sin(pn / 1100) + 0.08 * Math.sin(pn / 1700 + 1.3);
     g.save();
@@ -8970,11 +8971,12 @@ function renderRest(dt) {
       g.quadraticCurveTo(ox, by + 3, ox - ly.w, by);
       g.closePath(); g.fill();
     }
+    g.restore();
   }
 
   // --- a rug, and a low table with a steaming mug (the table is off-strip on a phone)
-  g.fillStyle = "rgba(223,215,183,0.85)"; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx, L.rugRy, 0, 0, 7); g.fill();
-  g.strokeStyle = "rgba(100,126,103,0.65)"; g.lineWidth = 2; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx * 0.84, L.rugRy * 0.82, 0, 0, 7); g.stroke();
+  g.fillStyle = "rgba(113,115,90,0.7)"; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx, L.rugRy, 0, 0, 7); g.fill();
+  g.strokeStyle = "rgba(81,101,82,0.65)"; g.lineWidth = 2; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx * 0.84, L.rugRy * 0.82, 0, 0, 7); g.stroke();
   if (!L.cramped) {
   const tbx = W * 0.9, tby = H * 0.66;
   g.fillStyle = "#6b4f3a"; roundRect(g, tbx - 20, tby, 40, 7, 2); g.fill();
