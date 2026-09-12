@@ -8360,15 +8360,15 @@ function restGrads() {
   if (_restG && _restG.key === key) return _restG;
   const g = ctx, L = restLayout();
   const wall = g.createLinearGradient(0, 0, 0, H * 0.58);
-  wall.addColorStop(0, "#2f2621"); wall.addColorStop(1, "#493a30");
+  wall.addColorStop(0, "#667566"); wall.addColorStop(1, "#8b977e");
   const floor = g.createLinearGradient(0, H * 0.58, 0, H);
-  floor.addColorStop(0, "#5c4636"); floor.addColorStop(1, "#3e3026");
+  floor.addColorStop(0, "#ad8e68"); floor.addColorStop(1, "#78634e");
   const sky = g.createLinearGradient(0, L.wy, 0, L.wy + L.wh);
-  sky.addColorStop(0, "#16203a"); sky.addColorStop(1, "#2f3f5c");
+  sky.addColorStop(0, "#344e60"); sky.addColorStop(1, "#698894");
   const glow = g.createRadialGradient(L.hx, L.hbase - 18, 6, L.hx, L.hbase - 18, L.hw * 2.2);
   glow.addColorStop(0, "rgba(255,165,75,0.32)"); glow.addColorStop(1, "rgba(255,165,75,0)");
   const vig = g.createRadialGradient(W / 2, H * 0.55, Math.min(W, H) * 0.25, W / 2, H * 0.55, Math.max(W, H) * 0.75);
-  vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(8,6,10,0.45)");
+  vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(24,34,29,0.28)");
   _restG = { key, wall, floor, sky, glow, vig, L };
   return _restG;
 }
@@ -8783,16 +8783,24 @@ function renderRest(dt) {
   }
   g.strokeStyle = "rgba(60,40,28,0.6)"; g.lineWidth = 3; g.beginPath(); g.moveTo(-8, wallY); g.lineTo(W + 8, wallY); g.stroke();
 
+  // Quiet painted wall panels: simple geometry, no texture allocations.
+  g.fillStyle="rgba(230,229,207,.12)";g.fillRect(0,wallY*.76,W,wallY*.24);
+  g.strokeStyle="rgba(233,230,204,.18)";g.lineWidth=1;
+  for(let x=24;x<W;x+=72){g.beginPath();g.moveTo(x,wallY*.78);g.lineTo(x,wallY-4);g.stroke();}
+  g.fillStyle="#aeb499";g.fillRect(0,wallY*.76,W,3);
+
   // --- window
   const { wx, wy, ww, wh } = L;
-  g.fillStyle = "#241b16"; roundRect(g, wx - 9, wy - 9, ww + 18, wh + 18, 6); g.fill();
+  g.fillStyle = "#d4c6a4"; roundRect(g, wx - 9, wy - 9, ww + 18, wh + 18, 6); g.fill();
   g.save();
   roundRect(g, wx, wy, ww, wh, 3); g.clip();
   g.fillStyle = R.sky; g.fillRect(wx, wy, ww, wh);
-  g.fillStyle = "rgba(8,12,20,0.6)";
-  g.beginPath(); g.moveTo(wx + ww * 0.6, wy + wh);
-  g.bezierCurveTo(wx + ww * 0.52, wy + wh * 0.55, wx + ww * 0.95, wy + wh * 0.5, wx + ww * 0.82, wy + wh * 0.05);
-  g.lineTo(wx + ww, wy + wh); g.closePath(); g.fill();
+  // Distant coastal hills keep the rainy view calm and familiar.
+  g.fillStyle="rgba(39,67,72,.5)";
+  g.beginPath();g.moveTo(wx,wy+wh);g.lineTo(wx,wy+wh*.79);
+  g.bezierCurveTo(wx+ww*.15,wy+wh*.65,wx+ww*.26,wy+wh*.93,wx+ww*.48,wy+wh*.88);
+  g.bezierCurveTo(wx+ww*.70,wy+wh*.92,wx+ww*.83,wy+wh*.64,wx+ww,wy+wh*.73);
+  g.lineTo(wx+ww,wy+wh);g.closePath();g.fill();
   if (_restFlash > 0.02) { g.fillStyle = `rgba(190,210,255,${_restFlash * 0.7})`; g.fillRect(wx, wy, ww, wh); }
   if (!dim) {
     g.strokeStyle = "rgba(206,220,240,0.9)"; g.lineWidth = 1.1; g.lineCap = "round";
@@ -8816,10 +8824,21 @@ function renderRest(dt) {
   }
   g.fillStyle = "rgba(255,255,255,0.06)"; g.fillRect(wx, wy, ww, wh * 0.14);
   g.restore();
-  g.strokeStyle = "#241b16"; g.lineWidth = 5;
+  g.strokeStyle = "#d4c6a4"; g.lineWidth = 5;
   g.beginPath(); g.moveTo(wx + ww / 2, wy); g.lineTo(wx + ww / 2, wy + wh);
   g.moveTo(wx, wy + wh / 2); g.lineTo(wx + ww, wy + wh / 2); g.stroke();
-  g.fillStyle = "#5a4636"; g.fillRect(wx - 12, wy + wh + 2, ww + 24, 7);   // sill
+  g.fillStyle = "#b9a180"; g.fillRect(wx - 12, wy + wh + 2, ww + 24, 7);   // sill
+
+  // Linen curtains frame the rain without covering the view or sill cats.
+  g.fillStyle="#d9d2b6";
+  for(const side of [-1,1]){
+    const cx=side<0?wx-18:wx+ww+2;
+    g.beginPath();g.moveTo(cx,wy-14);g.lineTo(cx+16,wy-14);
+    g.quadraticCurveTo(cx+10,wy+wh*.48,cx+18,wy+wh*.9);
+    g.lineTo(cx-2,wy+wh*.9);g.quadraticCurveTo(cx+4,wy+wh*.4,cx,wy-14);g.fill();
+    g.strokeStyle="rgba(108,117,91,.28)";g.lineWidth=1;g.beginPath();g.moveTo(cx+7,wy-8);g.lineTo(cx+9,wy+wh*.82);g.stroke();
+  }
+  g.strokeStyle="#a78c67";g.lineWidth=4;g.beginPath();g.moveTo(wx-23,wy-17);g.lineTo(wx+ww+24,wy-17);g.stroke();
 
   // --- wall clock: a cat-silhouette pendulum clock, its tail swinging like the
   //     pendulum. Off the visible strip on a phone, so skip it there.
@@ -8873,8 +8892,8 @@ function renderRest(dt) {
   // --- fireplace (bottom-left) — stone surround, a short wide firebox opening, tall flames
   const { hx, hw, htop, hbase } = L;
   const surH = hbase - htop;
-  g.fillStyle = "#78706a"; roundRect(g, hx - hw / 2, htop, hw, surH, 5); g.fill();
-  g.fillStyle = "#8b827b"; g.fillRect(hx - hw / 2 - 7, htop - 9, hw + 14, 13);   // mantle
+  g.fillStyle = "#a69f89"; roundRect(g, hx - hw / 2, htop, hw, surH, 5); g.fill();
+  g.fillStyle = "#c8bda1"; g.fillRect(hx - hw / 2 - 7, htop - 9, hw + 14, 13);   // mantle
   if (!dim) {
     g.strokeStyle = "rgba(0,0,0,0.14)"; g.lineWidth = 1; g.beginPath();
     for (let sy = htop + 14; sy < hbase - 8; sy += 16) { g.moveTo(hx - hw / 2, sy); g.lineTo(hx + hw / 2, sy); }
@@ -8891,7 +8910,7 @@ function renderRest(dt) {
   g.closePath(); g.fill();
   if (restOpts.fire) {
     // gentle, slow flicker — no fast strobe
-    const flick = 0.78 + 0.14 * Math.sin(pn / 320) + 0.08 * Math.sin(pn / 130 + 1.3);
+    const flick = 0.78 + 0.14 * Math.sin(pn / 1100) + 0.08 * Math.sin(pn / 1700 + 1.3);
     g.save();
     g.globalAlpha = clamp(0.78 * flick, 0, 0.92);
     g.fillStyle = R.glow; g.fillRect(-8, htop - 60, W * 0.7, H - htop + 90);
@@ -8906,9 +8925,9 @@ function renderRest(dt) {
     g.beginPath(); g.ellipse(ox, by, ow * 0.42, 5, 0, 0, 7); g.fill();
     // 3 overlapping organic flames + an inner core
     const layers = [
-      { col: "#e07a26", w: ow * 0.4, h: oh * 0.9, sp: 260 },
-      { col: "#f4b13e", w: ow * 0.28, h: oh * 1.05, sp: 200 },
-      { col: "#fbe08a", w: ow * 0.16, h: oh * 0.8, sp: 150 },
+      { col: "#e07a26", w: ow * 0.4, h: oh * 0.9, sp: 900 },
+      { col: "#f4b13e", w: ow * 0.28, h: oh * 1.05, sp: 1100 },
+      { col: "#fbe08a", w: ow * 0.16, h: oh * 0.8, sp: 1300 },
     ];
     for (const ly of layers) {
       const s1 = Math.sin(pn / ly.sp), s2 = Math.sin(pn / (ly.sp * 1.7) + 1);
@@ -8924,8 +8943,8 @@ function renderRest(dt) {
   }
 
   // --- a rug, and a low table with a steaming mug (the table is off-strip on a phone)
-  g.fillStyle = "rgba(150,88,78,0.28)"; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx, L.rugRy, 0, 0, 7); g.fill();
-  g.strokeStyle = "rgba(120,68,60,0.35)"; g.lineWidth = 2; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx * 0.84, L.rugRy * 0.82, 0, 0, 7); g.stroke();
+  g.fillStyle = "rgba(223,215,183,0.85)"; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx, L.rugRy, 0, 0, 7); g.fill();
+  g.strokeStyle = "rgba(100,126,103,0.65)"; g.lineWidth = 2; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx * 0.84, L.rugRy * 0.82, 0, 0, 7); g.stroke();
   if (!L.cramped) {
   const tbx = W * 0.9, tby = H * 0.66;
   g.fillStyle = "#6b4f3a"; roundRect(g, tbx - 20, tby, 40, 7, 2); g.fill();
