@@ -9186,7 +9186,7 @@ function openFestPicker(kind) {
 
   _festQuietUntil = Date.now() + 2500;   // no cove toasts through the wipe into the festival
   const w = document.getElementById("festWipe");
-  document.getElementById("festWipeEmoji").innerHTML = neoUIIcon("festival");
+  document.getElementById("festWipeEmoji").innerHTML = neoUIIcon("festival-welcome");
   document.getElementById("festWipeTitle").textContent = "Cove Festival";
   document.getElementById("festWipeSub").textContent = pick([
     "Everyone's wandering down to the grounds…",
@@ -9376,7 +9376,7 @@ function closeFest() {
   particles.length = 0; floaters.length = 0;   // a live "zoomies!" or confetti spark shouldn't follow you back to the cove
   _festQuietUntil = Date.now() + 1800;   // ...and none land the instant the wipe clears back at the cove
   const w = document.getElementById("festWipe");
-  document.getElementById("festWipeEmoji").innerHTML = neoUIIcon("paw");
+  document.getElementById("festWipeEmoji").innerHTML = neoUIIcon("homecoming");
   document.getElementById("festWipeTitle").textContent = "Back to the cove";
   document.getElementById("festWipeSub").textContent = "";
   w.classList.remove("out"); void w.offsetWidth; w.classList.add("in");
