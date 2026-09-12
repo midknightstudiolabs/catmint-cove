@@ -152,11 +152,17 @@ document.querySelectorAll(".chip[data-pose]").forEach(b => b.onclick = () => {
 function poseP(style, pose) {
   // [bw, top, hx, hy, hr] per style+pose — hand-tuned, not derived, so each
   // direction can push proportions independently
+  // every non-current style is "current"'s proven body, head just scaled up
+  // in place (same hy/top anchor — the head sits AT the shoulder peak, not
+  // floated above it on a stretched neck/chest). Inventing fresh body
+  // numbers is what produced the tall, bare-chested "alien" proportions —
+  // borrowing a composition that's already shipped and known to read as a
+  // cat is the safer move.
   const T = {
     current: { loaf:[27,-33,3,-33,17], sit:[22,-45,4,-44,16] },
-    bighead: { loaf:[23,-29,1,-35,22], sit:[19,-39,2,-47,21] },
-    plush:   { loaf:[29,-31,3,-35,19], sit:[24,-43,3,-47,18] },
-    blend:   { loaf:[24,-30,1,-36,23], sit:[20,-40,2,-48,22] },
+    bighead: { loaf:[25,-33,2,-33,20], sit:[20,-45,3,-44,19] },
+    plush:   { loaf:[26,-33,3,-34,18.5], sit:[21,-45,4,-45,17.5] },
+    blend:   { loaf:[24,-32,2,-33,21], sit:[19,-44,3,-44,20] },
   };
   const [bw, top, hx, hy, hr] = T[style][pose];
   return { bw, top, hx, hy, hr };
@@ -176,18 +182,19 @@ function catSil(g, P, style) {
     g.arc(P.hx, P.hy, P.hr, 0, Math.PI * 2, false);
     return;
   }
-  // cat-wedge head: narrow crown (for the ears to perch on), two flared cheek
-  // tufts at the widest point (the classic lynx-tuft silhouette that reads as
-  // cat even in silhouette), tapering to a rounded chin. One closed loop —
-  // no separate overlapping subpaths, so no clip/stroke artifacts either.
+  // a mostly-round head with a narrower crown (room for the ears to plant
+  // on top of, not out the sides) and just a whisper of cheek fullness at
+  // eye level — the earlier version flared the cheeks out hard, which read
+  // as a second pair of ears/antennae rather than fur. Chin stays close to
+  // the nose (short jaw), the same proportion "current"'s plain circle uses.
   const hx = P.hx, hy = P.hy, r = P.hr;
-  g.moveTo(hx, hy - r * 0.98);
-  g.bezierCurveTo(hx + r * 0.6, hy - r * 0.94, hx + r * 0.9, hy - r * 0.5, hx + r * 0.84, hy - r * 0.1);
-  g.bezierCurveTo(hx + r * 1.15, hy + r * 0.05, hx + r * 1.08, hy + r * 0.34, hx + r * 0.78, hy + r * 0.28);
-  g.bezierCurveTo(hx + r * 0.72, hy + r * 0.72, hx + r * 0.34, hy + r * 1.02, hx, hy + r * 0.98);
-  g.bezierCurveTo(hx - r * 0.34, hy + r * 1.02, hx - r * 0.72, hy + r * 0.72, hx - r * 0.78, hy + r * 0.28);
-  g.bezierCurveTo(hx - r * 1.08, hy + r * 0.34, hx - r * 1.15, hy + r * 0.05, hx - r * 0.84, hy - r * 0.1);
-  g.bezierCurveTo(hx - r * 0.9, hy - r * 0.5, hx - r * 0.6, hy - r * 0.94, hx, hy - r * 0.98);
+  g.moveTo(hx, hy - r * 0.9);
+  g.bezierCurveTo(hx + r * 0.58, hy - r * 0.86, hx + r * 0.86, hy - r * 0.5, hx + r * 0.9, hy - r * 0.08);
+  g.bezierCurveTo(hx + r * 0.93, hy + r * 0.14, hx + r * 0.84, hy + r * 0.28, hx + r * 0.7, hy + r * 0.24);
+  g.bezierCurveTo(hx + r * 0.62, hy + r * 0.56, hx + r * 0.32, hy + r * 0.78, hx, hy + r * 0.74);
+  g.bezierCurveTo(hx - r * 0.32, hy + r * 0.78, hx - r * 0.62, hy + r * 0.56, hx - r * 0.7, hy + r * 0.24);
+  g.bezierCurveTo(hx - r * 0.84, hy + r * 0.28, hx - r * 0.93, hy + r * 0.14, hx - r * 0.9, hy - r * 0.08);
+  g.bezierCurveTo(hx - r * 0.86, hy - r * 0.5, hx - r * 0.58, hy - r * 0.86, hx, hy - r * 0.9);
   g.closePath();
 }
 function drawEar(g, side, P, coat, style) {
@@ -256,7 +263,7 @@ function shade(ctx, coat, style, P) {
   }
   if (coat.white && coat.white.includes("muzzle")) {
     ctx.fillStyle = "#f8f5ee";
-    ctx.beginPath(); ctx.ellipse(P.hx + 1, P.hy + P.hr * 0.5, P.hr * 0.5, P.hr * 0.36, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(P.hx + 1, P.hy + P.hr * 0.42, P.hr * 0.42, P.hr * 0.3, 0, 0, 7); ctx.fill();
   }
 
   if (style === "current") {
@@ -292,8 +299,8 @@ function shade(ctx, coat, style, P) {
   }
 }
 function eyes(ctx, P, coat, style) {
-  const eDx = style === "current" ? 5.4 : style === "bighead" ? 7.6 : 7.2;
-  const eyeY = P.hy - (style === "bighead" ? 0.5 : 1.5);
+  const eDx = style === "current" ? 5.4 : P.hr * 0.36;
+  const eyeY = style === "current" ? P.hy - 1.5 : P.hy - P.hr * 0.06;
   for (const side of [-1, 1]) {
     const ex = P.hx + side * eDx, ey = eyeY;
     if (style === "current") {
@@ -405,7 +412,7 @@ function drawCatProto(ctx, style, coatKeyLocal, pose, t, cx, cy, scale) {
   if (blink) {
     ctx.strokeStyle = "rgba(38,32,26,0.8)"; ctx.lineWidth = 1.8; ctx.lineCap = "round";
     for (const side of [-1, 1]) {
-      const ex = P0.hx + side * (style === "current" ? 5.4 : style === "bighead" ? 7.6 : 7.2), ey = P0.hy - (style === "bighead" ? 0.5 : 1.5);
+      const ex = P0.hx + side * (style === "current" ? 5.4 : P0.hr * 0.36), ey = style === "current" ? P0.hy - 1.5 : P0.hy - P0.hr * 0.06;
       ctx.beginPath(); ctx.moveTo(ex - 3.4, ey - 0.3); ctx.quadraticCurveTo(ex, ey + 2.8, ex + 3.4, ey - 0.3); ctx.stroke();
     }
   } else {
