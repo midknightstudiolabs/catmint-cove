@@ -39,7 +39,7 @@ jobs:
         id: ver
         run: |
           NAME="${GITHUB_REF_NAME#android-v}"
-          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="2.0.$GITHUB_RUN_NUMBER"; fi
+          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="3.0.1"; fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "code=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
 
