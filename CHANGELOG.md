@@ -1,5 +1,12 @@
 # Changelog
 
+## Approved garden and café concept — 2026-09-12
+
+- Added a flat café interior using the existing resident cat artwork, subtle idle movement and a welcome interaction. Rendering pauses when the sheet closes and respects reduced motion.
+- Added saved cream, sage and rose tablecloths and two seating arrangements, free to switch.
+- Garden patches expand from four to eight; café seating from three to five, with explicit shell prices. Extra seats do not multiply automatic income.
+- Added crop illustrations, mobile-sized controls and Help guidance. Existing growing, cooking and sales progress is retained.
+
 ## Permanent café and garden — 2026-09-12
 
 - Festival now lists only Cove Race, Volleyball and Tug of Paws. Catmint Café and Cove Garden are separate Activities destinations, with clickable entrances in the Cove.

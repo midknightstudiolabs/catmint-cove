@@ -10,4 +10,7 @@ c.neoCafeSettle(250000);assert.equal(c.G.homestead.counter,3);assert.equal(c.G.h
 c.neoCafeSettle(999999999);assert.equal(c.G.homestead.counter,0);assert.equal(c.G.homestead.earned,8);
 c.neoCafeSettle(999999999);assert.equal(c.G.homestead.earned,8);
 c.G=JSON.parse(JSON.stringify(c.G));assert.equal(c.neoHomestead().served,4);
+c.G.shells=1000;assert.equal(c.neoExpandHomestead('garden'),true);assert.equal(c.G.homestead.plots.length,5);assert.equal(c.G.shells,900);
+c.G.shells=0;assert.equal(c.neoExpandHomestead('garden'),false);assert.equal(c.G.homestead.plots.length,5);
+c.G.homestead.cloth='sage';c.G.homestead.layout='window';c.G=JSON.parse(JSON.stringify(c.G));assert.equal(c.neoHomestead().cloth,'sage');assert.equal(c.neoHomestead().layout,'window');
 console.log('PASS: seed costs, occupied plot protection, harvest/cooking timers, stock-backed sales, no double payment and persistent progress.');
