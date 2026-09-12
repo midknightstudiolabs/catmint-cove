@@ -78,3 +78,5 @@
 .adv-flow .pick-cat canvas{width:66px;height:62px;display:block;margin:0 auto 8px}
 .adv-flow .pick-cat{text-align:center;display:flex;flex-direction:column;align-items:center}
 .adv-flow .pick-cat.on{outline:2px solid #648569;background:#eef2e5}
+
+#actions .ico svg{display:block;width:24px;height:24px;flex-shrink:0}#actions .ico{display:inline-flex;align-items:center;justify-content:center}

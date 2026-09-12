@@ -1321,6 +1321,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .adv-flow .pick-cat canvas{width:66px;height:62px;display:block;margin:0 auto 8px}
 .adv-flow .pick-cat{text-align:center;display:flex;flex-direction:column;align-items:center}
 .adv-flow .pick-cat.on{outline:2px solid #648569;background:#eef2e5}
+
+#actions .ico svg{display:block;width:24px;height:24px;flex-shrink:0}#actions .ico{display:inline-flex;align-items:center;justify-content:center}
 </style>
 
 <div id="app">
@@ -5212,26 +5214,26 @@ function renderCatCare(c) {
 //      (neck / ear / face / head), layered — a cat can wear a collar + glasses
 //      + a hat at once, but not two neck items or two hats.
 const ACCESSORIES = [
-  { key:"collar",      label:"Collar",       price:10,  slot:"neck", group:"Collars",  blurb:"A simple buckle collar." },
-  { key:"bell",        label:"Bell collar",  price:14,  slot:"neck", group:"Collars",  blurb:"A collar with a little brass bell." },
-  { key:"studcollar",  label:"Studded collar",price:20, slot:"neck", group:"Collars",  blurb:"A leather band with a row of little brass studs." },
-  { key:"bandana",     label:"Bandana",      price:16,  slot:"neck", group:"Neckwear", blurb:"A folded kerchief, knotted at the neck." },
-  { key:"bow",         label:"Bow tie",      price:16,  slot:"neck", group:"Neckwear", blurb:"A dapper little bow tie." },
-  { key:"scarf",       label:"Scarf",        price:26,  slot:"neck", group:"Neckwear", blurb:"A knitted scarf with two hanging ends." },
-  { key:"glasses",     label:"Round glasses",price:34,  slot:"face", group:"Specs",    blurb:"Round brass wire frames." },
-  { key:"sunglasses",  label:"Sunglasses",   price:38,  slot:"face", group:"Specs",    blurb:"Dark little shades. Very unbothered." },
-  { key:"monocle",     label:"Monocle",      price:44,  slot:"face", group:"Specs",    blurb:"A single lens on a fine chain. For a distinguished squint." },
-  { key:"flower",      label:"Ear flower",   price:12,  slot:"ear",  group:"Blooms",   blurb:"A single bloom tucked behind an ear." },
-  { key:"daisychain",  label:"Daisy chain",  price:20,  slot:"neck", group:"Blooms",   blurb:"A loop of little daisies, strung by hand." },
-  { key:"flowercrown", label:"Flower crown", price:30,  slot:"head", group:"Blooms",   blurb:"A woven ring of little blossoms." },
-  { key:"beanie",      label:"Beanie",       price:22,  slot:"head", group:"Hats",     blurb:"A snug knit cap with a pom." },
-  { key:"cap",         label:"Ball cap",     price:24,  slot:"head", group:"Hats",     blurb:"Brim to the side, face in the clear." },
-  { key:"bucket",      label:"Bucket hat",   price:26,  slot:"head", group:"Hats",     blurb:"Floppy brim, worn tipped back." },
-  { key:"sunhat",      label:"Sun hat",      price:30,  slot:"head", group:"Hats",     blurb:"A woven straw hat pushed back off the face." },
-  { key:"partyhat",    label:"Party hat",    price:20,  slot:"head", group:"Hats",     blurb:"Because every day could be a birthday." },
-  { key:"laurel",      label:"Laurel wreath",price:70,  slot:"head", group:"Regalia",  blurb:"A ring of laurel leaves. Hail the nap champion." },
-  { key:"tiara",       label:"Tiara",        price:95,  slot:"head", group:"Regalia",  blurb:"A slim band with three little points and a bright stone." },
-  { key:"crown",       label:"Crown",        price:120, slot:"head", group:"Regalia",  blurb:"For the cove's most distinguished loaf." },
+  { key:"collar",      label:"Collar",       price:15,  slot:"neck", group:"Collars",  blurb:"A simple buckle collar." },
+  { key:"bell",        label:"Bell collar",  price:20,  slot:"neck", group:"Collars",  blurb:"A collar with a little brass bell." },
+  { key:"studcollar",  label:"Studded collar",price:30, slot:"neck", group:"Collars",  blurb:"A leather band with a row of little brass studs." },
+  { key:"bandana",     label:"Bandana",      price:25,  slot:"neck", group:"Neckwear", blurb:"A folded kerchief, knotted at the neck." },
+  { key:"bow",         label:"Bow tie",      price:25,  slot:"neck", group:"Neckwear", blurb:"A dapper little bow tie." },
+  { key:"scarf",       label:"Scarf",        price:40,  slot:"neck", group:"Neckwear", blurb:"A knitted scarf with two hanging ends." },
+  { key:"glasses",     label:"Round glasses",price:50,  slot:"face", group:"Specs",    blurb:"Round brass wire frames." },
+  { key:"sunglasses",  label:"Sunglasses",   price:55,  slot:"face", group:"Specs",    blurb:"Dark little shades. Very unbothered." },
+  { key:"monocle",     label:"Monocle",      price:65,  slot:"face", group:"Specs",    blurb:"A single lens on a fine chain. For a distinguished squint." },
+  { key:"flower",      label:"Ear flower",   price:20,  slot:"ear",  group:"Blooms",   blurb:"A single bloom tucked behind an ear." },
+  { key:"daisychain",  label:"Daisy chain",  price:30,  slot:"neck", group:"Blooms",   blurb:"A loop of little daisies, strung by hand." },
+  { key:"flowercrown", label:"Flower crown", price:45,  slot:"head", group:"Blooms",   blurb:"A woven ring of little blossoms." },
+  { key:"beanie",      label:"Beanie",       price:35,  slot:"head", group:"Hats",     blurb:"A snug knit cap with a pom." },
+  { key:"cap",         label:"Ball cap",     price:35,  slot:"head", group:"Hats",     blurb:"Brim to the side, face in the clear." },
+  { key:"bucket",      label:"Bucket hat",   price:40,  slot:"head", group:"Hats",     blurb:"Floppy brim, worn tipped back." },
+  { key:"sunhat",      label:"Sun hat",      price:45,  slot:"head", group:"Hats",     blurb:"A woven straw hat pushed back off the face." },
+  { key:"partyhat",    label:"Party hat",    price:30,  slot:"head", group:"Hats",     blurb:"Because every day could be a birthday." },
+  { key:"laurel",      label:"Laurel wreath",price:105,  slot:"head", group:"Regalia",  blurb:"A ring of laurel leaves. Hail the nap champion." },
+  { key:"tiara",       label:"Tiara",        price:140,  slot:"head", group:"Regalia",  blurb:"A slim band with three little points and a bright stone." },
+  { key:"crown",       label:"Crown",        price:180, slot:"head", group:"Regalia",  blurb:"For the cove's most distinguished loaf." },
   // Welcome Pack IAP ($0.99) — a small first purchase. One accessory, unlocked
   // for the whole cove, plus a carved "welcome paw" that appears by the sign.
   { key:"amberribbon", label:"Amber ribbon", iap:"welcome_pack", slot:"neck", group:"Welcome", premium:true, blurb:"A soft amber ribbon knotted at the neck — the colour of late afternoon light on the cove." },
@@ -5667,21 +5669,21 @@ const SHOP_TABS = [
 ];
 const SHOP = [
   { key:"bowls", cat:"comforts", type:"food", name:"Food bowl", desc:"Cats come here to eat, then wash up. +2 cat capacity.",
-    base:12, mul:1.6, keepMin:1, get:()=>G.bowls, buy:()=>{ G.bowls++; rebuildAttractors(); }, remove:()=>{ G.bowls--; dropComfortPos("food", G.bowls); rebuildAttractors(); } },
+    base:30, mul:1.6, keepMin:1, get:()=>G.bowls, buy:()=>{ G.bowls++; rebuildAttractors(); }, remove:()=>{ G.bowls--; dropComfortPos("food", G.bowls); rebuildAttractors(); } },
   { key:"toys", cat:"comforts", type:"toy", name:"Toy", desc:"Cats come here to play — playing boosts their output. +1 capacity.",
-    base:16, mul:1.6, get:()=>G.toys, buy:()=>{ G.toys++; rebuildAttractors(); }, remove:()=>{ G.toys--; dropComfortPos("toy", G.toys); rebuildAttractors(); } },
+    base:45, mul:1.6, get:()=>G.toys, buy:()=>{ G.toys++; rebuildAttractors(); }, remove:()=>{ G.toys--; dropComfortPos("toy", G.toys); rebuildAttractors(); } },
   { key:"beds", cat:"comforts", type:"bed", name:"Cozy bed", desc:"A favourite napping spot — sleeping restores mood. +1 capacity.",
-    base:22, mul:1.6, get:()=>G.beds, buy:()=>{ G.beds++; rebuildAttractors(); }, remove:()=>{ G.beds--; dropComfortPos("bed", G.beds); rebuildAttractors(); } },
+    base:70, mul:1.6, get:()=>G.beds, buy:()=>{ G.beds++; rebuildAttractors(); }, remove:()=>{ G.beds--; dropComfortPos("bed", G.beds); rebuildAttractors(); } },
   { key:"scratch", cat:"comforts", type:"scratch", name:"Scratch pad", desc:"Cats stop by for a good scratch — sharpens the claws, lifts the mood, and they always stretch after. +1 capacity.",
-    base:20, mul:1.6, get:()=>G.scratch, buy:()=>{ G.scratch++; rebuildAttractors(); }, remove:()=>{ G.scratch--; dropComfortPos("scratch", G.scratch); rebuildAttractors(); } },
+    base:60, mul:1.6, get:()=>G.scratch, buy:()=>{ G.scratch++; rebuildAttractors(); }, remove:()=>{ G.scratch--; dropComfortPos("scratch", G.scratch); rebuildAttractors(); } },
   { key:"tree", cat:"comforts", type:"tree", name:"Shade tree", desc:"Cats doze in the shade. Lifts the whole cove's mood.",
-    base:30, mul:1.7, get:()=>G.decor.tree, buy:()=>{ G.decor.tree++; rebuildAttractors(); }, remove:()=>{ G.decor.tree--; dropDecorPos("tree", G.decor.tree); rebuildAttractors(); } },
+    base:120, mul:1.7, get:()=>G.decor.tree, buy:()=>{ G.decor.tree++; rebuildAttractors(); }, remove:()=>{ G.decor.tree--; dropDecorPos("tree", G.decor.tree); rebuildAttractors(); } },
   { key:"cottage", cat:"comforts", type:"cottage", name:"Cat cottage", desc:"A little house cats curl up inside to sleep. +2 capacity.",
-    base:55, mul:1.8, get:()=>G.decor.cottage, buy:()=>{ G.decor.cottage++; rebuildAttractors(); }, remove:()=>{ G.decor.cottage--; dropDecorPos("cottage", G.decor.cottage); rebuildAttractors(); } },
+    base:240, mul:1.8, get:()=>G.decor.cottage, buy:()=>{ G.decor.cottage++; rebuildAttractors(); }, remove:()=>{ G.decor.cottage--; dropDecorPos("cottage", G.decor.cottage); rebuildAttractors(); } },
   { key:"cattree", cat:"comforts", type:"cattree", name:"Cat tree", desc:"Three levels — a low step to loaf on, a cubby to hide in, and a perch on top to survey the whole cove from. Climbers love it. +3 capacity.",
-    base:52, mul:1.75, get:()=>G.decor.cattree, buy:()=>{ G.decor.cattree++; rebuildAttractors(); }, remove:()=>{ G.decor.cattree--; dropDecorPos("cattree", G.decor.cattree); rebuildAttractors(); } },
+    base:300, mul:1.75, get:()=>G.decor.cattree, buy:()=>{ G.decor.cattree++; rebuildAttractors(); }, remove:()=>{ G.decor.cattree--; dropDecorPos("cattree", G.decor.cattree); rebuildAttractors(); } },
   { key:"flowers", cat:"comforts", type:"flowers", name:"Flower patch", desc:"Just pretty. Raises everyone's baseline mood a little.",
-    base:14, mul:1.5, get:()=>G.decor.flowers, buy:()=>{ G.decor.flowers++; rebuildAttractors(); }, remove:()=>{ G.decor.flowers--; dropDecorPos("flowers", G.decor.flowers); rebuildAttractors(); } },
+    base:35, mul:1.5, get:()=>G.decor.flowers, buy:()=>{ G.decor.flowers++; rebuildAttractors(); }, remove:()=>{ G.decor.flowers--; dropDecorPos("flowers", G.decor.flowers); rebuildAttractors(); } },
   { key:"fishing", cat:"stations", name:"Fishing dock", desc:"Not for sale — repair the old dock down at the shore. Tap it in the cove.",
     base:0, mul:1, max:1, get:()=>projectDone("dock") ? 1 : 0,
     need:()=> projectDone("dock") ? null : "Repair the dock — tap it at the shore" },
@@ -5691,13 +5693,13 @@ const SHOP = [
     need:()=>"in the works",
     buy:()=>{ G.stations.bakery++; rebuildAttractors(); }, remove:()=>{ G.stations.bakery--; rebuildAttractors(); } },
   { key:"sunbeam", cat:"stations", type:"sunbeam", name:"Sunbeam mat", desc:"The comfiest spot in the cove — mood rockets, output ticks over gently. +2 capacity.",
-    base:50, mul:1.8, get:()=>G.stations.sunbeam, buy:()=>{ G.stations.sunbeam++; rebuildAttractors(); }, remove:()=>{ G.stations.sunbeam--; rebuildAttractors(); } },
+    base:180, mul:1.8, get:()=>G.stations.sunbeam, buy:()=>{ G.stations.sunbeam++; rebuildAttractors(); }, remove:()=>{ G.stations.sunbeam--; rebuildAttractors(); } },
   { key:"garden", cat:"stations", type:"garden", soon:true, name:"Catmint garden",
     desc:"Not sold any more — clear the overgrown woodland path and the wild catmint grows back. Any you already have still work.",
     base:65, mul:1.9, get:()=>G.stations.garden, need:()=>"the woodland path",
     buy:()=>{ G.stations.garden++; rebuildAttractors(); }, remove:()=>{ G.stations.garden--; rebuildAttractors(); } },
   { key:"comfort", cat:"upgrades", name:"Comfort upgrade", desc:"+22% output from every cat. Max level 5.",
-    base:45, mul:2.2, get:()=>G.comfort, max:5, buy:()=>{ G.comfort++; } },
+    base:200, mul:2.2, get:()=>G.comfort, max:5, buy:()=>{ G.comfort++; } },
   { key:"charter", cat:"upgrades", name:"Cove Charter", desc:"A one-time expansion for a well-loved cove — room for up to 24 cats.",
     base:5000, mul:1, pearls:30, get:()=>G.coveCharter ? 1 : 0, max:1,
     need:()=> charterEarned() ? null : `Meet ${CHARTER_DEX} coats first — ${dexCount()} so far`,
@@ -5743,6 +5745,8 @@ function welcomeToCattree() {
     go(c, "seeking", 18, { x: d.x + (kind === "step" ? -22 : 6), y: d.y + 8 });
   });
 }
+const LEGACY_SHOP_BASE={"bowls": 12, "toys": 16, "beds": 22, "scratch": 20, "tree": 30, "cottage": 55, "cattree": 52, "flowers": 14, "sunbeam": 50, "comfort": 45};
+function refundableShopCost(item){const level=item.get()-1;const paid=G.shopPaid&&G.shopPaid[item.key]&&G.shopPaid[item.key][level];const oldBase=LEGACY_SHOP_BASE[item.key]??item.base;return Number.isFinite(paid)?paid:Math.round(oldBase*Math.pow(item.mul,level));}
 function priceOf(item) { return Math.round(item.base * Math.pow(item.mul, item.get())); }
 function boostPrice() { return Math.round(180 * Math.pow(1.3, G.boostBuys || 0)); }
 function buyBoost() {
@@ -5848,7 +5852,7 @@ function shopItemRow(item) {
   row.className = "shop-item" + (item.key === "charter" ? " prestige" : "") + (soonLook ? " soon" : "");
   const priceLabel = maxed ? "owned" : soonLook ? "soon" : item.soon ? "—" : lockMsg ? "🔒" : pearlCost ? `◈${price} · ✦${pearlCost}` : `◈ ${price}`;
   const canRemove = !!item.remove && item.get() > (item.keepMin || 0);
-  const refund = canRemove ? Math.max(1, Math.round(item.base * Math.pow(item.mul, item.get() - 1) * 0.4)) : 0;
+  const refund = canRemove ? Math.max(1, Math.round(refundableShopCost(item) * 0.4)) : 0;
   row.innerHTML = `
     <div class="txt">
       <div class="name">${item.name} ${item.get() && item.max !== 1 ? `<span class="lv">·&nbsp;${item.max ? ("lv " + item.get()) : ("×" + item.get())}</span>` : ""}</div>
@@ -5861,6 +5865,7 @@ function shopItemRow(item) {
   const rmBtn = row.querySelector(".remove");
   if (rmBtn) rmBtn.addEventListener("click", () => {
     if (item.get() <= (item.keepMin || 0)) return;
+    if(G.shopPaid&&G.shopPaid[item.key])delete G.shopPaid[item.key][item.get()-1];
     item.remove();
     if (STATION[item.type]) for (const c of cats) if (c._station === item.type || c._pendStation === item.type) { c._station = null; c._pendStation = null; c._fx = null; c.stateDur = 0; }
     // sold the last scratch pad → nobody's still raking at where it used to be
@@ -5880,6 +5885,7 @@ function shopItemRow(item) {
     if (G.shells < p || G.pearls < pearlCost) return;
     G.shells -= p;
     if (pearlCost) G.pearls -= pearlCost;
+    if(item.remove){G.shopPaid=G.shopPaid||{};G.shopPaid[item.key]=G.shopPaid[item.key]||{};G.shopPaid[item.key][item.get()]=p;}
     item.buy();
     sfx("buy");
     spawnParticles(W / 2, H * 0.5, "spark", 10);
@@ -18452,6 +18458,9 @@ function neoBuildNavigation(){
   const journal=document.getElementById('todayBtn');journal.querySelector('.lbl').textContent='Journal';
   const explore=document.createElement('button');explore.className='btn';explore.id='neo-activities-nav';explore.innerHTML='<span class="ico" aria-hidden="true">✧</span><span class="lbl">Activities</span>';explore.onclick=neoOpenExplore;journal.before(explore);
   const shop=document.getElementById('shopBtn');shop.setAttribute('aria-label','Shop');journal.before(shop);
+
+  const menuIcons={"dexBtn": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"#67543f\" stroke-width=\"2.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path fill=\"#faf2dc\" d=\"M32 18Q19 12 7 17v34q13-5 25 1 12-6 25-1V17q-12-5-25 1Z\"/><path d=\"M32 19v32\"/><path fill=\"#94aa91\" d=\"m14 29 1-7 6 4 6-3v9q-6 8-13 0Z\"/><path d=\"M39 28h11m-11 8h8m-8 7h11\"/></svg>", "shopBtn": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"#67543f\" stroke-width=\"2.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path stroke-width=\"4\" d=\"M19 29q0-20 13-20t13 20\"/><path fill=\"#d9b47e\" d=\"m9 29 6 24q17 5 34-1l6-23Z\"/><path fill=\"#91aa91\" d=\"M29 24q10-2 20 2l-3 18-7-3-5 2-2-12Z\"/><path fill=\"#efe1bd\" d=\"M9 27q19 3 46 0v7q-27 4-46 0Z\"/><path stroke=\"#ad875b\" stroke-width=\"1.8\" d=\"m20 39 2 11m7-11 1 12m9-4v4m-24-7 17 1m16 0h3\"/><path stroke=\"#d6e0c6\" d=\"m38 26 2 12\"/></svg>", "todayBtn": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"#67543f\" stroke-width=\"2.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path fill=\"#89a7a6\" d=\"M17 10h31q4 0 4 4v36H18q-6 0-6-5V16q0-6 5-6Z\"/><path stroke=\"#f4ecd5\" stroke-width=\"3\" d=\"M19 16v28\"/><path stroke=\"#f4ecd5\" stroke-width=\"2.5\" d=\"m32 38 7-16\"/><path fill=\"#f4ecd5\" stroke=\"none\" d=\"M36 29q-10-1-7-8 8 1 7 8m0 3q7-10 11-4-3 6-11 4\"/><path fill=\"#c88c75\" d=\"M38 50h8v9l-4-3-4 3Z\"/></svg>"};
+  for(const [id,svg] of Object.entries(menuIcons)){const icon=document.getElementById(id).querySelector(".ico");if(icon){icon.innerHTML=svg;icon.setAttribute("aria-hidden","true");}}
   actions.setAttribute('role','navigation');actions.setAttribute('aria-label','Main menu');
   const sheet=document.createElement('div');sheet.className='sheet';sheet.hidden=true;sheet.id='neo-explore';
   sheet.innerHTML=`<button class="x" id="neo-explore-close" aria-label="Close Activities">✕</button><div class="kicker">A LITTLE ADVENTURE, AT YOUR PACE</div><h2>Activities</h2><p class="muted">Stay for a game, send a postcard, or settle in somewhere quiet.</p><div class="neo-explore-grid">
