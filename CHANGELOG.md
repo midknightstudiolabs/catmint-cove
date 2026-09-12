@@ -1,5 +1,12 @@
 # Changelog
 
+## Redecorating inventory — 2026-09-12
+
+- Added Put away while moving furniture, comforts and stations, retaining ownership without refunds or repurchase.
+- Added My inventory with separate In storage and In the cove groups, free placement, Move and Put away actions, and direct access from the arrangement bar and Shop.
+- Stored objects no longer appear as world obstacles or usable cat spots. Existing capacity upgrades remain owned; storage persists across reloads.
+- Clearly labeled furniture purchases Buy and the former refund control Sell, separating selling from storage.
+
 ## Tug timer readability — 2026-09-12
 
 - Enlarged the Tug of Paws title above the timer and the remaining seconds, with a taller cream panel and thicker progress bar.

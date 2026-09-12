@@ -1728,6 +1728,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <div id="focusBar">‹&nbsp; step back</div>
   <div id="placeBar" hidden>
     <span id="placeBarTxt">Tap where it should go</span>
+    <button id="placeBarInventory">Inventory</button>
+    <button id="placeBarPutAway" hidden>Put away</button>
     <button id="placeBarCancel">Cancel</button>
     <button id="placeBarDone" class="ok">Set here</button>
   </div>
@@ -2311,6 +2313,14 @@ function placeClear(items, avoid) {
   }
   return placed;
 }
+function itemStored(kind, key) {
+  return !!(G.cosmetics && G.cosmetics.itemStorage && G.cosmetics.itemStorage[kind + ":" + key]);
+}
+function setItemStored(kind, key, stored) {
+  G.cosmetics.itemStorage ||= {};
+  if (stored) G.cosmetics.itemStorage[kind + ":" + key] = true;
+  else delete G.cosmetics.itemStorage[kind + ":" + key];
+}
 function rebuildDecor() {
   decor = [];
   const foot = [];   // running footprint list — stations, then trees/cottages/flowers
@@ -2320,6 +2330,7 @@ function rebuildDecor() {
   for (const [type, home] of Object.entries(STATION_HOME)) {
     for (let i = 0; i < (G.stations[type] || 0); i++) {
       const dkey = "station:" + type + ":" + i;
+      if (itemStored("decor", dkey)) continue;
       const jx = i === 0 ? 0 : (mulberry32(3300 + i * 17)() - 0.5) * 0.16;
       const jy = i === 0 ? 0 : (mulberry32(4400 + i * 17)() - 0.5) * 0.05;
       let x = clamp(W * (home.x + jx), 52, W - 52);
@@ -2353,6 +2364,7 @@ function rebuildDecor() {
   const auto = [];
   for (const w of wants) {
     w.dkey = w.type + ":" + w.idx;
+    if (itemStored("decor", w.dkey)) continue;
     const f = dpos[w.dkey];
     if (f && Number.isFinite(f.x) && Number.isFinite(f.y)) {
       decor.push({ type: w.type, seed: w.seed, x: f.x, y: f.y, dkey: w.dkey });
@@ -2397,7 +2409,7 @@ function rebuildAttractors() {
   const avoid = decor.map(d => ({ x: d.x, y: d.y, r: d.type === "cottage" ? 46 : d.type === "station" || d.type === "project" ? 44 : d.type === "cattree" ? 44 : d.type === "tree" ? 38 : 24 }))
     .concat(obstacles.map(o => ({ x: o.x, y: o.y, r: Math.max(o.rx, o.ry) * 0.95 })));
   const comforts = [], cKeys = [];
-  const addC = (n, type, r, seed0, lo) => { for (let i = 0; i < n; i++) { comforts.push({ type, r, seed: seed0 + i * 7, yBand: [lo, catFloor() - 8] }); cKeys.push(type + ":" + i); } };
+  const addC = (n, type, r, seed0, lo) => { for (let i = 0; i < n; i++) { if (itemStored("comfort", type + ":" + i)) continue; comforts.push({ type, r, seed: seed0 + i * 7, yBand: [lo, catFloor() - 8] }); cKeys.push(type + ":" + i); } };
   addC(G.bowls, "food", 26, 12001, H * 0.56);
   addC(G.toys, "toy", 24, 13001, H * 0.56);
   addC(G.beds, "bed", 30, 14001, H * 0.54);
@@ -4655,6 +4667,7 @@ const DECOR_CLEAR = { cottage: 40, tree: 30, cattree: 40, flowers: 22, station: 
 const STATION_LABEL = { fishing: "fishing dock", bakery: "bakery oven", sunbeam: "sunbeam", garden: "catmint patch" };
 const COMFORT_TYPES = new Set(["food", "toy", "bed", "scratch"]);
 function _beginPlace(spec) {
+  document.getElementById("placeBarPutAway").hidden = false;
   if (!_arranging) closeAllPanels();
   _placing = spec;
   const start = spec._start || { x: W * 0.5, y: catFloor() - 60 };
@@ -4709,6 +4722,7 @@ function finishPlacing() {
   const { kind, key } = _placing;
   const near = _nearestValidSpot(_placeGhost.x, _placeGhost.y);
   if (!near) { toast("That spot is blocked. Choose another cell; your item stays where it was.", 3); return; }
+  setItemStored(kind, key, false);
   const spot = { x: Math.round(near.x), y: Math.round(near.y) };
   _placeGhost.x = spot.x; _placeGhost.y = spot.y;
   if (kind === "prop") {
@@ -4731,7 +4745,7 @@ function finishPlacing() {
       }
     }
   }
-  _placing = null; _placeGhost = null;
+  _placing = null; _placeGhost = null; document.getElementById("placeBarPutAway").hidden = true;
   sfx("buy"); spawnParticles(spot.x, spot.y, "dust", 6);
   syncHud(); save();
   if (_arranging) { document.getElementById("placeBarTxt").innerHTML = `Arranging your cove — drag anything, then <b>Done</b>`; }
@@ -4748,14 +4762,14 @@ function cancelPlacing() {
   if (!_placing) { if (_arranging) endArrange(); return; }
   const { kind, key, from } = _placing;
   _revertPlacing(kind, key, from);
-  _placing = null; _placeGhost = null;
+  _placing = null; _placeGhost = null; document.getElementById("placeBarPutAway").hidden = true;
   if (_arranging) { document.getElementById("placeBarTxt").innerHTML = `Arranging your cove — drag anything, then <b>Done</b>`; }
   else document.getElementById("placeBar").hidden = true;
   save();
 }
 function startArrange() {
   closeAllPanels();
-  _arranging = true; _placing = null; _placeGhost = null;
+  _arranging = true; _placing = null; _placeGhost = null; document.getElementById("placeBarPutAway").hidden = true;
   document.getElementById("placeBarTxt").innerHTML = `Arranging your cove — drag anything, then <b>Done</b>`;
   document.getElementById("placeBarCancel").textContent = "Back";
   document.getElementById("placeBarDone").textContent = "Done";
@@ -4763,7 +4777,7 @@ function startArrange() {
   toast("Drag anything — bowls, beds, toys, trees, the cottage, even your stations. Tap Done when it's just so.", 5);
 }
 function endArrange() {
-  _arranging = false; _placing = null; _placeGhost = null;
+  _arranging = false; _placing = null; _placeGhost = null; document.getElementById("placeBarPutAway").hidden = true;
   document.getElementById("placeBarCancel").textContent = "Cancel";
   document.getElementById("placeBarDone").textContent = "Set here";
   document.getElementById("placeBar").hidden = true;
@@ -4776,7 +4790,7 @@ function exitPlacement() {
     const { kind, key, from } = _placing;
     _revertPlacing(kind, key, from);
   }
-  _placing = null; _placeGhost = null; _arranging = false;
+  _placing = null; _placeGhost = null; document.getElementById("placeBarPutAway").hidden = true; _arranging = false;
   const pb = document.getElementById("placeBar"); if (pb) pb.hidden = true;
   document.getElementById("placeBarCancel").textContent = "Cancel";
   document.getElementById("placeBarDone").textContent = "Set here";
@@ -4833,9 +4847,28 @@ function boxProp(id) {
   G.cosmetics.propBoxed[id] = true;
   tone(392, 0.1, "sine", 0.05); tone(294, 0.14, "sine", 0.04, 0.06);
   spawnParticles(propPos(id).x, propPos(id).y, "dust", 6);
-  save(); renderShop();
+  rebuildAttractors(); save(); renderShop();
   toast(`Packed the ${p.name.toLowerCase()} away — place it again any time.`, 3);
 }
+function putAwayItem(kind, key, label) {
+  if (kind === "prop") { G.cosmetics.propBoxed ||= {}; G.cosmetics.propBoxed[key] = true; }
+  else setItemStored(kind, key, true);
+  rebuildAttractors();
+  for (const c of cats) {
+    if (c.state === "indoors") { if (c._cotY != null) c.y = c._cotY; c.state = "loafing"; c._cotX = null; c._cotY = null; c._perchKind = null; c._faceY = null; }
+    c._arriveState = null; c._station = null; c._pendStation = null; c._fx = null; c.stateDur = 0;
+  }
+  save(); syncHud();
+  toast(`${label} is in your inventory. Place it again for free.`, 4);
+}
+document.getElementById("placeBarPutAway").onclick = () => {
+  if (!_placing) return;
+  const {kind,key,label} = _placing;
+  cancelPlacing(); putAwayItem(kind,key,label);
+};
+document.getElementById("placeBarInventory").onclick = () => {
+  exitPlacement(); shopTab = "inventory"; togglePanel("shop");
+};
 document.getElementById("placeBarDone").onclick = () => { if (_placing) finishPlacing(); else if (_arranging) endArrange(); };
 document.getElementById("placeBarCancel").onclick = cancelPlacing;
 
@@ -5686,6 +5719,7 @@ document.getElementById("roster-x").onclick = () => {
 
 /* ---------- shop ---------- */
 const SHOP_TABS = [
+  { id:"inventory", label:"My inventory", intro:"Everything you own, ready to rearrange. Put away keeps an item; Place costs nothing. Capacity upgrades stay yours." },
   { id:"featured", label:"Featured", intro:"Optional ways to support Catmint Cove — no pressure, and appreciated. See ❤️ Cove Cares in Help." },
   { id:"comforts", label:"Comforts", intro:"More comforts draw more cats — and the right one keeps each personality happy." },
   { id:"stations", label:"Stations", intro:"Spots where cats work: bigger output while they're busy, plus a mood lift." },
@@ -5885,13 +5919,15 @@ function shopItemRow(item) {
       <div class="desc">${item.soon ? item.desc + ` <span class="soon-tag">${esc(item.need())}</span>` : lockMsg ? "🔒 " + lockMsg : item.desc}</div>
     </div>
     <div class="shop-actions">
-      ${canRemove ? `<button class="btn tiny remove" title="Remove one — refunds ◈${refund}">−</button>` : ""}
-      <button class="btn primary" ${maxed || lockMsg || !afford ? "disabled" : ""}>${priceLabel}</button>
+      ${canRemove ? `<button class="btn tiny remove" title="Sell one — refunds ◈${refund}">Sell</button>` : ""}
+      <button class="btn primary" ${maxed || lockMsg || !afford ? "disabled" : ""}>${!maxed && !lockMsg && !soonLook ? "Buy · " : ""}${priceLabel}</button>
     </div>`;
   const rmBtn = row.querySelector(".remove");
   if (rmBtn) rmBtn.addEventListener("click", () => {
     if (item.get() <= (item.keepMin || 0)) return;
     if(G.shopPaid&&G.shopPaid[item.key])delete G.shopPaid[item.key][item.get()-1];
+    const soldKey = inventoryItemKey(item, item.get() - 1);
+    if (soldKey) setItemStored(soldKey.kind, soldKey.key, false);
     item.remove();
     if (STATION[item.type]) for (const c of cats) if (c._station === item.type || c._pendStation === item.type) { c._station = null; c._pendStation = null; c._fx = null; c.stateDur = 0; }
     // sold the last scratch pad → nobody's still raking at where it used to be
@@ -5903,7 +5939,7 @@ function shopItemRow(item) {
     tone(392, 0.1, "sine", 0.05); tone(294, 0.14, "sine", 0.04, 0.06);
     spawnParticles(W / 2, H * 0.55, "dust", 6);
     syncHud(); renderShop();
-    toast(`Packed away a ${item.name.toLowerCase()} — refunded ◈${refund}.`);
+    toast(`Sold a ${item.name.toLowerCase()} — refunded ◈${refund}.`);
   });
   const btn = row.querySelector(".btn.primary");
   if (!maxed && !lockMsg) btn.addEventListener("click", () => {
@@ -5992,7 +6028,7 @@ function renderShopDecor(list) {
     if (!owned) action = `<button class="btn primary" data-buy-prop="${p.id}" ${afford ? "" : "disabled"}>◈ ${p.price.toLocaleString()}</button>`;
     else if (!p.movable) action = `<span class="owned">In the cove</span>`;
     else if (boxed) action = `<button class="btn primary" data-place-prop="${p.id}">Place it</button>`;
-    else action = `<button class="btn tiny" data-box-prop="${p.id}" title="Pack it away">📦</button><button class="btn tiny" data-move-prop="${p.id}">Move</button>`;
+    else action = `<button class="btn tiny" data-box-prop="${p.id}" title="Keep in inventory">Put away</button><button class="btn tiny" data-move-prop="${p.id}">Move</button>`;
     row.innerHTML = `<div class="txt"><div class="name">${p.name}</div><div class="desc">${boxed ? "Packed away — tap Place it to set it down." : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
     list.appendChild(row);
   }
@@ -6146,6 +6182,36 @@ function renderShopDress(list) {
   };
 }
 
+function inventoryItemKey(item, i) {
+  if (item.cat === "comforts") return {kind: COMFORT_TYPES.has(item.type) ? "comfort" : "decor", key: item.type + ":" + i, dtype:item.type};
+  if (item.cat === "stations") return {kind:"decor",key:"station:" + item.key + ":" + i,dtype:"station"};
+  return null;
+}
+function renderInventory(list) {
+  const entries = [];
+  for (const item of SHOP) for (let i=0; i<item.get(); i++) {
+    const spec = inventoryItemKey(item,i); if (!spec) break;
+    entries.push({...spec,label:item.name,stored:itemStored(spec.kind,spec.key)});
+  }
+  for (const p of DECOR_PROPS) if (p.movable && G.cosmetics.props[p.id]) entries.push({kind:"prop",key:p.id,label:p.name,stored:propBoxed(p.id)});
+  for (const stored of [true,false]) {
+    const group = entries.filter(e=>e.stored===stored);
+    list.appendChild(shopHead(`${stored ? "In storage" : "In the cove"} · ${group.length}`));
+    if (!group.length) { const note=document.createElement("p"); note.className="muted"; note.textContent=stored?"Nothing stored yet. Choose Put away while moving an item.":"Your placed items will appear here."; list.appendChild(note); }
+    for (const e of group) {
+      const row=document.createElement("div"); row.className="shop-item";
+      row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}</div><div class="desc">Owned · ${stored?"Stored safely":"Placed in your cove"}</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Put away</button>'}</div>`;
+      row.querySelector(".inventory-place").onclick=()=>{
+        if(e.kind==="prop") {startPlacing(e.key); return;}
+        const obj=e.kind==="comfort"?attractors.find(a=>a.key===e.key):decor.find(d=>d.dkey===e.key);
+        const pos=obj || (e.kind==="comfort"?G.cosmetics.comfortPos:G.cosmetics.decorPos)?.[e.key] || {x:W*.5,y:H*.7};
+        _beginPlace({...e,r:30,from:stored?null:{x:pos.x,y:pos.y},_start:{x:pos.x,y:pos.y}});
+      };
+      const put=row.querySelector(".inventory-store"); if(put) put.onclick=()=>{putAwayItem(e.kind,e.key,e.label);renderShop();};
+      list.appendChild(row);
+    }
+  }
+}
 function renderShop() {
   const list = document.getElementById("shopList");
   const tabsEl = document.getElementById("shopTabs");
@@ -6157,7 +6223,14 @@ function renderShop() {
   list.innerHTML = "";
   const tab = SHOP_TABS.find(t => t.id === shopTab);
   list.insertAdjacentHTML("beforeend", `<p class="muted">${tab.intro}</p>`);
+  if (shopTab !== "inventory") {
+    const owned = document.createElement("button"); owned.className = "btn";
+    owned.textContent = "Already owned? Open my inventory";
+    owned.onclick = () => { shopTab = "inventory"; renderShop(); list.scrollTop = 0; };
+    list.appendChild(owned);
+  }
 
+  if (shopTab === "inventory") { renderInventory(list); return; }
   if (shopTab === "featured") {
     // the two "support the cove" keepsakes live here — Welcome, then Founding
     // Covekeeper. The Sparkle Pack isn't a support tier; it's browsable in the
@@ -14256,7 +14329,7 @@ function drawProps(g) {
     g.globalAlpha = ok ? 0.94 : 0.5;
     try {
       if (_placing.kind === "prop") { const p = PROP_BY_ID[_placing.key]; if (p) p.render(g, t, gh.x, gh.y, p.place.s); }
-      else drawDecor(g, { type: _placing.dtype, seed: 7001, x: gh.x, y: gh.y });
+      else drawDecor(g, { type: _placing.dtype, station: _placing.dtype === "station" ? _placing.key.split(":")[1] : undefined, seed: 7001, x: gh.x, y: gh.y });
     } catch (e) {}
     g.restore();
   }
