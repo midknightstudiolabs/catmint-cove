@@ -146,6 +146,11 @@ function neoRenderJournal(){
     }
     archive.append(list);root.append(archive);
   }
+  if((G.postcards||[]).length){
+    const mail=document.createElement('details');mail.className='neo-journal-archive';
+    const title=document.createElement('summary');title.textContent=`Postcards · ${G.postcards.length}`;mail.append(title);
+    for(const pc of G.postcards){const button=document.createElement('button');button.className='neo-postcard-preview';button.textContent=`${pc.cat} · ${(ADV_DESTS[pc.dest]||ADV_DESTS.forest).name}`;button.onclick=()=>showPostcard(pc.text,pc.cat,pc.dest);mail.append(button);}root.append(mail);
+  }
   document.getElementById('neo-journal-photo').onclick=()=>{closeAllPanels();document.getElementById('photoBtn').click();};
   document.getElementById('neo-journal-cats').onclick=()=>togglePanel('dex');
 }
