@@ -54,3 +54,18 @@
 #neo-care-desc{margin-top:12px;line-height:1.5;font-size:13px}#neo-care-status:not(:empty){padding:12px;border-radius:12px;background:#e8efdb;color:#38513d;line-height:1.5;font-size:14px}
 
 #tut .guide-links{flex-wrap:wrap}#tut .guide-links .btn{min-height:44px}#tut .card{max-height:90dvh;overflow-y:auto}#tut .guide-list{max-height:45dvh}
+
+/* Catdex feels like a small keepsake album, with an understated close control. */
+#dex{background:#faf6e9;border:1px solid #d8d7bd;padding-top:0;scrollbar-width:thin;scrollbar-color:#b9c5aa transparent;box-shadow:0 16px 48px rgba(38,53,39,.20),inset 5px 0 #e2e8d2}
+.neo-dex-header{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0 13px;margin-bottom:12px;background:#faf6e9;border-bottom:1px solid #dce1cc}
+.neo-dex-kicker{display:block;font-size:10px;letter-spacing:.14em;color:#738168;margin-bottom:4px;font-weight:700}
+#dex .neo-dex-header h2{font-size:26px;color:#3d593f;margin:0}
+#dex .neo-dex-header .x{position:static;flex:0 0 44px;display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:12px;background:transparent;color:#61735c;box-shadow:none;padding:0}
+#dex .neo-dex-header .x:hover{background:#e9eddd;color:#314e35}
+#dex .neo-dex-header .x:active{background:#dfe7ce}
+#dex .neo-cat-tile{background:#fffdf5;border-color:#e0dfca;box-shadow:0 2px 0 rgba(102,119,79,.06)}
+#dex .neo-cat-tile canvas{background:#edf1e1;border-radius:50%;margin:3px 0 4px}
+#dex .neo-cat-tile:hover{background:#f0f3e3;border-color:#b4c49e}
+#dex .neo-section-label{border-top:1px solid #dedfcb;padding-top:18px;font-family:Fraunces,Georgia,serif;font-size:18px;color:#465f42}
+#dex .dexcell{border-color:#dedfcb;background:#edf0e2}#dex .dexcell.found{background:#fffdf5}
+#dex #neo-cat-search{background:#f1f2e6;border-color:#d9dfca}

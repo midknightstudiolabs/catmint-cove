@@ -1297,6 +1297,21 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #neo-care-desc{margin-top:12px;line-height:1.5;font-size:13px}#neo-care-status:not(:empty){padding:12px;border-radius:12px;background:#e8efdb;color:#38513d;line-height:1.5;font-size:14px}
 
 #tut .guide-links{flex-wrap:wrap}#tut .guide-links .btn{min-height:44px}#tut .card{max-height:90dvh;overflow-y:auto}#tut .guide-list{max-height:45dvh}
+
+/* Catdex feels like a small keepsake album, with an understated close control. */
+#dex{background:#faf6e9;border:1px solid #d8d7bd;padding-top:0;scrollbar-width:thin;scrollbar-color:#b9c5aa transparent;box-shadow:0 16px 48px rgba(38,53,39,.20),inset 5px 0 #e2e8d2}
+.neo-dex-header{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0 13px;margin-bottom:12px;background:#faf6e9;border-bottom:1px solid #dce1cc}
+.neo-dex-kicker{display:block;font-size:10px;letter-spacing:.14em;color:#738168;margin-bottom:4px;font-weight:700}
+#dex .neo-dex-header h2{font-size:26px;color:#3d593f;margin:0}
+#dex .neo-dex-header .x{position:static;flex:0 0 44px;display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:12px;background:transparent;color:#61735c;box-shadow:none;padding:0}
+#dex .neo-dex-header .x:hover{background:#e9eddd;color:#314e35}
+#dex .neo-dex-header .x:active{background:#dfe7ce}
+#dex .neo-cat-tile{background:#fffdf5;border-color:#e0dfca;box-shadow:0 2px 0 rgba(102,119,79,.06)}
+#dex .neo-cat-tile canvas{background:#edf1e1;border-radius:50%;margin:3px 0 4px}
+#dex .neo-cat-tile:hover{background:#f0f3e3;border-color:#b4c49e}
+#dex .neo-section-label{border-top:1px solid #dedfcb;padding-top:18px;font-family:Fraunces,Georgia,serif;font-size:18px;color:#465f42}
+#dex .dexcell{border-color:#dedfcb;background:#edf0e2}#dex .dexcell.found{background:#fffdf5}
+#dex #neo-cat-search{background:#f1f2e6;border-color:#d9dfca}
 </style>
 
 <div id="app">
@@ -1562,8 +1577,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
   <!-- catdex -->
   <div class="sheet" id="dex" hidden>
-    <button class="x" data-close="dex">✕</button>
-    <h2>Catdex</h2>
+    <header class="neo-dex-header">
+      <div><span class="neo-dex-kicker">THE COVE COLLECTION</span><h2>Catdex</h2></div>
+      <button class="x" data-close="dex" aria-label="Close Catdex" title="Back to the Cove"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+    </header>
     <p class="muted" id="dexSub">Every cat that's wandered through. Tap one for its note.</p>
     <div id="dexTiers"></div>
   </div>
@@ -18390,8 +18407,8 @@ function neoOpenStory(c){
   neoEvent('cat_story_open');
 }
 function neoRenderCats(){
-  let root=document.getElementById('neo-cat-roster');if(!root){root=document.createElement('div');root.id='neo-cat-roster';panels.dex.querySelector('h2').after(root);}
-  root.innerHTML=`<p class="muted">A familiar face, a favorite spot, a story of their own.</p><label class="neo-search-label" for="neo-cat-search">Find a cat</label><input id="neo-cat-search" type="search" placeholder="Search by name" autocomplete="off"><p id="neo-cat-count" class="muted" aria-live="polite"></p><div class="neo-cat-grid"></div><div class="neo-roster-actions"><button class="btn primary" id="neo-invite">Invite a cat · ◈ ${coaxPrice()}</button><button class="btn" id="neo-care" aria-describedby="neo-care-desc">Community Pantry</button></div><p id="neo-care-desc" class="muted">Free help when supplies or care run low: tops food up to one day, eases hunger and thirst, clears sickness, and restores health to at least 70%. If everyone is already cared for, nothing is added.</p><p id="neo-care-status" role="status" aria-live="polite"></p><h3 class="neo-section-label">Coats you have met</h3>`;
+  let root=document.getElementById('neo-cat-roster');if(!root){root=document.createElement('div');root.id='neo-cat-roster';panels.dex.querySelector('.neo-dex-header').after(root);}
+  root.innerHTML=`<p class="muted">Little paws. Familiar faces. A story for every cat.</p><label class="neo-search-label" for="neo-cat-search">Find a cat</label><input id="neo-cat-search" type="search" placeholder="Search by name" autocomplete="off"><p id="neo-cat-count" class="muted" aria-live="polite"></p><div class="neo-cat-grid"></div><div class="neo-roster-actions"><button class="btn primary" id="neo-invite">Invite a cat · ◈ ${coaxPrice()}</button><button class="btn" id="neo-care" aria-describedby="neo-care-desc">Community Pantry</button></div><p id="neo-care-desc" class="muted">Free help when supplies or care run low: tops food up to one day, eases hunger and thirst, clears sickness, and restores health to at least 70%. If everyone is already cared for, nothing is added.</p><p id="neo-care-status" role="status" aria-live="polite"></p><h3 class="neo-section-label">Coats you have met</h3>`;
   const grid=root.querySelector('.neo-cat-grid');
   for(const c of cats.filter(c=>!c.visitor)){
     const b=document.createElement('button');b.className='neo-cat-tile';b.dataset.name=c.name.toLocaleLowerCase();
