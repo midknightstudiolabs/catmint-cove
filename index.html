@@ -1293,6 +1293,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
  #dex{bottom:calc(76px + env(safe-area-inset-bottom));max-height:calc(100dvh - 155px)}
  .neo-cat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+#neo-care-desc{margin-top:12px;line-height:1.5;font-size:13px}#neo-care-status:not(:empty){padding:12px;border-radius:12px;background:#e8efdb;color:#38513d;line-height:1.5;font-size:14px}
 </style>
 
 <div id="app">
@@ -2943,7 +2945,7 @@ function openFoodRefill() {
     closeModal();
     toast(foodDaysLeft() >= 1 ? `Larder stocked — ${foodLeftText().replace("≈ ", "")}.` : "Bowls topped up.", 3);
   });
-  const help=document.createElement('button');help.className='btn';help.textContent='Community pantry · free basic care';
+  const help=document.createElement('button');help.className='btn';help.textContent='Community Pantry';
   help.onclick=()=>{neoCommunityCare();closeModal();};document.getElementById('food-close').before(help);
   document.getElementById("food-close").onclick = closeModal;
 }
@@ -18303,10 +18305,15 @@ function neoReplaceGoal(g,notify){
   if(notify){save();renderGoals();toast('A fresh little ritual. No cost, no penalty.');}
 }
 function neoCommunityCare(){
-  G.food=Math.max(G.food||0,foodPerDay());
-  for(const c of cats){if(c.visitor)continue;c.hunger=Math.min(c.hunger||0,30);c.thirst=Math.min(c.thirst||0,25);
+  const beforeFood=G.food||0;let helped=0;
+  G.food=Math.max(beforeFood,foodPerDay());
+  for(const c of cats){if(c.visitor)continue;if(c.hunger>30||c.thirst>25||c.sick||c.health<70)helped++;c.hunger=Math.min(c.hunger||0,30);c.thirst=Math.min(c.thirst||0,25);
     if(c.sick)clearSick(c,70);c.health=Math.max(c.health||0,70);c._criticalSince=0;c._leaveSince=0;}
-  syncHud();save();toast('The community pantry has covered the basics. Everyone is safe.');
+  const added=Math.max(0,G.food-beforeFood);
+  const message=added>0||helped>0?`Pantry supplies received. ${added>0?'Food topped up to one day. ':''}${helped>0?`${helped} ${helped===1?'cat received':'cats received'} care.`:'Your cats already have their basic care covered.'}`:'Everyone is already cared for, and you have at least one day of food. No supplies needed right now.';
+  syncHud();save();toast(message,5);
+  const status=document.getElementById('neo-care-status');if(status)status.textContent=message;
+  return message;
   neoEvent('community_care');
 }
 function neoRestoreHome(){
@@ -18353,7 +18360,7 @@ function neoOpenStory(c){
 }
 function neoRenderCats(){
   let root=document.getElementById('neo-cat-roster');if(!root){root=document.createElement('div');root.id='neo-cat-roster';panels.dex.querySelector('h2').after(root);}
-  root.innerHTML=`<p class="muted">A familiar face, a favorite spot, a story of their own.</p><label class="neo-search-label" for="neo-cat-search">Find a cat</label><input id="neo-cat-search" type="search" placeholder="Search by name" autocomplete="off"><p id="neo-cat-count" class="muted" aria-live="polite"></p><div class="neo-cat-grid"></div><div class="neo-roster-actions"><button class="btn primary" id="neo-invite">Invite a cat · ◈ ${coaxPrice()}</button><button class="btn" id="neo-care">Free basic care</button></div><h3 class="neo-section-label">Coats you have met</h3>`;
+  root.innerHTML=`<p class="muted">A familiar face, a favorite spot, a story of their own.</p><label class="neo-search-label" for="neo-cat-search">Find a cat</label><input id="neo-cat-search" type="search" placeholder="Search by name" autocomplete="off"><p id="neo-cat-count" class="muted" aria-live="polite"></p><div class="neo-cat-grid"></div><div class="neo-roster-actions"><button class="btn primary" id="neo-invite">Invite a cat · ◈ ${coaxPrice()}</button><button class="btn" id="neo-care" aria-describedby="neo-care-desc">Community Pantry</button></div><p id="neo-care-desc" class="muted">Free help when supplies or care run low: tops food up to one day, eases hunger and thirst, clears sickness, and restores health to at least 70%. If everyone is already cared for, nothing is added.</p><p id="neo-care-status" role="status" aria-live="polite"></p><h3 class="neo-section-label">Coats you have met</h3>`;
   const grid=root.querySelector('.neo-cat-grid');
   for(const c of cats.filter(c=>!c.visitor)){
     const b=document.createElement('button');b.className='neo-cat-tile';b.dataset.name=c.name.toLocaleLowerCase();
@@ -18364,7 +18371,7 @@ function neoRenderCats(){
   const filter=()=>{let shown=0;const query=search.value.trim().toLocaleLowerCase();for(const tile of grid.children){tile.hidden=!tile.dataset.name.includes(query);if(!tile.hidden)shown++;}count.textContent=query?`${shown} ${shown===1?"cat":"cats"} found`:`${grid.children.length} cats · tap one for their story`;};
   search.oninput=filter;filter();
   document.getElementById('neo-invite').onclick=()=>{closeAllPanels();document.getElementById('coaxBtn').click();};
-  document.getElementById('neo-care').onclick=()=>{neoCommunityCare();neoRenderCats();};
+  document.getElementById('neo-care').onclick=()=>{neoCommunityCare();};
 }
 function neoRenderJournal(){
   const root=document.getElementById('neoJournal');if(!root)return;
@@ -18389,7 +18396,7 @@ function neoBuildNavigation(){
   const actions=document.getElementById('actions');
   const originals=['coaxBtn','photoBtn'];
   for(const id of originals){document.getElementById(id).classList.add('neo-secondary-action');}
-  const catsBtn=document.getElementById('dexBtn');catsBtn.setAttribute('aria-label','Your cats');catsBtn.querySelector('.lbl').textContent='Cats';
+  const catsBtn=document.getElementById('dexBtn');catsBtn.setAttribute('aria-label','Catdex');catsBtn.querySelector('.lbl').textContent='Catdex';
   const journal=document.getElementById('todayBtn');journal.querySelector('.lbl').textContent='Journal';
   const explore=document.createElement('button');explore.className='btn';explore.id='neo-activities-nav';explore.innerHTML='<span class="ico" aria-hidden="true">✧</span><span class="lbl">Activities</span>';explore.onclick=neoOpenExplore;journal.before(explore);
   const shop=document.getElementById('shopBtn');shop.setAttribute('aria-label','Shop');journal.before(shop);
@@ -18407,7 +18414,7 @@ function neoBuildNavigation(){
   document.getElementById('neo-go-adventure').onclick=()=>{closeAllPanels();openAdventurePicker();};
   document.getElementById('neo-go-rest').onclick=()=>{closeAllPanels();document.getElementById('restBtn').click();};
   document.getElementById('neo-playtest').onclick=neoPlaytest;
-  panels.dex.querySelector('h2').textContent='Your cats';panels.shop.querySelector('h2').textContent='Tideline Shop';
+  panels.dex.querySelector('h2').textContent='Catdex';panels.shop.querySelector('h2').textContent='Tideline Shop';
 }
 function neoPlaytest(){
   const h=neoHome();openModal(`<h2>Your private playtest notebook</h2><p>Optional interaction counts stay on this device. No names, notes, or memories are exported. Nothing is sent automatically.</p><button class="btn" id="neo-metrics">${h.metrics?'Stop':'Start'} recording interactions</button><button class="btn" id="neo-export">Download anonymous counts</button><button class="btn" id="neo-metrics-close">Close</button>`);

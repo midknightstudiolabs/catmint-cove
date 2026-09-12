@@ -50,3 +50,5 @@
  #dex{bottom:calc(76px + env(safe-area-inset-bottom));max-height:calc(100dvh - 155px)}
  .neo-cat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+#neo-care-desc{margin-top:12px;line-height:1.5;font-size:13px}#neo-care-status:not(:empty){padding:12px;border-radius:12px;background:#e8efdb;color:#38513d;line-height:1.5;font-size:14px}
