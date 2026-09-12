@@ -136,12 +136,10 @@ function neoBuildNavigation(){
   const actions=document.getElementById('actions');
   const originals=['coaxBtn','photoBtn'];
   for(const id of originals){document.getElementById(id).classList.add('neo-secondary-action');}
-  const home=document.createElement('button');home.className='btn';home.id='neo-home-nav';home.innerHTML='<span class="ico" aria-hidden="true">⌂</span><span class="lbl">Cove</span>';
-  home.onclick=()=>{closeAllPanels();hideCatCard(true);};actions.prepend(home);
   const catsBtn=document.getElementById('dexBtn');catsBtn.setAttribute('aria-label','Your cats');catsBtn.querySelector('.lbl').textContent='Cats';
   const journal=document.getElementById('todayBtn');journal.querySelector('.lbl').textContent='Journal';
   const explore=document.createElement('button');explore.className='btn';explore.id='neo-activities-nav';explore.innerHTML='<span class="ico" aria-hidden="true">✧</span><span class="lbl">Activities</span>';explore.onclick=neoOpenExplore;journal.before(explore);
-  const shop=document.getElementById('shopBtn');shop.classList.add('neo-shop-cta');shop.setAttribute('aria-label','Shop');journal.before(shop);
+  const shop=document.getElementById('shopBtn');shop.setAttribute('aria-label','Shop');journal.before(shop);
   actions.setAttribute('role','navigation');actions.setAttribute('aria-label','Main menu');
   const sheet=document.createElement('div');sheet.className='sheet';sheet.hidden=true;sheet.id='neo-explore';
   sheet.innerHTML=`<button class="x" id="neo-explore-close" aria-label="Close Activities">✕</button><div class="kicker">A LITTLE ADVENTURE, AT YOUR PACE</div><h2>Activities</h2><p class="muted">Stay for a game, send a postcard, or settle in somewhere quiet.</p><div class="neo-explore-grid">
