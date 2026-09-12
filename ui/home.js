@@ -207,11 +207,16 @@ function neoHelloTap(x,y,sx,sy){
   const now=performance.now();
   if(!Number.isFinite(sx)||sy<innerHeight*.68||_focus||_placing||_arranging||restMode||festMode||anyPanelOpen()||now<neoHelloUntil||movableAt(x,y))return;
   if(now-neoHelloLast>2500)neoHelloCount=0;
-  neoHelloLast=now;if(++neoHelloCount<neoHelloTarget)return;
+  neoHelloLast=now;
+  if(++neoHelloCount<neoHelloTarget){
+    if(neoHelloCount===1&&!G.littleHelloSeen)toast("Someone’s curious… keep tapping this empty patch.",2);
+    return;
+  }
   neoHelloCount=0;neoHelloTarget=3+Math.floor(Math.random()*3);
   const available=cats.filter(c=>!c.visitor&&!c.sick&&c.state!=='sleeping');if(!available.length)return;
   const choices=available.filter(c=>c!==neoHelloPrevious),pool=choices.length?choices:available;
   const c=pool[Math.floor(Math.random()*pool.length)];neoHelloPrevious=c;neoHelloUntil=now+30000;
+  G.littleHelloSeen=true;save();hideToast();
   const shell=document.createElement('div');shell.className='neo-little-hello';shell.setAttribute('role','status');shell.setAttribute('aria-live','polite');
   const size=Math.min(300,innerWidth*.68),center=clamp(sx,size/2+12,innerWidth-size/2-12);
   shell.style.width=size+'px';shell.style.left=center+'px';

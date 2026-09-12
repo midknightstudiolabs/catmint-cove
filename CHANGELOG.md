@@ -1,5 +1,11 @@
 # Changelog
 
+## Friendly discovery and updated guide — 2026-09-12
+
+- Added a contextual first-time Little Hello hint and encouragement after the first foreground tap. Successful discovery is saved so the prompts stop; cooldown still applies.
+- Updated Help with greeting activation, inventory and selling, direct café service, adventure postcards and button-only zoom.
+- Updated the opening tutorial's closing guidance to introduce My inventory and point to the current Help guide. Café instructions retain drag/tap seating guidance.
+
 ## Mobile finishing pass — 2026-09-12
 
 - Wrapped inventory actions and Shop tabs for narrow screens, with 44px minimum action targets and 52px café service buttons.

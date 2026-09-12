@@ -6538,6 +6538,8 @@ function nextAction() {
   if (!G.tutorialDone) return null;                       // the opening flow speaks for itself
   if (restMode || _vig || scrim.classList.contains("on")) return null;
   if (!panels || !panels.shop) return null;
+  if (!G.littleHelloSeen && performance.now()>30000 && performance.now()>=neoHelloUntil && !_placing && !_arranging && cats.some(c=>!c.visitor&&!c.sick&&c.state!=="sleeping"))
+    return {t:"Tap an empty patch near the bottom a few times. Someone might come say hello."};
 
   // a cat (or the party) is home from a trip
   const backAdv = activeAdvs().filter(a => Date.now() >= a.endsAt).sort((x, y) => x.endsAt - y.endsAt)[0];
@@ -7118,7 +7120,7 @@ function endColdOpen(skipped) {
   visitorTimer = rand(45, 90);   // a third cat wanders in soon after the intro — "oh, they just turn up"
   save();
   // an honest reason to come back — the things that really change overnight
-  setTimeout(() => toast("You’re home. Activities has games and rainy rest; Shop has cozy additions. Your daily welcome lives in Journal.", 6), 500);
+  setTimeout(() => toast("You’re home. Activities has games and adventures; Shop has My inventory for free redecorating. Journal keeps your memories. Tap ? for the guide, including A Little Hello.", 6), 500);
   setTimeout(() => { try { checkOffline(afterReturn); } catch (e) {} }, 700);
   setTimeout(() => { try { maybePanHint(); } catch (e) {} }, 3200);
   syncHud();
@@ -7126,6 +7128,11 @@ function endColdOpen(skipped) {
 
 /* ---------- reference card (the "?" button) ---------- */
 const GUIDE = [
+  ["A Little Hello · a curious visitor", "Tap empty ground near the bottom 3–5 times in quick succession. A cat may peek over the screen edge for five seconds. Pause less than 2.5 seconds between taps, then wait 30 seconds before trying again. Use the normal Cove view with menus closed. Sleeping and sick cats sit this one out. No cost or rewards—just company."],
+  ["Redecorate · keep what you own", "Press and hold an item to move it on the grid. Set here keeps its new spot; Cancel leaves it unchanged; Put away stores it. Shop → My inventory separates In storage from In the cove. Place is free. Sell refunds shells and removes ownership. Red cells mean a blocked spot. Capacity upgrades stay yours in storage."],
+  ["Catmint Café · you run the room", "In Activities → Cove Festival → Catmint Café, drag a waiting cat to a clean table, or tap cat then table. Tap tables to take orders, prepare, serve and clear. Green rings mark open seats. Watch patience; occupied and dirty tables cannot seat another cat. Table buttons offer the same actions; staff cards let you switch roles."],
+  ["Adventures · postcards from your cats", "Choose a destination, cats and trip length in Activities. When they return, open their results for rewards and a keepsake postcard. Different destinations bring different finds. Longer trips suit time away; short trips suit an active visit."],
+  ["Your view · zoom buttons", "Use the zoom icon to change your view. Double-tapping does not zoom, leaving quick foreground taps available for A Little Hello."],
   ["Catdex · your little neighbors", "Find cats by name, tap their portraits for personalities and memories, or invite a new friend. Coats you have met are collected below."],
   ["Activities · play or unwind", "Visit the Festival, send a cat on an adventure, or settle into the rainy retreat. Festival games stay available day and night once unlocked; each game shows how many cats it needs."],
   ["Shop · make it cozy", "Find bowls, beds, toys, decorations and outfits here. Check an item's description and price before choosing it."],
@@ -18802,11 +18809,16 @@ function neoHelloTap(x,y,sx,sy){
   const now=performance.now();
   if(!Number.isFinite(sx)||sy<innerHeight*.68||_focus||_placing||_arranging||restMode||festMode||anyPanelOpen()||now<neoHelloUntil||movableAt(x,y))return;
   if(now-neoHelloLast>2500)neoHelloCount=0;
-  neoHelloLast=now;if(++neoHelloCount<neoHelloTarget)return;
+  neoHelloLast=now;
+  if(++neoHelloCount<neoHelloTarget){
+    if(neoHelloCount===1&&!G.littleHelloSeen)toast("Someone’s curious… keep tapping this empty patch.",2);
+    return;
+  }
   neoHelloCount=0;neoHelloTarget=3+Math.floor(Math.random()*3);
   const available=cats.filter(c=>!c.visitor&&!c.sick&&c.state!=='sleeping');if(!available.length)return;
   const choices=available.filter(c=>c!==neoHelloPrevious),pool=choices.length?choices:available;
   const c=pool[Math.floor(Math.random()*pool.length)];neoHelloPrevious=c;neoHelloUntil=now+30000;
+  G.littleHelloSeen=true;save();hideToast();
   const shell=document.createElement('div');shell.className='neo-little-hello';shell.setAttribute('role','status');shell.setAttribute('aria-live','polite');
   const size=Math.min(300,innerWidth*.68),center=clamp(sx,size/2+12,innerWidth-size/2-12);
   shell.style.width=size+'px';shell.style.left=center+'px';
