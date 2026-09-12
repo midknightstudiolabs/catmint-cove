@@ -1,5 +1,12 @@
 # Changelog
 
+## Permanent café and garden — 2026-09-12
+
+- Festival now lists only Cove Race, Volleyball and Tug of Paws. Catmint Café and Cove Garden are separate Activities destinations, with clickable entrances in the Cove.
+- Added four saved garden patches, three crop timings and harvest inventory. Crops never wither.
+- Replaced the main café entry with permanent batch cooking and stocked-counter sales, linked to garden ingredients. Cooking has three recipes; finished batches never spoil. Sales are limited by actual servings, including time away.
+- Added mobile-friendly activity sheets and updated Help. The former timed café code remains dormant for potential future special events; it is no longer in Festival navigation.
+
 ## Friendly discovery and updated guide — 2026-09-12
 
 - Added a contextual first-time Little Hello hint and encouragement after the first foreground tap. Successful discovery is saved so the prompts stop; cooldown still applies.

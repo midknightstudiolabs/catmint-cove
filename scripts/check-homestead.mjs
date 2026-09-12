@@ -1,0 +1,13 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const source=fs.readFileSync(new URL('../ui/homestead.js',import.meta.url),'utf8');
+const code=source.slice(source.indexOf('const COVE_CROPS'),source.indexOf('let neoHomesteadTimer'));
+const c={G:{shells:20},Date:{now:()=>100000},save:()=>{},syncHud:()=>{},neoOpenHomestead:()=>{}};vm.createContext(c);vm.runInContext(code,c);
+c.neoPlant(0,'carrot');assert.equal(c.G.shells,18);c.neoPlant(0,'carrot');assert.equal(c.G.shells,18);
+c.neoHarvest(0);assert(c.G.homestead.plots[0]);c.Date.now=()=>160000;c.neoHarvest(0);assert.equal(c.G.homestead.stock.carrot,5);
+c.neoCook('carrot');assert.equal(c.G.homestead.stock.carrot,3);c.neoStockCounter();assert.equal(c.G.homestead.counter,0);
+c.Date.now=()=>190000;c.neoStockCounter();assert.equal(c.G.homestead.counter,4);
+c.neoCafeSettle(250000);assert.equal(c.G.homestead.counter,3);assert.equal(c.G.homestead.earned,2);
+c.neoCafeSettle(999999999);assert.equal(c.G.homestead.counter,0);assert.equal(c.G.homestead.earned,8);
+c.neoCafeSettle(999999999);assert.equal(c.G.homestead.earned,8);
+c.G=JSON.parse(JSON.stringify(c.G));assert.equal(c.neoHomestead().served,4);
+console.log('PASS: seed costs, occupied plot protection, harvest/cooking timers, stock-backed sales, no double payment and persistent progress.');

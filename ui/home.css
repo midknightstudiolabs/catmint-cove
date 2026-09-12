@@ -124,6 +124,11 @@
 @media(max-width:370px){#fest .midk-spin{min-width:108px;font-size:21px;padding:10px 14px}#fest .midk-console{gap:8px;padding-left:8px;padding-right:8px}#fest .midk-console .mc-reels span{width:30px;height:32px}}
 
 #fest{touch-action:none}#cafeBoard{touch-action:pan-y}
+#neo-homestead{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(94vw,680px);max-height:calc(100dvh - 150px);overflow:auto;padding:24px;background:#faf6e9;color:#43543f;border-radius:24px;box-sizing:border-box;z-index:45;overscroll-behavior:contain}
+#neo-homestead[hidden]{display:none}#neo-homestead h2{padding-right:35px}#neo-homestead>.btn{margin:8px 6px 0 0;min-height:44px}
+.homestead-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}.homestead-patch{background:#e6edda;border:1px solid #c9d8b9;border-radius:18px;padding:14px}.homestead-patch h3{margin:0 0 10px}.homestead-patch .btn{display:block;width:100%;min-height:44px;margin-top:8px;white-space:normal}
+.homestead-stock{display:flex;flex-wrap:wrap;gap:10px;padding:12px;background:#eee6d0;border-radius:14px;font-size:14px}.homestead-cafe-room{background:#efe2c5;border:2px solid #d3bf98;border-radius:18px;padding:16px;margin:16px 0}.homestead-tables{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}.homestead-tables>span{background:#faf6e9;border:1px solid #c7ac84;padding:10px;border-radius:18px;font-size:12px;text-align:center}.homestead-tables canvas{position:static!important;width:76px;height:64px;display:block;margin:auto}
+@media(max-width:380px){#neo-homestead{padding:16px}.homestead-grid{gap:8px}.homestead-patch{padding:10px}.homestead-patch .btn{font-size:12px;padding:8px}.homestead-stock{font-size:12px}}
 
 /* Mobile finishing pass: cream surfaces, sage actions, comfortable touch targets. */
 #shopTabs{display:flex;flex-wrap:wrap;gap:6px}
