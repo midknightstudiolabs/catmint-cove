@@ -4606,7 +4606,7 @@ const PLACE_CELL=40;
 let _placeDragOrigin=null;
 function placeFootprint(spec){
   const id=spec.key||spec.id;
-  if(id==="rowboat")return [3,1];
+  if(id==="rowboat"||id==="bunting")return [3,1];
   if(id==="stones"||id==="birdbath")return [2,1];
   const type=spec.dtype||spec.type;
   if(type==='station'||type==='cottage')return [3,2];
@@ -4794,6 +4794,7 @@ function movableAt(x, y, tight) {
   if (G.cosmetics && G.cosmetics.props) for (const p of DECOR_PROPS) {
     if (!p.movable || !G.cosmetics.props[p.id] || propBoxed(p.id)) continue;
     const pos = propPos(p.id);
+    if(p.id==="bunting"&&Math.abs(x-pos.x)<62*f&&y>=pos.y-100&&y<=pos.y+10)return {kind:"prop",id:p.id};
     if (Math.hypot(x - pos.x, y - (pos.y - 6)) < 26 * f) return { kind: "prop", id: p.id };
   }
   // bowls / toys / beds / scratchers — live in `attractors`, not `decor`
@@ -13442,8 +13443,8 @@ const DECOR_THEMES = {
 const DECOR_PROPS = [
   { id:"stones",   name:"Stepping stones", price: 1500, blurb:"Flat stones in a lazy curve. Purely for the look.",
     movable:true, place:{ x:W*0.50, y:H*0.94, s:1.2 }, render(g,t,x,y,s){ propStones(g, x, y, s); } },
-  { id:"bunting",  name:"Bunting",         price: 1800, blurb:"Triangle flags strung from the cove sign to a pole.",
-    draw(g,t){ propBunting(g, t); } },
+  { id:"bunting",  name:"Bunting",         price: 1800, blurb:"Festival flags on two tall poles. Move them anywhere on clear grass.",
+    movable:true, place:{x:W*.25,y:H*.42+24,s:1}, render(g,t,x,y,s){ propBunting(g,t,x,y); } },
   { id:"lantern",  name:"Garden lantern",  price: 2200, blurb:"A standing post lantern. Pools warm light after dark.",
     movable:true, place:{ x:W*0.76, y:H*0.90, s:1.25 }, render(g,t,x,y,s){ propLantern(g, x, y, s, t); } },
   { id:"birdbath", name:"Birdbath",        price: 2400, blurb:"A shallow basin on a pedestal. The water catches the light.",
@@ -14230,13 +14231,14 @@ function drawFestoonPole(g, px, topY, footY) {
   g.fillStyle = "#6b5030"; g.beginPath(); g.arc(px, topY, 3, 0, 7); g.fill();
   g.fillStyle = "rgba(36,31,23,0.12)"; g.beginPath(); g.ellipse(px, footY, 7, 3, 0, 0, 7); g.fill();
 }
-function propBunting(g, t) {
-  const s = coveSignFestoon(g);
-  const x0 = s.tx, y0 = s.ty, x1 = s.tx + 110, y1 = s.ty - 4, sag = 22;
+function propBunting(g, t, x, y) {
+  const s = {tx:x-55,ty:y-92,footY:y};
+  const x0 = s.tx, y0 = s.ty, x1 = s.tx + 110, y1 = s.ty - 4, sag = 14;
   const cy = Math.max(y0, y1) + sag;
   const at = u => (1 - u) * (1 - u) * y0 + 2 * (1 - u) * u * cy + u * u * y1;
   const cols = ["#d98b7a", "#e9c85a", "#8fb0e0", "#f0efe6", "#8fbf7a"];
   g.save();
+  drawFestoonPole(g, x0, y0, s.footY);
   drawFestoonPole(g, x1, y1, s.footY);
   g.strokeStyle = "rgba(74,53,36,0.55)"; g.lineWidth = 1.4;
   g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo((x0 + x1) / 2, cy, x1, y1); g.stroke();
