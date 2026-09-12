@@ -1,0 +1,423 @@
+<title>Cat Redraw Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+
+<style>
+  :root {
+    --ground:#EFEDE4; --ground-2:#F8F6EE; --card:#FCFBF4; --ink:#262A26;
+    --ink-soft:#59614F; --ink-dim:#8B917C; --line:#DBD8C7; --accent:#6E5FA0;
+    --accent-2:#DFA24C; --shadow:rgba(38,42,38,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#191C18; --ground-2:#20241E; --card:#252A22; --ink:#ECEADC;
+      --ink-soft:#B0B6A1; --ink-dim:#7E856F; --line:#373E31; --accent:#A99BD6;
+      --accent-2:#E6B667; --shadow:rgba(0,0,0,.30);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#191C18; --ground-2:#20241E; --card:#252A22; --ink:#ECEADC;
+    --ink-soft:#B0B6A1; --ink-dim:#7E856F; --line:#373E31; --accent:#A99BD6;
+    --accent-2:#E6B667; --shadow:rgba(0,0,0,.30);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:"Hanken Grotesk",system-ui,sans-serif; line-height:1.55; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1180px; margin:0 auto; padding:clamp(26px,5vw,52px) clamp(16px,4vw,36px) 90px; }
+  .eyebrow { font-size:12px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin:0 0 12px; }
+  h1 { font-family:"Fraunces",Georgia,serif; font-weight:500; font-size:clamp(26px,4.6vw,42px); line-height:1.08; letter-spacing:-.01em; margin:0 0 14px; text-wrap:balance; }
+  .lede { font-size:clamp(14px,1.7vw,16px); color:var(--ink-soft); max-width:66ch; margin:0; }
+
+  .controls { display:flex; flex-wrap:wrap; gap:20px; align-items:center; margin:28px 0 6px; padding:14px 16px; background:var(--card); border:1px solid var(--line); border-radius:16px; }
+  .ctrl-group { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .ctrl-label { font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); margin-right:2px; }
+  .chip { appearance:none; border:1px solid var(--line); background:var(--ground-2); color:var(--ink); font:inherit; font-weight:600; font-size:12.5px; padding:6px 13px; border-radius:999px; cursor:pointer; transition:all .12s; }
+  .chip:hover { border-color:var(--accent); }
+  .chip.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+  section { margin-top:clamp(40px,6vw,64px); }
+  .sec-head { display:flex; align-items:baseline; gap:12px; margin-bottom:6px; flex-wrap:wrap; }
+  .sec-head h2 { font-family:"Fraunces",Georgia,serif; font-weight:500; font-size:clamp(19px,2.6vw,25px); letter-spacing:-.01em; margin:0; }
+  .sec-sub { color:var(--ink-soft); max-width:70ch; margin:0 0 22px; font-size:14px; }
+
+  .row3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+  @media (max-width:860px) { .row3 { grid-template-columns:1fr; } }
+  .stage { border:1px solid var(--line); border-radius:18px; background:var(--ground-2); overflow:hidden; }
+  .stage canvas { display:block; width:100%; height:auto; background:linear-gradient(180deg,var(--ground-2),color-mix(in srgb,var(--ground-2) 88%,#000 4%)); }
+  .stage-label { padding:12px 16px 4px; }
+  .stage-label .tag { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); }
+  .stage-label h3 { font-family:"Fraunces",Georgia,serif; font-weight:500; font-size:17px; margin:2px 0 5px; }
+  .stage-notes { padding:0 16px 16px; }
+  .stage-notes ul { margin:0; padding-left:18px; font-size:12.8px; color:var(--ink-soft); }
+  .stage-notes li { margin:3px 0; }
+
+  .crowd-stage { border:1px solid var(--line); border-radius:18px; background:linear-gradient(180deg,#bfe0e8,#d7e8c8 55%,#9fbf7a); overflow:hidden; position:relative; }
+  .crowd-stage canvas { display:block; width:100%; height:auto; }
+  .crowd-cap { padding:10px 16px 14px; font-size:12.8px; color:var(--ink-soft); background:var(--card); border-top:1px solid var(--line); }
+
+  code { font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:.9em; background:color-mix(in srgb,var(--ink) 8%,transparent); padding:1px 5px; border-radius:5px; }
+
+  .verdict { margin-top:10px; padding:16px 18px; border:1px dashed var(--line); border-radius:14px; font-size:13.5px; color:var(--ink-soft); background:var(--card); }
+  .verdict b { color:var(--ink); }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Catmint Cove · Art Direction Test</p>
+  <h1>Redrawing the cats cozier</h1>
+  <p class="lede">Three ways to draw the same coat + pose data the game already tracks — no new art pipeline, just a different <code>drawCat()</code>. Pick a direction below; the crowd preview at the bottom shows how six cats read together, closer to the festival reference.</p>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Coat</span>
+      <button class="chip active" data-coat="greytab">Grey tabby</button>
+      <button class="chip" data-coat="black">Black</button>
+      <button class="chip" data-coat="white">White</button>
+      <button class="chip" data-coat="ginger">Ginger</button>
+      <button class="chip" data-coat="calico">Calico</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Pose</span>
+      <button class="chip active" data-pose="loaf">Loaf</button>
+      <button class="chip" data-pose="sit">Sit</button>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-head"><h2>Three directions</h2></div>
+    <p class="sec-sub">Same silhouette formula, three different heads/eyes/shading. All still cheap to draw per-frame — nothing here needs sprite art.</p>
+    <div class="row3">
+      <div class="stage">
+        <div class="stage-label"><span class="tag">Baseline</span><h3>Current (live game)</h3></div>
+        <canvas id="cv-current" width="360" height="420"></canvas>
+        <div class="stage-notes"><ul>
+          <li>Realistic-ish round iris + pupil + lash line (deadpan half-lid)</li>
+          <li>Diagonal sticker-shading gradient, cool base</li>
+          <li>Pointy-ish ear, faint blush</li>
+        </ul></div>
+      </div>
+      <div class="stage">
+        <div class="stage-label"><span class="tag">Option A</span><h3>Big Head, Bean Eyes</h3></div>
+        <canvas id="cv-bighead" width="360" height="420"></canvas>
+        <div class="stage-notes"><ul>
+          <li>Head ~25% bigger, body a touch smaller → toddler proportions</li>
+          <li>Eyes simplify to solid bean shapes, one big highlight, no iris colour/lash</li>
+          <li>Flat two-tone fill instead of a gradient — reads clean at small sizes</li>
+        </ul></div>
+      </div>
+      <div class="stage">
+        <div class="stage-label"><span class="tag">Option B</span><h3>Painterly Plush</h3></div>
+        <canvas id="cv-plush" width="360" height="420"></canvas>
+        <div class="stage-notes"><ul>
+          <li>Head modestly bigger, body rounder/chunkier, soft all-around outline</li>
+          <li>Keeps coloured iris + highlight, drops the lash line, softer eyelid</li>
+          <li>Airbrushed radial shading (warm top, soft shadow low) + always-on blush</li>
+        </ul></div>
+      </div>
+    </div>
+    <div class="verdict">Closest match to the festival concept art is a blend: <b>Option A's proportions</b> (the big head is what reads "cozy" from a distance) + <b>Option B's shading</b> (flat two-tone can look plasticky; the soft airbrush keeps the plush-toy feel). The crowd preview below renders that blend as <b>Option C</b>.</div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>Crowd preview — Option C (A's head + B's shading)</h2></div>
+    <p class="sec-sub">Six cats in a row, mixed coats, sitting — the shape of the tug-of-war lineup without building the rope rig.</p>
+    <div class="crowd-stage">
+      <canvas id="cv-crowd" width="1120" height="360"></canvas>
+    </div>
+    <div class="crowd-cap">If this direction lands, the real change is small: swap the numbers in <code>poseParams()</code>, simplify <code>drawEye()</code>, and replace the diagonal <code>silShadeGrad</code> with a soft radial one. Everything else — coats, patterns, accessories, animation — keeps working as-is.</div>
+  </section>
+</div>
+
+<script>
+// ---- minimal coat palette (subset of the real COATS table) ----
+const COATS = {
+  greytab:  { base:"#8a949e", belly:"#c7cac9", stripe:"#67717b", pattern:"mackerel", eye:"#c6cf5a", nose:"#6a6264", inner:"#c99a9a" },
+  black:    { base:"#26232b", belly:"#33303a", pattern:"solid",   eye:"#f0c23b", nose:"#2a2622", inner:"#7c5c5c" },
+  white:    { base:"#f6f2ea", belly:"#ffffff", pattern:"solid",   eye:"#7fb7d8", nose:"#e6a6a6", inner:"#ecbcbc" },
+  ginger:   { base:"#d5813c", belly:"#f1dcbe", stripe:"#b0672a", pattern:"mackerel", white:["muzzle","bib","paws"], eye:"#e6ad3e", nose:"#cd7a6c", inner:"#e5a79e" },
+  calico:   { base:"#f4f1e8", belly:"#fbf8ef", pattern:"calico", p1:"#dd8a3e", p2:"#312c34", white:["bib","belly","muzzle","paws"], eye:"#c98b4b", nose:"#e0a0a0", inner:"#eab8b8" },
+};
+const CROWD_COATS = ["greytab","black","white","ginger","calico","greytab"];
+
+let coatKey = "greytab", poseKey = "loaf";
+document.querySelectorAll(".chip[data-coat]").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".chip[data-coat]").forEach(x => x.classList.remove("active"));
+  b.classList.add("active"); coatKey = b.dataset.coat;
+});
+document.querySelectorAll(".chip[data-pose]").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".chip[data-pose]").forEach(x => x.classList.remove("active"));
+  b.classList.add("active"); poseKey = b.dataset.pose;
+});
+
+// ---- shared geometry helpers ----
+function poseP(style, pose) {
+  // [bw, top, hx, hy, hr] per style+pose — hand-tuned, not derived, so each
+  // direction can push proportions independently
+  const T = {
+    current: { loaf:[27,-33,3,-33,17], sit:[22,-45,4,-44,16] },
+    bighead: { loaf:[23,-29,1,-35,22], sit:[19,-39,2,-47,21] },
+    plush:   { loaf:[29,-31,3,-35,19], sit:[24,-43,3,-47,18] },
+    blend:   { loaf:[24,-30,1,-36,23], sit:[20,-40,2,-48,22] },
+  };
+  const [bw, top, hx, hy, hr] = T[style][pose];
+  return { bw, top, hx, hy, hr };
+}
+function catSil(g, P) {
+  g.moveTo(-P.bw, 0);
+  g.bezierCurveTo(-P.bw - 4, P.top * 0.5, -P.bw * 0.72, P.top - 2, 2, P.top - 2);
+  g.bezierCurveTo(P.bw * 0.7, P.top - 2, P.bw + 4, P.top * 0.5, P.bw, 0);
+  g.closePath();
+  g.moveTo(P.hx + P.hr * 1.16, P.hy + P.hr * 0.5);
+  g.ellipse(P.hx, P.hy + P.hr * 0.5, P.hr * 1.16, P.hr * 0.95, 0, 0, Math.PI * 2, false);
+  g.moveTo(P.hx + P.hr, P.hy);
+  g.arc(P.hx, P.hy, P.hr, 0, Math.PI * 2, false);
+}
+function drawEar(g, side, P, coat, style) {
+  const sx = P.hx + side * P.hr * 0.64, sy = P.hy - P.hr * 0.52;
+  const round = style !== "current";
+  const hgt = round ? P.hr * 0.5 : 11, lean = side * (round ? 2.5 : 3);
+  const tipX = sx + lean, tipY = sy - hgt;
+  g.fillStyle = coat.base;
+  g.beginPath();
+  g.moveTo(sx - side * 6, sy + 3);
+  if (round) {
+    g.quadraticCurveTo(sx - side * 4, sy - hgt * 1.15, tipX, tipY);
+    g.quadraticCurveTo(sx + side * 5, sy - hgt * 1.1, sx + side * 7, sy + 3.5);
+  } else {
+    g.quadraticCurveTo(sx - side * 1.5, sy - hgt * 0.75, tipX - side * 2, tipY + 1.5);
+    g.quadraticCurveTo(tipX + side * 1.5, tipY - 1.5, tipX + side * 3.5, tipY + 3);
+    g.quadraticCurveTo(sx + side * 6, sy - 1, sx + side * 5.5, sy + 4);
+  }
+  g.closePath(); g.fill();
+  g.fillStyle = coat.inner || "#e2b4b4";
+  g.beginPath();
+  g.ellipse((sx + tipX) / 2, (sy + tipY) / 2 + 1.5, round ? P.hr * 0.24 : 3, round ? P.hr * 0.32 : 4, side * 0.3, 0, 7);
+  g.fill();
+}
+function shade(ctx, coat, style, P) {
+  if (style === "plush" || style === "blend") {
+    // plush-toy edge: a slightly bigger dark copy of the silhouette drawn first,
+    // so only its outer contour peeks out — stroking the compound catSil path
+    // directly outlines its hidden subpaths too (ruff ellipse + head circle),
+    // which reads as stray rings across the face. This avoids that.
+    ctx.save();
+    ctx.scale(1.045, 1.045);
+    ctx.beginPath(); catSil(ctx, P); ctx.fillStyle = "rgba(60,42,34,0.9)"; ctx.fill();
+    ctx.restore();
+  }
+  ctx.beginPath(); catSil(ctx, P); ctx.fillStyle = coat.base; ctx.fill();
+  ctx.save(); ctx.beginPath(); catSil(ctx, P); ctx.clip();
+  // belly
+  ctx.fillStyle = coat.belly; ctx.globalAlpha = 0.7;
+  ctx.beginPath(); ctx.ellipse(P.bw * 0.12, -1, P.bw * 0.62, 8.5, 0, 0, 7); ctx.fill();
+  ctx.globalAlpha = 1;
+  // pattern (kept simple across all three so the shading comparison stays honest)
+  if (coat.pattern === "mackerel") {
+    // short arcs on the back/shoulders only — stays clear of the chin/bib so it
+    // doesn't read as bars across the face
+    ctx.strokeStyle = coat.stripe; ctx.lineWidth = 2; ctx.globalAlpha = 0.42; ctx.lineCap = "round";
+    for (let i = -1; i <= 1; i++) {
+      const sx = P.hx + i * P.hr * 0.4;
+      ctx.beginPath();
+      ctx.moveTo(sx, P.top + 3);
+      ctx.quadraticCurveTo(sx + i * 1.2, P.top * 0.8, sx, P.top * 0.68);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  } else if (coat.pattern === "calico") {
+    const cols = [coat.p1, coat.p2];
+    for (let i = 0; i < 6; i++) {
+      ctx.fillStyle = cols[i % 2];
+      const bx = -P.bw * 0.7 + (i / 5) * P.bw * 1.4, by = -3 - (i % 3) * 6;
+      ctx.beginPath(); ctx.ellipse(bx, by, 6, 5, 0, 0, 7); ctx.fill();
+    }
+  }
+  if (coat.white && (coat.white.includes("bib") || coat.white.includes("belly"))) {
+    ctx.fillStyle = "#f8f5ee";
+    ctx.beginPath(); ctx.ellipse(P.hx * 0.4, -6, P.bw * 0.34, 16, 0, 0, 7); ctx.fill();
+  }
+  if (coat.white && coat.white.includes("muzzle")) {
+    ctx.fillStyle = "#f8f5ee";
+    ctx.beginPath(); ctx.ellipse(P.hx + 1, P.hy + P.hr * 0.5, P.hr * 0.5, P.hr * 0.36, 0, 0, 7); ctx.fill();
+  }
+
+  if (style === "current") {
+    const silTop = P.hy - P.hr;
+    const g2 = ctx.createLinearGradient(-P.bw, silTop, P.bw * 0.6, 4);
+    g2.addColorStop(0, "rgba(255,248,225,0.30)");
+    g2.addColorStop(0.45, "rgba(255,255,255,0)");
+    g2.addColorStop(1, "rgba(40,30,45,0.16)");
+    ctx.fillStyle = g2;
+    ctx.beginPath(); ctx.rect(-P.bw - 4, silTop - 4, P.bw * 2 + 8, -silTop + 10); ctx.fill();
+  } else if (style === "bighead") {
+    // flat two-tone: one hard-edged shadow lobe low + behind, nothing else
+    ctx.fillStyle = "rgba(20,16,14,0.14)";
+    ctx.beginPath(); ctx.ellipse(P.bw * 0.1, -3, P.bw * 0.75, 9, 0, 0, 7); ctx.fill();
+  } else {
+    // painterly / blend: soft radial glow from the crown, soft shadow pooling low
+    const rg = ctx.createRadialGradient(P.hx - P.hr * 0.3, P.hy - P.hr * 0.6, 2, P.hx, P.hy, P.hr * 2.6);
+    rg.addColorStop(0, "rgba(255,250,232,0.38)");
+    rg.addColorStop(0.55, "rgba(255,255,255,0)");
+    ctx.fillStyle = rg;
+    ctx.beginPath(); ctx.rect(-P.bw - 4, P.top - 4, P.bw * 2 + 8, -P.top + 60); ctx.fill();
+    ctx.fillStyle = "rgba(60,40,40,0.12)";
+    ctx.beginPath(); ctx.ellipse(P.bw * 0.06, -2, P.bw * 0.7, 8, 0, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+
+  if (style !== "bighead") {
+    // warm inner rim, top-left (current + plush)
+    ctx.save(); ctx.beginPath(); catSil(ctx, P); ctx.clip();
+    ctx.strokeStyle = "rgba(255,249,232,0.34)"; ctx.lineWidth = style === "plush" ? 2.2 : 1.6; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.arc(P.hx, P.hy, P.hr - 0.6, Math.PI * 1.08, Math.PI * 1.58); ctx.stroke();
+    ctx.restore();
+  }
+}
+function eyes(ctx, P, coat, style) {
+  const eDx = style === "current" ? 5.4 : style === "bighead" ? 6.6 : 6.2;
+  const eyeY = P.hy - (style === "bighead" ? 0.5 : 1.5);
+  for (const side of [-1, 1]) {
+    const ex = P.hx + side * eDx, ey = eyeY;
+    if (style === "current") {
+      const r = 3.0, eh = r * 1.14 * 0.66;
+      ctx.save(); ctx.beginPath(); ctx.ellipse(ex, ey + 1, r, eh, 0, 0, 7); ctx.clip();
+      ctx.fillStyle = coat.eye; ctx.fillRect(ex - r - 1, ey - r * 1.6 + 1, (r + 1) * 2, r * 3.2);
+      ctx.fillStyle = "#1b1620"; ctx.beginPath(); ctx.ellipse(ex, ey + r * 0.08 + 1, r * 0.48, r * 0.6, 0, 0, 7); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = "rgba(46,38,30,0.36)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(ex, ey + 1, r, eh, 0, 0, 7); ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.beginPath(); ctx.ellipse(ex - r * 0.3, ey - r * 0.36 + 1, r * 0.4, r * 0.38, 0, 0, 7); ctx.fill();
+      ctx.strokeStyle = "rgba(28,22,26,0.75)"; ctx.lineWidth = 1.6; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(ex - r * 0.95, ey - eh + 1.4); ctx.quadraticCurveTo(ex, ey - eh - 0.6, ex + r * 0.95, ey - eh + 1.4); ctx.stroke();
+    } else if (style === "bighead") {
+      // solid bean, no iris colour, one big highlight — the reference's dot eyes
+      const r = 4.4;
+      ctx.fillStyle = "#241d1a";
+      ctx.beginPath(); ctx.ellipse(ex, ey, r * 0.66, r, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.beginPath(); ctx.ellipse(ex - r * 0.24, ey - r * 0.4, r * 0.28, r * 0.32, 0, 0, 7); ctx.fill();
+    } else {
+      // plush / blend: coloured iris kept, softer + bigger, no lash line
+      const r = 4.0, eh = r * 1.05;
+      ctx.save(); ctx.beginPath(); ctx.ellipse(ex, ey, r, eh, 0, 0, 7); ctx.clip();
+      ctx.fillStyle = coat.eye; ctx.fillRect(ex - r - 1, ey - r * 1.6, (r + 1) * 2, r * 3.2);
+      ctx.fillStyle = "#241d1a"; ctx.beginPath(); ctx.ellipse(ex, ey + r * 0.05, r * 0.56, r * 0.66, 0, 0, 7); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = "rgba(60,44,36,0.3)"; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.ellipse(ex, ey, r, eh, 0, 0, 7); ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.beginPath(); ctx.ellipse(ex - r * 0.32, ey - r * 0.4, r * 0.42, r * 0.4, 0, 0, 7); ctx.fill();
+    }
+  }
+}
+function face(ctx, P, coat, style, wag) {
+  const nx = P.hx + 0.5, ny = P.hy + P.hr * (style === "current" ? 0.38 : 0.44);
+  ctx.fillStyle = coat.nose;
+  ctx.beginPath();
+  ctx.moveTo(nx - 2, ny - 1); ctx.quadraticCurveTo(nx, ny - 1.6, nx + 2, ny - 1);
+  ctx.quadraticCurveTo(nx, ny + 2.1, nx - 2, ny - 1); ctx.fill();
+  ctx.strokeStyle = "rgba(44,36,28,0.4)"; ctx.lineWidth = 1.1; ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(nx, ny + 1.6); ctx.lineTo(nx, ny + 2.9);
+  ctx.moveTo(nx - 2.6, ny + 2.6); ctx.quadraticCurveTo(nx, ny + 5, nx + 2.6, ny + 2.6);
+  ctx.stroke();
+  if (style !== "bighead") {
+    const wl = 10, lum = 0.5;
+    ctx.strokeStyle = "rgba(120,110,98,0.4)"; ctx.lineWidth = 1;
+    for (const dy of [-1, 0.6, 2.2]) {
+      ctx.beginPath(); ctx.moveTo(nx - 2, ny + dy * 0.4); ctx.quadraticCurveTo(nx - wl * 0.6, ny + dy * 0.3, nx - wl, ny + dy + 1.2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(nx + 2, ny + dy * 0.4); ctx.quadraticCurveTo(nx + wl * 0.6, ny + dy * 0.3, nx + wl, ny + dy + 1.2); ctx.stroke();
+    }
+  }
+  const blush = style === "current" ? 0.06 : style === "bighead" ? 0.16 : 0.22;
+  ctx.fillStyle = `rgba(230,132,142,${blush})`;
+  ctx.beginPath(); ctx.ellipse(P.hx - P.hr * 0.68, ny - 0.5, style === "current" ? 3 : 4.4, style === "current" ? 2 : 3.2, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(P.hx + P.hr * 0.68, ny - 0.5, style === "current" ? 3 : 4.4, style === "current" ? 2 : 3.2, 0, 0, 7); ctx.fill();
+}
+function tail(ctx, P, coat, wag) {
+  ctx.save();
+  ctx.strokeStyle = coat.base; ctx.lineWidth = P.hr * 0.42; ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(P.bw * 0.7, -2);
+  ctx.quadraticCurveTo(P.bw + 14, -10 + wag * 4, P.bw + 6, -26 + wag * 6);
+  ctx.stroke();
+  ctx.restore();
+}
+function paws(ctx, P, coat) {
+  ctx.fillStyle = coat.white && coat.white.includes("paws") ? "#f8f5ee" : coat.base;
+  ctx.beginPath(); ctx.ellipse(P.bw * 0.32, -1.5, 4.6, 3.6, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-P.bw * 0.32, -1.5, 4.6, 3.6, 0, 0, 7); ctx.fill();
+}
+
+function drawCatProto(ctx, style, coatKeyLocal, pose, t, cx, cy, scale) {
+  const coat = COATS[coatKeyLocal];
+  const P0 = poseP(style, pose);
+  const bob = Math.sin(t * 1.6 + cx * 0.01) * 1.2;
+  const blinkPh = (t * 0.6 + cx * 0.02) % 4;
+  const blink = blinkPh > 3.85;
+  const wag = Math.sin(t * 1.1 + cx * 0.01);
+  ctx.save();
+  ctx.translate(cx, cy + bob);
+  ctx.scale(scale, scale);
+  // shadow
+  ctx.fillStyle = "rgba(30,26,18,0.18)";
+  ctx.beginPath(); ctx.ellipse(0, 4, P0.bw + 4, 6, 0, 0, 7); ctx.fill();
+  tail(ctx, P0, coat, wag);
+  drawEar(ctx, -1, P0, coat, style);
+  drawEar(ctx, 1, P0, coat, style);
+  shade(ctx, coat, style, P0);
+  paws(ctx, P0, coat);
+  if (blink) {
+    ctx.strokeStyle = "rgba(38,32,26,0.8)"; ctx.lineWidth = 1.8; ctx.lineCap = "round";
+    for (const side of [-1, 1]) {
+      const ex = P0.hx + side * (style === "current" ? 5.4 : 6.4), ey = P0.hy - (style === "bighead" ? 0.5 : 1.5);
+      ctx.beginPath(); ctx.moveTo(ex - 3.4, ey - 0.3); ctx.quadraticCurveTo(ex, ey + 2.8, ex + 3.4, ey - 0.3); ctx.stroke();
+    }
+  } else {
+    eyes(ctx, P0, coat, style);
+  }
+  face(ctx, P0, coat, style, wag);
+  ctx.restore();
+}
+
+// ---- single-stage canvases ----
+const stages = [
+  { id: "cv-current", style: "current" },
+  { id: "cv-bighead", style: "bighead" },
+  { id: "cv-plush", style: "plush" },
+];
+function fitCanvas(cv) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = cv.clientWidth || cv.width, h = cv.height / cv.width * w;
+  cv.style.height = h + "px";
+  if (cv._dpr !== dpr || cv._cw !== w) {
+    cv._dpr = dpr; cv._cw = w;
+    cv.width = w * dpr; cv.height = h * dpr;
+    cv.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  return { w, h };
+}
+function loop(now) {
+  const t = now / 1000;
+  for (const s of stages) {
+    const cv = document.getElementById(s.id);
+    const { w, h } = fitCanvas(cv);
+    const ctx = cv.getContext("2d");
+    ctx.clearRect(0, 0, w, h);
+    const scale = w / 130;
+    drawCatProto(ctx, s.style, coatKey, poseKey, t, w / 2, h * 0.72, scale);
+  }
+  const crowd = document.getElementById("cv-crowd");
+  const { w: cw, h: ch } = fitCanvas(crowd);
+  const cctx = crowd.getContext("2d");
+  cctx.clearRect(0, 0, cw, ch);
+  const n = CROWD_COATS.length;
+  const scale = cw / (n * 130);
+  for (let i = 0; i < n; i++) {
+    const x = (i + 0.5) / n * cw;
+    drawCatProto(cctx, "blend", CROWD_COATS[i], "sit", t + i * 0.6, x, ch * 0.82, scale * 1.15);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
