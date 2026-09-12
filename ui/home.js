@@ -134,26 +134,27 @@ function neoOpenExplore(){
 }
 function neoBuildNavigation(){
   const actions=document.getElementById('actions');
-  const originals=['coaxBtn','shopBtn','photoBtn'];
+  const originals=['coaxBtn','photoBtn'];
   for(const id of originals){document.getElementById(id).classList.add('neo-secondary-action');}
-  const home=document.createElement('button');home.className='btn';home.id='neo-home-nav';home.textContent='⌂ Cove';
+  const home=document.createElement('button');home.className='btn';home.id='neo-home-nav';home.innerHTML='<span class="ico" aria-hidden="true">⌂</span><span class="lbl">Cove</span>';
   home.onclick=()=>{closeAllPanels();hideCatCard(true);};actions.prepend(home);
   const catsBtn=document.getElementById('dexBtn');catsBtn.setAttribute('aria-label','Your cats');catsBtn.querySelector('.lbl').textContent='Cats';
   const journal=document.getElementById('todayBtn');journal.querySelector('.lbl').textContent='Journal';
-  const explore=document.createElement('button');explore.className='btn';explore.textContent='✧ Explore';explore.onclick=neoOpenExplore;journal.before(explore);
+  const explore=document.createElement('button');explore.className='btn';explore.id='neo-activities-nav';explore.innerHTML='<span class="ico" aria-hidden="true">✧</span><span class="lbl">Activities</span>';explore.onclick=neoOpenExplore;journal.before(explore);
+  const shop=document.getElementById('shopBtn');shop.classList.add('neo-shop-cta');shop.setAttribute('aria-label','Shop');journal.before(shop);
+  actions.setAttribute('role','navigation');actions.setAttribute('aria-label','Main menu');
   const sheet=document.createElement('div');sheet.className='sheet';sheet.hidden=true;sheet.id='neo-explore';
-  sheet.innerHTML=`<button class="x" id="neo-explore-close" aria-label="Close Explore">✕</button><div class="kicker">A LITTLE ADVENTURE, AT YOUR PACE</div><h2>Beyond the everyday</h2><p class="muted">Stay for a game, send a postcard, or settle in somewhere quiet.</p><div class="neo-explore-grid">
+  sheet.innerHTML=`<button class="x" id="neo-explore-close" aria-label="Close Activities">✕</button><div class="kicker">A LITTLE ADVENTURE, AT YOUR PACE</div><h2>Activities</h2><p class="muted">Stay for a game, send a postcard, or settle in somewhere quiet.</p><div class="neo-explore-grid">
   <button class="neo-destination" id="neo-go-festival"><span>🎏</span><b>Cove Festival</b><small>Your familiar cats. A little friendly chaos.</small></button>
   <button class="neo-destination" id="neo-go-adventure"><span>✉</span><b>Adventures</b><small>A little trip. Something to bring home.</small></button>
   <button class="neo-destination" id="neo-go-rest"><span>☾</span><b>Rainy retreat</b><small>No chores. Just rain and company.</small></button>
-  <button class="neo-destination" id="neo-go-shop"><span>❀</span><b>Tideline Shop</b><small>Make a corner of the Cove your own.</small></button></div>
+  </div>
   <details class="neo-feedback"><summary>Help shape the Cove</summary><p>Your feedback can help us make this little home better.</p><button class="btn" id="neo-playtest">Private playtest notebook</button></details>`;
   document.getElementById('app').append(sheet);panels.explore=sheet;
   document.getElementById('neo-explore-close').onclick=closeAllPanels;
   document.getElementById('neo-go-festival').onclick=()=>{closeAllPanels();document.getElementById('festBtn').click();};
   document.getElementById('neo-go-adventure').onclick=()=>{closeAllPanels();openAdventurePicker();};
   document.getElementById('neo-go-rest').onclick=()=>{closeAllPanels();document.getElementById('restBtn').click();};
-  document.getElementById('neo-go-shop').onclick=()=>togglePanel('shop');
   document.getElementById('neo-playtest').onclick=neoPlaytest;
   panels.dex.querySelector('h2').textContent='Your cats';panels.shop.querySelector('h2').textContent='Tideline Shop';
 }
