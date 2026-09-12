@@ -128,9 +128,23 @@ function neoRenderJournal(){
   const pins=root.querySelector('.neo-journal-pins');
   for(const c of residents.filter(c=>neoRecord(c).favorite).slice(0,6)){const b=document.createElement('button');b.className='btn';b.textContent='♥ '+c.name;b.onclick=()=>neoOpenStory(c);pins.append(b);}
   const activeKeys=new Set(residents.map(neoCatKey));
-  for(const [key,r] of Object.entries(home.cats)){if(activeKeys.has(key)||!r.name)continue;
-    const entry=document.createElement('details');entry.className='neo-memory-list';const title=document.createElement('summary');title.textContent=r.name+' · always part of the story';entry.append(title);
-    for(const text of [r.note,...r.memories.map(m=>m.text)].filter(Boolean)){const line=document.createElement('p');line.textContent=text;entry.append(line);}root.append(entry);
+  const remembered=Object.entries(home.cats).filter(([key,r])=>!activeKeys.has(key)&&r.name).map(([,r])=>r);
+  if(remembered.length){
+    const archive=document.createElement('details');archive.className='neo-journal-archive';
+    const heading=document.createElement('summary');heading.textContent=`Cove memories · ${remembered.length} ${remembered.length===1?'cat':'cats'}`;archive.append(heading);
+    const intro=document.createElement('p');intro.className='muted';intro.textContent='Notes and moments from cats who have shared your cove.';archive.append(intro);
+    const list=document.createElement('div');list.className='neo-archive-cats';
+    if(remembered.length>8){const search=document.createElement('input');search.type='search';search.placeholder='Find a cat by name';search.setAttribute('aria-label','Search Cove memories');search.oninput=()=>{const query=search.value.trim().toLocaleLowerCase();for(const entry of list.children)entry.hidden=!entry.dataset.name.includes(query);};archive.append(search);}
+    for(const r of remembered){
+      const entry=document.createElement('details');entry.className='neo-memory-list';entry.dataset.name=r.name.toLocaleLowerCase();
+      const title=document.createElement('summary');title.textContent=r.name;entry.append(title);
+      if(r.note){const note=document.createElement('p');note.textContent=r.note;entry.append(note);}
+      const memories=Array.isArray(r.memories)?r.memories:[];
+      for(const m of memories){if(!m.text)continue;const moment=document.createElement('article');if(Number.isFinite(m.t)){const date=document.createElement('span');date.textContent=new Date(m.t).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});moment.append(date);}const line=document.createElement('p');line.textContent=m.text;moment.append(line);entry.append(moment);}
+      if(!r.note&&!memories.some(m=>m.text)){const empty=document.createElement('p');empty.className='muted';empty.textContent='No saved notes or moments yet.';entry.append(empty);}
+      list.append(entry);
+    }
+    archive.append(list);root.append(archive);
   }
   document.getElementById('neo-journal-photo').onclick=()=>{closeAllPanels();document.getElementById('photoBtn').click();};
   document.getElementById('neo-journal-cats').onclick=()=>togglePanel('dex');

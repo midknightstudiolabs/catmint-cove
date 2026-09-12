@@ -80,3 +80,11 @@
 .adv-flow .pick-cat.on{outline:2px solid #648569;background:#eef2e5}
 
 #actions .ico svg{display:block;width:24px;height:24px;flex-shrink:0}#actions .ico{display:inline-flex;align-items:center;justify-content:center}
+
+.neo-journal-archive{margin:18px 0;padding:16px 18px;border:1px solid #dedec7;border-radius:20px;background:#f7f5e9}
+.neo-journal-archive>summary{cursor:pointer;color:#45604b;font-weight:600;padding:4px 0}
+.neo-journal-archive summary:focus-visible{outline:2px solid #648569;outline-offset:4px}
+.neo-archive-cats{max-height:320px;overflow:auto;overscroll-behavior:contain}
+.neo-archive-cats .neo-memory-list{margin:16px 0;padding-left:12px}
+.neo-archive-cats summary{cursor:pointer;padding:8px 0}
+.neo-journal-archive input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #dedec7;border-radius:12px;background:#fffbed;color:#43543f}
