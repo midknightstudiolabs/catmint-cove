@@ -4892,12 +4892,11 @@ canvas.addEventListener("pointerup", (e) => {
 });
 canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeout(_lpTimer); _lpFired = false; });
 
-/* ================= PINCH-ZOOM TEST ================= */
-(function pinchZoomTest() {
+/* ================= BUTTON ZOOM / OVERVIEW PAN ================= */
+(function overviewControls() {
   const pts = new Map();                 // pointerId -> {x,y}
-  let pinchStart = 0, ovStart = 0;       // distance + _ovTarget at pinch start
+  let pinchStart = 0;       // distance + _ovTarget at pinch start
   let dragX = 0, dragY = 0, dragging = false;
-  let lastTapT = 0, lastTapX = 0, lastTapY = 0;
   const dist = () => { const a = [...pts.values()]; return Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); };
 
   canvas.addEventListener("pointerdown", (e) => {
@@ -4905,7 +4904,7 @@ canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeou
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 2) {
       clearTimeout(_lpTimer); _tpMoved = true;      // cancel the single-finger long-press
-      pinchStart = dist(); ovStart = _ovTarget;
+      pinchStart = dist();
     } else if (pts.size === 1 && _ovActive) {
       dragging = true; dragX = e.clientX; dragY = e.clientY;
     }
@@ -4915,10 +4914,7 @@ canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeou
     if (!pts.has(e.pointerId)) return;
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 2 && pinchStart > 0) {
-      const ratio = dist() / pinchStart;                       // <1 = pinch in, >1 = spread
-      // spreading fingers zooms OUT (toward the whole cove); pinch in returns
-      ovSetTarget(clamp(ovStart + (1 - ratio) * 1.6, 0, 1));
-      _ovT = _ovTarget;                                        // follow the fingers 1:1, no lag
+      // Multi-touch must not change the game camera; zoom uses the button.
       e.preventDefault();
     } else if (dragging && _ovActive) {
       _ovCamX -= (e.clientX - dragX) / Math.max(0.001, _camScale);
@@ -4940,17 +4936,6 @@ canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeou
   }
   canvas.addEventListener("pointerup", lift, true);
   canvas.addEventListener("pointercancel", lift, true);
-
-  // double-tap empty ground -> toggle whole-cove view
-  canvas.addEventListener("pointerup", (e) => {
-    if (_focus || pts.size) return;
-    const now = performance.now();
-    if (now - lastTapT < 300 && Math.hypot(e.clientX - lastTapX, e.clientY - lastTapY) < 30) {
-      const w = screenToWorld(e.clientX, e.clientY);
-      if (!catAt(w.x, w.y, 46)) { ovSetTarget(_ovTarget > 0.5 ? 0 : 1, true); lastTapT = 0; return; }
-    }
-    lastTapT = now; lastTapX = e.clientX; lastTapY = e.clientY;
-  });
 
   // the ⊙ / × "see the whole cove" button
   addEventListener("DOMContentLoaded", () => {
