@@ -1273,6 +1273,26 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   #actions>.btn .ico{font-size:22px;line-height:24px}
   #actions>.btn .lbl{overflow:visible;text-overflow:clip}
 }
+
+/* Compact collection and consistently anchored activity sheet. */
+#neo-explore{left:50%;top:50%;transform:translate(-50%,-50%);width:min(96vw,600px);max-height:calc(100dvh - 150px);overflow-y:auto;padding-top:24px;overscroll-behavior:contain}
+#neo-explore[hidden]{display:none}
+#neo-explore .kicker,#neo-explore h2{padding-right:42px}
+#neo-explore .x{z-index:2}
+.neo-cat-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 18px}
+.neo-cat-tile{padding:5px 4px 10px;gap:3px;border-radius:14px;min-width:0}
+.neo-cat-tile[hidden]{display:none}
+.neo-cat-tile canvas{width:66px;height:61px}
+.neo-cat-tile b{font-size:13px;max-width:100%;overflow-wrap:anywhere}
+.neo-cat-tile span{font-size:11px;line-height:1.3}
+.neo-search-label{display:block;font-size:12px;font-weight:600;margin:10px 0 5px}
+#neo-cat-search{width:100%;min-height:44px;padding:10px 12px;border:1px solid #cbd5bd;border-radius:12px;background:#fffdf5;color:#384c3e;font:inherit}
+#neo-cat-count{margin:8px 0;font-size:12px}
+@media(max-width:600px){
+ #neo-explore{top:auto;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);width:calc(100vw - 12px);max-height:calc(100dvh - 155px);border-radius:20px}
+ #dex{bottom:calc(76px + env(safe-area-inset-bottom));max-height:calc(100dvh - 155px)}
+ .neo-cat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
 </style>
 
 <div id="app">
@@ -18314,13 +18334,16 @@ function neoOpenStory(c){
 }
 function neoRenderCats(){
   let root=document.getElementById('neo-cat-roster');if(!root){root=document.createElement('div');root.id='neo-cat-roster';panels.dex.querySelector('h2').after(root);}
-  root.innerHTML=`<p class="muted">A familiar face, a favorite spot, a story of their own.</p><div class="neo-cat-grid"></div><div class="neo-roster-actions"><button class="btn primary" id="neo-invite">Invite a cat · ◈ ${coaxPrice()}</button><button class="btn" id="neo-care">Free basic care</button></div><h3 class="neo-section-label">Coats you have met</h3>`;
+  root.innerHTML=`<p class="muted">A familiar face, a favorite spot, a story of their own.</p><label class="neo-search-label" for="neo-cat-search">Find a cat</label><input id="neo-cat-search" type="search" placeholder="Search by name" autocomplete="off"><p id="neo-cat-count" class="muted" aria-live="polite"></p><div class="neo-cat-grid"></div><div class="neo-roster-actions"><button class="btn primary" id="neo-invite">Invite a cat · ◈ ${coaxPrice()}</button><button class="btn" id="neo-care">Free basic care</button></div><h3 class="neo-section-label">Coats you have met</h3>`;
   const grid=root.querySelector('.neo-cat-grid');
   for(const c of cats.filter(c=>!c.visitor)){
-    const b=document.createElement('button');b.className='neo-cat-tile';
-    b.innerHTML=`<canvas width="120" height="110"></canvas><b>${esc(c.name)}</b><span>${esc(c.title||bondName(c.bond||0))}</span>${c.friend?`<small>Often with ${esc(c.friend)}</small>`:''}`;
+    const b=document.createElement('button');b.className='neo-cat-tile';b.dataset.name=c.name.toLocaleLowerCase();
+    b.innerHTML=`<canvas width="120" height="110"></canvas><b>${esc(c.name)}</b><span>${esc(c.title||bondName(c.bond||0))}</span>`;
     b.onclick=()=>neoOpenStory(c);grid.append(b);neoPortrait(b.querySelector('canvas'),c,1.6);
   }
+  const search=document.getElementById('neo-cat-search'),count=document.getElementById('neo-cat-count');
+  const filter=()=>{let shown=0;const query=search.value.trim().toLocaleLowerCase();for(const tile of grid.children){tile.hidden=!tile.dataset.name.includes(query);if(!tile.hidden)shown++;}count.textContent=query?`${shown} ${shown===1?"cat":"cats"} found`:`${grid.children.length} cats · tap one for their story`;};
+  search.oninput=filter;filter();
   document.getElementById('neo-invite').onclick=()=>{closeAllPanels();document.getElementById('coaxBtn').click();};
   document.getElementById('neo-care').onclick=()=>{neoCommunityCare();neoRenderCats();};
 }

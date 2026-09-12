@@ -103,13 +103,16 @@ function neoOpenStory(c){
 }
 function neoRenderCats(){
   let root=document.getElementById('neo-cat-roster');if(!root){root=document.createElement('div');root.id='neo-cat-roster';panels.dex.querySelector('h2').after(root);}
-  root.innerHTML=`<p class="muted">A familiar face, a favorite spot, a story of their own.</p><div class="neo-cat-grid"></div><div class="neo-roster-actions"><button class="btn primary" id="neo-invite">Invite a cat · ◈ ${coaxPrice()}</button><button class="btn" id="neo-care">Free basic care</button></div><h3 class="neo-section-label">Coats you have met</h3>`;
+  root.innerHTML=`<p class="muted">A familiar face, a favorite spot, a story of their own.</p><label class="neo-search-label" for="neo-cat-search">Find a cat</label><input id="neo-cat-search" type="search" placeholder="Search by name" autocomplete="off"><p id="neo-cat-count" class="muted" aria-live="polite"></p><div class="neo-cat-grid"></div><div class="neo-roster-actions"><button class="btn primary" id="neo-invite">Invite a cat · ◈ ${coaxPrice()}</button><button class="btn" id="neo-care">Free basic care</button></div><h3 class="neo-section-label">Coats you have met</h3>`;
   const grid=root.querySelector('.neo-cat-grid');
   for(const c of cats.filter(c=>!c.visitor)){
-    const b=document.createElement('button');b.className='neo-cat-tile';
-    b.innerHTML=`<canvas width="120" height="110"></canvas><b>${esc(c.name)}</b><span>${esc(c.title||bondName(c.bond||0))}</span>${c.friend?`<small>Often with ${esc(c.friend)}</small>`:''}`;
+    const b=document.createElement('button');b.className='neo-cat-tile';b.dataset.name=c.name.toLocaleLowerCase();
+    b.innerHTML=`<canvas width="120" height="110"></canvas><b>${esc(c.name)}</b><span>${esc(c.title||bondName(c.bond||0))}</span>`;
     b.onclick=()=>neoOpenStory(c);grid.append(b);neoPortrait(b.querySelector('canvas'),c,1.6);
   }
+  const search=document.getElementById('neo-cat-search'),count=document.getElementById('neo-cat-count');
+  const filter=()=>{let shown=0;const query=search.value.trim().toLocaleLowerCase();for(const tile of grid.children){tile.hidden=!tile.dataset.name.includes(query);if(!tile.hidden)shown++;}count.textContent=query?`${shown} ${shown===1?"cat":"cats"} found`:`${grid.children.length} cats · tap one for their story`;};
+  search.oninput=filter;filter();
   document.getElementById('neo-invite').onclick=()=>{closeAllPanels();document.getElementById('coaxBtn').click();};
   document.getElementById('neo-care').onclick=()=>{neoCommunityCare();neoRenderCats();};
 }
