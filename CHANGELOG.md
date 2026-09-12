@@ -1,5 +1,12 @@
 # Changelog
 
+## Mobile finishing pass — 2026-09-12
+
+- Wrapped inventory actions and Shop tabs for narrow screens, with 44px minimum action targets and 52px café service buttons.
+- Restyled arrangement controls in the approved cream/sage palette and enlarged their mobile touch targets.
+- Made cat greeting placement responsive to rotation and added a split café layout on short landscape screens.
+- Verified inventory visually at 390×844 and 320×568; regression checks pass. Physical-device performance and complete café-shift testing remain outstanding.
+
 ## Direct café table service — 2026-09-12
 
 - Drag a waiting guest to a clean table, or tap the guest and then the table. Guests walk to their assigned seats.

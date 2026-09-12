@@ -1367,6 +1367,39 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 @media(max-width:370px){#fest .midk-spin{min-width:108px;font-size:21px;padding:10px 14px}#fest .midk-console{gap:8px;padding-left:8px;padding-right:8px}#fest .midk-console .mc-reels span{width:30px;height:32px}}
 
 #fest{touch-action:none}#cafeBoard{touch-action:pan-y}
+
+/* Mobile finishing pass: cream surfaces, sage actions, comfortable touch targets. */
+#shopTabs{display:flex;flex-wrap:wrap;gap:6px}
+#shopTabs button,#shop .shop-actions button,#placeBar button{min-height:44px}
+#shop .shop-actions{flex-wrap:wrap;justify-content:flex-end;max-width:100%}
+#shop .shop-item{gap:12px}
+#shop .shop-item .txt{overflow-wrap:anywhere}
+#placeBar{max-width:calc(100vw - 24px);box-sizing:border-box;background:#faf6e9;color:#43543f;border:1px solid #d8ddc7}
+#placeBar b{color:#43543f}
+#placeBar button{border:1px solid #d8ddc7;background:#fffaf0;color:#43543f}
+#placeBar button.ok{background:#477354;color:#fff}
+#placeBar button[hidden]{display:none}
+#cafeBoard{overscroll-behavior:contain;scrollbar-width:thin}
+.neo-cafe-tables .btn{min-height:52px;line-height:1.25}
+.neo-cafe-tables .btn span{white-space:normal;overflow-wrap:anywhere}
+.neo-little-hello{width:min(300px,68vw)!important;left:clamp(min(162px,36vw),var(--hello-x,50vw),calc(100vw - min(162px,36vw)))!important;max-height:70dvh}
+.neo-little-hello p{overflow-wrap:anywhere}
+@media(max-width:480px){
+  #shop .shop-item{flex-wrap:wrap}
+  #shop .shop-item .txt{flex-basis:100%}
+  #shop .shop-actions{width:100%;justify-content:flex-start}
+  #shop .shop-actions button{flex:1 1 auto}
+  #shopTabs button{font-size:13px;padding:8px 10px}
+  #placeBar{width:calc(100vw - 24px);gap:6px;padding:10px}
+  #placeBar button{flex:1 1 40%;padding:8px;font-size:13px}
+  #neo-cafe-clock{padding:8px 16px;font-size:20px;max-width:calc(100vw - 24px)}
+}
+@media(max-height:500px) and (orientation:landscape){
+  #fest #cafeBoard{width:42vw;left:auto;right:max(8px,env(safe-area-inset-right));transform:none;max-height:calc(100dvh - 140px)}
+  .neo-cafe-tables{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .neo-little-hello{width:min(210px,40vw)!important}
+  .neo-little-hello p{font-size:12px;padding:6px 10px}
+}
 </style>
 
 <div id="app">
@@ -12665,6 +12698,11 @@ function cafeFit() {
   const rd = _festDPR || DPR;
   // keep the whole café above the role-swap strip so it never sits behind it
   const bd = document.getElementById("cafeBoard");
+  if (vw > vh && vh <= 500 && bd && !bd.hidden) {
+    const roomW=vw*.56,roomH=Math.max(180,vh-80);
+    const sc=Math.min(roomW*rd/(CAFE_W+20),roomH*rd/650);
+    return {sc,ox:(roomW*rd-CAFE_W*sc)/2,oy:(roomH*rd-650*sc)/2-230*sc};
+  }
   const reserve = (bd && !bd.hidden) ? bd.offsetHeight + 90 : 0;
   const availH = Math.max(vh * 0.45, vh - reserve);
   const sc = Math.min((vw * rd) / (CAFE_W+20), (availH * rd) / 650);
@@ -18772,6 +18810,7 @@ function neoHelloTap(x,y,sx,sy){
   const shell=document.createElement('div');shell.className='neo-little-hello';shell.setAttribute('role','status');shell.setAttribute('aria-live','polite');
   const size=Math.min(300,innerWidth*.68),center=clamp(sx,size/2+12,innerWidth-size/2-12);
   shell.style.width=size+'px';shell.style.left=center+'px';
+  shell.style.setProperty('--hello-x',(center/innerWidth*100)+'vw');
   const portrait=document.createElement('canvas');portrait.width=400;portrait.height=320;portrait.setAttribute('aria-hidden','true');
   const line=document.createElement('p');line.textContent=c.name+[' noticed your tapping.',' has come to investigate.',' heard there might be snacks.',' would like a word.'][Math.floor(Math.random()*4)];
   // Attach to the viewport, not the Cove/menu layout: the shoulder crop meets the screen edge.

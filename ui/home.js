@@ -215,6 +215,7 @@ function neoHelloTap(x,y,sx,sy){
   const shell=document.createElement('div');shell.className='neo-little-hello';shell.setAttribute('role','status');shell.setAttribute('aria-live','polite');
   const size=Math.min(300,innerWidth*.68),center=clamp(sx,size/2+12,innerWidth-size/2-12);
   shell.style.width=size+'px';shell.style.left=center+'px';
+  shell.style.setProperty('--hello-x',(center/innerWidth*100)+'vw');
   const portrait=document.createElement('canvas');portrait.width=400;portrait.height=320;portrait.setAttribute('aria-hidden','true');
   const line=document.createElement('p');line.textContent=c.name+[' noticed your tapping.',' has come to investigate.',' heard there might be snacks.',' would like a word.'][Math.floor(Math.random()*4)];
   // Attach to the viewport, not the Cove/menu layout: the shoulder crop meets the screen edge.
