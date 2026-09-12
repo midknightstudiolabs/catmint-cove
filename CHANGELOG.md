@@ -1,5 +1,15 @@
 # Changelog
 
+## Economy balance — 2026-09-12
+
+- Gentler collection income growth and smaller rarity income bonuses. Baseline adult one-star Coves earn approximately 477/672/857/987 shells per hour at 3/8/16/24 cats (75 mood, neutral traits, no upgrades or boosts). Cat Tree remains 300.
+- Festival retains Cove income while visible and grants a separate time-based performance bonus. Hidden pages do not accrue active Festival earnings; replaying remains unrestricted.
+- Sleep and offline returns share four hours at 18% of the home rate, followed by eight hours at 4.5%, capped at twelve hours. Expired sleep sessions settle their earnings.
+- New adventures last 30 minutes, four hours, or eight hours. Shell stipends are 18/110/190 per cat before small variation and trait/party bonuses. Destinations retain different collectibles; mishaps no longer reduce shells. Existing departure timestamps are unchanged.
+- Shore driftwood arrives every 6–10 minutes after the introductory piece. Material trips give 1/2/3 pieces per cat by duration, with a small curious-cat bonus.
+- Mid-range scenery prices reduced to bridge the gap between starter furniture and prestige themes. Basic care, existing balances and ownership remain unchanged.
+- Automated checks cover baseline progression, background limits, Festival income/bonus accounting and hidden-page behavior. Real-device session playtesting remains necessary.
+
 ## After V3 — 2026-09-12
 
 - Café now has player-directed table service: seat, order, prepare, serve, and clear. Patience indicators and task buttons accompany the existing staff role swaps. The camera crops unused sky to enlarge the working area. Payout formulas are unchanged; service gate checks passed, with device playtesting still needed.

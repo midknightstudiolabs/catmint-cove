@@ -21,8 +21,8 @@ console.log('PASS: full-Cove and luck-dependent rituals excluded.');
 const food=vm.runInNewContext('('+html.match(/function foodServingCost\(\)\{[^\n]+/)[0].split('//')[0]+')',{residentCount:()=>n});
 const price=vm.runInNewContext('('+html.match(/function coaxPrice\(\) \{[^\n]+/)[0]+')',{residentCount:()=>n});
 for(n=0;n<=24;n++){assert.equal(food(),(12+n*4)/22);assert.equal(price(),Math.round(12*Math.pow(1.38,n)));}
-assert(html.includes('let m = 0.46 + welcomeBoost()'));assert(html.includes('const capped = Math.min(elapsed, 4 * 3600);'));
-console.log('PASS: original food/adoption curves, income multiplier and offline cap.');
+assert(html.includes('let m = 0.46 + welcomeBoost()'));assert(html.includes('function backgroundShells(rate, seconds)'));
+console.log('PASS: original food/adoption curves, income multiplier and shared background earnings.');
 assert(html.includes('if (_focusT > 0.01 && !_ovActive)'));assert(html.includes('neoCoveForeground(ctx)'));assert(html.includes('neoRaceMeadow(g,RACE_W,RACE_H)'));
 assert(!html.includes('Confirm purchase —'));assert(html.includes('Preview only on the web'));
 console.log('PASS: approved scenery integrations retained; no simulated public purchases.');

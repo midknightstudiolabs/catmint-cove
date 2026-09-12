@@ -2855,7 +2855,7 @@ class Cat {
   }
   starMul() { return 1 + (this.star - 1) * 0.3; }             // ★1 x1  →  ★4 x1.9
   ratePerSec() {
-    let s = 0.28 * earnMult() * this.traitRate() * comfortMult() * this.moodMul() * this.starMul();   // v3: ~half the v2 faucet — care items are a real sink now
+    let s = 0.08 * Math.pow(3 / Math.max(3, residentCount()), 0.65) * earnMult() * this.traitRate() * comfortMult() * this.moodMul() * (1 + (this.star - 1) * 0.1);   // collection growth is gentle; rarity is primarily identity
     s *= 0.5 + this.growth * 0.5;                 // kittens are still learning — half output, ramping up
     if (this.state === "eating" || this.state === "playing") s *= 1.3;
     if (this.state === "sleeping") s *= 0.8;      // napping in a bed: less output, but mood recovers
@@ -7700,6 +7700,11 @@ function maybeOfferWelcome() {
 }
 
 /* ---------- offline earnings ---------- */
+// Shared by offline returns and the rainy room: four steady hours, then a gentle tail.
+function backgroundShells(rate, seconds) {
+  const t = Math.max(0, Math.min(seconds, 12 * 3600));
+  return Math.floor(Math.max(0, rate) * (Math.min(t, 4 * 3600) * 0.18 + Math.max(0, t - 4 * 3600) * 0.045));
+}
 function aggregateRate() {
   if (!cats.length) return G.ratePerSec || 0;
   return cats.reduce((s, c) => s + c.ratePerSec(), 0);
@@ -7734,9 +7739,7 @@ function offlineArrivals(elapsed) {
 function offlineEarnings(elapsed, then) {
   const done = () => { try { then && then(); } catch (e) {} };
   if (elapsed < 45 || !(G.ratePerSec > 0)) return done();
-  const capped = Math.min(elapsed, 4 * 3600);          // original four-hour offline earnings cap
-  let base = Math.floor(G.ratePerSec * capped * 0.18); // the cove ticks over — it doesn't grind for you
-  base = Math.max(0, Math.min(base, 280 + cats.length * 260));   // soft cap: a return is 1-2 nice purchases, not a windfall
+  const base = backgroundShells(Math.min(G.ratePerSec, aggregateRate()), elapsed);
   if (base <= 0) return done();
   const earned = base;                                // no paid multiplier — see MONETIZATION.md
   const canWatch = ADS_ENABLED && Ads.rewardReady("offline2x");   // an OPTIONAL rewarded ad, only if ads are ever enabled
@@ -8761,7 +8764,7 @@ function beginRest(resumed) {
   initGlassDrops(); restSeatCats();
   startRestAudio();
   requestRestWakeLock();
-  G.rest = { on: true, startedAt: restStartedAt, endsAt: restEndsAt, opts: { ...restOpts } };
+  G.rest = { on: true, startedAt: restStartedAt, endsAt: restEndsAt, rate: resumed ? Math.min(G.rest?.rate ?? aggregateRate(), aggregateRate()) : aggregateRate(), opts: { ...restOpts } };
   save();
   clearInterval(_restTimerIv);
   _restTimerIv = setInterval(restTick, 1000);
@@ -8784,7 +8787,7 @@ function endRest(auto) {
   stopRestAudio(); releaseRestWakeLock();
   const elapsedS = Math.max(0, (Date.now() - restStartedAt) / 1000);
   const mins = Math.floor(elapsedS / 60);
-  const earned = Math.round(aggregateRate() * elapsedS * 0.6);
+  const earned = backgroundShells(G.rest?.rate ?? aggregateRate(), elapsedS);
   if (earned > 0) { G.shells += earned; bumpGoal("shells", earned); }
   for (const c of cats) { c.mood = clamp(c.mood + 20, 8, 100); c.stateDur = 0; }
   restMode = false; restEndsAt = 0; restStartedAt = 0;
@@ -9075,6 +9078,23 @@ function festUnlocked() { return !!G.tutorialDone && residentCount() >= 2; }
 // this naturally drops and recovers as trips leave and return).
 function eligibleForVolley() { return cats.filter(c => !c.visitor && !c._gone && !c._leaving); }
 function volleyReady() { return eligibleForVolley().length >= 3; }
+let festPlaySeconds = 0, festBank = 0;
+function festivalEconomyStep(dt) {
+  if (document.hidden) return;
+  const seconds = Math.max(0, Math.min(dt, 0.1));
+  festBank += aggregateRate() * seconds;
+  const whole = Math.floor(festBank);
+  if (whole) { G.shells += whole; festBank -= whole; }
+  if (!document.getElementById("festResult").hidden) return;
+  const playing = (festKind === "race" && racePhase === "run") || (festKind === "box" && boxPhase === "play") || (festKind === "volley" && ["play", "point"].includes(volleyPhase)) || (festKind === "midk" && midkPhase === "play") || (festKind === "cafe" && _cafeRunning);
+  if (playing) festPlaySeconds += seconds;
+}
+function balanceFestivalReward(rw) {
+  const skill = Math.max(0.25, Math.min(0.5, rw.shells / Math.max(1, goalShells(1)) * 0.4));
+  rw.shells = Math.max(1, Math.round(aggregateRate() * Math.min(festPlaySeconds, 600) * skill));
+  festPlaySeconds = 0;
+  return rw;
+}
 let festMode = false, _festDPR = 0, _festG = null;
 // which activity is live on the grounds — "race" (the original), "box" (the
 // Great Box Challenge) or "volley" (Cove Volleyball). Set when an activity
@@ -9196,7 +9216,7 @@ function openFestPicker(kind) {
   w.classList.remove("out"); void w.offsetWidth; w.classList.add("in");
   setTimeout(() => {
     fitFestCanvas();
-    festMode = true;
+    festMode = true; festPlaySeconds = 0;
     _festCamX = raceX(0);   // frame the starting line, not wherever the last heat ended
     document.getElementById("app").classList.add("festing");
     document.getElementById("fest").classList.add("on");
@@ -9922,7 +9942,7 @@ function showFestPodium() {
     : `${racePick ? racePick.name : "Your pick"} didn't place this time. Everyone still gets a little something for showing up. ${rwLine}`;
   const rest = order.slice(3).map(r => r.cat.name);
   document.getElementById("festRestLine").textContent = rest.length ? `${joinNice(rest)} ambled in eventually.` : "";
-  if (racePick && rw) { grantReward(rw, racePick); syncHud(); }
+  if (racePick && rw) { grantReward(balanceFestivalReward(rw), racePick); syncHud(); }
   spawnParticles(raceX(1) - 10, laneY(order[0].lane) - 6, "spark", 12);
   spawnParticles(raceX(1) - 10, laneY(order[0].lane) - 16, "heart", 5);
   document.getElementById("festSkip").hidden = true;
@@ -10727,7 +10747,7 @@ function showBoxResult() {
   const base = goalShells(0.25);
   const mine = !boxWinner.cat.visitor;
   const rw = { shells: mine ? goalShells(0.6) : base };   // participation, +winner bump if a resident took it
-  grantReward(rw, null);
+  grantReward(balanceFestivalReward(rw), null);
   syncHud();
 
   document.getElementById("festPickLine").textContent =
@@ -11749,7 +11769,7 @@ function showVolleyResult() {
     const big = volleyScore.visit === 0 || _vbMaxDeficit >= 2;
     return { shells: Math.round(base * m), pearls: Math.random() < (big ? 0.09 : 0.05) ? 1 : 0 };
   })();
-  grantReward(rw, null); syncHud();
+  grantReward(balanceFestivalReward(rw), null); syncHud();
   const asleepNow = cove.find(p => p.tier === "asleep");
   const mvp = [...cove].sort((a, b) => (b.stats.saves * 2 + b.stats.returns) - (a.stats.saves * 2 + a.stats.returns))[0];
   let wl;
@@ -12441,7 +12461,7 @@ function showMidkResult() {
     let m = 1.9 + marginK * 0.6 + (close ? 0.3 : 0);
     rw = { shells: Math.round(base * m), pearls: (marginK > 0.6 && Math.random() < 0.07) ? 1 : 0 };
   }
-  grantReward(rw, null); syncHud();
+  grantReward(balanceFestivalReward(rw), null); syncHud();
 
   const napper = [...cove].sort((a, b) => b.stats.naps - a.stats.naps)[0];
   const bigOne = [...cove].sort((a, b) => (b._chonk || 0) - (a._chonk || 0))[0];
@@ -13400,7 +13420,7 @@ function showCafeResult() {
   const rw = { shells: cafeShellTips + bonus };
   if (great && Math.random() < 0.06) rw.pearls = 1;
   const eots = cafeEmployeeOfShift();
-  grantReward(rw, null); syncHud();
+  grantReward(balanceFestivalReward(rw), null); syncHud();
 
   const rows = cafeStaff.map(s => {
     const chips = [];
@@ -13478,7 +13498,7 @@ const DECOR_THEMES = {
 // `render(g,t,x,y,s)` draws at a given anchor. The two "span" props (bunting,
 // lantern string) hang between the fixed sign posts and stay put.
 const DECOR_PROPS = [
-  { id:"stones",   name:"Stepping stones", price: 1500, blurb:"Flat stones in a lazy curve. Purely for the look.",
+  { id:"stones",   name:"Stepping stones", price: 350, blurb:"Flat stones in a lazy curve. Purely for the look.",
     movable:true, place:{ x:W*0.50, y:H*0.94, s:1.2 }, render(g,t,x,y,s){ propStones(g, x, y, s); } },
   { id:"bunting",  name:"Bunting",         price: 1800, blurb:"Festival flags on two tall poles. Move them anywhere on clear grass.",
     movable:true, place:{x:W*.25,y:H*.42+24,s:1}, render(g,t,x,y,s){ propBunting(g,t,x,y); } },
@@ -16594,7 +16614,7 @@ function simulate(dt) {
   if (G.tutorialDone && anyProjectOpen()) {
     driftTimer -= dt;
     if (driftTimer <= 0) {
-      driftTimer = rand(65, 135);
+      driftTimer = rand(360, 600);
       dropToken(rand(W * 0.08, W * 0.42), catFloor() - rand(8, 26), 0, "driftwood");
     }
   }
@@ -16819,7 +16839,7 @@ function frameBody(now) {
       if (_dprCap !== wantCap) { _dprCap = wantCap; resize(); }
     }
   }
-  if (festMode) { renderFest(frameDt); return; }
+  if (festMode) { festivalEconomyStep(frameDt); renderFest(frameDt); return; }
   if (restMode) {
     // full 60fps while you're actually watching (the first ~26s — rain & fire
     // need it to look smooth), then drop to 15fps once it dims for burn-in.
@@ -17289,9 +17309,9 @@ const ADV_DESTS = {
   peak:    { emoji: "⛰️", name: "The Peak",      blurb: "The hill that looks down on everything." },
 };
 const ADV_TIERS = {
-  short: { key: "short", label: "Short outing", mins: 60,  rareMul: 1.0, note: "back within the hour" },
-  day:   { key: "day",   label: "Day trip",     mins: 300, rareMul: 1.9, note: "gone for the day" },
-  night: { key: "night", label: "Overnight",    mins: 720, rareMul: 3.2, note: "back tomorrow" },
+  short: { key: "short", label: "Short outing", mins: 30,  rareMul: 1.0, note: "back in half an hour" },
+  day:   { key: "day",   label: "Day trip",     mins: 240, rareMul: 1.9, note: "gone for the day" },
+  night: { key: "night", label: "Overnight",    mins: 480, rareMul: 3.2, note: "back in eight hours" },
 };
 function advTier(t) { return ADV_TIERS[t] || ADV_TIERS.day; }
 function activeAdvs() { return Array.isArray(G.adventures) ? G.adventures : (G.adventures = []); }
@@ -17323,10 +17343,9 @@ function advLoot(cat, dest, tier) {
   const T = advTier(tier);
   const hrs = T.mins / 60;
   const rm = T.rareMul;
-  // shells: a per-hour stipend, always below the ~1,000-1,500/hr a cat earns at
-  // home — the trip is a bonus for the hours you're away, not a better job
-  const perHr = { fishing: 80, meadow: 90, forest: 100, market: 120, island: 140, peak: 160 }[dest] || 100;   // v3: ~half, in step with the home rate
-  const reward = { shells: Math.round(perHr * hrs * rand(0.82, 1.2)) };
+  // Fixed trip stipends: shorter trips slightly favor attention, longer trips favor convenience.
+  const stipend = { short: 18, day: 110, night: 190 }[tier] || 110;
+  const reward = { shells: Math.round(stipend * rand(0.9, 1.1)) };
   const lines = [];
   const keepPool = {
     fishing: [{ emoji: "🐚", label: "a spiral shell" }, { emoji: "🪸", label: "a scrap of coral" }, { emoji: "🦴", label: "an intact fish skeleton" }],
@@ -17337,13 +17356,13 @@ function advLoot(cat, dest, tier) {
     peak:    [{ emoji: "🪨", label: "a stone from the very top" }, { emoji: "🦅", label: "a huge feather" }, { emoji: "❄️", label: "a jar of cold mountain air" }],
   }[dest] || [];
   if (anyProjectOpen() && (dest === "forest" || dest === "fishing" || dest === "meadow")) {
-    reward.driftwood = 1 + (rnd() < 0.4 ? 1 : 0) + (has("curious") ? 1 : 0) + (tier === "night" ? 1 : 0);
+    reward.driftwood = ({ short: 1, day: 2, night: 3 }[tier] || 2) + (has("curious") && rnd() < 0.35 ? 1 : 0);
     lines.push(`dragged home ${reward.driftwood} piece${reward.driftwood === 1 ? "" : "s"} of driftwood`);
   }
   const keepP = clamp(0.42 + 0.12 * (rm - 1), 0, 0.9);
   if (rnd() < keepP || has("climber")) { reward.keepsake = pick(keepPool); lines.push(`brought back ${reward.keepsake.label}`); }
   if (has("glutton")) { reward.keepsake = { emoji: "📖", label: `a recipe from the ${dest === "island" ? "island" : "trail"}` }; lines.push("came back with a new recipe"); }
-  if (has("climber")) { reward.shells += Math.round(20 * hrs); lines.push("got somewhere the others couldn't and pocketed the difference"); }
+  if (has("climber")) { reward.shells += Math.round(stipend * 0.08); lines.push("got somewhere the others couldn't and pocketed the difference"); }
   if (has("playful") && !(cat.worn && cat.worn.length)) {
     const f = pick(["bow", "bandana", "flower", "scarf"]);
     cat.worn = normalizeWorn([...(cat.worn || []), f]);
@@ -17362,12 +17381,12 @@ function advLoot(cat, dest, tier) {
   mapP = Math.min(0.45, mapP);
   if ((G.mapPieces || 0) >= MAP_TOTAL) mapP = 0;
   if (rnd() < mapP) { reward.mapPiece = true; lines.push("found a piece of a torn map"); }
-  if (has("grumpy") && rnd() < 0.15) { const j = Math.round(60 * hrs); reward.shells += j; lines.push("came back furious and inexplicably rich"); }
+  if (has("grumpy") && rnd() < 0.15) { const j = Math.round(stipend * 0.15); reward.shells += j; lines.push("came back furious and inexplicably rich"); }
   if (has("cuddly") && rnd() < 0.5) { reward.mood = 18; lines.push("mostly just missed everyone"); }
   if (has("chatty")) lines.push("will not stop talking about something it saw");
   if (!has("bold") && !has("shy") && rnd() < 0.18) {
     lines.push(pick(["lost the fishing rod somehow", "fell in a stream and is pretending it was on purpose", "was chased by a goose and will not discuss it"]));
-    reward.shells = Math.round(reward.shells * 0.7);
+    // Mishaps add stories, not a penalty to the promised shell range.
   }
   if (cat.mascot) lines.push("lost something on the way home, naturally");
   return { reward, lines };
@@ -17398,7 +17417,7 @@ function advVignette(dest, results) {
   if (!combined.pearls) delete combined.pearls;
   if (!combined.driftwood) delete combined.driftwood;
   if (!combined.keepsakes.length) delete combined.keepsakes;
-  if (!solo) combined.shells = Math.round(combined.shells * (1 + 0.08 * (results.length - 1)));   // a small bonus for going together
+  if (!solo) combined.shells = Math.round(combined.shells * (1 + 0.03 * (results.length - 1)));   // a small bonus for going together
   const mkHome = results.some(x => x.cat.mascot);
   const names = joinNice(results.map(x => x.cat.name));
   const verb = solo ? "is" : "are";
@@ -17489,7 +17508,7 @@ function startAdventure(names, dest, tier) {
   if (!going.length) return;
   const party = going.map(snapshotCat);
   const anyLazy = going.some(c => c.traits.includes("lazy"));
-  const mins = advTier(tier).mins * (anyLazy ? 1.5 : 1);
+  const mins = advTier(tier).mins; // personality changes the story, not the promised return time
   for (const c of going) {
     if (typeof cardCat !== "undefined" && cardCat === c) hideCatCard();
     cats.splice(cats.indexOf(c), 1);
@@ -18659,7 +18678,11 @@ setTimeout(refreshShellAnchor, 400);   // pin the HUD-counter target once fonts/
 // resume a rainy-day session that was running when the tab closed
 if (G.rest && G.rest.on && (!G.rest.endsAt || Date.now() < G.rest.endsAt)) {
   setTimeout(() => resumeRest(G.rest), 250);
-} else if (G.rest) { G.rest = null; }
+} else if (G.rest) {
+  G.shells += backgroundShells(Math.min(G.rest.rate ?? aggregateRate(), aggregateRate()), Math.max(0, ((G.rest.endsAt || Date.now()) - G.rest.startedAt) / 1000));
+  G.lastSeen = Math.max(G.lastSeen || 0, G.rest.endsAt || Date.now());
+  G.rest = null; save();
+}
 
 // first run: name the cove → age gate → cold open → then check offline earnings
 const needName = !G.owner && !G.ownerAsked;
