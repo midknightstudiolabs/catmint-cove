@@ -6239,6 +6239,7 @@ function inventoryItemKey(item, i) {
   if (item.cat === "stations") return {kind:"decor",key:"station:" + item.key + ":" + i,dtype:"station"};
   return null;
 }
+let inventoryView = 'stored';
 function renderInventory(list) {
   const entries = [];
   for (const item of SHOP) for (let i=0; i<item.get(); i++) {
@@ -6246,13 +6247,16 @@ function renderInventory(list) {
     entries.push({...spec,label:item.name,stored:itemStored(spec.kind,spec.key)});
   }
   for (const p of DECOR_PROPS) if (p.movable && G.cosmetics.props[p.id]) entries.push({kind:"prop",key:p.id,label:p.name,stored:propBoxed(p.id)});
-  for (const stored of [true,false]) {
-    const group = entries.filter(e=>e.stored===stored);
-    list.appendChild(shopHead(`${stored ? "In storage" : "In the cove"} · ${group.length}`));
+  const filters=document.createElement('div');filters.className='shop-actions';
+  for(const [id,label] of [['stored','Stored'],['placed','In the Cove']]){const b=document.createElement('button');b.className='btn';b.textContent=label+' ('+entries.filter(e=>e.stored===(id==='stored')).length+')';b.setAttribute('aria-pressed',inventoryView===id);b.onclick=()=>{inventoryView=id;renderShop();};filters.appendChild(b);}list.appendChild(filters);
+  for (const stored of [inventoryView==='stored']) {
+    const matching = entries.filter(e=>e.stored===stored);
+    const group=stored?Array.from(matching.reduce((m,e)=>{const k=e.kind+':'+e.label;if(m.has(k))m.get(k).quantity++;else m.set(k,{...e,quantity:1});return m;},new Map()).values()):matching;
+    
     if (!group.length) { const note=document.createElement("p"); note.className="muted"; note.textContent=stored?"Nothing stored yet. Choose Put away while moving an item.":"Your placed items will appear here."; list.appendChild(note); }
     for (const e of group) {
       const row=document.createElement("div"); row.className="shop-item";
-      row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}</div><div class="desc">Owned · ${stored?"Stored safely":"Placed in your cove"}</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Put away</button>'}</div>`;
+      row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}${e.quantity>1?" ×"+e.quantity:""}</div><div class="desc">${stored?"Ready to place":"Placed"}</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Put away</button>'}</div>`;
       row.querySelector(".inventory-place").onclick=()=>{
         if(e.kind==="prop") {startPlacing(e.key); return;}
         const obj=e.kind==="comfort"?attractors.find(a=>a.key===e.key):decor.find(d=>d.dkey===e.key);
@@ -6275,12 +6279,7 @@ function renderShop() {
   list.innerHTML = "";
   const tab = SHOP_TABS.find(t => t.id === shopTab);
   list.insertAdjacentHTML("beforeend", `<p class="muted">${tab.intro}</p>`);
-  if (shopTab !== "inventory") {
-    const owned = document.createElement("button"); owned.className = "btn";
-    owned.textContent = "Already owned? Open my inventory";
-    owned.onclick = () => { shopTab = "inventory"; renderShop(); list.scrollTop = 0; };
-    list.appendChild(owned);
-  }
+
 
   if (shopTab === "inventory") { renderInventory(list); return; }
   if (shopTab === "featured") {
