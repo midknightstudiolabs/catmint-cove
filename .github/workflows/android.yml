@@ -39,7 +39,7 @@ jobs:
         id: ver
         run: |
           NAME="${GITHUB_REF_NAME#android-v}"
-          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="3.0.1"; fi
+          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="3.0.2"; fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "code=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
 
@@ -141,3 +141,4 @@ jobs:
           releaseFiles: ${{ steps.sign.outputs.signedReleaseFile }}
           track: ${{ inputs.track }}
           status: ${{ inputs.track == 'production' && 'completed' || 'draft' }}
+
