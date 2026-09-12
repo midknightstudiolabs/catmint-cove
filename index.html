@@ -1334,6 +1334,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
 .neo-ui-icon{display:inline-block;width:1.5em;height:1.5em;object-fit:contain;vertical-align:middle;flex-shrink:0}
 .fp-art .neo-ui-icon,.fw-emoji .neo-ui-icon{width:56px;height:56px}.fc-emoji .neo-ui-icon{width:40px;height:40px}.neo-destination>span .neo-ui-icon{width:36px;height:36px}#actions .neo-ui-icon{width:24px;height:24px}
+
+.neo-postcard{background:#fff9e9;border:1px solid #d9cdb0;padding:10px;color:#4e5847;text-align:left}.neo-postcard-front{min-height:180px;padding:22px;background:#b8d2b0 url('art/cove-2d.png') center 37%/cover;text-align:center;position:relative}.neo-postcard-front>span,.neo-postcard-front>small{background:#fff9e9;padding:5px 9px;letter-spacing:.1em;font-size:10px}.neo-postcard-front h2{margin:10px auto;color:#334c41;background:#fff9e9;width:fit-content;padding:4px 14px}.neo-postcard-mark{margin:10px}.neo-postcard-mark img{width:44px;height:44px}.neo-postcard-back{display:grid;grid-template-columns:3fr 2fr;gap:18px;padding:22px 12px}.neo-postcard-letter p{line-height:1.7;font-family:Georgia,serif}.neo-postcard-sign{color:#6c8060;font-style:italic}.neo-postcard-address{border-left:1px solid #cfc5ac;padding-left:16px;font-size:13px}.neo-postcard-address p{border-bottom:1px solid #dcd3bc;padding-bottom:8px}.neo-postcard-stamp{border:2px dashed #9cab8d;width:60px;padding:5px;text-align:center;margin:0 0 18px auto}.neo-postcard-stamp small{display:block;font-size:8px}.neo-postcard-preview{display:flex;width:100%;align-items:center;gap:12px;padding:14px;text-align:left;background:#fff9e9;border:1px dashed #bdbb9d;border-radius:5px;color:#4e5847;cursor:pointer}.neo-postcard-preview small{display:block;margin-top:5px}@media(max-width:480px){.neo-postcard-back{grid-template-columns:1fr;padding:14px 8px}.neo-postcard-address{border-left:0;border-top:1px solid #cfc5ac;padding:12px 0}.neo-postcard-stamp{float:right;margin:0 0 8px 12px}}
 </style>
 
 <div id="app">
@@ -4964,6 +4966,7 @@ function handleTap(x, y) {
   const bt = tokenAt(x, y);
   if (bt) { hidePropCard(); collectToken(bt); return; }
 
+  if(_founderPlaque&&iapOwns("founding_covekeeper")&&Math.abs(x-_founderPlaque.x)<=31&&Math.abs(y-_founderPlaque.y)<=22){hideCatCard();hidePropCard();showFounderDescription();return;}
   // cats
   const bc = catAt(x, y, 40);
   if (bc) {
@@ -5789,12 +5792,12 @@ function shopPackRow() {
   pack.innerHTML = Ads.owned()
     ? `<div class="txt"><div class="name">Founding Covekeeper</div>
          <div class="desc">Your plaque's by the sign${ADS_ENABLED ? " · ads off" : ""} · thank you 🧡</div></div>
-       <span class="owned">Owned</span>`
+       <button class="btn" data-founder-info>About your plaque</button>`
     : `<div class="txt"><div class="name">❤️ Founding Covekeeper</div>
          <div class="desc">For the hoomans helping our little Cove grow from the start · a limited 2026 founder's plaque, ribbon, halo &amp; hero mask · ad-free forever</div></div>
        <button class="btn primary">${IAP_PRODUCTS.founding_covekeeper.price}</button>`;
   const pb = pack.querySelector("button");
-  if (pb) pb.addEventListener("click", () => showPackOffer(false));
+  if (pb) pb.addEventListener("click", () => pb.hasAttribute("data-founder-info") ? showFounderDescription() : showPackOffer(false));
   return pack;
 }
 // the Welcome Pack — a small first-purchase row (the welcome paw is decor, so
@@ -13660,6 +13663,7 @@ function drawBackground(dt) {
   ctx.fillStyle = _vignetteGrad; ctx.fillRect(0, 0, W, H);
 }
 let _vignetteGrad = null, _warmWash = null;
+let _founderPlaque = null;
 let _coveSignTag = null;   // world-space bounds of the "N cats are out exploring" tag, for tap-to-open
 // a couple of reusable soft radial gradients for the cat contact shadow, keyed
 // by a bucketed radius — canvas gradient creation is one of the costlier calls
@@ -14843,10 +14847,12 @@ function drawCoveSign(g, W, H) {
     // remember where the tag sits in world space so a tap can open the trips view
     _coveSignTag = { x, y: y + 10, w: Math.max(tw, 54), h: 20 };
   }
+  _founderPlaque=null;
   // Founding Covekeeper — a small brass plaque on its own post, standing clear
   // to the right of the sign (a ~20px gap so it never crowds the cove name).
   if (typeof iapOwns === "function" && iapOwns("founding_covekeeper")) {
     g.save();
+    _founderPlaque={x:x+bw/2+46,y:y-13.5};
     g.translate(bw / 2 + 46, 0);
     g.fillStyle = "rgba(36,31,23,0.10)"; g.beginPath(); g.ellipse(0, 26, 18, 4.5, 0, 0, 7); g.fill();
     g.fillStyle = "#8a6a4a"; g.fillRect(-2.5, -4, 5, 30);                // post
@@ -17620,13 +17626,14 @@ function deliverDuePostcards(opts = {}) {
   return false;
 }
 function showPostcard(text, cat, dest, onDone) {
-  openModal(`<div class="reveal vignette">
-    <div class="kicker">A postcard from ${esc(cat)}</div>
-    <div class="vig-art">✉️</div>
-    <p class="vig-body" style="font-style:italic">${esc(text)}</p>
-    <div class="row"><button class="btn primary" id="pc-ok">Aw</button></div>
-  </div>`);
+  const place=ADV_DESTS[dest]||ADV_DESTS.forest;
+  const signature="— "+cat;const message=text.trim().endsWith(signature)?text.trim().slice(0,-signature.length).trim():text;
+  openModal(`<article class="neo-postcard"><div class="neo-postcard-front"><span>GREETINGS FROM</span><h2>${esc(place.name)}</h2><div class="neo-postcard-mark">${neoUIIcon('adventure')}</div><small>CATMINT COVE · A LITTLE WAY FROM HOME</small></div><div class="neo-postcard-back"><div class="neo-postcard-letter"><p>${esc(message)}</p><p class="neo-postcard-sign">With love, ${esc(cat)}</p></div><div class="neo-postcard-address"><div class="neo-postcard-stamp">${neoUIIcon('paw')}<small>COVE POST</small></div><small>TO</small><p>${esc(coveName())}</p><p>Our little home by the sea</p></div></div></article><div class="row"><button class="btn primary" id="pc-ok">Keep this postcard</button></div>`);
   document.getElementById("pc-ok").onclick = () => { closeModal(); if (onDone) setTimeout(onDone, 250); };
+}
+function showFounderDescription(){
+  openModal(`<div class="reveal"><div class="kicker">A LITTLE THANK-YOU · 2026</div><h2>Founding Covekeeper</h2><p>This plaque marks your support for Catmint Cove during its founding days. You helped give this little home a beginning.</p><p>Your keepsakes include the dated plaque and founder accessories: a ribbon, halo, and hero mask. They celebrate your support and give no gameplay advantage.</p><p class="muted">Thank you for helping the Cove grow.</p><button class="btn" id="founder-close">Back to my cove</button></div>`);
+  document.getElementById('founder-close').onclick=closeModal;
 }
 function latestPostcardFor(cat) {
   return (G.postcards || []).find(p => p.cat === cat);
@@ -17680,7 +17687,7 @@ function renderAdventureCard() {
       <div><div class="adv-title">${esc(who)} &middot; ${esc(d.name)}</div>
       <div class="adv-sub">${back ? "back at the cove — see how it went" : `${T.label.toLowerCase()} · back ${whenText(a.endsAt)}`}</div></div></div>
       ${back ? "" : `<div class="pj-bar adv-bar"><i style="width:${prg}%"></i></div>`}
-      ${pc ? `<div class="adv-postcard">✉️ ${esc(pc.text.replace(/\s*—\s*.*$/, ""))}</div>` : ""}
+      ${pc ? `<button class="adv-postcard neo-postcard-preview" data-postcard="${a.id}">${neoUIIcon("adventure")}<span><b>Postcard from ${esc(pc.cat)}</b><small>${esc(d.name)} · Read their note</small></span></button>` : ""}
       ${back ? `<button class="btn primary" data-claim="${a.id}">See how it went</button>`
              : `<button class="btn tiny" data-recall="${a.id}">Call them home</button>${DEV_BUILD ? ` <button class="btn tiny" data-skip="${a.id}">skip · dev</button>` : ""}`}
     </div>`;
@@ -17699,6 +17706,7 @@ function renderAdventureCard() {
   }
   html += mapLine();
   el.innerHTML = html;
+  el.querySelectorAll("[data-postcard]").forEach(b=>b.onclick=()=>{const a=activeAdvs().find(a=>String(a.id)===b.dataset.postcard);const pc=a&&latestPostcardFor(a.cat);if(pc)showPostcard(pc.text,pc.cat,pc.dest);});
   el.querySelectorAll("[data-claim]").forEach(b => b.onclick = () => resolveAdventure(b.dataset.claim));
   el.querySelectorAll("[data-recall]").forEach(b => b.onclick = () => recallAdventure(b.dataset.recall));
   el.querySelectorAll("[data-skip]").forEach(b => b.onclick = () => {
