@@ -1245,7 +1245,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-secondary-action{display:none!important}
 #actions{gap:8px;padding-bottom:max(10px,env(safe-area-inset-bottom));}
 #dexBtn .badge{display:none}
-.neo-story-x{position:sticky;top:0;float:right;z-index:2;min-height:44px;min-width:44px}
+.neo-story-x{position:absolute;top:0;right:0;float:none;z-index:2;min-height:44px;min-width:44px}
 #actions>.btn{min-height:48px;min-width:88px;justify-content:center}
 #neo-explore{max-width:650px}
 .neo-explore-grid,.neo-cat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
@@ -1258,7 +1258,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-journal-cover{padding:28px 24px;border-radius:22px;background:linear-gradient(130deg,#e6efda,#f8edce);border:1px solid #d7dfc7;position:relative;margin:16px 0}
 .neo-journal-cover h3{font-family:Fraunces,serif;font-size:30px;line-height:1.15;margin:12px 0;color:#38543f}.neo-journal-cover p{line-height:1.6}
 .neo-promise{font-size:14px;color:#566a54}.neo-journal-pins:empty{display:none}.neo-journal-tools{margin:16px 0 24px}
-.neo-story{text-align:center}.neo-story canvas{display:block;margin:auto;width:180px;height:148px}.neo-story h2{margin:0}.neo-story-sub{color:#65745b}
+.neo-story{position:relative;text-align:center;padding-top:48px;min-width:0}.neo-story canvas{display:block;margin:auto;width:180px;height:148px}.neo-story h2{margin:0}.neo-story-sub{color:#65745b}
 .neo-story-facts{background:#eef2e5;border-radius:18px;padding:12px 20px;text-align:left;line-height:1.5;margin:20px 0}
 .neo-note-label{display:block;text-align:left;font-weight:600;margin-bottom:8px}.neo-story textarea{width:100%;min-height:90px;background:#fffdf6;border:1px solid #c6d1bd;border-radius:12px;padding:12px;color:#3b493d;font:inherit;resize:vertical;margin-bottom:12px}
 .neo-memory-list{text-align:left;border-left:2px solid #ccd7be;padding-left:18px;margin:24px 4px}.neo-memory-list article{padding:8px 0}.neo-memory-list span{font-size:12px;color:#738067}.neo-memory-list p{margin:6px 0;line-height:1.5}
@@ -1312,6 +1312,15 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #dex .neo-section-label{border-top:1px solid #dedfcb;padding-top:18px;font-family:Fraunces,Georgia,serif;font-size:18px;color:#465f42}
 #dex .dexcell{border-color:#dedfcb;background:#edf0e2}#dex .dexcell.found{background:#fffdf5}
 #dex #neo-cat-search{background:#f1f2e6;border-color:#d9dfca}
+
+#modal .neo-story .row{justify-content:center;flex-wrap:wrap}
+#modal .neo-story canvas{max-width:100%;object-fit:contain}
+.adv-flow .pick-dest.on{outline:2px solid #648569;background:#eef2e5}
+.adv-flow .adv-selection{padding:12px;background:#eef2e5;border-radius:14px;text-align:left;line-height:1.5}
+.adv-flow .row{justify-content:center;flex-wrap:wrap}
+.adv-flow .pick-cat canvas{width:66px;height:62px;display:block;margin:0 auto 8px}
+.adv-flow .pick-cat{text-align:center;display:flex;flex-direction:column;align-items:center}
+.adv-flow .pick-cat.on{outline:2px solid #648569;background:#eef2e5}
 </style>
 
 <div id="app">
@@ -6520,7 +6529,7 @@ document.addEventListener("pointerdown", (e) => {
   }
   if (!anyPanelOpen()) return;
   if (_vig || scrim.classList.contains("on")) return;    // a modal/vignette is up over the panel — it owns dismissal; tapping it must NOT collapse the panel underneath (e.g. a Catdex coat note)
-  if (e.target.closest("#shop, #dex, #today, #scrim")) return;   // interacting with the panel or a modal on top of it
+  if (e.target.closest("#shop, #dex, #today, #neo-explore, #scrim")) return;   // interacting with the panel or a modal on top of it
   closeAllPanels();
   if (!e.target.closest("#actions")) e.stopPropagation(); // a dismiss tap — don't also pet a cat underneath
 }, true);
@@ -17683,22 +17692,15 @@ function renderAdventureCard() {
 }
 function openAdventurePicker() {
   if (!advSlotOpen()) { toast("Both expeditions are already out.", 3.5); return; }
-  const dests = Object.entries(ADV_DESTS).map(([k, d]) =>
-    `<button class="pick-dest" data-d="${k}"><span>${d.emoji}</span><b>${d.name}</b><i>${d.blurb}</i></button>`).join("");
-  const tiers = Object.values(ADV_TIERS).map((t, i) =>
-    `<button class="pick-tier${i === 1 ? " on" : ""}" data-t="${t.key}"><b>${t.label}</b><i>${t.note}</i></button>`).join("");
-  openModal(`<div class="reveal"><div class="kicker">A day out</div><h2>Where to?</h2>
-    <div class="pick-list">${dests}</div>
-    <div class="pick-label">How long?</div>
-    <div class="pick-tiers">${tiers}</div>
-    <button class="linkbtn" id="pick-cancel">Not today</button></div>`);
-  let tier = "day";
-  document.querySelectorAll("#modal .pick-tier").forEach(b => b.onclick = () => {
-    document.querySelectorAll("#modal .pick-tier").forEach(x => x.classList.remove("on"));
-    b.classList.add("on"); tier = b.dataset.t;
-  });
-  document.getElementById("pick-cancel").onclick = closeModal;
-  document.querySelectorAll("#modal .pick-dest").forEach(b => b.onclick = () => pickAdventureCat(b.dataset.d, tier));
+  const dests=Object.entries(ADV_DESTS).map(([k,d])=>`<button class="pick-dest" data-d="${k}" aria-pressed="false"><span>${d.emoji}</span><b>${esc(d.name)}</b><i>${esc(d.blurb)}</i></button>`).join("");
+  const tiers=Object.values(ADV_TIERS).map(t=>`<button class="pick-tier${t.key==='day'?' on':''}" data-t="${t.key}" aria-pressed="${t.key==='day'}"><b>${esc(t.label)}</b><i>${esc(t.note)}</i></button>`).join("");
+  openModal(`<div class="reveal adv-flow"><div class="kicker">Adventure · 1 of 2</div><h2>Plan a little adventure</h2><p class="sub">Choose a place and how long your cats will be away.</p><div class="pick-list">${dests}</div><div class="pick-label">How long?</div><div class="pick-tiers">${tiers}</div><p class="adv-selection" id="adv-selection" role="status">Choose a destination to continue.</p><div class="row"><button class="btn primary" id="adv-continue" disabled>Choose cats</button><button class="btn" id="pick-cancel">Cancel</button></div></div>`);
+  let tier='day',dest=null;
+  const sync=()=>{document.getElementById('adv-continue').disabled=!dest;document.getElementById('adv-selection').textContent=dest?ADV_DESTS[dest].name+' · '+advTier(tier).label:'Choose a destination to continue.';};
+  document.querySelectorAll('#modal .pick-tier').forEach(b=>b.onclick=()=>{document.querySelectorAll('#modal .pick-tier').forEach(x=>{x.classList.remove('on');x.setAttribute('aria-pressed','false')});b.classList.add('on');b.setAttribute('aria-pressed','true');tier=b.dataset.t;sync();});
+  document.querySelectorAll('#modal .pick-dest').forEach(b=>b.onclick=()=>{document.querySelectorAll('#modal .pick-dest').forEach(x=>{x.classList.remove('on');x.setAttribute('aria-pressed','false')});b.classList.add('on');b.setAttribute('aria-pressed','true');dest=b.dataset.d;sync();});
+  document.getElementById('pick-cancel').onclick=closeModal;
+  document.getElementById('adv-continue').onclick=()=>{if(dest)pickAdventureCat(dest,tier);};
 }
 const PARTY_MAX = 3;
 function pickAdventureCat(dest, tier) {
@@ -17714,22 +17716,24 @@ function pickAdventureCat(dest, tier) {
   }
   const listHtml = goers.map(c => {
     const hint = advTraitHint(c);
-    return `<button class="pick-cat${c.mascot ? " mk" : ""}" data-c="${esc(c.name)}"><b>${esc(c.name)}</b>
+    return `<button class="pick-cat${c.mascot ? " mk" : ""}" data-c="${esc(c.name)}" aria-pressed="false"><canvas width="100" height="94" aria-hidden="true"></canvas><b>${esc(c.name)}</b>
       <i>${c.traits.map(t => TRAITS[t] ? TRAITS[t].label : t).join(" · ")}</i>${hint ? `<em>${esc(hint)}</em>` : ""}</button>`;
   }).join("");
-  openModal(`<div class="reveal"><div class="kicker">${esc(ADV_DESTS[dest].name)} · ${esc(T.label)}</div><h2>Who's going?</h2>
+  openModal(`<div class="reveal adv-flow"><div class="kicker">Adventure · 2 of 2</div><p class="adv-selection">${esc(ADV_DESTS[dest].name)} · ${esc(T.label)}</p><h2>Who's going?</h2>
     <p class="sub" style="margin:.1rem 0 .1rem">Pick up to ${room} — more cats, a little more brought home.</p>
     <div class="pick-list cats">${listHtml}</div>
-    <div class="row"><button class="btn primary" id="pc-send" disabled>Send them</button>
+    <div class="row"><button class="btn primary" id="pc-send" disabled>Send adventure</button>
     <button class="btn" id="pc-back">Back</button></div></div>`);
+  document.querySelectorAll('#modal .pick-cat').forEach(b=>{const c=goers.find(c=>c.name===b.dataset.c);if(c)neoPortrait(b.querySelector('canvas'),c,1.3);});
   const sel = new Set();
   const sendBtn = document.getElementById("pc-send");
-  const sync = () => { sendBtn.disabled = !sel.size; sendBtn.textContent = sel.size <= 1 ? "Send them" : `Send all ${sel.size}`; };
+  const sync = () => { sendBtn.disabled = !sel.size; sendBtn.textContent = sel.size ? `Send ${sel.size} ${sel.size===1?"cat":"cats"} · ${T.label}` : "Select cats to send"; };
   document.getElementById("pc-back").onclick = openAdventurePicker;
   document.querySelectorAll("#modal .pick-cat").forEach(b => b.onclick = () => {
     const n = b.dataset.c;
     if (sel.has(n)) { sel.delete(n); b.classList.remove("on"); }
     else if (sel.size < room) { sel.add(n); b.classList.add("on"); }
+    b.setAttribute("aria-pressed",String(sel.has(n)));
     sync();
   });
   sendBtn.onclick = () => { if (sel.size) { startAdventure([...sel], dest, tier); closeModal(); } };
