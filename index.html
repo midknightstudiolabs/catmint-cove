@@ -1331,6 +1331,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-archive-cats .neo-memory-list{margin:16px 0;padding-left:12px}
 .neo-archive-cats summary{cursor:pointer;padding:8px 0}
 .neo-journal-archive input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #dedec7;border-radius:12px;background:#fffbed;color:#43543f}
+
+.neo-ui-icon{display:inline-block;width:1.5em;height:1.5em;object-fit:contain;vertical-align:middle;flex-shrink:0}
+.fp-art .neo-ui-icon,.fw-emoji .neo-ui-icon{width:56px;height:56px}.fc-emoji .neo-ui-icon{width:40px;height:40px}.neo-destination>span .neo-ui-icon{width:36px;height:36px}#actions .neo-ui-icon{width:24px;height:24px}
 </style>
 
 <div id="app">
@@ -1358,17 +1361,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
         <div class="pill drift" id="driftPill" hidden data-tip="Driftwood — washes up on the shore and comes home from trips. A building material for restoring the cove."><span class="dot">🪵</span><span id="driftwood">0</span></div>
       </div>
       <div class="hud-stats">
-        <div class="hud-stat" id="catPill" data-tip="Cats here / room you have. Tap for the cove roster — how everyone's doing."><span class="ico">🐾</span><span id="catcount">0</span>/<span id="catcap">0</span></div>
+        <div class="hud-stat" id="catPill" data-tip="Cats here / room you have. Tap for the cove roster — how everyone's doing."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-paw.svg" alt="" aria-hidden="true" width="28" height="28"></span><span id="catcount">0</span>/<span id="catcap">0</span></div>
         <div class="hud-stat" id="foodStat" data-tip="Food in the bowls. Tap a bowl to refill. Empty bowls mean hungry cats."><span class="ico">🍚</span><span id="foodlevel">0</span></div>
         <div class="hud-stat opens" data-tip="Days you've dropped by the cove."><span class="ico">☀️</span><span id="opens">1</span></div>
       </div>
     </div>
     <div class="hud-group">
       <button class="pill title-pill" id="titlePill" data-tip="Your cove's name. Tap to rename it.">Catmint <b>Cove</b></button>
-      <button class="btn" id="helpBtn" data-tip="Make yourself at home — a quick guide to everything."><span class="ico">?</span></button>
-      <button class="btn" id="restBtn" data-tip="Rainy-day rest — everyone naps inside with real rain. Tap any time, good to work or sleep to."><span class="ico">🌙</span></button>
-      <button class="btn" id="festBtn" aria-label="Cove Festival" hidden data-tip="The Cove Festival — a friendly race down at the track. Tap any time."><span class="ico">🎪</span></button>
-      <button class="btn" id="muteBtn" data-tip="Sounds — tap to mute or unmute."><span class="ico">🔊</span></button>
+      <button class="btn" id="helpBtn" aria-label="Help" data-tip="Make yourself at home — a quick guide to everything."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-help.svg" alt="" aria-hidden="true" width="28" height="28"></span></button>
+      <button class="btn" id="restBtn" aria-label="Rainy retreat" data-tip="Rainy-day rest — everyone naps inside with real rain. Tap any time, good to work or sleep to."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-rest.svg" alt="" aria-hidden="true" width="28" height="28"></span></button>
+      <button class="btn" id="festBtn" aria-label="Cove Festival" hidden data-tip="The Cove Festival — a friendly race down at the track. Tap any time."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg" alt="" aria-hidden="true" width="28" height="28"></span></button>
+      <button class="btn" id="muteBtn" aria-label="Sound settings" data-tip="Sounds — tap to mute or unmute."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-sound.svg" alt="" aria-hidden="true" width="28" height="28"></span></button>
     </div>
   </div>
 
@@ -1405,14 +1408,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
        enters gets a little something, your pick winning gets a bit more. -->
   <div id="fest">
     <div class="fest-panel fest-panel--hub" id="festChoose" hidden>
-      <div class="fp-art">🎪</div>
+      <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>Cove Festival</h2>
       <p>Pick an event. The cats will handle the rest.</p>
       <div class="fc-cards" id="festEventCards"></div>
       <div class="btn-row"><button class="btn" id="festChooseBack">Back to the Cove</button></div>
     </div>
     <div class="fest-panel" id="festPanel" hidden>
-      <div class="fp-art">🎪</div>
+      <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>The Cove Festival</h2>
       <p>A race is forming down at the track. Send someone to represent the cove.</p>
       <div class="fp-grid" id="festPickGrid"></div>
@@ -1422,7 +1425,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       </div>
     </div>
     <div class="fest-panel" id="festBoxPanel" hidden>
-      <div class="fp-art">📦</div>
+      <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-box.svg" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>The Great Box Challenge</h2>
       <p>Choose five highly qualified professionals. <span id="boxPickCount">(0 / 5)</span></p>
       <div class="fp-grid" id="boxPickGrid"></div>
@@ -1432,7 +1435,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       </div>
     </div>
     <div class="fest-panel" id="festVolleyPanel" hidden>
-      <div class="fp-art">🏐</div>
+      <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-volley.svg" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>Choose your team</h2>
       <p>Pick three cats currently available at the Cove. <span id="volleyPickCount">(0 / 3)</span></p>
       <div class="fp-grid" id="volleyPickGrid"></div>
@@ -1442,11 +1445,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       </div>
     </div>
     <div class="fest-panel" id="festVolleyTut" hidden>
-      <div class="fp-art">🏐</div>
+      <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-volley.svg" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>The rules, briefly</h2>
       <ul class="vb-tut">
         <li><span class="vt-e">🐈</span><span class="vt-t">Your cats have agreed to play volleyball. Their commitment ends there.</span></li>
-        <li><span class="vt-e">🏐</span><span class="vt-t">When the ball comes over, <b>tap the cat you want to go for it.</b> They'll act like that was the plan.</span></li>
+        <li><span class="vt-e"><img class="neo-ui-icon" src="art/icon-keepsake-volley.svg" alt="" aria-hidden="true" width="28" height="28"></span><span class="vt-t">When the ball comes over, <b>tap the cat you want to go for it.</b> They'll act like that was the plan.</span></li>
         <li><span class="vt-e">🥱</span><span class="vt-t"><b>Tap a yawning cat</b> to keep them awake. Already asleep? Two taps. And perhaps a stern look.</span></li>
       </ul>
       <div class="btn-row">
@@ -1459,7 +1462,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     </div>
     <div class="volley-banner" id="volleyBanner" hidden>MATCH POINT</div>
     <div class="fest-panel" id="festMidkPanel" hidden>
-      <div class="fp-art">🧶</div>
+      <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-tug.svg" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>Tug of Paws</h2>
       <p>Pick your five for the rope. <span id="midkPickCount">(0 / 5)</span></p>
       <div class="fp-grid" id="midkPickGrid"></div>
@@ -1469,11 +1472,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       </div>
     </div>
     <div class="fest-panel" id="festMidkTut" hidden>
-      <div class="fp-art">🎰</div>
+      <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-tug.svg" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>The rope, briefly</h2>
       <ul class="vb-tut">
-        <li><span class="vt-e">🧶</span><span class="vt-t">Five of your cats, five of a visiting Cove's, one yarn ball. Pull it past your flag. It's all down to the <b>slot</b>.</span></li>
-        <li><span class="vt-e">🎰</span><span class="vt-t">The meter charges. Hit <b>SPIN</b> and the reels roll. Mostly you'll get <b>🐈 BIGGER</b> (a random cat swells up and hauls harder) or <b>💪 HEAVE</b> (the ball jumps your way).</span></li>
+        <li><span class="vt-e"><img class="neo-ui-icon" src="art/icon-keepsake-tug.svg" alt="" aria-hidden="true" width="28" height="28"></span><span class="vt-t">Five of your cats, five of a visiting Cove's, one yarn ball. Pull it past your flag. It's all down to the <b>slot</b>.</span></li>
+        <li><span class="vt-e"><img class="neo-ui-icon" src="art/icon-keepsake-tug.svg" alt="" aria-hidden="true" width="28" height="28"></span><span class="vt-t">The meter charges. Hit <b>SPIN</b> and the reels roll. Mostly you'll get <b>🐈 BIGGER</b> (a random cat swells up and hauls harder) or <b>💪 HEAVE</b> (the ball jumps your way).</span></li>
         <li><span class="vt-e">⭐</span><span class="vt-t"><b>⭐ 7 7 7 ⭐</b> is rare (~1 in 10) — a huge shove toward your flag. And if the ball's already a third of the way home when you hit it, that's the match.</span></li>
         <li><span class="vt-e">😴</span><span class="vt-t">Sometimes it backfires and a cat nods off. The visiting Cove spins too — best luck wins.</span></li>
       </ul>
@@ -1491,7 +1494,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       </div>
     </div>
     <div class="fest-panel" id="festCafePanel" hidden>
-      <div class="fp-art">🎀</div>
+      <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-cafe.svg" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>Who's on shift?</h2>
       <p>Pick three cats to run the pop-up café. <span id="cafePickCount">(0 / 3)</span></p>
       <div class="fp-grid" id="cafePickGrid"></div>
@@ -1501,7 +1504,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       </div>
     </div>
     <div class="fest-panel" id="festCafeTut" hidden>
-      <div class="fp-art">🐈‍⬛☕</div>
+      <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-cafe.svg" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>Running the café</h2>
       <ul class="vb-tut">
         <li><span class="vt-e">🐈</span><span class="vt-t">Three cats have agreed to run a pop-up café. None of them asked what that involves.</span></li>
@@ -1549,7 +1552,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   </div>
   <div id="festWipe">
     <div class="fw-bunting top"></div>
-    <div class="fw-emoji" id="festWipeEmoji">🎪</div>
+    <div class="fw-emoji" id="festWipeEmoji"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg" alt="" aria-hidden="true" width="28" height="28"></div>
     <h2 id="festWipeTitle">The Cove Festival</h2>
     <p id="festWipeSub">Everyone's heading to the track…</p>
     <div class="fw-bunting bottom"></div>
@@ -1558,11 +1561,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <div id="hint" hidden><span id="hintDot">✦</span><span id="hintText"></span><button id="hintGo" hidden></button><button id="hintX" title="Dismiss">✕</button></div>
 
   <div id="actions">
-    <button class="btn primary" id="coaxBtn"><span class="ico">🐾</span> <span class="lbl">Coax<span class="lbl-x">&nbsp;a cat</span></span> <span class="badge cost">◈<span id="coaxCost">10</span></span></button>
+    <button class="btn primary" id="coaxBtn"><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-paw.svg" alt="" aria-hidden="true" width="28" height="28"></span> <span class="lbl">Coax<span class="lbl-x">&nbsp;a cat</span></span> <span class="badge cost">◈<span id="coaxCost">10</span></span></button>
     <button class="btn" id="dexBtn"><span class="ico">📖</span> <span class="lbl">Catdex</span> <span class="badge" id="dexBadge">0</span></button>
     <button class="btn" id="todayBtn"><span class="ico">📋</span> <span class="lbl">Today</span> <span class="badge alert" id="todayBadge" hidden>!</span></button>
     <button class="btn" id="shopBtn"><span class="ico">🧺</span> <span class="lbl">Shop</span></button>
-    <button class="btn" id="photoBtn"><span class="ico">📷</span> <span class="lbl">Photo</span></button>
+    <button class="btn" id="photoBtn"><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-photo.svg" alt="" aria-hidden="true" width="28" height="28"></span> <span class="lbl">Photo</span></button>
   </div>
 
   <div id="toast"></div>
@@ -6835,7 +6838,7 @@ function openSound() {
   </div>`);
   const sync = () => {
     document.getElementById("sndRows").classList.toggle("off", !S.on);
-    const ic = document.querySelector(".snd-master .ic"); if (ic) ic.textContent = S.on ? "🔊" : "🔇";
+    const ic = document.querySelector(".snd-master .ic"); if (ic) ic.innerHTML = neoUIIcon(S.on ? "sound" : "muted"); mb.setAttribute("aria-label", S.on ? "Sound settings — sound on" : "Sound settings — muted");
     document.querySelector(".snd-master .tgl").classList.toggle("off", !S.on);
     document.getElementById("sndMaster").setAttribute("aria-pressed", S.on);
     applySound();
@@ -7937,7 +7940,7 @@ function applySound() {
   if (festBus)  rampParam(festBus.gain, S.on ? 0.85 : 0.0001, 0.3);
   if (_festBed) rampParam(_festBed.g.gain, S.on ? festBedTarget() : 0.0001, 0.3);
   const mb = document.getElementById("muteBtn");
-  if (mb) { const ic = mb.querySelector(".ico"); if (ic) ic.textContent = S.on ? "🔊" : "🔇"; }
+  if (mb) { const ic = mb.querySelector(".ico"); if (ic) ic.innerHTML = neoUIIcon(S.on ? "sound" : "muted"); mb.setAttribute("aria-label", S.on ? "Sound settings — sound on" : "Sound settings — muted"); }
 }
 let _audioRebuildAt = 0, _audioWasRunning = false, _audioStale = false, _rebuildQueued = false, _resumeFails = 0;
 // rebuild whichever ambient bed(s) should be playing right now — the cove bed,
@@ -9168,7 +9171,7 @@ function openFestPicker(kind) {
 
   _festQuietUntil = Date.now() + 2500;   // no cove toasts through the wipe into the festival
   const w = document.getElementById("festWipe");
-  document.getElementById("festWipeEmoji").textContent = pick(["🎪", "🎏", "🏵️"]);
+  document.getElementById("festWipeEmoji").innerHTML = neoUIIcon("festival");
   document.getElementById("festWipeTitle").textContent = "Cove Festival";
   document.getElementById("festWipeSub").textContent = pick([
     "Everyone's wandering down to the grounds…",
@@ -9358,7 +9361,7 @@ function closeFest() {
   particles.length = 0; floaters.length = 0;   // a live "zoomies!" or confetti spark shouldn't follow you back to the cove
   _festQuietUntil = Date.now() + 1800;   // ...and none land the instant the wipe clears back at the cove
   const w = document.getElementById("festWipe");
-  document.getElementById("festWipeEmoji").textContent = "🐾";
+  document.getElementById("festWipeEmoji").innerHTML = neoUIIcon("paw");
   document.getElementById("festWipeTitle").textContent = "Back to the cove";
   document.getElementById("festWipeSub").textContent = "";
   w.classList.remove("out"); void w.offsetWidth; w.classList.add("in");
@@ -9863,7 +9866,7 @@ function showFestPodium() {
   { // the result card is shared with the Box Challenge — put its race face back
     const rc = document.getElementById("festResult");
     rc.querySelector("h2").textContent = "The Cove Festival";
-    rc.querySelector(".fr-emoji").textContent = "🏆";
+    rc.querySelector(".fr-emoji").innerHTML = neoUIIcon("trophy");
     document.getElementById("festAgain").textContent = "Race again";
   }
   // classic podium arrangement — 2nd/1st/3rd left to right, 1st tallest —
@@ -10224,6 +10227,7 @@ function enterFestVolley() {
   document.getElementById("festVolleyPanel").hidden = false;
   trackEvent("volleyball_card_opened");
 }
+function neoUIIcon(key){return `<img class="neo-ui-icon" src="art/icon-keepsake-${key}.svg" alt="" aria-hidden="true" width="28" height="28">`;}
 const FEST_EVENTS = [
   { key: "race", emoji: "🚩", name: "Cove Race",
     desc: "Pick a cat and cheer them all the way to the finish.",
@@ -10243,7 +10247,7 @@ function renderFestChooser() {
   wrap.innerHTML = FEST_EVENTS.map(ev => {
     const locked = ev.lock();
     return `<button class="fc-card${locked ? " locked" : ""}" data-ev="${ev.key}" aria-disabled="${!!locked}" type="button">
-      <span class="fc-emoji">${ev.art ? ev.art() : ev.emoji}</span>
+      <span class="fc-emoji">${neoUIIcon(({race:'race',volley:'volley',midk:'tug',cafe:'cafe'})[ev.key])}</span>
       <span class="fc-name">${esc(ev.name)}</span>
       <span class="fc-desc">${esc(ev.desc)}</span>
       ${locked ? `<span class="fc-lock">${esc(locked)}</span>` : ""}
@@ -10686,7 +10690,7 @@ function showBoxResult() {
   boxWinner = rank[0].p;
   const res = document.getElementById("festResult");
   res.querySelector("h2").textContent = "The Great Box Challenge";
-  res.querySelector(".fr-emoji").textContent = "📦";
+  res.querySelector(".fr-emoji").innerHTML = neoUIIcon("box");
   document.getElementById("festAgain").textContent = "Go again";
 
   const top = rank.slice(0, 3).map(r => r.p);
@@ -11700,7 +11704,7 @@ function showVolleyResult() {
   const won = volleyScore.cove >= 3;
   const res = document.getElementById("festResult");
   res.querySelector("h2").textContent = "Cove Volleyball";
-  res.querySelector(".fr-emoji").textContent = "🏐";
+  res.querySelector(".fr-emoji").innerHTML = neoUIIcon("volley");
   document.getElementById("festAgain").textContent = "Play again";
   const cove = volleyParts.filter(p => p.side === "cove");
   document.getElementById("festPodium").innerHTML =
@@ -12409,7 +12413,7 @@ function showMidkResult() {
   const won = _midkWinner === "cove";
   const res = document.getElementById("festResult");
   res.querySelector("h2").textContent = "Tug of Paws";
-  res.querySelector(".fr-emoji").textContent = "🧶";
+  res.querySelector(".fr-emoji").innerHTML = neoUIIcon("tug");
   document.getElementById("festAgain").textContent = "Rematch";
   const cove = midkParts.filter(p => p.side === "cove");
   const base = goalShells(0.42);
@@ -12579,7 +12583,7 @@ let _cafeBannerUntil = 0;
 function renderCafePickGrid(roster) {
   cafePickSel = [];
   const art = document.querySelector("#festCafePanel .fp-art");
-  if (art && !art.querySelector("img")) art.innerHTML = cafeEmblemHTML(64);
+  if (art) art.innerHTML = neoUIIcon("cafe");
   const grid = document.getElementById("cafePickGrid");
   grid.innerHTML = "";
   for (const c of roster) {
@@ -17672,7 +17676,7 @@ function renderAdventureCard() {
     const who = (a.cats && a.cats.length) ? (a.cats.length > 2 ? `${a.cats[0]} + ${a.cats.length - 1}` : joinNice(a.cats)) : a.cat;
     const prg = back ? 100 : Math.max(3, Math.min(99, Math.round((Date.now() - a.startedAt) / Math.max(1, a.endsAt - a.startedAt) * 100)));
     html += `<div class="adv-trip${back ? " back" : ""}">
-      <div class="adv-top"><span class="adv-emoji">${d.emoji}</span>
+      <div class="adv-top"><span class="adv-emoji">${neoUIIcon("adventure")}</span>
       <div><div class="adv-title">${esc(who)} &middot; ${esc(d.name)}</div>
       <div class="adv-sub">${back ? "back at the cove — see how it went" : `${T.label.toLowerCase()} · back ${whenText(a.endsAt)}`}</div></div></div>
       ${back ? "" : `<div class="pj-bar adv-bar"><i style="width:${prg}%"></i></div>`}
@@ -17684,7 +17688,7 @@ function renderAdventureCard() {
   if (ready) {
     const another = list.length > 0;
     html += `<div class="adv-send">
-      <div class="adv-top"><span class="adv-emoji">🧭</span>
+      <div class="adv-top"><span class="adv-emoji">${neoUIIcon("adventure")}</span>
       <div><div class="adv-title">${another ? "Send another party" : "Send cats exploring"}</div>
       <div class="adv-sub">${ADV_AWAY_CAP - catsAway()} more can go · up to ${PARTY_MAX} per trip</div></div></div>
       <button class="btn ${another ? "" : "primary"}" id="adv-start">Choose a trip</button></div>`;
@@ -17706,7 +17710,7 @@ function renderAdventureCard() {
 }
 function openAdventurePicker() {
   if (!advSlotOpen()) { toast("Both expeditions are already out.", 3.5); return; }
-  const dests=Object.entries(ADV_DESTS).map(([k,d])=>`<button class="pick-dest" data-d="${k}" aria-pressed="false"><span>${d.emoji}</span><b>${esc(d.name)}</b><i>${esc(d.blurb)}</i></button>`).join("");
+  const dests=Object.entries(ADV_DESTS).map(([k,d])=>`<button class="pick-dest" data-d="${k}" aria-pressed="false"><span>${neoUIIcon("adventure")}</span><b>${esc(d.name)}</b><i>${esc(d.blurb)}</i></button>`).join("");
   const tiers=Object.values(ADV_TIERS).map(t=>`<button class="pick-tier${t.key==='day'?' on':''}" data-t="${t.key}" aria-pressed="${t.key==='day'}"><b>${esc(t.label)}</b><i>${esc(t.note)}</i></button>`).join("");
   openModal(`<div class="reveal adv-flow"><div class="kicker">Adventure · 1 of 2</div><h2>Plan a little adventure</h2><p class="sub">Choose a place and how long your cats will be away.</p><div class="pick-list">${dests}</div><div class="pick-label">How long?</div><div class="pick-tiers">${tiers}</div><p class="adv-selection" id="adv-selection" role="status">Choose a destination to continue.</p><div class="row"><button class="btn primary" id="adv-continue" disabled>Choose cats</button><button class="btn" id="pick-cancel">Cancel</button></div></div>`);
   let tier='day',dest=null;
@@ -18426,7 +18430,7 @@ function neoOpenStory(c){
 }
 function neoRenderCats(){
   let root=document.getElementById('neo-cat-roster');if(!root){root=document.createElement('div');root.id='neo-cat-roster';panels.dex.querySelector('.neo-dex-header').after(root);}
-  root.innerHTML=`<p class="muted">Little paws. Familiar faces. A story for every cat.</p><label class="neo-search-label" for="neo-cat-search">Find a cat</label><input id="neo-cat-search" type="search" placeholder="Search by name" autocomplete="off"><p id="neo-cat-count" class="muted" aria-live="polite"></p><div class="neo-cat-grid"></div><div class="neo-roster-actions"><button class="btn primary" id="neo-invite">Invite a cat · ◈ ${coaxPrice()}</button><button class="btn" id="neo-care" aria-describedby="neo-care-desc">Community Pantry</button></div><p id="neo-care-desc" class="muted">Free help when supplies or care run low: tops food up to one day, eases hunger and thirst, clears sickness, and restores health to at least 70%. If everyone is already cared for, nothing is added.</p><p id="neo-care-status" role="status" aria-live="polite"></p><h3 class="neo-section-label">Coats you have met</h3>`;
+  root.innerHTML=`<p class="muted">Little paws. Familiar faces. A story for every cat.</p><label class="neo-search-label" for="neo-cat-search">Find a cat</label><input id="neo-cat-search" type="search" placeholder="Search by name" autocomplete="off"><p id="neo-cat-count" class="muted" aria-live="polite"></p><div class="neo-cat-grid"></div><div class="neo-roster-actions"><button class="btn primary" id="neo-invite">Invite a cat · ◈ ${coaxPrice()}</button><button class="btn" id="neo-care" aria-describedby="neo-care-desc">${neoUIIcon("pantry")} Community Pantry</button></div><p id="neo-care-desc" class="muted">Free help when supplies or care run low: tops food up to one day, eases hunger and thirst, clears sickness, and restores health to at least 70%. If everyone is already cared for, nothing is added.</p><p id="neo-care-status" role="status" aria-live="polite"></p><h3 class="neo-section-label">Coats you have met</h3>`;
   const grid=root.querySelector('.neo-cat-grid');
   for(const c of cats.filter(c=>!c.visitor)){
     const b=document.createElement('button');b.className='neo-cat-tile';b.dataset.name=c.name.toLocaleLowerCase();
@@ -18478,7 +18482,7 @@ function neoBuildNavigation(){
   for(const id of originals){document.getElementById(id).classList.add('neo-secondary-action');}
   const catsBtn=document.getElementById('dexBtn');catsBtn.setAttribute('aria-label','Catdex');catsBtn.querySelector('.lbl').textContent='Catdex';
   const journal=document.getElementById('todayBtn');journal.querySelector('.lbl').textContent='Journal';
-  const explore=document.createElement('button');explore.className='btn';explore.id='neo-activities-nav';explore.innerHTML='<span class="ico" aria-hidden="true">✧</span><span class="lbl">Activities</span>';explore.onclick=neoOpenExplore;journal.before(explore);
+  const explore=document.createElement('button');explore.className='btn';explore.id='neo-activities-nav';explore.innerHTML='<span class="ico" aria-hidden="true"><img class="neo-ui-icon" src="art/icon-keepsake-activities.svg" alt="" width="28" height="28"></span><span class="lbl">Activities</span>';explore.onclick=neoOpenExplore;journal.before(explore);
   const shop=document.getElementById('shopBtn');shop.setAttribute('aria-label','Shop');journal.before(shop);
 
   const menuIcons={"dexBtn": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"#67543f\" stroke-width=\"2.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path fill=\"#faf2dc\" d=\"M32 18Q19 12 7 17v34q13-5 25 1 12-6 25-1V17q-12-5-25 1Z\"/><path d=\"M32 19v32\"/><path fill=\"#94aa91\" d=\"m14 29 1-7 6 4 6-3v9q-6 8-13 0Z\"/><path d=\"M39 28h11m-11 8h8m-8 7h11\"/></svg>", "shopBtn": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"#67543f\" stroke-width=\"2.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path stroke-width=\"4\" d=\"M19 29q0-20 13-20t13 20\"/><path fill=\"#d9b47e\" d=\"m9 29 6 24q17 5 34-1l6-23Z\"/><path fill=\"#91aa91\" d=\"M29 24q10-2 20 2l-3 18-7-3-5 2-2-12Z\"/><path fill=\"#efe1bd\" d=\"M9 27q19 3 46 0v7q-27 4-46 0Z\"/><path stroke=\"#ad875b\" stroke-width=\"1.8\" d=\"m20 39 2 11m7-11 1 12m9-4v4m-24-7 17 1m16 0h3\"/><path stroke=\"#d6e0c6\" d=\"m38 26 2 12\"/></svg>", "todayBtn": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"#67543f\" stroke-width=\"2.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path fill=\"#89a7a6\" d=\"M17 10h31q4 0 4 4v36H18q-6 0-6-5V16q0-6 5-6Z\"/><path stroke=\"#f4ecd5\" stroke-width=\"3\" d=\"M19 16v28\"/><path stroke=\"#f4ecd5\" stroke-width=\"2.5\" d=\"m32 38 7-16\"/><path fill=\"#f4ecd5\" stroke=\"none\" d=\"M36 29q-10-1-7-8 8 1 7 8m0 3q7-10 11-4-3 6-11 4\"/><path fill=\"#c88c75\" d=\"M38 50h8v9l-4-3-4 3Z\"/></svg>"};
@@ -18486,9 +18490,9 @@ function neoBuildNavigation(){
   actions.setAttribute('role','navigation');actions.setAttribute('aria-label','Main menu');
   const sheet=document.createElement('div');sheet.className='sheet';sheet.hidden=true;sheet.id='neo-explore';
   sheet.innerHTML=`<button class="x" id="neo-explore-close" aria-label="Close Activities">✕</button><div class="kicker">A LITTLE ADVENTURE, AT YOUR PACE</div><h2>Activities</h2><p class="muted">Stay for a game, send a postcard, or settle in somewhere quiet.</p><div class="neo-explore-grid">
-  <button class="neo-destination" id="neo-go-festival"><span>🎏</span><b>Cove Festival</b><small>Your familiar cats. A little friendly chaos.</small></button>
-  <button class="neo-destination" id="neo-go-adventure"><span>✉</span><b>Adventures</b><small>A little trip. Something to bring home.</small></button>
-  <button class="neo-destination" id="neo-go-rest"><span>☾</span><b>Rainy retreat</b><small>No chores. Just rain and company.</small></button>
+  <button class="neo-destination" id="neo-go-festival"><span>${neoUIIcon("festival")}</span><b>Cove Festival</b><small>Your familiar cats. A little friendly chaos.</small></button>
+  <button class="neo-destination" id="neo-go-adventure"><span>${neoUIIcon("adventure")}</span><b>Adventures</b><small>A little trip. Something to bring home.</small></button>
+  <button class="neo-destination" id="neo-go-rest"><span>${neoUIIcon("rest")}</span><b>Rainy retreat</b><small>No chores. Just rain and company.</small></button>
   </div>
   <details class="neo-feedback"><summary>Help shape the Cove</summary><p>Your feedback can help us make this little home better.</p><button class="btn" id="neo-playtest">Private playtest notebook</button></details>`;
   document.getElementById('app').append(sheet);panels.explore=sheet;
@@ -18618,7 +18622,7 @@ function runPostTitleNudges() {
   if (G.tutorialDone && festUnlocked() && !G.tips.includes("fest_unlocked")) {
     G.tips.push("fest_unlocked");
     logMoment("🎉", "The Cove Festival is ready — a little race down at the track, everyone welcome.", "tale");
-    setTimeout(() => toast("The Cove Festival is ready. Tap 🎪 any time to send someone to race.", 6.5), 6200);
+    setTimeout(() => toast("The Cove Festival is ready. Open Cove Festival any time to send someone to race.", 6.5), 6200);
   }
   // one-time notice for testers whose shells were reset for the rebalance
   if (_econJustReset) {
