@@ -52,3 +52,5 @@
 }
 
 #neo-care-desc{margin-top:12px;line-height:1.5;font-size:13px}#neo-care-status:not(:empty){padding:12px;border-radius:12px;background:#e8efdb;color:#38513d;line-height:1.5;font-size:14px}
+
+#tut .guide-links{flex-wrap:wrap}#tut .guide-links .btn{min-height:44px}#tut .card{max-height:90dvh;overflow-y:auto}#tut .guide-list{max-height:45dvh}

@@ -1295,6 +1295,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 }
 
 #neo-care-desc{margin-top:12px;line-height:1.5;font-size:13px}#neo-care-status:not(:empty){padding:12px;border-radius:12px;background:#e8efdb;color:#38513d;line-height:1.5;font-size:14px}
+
+#tut .guide-links{flex-wrap:wrap}#tut .guide-links .btn{min-height:44px}#tut .card{max-height:90dvh;overflow-y:auto}#tut .guide-list{max-height:45dvh}
 </style>
 
 <div id="app">
@@ -1329,7 +1331,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     </div>
     <div class="hud-group">
       <button class="pill title-pill" id="titlePill" data-tip="Your cove's name. Tap to rename it.">Catmint <b>Cove</b></button>
-      <button class="btn" id="helpBtn" data-tip="How the cove works — a quick guide to everything."><span class="ico">?</span></button>
+      <button class="btn" id="helpBtn" data-tip="Make yourself at home — a quick guide to everything."><span class="ico">?</span></button>
       <button class="btn" id="restBtn" data-tip="Rainy-day rest — everyone naps inside with real rain. Tap any time, good to work or sleep to."><span class="ico">🌙</span></button>
       <button class="btn" id="festBtn" aria-label="Cove Festival" hidden data-tip="The Cove Festival — a friendly race down at the track. Tap any time."><span class="ico">🎪</span></button>
       <button class="btn" id="muteBtn" data-tip="Sounds — tap to mute or unmute."><span class="ico">🔊</span></button>
@@ -3247,7 +3249,7 @@ function bumpGoal(id, amount) {
   for (const g of G.goals) {
     if (g.id !== id || g.done) continue;
     g.prog = Math.min(g.target, g.prog + amount);
-    if (g.prog >= g.target) { g.done = true; toast("Daily goal complete — claim it in Today", 3.2); }
+    if (g.prog >= g.target) { g.done = true; toast("Daily goal complete — claim it in Journal", 3.2); }
     changed = true;
   }
   if (changed && typeof renderGoals === "function") renderGoals();
@@ -6376,7 +6378,7 @@ function nextAction() {
 
   // a trip is available and the cove can spare a cat
   if (advReady() && cats.filter(c => !c.visitor).length >= 2 && !G.tips.includes("explore_seen"))
-    return { t: `A cat could take a trip today — pick a spot in Today.`, go: "Open Today", act: () => togglePanel("today") };
+    return { t: `A cat could take a trip today — pick a trip in Activities.`, go: "Open Activities", act: () => neoOpenExplore() };
 
   // brand-new cove with barely any cats and no shells yet — one gentle pointer
   if (cats.length < 4 && G.shells < coaxPrice())
@@ -6792,7 +6794,7 @@ let _coldTarget = null;    // a Cat to ring on the canvas
 
 const COLD = [
   { // 1 — meet Midknight, and the first hello lands
-    say: "This is Midknight. He was here before the cove had a name.",
+    say: "Meet Midknight, your first little neighbor.",
     cue: "Tap Midknight to say hello.",
     arm(s) { s.mk = cats.find(c => c.mascot); s.armPet = s.mk ? s.mk.petCount : 0; _coldTarget = s.mk || null; },
     test(s) { return s.mk && s.mk.petCount > s.armPet; },
@@ -6810,8 +6812,8 @@ const COLD = [
     },
   },
   { // 2 — collect the first shell (the arc + chime carry it)
-    say: "Cats leave these. Tap them, or don't — they always find you.",
-    cue: "Tap the shell.",
+    say: "A little thank-you from Midknight! Shells help you make the Cove cozy.",
+    cue: "Tap the glowing shell. Miss one? It collects itself.",
     arm(s) { s.armTok = G.metrics.tokens; if (!fieldTokens.length) { const mk = cats.find(c => c.mascot) || cats[0]; if (mk) dropToken(mk.x, mk.y - 12, 12, null); } },
     test(s) { return G.metrics.tokens > s.armTok; },
     exit(s) { s.newCat = scriptArrival(); },   // a second cat starts walking in
@@ -6828,27 +6830,19 @@ const COLD = [
     test(s) { return s.newCat && s.newCat.petCount > s.armPet2; },
     exit() { _coldTarget = null; },
   },
-  { // 4 — the festival, something to look forward to
-    say: null, cue: null,
-    arm(s) {
-      _coldTarget = cats.find(c => c.mascot) || null;
-      this.say = "One more thing. There's a festival coming to the field — five days off.";
-      this.cue = "Save the date.";
-      s.doneAt = performance.now() + 4600;
-    },
-    test(s) { return performance.now() >= s.doneAt; },
-    exit() { _coldTarget = null; },
+  { // 4 — discover the personal collection through the real button
+    say: "Every cat has a little story. Let's find your new friend.",
+    cue: "Open Catdex below. Tap a portrait whenever you want to know more.",
+    label:"Open Catdex",go:()=>togglePanel("dex"),
+    arm() { _coldTarget=null; },
+    test() { return !panels.dex.hidden; },
   },
-  { // 5 — the cove is yours (a beat, not a task)
-    say: null, cue: null,
-    arm(s) {
-      _coldTarget = cats.find(c => c.mascot) || null;
-      this.say = "Cats turn up, some stay, the shore keeps handing things back.";
-      this.cue = "It's yours to look after now.";
-      s.doneAt = performance.now() + 4200;
-    },
-    test(s) { return performance.now() >= s.doneAt; },
-    exit() { _coldTarget = null; },
+  { // 5 — show where rewards and memories live, without forcing a claim
+    say: "Journal keeps your little moments and daily welcome together.",
+    cue: "Open Journal. After that, explore at your own pace.",
+    label:"Open Journal",go:()=>togglePanel("today"),
+    arm() { _coldTarget=null; },
+    test() { return !panels.today.hidden; },
   },
 ];
 
@@ -6894,10 +6888,10 @@ function coldTick() {
     _cold.shownKey = key;
     band.classList.add("cold");
     document.getElementById("hintText").innerHTML =
-      `<span class="cold-who">✦ Midknight</span>` +
+      `<span class="cold-who">✦ Midknight · ${_cold.i+1} of ${COLD.length}</span>` +
       (step.say ? `<span class="cold-say">${esc(step.say)}</span>` : "") +
       `<span class="cold-cue">${esc(step.cue || "")}</span>`;
-    if (step.go) { go.hidden = false; go.textContent = "Open the Shop"; go._act = step.go; }
+    if (step.go) { go.hidden = false; go.textContent = step.label || "Show me"; go._act = step.go; }
     else go.hidden = true;
     x.hidden = false; x.textContent = "Skip"; x.title = "Skip the intro"; x._skip = true;
     band.hidden = false;
@@ -6919,14 +6913,14 @@ function endColdOpen(skipped) {
   document.getElementById("hintText").textContent = "";
   G.tutorialDone = true;
   G.coldStep = COLD.length;
-  closeAllPanels();
+  if(skipped)closeAllPanels();
   sfx("coax");
   if (!(G.moments || []).some(m => m.kind === "tale"))
     logMoment("🐾", "Midknight decided you could stay. He went back to his spot by the sign — the cove's yours to look after now.", "tale");   // Phase C picks this thread up
   visitorTimer = rand(45, 90);   // a third cat wanders in soon after the intro — "oh, they just turn up"
   save();
   // an honest reason to come back — the things that really change overnight
-  setTimeout(() => toast("Come back tomorrow — a welcome will be waiting, and the shore always turns something up.", 6), 500);
+  setTimeout(() => toast("You’re home. Activities has games and rainy rest; Shop has cozy additions. Your daily welcome lives in Journal.", 6), 500);
   setTimeout(() => { try { checkOffline(afterReturn); } catch (e) {} }, 700);
   setTimeout(() => { try { maybePanHint(); } catch (e) {} }, 3200);
   syncHud();
@@ -6934,27 +6928,29 @@ function endColdOpen(skipped) {
 
 /* ---------- reference card (the "?" button) ---------- */
 const GUIDE = [
-  ["Pet your cats", "Tap a cat — mood up, output up for a bit. Cuddly cats may start purring; prickly ones sulk if you overdo it."],
-  ["Collect the drops", "Cats leave a shell every so often. Tap it, or leave it — it banks itself. Earnings run fast your first hour, then settle."],
-  ["Grow the cove", "Coax a cat, or open the Shop for bowls, beds and toys — each one makes room for more. Fresh catnip doubles earnings for 20 minutes."],
-  ["Restore the cove", "Down at the shore, places like the old dock come back over time — shells plus driftwood the cats turn up. Tap one to see what it needs."],
-  ["Today", "A welcome gift each day, optional rituals, your shared memories. Miss a day and nothing's lost — there's no way to fall behind here."],
-  ["Send a cat exploring", "Once a day, pick a trip and a cat. Postcards arrive while they're away; they come home with finds and a story. Midknight never leaves."],
-  ["Rainy days", "Tap 🌙 any time — everyone pads inside, real rain plays. Leave it running while you work, or sleep to it."],
-  ["The Cove Festival", "Tap 🎪 any time — the grounds have a few things on: a Cove Race, Cove Volleyball, and Tug of Paws against a visiting Cove. No stakes: everyone who plays comes away with a little something."],
+  ["Catdex · your little neighbors", "Find cats by name, tap their portraits for personalities and memories, or invite a new friend. Coats you have met are collected below."],
+  ["Activities · play or unwind", "Visit the Festival, send a cat on an adventure, or settle into the rainy retreat. Festival games stay available day and night once unlocked; each game shows how many cats it needs."],
+  ["Shop · make it cozy", "Find bowls, beds, toys, decorations and outfits here. Check an item's description and price before choosing it."],
+  ["Journal · moments worth keeping", "Collect your daily welcome, choose optional rituals, see postcards and memories, or capture a photo. You can swap unfinished rituals. Missing a day never resets your lovely days."],
+  ["Say hello", "Tap a cat to get to know them. Some love cuddles; others appreciate a little space. Their personalities unfold as you spend time together."],
+  ["Little shore finds", "Tap glowing shells and driftwood to collect them. Uncollected drops bank themselves. Driftwood helps restore places such as the old dock."],
+  ["Community Pantry · a helping hand", "In Catdex, this free help tops food up to one day, eases hunger and thirst, clears sickness and restores health to at least 70%. It tells you what changed—or that everyone is already cared for."],
+  ["Rest without worry", "Rainy retreat has rain, an optional fireplace and a sleep timer. Back to the cove returns you home. Your cats are looked after while you are away."],
+
 ];
 function openGuide() {
   ensureAudio();
   const card = tutEl.querySelector(".card");
   const rows = GUIDE.filter(([h]) => h !== "The Cove Festival" || festUnlocked());   // not a spoiler before it exists
-  card.innerHTML = `<h2 style="margin:.1rem 0 .2rem">How the cove works</h2>
-    <div class="guide-list">${rows.map(([h, b]) => `<div class="guide-row"><b>${esc(h)}</b><p>${esc(b)}</p></div>`).join("")}</div>
+  card.innerHTML = `<h2 style="margin:.1rem 0 .2rem">Make yourself at home</h2>
+    <p>There’s no rush. Say hello, make a cozy corner, and discover a little at a time.</p><div class="row guide-links"><button class="btn" data-guide="dex">Catdex</button><button class="btn" data-guide="explore">Activities</button><button class="btn" data-guide="shop">Shop</button><button class="btn" data-guide="today">Journal</button></div><div class="guide-list">${rows.map(([h, b]) => `<div class="guide-row"><b>${esc(h)}</b><p>${esc(b)}</p></div>`).join("")}</div>
     <div class="row guide-foot">
       <button class="btn primary" id="guideOk">Got it</button>
       <button class="btn" id="guideCares">❤️ Cove Cares</button>
       <button class="btn" id="guideCredits">🐾 Credits</button>
     </div>`;
   tutEl.classList.add("on");
+  card.querySelectorAll("[data-guide]").forEach(b=>b.onclick=()=>{tutEl.classList.remove("on");if(b.dataset.guide==="explore")neoOpenExplore();else togglePanel(b.dataset.guide);});
   document.getElementById("guideOk").onclick = () => tutEl.classList.remove("on");
   document.getElementById("guideCares").onclick = () => { tutEl.classList.remove("on"); openCares(); };
   document.getElementById("guideCredits").onclick = () => { tutEl.classList.remove("on"); openCredits(); };
