@@ -18,9 +18,11 @@ console.log('PASS: 30-day absence preserves all cats, food and health.');
 let n=16;const eligible=vm.runInNewContext('('+fn('neoGoalEligible')+')',{residentCount:()=>n,capacity:()=>16,G:{shells:1000},coaxPrice:()=>200});
 assert(!eligible({id:'coax'}));assert(!eligible({id:'discover'}));assert(eligible({id:'pet'}));n=4;assert(eligible({id:'coax'}));
 console.log('PASS: full-Cove and luck-dependent rituals excluded.');
-const food=vm.runInNewContext('('+html.match(/function foodServingCost\(\)\{[^\n]+/)[0].split('//')[0]+')');assert.equal(food(),.8);
-const price=vm.runInNewContext('('+html.match(/function coaxPrice\(\) \{[^\n]+/)[0]+')',{residentCount:()=>n});let previous=0;for(n=0;n<=24;n++){const p=price();assert(p>=previous&&p<=1800);previous=p;}
-console.log('PASS: predictable food unit price and bounded adoption curve.');
+const food=vm.runInNewContext('('+html.match(/function foodServingCost\(\)\{[^\n]+/)[0].split('//')[0]+')',{residentCount:()=>n});
+const price=vm.runInNewContext('('+html.match(/function coaxPrice\(\) \{[^\n]+/)[0]+')',{residentCount:()=>n});
+for(n=0;n<=24;n++){assert.equal(food(),(12+n*4)/22);assert.equal(price(),Math.round(12*Math.pow(1.38,n)));}
+assert(html.includes('let m = 0.46 + welcomeBoost()'));assert(html.includes('const capped = Math.min(elapsed, 4 * 3600);'));
+console.log('PASS: original food/adoption curves, income multiplier and offline cap.');
 assert(html.includes('if (_focusT > 0.01 && !_ovActive)'));assert(html.includes('neoCoveForeground(ctx)'));assert(html.includes('neoRaceMeadow(g,RACE_W,RACE_H)'));
 assert(!html.includes('Confirm purchase —'));assert(html.includes('Preview only on the web'));
 console.log('PASS: approved scenery integrations retained; no simulated public purchases.');

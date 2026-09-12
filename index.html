@@ -2565,11 +2565,11 @@ function flowerMood() { return G.decor.flowers * 3 + G.decor.tree * 1.5; }   // 
 const WELCOME_SEC = 2700;   // ~45 min of active playtime
 function welcomeBoost() {
   const t = G.allTimeSec || 0;
-  return t >= WELCOME_SEC ? 0 : 0.22 * (1 - t / WELCOME_SEC);   // +0.22 → 0 over the window
+  return t >= WELCOME_SEC ? 0 : 0.42 * (1 - t / WELCOME_SEC);   // +0.42 → 0 over the window
 }
 function boostActive() { return !!(G.boostUntil && Date.now() < G.boostUntil); }
 function earnMult() {
-  let m = 0.62 + welcomeBoost();      // baseline .62, up to .84 for a fresh Cove; a softer introduction
+  let m = 0.46 + welcomeBoost();      // baseline 0.46, up to ~0.88 for a fresh cove — active-idle pace, not a firehose
   if (boostActive()) m *= 2;          // a purchased "fresh catnip" boost
   return m;
 }
@@ -2606,7 +2606,7 @@ function foodLeftText() {
   const days = Math.floor(d), hrs = Math.round((d - days) * 24);
   return `≈ ${days} day${days === 1 ? "" : "s"}${hrs ? ` ${hrs} hr${hrs === 1 ? "" : "s"}` : ""} of food left`;
 }
-function foodServingCost(){ return 0.8; }     // per serving — matches the old sack's rate
+function foodServingCost(){ return (12 + residentCount() * 4) / 22; }     // per serving — matches the old sack's rate
 // a bulk buy sized to feed the current cove for `days`
 function foodBulk(days) {
   const servings = Math.max(1, Math.ceil(foodPerDay() * days));
@@ -2794,7 +2794,7 @@ class Cat {
     if (this._station && STATION[this._station]) s *= STATION[this._station].rate;   // working a station
     if (this.zoomies > 0) s *= 1.45;              // fresh from the catmint garden
     if (this.petBuff > 0) s *= 1.5;
-    if (this.sick) s *= 0.65;                     // care is recoverable without a production spiral
+    if (this.sick) s *= 0.15;                     // care is recoverable without a production spiral
     else { const need = Math.max(this.hunger || 0, this.thirst || 0);
       if (need > 60) s *= clamp(1 - (need - 60) * 0.02, 0.3, 1); }   // hungry/thirsty → tapers off
     return s;
@@ -6132,7 +6132,7 @@ function renderShop() {
    so rehoming a cat genuinely brings the next coax back down, and letting cats
    wander in for free still nudges the price up (a fuller cove is harder to add
    to). G.coax stays as a lifetime stat. */
-function coaxPrice() { const n=residentCount(); return Math.min(1800, Math.round(12+5*n+2.8*Math.pow(Math.max(0,n-3),2))); }
+function coaxPrice() { return Math.round(12 * Math.pow(1.38, residentCount())); }
 function doCoax(free) {
   if (!free) { G.shells -= coaxPrice(); }
   G.coax++;
@@ -7676,7 +7676,7 @@ function offlineArrivals(elapsed) {
 function offlineEarnings(elapsed, then) {
   const done = () => { try { then && then(); } catch (e) {} };
   if (elapsed < 45 || !(G.ratePerSec > 0)) return done();
-  const capped = Math.min(elapsed, 4 * 3600) + Math.min(Math.max(0,elapsed-4*3600),20*3600)*0.2;          // full trickle for 4h, then a slower trickle up to 24h
+  const capped = Math.min(elapsed, 4 * 3600);          // original four-hour offline earnings cap
   let base = Math.floor(G.ratePerSec * capped * 0.18); // the cove ticks over — it doesn't grind for you
   base = Math.max(0, Math.min(base, 280 + cats.length * 260));   // soft cap: a return is 1-2 nice purchases, not a windfall
   if (base <= 0) return done();

@@ -54,3 +54,6 @@ Food is 0.8 shells per serving, four servings per resident per active real day. 
 Adoption: min(1800, round(12 + 5n + 2.8 max(0,n-3)^2)). Approximately 22 / 67 / 299 / 565 shells at 2 / 6 / 12 / 16 residents.
 Offline: first four hours at existing 18% recorded rate, subsequent twenty hours at one-fifth that accrual, retaining the existing balance cap.
 These are starting parameters. Compare low-resource, high-resource, once-daily and active cohorts; tune net discretionary income and time to a desired decoration. Do not call the economy validated without longitudinal play.
+
+## Economic correction (latest, supersedes pilot assumptions above)
+Restored original 0.46 income baseline and 0.42 welcome boost, four-hour offline earnings cap, population-scaled food prices, exponential invitation costs and 0.15 sick-cat production multiplier. Driftwood exploration, offshore arrivals and Labubu gift logic match the original source. Existing balances are retained. Community Pantry, safe-away care, optional ritual swaps and no-rehome-reward remain Neo differences; this is not a claim that every economic mechanism is identical. Validate these remaining safety-net effects before declaring the economy balanced.
