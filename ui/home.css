@@ -110,3 +110,15 @@
 .neo-little-hello{position:fixed;bottom:64px;transform:translateX(-50%);z-index:55;pointer-events:none;text-align:center;animation:neo-hello-arrive 5s ease both}.neo-little-hello canvas{position:static!important;display:block;width:100%;height:auto}.neo-little-hello p{font-size:14px;line-height:1.4;color:#43543f;background:#fff9e9;border:1px solid #d9dec7;border-radius:18px;padding:10px 14px;margin:0 0 -6px;box-shadow:0 3px 10px #334c4112}@keyframes neo-hello-arrive{0%{opacity:0;translate:0 12px}12%,85%{opacity:1;translate:0 0}100%{opacity:0;translate:0 8px}}@media(prefers-reduced-motion:reduce){.neo-little-hello{animation:none}}
 
 .neo-cafe-tables{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.neo-cafe-tables .btn{display:flex;flex-direction:column;gap:3px;min-width:0;padding:8px 5px;font-size:12px}.neo-cafe-tables .btn:not(:disabled){background:#edf2dc;border-color:#789878}.neo-cafe-tables .btn:disabled{opacity:.7}.neo-cafe-tables meter{width:80%;height:7px}.neo-cafe-queue{font-size:12px;margin:3px 0 7px;text-align:center}#cafeBoard{max-height:44vh;overflow:auto}#cafeSlots .cs-tr{display:none}#cafeSlots .cs-cat{min-height:44px;padding:5px}#cafeSlots .cs-jn{font-size:11px}#cafeSlots .cs-st{font-size:10px}
+
+#fest .midk-hud{bottom:calc(88px + env(safe-area-inset-bottom));gap:10px}
+#fest .midk-console{padding:10px 12px 14px;gap:12px;max-width:calc(100vw - 32px);box-sizing:border-box}
+#fest .midk-spin{min-height:56px;min-width:130px;font-size:24px;padding:12px 20px}
+#fest .midk-spin .ms-paw{font-size:22px}#fest .midk-console .mc-reels span{width:36px;height:36px}
+#fest .midk-console .mc-bar{bottom:6px;left:12px;width:116px;height:4px}
+#fest .midk-console .mc-msg{left:12px;width:116px}
+#fest .fest-bar{min-height:48px;box-sizing:border-box;bottom:calc(12px + env(safe-area-inset-bottom))}
+#fest #cafeBoard{bottom:calc(78px + env(safe-area-inset-bottom));max-height:38vh}
+#neo-cafe-clock{display:none;position:absolute;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:68;background:#fff9e9;color:#43543f;border:1px solid #d8d9bf;border-radius:20px;padding:12px 22px;font-size:clamp(20px,3vw,28px);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none}
+#fest:has(#cafeBoard:not([hidden])) #neo-cafe-clock{display:block}
+@media(max-width:370px){#fest .midk-spin{min-width:108px;font-size:21px;padding:10px 14px}#fest .midk-console{gap:8px;padding-left:8px;padding-right:8px}#fest .midk-console .mc-reels span{width:30px;height:32px}}
