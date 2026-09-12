@@ -1412,6 +1412,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-story .neo-story-x:hover{background:#e2e8d5;color:#365b42}
 .neo-story .neo-story-x:active{background:#d7e0cc}
 .neo-story .neo-story-x:focus-visible{outline:3px solid #789578;outline-offset:3px}
+/* Compact object-local actions, including on narrow phones. */
+#placeBar{width:232px;max-width:calc(100vw - 24px);gap:6px;padding:10px}
+#placeBar button{flex:1 1 42%;min-height:44px;padding:8px;font-size:13px}
+#placeBarTxt{font-size:13px}
+#placeBarInventory{display:none}
 </style>
 
 <div id="app">
@@ -4718,9 +4723,10 @@ function positionPlaceActions(){
   const el=document.getElementById('placeBar');if(el.hidden)return;
   if(!_placing||!_placeGhost){el.style.position='';el.style.left='';el.style.top='';el.style.bottom='';el.style.transform='';return;}
   const r=canvas.getBoundingClientRect(),w=el.offsetWidth,h=el.offsetHeight;
-  const x=r.left+(_placeGhost.x+_worldOffX)*displayScale,y=r.top+(_placeGhost.y+_worldOffY)*displayScale;
-  const left=clamp(x-w/2,8,Math.max(8,window.innerWidth-w-8));
-  let top=y-h-48;if(top<60)top=y+40;
+  const x=r.left+(_ovActive?_camTx+_placeGhost.x*_camScale:(_placeGhost.x+_worldOffX)*displayScale),y=r.top+(_ovActive?_camTy+_placeGhost.y*_camScale:(_placeGhost.y+_worldOffY)*displayScale);
+  let left=x+36,top=y-h/2;
+  if(left+w>window.innerWidth-12)left=x-w-36;
+  if(left<12){left=clamp(x-w/2,12,Math.max(12,window.innerWidth-w-12));top=y-h-24;if(top<60)top=y+32;}
   top=clamp(top,12,Math.max(12,window.innerHeight-h-12));
   el.style.position='fixed';el.style.transform='none';el.style.bottom='auto';el.style.left=left+'px';el.style.top=top+'px';
 }
@@ -4735,6 +4741,7 @@ function _beginPlace(spec) {
   spec._moved=false;
   document.getElementById("placeBarTxt").innerHTML = `<b>${spec.label}</b> · Drag to move`;
   document.getElementById("placeBar").hidden = false;
+  positionPlaceActions();
   document.getElementById("placeBarCancel").textContent = _arranging ? "Back" : "Cancel";
 }
 function startPlacing(id) {   // a prop, from the shop row / straight after buying

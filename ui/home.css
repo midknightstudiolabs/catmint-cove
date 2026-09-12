@@ -169,3 +169,8 @@
 .neo-story .neo-story-x:hover{background:#e2e8d5;color:#365b42}
 .neo-story .neo-story-x:active{background:#d7e0cc}
 .neo-story .neo-story-x:focus-visible{outline:3px solid #789578;outline-offset:3px}
+/* Compact object-local actions, including on narrow phones. */
+#placeBar{width:232px;max-width:calc(100vw - 24px);gap:6px;padding:10px}
+#placeBar button{flex:1 1 42%;min-height:44px;padding:8px;font-size:13px}
+#placeBarTxt{font-size:13px}
+#placeBarInventory{display:none}
