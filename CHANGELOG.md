@@ -1,5 +1,9 @@
 # Changelog
 
+## Approved V2 icons — 2026-09-12
+
+- Applied the approved sleep moon, sage festival flag and rope-with-paws icons. All other V2 artwork is retained. Updated the icon cache version.
+
 ## Economy balance — 2026-09-12
 
 - Gentler collection income growth and smaller rarity income bonuses. Baseline adult one-star Coves earn approximately 477/672/857/987 shells per hour at 3/8/16/24 cats (75 mood, neutral traits, no upgrades or boosts). Cat Tree remains 300.

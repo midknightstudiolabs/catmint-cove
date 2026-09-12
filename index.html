@@ -1400,8 +1400,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <div class="hud-group">
       <button class="pill title-pill" id="titlePill" data-tip="Your cove's name. Tap to rename it.">Catmint <b>Cove</b></button>
       <button class="btn" id="helpBtn" aria-label="Help" data-tip="Make yourself at home — a quick guide to everything."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-help.svg?v=2" alt="" aria-hidden="true" width="28" height="28"></span></button>
-      <button class="btn" id="restBtn" aria-label="Rainy retreat" data-tip="Rainy-day rest — everyone naps inside with real rain. Tap any time, good to work or sleep to."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-rest.svg?v=2" alt="" aria-hidden="true" width="28" height="28"></span></button>
-      <button class="btn" id="festBtn" aria-label="Cove Festival" hidden data-tip="The Cove Festival — a friendly race down at the track. Tap any time."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg?v=2" alt="" aria-hidden="true" width="28" height="28"></span></button>
+      <button class="btn" id="restBtn" aria-label="Rainy retreat" data-tip="Rainy-day rest — everyone naps inside with real rain. Tap any time, good to work or sleep to."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-rest.svg?v=3" alt="" aria-hidden="true" width="28" height="28"></span></button>
+      <button class="btn" id="festBtn" aria-label="Cove Festival" hidden data-tip="The Cove Festival — a friendly race down at the track. Tap any time."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg?v=3" alt="" aria-hidden="true" width="28" height="28"></span></button>
       <button class="btn" id="muteBtn" aria-label="Sound settings" data-tip="Sounds — tap to mute or unmute."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-sound.svg?v=2" alt="" aria-hidden="true" width="28" height="28"></span></button>
     </div>
   </div>
@@ -1439,14 +1439,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
        enters gets a little something, your pick winning gets a bit more. -->
   <div id="fest">
     <div class="fest-panel fest-panel--hub" id="festChoose" hidden>
-      <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg?v=2" alt="" aria-hidden="true" width="28" height="28"></div>
+      <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg?v=3" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>Cove Festival</h2>
       <p>Pick an event. The cats will handle the rest.</p>
       <div class="fc-cards" id="festEventCards"></div>
       <div class="btn-row"><button class="btn" id="festChooseBack">Back to the Cove</button></div>
     </div>
     <div class="fest-panel" id="festPanel" hidden>
-      <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg?v=2" alt="" aria-hidden="true" width="28" height="28"></div>
+      <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg?v=3" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>The Cove Festival</h2>
       <p>A race is forming down at the track. Send someone to represent the cove.</p>
       <div class="fp-grid" id="festPickGrid"></div>
@@ -1583,7 +1583,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   </div>
   <div id="festWipe">
     <div class="fw-bunting top"></div>
-    <div class="fw-emoji" id="festWipeEmoji"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg?v=2" alt="" aria-hidden="true" width="28" height="28"></div>
+    <div class="fw-emoji" id="festWipeEmoji"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg?v=3" alt="" aria-hidden="true" width="28" height="28"></div>
     <h2 id="festWipeTitle">The Cove Festival</h2>
     <p id="festWipeSub">Everyone's heading to the track…</p>
     <div class="fw-bunting bottom"></div>
@@ -10262,7 +10262,7 @@ function enterFestVolley() {
   document.getElementById("festVolleyPanel").hidden = false;
   trackEvent("volleyball_card_opened");
 }
-function neoUIIcon(key){return `<img class="neo-ui-icon" src="art/icon-keepsake-${key}.svg?v=2" alt="" aria-hidden="true" width="28" height="28">`;}
+function neoUIIcon(key){return `<img class="neo-ui-icon" src="art/icon-keepsake-${key}.svg?v=3" alt="" aria-hidden="true" width="28" height="28">`;}
 const FEST_EVENTS = [
   { key: "race", emoji: "🚩", name: "Cove Race",
     desc: "Pick a cat and cheer them all the way to the finish.",
