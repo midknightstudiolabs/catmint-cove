@@ -217,7 +217,8 @@ function neoHelloTap(x,y,sx,sy){
   shell.style.width=size+'px';shell.style.left=center+'px';
   const portrait=document.createElement('canvas');portrait.width=400;portrait.height=320;portrait.setAttribute('aria-hidden','true');
   const line=document.createElement('p');line.textContent=c.name+[' noticed your tapping.',' has come to investigate.',' heard there might be snacks.',' would like a word.'][Math.floor(Math.random()*4)];
-  shell.append(line,portrait);document.getElementById('app').append(shell);
+  // Attach to the viewport, not the Cove/menu layout: the shoulder crop meets the screen edge.
+  shell.append(line,portrait);document.body.append(shell);
   const copy=new Cat({coatKey:c.coatKey,star:c.star,markSeed:c.markSeed,mascot:c.mascot,bornAt:c.bornAt,x:0,y:0});copy.worn=[...(c.worn||[])];Object.assign(copy,{mood:75,face:1,squash:0,bob:.6,tail:.3,blink:3,walk:0,walkAmt:0,state:'wantpet',stateT:0,stateDur:12});
   const g=portrait.getContext('2d');g.save();g.translate(200,435.2);g.scale(6,6);drawCat(g,copy,true);g.restore();
   let step=0;const lines=['Sniff… sniff.','No snacks? Just you? Perfect.'];

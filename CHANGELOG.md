@@ -1,5 +1,10 @@
 # Changelog
 
+## Screen-edge cat greetings — 2026-09-12
+
+- Anchored Little Hello close-ups to the actual bottom viewport edge instead of floating 64 pixels above the menu.
+- Attached greetings outside the Cove layout and kept their shoulder crop flush throughout the fade. Menu controls remain tappable underneath.
+
 ## Redecorating inventory — 2026-09-12
 
 - Added Put away while moving furniture, comforts and stations, retaining ownership without refunds or repurchase.
