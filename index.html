@@ -1417,6 +1417,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #placeBar button{flex:1 1 42%;min-height:44px;padding:8px;font-size:13px}
 #placeBarTxt{font-size:13px}
 #placeBarInventory{display:none}
+.inventory-item{position:relative;flex-wrap:wrap;gap:10px}
+.inventory-preview{position:static!important;width:80px!important;height:60px!important;flex:0 0 80px;background:#eef0df;border-radius:12px;cursor:grab}
+.inventory-quantity{position:absolute;left:8px;top:5px;background:#faf6e9;color:#43543f;border-radius:10px;padding:2px 6px;font-weight:700;font-size:12px;pointer-events:none}
 </style>
 
 <div id="app">
@@ -6279,6 +6282,18 @@ function renderInventory(list) {
         const obj=e.kind==="comfort"?attractors.find(a=>a.key===e.key):decor.find(d=>d.dkey===e.key);
         const pos=obj || (e.kind==="comfort"?G.cosmetics.comfortPos:G.cosmetics.decorPos)?.[e.key] || {x:W*.5,y:H*.7};
         _beginPlace({...e,r:30,from:stored?null:{x:pos.x,y:pos.y},_start:{x:pos.x,y:pos.y}});
+      };
+      const preview=document.createElement('canvas');preview.width=160;preview.height=120;preview.className='inventory-preview';preview.setAttribute('aria-label',e.label+' · '+(e.quantity||1)+' '+(stored?'stored':'placed'));row.prepend(preview);
+      const g=preview.getContext('2d');g.translate(80,85);g.scale(.85,.85);
+      if(e.kind==='prop'){const p=PROP_BY_ID[e.key];if(p?.render)p.render(g,0,0,0,.8);}
+      else if(e.kind==='comfort')drawAttractor(g,{type:e.dtype,x:0,y:0});
+      else {const d=decor.find(d=>d.dkey===e.key);drawDecor(g,{...(d||{}),type:e.dtype,x:0,y:0,dkey:e.key});}
+      const count=document.createElement('span');count.className='inventory-quantity';count.textContent='×'+(e.quantity||1);row.prepend(count);
+      preview.style.touchAction='none';preview.onpointerdown=ev=>{if(!stored)return;ev.preventDefault();const x=ev.clientX,y=ev.clientY;let started=false;
+        const move=p=>{if(p.pointerId!==ev.pointerId)return;if(!started&&Math.hypot(p.clientX-x,p.clientY-y)>8){started=true;row.querySelector('.inventory-place').click();_placeDragOrigin=null;}if(started&&_placing){_placeGhost=_ghostAt(p.clientX,p.clientY);_placing._moved=true;positionPlaceActions();}p.preventDefault();};
+        const end=p=>{if(p.pointerId!==ev.pointerId)return;document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',cancel);if(started&&_placing)finishPlacing();};
+        const cancel=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',cancel);if(started&&_placing)cancelPlacing();};
+        document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',end);document.addEventListener('pointercancel',cancel);
       };
       const put=row.querySelector(".inventory-store"); if(put) put.onclick=()=>{putAwayItem(e.kind,e.key,e.label);renderShop();};
       list.appendChild(row);

@@ -174,3 +174,6 @@
 #placeBar button{flex:1 1 42%;min-height:44px;padding:8px;font-size:13px}
 #placeBarTxt{font-size:13px}
 #placeBarInventory{display:none}
+.inventory-item{position:relative;flex-wrap:wrap;gap:10px}
+.inventory-preview{position:static!important;width:80px!important;height:60px!important;flex:0 0 80px;background:#eef0df;border-radius:12px;cursor:grab}
+.inventory-quantity{position:absolute;left:8px;top:5px;background:#faf6e9;color:#43543f;border-radius:10px;padding:2px 6px;font-weight:700;font-size:12px;pointer-events:none}
