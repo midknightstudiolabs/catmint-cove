@@ -66,6 +66,7 @@ function neoStockCounter(slot){
 let neoHomesteadTimer;
 let neoCafeFrame=0;
 function neoOpenHomestead(kind){
+  if(kind==='cafe')return; // Public release: café is under development.
   closeAllPanels();neoCafeSettle();save();clearInterval(neoHomesteadTimer);cancelAnimationFrame(neoCafeFrame);
   const h=neoHomestead(),garden=kind==='garden';
   let sheet=document.getElementById('neo-homestead');
@@ -99,7 +100,7 @@ function neoOpenHomestead(kind){
   }
   const n=garden?h.plots.length:h.tables,max=garden?8:5,cost=garden?100+(n-4)*75:150+(n-3)*100;
   if(n<max){const expand=document.createElement('button');expand.className='btn';expand.textContent=`Add ${garden?'a garden patch':'a table'} · ${cost} shells`;expand.disabled=G.shells<cost;expand.onclick=()=>{if(neoExpandHomestead(kind))neoOpenHomestead(kind);};sheet.append(expand);}
-  const other=document.createElement('button');other.className='btn';other.textContent=garden?'Visit Catmint Café':'Visit Cove Garden';other.onclick=()=>neoOpenHomestead(garden?'cafe':'garden');sheet.append(other);
+  const other=document.createElement('button');other.className='btn';other.textContent=garden?'Catmint Café · Under development':'Visit Cove Garden';other.disabled=garden;other.onclick=()=>neoOpenHomestead(garden?'cafe':'garden');sheet.append(other);
   sheet.querySelector('.x').onclick=()=>{sheet.hidden=true;clearInterval(neoHomesteadTimer);cancelAnimationFrame(neoCafeFrame);};
   neoHomesteadTimer=setInterval(()=>{if(sheet.hidden){clearInterval(neoHomesteadTimer);return;}if(document.hidden)return;const before=h.served;neoCafeSettle();if(before!==h.served){save();const trays=sheet.querySelector('#neo-cafe-trays');if(trays)trays.innerHTML=h.trays.map((t,i)=>`<span>Counter ${i+1}: <b>${t.servings?COVE_RECIPES[t.key].name+' · '+t.servings:'Empty'}</b></span>`).join('');const count=sheet.querySelector('.homestead-cafe-room > p');if(count)count.textContent=h.counter+' treats on the counter · '+h.served+' served';const collect=sheet.querySelector('[data-cafe-collect]');if(collect){collect.textContent='Collect '+h.earned+' shells';collect.disabled=!h.earned;}}for(const b of sheet.querySelectorAll('[data-ready]')){const seconds=time(+b.dataset.ready);b.disabled=seconds>0;b.textContent=seconds?`${garden?'Growing':'Cooking'} · ${seconds}s`:garden?'Harvest':'Stock the counter';}},1000);
 }

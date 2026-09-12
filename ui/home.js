@@ -175,7 +175,7 @@ function neoBuildNavigation(){
   sheet.innerHTML=`<button class="x" id="neo-explore-close" aria-label="Close Activities">✕</button><div class="kicker">A LITTLE ADVENTURE, AT YOUR PACE</div><h2>Activities</h2><p class="muted">Stay for a game, send a postcard, or settle in somewhere quiet.</p><div class="neo-explore-grid">
   <button class="neo-destination" id="neo-go-festival"><span>${neoUIIcon("festival")}</span><b>Cove Festival</b><small>Your familiar cats. A little friendly chaos.</small></button>
   <button class="neo-destination" id="neo-go-adventure"><span>${neoUIIcon("adventure")}</span><b>Adventures</b><small>A little trip. Something to bring home.</small></button>
-  <button class="neo-destination" id="neo-go-cafe"><span>${neoUIIcon("cafe")}</span><b>Catmint Café</b><small>Cook a batch. Welcome your regulars.</small></button>
+  <button class="neo-destination" id="neo-go-cafe" disabled aria-label="Catmint Café — under development"><span>${neoUIIcon("cafe")}</span><b>Catmint Café</b><small>Under development · coming in a future release.</small></button>
   <button class="neo-destination" id="neo-go-garden"><span><img class="neo-ui-icon" src="art/icon-keepsake-garden.svg" alt="" width="36" height="36"></span><b>Cove Garden</b><small>Plant, grow and gather something good.</small></button>
   <button class="neo-destination" id="neo-go-rest"><span>${neoUIIcon("rest")}</span><b>Rainy retreat</b><small>No chores. Just rain and company.</small></button>
   </div>
@@ -184,7 +184,7 @@ function neoBuildNavigation(){
   document.getElementById('neo-explore-close').onclick=closeAllPanels;
   document.getElementById('neo-go-festival').onclick=()=>{closeAllPanels();document.getElementById('festBtn').click();};
   document.getElementById('neo-go-adventure').onclick=()=>{closeAllPanels();openAdventurePicker();};
-  document.getElementById('neo-go-cafe').onclick=()=>neoOpenHomestead('cafe');
+  // Café development continues in the neo-catmint-cafe branch; saved progress is retained.
   document.getElementById('neo-go-garden').onclick=()=>neoOpenHomestead('garden');
   document.getElementById('neo-go-rest').onclick=()=>{closeAllPanels();document.getElementById('restBtn').click();};
   document.getElementById('neo-playtest').onclick=neoPlaytest;
