@@ -1351,6 +1351,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-postcard-front{background:#bddbd9;isolation:isolate;overflow:hidden}.neo-postcard-front>svg{position:absolute;inset:0;width:100%;height:100%;z-index:-1}.neo-postcard-mark{height:60px}.neo-postcard-front>small{font-size:9px}
 
 .neo-little-hello{position:fixed;bottom:64px;transform:translateX(-50%);z-index:55;pointer-events:none;text-align:center;animation:neo-hello-arrive 5s ease both}.neo-little-hello canvas{position:static!important;display:block;width:100%;height:auto}.neo-little-hello p{font-size:14px;line-height:1.4;color:#43543f;background:#fff9e9;border:1px solid #d9dec7;border-radius:18px;padding:10px 14px;margin:0 0 -6px;box-shadow:0 3px 10px #334c4112}@keyframes neo-hello-arrive{0%{opacity:0;translate:0 12px}12%,85%{opacity:1;translate:0 0}100%{opacity:0;translate:0 8px}}@media(prefers-reduced-motion:reduce){.neo-little-hello{animation:none}}
+
+.neo-cafe-tables{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.neo-cafe-tables .btn{display:flex;flex-direction:column;gap:3px;min-width:0;padding:8px 5px;font-size:12px}.neo-cafe-tables .btn:not(:disabled){background:#edf2dc;border-color:#789878}.neo-cafe-tables .btn:disabled{opacity:.7}.neo-cafe-tables meter{width:80%;height:7px}.neo-cafe-queue{font-size:12px;margin:3px 0 7px;text-align:center}#cafeBoard{max-height:44vh;overflow:auto}#cafeSlots .cs-tr{display:none}#cafeSlots .cs-cat{min-height:44px;padding:5px}#cafeSlots .cs-jn{font-size:11px}#cafeSlots .cs-st{font-size:10px}
 </style>
 
 <div id="app">
@@ -1525,9 +1527,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <h2>Running the café</h2>
       <ul class="vb-tut">
         <li><span class="vt-e">🐈</span><span class="vt-t">Three cats have agreed to run a pop-up café. None of them asked what that involves.</span></li>
-        <li><span class="vt-e">☕🍰🤵</span><span class="vt-t"><b>Barista</b> makes it, <b>Server</b> carries it, <b>Host</b> seats the guests. That's the whole plan.</span></li>
+        <li><span class="vt-e">☕🍰🤵</span><span class="vt-t"><b>Barista</b> makes it, <b>Server</b> carries it, <b>Host</b> seats the guests. Tap the table buttons to give them their next task.</span></li>
         <li><span class="vt-e">🔀</span><span class="vt-t">Someone clearly not coping? <b>Drag their card to another role.</b> The swap's instant. The improvement is a hope, not a promise.</span></li>
-        <li><span class="vt-e">⏳</span><span class="vt-t">The shift runs itself — opening, coffee rush, festival rush, last orders. Serve guests before they give up and keep the <b>Café Mood</b> up.</span></li>
+        <li><span class="vt-e">⏳</span><span class="vt-t"><b>You direct service:</b> seat a guest, take their order, prepare it, serve it, then clear the table. Watch the patience bars; the cats handle the walking.</span></li>
         <li><span class="vt-e">😼</span><span class="vt-t">It will not go smoothly. Perfect chaos is the target.</span></li>
       </ul>
       <div class="btn-row">
@@ -12558,8 +12560,8 @@ function cafeFit() {
   const bd = document.getElementById("cafeBoard");
   const reserve = (bd && !bd.hidden) ? bd.offsetHeight + 6 : 0;
   const availH = Math.max(vh * 0.45, vh - reserve);
-  const sc = Math.min((vw * rd) / CAFE_W, (availH * rd) / CAFE_H);
-  return { sc, ox: (vw * rd - CAFE_W * sc) / 2, oy: (availH * rd - CAFE_H * sc) / 2 };
+  const sc = Math.min((vw * rd) / (CAFE_W+20), (availH * rd) / 650);
+  return { sc, ox: (vw * rd - CAFE_W * sc) / 2, oy: (availH * rd - 650 * sc) / 2 - 230*sc };
 }
 function cafeNote(key, vars) {
   const pool = CAFE_NOTES[key]; if (!pool) return;
@@ -12721,7 +12723,27 @@ function renderCafeBoard() {
   }
   if (festKind !== "cafe") { hint.textContent = ""; return; }
   if (cafePick) hint.innerHTML = `Drop <b>${esc(cafePick.cat.name)}</b> on a role — or tap one.`;
-  else hint.innerHTML = `Drag a cat to a different role. Whoever's there swaps in.`;
+  else hint.innerHTML = `Tap a table action to seat, order, prepare, serve, and clear. Swap staff below when needed.`;
+}
+function neoCafeServiceBoard(){
+  let board=document.getElementById('neo-cafe-service');
+  if(!board){board=document.createElement('div');board.id='neo-cafe-service';board.setAttribute('aria-label','Table service');document.getElementById('cafeBoard').prepend(board);}
+  const queue=cafeCust.filter(c=>c.state==='queue').length;
+  const rows=cafeSeats.map((seat,i)=>{
+    const c=seat.cust,ready=cafeReady.some(o=>o.seat===seat),order=cafeOrderQ.find(o=>o.seat===seat);
+    let action='',label='Open table';
+    if(seat._clearing)label='Guest leaving';
+    else if(seat.dirty){action='clear';label='Clear table';}
+    else if(!c){if(seat.seatRequested)label='Host on the way';else if(queue){action='seat';label='Seat guest';}}
+    else if(c.state==='toSeat')label='Guest arriving';
+    else if(c.state==='seated'){if(seat.orderRequested)label='Taking order';else {action='order';label='Take order';}}
+    else if(c.state==='wait'){if(ready){if(seat.deliverRequested)label='Serving';else {action='serve';label='Serve order';}}else if(order&&!order.approved){action='prepare';label='Prepare '+(c.wants==='food'?'food':'drink');}else label='Preparing order';}
+    else if(c.state==='enjoy')label='Enjoying a treat';
+    return {seat,c,action,label,i,pat:c?Math.max(0,Math.ceil(c.patience*5)):0};
+  });
+  const signature=queue+'|'+rows.map(r=>[r.action,r.label,r.pat].join(':')).join('|');if(board.dataset.state===signature)return;board.dataset.state=signature;
+  board.innerHTML=`<p class="neo-cafe-queue">${queue?queue+' waiting at the door':'Ready for the next guest'} · Follow the table buttons</p><div class="neo-cafe-tables">${rows.map(r=>`<button class="btn" data-table="${r.i}" data-action="${r.action}" ${r.action?'':'disabled'}><b>Table ${r.i+1}</b><span>${r.label}</span>${r.c?`<meter min="0" max="5" value="${r.pat}" aria-label="Guest patience"></meter>`:''}</button>`).join('')}</div>`;
+  board.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{if(!_cafeRunning)return;const seat=cafeSeats[Number(b.dataset.table)];if(!seat)return;const action=b.dataset.action;if(action==='seat')seat.seatRequested=true;if(action==='order')seat.orderRequested=true;if(action==='prepare'){const order=cafeOrderQ.find(o=>o.seat===seat);if(order)order.approved=true;}if(action==='serve')seat.deliverRequested=true;if(action==='clear'&&!seat.cust&&!seat._clearing)seat.dirty=false;board.dataset.state='';neoCafeServiceBoard();});
 }
 function cafeSwap(a, b) {
   if (!a || !b || a === b) return;
@@ -12781,7 +12803,7 @@ function cafeTokUp(ev) {
 function renderCafeBoardHint() {
   const hint = document.getElementById("cafeHint");
   if (cafePick) hint.innerHTML = `Drop <b>${esc(cafePick.cat.name)}</b> on a role — or tap one.`;
-  else hint.innerHTML = `Drag a cat to a different role. Whoever's there swaps in.`;
+  else hint.innerHTML = `Tap a table action to seat, order, prepare, serve, and clear. Swap staff below when needed.`;
 }
 
 /* ---- customers ---- */
@@ -12799,7 +12821,7 @@ function cafeSpawnCust() {
 }
 // a seat isn't free until the last guest has actually stepped away from it, so a
 // new cat is never routed onto a table someone's still leaving
-function cafeFreeSeat() { return cafeSeats.find(s => !s.cust && !s._clearing); }
+function cafeFreeSeat() { return cafeSeats.find(s => !s.cust && !s._clearing && !s.dirty && s.seatRequested); }
 function cafeSeatNum(seat) { return cafeSeats.indexOf(seat) + 1; }
 function cafeMoveTo(o, tx, ty, sp, dt) {
   const dx = tx - o.x, dy = ty - o.y, d = Math.hypot(dx, dy);
@@ -12850,7 +12872,7 @@ function cafeStepCust(c, dt) {
       const glad = c._bye !== "🙂";
       if (!playSample("meow", { vol: glad ? 0.42 : 0.3, rate: glad ? rand(1.0, 1.12) : rand(0.9, 0.98), jitter: 0.1 })) meow(true, glad ? 0.4 : 0.28);
       c.state = "leave"; c._ct = 0; c._out = false;
-      const s = cafeSeats.find(x => x.cust === c); if (s) { s.cust = null; s._clearing = c; }
+      const s = cafeSeats.find(x => x.cust === c); if (s) { s.cust = null; s._clearing = c; s.dirty=true; s.orderRequested=false; s.deliverRequested=false; }
     }
   } else if (c.state === "leave") {
     // free the table only once we've stepped clear of it
@@ -12962,7 +12984,7 @@ function cafeStepBarista(s, dt, speed) {
     return;
   }
   if (!s.act) {
-    if (cafeOrderQ.length) s.act = { order: cafeOrderQ.shift(), t: 0 };
+    if (cafeOrderQ.some(o=>o.approved)) { const ix=cafeOrderQ.findIndex(o=>o.approved); s.act = { order: cafeOrderQ.splice(ix,1)[0], t: 0 }; }
     else { c.state = "loafing"; cafeMoveTo(c, CAFE_IDLE.barista.x, CAFE_IDLE.barista.y, speed * 0.5, dt); return; }
   }
   if (!cafeMoveTo(c, home.x, home.y, speed, dt)) return;
@@ -12992,16 +13014,16 @@ function cafeStepServer(s, dt, speed) {
     renderCafeBoard(); return;
   }
   if (s.carry) s.carry = null;
-  if (cafeReady.length) {
+  if (cafeReady.some(it=>it.seat&&it.seat.deliverRequested)) {
     if (!cafeMoveTo(c, CAFE_PASS.x + 44, CAFE_PASS.y + 48, speed, dt)) return;
-    s.carry = { items: cafeReady.splice(0) }; s.squash = 0.3; return;
+    s.carry = { items: cafeReady.filter(it=>it.seat&&it.seat.deliverRequested) }; cafeReady=cafeReady.filter(it=>!s.carry.items.includes(it)); s.squash = 0.3; return;
   }
-  const need = cafeSeats.find(s2 => s2.cust && s2.cust.state === "seated");
+  const need = cafeSeats.find(s2 => s2.orderRequested && s2.cust && s2.cust.state === "seated");
   if (need) {
     cafeMoveTo(c, need.x, need.y - 30, speed, dt);
     if (Math.hypot(c.x - need.x, c.y - need.y) > 46) return;
     for (const seat of cafeSeats) {
-      if (seat.cust && seat.cust.state === "seated" && Math.hypot(seat.x - c.x, seat.y - c.y) < 90) {
+      if (seat.orderRequested && seat.cust && seat.cust.state === "seated" && Math.hypot(seat.x - c.x, seat.y - c.y) < 90) {
         seat.cust.state = "wait"; seat.cust._ct = 0;
         seat.cust.order = { wants: seat.cust.wants, seat };
         cafeOrderQ.push(seat.cust.order);
@@ -13050,7 +13072,7 @@ function cafeStepHost(s, dt, speed) {
     s.act.t += dt * s.ramp;
     const gm = 0.7 * (cafeTrait(s, "chatty") ? 1.9 : cafeTrait(s, "grumpy") ? 0.55 : 1);
     if (s.act.t >= gm) {
-      q.state = "toSeat"; q.seat = seat; seat.cust = q;
+      q.state = "toSeat"; q.seat = seat; seat.cust = q; seat.seatRequested=false; seat.orderRequested=false; seat.deliverRequested=false;
       s.stats.greeted++; s.squash = 0.35; s.act = null;
       if (cafeTrait(s, "chatty", "cuddly")) cafeMood = Math.min(1, cafeMood + 0.02);
       if (cafeTrait(s, "grumpy")) cafeMood = Math.max(0, cafeMood - 0.006);
@@ -13086,6 +13108,7 @@ function cafeStep(dt) {
   for (const s of cafeStaff) cafeStepStaff(s, dt);
   for (let i = cafeCust.length - 1; i >= 0; i--) if (cafeStepCust(cafeCust[i], dt)) cafeCust.splice(i, 1);
   cafeSeparate();
+  neoCafeServiceBoard();
   cafeMood += (0.5 - cafeMood) * dt * 0.02; cafeMood = Math.max(0, Math.min(1, cafeMood));
   if (_cafeQuietT > 26 && cafePhaseIx > 0 && cafePhaseIx < 4 && !cafeStaff.some(s => s.incident)
       && cafeOrderQ.length < 2 && cafeCust.filter(c => c.state === "queue").length === 0) { cafeNote("quiet"); _cafeQuietT = rand(-6, 0); }

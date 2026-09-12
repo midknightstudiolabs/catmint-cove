@@ -2,6 +2,8 @@
 
 ## After V3 — 2026-09-12
 
+- Café now has player-directed table service: seat, order, prepare, serve, and clear. Patience indicators and task buttons accompany the existing staff role swaps. The camera crops unused sky to enlarge the working area. Payout formulas are unchanged; service gate checks passed, with device playtesting still needed.
+
 - Enabled A Little Hello: 3–5 empty foreground taps show a resident cat close-up with personalized playful captions. Five-second duration, 30-second cooldown, tap-position placement, reduced-motion support, and no resource rewards. Existing cats and accessories are reused.
 
 - Six destination-specific flat postcard illustrations replace the shared Cove picture.
