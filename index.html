@@ -4714,6 +4714,16 @@ const DECOR_CLEAR = { cottage: 40, tree: 30, cattree: 40, flowers: 22, station: 
   food: 22, toy: 20, bed: 26, scratch: 20 };   // how much open space each needs
 const STATION_LABEL = { fishing: "fishing dock", bakery: "bakery oven", sunbeam: "sunbeam", garden: "catmint patch" };
 const COMFORT_TYPES = new Set(["food", "toy", "bed", "scratch"]);
+function positionPlaceActions(){
+  const el=document.getElementById('placeBar');if(el.hidden)return;
+  if(!_placing||!_placeGhost){el.style.position='';el.style.left='';el.style.top='';el.style.bottom='';el.style.transform='';return;}
+  const r=canvas.getBoundingClientRect(),w=el.offsetWidth,h=el.offsetHeight;
+  const x=r.left+(_placeGhost.x+_worldOffX)*displayScale,y=r.top+(_placeGhost.y+_worldOffY)*displayScale;
+  const left=clamp(x-w/2,8,Math.max(8,window.innerWidth-w-8));
+  let top=y-h-48;if(top<60)top=y+40;
+  top=clamp(top,12,Math.max(12,window.innerHeight-h-12));
+  el.style.position='fixed';el.style.transform='none';el.style.bottom='auto';el.style.left=left+'px';el.style.top=top+'px';
+}
 function _beginPlace(spec) {
   document.getElementById("placeBarPutAway").hidden = false;
   if (!_arranging) closeAllPanels();
@@ -4723,7 +4733,7 @@ function _beginPlace(spec) {
   const pointer=_tpX!=null?screenToWorld(_tpX,_tpY):null;
   _placeDragOrigin=pointer?{x:start.x-pointer.x,y:start.y-pointer.y}:null;
   spec._moved=false;
-  document.getElementById("placeBarTxt").innerHTML = `Moving the <b>${spec.label}</b> — ${placeFootprint(spec).join("×")} cells. Drag onto the grid; red means blocked.`;
+  document.getElementById("placeBarTxt").innerHTML = `<b>${spec.label}</b> · Drag to move`;
   document.getElementById("placeBar").hidden = false;
   document.getElementById("placeBarCancel").textContent = _arranging ? "Back" : "Cancel";
 }
@@ -16979,7 +16989,7 @@ function renderScene(dt) {
   // just counters and doesn't need 60fps (its DOM writes, incl. innerHTML, add up)
   if (cardCat) { updateCatCard(); positionCard(cardCat); }
   const _now = performance.now();
-  if (_now - _lastHudSync > 110) { _lastHudSync = _now; updateDev(); syncHud(); }
+  if (_now - _lastHudSync > 110) { _lastHudSync = _now; updateDev(); syncHud(); positionPlaceActions(); }
   const _pt4 = performance.now();
   // diagnostic phase timing (EWMA, ms) — read via __cove.perfLite() / the dev
   // overlay. Cheap (a handful of performance.now() calls); left in permanently.
