@@ -17,8 +17,15 @@ function neoHomestead(){
   G.homestead ||= {plots:[null,null,null,null],stock:{carrot:2,pumpkin:0,berry:0},batch:null,counter:0,earned:0,served:0,lastSale:Date.now(),tables:3};
   G.homestead.cloth ||= 'cream';
   G.homestead.layout ||= 'together';
+  const h=G.homestead;
+  if(!h.stoves){h.stoves=[h.batch||null,null];h.batch=null;}
+  h.cafeXP ||= 0;
+  h.trays ||= [{key:'carrot',servings:h.counter||0},{key:null,servings:0}];
   return G.homestead;
 }
+function neoBuyCafeIngredients(){const h=neoHomestead();if(G.shells<4)return;G.shells-=4;h.stock.carrot+=3;save();syncHud();neoOpenHomestead('cafe');}
+function neoCafeLevel(h){return 1+Math.floor(Math.sqrt(h.cafeXP/20));}
+function neoAddStove(){const h=neoHomestead(),cost=200+(h.stoves.length-2)*150;if(h.stoves.length>=4||neoCafeLevel(h)<h.stoves.length||G.shells<cost)return;G.shells-=cost;h.stoves.push(null);save();syncHud();neoOpenHomestead('cafe');}
 function neoExpandHomestead(kind){
   const h=neoHomestead(),garden=kind==='garden',n=garden?h.plots.length:h.tables,max=garden?8:5;
   const cost=garden?100+(n-4)*75:150+(n-3)*100;
@@ -32,7 +39,7 @@ function neoCropArt(key,ready){
 function neoCafeSettle(now=Date.now()){
   const h=neoHomestead();
   const n=Math.min(h.counter,Math.max(0,Math.floor((now-h.lastSale)/60000)));
-  if(n){h.counter-=n;h.earned+=n*2;h.served+=n;h.lastSale+=n*60000;}
+  if(n){let left=n;for(const t of h.trays){const sold=Math.min(left,t.servings);t.servings-=sold;left-=sold;if(!t.servings)t.key=null;}h.counter-=n;h.earned+=n*2;h.served+=n;h.cafeXP+=n;h.lastSale+=n*60000;}
   if(!h.counter)h.lastSale=now;
 }
 function neoPlant(i,key){
@@ -45,12 +52,13 @@ function neoHarvest(i){
   h.stock[p.key]=(h.stock[p.key]||0)+COVE_CROPS[p.key].yield;h.plots[i]=null;save();neoOpenHomestead('garden');
 }
 function neoCook(key){
-  const h=neoHomestead(),r=COVE_RECIPES[key];if(!r||h.batch||(h.stock[r.ingredient]||0)<r.amount)return;
-  h.stock[r.ingredient]-=r.amount;h.batch={key,ready:Date.now()+r.seconds*1000};save();neoOpenHomestead('cafe');
+  const h=neoHomestead(),r=COVE_RECIPES[key],slot=h.stoves.indexOf(null);if(!r||slot<0||(h.stock[r.ingredient]||0)<r.amount)return;
+  h.stock[r.ingredient]-=r.amount;h.stoves[slot]={key,ready:Date.now()+r.seconds*1000};save();neoOpenHomestead('cafe');
 }
-function neoStockCounter(){
-  const h=neoHomestead();if(!h.batch||Date.now()<h.batch.ready)return;
-  neoCafeSettle();if(!h.counter)h.lastSale=Date.now();h.counter+=COVE_RECIPES[h.batch.key].servings;h.batch=null;save();neoOpenHomestead('cafe');
+function neoStockCounter(slot){
+  const h=neoHomestead();if(!Number.isInteger(slot))slot=h.stoves.findIndex(j=>j&&Date.now()>=j.ready);
+  const job=h.stoves[slot];if(!job||Date.now()<job.ready)return;
+  neoCafeSettle();const tray=h.trays.find(t=>t.key===job.key)||h.trays.find(t=>!t.servings);if(!tray)return;tray.key=job.key;tray.servings+=COVE_RECIPES[job.key].servings;if(!h.counter)h.lastSale=Date.now();h.counter+=COVE_RECIPES[job.key].servings;h.cafeXP+=3;h.stoves[slot]=null;save();neoOpenHomestead('cafe');
 }
 let neoHomesteadTimer;
 let neoCafeFrame=0;
@@ -78,8 +86,12 @@ function neoOpenHomestead(kind){
     for(const key of ['cream','sage','rose']){const b=document.createElement('button');b.className='btn';b.textContent=key+' tablecloth';b.setAttribute('aria-pressed',h.cloth===key);b.onclick=()=>{h.cloth=key;save();neoOpenHomestead('cafe');};style.append(b);}
     for(const key of ['wood','tile']){const b=document.createElement('button');b.className='btn';b.textContent=key+' floor';b.onclick=()=>{h.floor=key;save();neoOpenHomestead('cafe');};style.append(b);}sheet.append(style);
     const earnings=document.createElement('button');earnings.className='btn';earnings.textContent=`Collect ${h.earned} shells`;earnings.disabled=!h.earned;earnings.onclick=()=>{neoCafeSettle();G.shells+=h.earned;h.earned=0;save();syncHud();neoOpenHomestead('cafe');};sheet.append(earnings);
-    if(h.batch){const b=document.createElement('button');b.id='neo-cafe-kitchen';b.className='btn';b.dataset.ready=h.batch.ready;b.textContent=time(h.batch.ready)?`Cooking · ${time(h.batch.ready)}s`:'Stock the counter';b.disabled=!!time(h.batch.ready);b.onclick=neoStockCounter;sheet.append(b);}
-    else{const recipes=document.createElement('div');recipes.className='homestead-grid';recipes.id='neo-cafe-kitchen';for(const[k,r]of Object.entries(COVE_RECIPES)){const b=document.createElement('button');b.className='neo-destination';b.innerHTML=`<b>${r.name}</b><small>${r.amount} ${COVE_CROPS[r.ingredient].name.toLowerCase()} · ${r.seconds}s · ${r.servings} servings</small>`;b.disabled=(h.stock[r.ingredient]||0)<r.amount;b.onclick=()=>neoCook(k);recipes.append(b);}sheet.append(recipes);}
+    const trays=document.createElement('div');trays.className='homestead-stock';trays.innerHTML=h.trays.map((t,i)=>`<span>Counter ${i+1}: <b>${t.servings?COVE_RECIPES[t.key].name+' · '+t.servings:'Empty'}</b></span>`).join('');sheet.append(trays);
+    const kitchen=document.createElement('div');kitchen.id='neo-cafe-kitchen';kitchen.innerHTML=`<h3>Cookbook · Café level ${neoCafeLevel(h)}</h3><p>${h.cafeXP} café points · ${h.stoves.filter(j=>!j).length} free stoves</p>`;
+    const stoves=document.createElement('div');stoves.className='homestead-grid';
+    h.stoves.forEach((job,i)=>{const b=document.createElement('button');b.className='btn';if(job){b.dataset.ready=job.ready;b.textContent=time(job.ready)?`Stove ${i+1} · ${COVE_RECIPES[job.key].name} · ${time(job.ready)}s`:`Stove ${i+1} · Stock ${COVE_RECIPES[job.key].name}`;b.disabled=!!time(job.ready);b.onclick=()=>neoStockCounter(i);}else{b.textContent=`Stove ${i+1} · Ready to cook`;b.disabled=true;}stoves.append(b);});kitchen.append(stoves);
+    const recipes=document.createElement('div');recipes.className='homestead-grid';for(const[k,r]of Object.entries(COVE_RECIPES)){const b=document.createElement('button');b.className='neo-destination';b.innerHTML=`<b>${r.name}</b><small>${r.amount} ${COVE_CROPS[r.ingredient].name.toLowerCase()} · ${r.seconds}s · ${r.servings} servings · 3 café points</small>`;b.disabled=!h.stoves.includes(null)||(h.stock[r.ingredient]||0)<r.amount;b.onclick=()=>neoCook(k);recipes.append(b);}kitchen.append(recipes);
+    if(h.stoves.length<4){const buy=document.createElement('button');buy.className='btn';const cost=200+(h.stoves.length-2)*150;buy.textContent=`Add stove · ${cost} shells · Level ${h.stoves.length}`;buy.disabled=G.shells<cost||neoCafeLevel(h)<h.stoves.length;buy.onclick=neoAddStove;kitchen.append(buy);}const pantry=document.createElement('button');pantry.className='btn';pantry.textContent='Buy 3 carrots · 4 shells (growing costs 2)';pantry.disabled=G.shells<4;pantry.onclick=neoBuyCafeIngredients;kitchen.append(pantry);const tip=document.createElement('p');tip.textContent='Two counters hold two different recipes. Matching batches stack. If both are occupied, your finished food waits safely on its stove.';kitchen.append(tip);sheet.append(kitchen);
   }
   const n=garden?h.plots.length:h.tables,max=garden?8:5,cost=garden?100+(n-4)*75:150+(n-3)*100;
   if(n<max){const expand=document.createElement('button');expand.className='btn';expand.textContent=`Add ${garden?'a garden patch':'a table'} · ${cost} shells`;expand.disabled=G.shells<cost;expand.onclick=()=>{if(neoExpandHomestead(kind))neoOpenHomestead(kind);};sheet.append(expand);}

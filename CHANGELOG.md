@@ -1,3 +1,12 @@
+## Café cooking and progression — 2026-09-12
+
+- Two parallel cooking stoves; café points unlock a third and fourth stove for 200 and 350 shells.
+- Two named recipe counters, with matching batches stacked and stock-backed offline sales.
+- Equipment appears in the editable room; existing cooking progress migrates safely.
+- Buy a small carrot refill for 4 shells, or grow the same quantity for 2 shells.
+- Retain no-spoil food, existing garden, original cat artwork and saved furniture layouts.
+- Verified timers, parallel cooking, duplicate-payment protection, equipment costs and layout routes.
+
 # Changelog
 
 ## Café room design — 2026-09-12

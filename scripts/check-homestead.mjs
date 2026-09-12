@@ -14,3 +14,5 @@ c.G.shells=1000;assert.equal(c.neoExpandHomestead('garden'),true);assert.equal(c
 c.G.shells=0;assert.equal(c.neoExpandHomestead('garden'),false);assert.equal(c.G.homestead.plots.length,5);
 c.G.homestead.cloth='sage';c.G.homestead.layout='window';c.G=JSON.parse(JSON.stringify(c.G));assert.equal(c.neoHomestead().cloth,'sage');assert.equal(c.neoHomestead().layout,'window');
 console.log('PASS: seed costs, occupied plot protection, harvest/cooking timers, stock-backed sales, no double payment and persistent progress.');
+const h=c.neoHomestead();h.stock.carrot=10;c.neoCook('carrot');c.neoCook('carrot');assert.equal(h.stoves.filter(Boolean).length,2);c.neoCook('carrot');assert.equal(h.stock.carrot,6);c.Date.now=()=>220000;c.neoStockCounter(0);c.neoStockCounter(1);assert.equal(h.counter,8);assert.equal(h.trays[0].servings,8);c.neoStockCounter(1);assert.equal(h.counter,8);h.cafeXP=20;c.G.shells=200;c.neoAddStove();assert.equal(h.stoves.length,3);assert.equal(c.G.shells,0);c.neoAddStove();assert.equal(h.stoves.length,3);
+console.log('PASS: parallel cooking, batch stacking, duplicate stocking protection and level/cost equipment gates.');
