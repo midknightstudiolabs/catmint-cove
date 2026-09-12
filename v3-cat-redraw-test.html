@@ -100,7 +100,7 @@
         <canvas id="cv-bighead" width="360" height="420"></canvas>
         <div class="stage-notes"><ul>
           <li>Head ~25% bigger, body a touch smaller → toddler proportions</li>
-          <li>Eyes simplify to solid bean shapes, one big highlight, no iris colour/lash</li>
+          <li>Almond eyes with a coloured iris + vertical slit pupil — pointed cat ears, not a rounded teddy scoop</li>
           <li>Flat two-tone fill instead of a gradient — reads clean at small sizes</li>
         </ul></div>
       </div>
@@ -173,24 +173,24 @@ function catSil(g, P) {
 }
 function drawEar(g, side, P, coat, style) {
   const sx = P.hx + side * P.hr * 0.64, sy = P.hy - P.hr * 0.52;
-  const round = style !== "current";
-  const hgt = round ? P.hr * 0.5 : 11, lean = side * (round ? 2.5 : 3);
+  const big = style !== "current";
+  // a proper triangular cat ear — soft corners, but a real point, not a
+  // teddy-bear scoop (that read as hamster/bear in testing, not cat)
+  const hgt = big ? P.hr * 0.72 : 11, lean = side * (big ? 5 : 3);
+  const baseW = big ? P.hr * 0.5 : 6;
   const tipX = sx + lean, tipY = sy - hgt;
   g.fillStyle = coat.base;
   g.beginPath();
-  g.moveTo(sx - side * 6, sy + 3);
-  if (round) {
-    g.quadraticCurveTo(sx - side * 4, sy - hgt * 1.15, tipX, tipY);
-    g.quadraticCurveTo(sx + side * 5, sy - hgt * 1.1, sx + side * 7, sy + 3.5);
-  } else {
-    g.quadraticCurveTo(sx - side * 1.5, sy - hgt * 0.75, tipX - side * 2, tipY + 1.5);
-    g.quadraticCurveTo(tipX + side * 1.5, tipY - 1.5, tipX + side * 3.5, tipY + 3);
-    g.quadraticCurveTo(sx + side * 6, sy - 1, sx + side * 5.5, sy + 4);
-  }
+  g.moveTo(sx - side * baseW, sy + baseW * 0.42);
+  g.quadraticCurveTo(sx - side * baseW * 0.7, sy - hgt * 0.62, tipX - side * 1.2, tipY + hgt * 0.1);
+  g.quadraticCurveTo(tipX + side * 0.6, tipY - hgt * 0.06, tipX + side * 1.6, tipY + hgt * 0.16);
+  g.quadraticCurveTo(sx + side * baseW * 0.9, sy - hgt * 0.42, sx + side * baseW * 1.05, sy + baseW * 0.5);
   g.closePath(); g.fill();
+  // inner ear — set well inside the point so the coloured base rim still reads
   g.fillStyle = coat.inner || "#e2b4b4";
   g.beginPath();
-  g.ellipse((sx + tipX) / 2, (sy + tipY) / 2 + 1.5, round ? P.hr * 0.24 : 3, round ? P.hr * 0.32 : 4, side * 0.3, 0, 7);
+  const ix = sx + lean * 0.45, iy = sy - hgt * 0.48;
+  g.ellipse(ix, iy, baseW * (big ? 0.4 : 0.5), hgt * (big ? 0.42 : 0.36), side * 0.12, 0, 7);
   g.fill();
 }
 function shade(ctx, coat, style, P) {
@@ -290,12 +290,26 @@ function eyes(ctx, P, coat, style) {
       ctx.strokeStyle = "rgba(28,22,26,0.75)"; ctx.lineWidth = 1.6; ctx.lineCap = "round";
       ctx.beginPath(); ctx.moveTo(ex - r * 0.95, ey - eh + 1.4); ctx.quadraticCurveTo(ex, ey - eh - 0.6, ex + r * 0.95, ey - eh + 1.4); ctx.stroke();
     } else if (style === "bighead") {
-      // solid bean, no iris colour, one big highlight — the reference's dot eyes
-      const r = 4.4;
+      // almond iris + a vertical slit pupil — a solid dark bean tested as
+      // "cute rodent," not cat; the slit is the one shape that reads as cat
+      // even at this simplified a level of detail
+      const r = 4.6, pinch = side * -1.4;  // pinch: outer corner narrows toward the temple
+      const almond = () => {
+        ctx.beginPath();
+        ctx.moveTo(ex - r, ey);
+        ctx.quadraticCurveTo(ex - r * 0.5 + pinch * 0.3, ey - r * 0.86, ex + r * 0.75, ey - r * 0.4);
+        ctx.quadraticCurveTo(ex + r * 1.05 + pinch, ey, ex + r * 0.75, ey + r * 0.4);
+        ctx.quadraticCurveTo(ex - r * 0.5 + pinch * 0.3, ey + r * 0.86, ex - r, ey);
+        ctx.closePath();
+      };
+      almond(); ctx.fillStyle = coat.eye; ctx.fill();
+      ctx.save(); almond(); ctx.clip();
       ctx.fillStyle = "#241d1a";
-      ctx.beginPath(); ctx.ellipse(ex, ey, r * 0.66, r, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(ex + r * 0.1, ey, r * 0.28, r * 0.82, 0, 0, 7); ctx.fill();
+      ctx.restore();
+      almond(); ctx.strokeStyle = "rgba(46,38,30,0.4)"; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = "rgba(255,255,255,0.92)";
-      ctx.beginPath(); ctx.ellipse(ex - r * 0.24, ey - r * 0.4, r * 0.28, r * 0.32, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(ex - r * 0.1, ey - r * 0.42, r * 0.3, r * 0.3, 0, 0, 7); ctx.fill();
     } else {
       // plush / blend: coloured iris kept, softer + bigger, no lash line
       const r = 4.0, eh = r * 1.05;
@@ -321,10 +335,12 @@ function face(ctx, P, coat, style, wag) {
   ctx.moveTo(nx, ny + 1.6); ctx.lineTo(nx, ny + 2.9);
   ctx.moveTo(nx - 2.6, ny + 2.6); ctx.quadraticCurveTo(nx, ny + 5, nx + 2.6, ny + 2.6);
   ctx.stroke();
-  if (style !== "bighead") {
-    const wl = 10, lum = 0.5;
+  {
+    // whiskers, on every style — dropping them for bighead read as a plush
+    // toy rather than a cat; two per side is plenty at this scale
+    const wl = 10, rows = style === "bighead" ? [-0.6, 1.6] : [-1, 0.6, 2.2];
     ctx.strokeStyle = "rgba(120,110,98,0.4)"; ctx.lineWidth = 1;
-    for (const dy of [-1, 0.6, 2.2]) {
+    for (const dy of rows) {
       ctx.beginPath(); ctx.moveTo(nx - 2, ny + dy * 0.4); ctx.quadraticCurveTo(nx - wl * 0.6, ny + dy * 0.3, nx - wl, ny + dy + 1.2); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(nx + 2, ny + dy * 0.4); ctx.quadraticCurveTo(nx + wl * 0.6, ny + dy * 0.3, nx + wl, ny + dy + 1.2); ctx.stroke();
     }
