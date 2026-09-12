@@ -122,3 +122,5 @@
 #neo-cafe-clock{display:none;position:absolute;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:68;background:#fff9e9;color:#43543f;border:1px solid #d8d9bf;border-radius:20px;padding:12px 22px;font-size:clamp(20px,3vw,28px);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none}
 #fest:has(#cafeBoard:not([hidden])) #neo-cafe-clock{display:block}
 @media(max-width:370px){#fest .midk-spin{min-width:108px;font-size:21px;padding:10px 14px}#fest .midk-console{gap:8px;padding-left:8px;padding-right:8px}#fest .midk-console .mc-reels span{width:30px;height:32px}}
+
+#fest{touch-action:none}#cafeBoard{touch-action:pan-y}

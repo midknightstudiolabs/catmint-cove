@@ -1,5 +1,11 @@
 # Changelog
 
+## Direct café table service — 2026-09-12
+
+- Drag a waiting guest to a clean table, or tap the guest and then the table. Guests walk to their assigned seats.
+- Tap tables directly to take orders, prepare, serve and clear. Table labels show the next action; available seats highlight when a guest is selected.
+- Retained table buttons as an accessible alternative, staff role management, patience and existing rewards.
+
 ## Screen-edge cat greetings — 2026-09-12
 
 - Anchored Little Hello close-ups to the actual bottom viewport edge instead of floating 64 pixels above the menu.

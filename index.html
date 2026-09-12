@@ -1365,6 +1365,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #neo-cafe-clock{display:none;position:absolute;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:68;background:#fff9e9;color:#43543f;border:1px solid #d8d9bf;border-radius:20px;padding:12px 22px;font-size:clamp(20px,3vw,28px);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none}
 #fest:has(#cafeBoard:not([hidden])) #neo-cafe-clock{display:block}
 @media(max-width:370px){#fest .midk-spin{min-width:108px;font-size:21px;padding:10px 14px}#fest .midk-console{gap:8px;padding-left:8px;padding-right:8px}#fest .midk-console .mc-reels span{width:30px;height:32px}}
+
+#fest{touch-action:none}#cafeBoard{touch-action:pan-y}
 </style>
 
 <div id="app">
@@ -1539,9 +1541,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <h2>Running the café</h2>
       <ul class="vb-tut">
         <li><span class="vt-e">🐈</span><span class="vt-t">Three cats have agreed to run a pop-up café. None of them asked what that involves.</span></li>
-        <li><span class="vt-e">☕🍰🤵</span><span class="vt-t"><b>Barista</b> makes it, <b>Server</b> carries it, <b>Host</b> seats the guests. Tap the table buttons to give them their next task.</span></li>
+        <li><span class="vt-e">☕🍰🤵</span><span class="vt-t"><b>Barista</b> makes it, <b>Server</b> carries it, <b>Host</b> seats the guests. Drag a waiting cat onto a clean table, or tap the cat and then its table.</span></li>
         <li><span class="vt-e">🔀</span><span class="vt-t">Someone clearly not coping? <b>Drag their card to another role.</b> The swap's instant. The improvement is a hope, not a promise.</span></li>
-        <li><span class="vt-e">⏳</span><span class="vt-t"><b>You direct service:</b> seat a guest, take their order, prepare it, serve it, then clear the table. Watch the patience bars; the cats handle the walking.</span></li>
+        <li><span class="vt-e">⏳</span><span class="vt-t"><b>You direct service:</b> seat a guest, take their order, prepare it, serve it, then clear the table. Tap tables in the room for each step. Green rings show open seats; the cats walk there themselves. Watch their patience bars.</span></li>
         <li><span class="vt-e">😼</span><span class="vt-t">It will not go smoothly. Perfect chaos is the target.</span></li>
       </ul>
       <div class="btn-row">
@@ -12736,6 +12738,7 @@ function startCoveCafe() {
   festKind = "cafe";
   fitFestCanvas();
   cafeShiftT = 0; cafePhaseIx = 0; cafePhaseT = 0; cafeMood = 0.6; cafeShellTips = 0;
+  cafeGuestPick=null; cafeGuestPointer=null;
   cafeServed = 0; cafeLost = 0; cafeSpawnT = 2; _cafePhaseHinted = ""; _cafeQuietT = 0;
   cafePick = null; _cafeResultShown = false; _cafeDrag = null; _cafeLastNote = ""; _cafeBannerUntil = 0;
   cafeCust = []; cafeOrderQ = []; cafeReady = []; _cafeCustPool = []; _cafePassWaitT = 0;
@@ -12850,8 +12853,8 @@ function neoCafeServiceBoard(){
     return {seat,c,action,label,i,pat:c?Math.max(0,Math.ceil(c.patience*5)):0};
   });
   const signature=queue+'|'+rows.map(r=>[r.action,r.label,r.pat].join(':')).join('|');if(board.dataset.state===signature)return;board.dataset.state=signature;
-  board.innerHTML=`<p class="neo-cafe-queue">${queue?queue+' waiting at the door':'Ready for the next guest'} · Follow the table buttons</p><div class="neo-cafe-tables">${rows.map(r=>`<button class="btn" data-table="${r.i}" data-action="${r.action}" ${r.action?'':'disabled'}><b>Table ${r.i+1}</b><span>${r.label}</span>${r.c?`<meter min="0" max="5" value="${r.pat}" aria-label="Guest patience"></meter>`:''}</button>`).join('')}</div>`;
-  board.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{if(!_cafeRunning)return;const seat=cafeSeats[Number(b.dataset.table)];if(!seat)return;const action=b.dataset.action;if(action==='seat')seat.seatRequested=true;if(action==='order')seat.orderRequested=true;if(action==='prepare'){const order=cafeOrderQ.find(o=>o.seat===seat);if(order)order.approved=true;}if(action==='serve')seat.deliverRequested=true;if(action==='clear'&&!seat.cust&&!seat._clearing)seat.dirty=false;board.dataset.state='';neoCafeServiceBoard();});
+  board.innerHTML=`<p class="neo-cafe-queue">${queue?queue+' waiting at the door':'Ready for the next guest'} · Drag a guest to a table, or tap guest then table</p><div class="neo-cafe-tables">${rows.map(r=>`<button class="btn" data-table="${r.i}" data-action="${r.action}" ${r.action?'':'disabled'}><b>Table ${r.i+1}</b><span>${r.label}</span>${r.c?`<meter min="0" max="5" value="${r.pat}" aria-label="Guest patience"></meter>`:''}</button>`).join('')}</div>`;
+  board.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{if(!_cafeRunning)return;const seat=cafeSeats[Number(b.dataset.table)];if(!seat)return;const action=b.dataset.action;if(action==='seat')cafeTableAction(seat);if(action==='order')seat.orderRequested=true;if(action==='prepare'){const order=cafeOrderQ.find(o=>o.seat===seat);if(order)order.approved=true;}if(action==='serve')seat.deliverRequested=true;if(action==='clear'&&!seat.cust&&!seat._clearing)seat.dirty=false;board.dataset.state='';neoCafeServiceBoard();});
 }
 function cafeSwap(a, b) {
   if (!a || !b || a === b) return;
@@ -12931,6 +12934,72 @@ function cafeSpawnCust() {
 // new cat is never routed onto a table someone's still leaving
 function cafeFreeSeat() { return cafeSeats.find(s => !s.cust && !s._clearing && !s.dirty && s.seatRequested); }
 function cafeSeatNum(seat) { return cafeSeats.indexOf(seat) + 1; }
+// Direct dining-room play: select or drag a guest, then seat them at a clean table.
+let cafeGuestPick = null, cafeGuestPointer = null;
+function cafeSeatGuest(guest, seat) {
+  if (!_cafeRunning || !guest || guest.state !== "queue" || !seat || seat.cust || seat.dirty || seat._clearing) return false;
+  guest.state="toSeat"; guest.seat=seat; guest._lined=false;
+  seat.cust=guest; seat.seatRequested=false; seat.orderRequested=false; seat.deliverRequested=false;
+  cafeGuestPick=null;
+  const host=cafeStaff.find(s=>s.job==="host"); if(host)host.stats.greeted++;
+  neoCafeServiceBoard(); return true;
+}
+function cafeTableAction(seat) {
+  if (!_cafeRunning || !seat) return;
+  if (cafeGuestPick && cafeGuestPick.state!=="queue") cafeGuestPick=null;
+  if (!seat.cust && !seat._clearing) {
+    if (seat.dirty) {seat.dirty=false;}
+    else {const guest=cafeGuestPick || cafeCust.find(c=>c.state==="queue");cafeSeatGuest(guest,seat);}
+  } else if(seat.cust?.state==="seated") seat.orderRequested=true;
+  else if(seat.cust?.state==="wait") {
+    if(cafeReady.some(o=>o.seat===seat))seat.deliverRequested=true;
+    else {const order=cafeOrderQ.find(o=>o.seat===seat);if(order)order.approved=true;}
+  }
+  neoCafeServiceBoard();
+}
+function cafeRoomPoint(e) {
+  const r=canvas.getBoundingClientRect(),v=cafeFit();
+  return {x:((e.clientX-r.left)*canvas.width/r.width-v.ox)/v.sc,y:((e.clientY-r.top)*canvas.height/r.height-v.oy)/v.sc};
+}
+function cafeTableAt(p) {return cafeSeats.find(s=>Math.abs(p.x-s.x)<48 && p.y>s.y-72 && p.y<s.y+32);}
+const cafeRoom=document.getElementById("fest");
+cafeRoom.addEventListener("pointerdown",e=>{
+  if(!_cafeRunning || !festMode || festKind!=="cafe" || e.target.closest("button,.fest-panel,.fest-result,#cafeBoard,.fest-bar"))return;
+  const p=cafeRoomPoint(e);
+  const guest=cafeCust.filter(c=>c.state==="queue").find(c=>Math.hypot(p.x-c.x,p.y-(c.y-16))<32);
+  cafeGuestPointer={id:e.pointerId,guest,start:p,p};
+  if(guest)cafeGuestPick=guest;
+  cafeRoom.setPointerCapture(e.pointerId);e.preventDefault();
+});
+cafeRoom.addEventListener("pointermove",e=>{
+  if(cafeGuestPointer?.id!==e.pointerId)return;
+  cafeGuestPointer.p=cafeRoomPoint(e);e.preventDefault();
+});
+cafeRoom.addEventListener("pointerup",e=>{
+  if(cafeGuestPointer?.id!==e.pointerId)return;
+  const d=cafeGuestPointer;cafeGuestPointer=null;
+  const seat=cafeTableAt(cafeRoomPoint(e));
+  if(d.guest){if(seat)cafeSeatGuest(d.guest,seat);}
+  else if(seat)cafeTableAction(seat);
+  if(cafeRoom.hasPointerCapture(e.pointerId))cafeRoom.releasePointerCapture(e.pointerId);
+});
+cafeRoom.addEventListener("pointercancel",()=>{cafeGuestPointer=null;cafeGuestPick=null;});
+function drawCafeDirectControls(g) {
+  if(cafeGuestPick?.state!=="queue")cafeGuestPick=null;
+  g.save();g.textAlign="center";g.font='bold 10px "Hanken Grotesk",sans-serif';
+  for(let i=0;i<cafeSeats.length;i++) {
+    const s=cafeSeats[i],c=s.cust;
+    const ready=cafeReady.some(o=>o.seat===s),order=cafeOrderQ.find(o=>o.seat===s);
+    let label=s._clearing?"Leaving":s.dirty?"Clear":!c?"Seat here":c.state==="toSeat"?"Arriving":c.state==="seated"?(s.orderRequested?"Ordering":"Take order"):c.state==="enjoy"?"Enjoying":ready?(s.deliverRequested?"Serving":"Serve"):order&&!order.approved?"Prepare":"Cooking";
+    const open=!c&&!s.dirty&&!s._clearing;
+    g.fillStyle=cafeGuestPick&&open?"#cfe5b9":"#fff7e5";g.strokeStyle="#879a78";g.lineWidth=1.5;
+    g.beginPath();g.roundRect(s.x-40,s.y-65,80,23,10);g.fill();g.stroke();g.fillStyle="#43543f";g.fillText((i+1)+" · "+label,s.x,s.y-50);
+    if(cafeGuestPick&&open){g.strokeStyle="#93ad77";g.lineWidth=3;g.beginPath();g.ellipse(s.x,s.y,45,26,0,0,Math.PI*2);g.stroke();}
+  }
+  if(cafeGuestPick){const c=cafeGuestPick;g.strokeStyle="#f0d386";g.lineWidth=3;g.beginPath();g.ellipse(c.x,c.y-12,26,32,0,0,Math.PI*2);g.stroke();
+    if(cafeGuestPointer){const p=cafeGuestPointer.p;g.setLineDash([5,5]);g.beginPath();g.moveTo(c.x,c.y);g.lineTo(p.x,p.y);g.stroke();}}
+  g.restore();
+}
 function cafeMoveTo(o, tx, ty, sp, dt) {
   const dx = tx - o.x, dy = ty - o.y, d = Math.hypot(dx, dy);
   if (d < 2) { o.x = tx; o.y = ty; return true; }
@@ -13329,6 +13398,7 @@ function renderCafe(dt) {
   items.sort((a, b) => a.y - b.y);
   for (const it of items) it.fn();
   if (particles.length || floaters.length) drawFX(g);
+  drawCafeDirectControls(g);
   if (_cafeBannerUntil && cafeShiftT > _cafeBannerUntil) { document.getElementById("volleyBanner").hidden = true; _cafeBannerUntil = 0; }
 }
 function drawCafeCustomer(g, c) {
