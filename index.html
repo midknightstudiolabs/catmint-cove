@@ -15919,8 +15919,9 @@ function drawCat(g, c, isPhoto) {
 
 function drawToken(g, tk) {
   const now = performance.now();
-  const bob = Math.sin(now / 300 + tk.x) * 3;
-  const pulse = 0.5 + 0.5 * Math.sin(now / 320 + tk.x * 0.7);   // 0..1 breathing
+  const wood = tk.flair === "driftwood";
+  const bob = wood ? (art2dStill ? 0 : Math.sin(now / 900 + tk.x) * 1.5) : Math.sin(now / 300 + tk.x) * 3;
+  const pulse = wood ? (art2dStill ? 0.5 : 0.5 + 0.5 * Math.sin(now / 1100)) : 0.5 + 0.5 * Math.sin(now / 320 + tk.x * 0.7);   // 0..1 breathing
   const scale = tk.pop > 0 ? (1 + tk.pop * 0.8) : 1;
   const alpha = tk.pop > 0 ? (1 - tk.pop) : (tk.life > tk.ttl - 4 ? (tk.ttl - tk.life) / 4 : 1);
   const col = tk.flair === "yarn" ? "#c47a35" : tk.flair === "fish" ? "#8fb0c4" : tk.flair === "driftwood" ? "#b9a074" : "#e8b45a";
@@ -15935,7 +15936,7 @@ function drawToken(g, tk) {
   g.scale(scale, scale);
 
   // a "just landed" ring
-  if (tk.life < 0.7) {
+  if (tk.life < 0.7 && !art2dStill) {
     const p = tk.life / 0.7;
     g.globalAlpha = Math.max(0, alpha) * (1 - p);
     g.strokeStyle = col; g.lineWidth = 2;
@@ -15944,7 +15945,7 @@ function drawToken(g, tk) {
   }
 
   // two-layer breathing glow — the whole point is you can't miss it
-  const glow = tk.flair === "driftwood" ? "185,160,116" : "232,180,90";
+  const glow = tk.flair === "driftwood" ? "255,235,172" : "232,180,90";
   g.fillStyle = `rgba(${glow},0.16)`;
   g.beginPath(); g.arc(0, 0, 17 + pulse * 4, 0, 7); g.fill();
   g.fillStyle = `rgba(${glow},0.34)`;
@@ -15953,10 +15954,27 @@ function drawToken(g, tk) {
   g.fillStyle = col;
   if (tk.flair === "driftwood") {
     g.save(); g.rotate(-0.35);
-    roundRect(g, -8, -3.2, 16, 6.4, 2); g.fill();
+    roundRect(g, -11, -4.5, 22, 9, 3); g.fill();
+    g.strokeStyle="#fff1cc";g.lineWidth=1.5;g.stroke();
     g.strokeStyle = "rgba(90,70,45,0.4)"; g.lineWidth = 1;
     g.beginPath(); g.moveTo(-5, -1); g.lineTo(4, -1); g.moveTo(-3, 1.4); g.lineTo(5, 1.4); g.stroke();
     g.restore();
+    // One gentle arrival glint; no repeated flashing or extra particle objects.
+    const reveal=art2dStill ? 0 : Math.sin(Math.PI*Math.min(1,tk.life/1.8));
+    g.save();g.globalAlpha*=0.45+reveal*0.55;
+    g.fillStyle="#fff9df";
+    for(const [x,y,r] of [[15,-12,3+reveal*3],[-15,5,2+reveal*2]]){
+      g.beginPath();g.moveTo(x,y-r);g.quadraticCurveTo(x+1,y-1,x+r,y);
+      g.quadraticCurveTo(x+1,y+1,x,y+r);g.quadraticCurveTo(x-1,y+1,x-r,y);
+      g.quadraticCurveTo(x-1,y-1,x,y-r);g.fill();
+    }
+    g.restore();
+    if(tk.life<3.2){
+      g.save();g.globalAlpha*=Math.min(1,(3.2-tk.life)/.7);
+      g.font="600 11px sans-serif";g.textAlign="center";
+      g.fillStyle="rgba(51,65,45,.88)";roundRect(g,-34,-39,68,19,9);g.fill();
+      g.fillStyle="#fff8e4";g.fillText("Driftwood",0,-26);g.restore();
+    }
   } else if (tk.flair === "yarn") {
     g.beginPath(); g.arc(0, 0, 7.5, 0, 7); g.fill();
     g.strokeStyle = "rgba(0,0,0,0.15)"; g.lineWidth = 1.4;
