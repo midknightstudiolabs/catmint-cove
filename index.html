@@ -1344,6 +1344,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .adv-flow .pick-cat i{font-size:11px}.adv-flow .pick-cat em{font-size:11px}
 @media(max-width:650px){.adv-flow .pick-list.cats{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:380px){.adv-flow .pick-list.cats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Suppress browser double-tap zoom on the game surface; retain horizontal pan. */
+#stage canvas{touch-action:pan-x}
 </style>
 
 <div id="app">
@@ -4848,8 +4851,7 @@ canvas.addEventListener("pointerdown", (e) => {
       const m = movableAt(w.x, w.y, true);
       if (m) { grabMovable(m); _lpFired = true; buzz(); return; }
     }
-    const c = catAt(w.x, w.y, 46);
-    if (c) { enterFocus(c); _lpFired = true; buzz(); return; }
+    // Cat taps and holds never move the camera. Overview uses its button only.
   }, 360);
 });
 canvas.addEventListener("pointermove", (e) => {
@@ -4891,6 +4893,7 @@ canvas.addEventListener("pointerup", (e) => {
   handleTap(w.x, w.y);
 });
 canvas.addEventListener("pointercancel", () => { _tpX = _tpY = null; clearTimeout(_lpTimer); _lpFired = false; });
+canvas.addEventListener("dblclick", e => e.preventDefault());
 
 /* ================= BUTTON ZOOM / OVERVIEW PAN ================= */
 (function overviewControls() {
