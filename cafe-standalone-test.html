@@ -6,89 +6,111 @@
 <title>Catmint Café — test build</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
 <style>
+  /* on-brand: these are the real game's own tokens (index.html :root), not a
+     fresh palette — accent green, shell gold, ink and panel all match. */
   :root{
+    --sky-top:#bfe0d6; --sky-bot:#eef3e6;
     --ground:#eef1e3; --panel:#fdfbf3; --panel-2:#f3efe0; --line:#ddd7c2;
-    --ink:#2e2a22; --ink-soft:#6a6552; --ink-faint:#9a947e;
-    --accent:#3f8159; --accent-bright:#4fae76; --gold:#d9a94e; --rose:#d8768a;
-    --wood:#c99a63; --wood-dark:#a97a45;
+    --ink:#241f17; --ink-soft:#5b5343; --ink-faint:#938a76;
+    --accent:#356b4c; --accent-bright:#3f8159; --shell:#e8b45a; --apricot:#c47a35; --rose:#d8768a;
+    --wood:#c99a63; --wood-dark:#a97a45; --savory:#8a6a4a; --dessert:#d8768a;
     --shadow:0 2px 10px rgba(40,34,20,.10);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;background:var(--ground);color:var(--ink);
     font-family:"Hanken Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;}
-  h1,h2,h3{font-family:"Fraunces",Georgia,serif;font-weight:500;margin:0;}
+  h1,h2,h3{font-family:"Fraunces",Georgia,serif;font-weight:600;margin:0;}
   button{font:inherit;}
 
   .app{display:flex;flex-direction:column;height:100dvh;max-width:560px;margin:0 auto;
-    background:linear-gradient(180deg,var(--ground),#e6ead8);}
+    background:var(--ground);}
 
-  /* ---- HUD ---- */
+  /* ---- HUD — same pill/chip language as the real game's #hud ---- */
   .hud{display:flex;align-items:center;justify-content:space-between;gap:.6rem;
-    padding:.7rem .9rem;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:2;}
-  .hud-name{font-family:"Fraunces",Georgia,serif;font-size:1.05rem;display:flex;align-items:baseline;gap:.4rem;}
-  .hud-name .tag{font-family:"Hanken Grotesk",sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.08em;
+    padding:.7rem .9rem;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:3;}
+  .hud-name{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:1.05rem;display:flex;align-items:baseline;gap:.4rem;}
+  .hud-name .tag{font-family:"Hanken Grotesk",sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.08em;
     text-transform:uppercase;color:var(--ink-faint);border:1px solid var(--line);border-radius:999px;padding:.1rem .45rem;}
-  .hud-stats{display:flex;align-items:center;gap:.6rem;}
-  .hud-stats .coin{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
-  .hud-stats .level{font-weight:700;color:var(--accent);white-space:nowrap;}
-  .xpbar{width:4.6rem;height:.4rem;border-radius:999px;background:var(--panel-2);overflow:hidden;border:1px solid var(--line);}
+  .hud-stats{display:flex;align-items:center;gap:.5rem;}
+  .pill{display:flex;align-items:center;gap:.3rem;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:999px;padding:.28rem .6rem;font-weight:700;font-size:.82rem;font-variant-numeric:tabular-nums;}
+  .pill.level{color:var(--accent);}
+  .xpbar{width:3.6rem;height:.4rem;border-radius:999px;background:var(--panel-2);overflow:hidden;border:1px solid var(--line);}
   .xpfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-bright));width:0%;transition:width .35s ease;}
 
-  /* ---- the room: one continuous café scene, not a settings panel ---- */
-  .room{flex:1;overflow-y:auto;padding:.8rem;display:flex;flex-direction:column;gap:.8rem;
+  /* ---- the room ---- */
+  .room{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+  .window-strip{height:2.4rem;flex:0 0 auto;position:relative;overflow:hidden;
+    background:linear-gradient(180deg,var(--sky-top),var(--sky-bot));
+    box-shadow:inset 0 -3px 6px -3px rgba(40,34,20,.18);}
+  .window-strip i{position:absolute;bottom:.3rem;width:2.2rem;height:.7rem;border-radius:999px;background:#fff;opacity:.75;}
+  .window-strip i:nth-child(1){left:8%;}
+  .window-strip i:nth-child(2){left:38%;width:1.6rem;bottom:.6rem;opacity:.55;}
+  .window-strip i:nth-child(3){left:70%;}
+
+  .floor-pad{flex:1;padding:.8rem;display:flex;flex-direction:column;gap:.85rem;
     background:
       radial-gradient(circle at 18px 18px, rgba(0,0,0,.035) 2px, transparent 2.4px) 0 0/36px 36px,
       linear-gradient(180deg,#f2eedd,#e9e4cc);}
-  .section-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);
-    margin:0 0 .35rem .1rem;}
+  .section-label{font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);
+    margin:0 0 .4rem .1rem;display:flex;align-items:center;justify-content:space-between;}
+  .section-label small{font-weight:600;letter-spacing:0;text-transform:none;color:var(--ink-faint);font-size:.68rem;}
 
-  /* the counter: where you choose what to cook */
-  .counter{display:flex;gap:.5rem;background:var(--panel);border:1px solid var(--line);border-radius:18px;
-    padding:.7rem;box-shadow:var(--shadow);}
-  .station{flex:1;display:flex;flex-direction:column;align-items:center;gap:.35rem;text-align:center;min-width:0;}
-  .station .sname{font-size:.72rem;font-weight:700;color:var(--ink-soft);display:flex;align-items:center;gap:.25rem;}
+  /* ---- counter: one card per machine, colour-coded by what it makes ---- */
+  .counter{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.55rem;}
+  .eq-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:.65rem .5rem;
+    display:flex;flex-direction:column;align-items:center;gap:.35rem;text-align:center;box-shadow:var(--shadow);
+    border-top:3px solid var(--eq-c,var(--accent));}
+  .eq-card .ename{font-size:.68rem;font-weight:700;color:var(--ink-soft);line-height:1.15;}
+  .eq-card .eunit{font-size:.6rem;color:var(--ink-faint);}
   .chip-row{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center;}
   .chip{appearance:none;border:1px solid var(--line);background:var(--panel-2);border-radius:10px;
-    padding:.3rem .4rem;font-size:1.15rem;cursor:pointer;line-height:1;}
+    padding:.28rem .4rem;font-size:1.05rem;cursor:pointer;line-height:1;}
   .chip:active{transform:translateY(1px);}
-  .cook-dish{font-size:1.7rem;line-height:1;}
-  .cookbar{width:100%;height:.4rem;border-radius:999px;background:var(--panel-2);overflow:hidden;border:1px solid var(--line);}
-  .cookbar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#f0c878);width:0%;transition:width .2s linear;}
-  .collect-btn{appearance:none;border:0;border-radius:12px;padding:.3rem .6rem;font-weight:700;font-size:.76rem;
-    background:var(--accent);color:#fff;cursor:pointer;animation:bounce 1s ease-in-out infinite;}
-  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-  .stuck-note{font-size:.66rem;color:var(--rose);font-weight:700;}
 
-  /* the pass: dishes ready to serve — tap one to send it out */
+  .eq-ring{--pct:0;width:3.2rem;height:3.2rem;border-radius:50%;padding:3px;
+    background:conic-gradient(var(--eq-c,var(--accent)) calc(var(--pct)*1%), var(--panel-2) 0);
+    transition:background .2s linear;}
+  .eq-ring .inner{width:100%;height:100%;border-radius:50%;background:var(--panel);display:grid;place-items:center;font-size:1.4rem;}
+  .collect-btn{appearance:none;border:0;border-radius:999px;padding:.28rem .6rem;font-weight:700;font-size:.72rem;
+    background:var(--eq-c,var(--accent));color:#fff;cursor:pointer;animation:bounce 1s ease-in-out infinite;}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+  .stuck-note{font-size:.62rem;color:var(--rose);font-weight:700;}
+  .eq-locked{opacity:.55;}
+  .eq-locked .ename{color:var(--ink-faint);}
+
+  /* ---- the pass ---- */
   .pass{display:flex;gap:.5rem;background:var(--panel-2);border:1.5px dashed var(--line);border-radius:16px;
     padding:.55rem;min-height:3.3rem;align-items:center;}
-  .pass-slot{width:2.6rem;height:2.6rem;border-radius:12px;display:grid;place-items:center;font-size:1.35rem;flex:0 0 auto;}
+  .pass-slot{width:2.5rem;height:2.5rem;border-radius:12px;display:grid;place-items:center;font-size:1.3rem;flex:0 0 auto;}
   .pass-slot.empty{border:1.5px dashed var(--line);opacity:.5;}
   .pass-slot.full{background:var(--panel);box-shadow:var(--shadow);cursor:pointer;
     animation:pulseGlow 1.6s ease-in-out infinite;}
   @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 rgba(63,129,89,.35)}50%{box-shadow:0 0 0 7px rgba(63,129,89,0)}}
   .pass-hint{font-size:.7rem;color:var(--ink-faint);padding-left:.2rem;}
 
-  /* the floor: tables around the room */
-  .tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:.7rem .5rem;}
-  .table{display:flex;flex-direction:column;align-items:center;gap:.3rem;cursor:default;}
-  .table-top{position:relative;width:4.4rem;height:4.4rem;border-radius:50%;display:grid;place-items:center;
-    font-size:1.9rem;background:radial-gradient(circle at 35% 30%, var(--wood), var(--wood-dark));
-    box-shadow:inset 0 -4px 0 rgba(0,0,0,.12), var(--shadow);}
+  /* ---- the floor: tables, a real ring timer, a brand cat instead of an emoji ---- */
+  .tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.7rem .5rem;}
+  .table{display:flex;flex-direction:column;align-items:center;gap:.3rem;}
+  .table-ring{--pct:100;width:4.6rem;height:4.6rem;border-radius:50%;padding:3px;
+    background:conic-gradient(var(--rose) calc(var(--pct)*1%), var(--panel-2) 0);transition:background .2s linear;}
+  .table.empty .table-ring{background:none;}
+  .table-top{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;position:relative;
+    background:radial-gradient(circle at 35% 30%, var(--wood), var(--wood-dark));
+    box-shadow:inset 0 -4px 0 rgba(0,0,0,.12);}
   .table.empty .table-top{background:transparent;box-shadow:none;border:2px dashed var(--line);opacity:.6;}
   .table.seated .table-top{animation:popIn .22s ease-out;}
   .table.leaving .table-top{animation:leaveOut .4s ease-in forwards;}
   @keyframes popIn{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
   @keyframes leaveOut{to{transform:scale(.35);opacity:0}}
-  .want-bubble{position:absolute;top:-.6rem;right:-.3rem;width:1.7rem;height:1.7rem;border-radius:50%;
-    background:#fff;box-shadow:var(--shadow);display:grid;place-items:center;font-size:1rem;
-    border:1.5px solid var(--gold);}
-  .want-bubble.matched{border-color:var(--accent);}
-  .name{font-size:.68rem;color:var(--ink-soft);font-weight:600;}
-  .patience{width:80%;height:.24rem;border-radius:999px;background:var(--panel-2);overflow:hidden;}
-  .patience i{display:block;height:100%;background:var(--rose);transition:width .2s linear;}
+  .cat-badge{width:2.7rem;height:2.7rem;border-radius:50%;display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+  .cat-badge svg{width:1.7rem;height:1.7rem;}
+  .want-bubble{position:absolute;top:-.5rem;right:-.35rem;width:1.6rem;height:1.6rem;border-radius:50%;
+    background:#fff;box-shadow:var(--shadow);display:grid;place-items:center;font-size:.95rem;
+    border:1.5px solid var(--shell);}
+  .name{font-size:.66rem;color:var(--ink-soft);font-weight:600;}
 
   /* ---- toolbar ---- */
   .toolbar{display:flex;gap:.6rem;padding:.7rem .9rem;background:var(--panel);border-top:1px solid var(--line);}
@@ -104,20 +126,24 @@
   .modal{background:var(--panel);width:100%;max-width:520px;max-height:82dvh;overflow-y:auto;
     border-radius:20px 20px 0 0;padding:1.1rem 1.1rem 1.4rem;box-shadow:0 -8px 30px rgba(20,16,8,.2);}
   @media(min-width:560px){.modal{border-radius:20px;}}
-  .modal .mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;}
+  .modal .mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;}
   .modal .x{border:1px solid var(--line);background:#fff;border-radius:50%;width:1.9rem;height:1.9rem;cursor:pointer;color:var(--ink-soft);}
+  .modal .mkicker{font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);
+    margin:1rem 0 .2rem;}
+  .modal .mkicker:first-of-type{margin-top:0;}
   .recipe-row,.shop-row{display:flex;align-items:center;gap:.7rem;padding:.6rem 0;border-top:1px solid var(--line);}
   .recipe-row:first-of-type,.shop-row:first-of-type{border-top:none;}
-  .recipe-row .ic,.shop-row .ic{font-size:1.6rem;width:2.2rem;text-align:center;}
-  .recipe-row .info,.shop-row .info{flex:1;}
-  .recipe-row .info b,.shop-row .info b{display:block;font-size:.92rem;}
-  .recipe-row .info span,.shop-row .info span{font-size:.76rem;color:var(--ink-soft);}
+  .mkicker + .recipe-row,.mkicker + .shop-row{border-top:none;}
+  .recipe-row .ic,.shop-row .ic{font-size:1.5rem;width:2.1rem;text-align:center;flex:0 0 auto;}
+  .recipe-row .info,.shop-row .info{flex:1;min-width:0;}
+  .recipe-row .info b,.shop-row .info b{display:block;font-size:.9rem;}
+  .recipe-row .info span,.shop-row .info span{font-size:.74rem;color:var(--ink-soft);}
   .recipe-row.locked{opacity:.5;}
-  .buy-btn{appearance:none;border:0;border-radius:999px;padding:.45rem .8rem;font-weight:700;font-size:.8rem;
-    background:var(--accent);color:#fff;cursor:pointer;white-space:nowrap;}
+  .buy-btn{appearance:none;border:0;border-radius:999px;padding:.42rem .75rem;font-weight:700;font-size:.78rem;
+    background:var(--accent);color:#fff;cursor:pointer;white-space:nowrap;flex:0 0 auto;}
   .buy-btn:disabled{background:var(--panel-2);color:var(--ink-faint);cursor:default;}
-  .soon-tag{display:inline-block;margin-left:.3rem;padding:.05rem .45rem;border-radius:999px;background:var(--panel-2);
-    color:var(--ink-faint);font-size:.62rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}
+  .soon-tag{display:inline-block;padding:.05rem .45rem;border-radius:999px;background:var(--panel-2);
+    color:var(--ink-faint);font-size:.6rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;flex:0 0 auto;}
 
   /* ---- toasts + floaters ---- */
   .toasts{position:fixed;left:50%;top:.8rem;transform:translateX(-50%);z-index:80;
@@ -135,24 +161,27 @@
   <header class="hud">
     <div class="hud-name">🎀 Catmint Café <span class="tag">test build</span></div>
     <div class="hud-stats">
-      <span class="coin">🐚 <b id="coins">0</b></span>
-      <span class="level">Lv <b id="level">1</b></span>
+      <span class="pill">🐚 <b id="coins">0</b></span>
+      <span class="pill level">Lv <b id="level">1</b></span>
       <div class="xpbar"><div class="xpfill" id="xpfill"></div></div>
     </div>
   </header>
 
   <main class="room">
-    <div>
-      <div class="section-label">Counter — tap a station, pick what to cook</div>
-      <div class="counter" id="stations"></div>
-    </div>
-    <div>
-      <div class="section-label">Pass — tap a ready dish to send it out</div>
-      <div class="pass" id="pass"></div>
-    </div>
-    <div>
-      <div class="section-label">Floor</div>
-      <div class="tables" id="tables"></div>
+    <div class="window-strip"><i></i><i></i><i></i></div>
+    <div class="floor-pad">
+      <div>
+        <div class="section-label">Counter <small>tap a machine, pick what to cook</small></div>
+        <div class="counter" id="stations"></div>
+      </div>
+      <div>
+        <div class="section-label">Pass <small>tap a ready dish to send it out</small></div>
+        <div class="pass" id="pass"></div>
+      </div>
+      <div>
+        <div class="section-label">Floor</div>
+        <div class="tables" id="tables"></div>
+      </div>
     </div>
   </main>
 
@@ -170,45 +199,61 @@
 <script>
 "use strict";
 /* =========================================================================
-   Catmint Café — v0.1 test build (rev 2)
+   Catmint Café — v0.3 test build
 
-   rev 1 tied each station directly to one table and auto-started cooking
-   the instant a station freed up — the player's only action was tapping
-   "Serve!" on a green button. It looked like a game and played like a
-   notification tray. Verdict: not playable.
+   v0.1 auto-cooked everything — one passive "Serve!" button, no decisions.
+   v0.2 fixed the loop (choose -> collect -> serve, 3 real taps) but still
+   ran on two identical anonymous "stations" and emoji placeholder art.
 
-   rev 2 decouples cooking from serving, the way the genre this is actually
-   modeled on (Cafe World, and cook-and-serve games generally) does it:
-     1. CHOOSE what to cook at an open station (a real decision — you're
-        picking against what the floor is currently asking for).
-     2. COLLECT the finished dish into the pass when it's done (a tray with
-        a hard cap, so over-cooking one thing has a real cost).
-     3. SERVE by tapping a ready dish in the pass — it goes to whichever
-        waiting cat asked for it, oldest wait first.
-   Three taps, three decisions, instead of one passive button. See
-   GAME_DESIGN.md for why the loop is shaped this way.
+   v0.3: real equipment. Espresso Machine and Pastry Oven come with the
+   café; the Sandwich Press and Dessert Chiller are purchased, level-gated,
+   and each one you own is its own cooking slot — buying a second Espresso
+   Machine literally means two coffees brewing at once. Recipes are grouped
+   into families (drink/baked/savory/dessert) tied 1:1 to an equipment type,
+   so a family with no machine yet simply can't be ordered — buying the
+   Press is what makes sandwiches start showing up on the floor at all.
+
+   Also: the customer icon is the real brand mark (the app-icon cat, as
+   vector) instead of an emoji, and cooking/patience read as ring timers
+   instead of flat bars. See GAME_DESIGN.md for the underlying pitch.
    ========================================================================= */
 
-const SAVE_KEY = "catmintCafe_v0_2";
+const SAVE_KEY = "catmintCafe_v0_3";
 
 // ---- content tables ------------------------------------------------------
+// families map 1:1 to an equipment id — see FAMILY_EQUIP below. A recipe's
+// family is what machine can cook it, not just flavour text.
 const RECIPES = [
-  { id:"coffee",   name:"Warm Coffee",     icon:"☕", cook:7,  pay:8,   xp:4,  minLevel:1 },
-  { id:"pastry",   name:"Butter Pastry",   icon:"🥐", cook:13, pay:16,  xp:8,  minLevel:1 },
-  { id:"sandwich", name:"Garden Sandwich", icon:"🥪", cook:20, pay:30,  xp:14, minLevel:2 },
-  { id:"latte",    name:"Catmint Latte",   icon:"🧋", cook:26, pay:42,  xp:19, minLevel:3 },
-  { id:"cake",     name:"Catmint Cake",    icon:"🍰", cook:36, pay:64,  xp:26, minLevel:4 },
+  { id:"coffee",   name:"Warm Coffee",     icon:"☕", family:"drink",   cook:7,  pay:8,  xp:4,  minLevel:1 },
+  { id:"pastry",   name:"Butter Pastry",   icon:"🥐", family:"baked",   cook:13, pay:16, xp:8,  minLevel:1 },
+  { id:"sandwich", name:"Garden Sandwich", icon:"🥪", family:"savory",  cook:18, pay:30, xp:14, minLevel:2 },
+  { id:"latte",    name:"Catmint Latte",   icon:"🧋", family:"drink",   cook:24, pay:42, xp:19, minLevel:3 },
+  { id:"cake",     name:"Catmint Cake",    icon:"🍰", family:"dessert", cook:34, pay:64, xp:26, minLevel:4 },
 ];
 const RECIPE_BY_ID = Object.fromEntries(RECIPES.map(r => [r.id, r]));
 
+// the equipment roster — this is the "buy more stoves" system. espresso +
+// oven ship free with the café; press + chiller are real purchases gated
+// by level, and every type can be doubled up once (MAX_UNITS) for real
+// parallel throughput, the same lever Cafe World used.
+const EQUIP = [
+  { id:"espresso", name:"Espresso Machine", icon:"☕", family:"drink",   accent:"#356b4c", startOwned:1, unlockLevel:1, basePrice:0,   extraPrice:150 },
+  { id:"oven",     name:"Pastry Oven",      icon:"🔥", family:"baked",   accent:"#c47a35", startOwned:1, unlockLevel:1, basePrice:0,   extraPrice:150 },
+  { id:"press",    name:"Sandwich Press",   icon:"🥪", family:"savory",  accent:"#8a6a4a", startOwned:0, unlockLevel:2, basePrice:180, extraPrice:220 },
+  { id:"chiller",  name:"Dessert Chiller",  icon:"🍰", family:"dessert", accent:"#d8768a", startOwned:0, unlockLevel:4, basePrice:380, extraPrice:320 },
+];
+const EQUIP_BY_ID = Object.fromEntries(EQUIP.map(e => [e.id, e]));
+const FAMILY_EQUIP = Object.fromEntries(EQUIP.map(e => [e.family, e.id]));
+const MAX_UNITS = 2;
+
 const CAT_NAMES = ["Biscuit","Clover","Ember","Hazel","Marlow","Pepper","Sable",
   "Toffee","Wren","Sundew","Basil","Pip", "Midknight", "Labubu"];   // the last two: a little cameo, not a real roster link yet
-
-const STATION_DEFS = [
-  { id:"brew", name:"Brew Bar",  icon:"☕" },
-  { id:"oven", name:"Bake Oven", icon:"🔥" },
-];
-const PASS_CAP = 4;
+// soft on-brand tints for the customer badge — a stand-in for "coat variety"
+// until this pulls from the real Catdex palette
+const CUSTOMER_TINTS = ["#e4c9a0","#c7ceb9","#e0b9a8","#cfd6d6","#e8d3b0","#d3c2d6"];
+// the app icon's cat-from-behind mark, as a path — see catmint-cove-wordmark
+// work; same silhouette, reused here instead of an emoji
+const CAT_MARK = 'M100,152 C100,152 58,152 53,146 C47,140 45,118 53,97 C57,86 62,80 69,76 L71,60 C72,55 76,55 78,60 L87,79 C91,77 96,76 100,76 C104,76 109,77 113,79 L122,60 C124,55 128,55 129,60 L131,76 C138,80 143,86 147,97 C155,118 153,140 147,146 C142,152 100,152 100,152 Z';
 
 const LEVEL_XP = [0, 20, 55, 110, 190, 300, 450];   // xp needed to REACH level n (index = level-1)
 function levelForXp(xp) {
@@ -221,7 +266,11 @@ function xpIntoLevel(xp, lvl) {
   const next = LEVEL_XP[lvl] ?? (base + 220);   // keep climbing past the table so play never hard-stops
   return { base, next, frac: Math.min(1, (xp - base) / (next - base)) };
 }
-function unlockedRecipes(level) { return RECIPES.filter(r => r.minLevel <= level); }
+// a recipe can only come up if its family's machine is actually owned —
+// buying the Sandwich Press is what makes sandwiches start being requested
+function availableRecipes(level) {
+  return RECIPES.filter(r => r.minLevel <= level && (ownedEquip[FAMILY_EQUIP[r.family]] || 0) > 0);
+}
 
 // ---- state -----------------------------------------------------------
 const MAX_TABLES = 3;
@@ -232,10 +281,11 @@ const SPAWN_EVERY_S = [5, 11];   // random range between a table opening up and 
 const AWAY_CAP_MIN = 20;         // "while you were away" trickle caps here
 
 let coins = 30, xp = 0, tableCount = 2, passIdSeq = 1;
-let tables = [];      // { id, cat, hue, want:recipeId|null, waitS, leaving:boolean }
-let stations = STATION_DEFS.map(s => ({ ...s, recipeId:null, endsAt:0, duration:0, stuck:false }));
-let pass = [];         // { id, recipeId }
-let nextSpawnAt = {};  // tableId -> clock value (seconds) of the next spawn attempt
+let ownedEquip = Object.fromEntries(EQUIP.map(e => [e.id, e.startOwned]));
+let tables = [];          // { id, cat, tint, want:recipeId|null, waitS, leaving:boolean }
+let stationState = new Map();  // "equipId:idx" -> { recipeId, endsAt, duration, stuck }
+let pass = [];             // { id, recipeId }
+let nextSpawnAt = {};      // tableId -> clock value (seconds) of the next spawn attempt
 
 function load() {
   let raw = null;
@@ -246,6 +296,7 @@ function load() {
   const now = Date.now();
   if (raw) {
     coins = raw.coins ?? coins; xp = raw.xp ?? xp; tableCount = raw.tableCount ?? tableCount;
+    if (raw.ownedEquip) Object.assign(ownedEquip, raw.ownedEquip);
     const awayMin = Math.max(0, Math.min(AWAY_CAP_MIN, (now - (raw.lastSeen || now)) / 60000));
     if (awayMin > 0.5) {
       const tip = Math.round(awayMin * 1.1);
@@ -257,10 +308,10 @@ function load() {
   save();
 }
 function save() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ coins, xp, tableCount, lastSeen: Date.now() })); }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ coins, xp, tableCount, ownedEquip, lastSeen: Date.now() })); }
   catch (e) { /* no persistence available here — game still plays for the session */ }
 }
-function freshTable(id) { return { id, cat:null, hue:0, want:null, waitS:0, leaving:false }; }
+function freshTable(id) { return { id, cat:null, tint:"#ccc", want:null, waitS:0, leaving:false }; }
 
 // ---- economy helpers ---------------------------------------------------
 function grantXp(n) {
@@ -268,7 +319,7 @@ function grantXp(n) {
   xp += n;
   const after = levelForXp(xp);
   if (after > before) {
-    toast(`Café Level ${after}! ${unlockedRecipes(after).length > unlockedRecipes(before).length ? "A new recipe just unlocked." : "Keep it up."}`);
+    toast(`Café Level ${after}! ${availableRecipes(after).length > availableRecipes(before).length ? "A new recipe just unlocked." : "Keep it up."}`);
   }
 }
 
@@ -281,10 +332,11 @@ function maybeSpawn(nowS) {
   }
 }
 function spawnAt(t) {
-  const pool = unlockedRecipes(levelForXp(xp));
+  const pool = availableRecipes(levelForXp(xp));
+  if (!pool.length) return;   // shouldn't happen (coffee/pastry are always owned) but never seat an impossible order
   const recipe = pool[Math.floor(Math.random() * pool.length)];
   t.cat = CAT_NAMES[Math.floor(Math.random() * CAT_NAMES.length)];
-  t.hue = Math.floor(Math.random() * 360);
+  t.tint = CUSTOMER_TINTS[Math.floor(Math.random() * CUSTOMER_TINTS.length)];
   t.want = recipe.id;
   t.waitS = 0;
   t.leaving = false;
@@ -296,22 +348,35 @@ function startTableLeave(t, reason) {
   setTimeout(() => { t.cat = null; t.want = null; t.waitS = 0; t.leaving = false; }, 380);
 }
 
-// ---- cooking: choose -> collect -----------------------------------------
-function pickRecipe(stationId, recipeId) {
-  const st = stations.find(s => s.id === stationId);
+// ---- equipment: every owned unit is its own cooking slot -----------------
+function getStations() {
+  const list = [];
+  for (const e of EQUIP) {
+    const n = ownedEquip[e.id] || 0;
+    for (let i = 0; i < n; i++) {
+      const key = e.id + ":" + i;
+      if (!stationState.has(key)) stationState.set(key, { recipeId:null, endsAt:0, duration:0, stuck:false });
+      list.push({ key, def:e, idx:i, count:n, state: stationState.get(key) });
+    }
+  }
+  return list;
+}
+function pickRecipe(key, recipeId) {
+  const st = stationState.get(key);
   const recipe = RECIPE_BY_ID[recipeId];
   if (!st || st.recipeId || !recipe) return;
   st.recipeId = recipeId; st.duration = recipe.cook; st.endsAt = performance.now() + recipe.cook * 1000; st.stuck = false;
   render();
 }
-function collect(stationId) {
-  const st = stations.find(s => s.id === stationId);
+function collect(key) {
+  const st = stationState.get(key);
   if (!st || !st.recipeId || st.endsAt > performance.now()) return;
-  if (pass.length >= PASS_CAP) { st.stuck = true; toast("The pass is full — serve something before this burns a hole in the tray."); render(); return; }
+  if (pass.length >= PASS_CAP()) { st.stuck = true; toast("The pass is full — serve something before this burns a hole in the tray."); render(); return; }
   pass.push({ id: passIdSeq++, recipeId: st.recipeId });
   st.recipeId = null; st.endsAt = 0; st.duration = 0; st.stuck = false;
   render();
 }
+function PASS_CAP() { return 4; }
 
 // ---- serving: pass -> best-matching table --------------------------------
 function serveFromPass(passItemId) {
@@ -353,6 +418,19 @@ function buyTable() {
   save(); renderShop(); render();
   toast("A new table's out on the floor.");
 }
+function equipPrice(def) { const n = ownedEquip[def.id] || 0; return n === 0 ? def.basePrice : def.extraPrice; }
+function buyEquip(id) {
+  const def = EQUIP_BY_ID[id];
+  const level = levelForXp(xp);
+  const n = ownedEquip[id] || 0;
+  if (level < def.unlockLevel || n >= MAX_UNITS) return;
+  const price = equipPrice(def);
+  if (coins < price) { toast("Not enough shells yet."); return; }
+  coins -= price;
+  ownedEquip[id] = n + 1;
+  save(); renderShop(); render();
+  toast(n === 0 ? `The ${def.name} is in.` : `A second ${def.name} — twice the throughput.`);
+}
 
 // ---- game loop ---------------------------------------------------------
 function tick(now) {
@@ -378,29 +456,44 @@ function render() {
   document.getElementById("xpfill").style.width = (xpIntoLevel(xp, level).frac * 100) + "%";
 
   const wanted = new Set(tables.filter(t => t.cat && !t.leaving).map(t => t.want));
-  $stations.innerHTML = stations.map(s => stationHTML(s, level)).join("");
+  $stations.innerHTML = getStations().map(s => stationHTML(s, level)).join("") + lockedEquipHTML(level);
   $pass.innerHTML = passHTML(wanted);
-  $tables.innerHTML = tables.map(tableHTML).join("");
+  ensureTableEls();
+  tables.forEach((t, i) => updateTableEl(tableEls[i], t));
 }
 function stationHTML(s, level) {
-  if (!s.recipeId) {
-    const chips = unlockedRecipes(level).map(r => `<button class="chip" onclick="onPick('${s.id}','${r.id}')" title="${r.name}">${r.icon}</button>`).join("");
-    return `<div class="station"><div class="sname">${s.icon} ${s.name}</div><div class="chip-row">${chips}</div></div>`;
+  const { key, def } = s;
+  const unitTag = s.count > 1 ? `<div class="eunit">unit ${s.idx + 1} of ${s.count}</div>` : "";
+  if (!s.state.recipeId) {
+    const chips = availableRecipes(level).filter(r => r.family === def.family)
+      .map(r => `<button class="chip" onclick="onPick('${key}','${r.id}')" title="${r.name}">${r.icon}</button>`).join("");
+    return `<div class="eq-card" style="--eq-c:${def.accent}">
+      <div class="ename">${def.icon} ${def.name}</div>${unitTag}
+      <div class="chip-row">${chips || "<span class='eunit'>—</span>"}</div>
+    </div>`;
   }
-  const recipe = RECIPE_BY_ID[s.recipeId];
+  const recipe = RECIPE_BY_ID[s.state.recipeId];
   const now = performance.now();
-  const ready = s.endsAt <= now;
-  const pct = ready ? 100 : Math.max(0, 100 - ((s.endsAt - now) / (s.duration * 1000)) * 100);
-  return `<div class="station"><div class="sname">${s.icon} ${s.name}</div>
-    <div class="cook-dish">${recipe.icon}</div>
+  const ready = s.state.endsAt <= now;
+  const pct = ready ? 100 : Math.max(0, 100 - ((s.state.endsAt - now) / (s.state.duration * 1000)) * 100);
+  return `<div class="eq-card" style="--eq-c:${def.accent}">
+    <div class="ename">${def.icon} ${def.name}</div>${unitTag}
+    <div class="eq-ring" style="--pct:${pct}"><div class="inner">${recipe.icon}</div></div>
     ${ready
-      ? (s.stuck ? `<div class="stuck-note">pass is full!</div>` : `<button class="collect-btn" onclick="onCollect('${s.id}')">Collect</button>`)
-      : `<div class="cookbar"><i style="width:${pct}%"></i></div>`}
+      ? (s.state.stuck ? `<div class="stuck-note">pass is full!</div>` : `<button class="collect-btn" onclick="onCollect('${key}')">Collect</button>`)
+      : `<div class="eunit">${Math.max(0, Math.ceil((s.state.endsAt - now) / 1000))}s</div>`}
   </div>`;
+}
+function lockedEquipHTML(level) {
+  return EQUIP.filter(e => level < e.unlockLevel && (ownedEquip[e.id] || 0) === 0).map(e => `
+    <div class="eq-card eq-locked" style="--eq-c:${e.accent}">
+      <div class="ename">${e.icon} ${e.name}</div>
+      <div class="eunit">Unlocks at Lv ${e.unlockLevel}</div>
+    </div>`).join("");
 }
 function passHTML(wanted) {
   const slots = [];
-  for (let i = 0; i < PASS_CAP; i++) {
+  for (let i = 0; i < PASS_CAP(); i++) {
     const item = pass[i];
     if (item) {
       const r = RECIPE_BY_ID[item.recipeId];
@@ -412,19 +505,48 @@ function passHTML(wanted) {
   }
   return slots.join("") + (pass.length ? "" : `<span class="pass-hint">nothing ready yet</span>`);
 }
-function tableHTML(t) {
-  if (!t.cat) return `<div class="table empty"><div class="table-top"></div><div class="name">open table</div></div>`;
-  const recipe = t.want ? RECIPE_BY_ID[t.want] : null;
-  const pct = Math.max(0, 100 - (t.waitS / PATIENCE_S) * 100);
-  const cls = "table seated" + (t.leaving ? " leaving" : "");
-  return `<div class="${cls}" onclick="onTableTap(${t.id})">
-    <div class="table-top">🐱${recipe ? `<div class="want-bubble">${recipe.icon}</div>` : ""}</div>
-    <div class="name">${t.cat}</div>
-    <div class="patience"><i style="width:${pct}%"></i></div>
-  </div>`;
+// Tables get PERSISTENT DOM nodes, unlike stations/pass which are cheap to
+// fully rebuild every tick. A table's markup includes an entrance/exit CSS
+// animation (popIn/leaveOut) keyed to the element existing — rebuilding
+// `innerHTML` wholesale every 200ms (as a first pass here did) creates a
+// brand-new element every tick, which restarts that animation from its 0%
+// frame every single time. The visible result was every seated table stuck
+// flickering near-invisible instead of popping in once and staying put.
+// Fix: one real DOM node per table, only its *contents* rebuilt when the
+// table's occupant actually changes; the timer ring's fill updates in place
+// every tick without touching the node the animation is attached to.
+let tableEls = [];
+function ensureTableEls() {
+  while (tableEls.length < tables.length) {
+    const idx = tableEls.length;
+    const el = document.createElement("div");
+    el.addEventListener("click", () => onTableTap(tables[idx].id));
+    $tables.appendChild(el);
+    tableEls.push(el);
+  }
 }
-function onPick(stationId, recipeId) { pickRecipe(stationId, recipeId); }
-function onCollect(stationId) { collect(stationId); }
+function updateTableEl(el, t) {
+  const sig = `${t.cat || ""}:${t.want || ""}:${t.leaving ? 1 : 0}`;
+  if (el.dataset.sig !== sig) {
+    el.dataset.sig = sig;
+    if (!t.cat) {
+      el.className = "table empty";
+      el.innerHTML = `<div class="table-ring"><div class="table-top"></div></div><div class="name">open table</div>`;
+    } else {
+      el.className = "table seated" + (t.leaving ? " leaving" : "");
+      const recipe = t.want ? RECIPE_BY_ID[t.want] : null;
+      el.innerHTML = `<div class="table-ring"><div class="table-top">
+        <div class="cat-badge" style="background:${t.tint}"><svg viewBox="0 0 200 200"><path d="${CAT_MARK}" fill="#241f17"/></svg></div>
+        ${recipe ? `<div class="want-bubble">${recipe.icon}</div>` : ""}
+      </div></div>
+      <div class="name">${t.cat}</div>`;
+    }
+  }
+  const ring = el.querySelector(".table-ring");
+  if (ring) ring.style.setProperty("--pct", t.cat ? Math.max(0, 100 - (t.waitS / PATIENCE_S) * 100) : 0);
+}
+function onPick(key, recipeId) { pickRecipe(key, recipeId); }
+function onCollect(key) { collect(key); }
 function onServePass(id) { serveFromPass(id); }
 function onTableTap(id) { serveTable(id); }
 window.onPick = onPick; window.onCollect = onCollect;
@@ -462,14 +584,19 @@ $backdrop.addEventListener("click", e => { if (e.target === $backdrop) closeModa
 
 function renderMenu() {
   const level = levelForXp(xp);
+  const byFamily = {};
+  for (const r of RECIPES) (byFamily[r.family] ||= []).push(r);
   openModal(`
     <div class="mhead"><h2>The Menu</h2><button class="x" onclick="closeModal()">✕</button></div>
-    ${RECIPES.map(r => `
-      <div class="recipe-row ${r.minLevel > level ? "locked" : ""}">
-        <div class="ic">${r.icon}</div>
-        <div class="info"><b>${r.name}</b><span>${r.cook}s cook · pays 🐚${r.pay} · +${r.xp} xp</span></div>
-        ${r.minLevel > level ? `<span class="soon-tag">Lv ${r.minLevel}</span>` : ""}
-      </div>`).join("")}
+    ${EQUIP.map(e => `
+      <div class="mkicker">${e.icon} ${e.name}${!(ownedEquip[e.id]) ? " — not owned yet" : ""}</div>
+      ${(byFamily[e.family] || []).map(r => `
+        <div class="recipe-row ${r.minLevel > level ? "locked" : ""}">
+          <div class="ic">${r.icon}</div>
+          <div class="info"><b>${r.name}</b><span>${r.cook}s cook · pays 🐚${r.pay} · +${r.xp} xp</span></div>
+          ${r.minLevel > level ? `<span class="soon-tag">Lv ${r.minLevel}</span>` : ""}
+        </div>`).join("")}
+    `).join("")}
   `);
 }
 function renderShop() {
@@ -477,6 +604,22 @@ function renderShop() {
   const canBuyTable = tableCount < MAX_TABLES;
   openModal(`
     <div class="mhead"><h2>Shop</h2><button class="x" onclick="closeModal()">✕</button></div>
+    <div class="mkicker">Equipment</div>
+    ${EQUIP.map(e => {
+      const n = ownedEquip[e.id] || 0;
+      const locked = level < e.unlockLevel;
+      const maxed = n >= MAX_UNITS;
+      const price = equipPrice(e);
+      const label = n === 0 ? "Buy" : `+1 more`;
+      return `<div class="shop-row">
+        <div class="ic">${e.icon}</div>
+        <div class="info"><b>${e.name}</b><span>${maxed ? "Fully stocked for this test build" : n === 0 ? `Cook ${e.family} orders — 🐚${price}` : `A second one cooks in parallel — 🐚${price}`}</span></div>
+        ${locked ? `<span class="soon-tag">Lv ${e.unlockLevel}</span>`
+          : maxed ? `<span class="soon-tag">Owned ×${n}</span>`
+          : `<button class="buy-btn" ${coins < price ? "disabled" : ""} onclick="buyEquip('${e.id}')">${label} 🐚${price}</button>`}
+      </div>`;
+    }).join("")}
+    <div class="mkicker">Café</div>
     <div class="shop-row">
       <div class="ic">🪑</div>
       <div class="info"><b>Extra table</b><span>${canBuyTable ? `Serve one more cat at a time — 🐚${tablePrice()}` : "Floor's full for this test build"}</span></div>
@@ -485,19 +628,15 @@ function renderShop() {
         : `<span class="soon-tag">Owned</span>`}
     </div>
     <div class="shop-row">
-      <div class="ic">🔥</div>
-      <div class="info"><b>Third station</b><span>One more thing cooking at once.</span></div>
-      <span class="soon-tag">Soon</span>
-    </div>
-    <div class="shop-row">
       <div class="ic">✨</div>
-      <div class="info"><b>Decor & faster stations</b><span>Cosmetic sets + speed upgrades — no pay-to-win, ever.</span></div>
+      <div class="info"><b>Decor & speed upgrades</b><span>Cosmetic sets + faster machines — no pay-to-win, ever.</span></div>
       <span class="soon-tag">Soon</span>
     </div>
   `);
 }
 window.closeModal = closeModal;
 window.buyTable = buyTable;
+window.buyEquip = buyEquip;
 document.getElementById("btnMenu").onclick = renderMenu;
 document.getElementById("btnShop").onclick = renderShop;
 
