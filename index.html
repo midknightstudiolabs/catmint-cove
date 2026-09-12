@@ -4489,11 +4489,11 @@ let _ovActive = false;                    // touch-action override + drag-pan en
 let _ovBaseScale = 1, _ovFit = 1;         // frozen at entry — the camera never reads live displayScale (which wobbles as the mobile viewport churns)
 let _ovVpW = 0, _ovVpH = 0;               // viewport snapshot the zoom-out camera uses — refreshed only on a real resize, NEVER read per-frame (window.innerWidth/Height jitter ±1px every frame on mobile as the URL bar settles → that was the shake)
 let _ovHold = null;                       // once the zoom is fully settled with no finger down, the whole transform is frozen here and replayed verbatim — no recompute, no shimmer
-const OV_MAX_OUT = 1.7;                   // hard cap: never pull back further than 1.7x the normal view
 function ovComputeFit() {                 // scale (relative to _ovBaseScale) at full zoom-out — computed ONCE at entry
-  // Cover the held viewport with real scenery, without letterbox margins.
-  const fit = Math.max((_ovVpW + 4) / (W + 2 * _overX), (_ovVpH + 4) / H);
-  return Math.max(1 / OV_MAX_OUT, fit / Math.max(0.001, _ovBaseScale));
+  // Contain the entire playable Cove on every aspect ratio, including phones.
+  // Reserve breathing room for the return control instead of cropping the field.
+  const fit = Math.min(Math.max(1, _ovVpW - 16) / (W + 2 * _overX), Math.max(1, _ovVpH - 112) / H);
+  return Math.min(1, fit / Math.max(0.001, _ovBaseScale));
 }
 function ovSnapViewport() {                 // ONE read of the viewport, held until the next real resize
   const de = document.documentElement;
