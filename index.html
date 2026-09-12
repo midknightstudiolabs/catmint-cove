@@ -18416,12 +18416,12 @@ function neoPlaytest(){
   document.getElementById('neo-metrics-close').onclick=closeModal;
 }
 function neoFestivalLanterns(g,x0,y,w,sagAt){
-  const night=neoLight(nowHours()).night;if(night<.05)return;
+  const night=neoLight(nowHours()).night;if(night<=0)return;
   g.save();for(let i=0;i<Math.min(12,Math.ceil(w/120));i++){
     const f=(i+.5)/Math.min(12,Math.ceil(w/120)),x=x0+f*w,yy=sagAt(f)+13;
-    const glow=g.createRadialGradient(x,yy,2,x,yy,34);glow.addColorStop(0,'rgba(255,210,128,'+(night*.26)+')');glow.addColorStop(1,'rgba(255,210,128,0)');
-    g.fillStyle=glow;g.fillRect(x-34,yy-34,68,68);g.strokeStyle='#796649';g.lineWidth=1;g.beginPath();g.moveTo(x,yy-13);g.lineTo(x,yy-5);g.stroke();
-    g.fillStyle='#ffdda0';g.beginPath();g.ellipse(x,yy,5,7,0,0,Math.PI*2);g.fill();
+    neoWarmGlow(g,x,yy,42,46,night*.45);
+    g.strokeStyle='#796649';g.lineWidth=1;g.beginPath();g.moveTo(x,yy-13);g.lineTo(x,yy-5);g.stroke();
+    g.globalAlpha=night;g.fillStyle='#ffdda0';g.beginPath();g.ellipse(x,yy,5,7,0,0,Math.PI*2);g.fill();
   }g.restore();
 }
 /* NEO_HOME_END */
@@ -18602,6 +18602,7 @@ function neoOutdoor(g,w,h,horizon,over,sand=false) {
   neoClearSky(g,w,horizon*(300/1024)/.38,over);
   neoAtmosphere(g,sky,w,h,horizon*(300/1024)/.38,over,true);
   neoSky(g,sky,w,horizon*(300/1024)/.38,over);
+  neoFestivalGroundLights(g,w,h,horizon);
   g.restore();
 }
 
@@ -18771,6 +18772,7 @@ function neoRaceMeadow(g,w,h){
   g.bezierCurveTo(w*.8,145,w*.65,95,w*.43,130);
   g.bezierCurveTo(w*.27,155,w*.18,80,0,bank);g.closePath();g.clip();
   neoSky(g,day,w,bank,0);g.restore();
+  neoFestivalGroundLights(g,w,h,bank);
   g.restore();
 }
 
@@ -18788,6 +18790,35 @@ function neoCoveForeground(g,over=_overX){
   const light=neoLight(nowHours()),sky=timeOfDay();
   g.fillStyle='rgba(9,19,43,'+Math.min(.84,(1-sky.df)*.36+light.night*.48)+')';
   g.fillRect(0,0,1536,1024);g.restore();
+}
+
+// One reusable soft-light bitmap; no blur filters or per-frame gradients.
+let neoLanternGlow=null;
+function neoWarmGlow(g,x,y,rx,ry,alpha){
+  if(!neoLanternGlow){
+    neoLanternGlow=document.createElement('canvas');neoLanternGlow.width=neoLanternGlow.height=128;
+    const c=neoLanternGlow.getContext('2d'),r=c.createRadialGradient(64,64,0,64,64,64);
+    r.addColorStop(0,'rgba(255,220,151,.85)');r.addColorStop(.35,'rgba(255,207,121,.4)');r.addColorStop(1,'rgba(255,207,121,0)');
+    c.fillStyle=r;c.fillRect(0,0,128,128);
+  }
+  g.save();g.globalAlpha*=alpha;g.drawImage(neoLanternGlow,x-rx,y-ry,rx*2,ry*2);g.restore();
+}
+function neoFestivalGroundLights(g,w,h,horizon){
+  const night=neoLight(nowHours()).night;if(night<=0)return;
+  g.save();
+  // A soft field wash and ground pools behind the cats and activity objects.
+  neoWarmGlow(g,w*.5,horizon+(h-horizon)*.50,w*.66,(h-horizon)*.60,night*.19);
+  const count=Math.min(6,Math.max(2,Math.ceil(w/400)));
+  for(let i=0;i<count;i++){
+    const x=w*(-.12+1.24*i/(count-1)),y=horizon+38;
+    neoWarmGlow(g,x,y+16,95,35,night*.48);
+    neoWarmGlow(g,x,y-34,52,64,night*.38);
+    g.strokeStyle='#786348';g.lineWidth=3;g.beginPath();g.moveTo(x,y+5);g.lineTo(x,y-47);g.stroke();
+    g.fillStyle='#6a5b45';roundRect(g,x-9,y-48,18,27,4);g.fill();
+    g.fillStyle='#d6c296';roundRect(g,x-6,y-44,12,19,3);g.fill();
+    g.globalAlpha=night;g.fillStyle='#ffe5ac';roundRect(g,x-5,y-43,10,17,3);g.fill();g.globalAlpha=1;
+  }
+  g.restore();
 }
 
 /* NEO_SCENERY_END */

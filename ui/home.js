@@ -166,11 +166,11 @@ function neoPlaytest(){
   document.getElementById('neo-metrics-close').onclick=closeModal;
 }
 function neoFestivalLanterns(g,x0,y,w,sagAt){
-  const night=neoLight(nowHours()).night;if(night<.05)return;
+  const night=neoLight(nowHours()).night;if(night<=0)return;
   g.save();for(let i=0;i<Math.min(12,Math.ceil(w/120));i++){
     const f=(i+.5)/Math.min(12,Math.ceil(w/120)),x=x0+f*w,yy=sagAt(f)+13;
-    const glow=g.createRadialGradient(x,yy,2,x,yy,34);glow.addColorStop(0,'rgba(255,210,128,'+(night*.26)+')');glow.addColorStop(1,'rgba(255,210,128,0)');
-    g.fillStyle=glow;g.fillRect(x-34,yy-34,68,68);g.strokeStyle='#796649';g.lineWidth=1;g.beginPath();g.moveTo(x,yy-13);g.lineTo(x,yy-5);g.stroke();
-    g.fillStyle='#ffdda0';g.beginPath();g.ellipse(x,yy,5,7,0,0,Math.PI*2);g.fill();
+    neoWarmGlow(g,x,yy,42,46,night*.45);
+    g.strokeStyle='#796649';g.lineWidth=1;g.beginPath();g.moveTo(x,yy-13);g.lineTo(x,yy-5);g.stroke();
+    g.globalAlpha=night;g.fillStyle='#ffdda0';g.beginPath();g.ellipse(x,yy,5,7,0,0,Math.PI*2);g.fill();
   }g.restore();
 }
