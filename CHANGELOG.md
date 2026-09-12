@@ -1,5 +1,12 @@
 # Changelog
 
+## Café room design — 2026-09-12
+
+- Replaced the small café illustration with a larger editable 2D room: stove, counter, table/chair sets and plant.
+- Added grid placement, stored furniture, floor choices and persistent individual positions. Placement protects the entrance and routes to functional furniture.
+- Guests follow room routes; stove and counter taps connect to cooking and stocking. Existing recipes, sales and garden progress are retained.
+- Added placement and persistence checks. Physical mobile drag testing remains outstanding.
+
 ## Approved garden and café concept — 2026-09-12
 
 - Added a flat café interior using the existing resident cat artwork, subtle idle movement and a welcome interaction. Rendering pauses when the sheet closes and respects reduced motion.
