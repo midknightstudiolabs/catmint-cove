@@ -1,5 +1,9 @@
 # Changelog
 
+## Tug timer readability — 2026-09-12
+
+- Enlarged the Tug of Paws title above the timer and the remaining seconds, with a taller cream panel and thicker progress bar.
+
 ## Approved V2 icons — 2026-09-12
 
 - Applied the approved sleep moon, sage festival flag and rope-with-paws icons. All other V2 artwork is retained. Updated the icon cache version.

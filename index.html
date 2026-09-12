@@ -12416,17 +12416,17 @@ function drawMidkYarn(g) {
   g.restore();
 }
 function drawMidkHudCanvas(g) {
-  const bx = 54, bw = MIDK_W - 108, by = 40;
-  g.fillStyle = "rgba(247,245,236,.92)"; roundRect(g, bx - 10, by - 16, bw + 20, 30, 14); g.fill();
+  const bx = 54, bw = MIDK_W - 108, by = 66;
+  g.fillStyle = "rgba(247,245,236,.92)"; roundRect(g, bx - 10, by - 48, bw + 20, 62, 18); g.fill();
   // a slim depleting round timer
   const frac = clamp(1 - midkT / MIDK_MATCH_LEN, 0, 1);
-  g.fillStyle = "#e6ddc7"; roundRect(g, bx, by - 3, bw, 6, 3); g.fill();
-  g.fillStyle = frac < 0.2 ? "#d9884f" : "#7ba46b"; roundRect(g, bx, by - 3, bw * frac, 6, 3); g.fill();
-  g.font = "800 8px 'IBM Plex Mono', monospace"; g.fillStyle = "#6b5335"; g.textAlign = "left";
-  g.fillText("TUG OF PAWS", bx, by - 8);
+  g.fillStyle = "#e6ddc7"; roundRect(g, bx, by - 3, bw, 8, 4); g.fill();
+  g.fillStyle = frac < 0.2 ? "#d9884f" : "#7ba46b"; roundRect(g, bx, by - 3, bw * frac, 8, 4); g.fill();
+  g.font = "800 20px 'IBM Plex Mono', monospace"; g.fillStyle = "#6b5335"; g.textAlign = "left";
+  g.fillText("TUG OF PAWS", bx, by - 16);
   const left = Math.max(0, Math.ceil(MIDK_MATCH_LEN - midkT));
-  g.textAlign = "right"; g.font = "700 12px 'Fraunces', serif"; g.fillStyle = "#5b5343";
-  g.fillText(left + "s", bx + bw, by - 8);
+  g.textAlign = "right"; g.font = "700 28px 'Fraunces', serif"; g.fillStyle = "#5b5343";
+  g.fillText(left + "s", bx + bw, by - 16);
 
   // the tug rail — centre-out, shows the yarn ball's position between the flags
   const rx = MIDK_W - 20, ry0 = MIDK_WIN_Y.visit, ry1 = MIDK_WIN_Y.cove, rc = (ry0 + ry1) / 2;
