@@ -1,8 +1,8 @@
 {
   "name": "catmint-cove",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "private": true,
-  "description": "Catmint Cove \u2014 a cozy-idle cat sanctuary. Web game + Capacitor wrapper for the app stores.",
+  "description": "Catmint Cove — a cozy-idle cat sanctuary. Web game + Capacitor wrapper for the app stores.",
   "type": "module",
   "scripts": {
     "build": "node scripts/build-www.mjs",
