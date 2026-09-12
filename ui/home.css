@@ -104,3 +104,5 @@
 
 /* Suppress browser double-tap zoom on the game surface; retain horizontal pan. */
 #stage canvas{touch-action:pan-x}
+
+.neo-postcard-front{background:#bddbd9;isolation:isolate;overflow:hidden}.neo-postcard-front>svg{position:absolute;inset:0;width:100%;height:100%;z-index:-1}.neo-postcard-mark{height:60px}.neo-postcard-front>small{font-size:9px}

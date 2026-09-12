@@ -1347,6 +1347,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
 /* Suppress browser double-tap zoom on the game surface; retain horizontal pan. */
 #stage canvas{touch-action:pan-x}
+
+.neo-postcard-front{background:#bddbd9;isolation:isolate;overflow:hidden}.neo-postcard-front>svg{position:absolute;inset:0;width:100%;height:100%;z-index:-1}.neo-postcard-mark{height:60px}.neo-postcard-front>small{font-size:9px}
 </style>
 
 <div id="app">
@@ -17605,7 +17607,9 @@ function deliverDuePostcards(opts = {}) {
       const full = card.text.replace(/\{n\}/g, a.cat);
       const bare = card.text.replace(/\s*—\s*\{n\}\s*$/, "");
       if (!Array.isArray(G.postcards)) G.postcards = [];
-      G.postcards.unshift({ t: now, cat: a.cat, dest: a.dest, text: full });
+      const previous=G.postcards.find(p=>p.dest===a.dest);
+      const artVariant=((previous&&Number.isInteger(previous.artVariant)?previous.artVariant:Math.floor(Math.random()*4))+1+Math.floor(Math.random()*3))%4;
+      G.postcards.unshift({ t: now, cat: a.cat, dest: a.dest, text: full, artVariant, artSeed:Math.floor(Math.random()*2147483647) });
       if (G.postcards.length > 30) G.postcards.length = 30;
       logMoment("✉️", `Postcard from ${a.cat}: “${bare}”`);
       latest = full; latestA = a;
@@ -17615,16 +17619,42 @@ function deliverDuePostcards(opts = {}) {
   save();
   renderAdventureCard();
   if (opts.pop && !_vig && !scrim.classList.contains("on")) {
-    showPostcard(latest, latestA.cat, latestA.dest, opts.onDone);
+    showPostcard(latest, latestA.cat, latestA.dest, opts.onDone, G.postcards[0]);
     return true;                         // a modal is up — caller must NOT also run earnings
   }
   toast(`A postcard from ${latestA.cat} arrived. ✉️`, 5);
   return false;
 }
-function showPostcard(text, cat, dest, onDone) {
+function postcardArt(dest,seed,variant){
+  let n=seed>>>0;const random=()=>{n=(Math.imul(n,1664525)+1013904223)>>>0;return n/4294967296;};
+  const skies=['#bddbd9','#edd6b4','#b7ccd9','#d0debc'],waters=['#82b9c5','#9dbdb6','#7ea6bd','#91bcb1'];
+  let art=`<rect width="600" height="240" fill="${skies[variant]}"/><circle cx="${420+Math.floor(random()*100)}" cy="${35+Math.floor(random()*25)}" r="22" fill="#f7e8b3"/><path d="M0 137Q90 80 180 131T360 124T600 115V240H0Z" fill="#96b3a0"/>`;
+  const tree=(x,y,z)=>`<g transform="translate(${x} ${y}) scale(${z})"><path d="M0 0v-75" stroke="#857456" stroke-width="8"/><path d="M-29-32-15-55-24-55 0-96 25-55 15-55 30-32Z" fill="#60876d"/></g>`;
+  if(dest==='fishing'||dest==='island'){
+    art+=`<path d="M0 139H600V240H0Z" fill="${waters[variant]}"/>`;
+    for(let i=0;i<12;i++){let x=Math.floor(random()*600),y=150+Math.floor(random()*85);art+=`<path d="M${x} ${y}h${15+Math.floor(random()*38)}" stroke="#c9dfd3" stroke-width="2"/>`;}
+    if(dest==='fishing')art+='<path d="M45 240 120 172h167l39 68" fill="#c7a77a"/><path d="M92 240v-63m190 63v-67M85 182h205M77 204h219M63 225h246" stroke="#8c7657" stroke-width="5"/><path d="M232 182q18-64 72-48l38 49" fill="none" stroke="#67543f" stroke-width="3"/>';
+    else art+='<path d="M160 200q130-91 280 0Z" fill="#e7d5a9"/>'+tree(298,172,1)+tree(342,181,.65);
+  }else if(dest==='peak'){
+    art+='<path d="M-30 240 140 63 290 240M190 240 410 34 640 240" fill="#849e98"/><path d="m105 99 35-36 39 46-34-10-18 10ZM371 71l39-37 42 44-30-7-15 10-17-16Z" fill="#f2eedc"/><path d="M290 240q49-45 34-67t35-24" fill="none" stroke="#d3c7a7" stroke-width="14"/>';
+  }else{
+    art+='<path d="M0 158Q160 118 330 160T600 149V240H0Z" fill="#acbf89"/><path d="M255 240q115-49 55-88" stroke="#e0d1a6" stroke-width="31" fill="none"/>';
+    if(dest==='market')for(let i=0;i<4;i++){let x=45+i*142;art+=`<path d="M${x} 195v-54h92v54" fill="#f1e4c6"/><path d="m${x-8} 143 54-40 54 40Z" fill="${i%2?'#899f8b':'#c88f77'}"/><path d="M${x+35} 195v-31h24v31" fill="#8c9e92"/>`;}
+    else if(dest==='forest')for(let i=0;i<10;i++){let x=i<5?i*49:390+(i-5)*50;art+=tree(x,190+random()*30,.7+random()*.5);}
+    else for(let i=0;i<30;i++){let x=Math.floor(random()*600),y=163+Math.floor(random()*75);art+=`<path d="M${x} ${y}v9" stroke="#779564"/><circle cx="${x}" cy="${y}" r="4" fill="${i%3?'#f8efd2':'#d4a18a'}"/>`;}
+  }
+  art+=`<path d="M${55+Math.floor(random()*100)} 55q7-8 14 0 7-8 14 0" stroke="#677f75" stroke-width="2" fill="none"/>`;
+  return `<svg viewBox="0 0 600 240" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${art}</svg>`;
+}
+function showPostcard(text, cat, dest, onDone, card) {
   const place=ADV_DESTS[dest]||ADV_DESTS.forest;
+  let hash=2166136261;for(const ch of cat+dest+text)hash=Math.imul(hash^ch.charCodeAt(0),16777619)>>>0;
+  const seed=card&&Number.isInteger(card.artSeed)?card.artSeed:hash;
+  const variant=card&&Number.isInteger(card.artVariant)?card.artVariant%4:hash%4;
+  const greeting=['A LITTLE HELLO FROM','WISH YOU WERE HERE ·','A NOTE FROM','POSTMARKED IN'][variant];
+  const signoff=['With love','See you soon','Saving you a sunny spot','Sending a little purr'][variant];
   const signature="— "+cat;const message=text.trim().endsWith(signature)?text.trim().slice(0,-signature.length).trim():text;
-  openModal(`<article class="neo-postcard"><div class="neo-postcard-front"><span>GREETINGS FROM</span><h2>${esc(place.name)}</h2><div class="neo-postcard-mark">${neoUIIcon('adventure')}</div><small>CATMINT COVE · A LITTLE WAY FROM HOME</small></div><div class="neo-postcard-back"><div class="neo-postcard-letter"><p>${esc(message)}</p><p class="neo-postcard-sign">With love, ${esc(cat)}</p></div><div class="neo-postcard-address"><div class="neo-postcard-stamp">${neoUIIcon('paw')}<small>COVE POST</small></div><small>TO</small><p>${esc(coveName())}</p><p>Our little home by the sea</p></div></div></article><div class="row"><button class="btn primary" id="pc-ok">Keep this postcard</button></div>`);
+  openModal(`<article class="neo-postcard"><div class="neo-postcard-front">${postcardArt(dest,seed,variant)}<span>${greeting}</span><h2>${esc(place.name)}</h2><div class="neo-postcard-mark"></div><small>CATMINT COVE · A LITTLE WAY FROM HOME</small></div><div class="neo-postcard-back"><div class="neo-postcard-letter"><p>${esc(message)}</p><p class="neo-postcard-sign">${signoff}, ${esc(cat)}</p></div><div class="neo-postcard-address"><div class="neo-postcard-stamp">${neoUIIcon('paw')}<small>COVE POST</small></div><small>TO</small><p>${esc(coveName())}</p><p>Our little home by the sea</p></div></div></article><div class="row"><button class="btn primary" id="pc-ok">Keep this postcard</button></div>`);
   document.getElementById("pc-ok").onclick = () => { closeModal(); if (onDone) setTimeout(onDone, 250); };
 }
 function showFounderDescription(){
@@ -17702,7 +17732,7 @@ function renderAdventureCard() {
   }
   html += mapLine();
   el.innerHTML = html;
-  el.querySelectorAll("[data-postcard]").forEach(b=>b.onclick=()=>{const a=activeAdvs().find(a=>String(a.id)===b.dataset.postcard);const pc=a&&latestPostcardFor(a.cat);if(!a)return;if(pc&&pc.t>=a.startedAt)showPostcard(pc.text,pc.cat,pc.dest);else showPostcard(Date.now()>=a.endsAt ? "This adventure is complete. Your cats are ready to share how it went." : "The adventure has begun. A first note will arrive partway through the trip.",a.cat,a.dest);});
+  el.querySelectorAll("[data-postcard]").forEach(b=>b.onclick=()=>{const a=activeAdvs().find(a=>String(a.id)===b.dataset.postcard);const pc=a&&latestPostcardFor(a.cat);if(!a)return;if(pc&&pc.t>=a.startedAt)showPostcard(pc.text,pc.cat,pc.dest,undefined,pc);else showPostcard(Date.now()>=a.endsAt ? "This adventure is complete. Your cats are ready to share how it went." : "The adventure has begun. A first note will arrive partway through the trip.",a.cat,a.dest);});
   el.querySelectorAll("[data-claim]").forEach(b => b.onclick = () => resolveAdventure(b.dataset.claim));
   el.querySelectorAll("[data-recall]").forEach(b => b.onclick = () => recallAdventure(b.dataset.recall));
   el.querySelectorAll("[data-skip]").forEach(b => b.onclick = () => {
@@ -18475,7 +18505,7 @@ function neoRenderJournal(){
   if((G.postcards||[]).length){
     const mail=document.createElement('details');mail.className='neo-journal-archive';
     const title=document.createElement('summary');title.textContent=`Postcards · ${G.postcards.length}`;mail.append(title);
-    for(const pc of G.postcards){const button=document.createElement('button');button.className='neo-postcard-preview';button.textContent=`${pc.cat} · ${(ADV_DESTS[pc.dest]||ADV_DESTS.forest).name}`;button.onclick=()=>showPostcard(pc.text,pc.cat,pc.dest);mail.append(button);}root.append(mail);
+    for(const pc of G.postcards){const button=document.createElement('button');button.className='neo-postcard-preview';button.textContent=`${pc.cat} · ${(ADV_DESTS[pc.dest]||ADV_DESTS.forest).name}`;button.onclick=()=>showPostcard(pc.text,pc.cat,pc.dest,undefined,pc);mail.append(button);}root.append(mail);
   }
   document.getElementById('neo-journal-photo').onclick=()=>{closeAllPanels();document.getElementById('photoBtn').click();};
   document.getElementById('neo-journal-cats').onclick=()=>togglePanel('dex');

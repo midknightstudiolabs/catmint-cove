@@ -1,5 +1,12 @@
 # Changelog
 
+## After V3 — 2026-09-12
+
+- Six destination-specific flat postcard illustrations replace the shared Cove picture.
+- New delivered cards save a random art seed and one of four palettes; consecutive cards for the same destination avoid repeating the palette. Scene details, greetings, and sign-offs vary. Reopening a saved card preserves its appearance.
+- Existing postcards retain their text and receive a deterministic illustration without changing saves.
+- Verified six distinct destinations and stable rendering; reviewed the illustration sheet.
+
 ## V3 — 3.0.0 — 2026-09-12
 
 Release tag: `v3.0.0`. Game code baseline: `2d3930e`.
