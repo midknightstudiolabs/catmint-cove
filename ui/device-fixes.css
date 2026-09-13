@@ -98,3 +98,14 @@ button{text-align:center!important}.btn,#placeBar button,.cove-action-pair butto
 #fest .fc-card:focus-visible{outline:2px solid #477354;outline-offset:2px}
 @media(hover:hover){#fest .fc-card:not(.locked):hover{background:#e7eddb;border-color:#91a781}}
 @media(max-width:360px){#fest .fc-card{padding:10px;column-gap:9px}#fest .fc-card .fc-name{font-size:.95rem}}
+
+/* Compact phone spin control: ID specificity survives later legacy theme rules. */
+@media(max-width:600px),(max-height:500px){
+ #fest #midkHud .midk-console{padding:6px 8px 10px;gap:8px;border-radius:14px;max-width:calc(100vw - 24px)}
+ #fest #midkHud .midk-spin{min-height:44px;height:44px;min-width:88px;padding:6px 10px;font-size:17px;line-height:1;gap:6px}
+ #fest #midkHud .midk-spin .ms-paw{font-size:16px}
+ #fest #midkHud .mc-reels{gap:3px}
+ #fest #midkHud .mc-reels span{width:26px;height:28px;font-size:16px}
+ #fest #midkHud .mc-bar{left:8px;width:84px;bottom:4px;height:3px}
+ #fest #midkHud .mc-msg{left:8px;width:84px;font-size:11px;line-height:1.2}
+}
