@@ -4923,7 +4923,7 @@ function movableAt(x, y, tight) {
   if (G.cosmetics && G.cosmetics.props) for (const p of DECOR_PROPS) {
     if (!p.movable || !G.cosmetics.props[p.id] || propBoxed(p.id)) continue;
     const pos = propPos(p.id);
-    if(p.id==="bunting"&&Math.abs(x-pos.x)<62*f&&y>=pos.y-100&&y<=pos.y+10)return {kind:"prop",id:p.id};
+    if((p.baseId||p.id)==="bunting"&&Math.abs(x-pos.x)<70*f&&y>=pos.y-108&&y<=pos.y+16)return {kind:"prop",id:p.id};
     if (Math.hypot(x - pos.x, y - (pos.y - 6)) < 26 * f) return { kind: "prop", id: p.id };
   }
   // bowls / toys / beds / scratchers — live in `attractors`, not `decor`
@@ -4983,7 +4983,7 @@ canvas.addEventListener("pointerdown", (e) => {
   ensureAudio();
   if (festMode) { if (festKind === "volley") volleyPointer(e); return; }   // festival modes own their taps; race/box use HTML buttons
   if (_placing) {
-    const w=screenToWorld(e.clientX,e.clientY),near=Math.hypot(w.x-_placeGhost.x,w.y-_placeGhost.y)<50;
+    const w=screenToWorld(e.clientX,e.clientY),near=(_placing.kind==="prop"&&_placing.key.split("#")[0]==="bunting")?Math.abs(w.x-_placeGhost.x)<80&&w.y>=_placeGhost.y-112&&w.y<=_placeGhost.y+24:Math.hypot(w.x-_placeGhost.x,w.y-_placeGhost.y)<50;
     _placeDragOrigin=near?{x:_placeGhost.x-w.x,y:_placeGhost.y-w.y}:null;
     _tpX=e.clientX;_tpY=e.clientY;_tpMoved=false;return;
   }
