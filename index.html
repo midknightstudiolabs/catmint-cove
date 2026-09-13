@@ -8934,7 +8934,7 @@ function restSeatCats() {
   // different every time you start one — a fresh cat gets the windowsill
   const rnd = mulberry32(((restStartedAt || Date.now()) >>> 0) ^ 0x5ca7);
   const list = [...cats];
-  for(const c of list)c._restNapScale=1;
+  for(const c of list){c._restNapScale=1;c._restHammock=false;}
   const seat = (c, o) => Object.assign(c, { vx: 0, vy: 0, walkAmt: 0, walk: 0, blink: 3, stateDur: 1e6, stateT: rnd() * 3, _station: null, _fx: null, ...o });
 
   // Midknight always claims the fire (founder's privilege)
@@ -8951,7 +8951,7 @@ function restSeatCats() {
     let t = w.reduce((a, b) => a + b, 0), r = rnd() * t;
     for (let i = 0; i < others.length; i++) { r -= w[i]; if (r <= 0) { sill = others[i]; break; } }
     sill = sill || others[0];
-    seat(sill, { x: L.sillX, y: L.sillY, face: rnd() < 0.5 ? -1 : 1, state: "sleeping" });
+    seat(sill, { x: L.sillX, y: L.sillY + 4, _restHammock: true, face: rnd() < 0.5 ? -1 : 1, state: "sleeping" });
   }
 
   // everyone else: a shuffled nap pile on the rug. It grows WIDE, not tall — a
@@ -9180,7 +9180,7 @@ function renderRest(dt) {
   const hamX=L.sillX,hamY=L.sillY;
   g.strokeStyle='#a68e67';g.lineWidth=2.2;
   for(const side of [-1,1]){g.beginPath();g.moveTo(hamX+side*47,hamY-47);g.lineTo(hamX+side*40,hamY-5);g.stroke();g.fillStyle='#867555';g.beginPath();g.arc(hamX+side*47,hamY-47,3,0,Math.PI*2);g.fill();}
-  g.fillStyle='#c8b58b';g.beginPath();g.moveTo(hamX-43,hamY-6);g.quadraticCurveTo(hamX,hamY+19,hamX+43,hamY-6);g.lineTo(hamX+39,hamY+5);g.quadraticCurveTo(hamX,hamY+29,hamX-39,hamY+5);g.closePath();g.fill();
+  g.fillStyle='#c8b58b';g.beginPath();g.moveTo(hamX-43,hamY-6);g.quadraticCurveTo(hamX,hamY+11,hamX+43,hamY-6);g.lineTo(hamX+39,hamY+5);g.quadraticCurveTo(hamX,hamY+23,hamX-39,hamY+5);g.closePath();g.fill();
   g.strokeStyle='#8b7958';g.lineWidth=1.4;g.stroke();
   // Linen curtains frame the rain without covering the view or sill cats.
   g.fillStyle="#8b8771";
@@ -9298,6 +9298,15 @@ function renderRest(dt) {
     if(c._restNapScale && c._restNapScale!==1){g.translate(c.x,c.y);g.scale(c._restNapScale,c._restNapScale);g.translate(-c.x,-c.y);}
     if(c.state==='sleeping'&&!_reduceMotion){const breath=1+Math.sin(pn/1500+c.x*.03)*.012;g.translate(c.x,c.y);g.scale(1,breath);g.translate(-c.x,-c.y);}
     drawCat(g,c,false);g.restore();
+  }
+  // The near edge sits in front of the sleeper, cradling the lower body.
+  // Its contact point matches restSeatCats; breathing pivots at that same base.
+  if(cats.some(c=>c._restHammock)){
+    g.fillStyle='#c8b58b';g.strokeStyle='#8b7958';g.lineWidth=1.4;
+    g.beginPath();g.moveTo(hamX-43,hamY-6);g.quadraticCurveTo(hamX,hamY+11,hamX+43,hamY-6);
+    g.lineTo(hamX+39,hamY+5);g.quadraticCurveTo(hamX,hamY+23,hamX-39,hamY+5);g.closePath();g.fill();g.stroke();
+    g.strokeStyle='#e3d5b5';g.lineWidth=1;
+    g.beginPath();g.moveTo(hamX-36,hamY);g.quadraticCurveTo(hamX,hamY+15,hamX+36,hamY);g.stroke();
   }
   if (particles.length) drawFX(g);
 
