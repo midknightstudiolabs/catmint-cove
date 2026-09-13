@@ -1228,7 +1228,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?v=4">
+</style><link rel="stylesheet" href="ui/device-fixes.css?v=5">
 <style id="neo-theme">
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
@@ -4750,6 +4750,9 @@ const COMFORT_TYPES = new Set(["food", "toy", "bed", "scratch"]);
 function positionPlaceActions(){
   const el=document.getElementById('placeBar');if(el.hidden)return;
   if(!_placing||!_placeGhost){el.style.position='';el.style.left='';el.style.top='';el.style.bottom='';el.style.transform='';return;}
+  const stamp=[_placing.key,_placeGhost.x,_placeGhost.y,innerWidth,innerHeight,_camTx,_camTy,_camScale,displayScale,_worldOffX,_worldOffY].join(':');
+  if(el._placeStamp===stamp)return;
+  el._placeStamp=stamp;
   const r=canvas.getBoundingClientRect(),w=el.offsetWidth||Math.min(232,innerWidth-24),h=el.offsetHeight||150;
   const x=r.left+(_ovActive?_camTx+_placeGhost.x*_camScale:(_placeGhost.x+_worldOffX)*displayScale),y=r.top+(_ovActive?_camTy+_placeGhost.y*_camScale:(_placeGhost.y+_worldOffY)*displayScale);
   let left=x+36,top=y-h/2;
@@ -4763,6 +4766,7 @@ function _beginPlace(spec) {
   document.getElementById("placeBarPutAway").hidden = false;
   if (!_arranging) closeAllPanels();
   _placing = spec;
+  document.getElementById("placeBar")._placeStamp=null;
   const start = spec._start || { x: W * 0.5, y: catFloor() - 60 };
   _placeGhost = { x: start.x, y: start.y };
   const pointer=_tpX!=null?screenToWorld(_tpX,_tpY):null;
@@ -6352,7 +6356,7 @@ function renderInventory(list) {
       else {const d=decor.find(d=>d.dkey===e.key);drawDecor(g,{...(d||{}),type:e.dtype,x:0,y:0,dkey:e.key});}
       const count=document.createElement('span');count.className='inventory-quantity';count.textContent='×'+(e.quantity||1);row.prepend(count);
       preview.style.touchAction='none';preview.onpointerdown=ev=>{if(!stored||e.kind==='cairn')return;ev.preventDefault();const x=ev.clientX,y=ev.clientY;let started=false;
-        const move=p=>{if(p.pointerId!==ev.pointerId)return;if(!started&&Math.hypot(p.clientX-x,p.clientY-y)>8){started=true;row.querySelector('.inventory-place').click();_placeDragOrigin=null;}if(started&&_placing){_placeGhost=_ghostAt(p.clientX,p.clientY);_placing._moved=true;positionPlaceActions();}p.preventDefault();};
+        const move=p=>{if(p.pointerId!==ev.pointerId)return;if(!started&&Math.hypot(p.clientX-x,p.clientY-y)>8){started=true;row.querySelector('.inventory-place').click();_placeDragOrigin=null;}if(started&&_placing){_placeGhost=_ghostAt(p.clientX,p.clientY);_placing._moved=true;}p.preventDefault();};
         const end=p=>{if(p.pointerId!==ev.pointerId)return;document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',cancel);if(started&&_placing)finishPlacing();};
         const cancel=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',cancel);if(started&&_placing)cancelPlacing();};
         document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',end);document.addEventListener('pointercancel',cancel);
@@ -14570,7 +14574,11 @@ function drawProps(g) {
   }
   // the piece currently being positioned: a ghost at the pointer + a validity ring
   if (_placing && _placeGhost) {
-    const gh = _placeGhost, ok = _placeOK(gh.x, gh.y);
+    const ok = _placeOK(_placeGhost.x, _placeGhost.y);
+    const now=performance.now(),v=_placing._visual||(_placing._visual={..._placeGhost,at:now});
+    const blend=_reduceMotion?1:1-Math.exp(-Math.min(100,now-v.at)/35);
+    v.x+=(_placeGhost.x-v.x)*blend;v.y+=(_placeGhost.y-v.y)*blend;v.at=now;
+    const gh=v;
     g.save();
     // the no-go zone around the dock / bakery / other fixed structures
     g.setLineDash([4, 4]); g.lineWidth = 1.4; g.strokeStyle = "rgba(201,80,63,.4)";

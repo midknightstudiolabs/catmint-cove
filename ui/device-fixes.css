@@ -48,3 +48,5 @@
 #roster-close{appearance:none;-webkit-appearance:none;background:#f1ecdc;color:#454e3c;-webkit-text-fill-color:#454e3c;border:1px solid #d8d3bf;min-height:44px}
 
 #placeBar{box-sizing:border-box;max-width:calc(100vw - 24px);flex-wrap:wrap}#placeBarTxt{min-width:0;overflow-wrap:anywhere}
+
+#placeBar{transition:left 100ms ease-out,top 100ms ease-out} @media(prefers-reduced-motion:reduce){#placeBar{transition:none}}
