@@ -6351,7 +6351,7 @@ function renderInventory(list) {
     
     if (!group.length) { const note=document.createElement("p"); note.className="muted"; note.textContent=stored?"Nothing stored yet. Choose Store item while moving an item.":"Your placed items will appear here."; list.appendChild(note); }
     for (const e of group) {
-      const row=document.createElement("div"); row.className="shop-item";
+      const row=document.createElement("div"); row.className="shop-item inventory-item";
       row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}${e.quantity>1?" ×"+e.quantity:""}</div><div class="desc">${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&o.stored).length} stored · ${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&!o.stored).length} placed</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Store item</button>'}</div>`;
       if(e.kind==='cairn'||e.kind==='founder') {
         row.classList.add('keepsake-item');
@@ -18993,7 +18993,7 @@ function neoBuildNavigation(){
   document.getElementById('neo-go-garden').onclick=()=>neoOpenHomestead('garden');
   document.getElementById('neo-go-rest').onclick=()=>{closeAllPanels();document.getElementById('restBtn').click();};
   document.getElementById('neo-playtest').onclick=neoPlaytest;
-  panels.dex.querySelector('h2').textContent='Catdex';panels.shop.querySelector('h2').textContent='Tideline Shop';
+  panels.dex.querySelector('h2').textContent='Catdex';panels.shop.querySelector('h2').textContent='Shop';
 }
 function neoPlaytest(){
   const h=neoHome();openModal(`<h2>Your private playtest notebook</h2><p>Optional interaction counts stay on this device. No names, notes, or memories are exported. Nothing is sent automatically.</p><button class="btn" id="neo-metrics">${h.metrics?'Stop':'Start'} recording interactions</button><button class="btn" id="neo-export">Download anonymous counts</button><button class="btn" id="neo-metrics-close">Close</button>`);
