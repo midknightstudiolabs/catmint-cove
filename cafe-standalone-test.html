@@ -117,6 +117,30 @@
   .toolbar button{flex:1;appearance:none;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);
     border-radius:12px;padding:.65rem;font-weight:700;font-size:.86rem;cursor:pointer;}
   .toolbar button:active{transform:translateY(1px);}
+  .toolbar button.help{flex:0 0 auto;width:2.7rem;padding:.65rem 0;}
+
+  /* ---- welcome / how-to-play — same title-card language as the real game's
+     #titleScreen, so opening this doesn't feel like a different product ---- */
+  .welcome{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,var(--sky-top),var(--sky-bot));padding:1.2rem;}
+  .welcome[hidden]{display:none;}
+  .w-card{background:var(--panel);border-radius:22px;padding:1.6rem 1.5rem;max-width:360px;width:100%;
+    box-shadow:0 20px 46px -20px rgba(36,31,23,.4);text-align:center;}
+  .w-card .w-mark{width:3.2rem;height:3.2rem;border-radius:50%;background:var(--shell);display:grid;place-items:center;
+    margin:0 auto .7rem;}
+  .w-card .w-mark svg{width:2rem;height:2rem;}
+  .w-card h1{font-size:1.5rem;margin-bottom:.3rem;}
+  .w-card h1 b{color:var(--accent-bright);font-style:italic;}
+  .w-card .w-tag{font-size:.86rem;color:var(--ink-soft);margin:0 0 1.2rem;line-height:1.4;}
+  .w-steps{text-align:left;display:flex;flex-direction:column;gap:.7rem;margin-bottom:1.3rem;}
+  .w-step{display:flex;gap:.6rem;align-items:flex-start;}
+  .w-step .num{flex:0 0 auto;width:1.5rem;height:1.5rem;border-radius:50%;background:var(--accent);color:#fff;
+    font-size:.76rem;font-weight:700;display:grid;place-items:center;margin-top:.05rem;}
+  .w-step .txt{font-size:.82rem;line-height:1.4;color:var(--ink);}
+  .w-step .txt b{color:var(--accent);}
+  .w-go{appearance:none;border:0;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;
+    font-size:.94rem;padding:.75rem 1.6rem;cursor:pointer;width:100%;box-shadow:0 4px 0 rgba(30,70,45,.3);}
+  .w-go:active{transform:translateY(2px);box-shadow:none;}
 
   /* ---- modal ---- */
   .backdrop{position:fixed;inset:0;background:rgba(30,26,18,.4);display:flex;align-items:flex-end;
@@ -188,7 +212,22 @@
   <footer class="toolbar">
     <button id="btnMenu">📖 Menu</button>
     <button id="btnShop">🛍 Shop</button>
+    <button id="btnHelp" class="help" title="How to play">❓</button>
   </footer>
+</div>
+
+<div class="welcome" id="welcome">
+  <div class="w-card">
+    <div class="w-mark"><svg viewBox="0 0 200 200"><path id="wMarkPath" fill="#241f17"/></svg></div>
+    <h1>Catmint <b>Café</b></h1>
+    <p class="w-tag">Your own corner of the cove — cats stop in, you keep the counter running.</p>
+    <div class="w-steps">
+      <div class="w-step"><span class="num">1</span><span class="txt"><b>Choose</b> what to cook — tap a machine on the Counter, pick a dish it can make.</span></div>
+      <div class="w-step"><span class="num">2</span><span class="txt"><b>Collect</b> it into the Pass once it's done — that's your tray of ready dishes.</span></div>
+      <div class="w-step"><span class="num">3</span><span class="txt"><b>Serve</b> — tap a ready dish and it goes out to whichever cat's been waiting for it.</span></div>
+    </div>
+    <button class="w-go" id="wGo">Open up the café</button>
+  </div>
 </div>
 
 <div class="backdrop" id="backdrop" hidden>
@@ -642,12 +681,39 @@ document.getElementById("btnShop").onclick = renderShop;
 
 function rand(a, b) { return a + Math.random() * (b - a); }
 
+// ---- welcome / how-to-play ------------------------------------------------
+// A cold visitor lands on a running simulation with three unlabeled panels
+// and no idea what "the pass" even is — mechanically fine, not actually
+// playable to someone who hasn't read the source. This is the fix: a real
+// first screen (same title-card language as the shipped game) that explains
+// the loop before a single customer shows up, plus a "?" to bring it back.
+const SEEN_KEY = "catmintCafe_seenWelcome";
+const $welcome = document.getElementById("welcome");
+let gameStarted = false;
+function startGame() {
+  if (gameStarted) return;
+  gameStarted = true;
+  setInterval(() => tick(performance.now()), 200);
+  setInterval(save, 5000);
+  window.addEventListener("beforeunload", save);
+}
+document.getElementById("wMarkPath").setAttribute("d", CAT_MARK);
+document.getElementById("wGo").onclick = () => {
+  $welcome.hidden = true;
+  try { localStorage.setItem(SEEN_KEY, "1"); } catch (e) {}
+  startGame();
+};
+document.getElementById("btnHelp").onclick = () => { $welcome.hidden = false; };
+
 // ---- boot --------------------------------------------------------------
 load();
 render();
-setInterval(() => tick(performance.now()), 200);
-setInterval(save, 5000);
-window.addEventListener("beforeunload", save);
+let alreadySeen = false;
+try { alreadySeen = localStorage.getItem(SEEN_KEY) === "1"; } catch (e) {}
+if (alreadySeen) { $welcome.hidden = true; startGame(); }
+// else: leave the welcome card up and the loop paused until "Open up the
+// café" is tapped — nothing spawns or drains patience while someone's
+// still reading how to play.
 </script>
 </body>
 </html>
