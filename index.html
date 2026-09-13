@@ -6334,6 +6334,21 @@ function inventoryItemKey(item, i) {
   return null;
 }
 let inventoryView = 'stored';
+function placedInventoryDecor() {
+  return DECOR_PROPS.filter(p => p.movable && !['lanterns','rowboat'].includes(p.baseId||p.id) && G.cosmetics.props[p.id] && !propBoxed(p.id));
+}
+function confirmStoreAllDecor() {
+  if (!placedInventoryDecor().length) return;
+  openModal(`<h2>Store all decor?</h2><p>Store all placed decorations? You can place them again anytime.</p><p class="muted">Bowls, beds, stations, and keepsakes stay in the Cove.</p><div class="cove-action-pair"><button class="btn" id="cancelStoreDecor">Cancel</button><button class="btn primary" id="confirmStoreDecor">Store all decor</button></div>`);
+  document.getElementById('cancelStoreDecor').onclick=closeModal;
+  document.getElementById('confirmStoreDecor').onclick=()=>{
+    const placed=placedInventoryDecor();
+    G.cosmetics.propBoxed ||= {};
+    for(const p of placed) G.cosmetics.propBoxed[p.id]=true;
+    rebuildAttractors();save();syncHud();closeModal();renderShop();
+    toast(`${placed.length} decorations stored. Place them again for free.`,4);
+  };
+}
 function renderInventory(list) {
   const entries = [];
   for (const item of SHOP) for (let i=0; i<item.get(); i++) {
@@ -6345,6 +6360,7 @@ function renderInventory(list) {
   if(G.cairn && (G.cairn.stage>=4||G.cairn.size>0||G.cairn.tidied)) entries.push({kind:'cairn',key:'midknight-cairn',label:"Midknight's cairn",stored:!!G.cairn.tidied});
   const filters=document.createElement('div');filters.className='shop-actions';
   for(const [id,label] of [['stored','Stored'],['placed','In the Cove']]){const b=document.createElement('button');b.className='btn';b.textContent=label+' ('+entries.filter(e=>e.stored===(id==='stored')).length+')';b.setAttribute('aria-pressed',inventoryView===id);b.onclick=()=>{inventoryView=id;renderShop();};filters.appendChild(b);}list.appendChild(filters);
+  const storeAll=document.createElement('button');storeAll.className='btn';storeAll.textContent='Store all decor';storeAll.disabled=!placedInventoryDecor().length;storeAll.onclick=confirmStoreAllDecor;filters.appendChild(storeAll);
   for (const stored of [inventoryView==='stored']) {
     const matching = entries.filter(e=>e.stored===stored);
     const group=stored?Array.from(matching.reduce((m,e)=>{const k=e.kind+':'+e.label;if(m.has(k))m.get(k).quantity++;else m.set(k,{...e,quantity:1});return m;},new Map()).values()):matching;
@@ -18993,7 +19009,7 @@ function neoBuildNavigation(){
   document.getElementById('neo-go-garden').onclick=()=>neoOpenHomestead('garden');
   document.getElementById('neo-go-rest').onclick=()=>{closeAllPanels();document.getElementById('restBtn').click();};
   document.getElementById('neo-playtest').onclick=neoPlaytest;
-  panels.dex.querySelector('h2').textContent='Catdex';panels.shop.querySelector('h2').textContent='Shop';
+  panels.dex.querySelector('h2').textContent='Catdex';panels.shop.querySelector('h2').textContent='Cove Shop';
 }
 function neoPlaytest(){
   const h=neoHome();openModal(`<h2>Your private playtest notebook</h2><p>Optional interaction counts stay on this device. No names, notes, or memories are exported. Nothing is sent automatically.</p><button class="btn" id="neo-metrics">${h.metrics?'Stop':'Start'} recording interactions</button><button class="btn" id="neo-export">Download anonymous counts</button><button class="btn" id="neo-metrics-close">Close</button>`);
