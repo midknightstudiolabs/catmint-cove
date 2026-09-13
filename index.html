@@ -18788,6 +18788,7 @@ function neoOpenStory(c){
   openModal(`<div class="neo-story" role="dialog" aria-label="Cat story"><button class="x neo-story-x" id="neo-story-x" aria-label="Close cat story">✕</button><div class="kicker">A little life, shared with you</div>
     <canvas id="neo-portrait" width="220" height="180"></canvas>
     <h2>${esc(c.name)}</h2><p class="neo-story-sub">${esc(c.title||bondName(c.bond||0))}</p>
+    ${!c.visitor && !c.mascot ? `<section class="neo-wellbeing" aria-label="Cat wellbeing"><div class="neo-wellbeing-label"><b>Wellbeing</b><span>${Math.round(clamp(c.health ?? 100,0,100))}%</span></div><div class="moodbar well ${wellClass(c.health ?? 100)}" role="progressbar" aria-label="Wellbeing" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(clamp(c.health ?? 100,0,100))}"><i style="width:${clamp(c.health ?? 100,0,100)}%"></i></div><p>${c.sick?'Feeling unwell — medicine is available in the Shop.':catNeed(c)==='hungry'?'Hungry — refill a food bowl.':catNeed(c)==='thirsty'?'Thirsty — check the water supply.':(c.health ?? 100)<70?'Recovering — keep food and water available.':'Comfortable and cared for.'}</p></section>` : ''}
     <div class="neo-story-facts"><p><b>Loves</b> ${esc(catPrefLine(c))}</p>
     <p><b>Company</b> ${c.friend?esc(c.friend)+' is a familiar friend.':'Still finding their favorite company.'}</p>
     <p>${c.quirkKnown?esc(catQuirkLine(c)):'There are still little habits to discover together.'}</p></div>
