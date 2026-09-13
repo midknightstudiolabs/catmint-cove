@@ -73,3 +73,8 @@
 
 #modal .neo-story{padding-top:68px}#modal .neo-story>.kicker{font-size:11px;line-height:1.4}#modal .neo-story .neo-story-x{top:6px;right:0}
 @media(max-width:559px){#shopList.dressmode{display:block;overflow-y:auto}.dp{overflow:visible}.dp-stage{padding:10px 12px}.dp-platform{max-width:150px}.dp-rack{flex:none;overflow:visible}.dp-switch button{min-width:36px;min-height:36px}.dp-actions{max-width:100%}}
+
+/* WKWebView: the rename button must never inherit native blue text. */
+#hud #titlePill{appearance:none;-webkit-appearance:none;color:var(--ink,#343d31);-webkit-text-fill-color:var(--ink,#343d31);text-decoration:none}
+#hud #titlePill .cove-title-text{color:var(--ink,#343d31);-webkit-text-fill-color:var(--ink,#343d31)}
+#hud #titlePill b{color:var(--accent-bright,#508363);-webkit-text-fill-color:var(--accent-bright,#508363)}
