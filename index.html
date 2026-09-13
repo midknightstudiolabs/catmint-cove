@@ -6138,7 +6138,7 @@ function renderShopDecor(list) {
     list.appendChild(row);
   }
   list.appendChild(shopHead("Props"));
-  for (const p of DECOR_PROPS.filter(p=>!p.baseId)) {
+  for (const p of DECOR_PROPS.filter(p=>!p.baseId&&!['lanterns','rowboat'].includes(p.id))) {
     const copies=propCopies(p.id),count=copies.filter(p=>cm.props[p.id]).length;
     const owned = !!cm.props[p.id];
     const afford = G.shells >= p.price;
@@ -6152,6 +6152,8 @@ function renderShopDecor(list) {
     else action = `<button class="btn tiny" data-box-prop="${p.id}" title="Keep in inventory">Put away</button><button class="btn tiny" data-move-prop="${p.id}">Move</button>`;
     if(p.maxOwned) action=(count<p.maxOwned?`<button class="btn primary" data-buy-prop="${p.id}" ${afford?'':'disabled'}>${count?'Buy another':'Buy'} · ${p.price.toLocaleString()}</button>`:'<span class="owned">Collection complete</span>');
     row.innerHTML = `<div class="txt"><div class="name">${p.name}${p.maxOwned?' · Owned '+count+'/8':''}</div><div class="desc">${boxed ? "Packed away — tap Place it to set it down." : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
+    const photo=document.createElement('canvas');photo.width=160;photo.height=120;photo.className='inventory-preview';photo.setAttribute('role','img');photo.setAttribute('aria-label',p.name+' preview');
+    const pg=photo.getContext('2d');pg.translate(80,106);pg.scale(.82,.82);if(p.render)p.render(pg,0,0,0,p.place.s);row.prepend(photo);
     list.appendChild(row);
   }
   list.querySelectorAll("[data-move-prop],[data-place-prop]").forEach(b => b.onclick = () => startPlacing(b.dataset.moveProp || b.dataset.placeProp));
@@ -10034,6 +10036,7 @@ function drawBunting(g, x0, y, w, h, t, opts = {}) {
   for (let i = 0; i < n; i++) {
     const f = (i + 0.5) / n, x = x0 + f * w, yy = sagAt(f);
     g.save(); g.translate(x, yy); g.rotate(Math.sin(t * 1.3 + i * 0.9) * 0.05);
+    if((g._nightGlow||0)>.3){const glow=g.createRadialGradient(0,0,0,0,0,8);glow.addColorStop(0,'rgba(255,221,150,.22)');glow.addColorStop(1,'rgba(255,221,150,0)');g.fillStyle=glow;g.beginPath();g.arc(0,0,8,0,Math.PI*2);g.fill();g.fillStyle='#ffe3a4';g.beginPath();g.arc(0,-1,1.7,0,Math.PI*2);g.fill();}
     g.fillStyle = cols[i % cols.length];
     g.beginPath(); g.moveTo(-11, 0); g.lineTo(11, 0); g.lineTo(0, h * 0.92); g.closePath(); g.fill();
     g.restore();
@@ -14293,7 +14296,9 @@ function updateBird(dt) {
   if (_reduceMotion) return;
   if (_bird) {
     const b = _bird; b.t += dt;
-    const sx = clamp(W * 0.12, 70, W - 70), sy = H * 0.42 - 22;   // perched on the sign board
+    const bath=b.target==='birdbath'&&G.cosmetics.props.birdbath&&!propBoxed('birdbath')?propPos('birdbath'):null;
+    if(b.target==='birdbath'&&!bath&&b.phase!=='out'){b.phase='out';b.dir=1;}
+    const sx=bath?bath.x+7*bath.s:clamp(W*.12,70,W-70),sy=bath?bath.y-24*bath.s:H*.42-22;
     if (b.phase === "in") {
       b.x += (sx - b.x) * dt * 2.6; b.y += (sy - b.y) * dt * 2.6 + Math.sin(b.t * 9) * 8 * dt;
       if (Math.hypot(sx - b.x, sy - b.y) < 4) { b.phase = "perch"; b.x = sx; b.y = sy; b.until = b.t + rand(3.5, 8); }
@@ -14310,7 +14315,9 @@ function updateBird(dt) {
   _birdTimer -= dt;
   if (_birdTimer <= 0 && _dayLit() && G && G.tutorialDone) {
     _birdTimer = rand(70, 180);
-    _bird = { x: Math.random() < 0.5 ? -20 : W + 20, y: H * 0.2, t: 0, phase: "in", hop: 0 };
+    const morning=nowHours()>=6&&nowHours()<12;
+    const target=morning&&G.cosmetics.props.birdbath&&!propBoxed('birdbath')&&Math.random()<.75?'birdbath':'sign';
+    _bird = { target, x: Math.random() < 0.5 ? -20 : W + 20, y: H * 0.2, t: 0, phase: "in", hop: 0 };
   }
 }
 function drawBird(g) {
