@@ -1,3 +1,9 @@
+## HUD icons — option B — 2026-09-13
+
+- Use fixed V2-style SVGs for cat capacity (cat silhouette), food supply (sage bowl), and Cove day (calendar).
+- Preserve counters, existing tap actions, and all other Neo features.
+- Checked phone and desktop layouts at 320px, 390px, and 1280px.
+
 ## Neo hotfix recovery — 2026-09-13
 
 - Restore the full existing Neo implementation after an incorrect redesign-copy deployment.

@@ -185,3 +185,7 @@
 #fest .midk-console .mc-reels span{width:28px;height:30px}
 #fest .midk-console .mc-bar,#fest .midk-console .mc-msg{left:10px;width:92px}
 @media(max-width:370px){#fest .midk-console{gap:6px}#fest .midk-spin{min-width:82px;font-size:16px}#fest .midk-console .mc-reels span{width:25px;height:28px}}
+
+/* Approved option B: fixed artwork across mobile and desktop. */
+#hud .neo-hud-icon{width:26px;height:26px;display:block;object-fit:contain;filter:none}
+#hud .hud-stat .ico:has(.neo-hud-icon){display:inline-flex;align-items:center;flex-shrink:0;text-shadow:none}
