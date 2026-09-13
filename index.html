@@ -5720,8 +5720,8 @@ function rosterRowEl(r) {
       `<span class="rline">${r.line}</span>` +
       (passive ? "" :
       `<span class="rbars">` +
-        `<span class="rb"><span class="rk">mood</span><span class="moodbar"><i style="width:${r.mood}%"></i></span></span>` +
-        `<span class="rb"><span class="rk">wellbeing</span><span class="moodbar well ${wc}"><i style="width:${r.health}%"></i></span></span>` +
+        `<span class="rb"><span class="rk">Mood <span>${Math.round(r.mood)}%</span></span><span class="moodbar"><i style="width:${r.mood}%"></i></span></span>` +
+        `<span class="rb"><span class="rk">Wellbeing <span>${Math.round(r.health)}%</span></span><span class="moodbar well ${wc}"><i style="width:${r.health}%"></i></span></span>` +
       `</span>`) +
     `</span>`;
   const cv = b.querySelector("canvas");

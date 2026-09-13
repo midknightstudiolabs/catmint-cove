@@ -192,3 +192,12 @@
 
 /* Explicit block sizing for wellbeing in Safari / WKWebView. */
 .neo-wellbeing{text-align:left;margin:16px 0;padding:12px 14px;border:1px solid #d8ddc7;border-radius:14px;background:#f4f1e3}.neo-wellbeing-label{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;font-size:14px}.neo-wellbeing p{font-size:13px;margin:8px 0 0;color:#53644e}.neo-wellbeing .moodbar,#cc-wellwrap .moodbar{display:block;width:100%;height:9px;min-height:9px;flex-shrink:0}.neo-wellbeing .moodbar i,#cc-well{display:block;height:9px;min-height:9px}
+
+/* Roster: span tracks need block layout; iOS buttons need an explicit ink. */
+#roster .rrow{appearance:none;-webkit-appearance:none;color:var(--ink,#302c24)}
+#roster .rnm{color:var(--ink,#302c24);-webkit-text-fill-color:var(--ink,#302c24)}
+#roster .rmeat,#roster .rb{display:block;min-width:0}
+#roster .rb{flex:1 1 0}
+#roster .rb .rk{display:flex;justify-content:space-between;gap:4px}
+#roster .rb .moodbar{display:block;width:100%;height:7px;min-height:7px;border-radius:5px;background:#e4e0cf;overflow:hidden}
+#roster .rb .moodbar i{display:block;height:7px;min-height:7px}
