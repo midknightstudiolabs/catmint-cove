@@ -6312,6 +6312,7 @@ function renderInventory(list) {
     entries.push({...spec,label:item.name,stored:itemStored(spec.kind,spec.key)});
   }
   for (const p of DECOR_PROPS) if (p.movable && G.cosmetics.props[p.id]) entries.push({kind:"prop",key:p.id,label:p.name,stored:propBoxed(p.id)});
+  if(G.cairn?.stage>=4) entries.push({kind:'cairn',key:'midknight-cairn',label:"Midknight's cairn",stored:!!G.cairn.tidied});
   const filters=document.createElement('div');filters.className='shop-actions';
   for(const [id,label] of [['stored','Stored'],['placed','In the Cove']]){const b=document.createElement('button');b.className='btn';b.textContent=label+' ('+entries.filter(e=>e.stored===(id==='stored')).length+')';b.setAttribute('aria-pressed',inventoryView===id);b.onclick=()=>{inventoryView=id;renderShop();};filters.appendChild(b);}list.appendChild(filters);
   for (const stored of [inventoryView==='stored']) {
@@ -6322,7 +6323,9 @@ function renderInventory(list) {
     for (const e of group) {
       const row=document.createElement("div"); row.className="shop-item";
       row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}${e.quantity>1?" ×"+e.quantity:""}</div><div class="desc">${stored?"Ready to place":"Placed"}</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Put away</button>'}</div>`;
+      if(e.kind==='cairn') row.querySelector('.inventory-place').textContent=stored?'Return by the sign · free':'View by the sign';
       row.querySelector(".inventory-place").onclick=()=>{
+        if(e.kind==='cairn'){G.cairn.tidied=false;G.cairn.size=3;save();rebuildAttractors();closeAllPanels();toast("Midknight's cairn is standing by the sign.",4);return;}
         if(e.kind==="prop") {startPlacing(e.key); return;}
         const obj=e.kind==="comfort"?attractors.find(a=>a.key===e.key):decor.find(d=>d.dkey===e.key);
         const pos=obj || (e.kind==="comfort"?G.cosmetics.comfortPos:G.cosmetics.decorPos)?.[e.key] || {x:W*.5,y:H*.7};
@@ -6330,17 +6333,18 @@ function renderInventory(list) {
       };
       const preview=document.createElement('canvas');preview.width=160;preview.height=120;preview.className='inventory-preview';preview.setAttribute('aria-label',e.label+' · '+(e.quantity||1)+' '+(stored?'stored':'placed'));row.prepend(preview);
       const g=preview.getContext('2d');g.translate(80,85);g.scale(.85,.85);
-      if(e.kind==='prop'){const p=PROP_BY_ID[e.key];if(p?.render)p.render(g,0,0,0,.8);}
+      if(e.kind==='cairn'){const original=G.cairn;try{G.cairn={...original,tidied:false,size:3};const cp=cairnPos(W,H);g.translate(-cp.sx,-cp.gy);drawCairn(g,W,H);}finally{G.cairn=original;}}
+      else if(e.kind==='prop'){const p=PROP_BY_ID[e.key];if(p?.render)p.render(g,0,0,0,.8);}
       else if(e.kind==='comfort')drawAttractor(g,{type:e.dtype,x:0,y:0});
       else {const d=decor.find(d=>d.dkey===e.key);drawDecor(g,{...(d||{}),type:e.dtype,x:0,y:0,dkey:e.key});}
       const count=document.createElement('span');count.className='inventory-quantity';count.textContent='×'+(e.quantity||1);row.prepend(count);
-      preview.style.touchAction='none';preview.onpointerdown=ev=>{if(!stored)return;ev.preventDefault();const x=ev.clientX,y=ev.clientY;let started=false;
+      preview.style.touchAction='none';preview.onpointerdown=ev=>{if(!stored||e.kind==='cairn')return;ev.preventDefault();const x=ev.clientX,y=ev.clientY;let started=false;
         const move=p=>{if(p.pointerId!==ev.pointerId)return;if(!started&&Math.hypot(p.clientX-x,p.clientY-y)>8){started=true;row.querySelector('.inventory-place').click();_placeDragOrigin=null;}if(started&&_placing){_placeGhost=_ghostAt(p.clientX,p.clientY);_placing._moved=true;positionPlaceActions();}p.preventDefault();};
         const end=p=>{if(p.pointerId!==ev.pointerId)return;document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',cancel);if(started&&_placing)finishPlacing();};
         const cancel=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',cancel);if(started&&_placing)cancelPlacing();};
         document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',end);document.addEventListener('pointercancel',cancel);
       };
-      const put=row.querySelector(".inventory-store"); if(put) put.onclick=()=>{putAwayItem(e.kind,e.key,e.label);renderShop();};
+      const put=row.querySelector(".inventory-store"); if(put) put.onclick=()=>{if(e.kind==='cairn'){G.cairn.tidied=true;G.cairn.size=0;save();rebuildAttractors();}else putAwayItem(e.kind,e.key,e.label);renderShop();};
       list.appendChild(row);
     }
   }
@@ -16841,7 +16845,7 @@ function offerCairnChoice() {
     </div></div>`);
   const done = () => { _cairnAsking = false; closeModal(); save(); syncHud(); };
   document.getElementById("cairn-keep").onclick = () => {
-    G.cairn.stage = 4; G.cairn.size = 3; G.cairn.nextAt = 0;
+    G.cairn.stage = 4; G.cairn.size = 3; G.cairn.nextAt = 0; G.cairn.tidied = false;
     logMoment("🗿", "Midknight's cairn stands by the sign now — a little monument to everything worth carrying home.", "tale");
     toast("The cairn stays. Midknight seems satisfied. 🗿", 5);
     const sx = clamp(W * 0.12, 70, W - 70);
@@ -16851,8 +16855,8 @@ function offerCairnChoice() {
   };
   document.getElementById("cairn-tidy").onclick = () => {
     G.cairn.stage = 4; G.cairn.size = 0; G.cairn.nextAt = 0; G.cairn.tidied = true;
-    logMoment("🧹", "You tidied the pile away. Midknight watched you do it, then padded off to start another one somewhere you won't find it.", "tale");
-    toast("All tidied. Labubu's finds are still on the shelf.", 5);
+    logMoment("🧹", "You stored Midknight's cairn safely in inventory, ready to return by the sign.", "tale");
+    toast("Cairn stored in My inventory. You can return it by the sign anytime.", 5);
     done();
   };
 }
