@@ -4711,7 +4711,8 @@ let _placing = null;
 let _placeGhost = null;     // { x, y } world pos the ghost follows
 let _arranging = false;
 const PLACE_CELL=40;
-function placementTop(){return H*.42-2*PLACE_CELL;}
+// Keep the complete placement footprint on grass, below the shoreline.
+function placementTop(){return H*.42;}
 let _placeDragOrigin=null;
 function placeFootprint(spec){
   const id=(spec.key||spec.id||" ").split("#")[0];
