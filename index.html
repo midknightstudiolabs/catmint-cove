@@ -1228,7 +1228,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?v=12">
+</style><link rel="stylesheet" href="ui/device-fixes.css?v=13">
 <style id="neo-theme">
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
@@ -1804,7 +1804,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <div id="placeBar" hidden>
     <span id="placeBarTxt">Tap where it should go</span>
     <button id="placeBarInventory">Inventory</button>
-    <button id="placeBarPutAway" hidden>Put away</button>
+    <button id="placeBarPutAway" hidden>Store item</button>
     <button id="placeBarCancel">Cancel</button>
     <button id="placeBarDone" class="ok">Set here</button>
   </div>
@@ -5170,7 +5170,7 @@ function tapCairn(x, y) {
   if (dist2(x, y, sx, gy - 14) > 32 * 32) return false;
   hideCatCard();
   hidePropCard();
-  openModal(`<div class="reveal"><div class="kicker">A little keepsake</div><h2>Midknight’s cairn</h2><p>A small tower of treasures, carefully gathered and arranged. You can store it safely and bring it back from My inventory.</p><div class="cove-action-pair"><button class="btn" id="cairn-close">Back</button><button class="btn primary" id="cairn-store">Put away</button></div></div>`);
+  openModal(`<div class="reveal"><div class="kicker">A little keepsake</div><h2>Midknight’s cairn</h2><p>A small tower of treasures, carefully gathered and arranged. You can store it safely and bring it back from My inventory.</p><div class="cove-action-pair"><button class="btn" id="cairn-close">Keep here</button><button class="btn primary" id="cairn-store">Store item</button></div></div>`);
   document.getElementById('cairn-close').onclick=closeModal;
   document.getElementById('cairn-store').onclick=()=>{storeCairn();closeModal();toast('Cairn stored in My inventory.');};
   return true;
@@ -5835,7 +5835,7 @@ document.getElementById("roster-x").onclick = () => {
 
 /* ---------- shop ---------- */
 const SHOP_TABS = [
-  { id:"inventory", label:"My inventory", intro:"Everything you own, ready to rearrange. Put away keeps an item; Place costs nothing. Capacity upgrades stay yours." },
+  { id:"inventory", label:"My inventory", intro:"Everything you own, ready to rearrange. Store item keeps an item; Place costs nothing. Capacity upgrades stay yours." },
   { id:"featured", label:"Featured", intro:"Optional ways to support Catmint Cove — no pressure, and appreciated. See ❤️ Cove Cares in Help." },
   { id:"comforts", label:"Comforts", intro:"More comforts draw more cats — and the right one keeps each personality happy." },
   { id:"stations", label:"Stations", intro:"Spots where cats work: bigger output while they're busy, plus a mood lift." },
@@ -6169,7 +6169,7 @@ function renderShopDecor(list) {
     if (!owned) action = `<button class="btn primary" data-buy-prop="${p.id}" ${afford ? "" : "disabled"}>◈ ${p.price.toLocaleString()}</button>`;
     else if (!p.movable) action = `<span class="owned">In the cove</span>`;
     else if (boxed) action = `<button class="btn primary" data-place-prop="${p.id}">Place it</button>`;
-    else action = `<button class="btn tiny" data-box-prop="${p.id}" title="Keep in inventory">Put away</button><button class="btn tiny" data-move-prop="${p.id}">Move</button>`;
+    else action = `<button class="btn tiny" data-box-prop="${p.id}" title="Keep in inventory">Store item</button><button class="btn tiny" data-move-prop="${p.id}">Move</button>`;
     if(p.maxOwned) action=(count<p.maxOwned?`<button class="btn primary" data-buy-prop="${p.id}" ${afford?'':'disabled'}>${count?'Buy another':'Buy'} · ${p.price.toLocaleString()}</button>`:'<span class="owned">Collection complete</span>');
     row.innerHTML = `<div class="txt"><div class="name">${p.name}${p.maxOwned?' · Owned '+count+'/8':''}</div><div class="desc">${boxed ? "Packed away — tap Place it to set it down." : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
     const photo=document.createElement('canvas');photo.width=160;photo.height=120;photo.className='inventory-preview';photo.setAttribute('role','img');photo.setAttribute('aria-label',p.name+' preview');
@@ -6349,10 +6349,10 @@ function renderInventory(list) {
     const matching = entries.filter(e=>e.stored===stored);
     const group=stored?Array.from(matching.reduce((m,e)=>{const k=e.kind+':'+e.label;if(m.has(k))m.get(k).quantity++;else m.set(k,{...e,quantity:1});return m;},new Map()).values()):matching;
     
-    if (!group.length) { const note=document.createElement("p"); note.className="muted"; note.textContent=stored?"Nothing stored yet. Choose Put away while moving an item.":"Your placed items will appear here."; list.appendChild(note); }
+    if (!group.length) { const note=document.createElement("p"); note.className="muted"; note.textContent=stored?"Nothing stored yet. Choose Store item while moving an item.":"Your placed items will appear here."; list.appendChild(note); }
     for (const e of group) {
       const row=document.createElement("div"); row.className="shop-item";
-      row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}${e.quantity>1?" ×"+e.quantity:""}</div><div class="desc">${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&o.stored).length} stored · ${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&!o.stored).length} placed</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Put away</button>'}</div>`;
+      row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}${e.quantity>1?" ×"+e.quantity:""}</div><div class="desc">${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&o.stored).length} stored · ${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&!o.stored).length} placed</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Store item</button>'}</div>`;
       if(e.kind==='cairn'||e.kind==='founder') {
         row.classList.add('keepsake-item');
         row.querySelector('.desc').textContent=stored?'Stored · returns beside the sign':'Beside the sign';
@@ -7270,7 +7270,7 @@ function endColdOpen(skipped) {
 /* ---------- reference card (the "?" button) ---------- */
 const GUIDE = [
   ["A Little Hello · a curious visitor", "Tap empty ground near the bottom 3–5 times in quick succession. A cat may peek over the screen edge for a few seconds. Pause less than 2.5 seconds between taps, then wait 30 seconds before trying again. Use the normal Cove view with menus closed. Sleeping and sick cats sit this one out. No cost or rewards—just company."],
-  ["Redecorate · keep what you own", "Press and hold an item to move it on the grid. Set here keeps its new spot; Cancel leaves it unchanged; Put away stores it. Shop → My inventory separates In storage from In the cove. Place is free. Sell refunds shells and removes ownership. Red cells mean a blocked spot. Capacity upgrades stay yours in storage."],
+  ["Redecorate · keep what you own", "Press and hold an item to move it on the grid. Set here keeps its new spot; Cancel leaves it unchanged; Store item stores it. Shop → My inventory separates In storage from In the cove. Place is free. Sell refunds shells and removes ownership. Red cells mean a blocked spot. Capacity upgrades stay yours in storage."],
   ["Catmint Café and Cove Garden", "Find Cove Garden in Activities: plant crops, harvest them, and use or sell your harvest. Catmint Café is under development. Festival contains Race, Volleyball and Tug of Paws."],
   ["Adventures · postcards from your cats", "Choose a destination, cats and trip length in Activities. When they return, open their results for rewards and a keepsake postcard. Different destinations bring different finds. Longer trips suit time away; short trips suit an active visit."],
   ["Your view · zoom buttons", "Use the zoom icon to change your view. Double-tapping does not zoom, leaving quick foreground taps available for A Little Hello."],
@@ -7287,7 +7287,7 @@ const GUIDE = [
 ];
 const HELP_TOPICS=[
  ['Meet your cats','catdex',['Tap a portrait in Catdex to meet your cat and see care options.','The cat counter shows mood and wellbeing.','For Little Hello, close menus and tap empty foreground ground 3–5 times.'],'dex'],
- ['Decorate your Cove','shop',['Shop pictures show what you are buying.','My inventory separates Stored items from In the Cove.','Hold a decoration to drag it. Put away stores it; Place brings it back for free.'],'shop'],
+ ['Decorate your Cove','shop',['Shop pictures show what you are buying.','My inventory separates Stored items from In the Cove.','Hold a decoration to drag it. Store item stores it; Place brings it back for free.'],'shop'],
  ['Explore & play','activities',['Choose an adventure destination, cats, and trip length.','Visit the garden or play a festival game in Activities.','Rainy Retreat is a quiet place to rest together.'],'explore'],
  ['Settings & saves','sound',['Use Sound for the master switch and individual volumes.','Use the view controls or pinch to adjust the Cove view.','Journal has Back up / restore. Purchased support packs can be restored through the purchase controls.'],'today']
 ];
@@ -7308,7 +7308,7 @@ function openGuide(){
 function neoStartTour(){
  tutEl.classList.remove("on");closeModal();hidePropCard();hideCatCard();rosterEl.hidden=true;
  document.getElementById('neo-tour')?.remove();closeAllPanels();
- const steps=[['Meet your cats','Tap Catdex to open your cats.','#dexBtn'],['Browse the shop','Tap Shop to see what you can add.','#shopBtn'],['Find your belongings','Tap My inventory in the Shop.','#shopTabs [data-tab="inventory"]'],['Your placed items','Tap In the Cove to see what you can put away.','#shop .shop-actions button[aria-pressed]']];
+ const steps=[['Meet your cats','Tap Catdex to open your cats.','#dexBtn'],['Browse the shop','Tap Shop to see what you can add.','#shopBtn'],['Find your belongings','Tap My inventory in the Shop.','#shopTabs [data-tab="inventory"]'],['Your placed items','Tap In the Cove to see what you can store.','#shop .shop-actions button[aria-pressed]']];
  let i=0;const box=document.createElement('aside');box.id='neo-tour';box.setAttribute('aria-label','Guided tour');document.body.append(box);
  const finish=()=>{document.removeEventListener('click',clicked,true);window.removeEventListener('resize',position);document.removeEventListener('scroll',position,true);box.remove();};
  const tourTarget=()=>i===3?[...document.querySelectorAll(steps[i][2])].find(el=>el.textContent.includes('In the Cove')):document.querySelector(steps[i]?.[2]);
@@ -18105,7 +18105,7 @@ function showPostcard(text, cat, dest, onDone, card) {
   document.getElementById("pc-ok").onclick = () => { closeModal(); if (onDone) setTimeout(onDone, 250); };
 }
 function showFounderDescription(){
-  openModal(`<div class="reveal"><div class="kicker">A LITTLE THANK-YOU · 2026</div><h2>Founding Covekeeper</h2><p>This plaque marks your support for Catmint Cove during its founding days. You helped give this little home a beginning.</p><p>Your keepsakes include the dated plaque and founder accessories: a ribbon, halo, and hero mask. They celebrate your support and give no gameplay advantage.</p><p class="muted">Thank you for helping the Cove grow.</p><div class="cove-action-pair"><button class="btn" id="founder-close">Back</button><button class="btn primary" id="founder-store">Put away</button></div></div>`);
+  openModal(`<div class="reveal"><div class="kicker">A LITTLE THANK-YOU · 2026</div><h2>Founding Covekeeper</h2><p>This plaque marks your support for Catmint Cove during its founding days. You helped give this little home a beginning.</p><p>Your keepsakes include the dated plaque and founder accessories: a ribbon, halo, and hero mask. They celebrate your support and give no gameplay advantage.</p><p class="muted">Thank you for helping the Cove grow.</p><div class="cove-action-pair"><button class="btn" id="founder-close">Keep here</button><button class="btn primary" id="founder-store">Store item</button></div></div>`);
   document.getElementById('founder-store').onclick=()=>{G.cosmetics.founderStored=true;save();closeModal();toast('Plaque stored in My inventory.');};
   document.getElementById('founder-close').onclick=closeModal;
 }
@@ -19201,7 +19201,7 @@ function neoCafeCanPlace(items,id,x,y){
 function neoPaintCafe(cv,h){
   cancelAnimationFrame(neoCafeFrame);cv.width=720;cv.height=560;
   const room=cv.parentElement,items=neoCafeFurniture(h),g=cv.getContext('2d');
-  const toolbar=document.createElement('div');toolbar.className='cafe-room-tools';toolbar.innerHTML='<button class="btn" data-edit>Arrange café</button><button class="btn" data-store disabled>Put away</button><select aria-label="Stored café furniture"><option value="">Stored furniture</option></select><span role="status">Tap the stove to cook, or the counter to stock treats.</span>';room.insertBefore(toolbar,cv);
+  const toolbar=document.createElement('div');toolbar.className='cafe-room-tools';toolbar.innerHTML='<button class="btn" data-edit>Arrange café</button><button class="btn" data-store disabled>Store item</button><select aria-label="Stored café furniture"><option value="">Stored furniture</option></select><span role="status">Tap the stove to cook, or the counter to stock treats.</span>';room.insertBefore(toolbar,cv);
   let editing=false,selected=null,drag=null,ghost=null,last=0;
   const status=toolbar.querySelector('span'),select=toolbar.querySelector('select');
   function controls(){toolbar.querySelector('[data-edit]').textContent=editing?'Done arranging':'Arrange café';toolbar.querySelector('[data-store]').disabled=!editing||!selected||['oven','counter'].includes(selected.type)||(selected.type==='table'&&items.filter(f=>f.type==='table'&&!f.boxed).length<=1);select.innerHTML='<option value="">Stored furniture</option>'+items.filter(f=>f.boxed).map(f=>`<option value="${f.id}">${f.type==='table'?'Table & chair':f.type}</option>`).join('');}
