@@ -19000,7 +19000,7 @@ function neoBuildNavigation(){
   <button class="neo-destination" id="neo-go-garden"><span><img class="neo-ui-icon" src="art/icon-keepsake-garden.svg" alt="" width="36" height="36"></span><b>Cove Garden</b><small>Plant, grow and gather something good.</small></button>
   <button class="neo-destination" id="neo-go-rest"><span>${neoUIIcon("rest")}</span><b>Rainy retreat</b><small>No chores. Just rain and company.</small></button>
   </div>
-  <details class="neo-feedback"><summary>Help shape the Cove</summary><p>Your feedback can help us make this little home better.</p><button class="btn" id="neo-playtest">Private playtest notebook</button></details>`;
+  <div class="neo-feedback"><p>Your feedback can help us make this little home better.</p><button class="btn primary" id="neo-feedback-contact" type="button">Give feedback</button></div>`;
   document.getElementById('app').append(sheet);panels.explore=sheet;
   document.getElementById('neo-explore-close').onclick=closeAllPanels;
   document.getElementById('neo-go-festival').onclick=()=>{closeAllPanels();document.getElementById('festBtn').click();};
@@ -19008,7 +19008,7 @@ function neoBuildNavigation(){
   // Café development continues in the neo-catmint-cafe branch; saved progress is retained.
   document.getElementById('neo-go-garden').onclick=()=>neoOpenHomestead('garden');
   document.getElementById('neo-go-rest').onclick=()=>{closeAllPanels();document.getElementById('restBtn').click();};
-  document.getElementById('neo-playtest').onclick=neoPlaytest;
+  document.getElementById('neo-feedback-contact').onclick=()=>openExternal('https://www.catmintcove.com/#contact');
   panels.dex.querySelector('h2').textContent='Catdex';panels.shop.querySelector('h2').textContent='Cove Shop';
 }
 function neoPlaytest(){
