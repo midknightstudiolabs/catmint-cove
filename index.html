@@ -1095,9 +1095,9 @@
   .snd-master .lab{display:flex;align-items:center;gap:.55rem;font-weight:700;font-size:.86rem;}
   .snd-master .lab .ic{font-size:1rem;}
   .snd-master .tgl{width:2.7rem;height:1.6rem;border-radius:999px;background:var(--accent);position:relative;flex:0 0 auto;transition:background .15s ease;}
-  .snd-master .tgl::after{content:"";position:absolute;top:.18rem;left:.18rem;width:1.24rem;height:1.24rem;border-radius:50%;background:#fff;transition:left .15s ease;}
+  .snd-master .tgl::after{content:"";position:absolute;top:.18rem;left:1.28rem;width:1.24rem;height:1.24rem;border-radius:50%;background:#fff;transition:left .15s ease;}
   .snd-master .tgl.off{background:#c9c2ad;}
-  .snd-master .tgl.off::after{left:1.28rem;}
+  .snd-master .tgl.off::after{left:.18rem;}
   .snd-rows{transition:opacity .15s ease;}
   .snd-rows.off{opacity:.4;pointer-events:none;}
   .snd-row{display:grid;grid-template-columns:1.4rem 1fr auto;align-items:center;gap:.7rem;padding:.6rem .1rem;text-align:left;}
@@ -1228,7 +1228,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?v=1">
+</style><link rel="stylesheet" href="ui/device-fixes.css?v=9">
 <style id="neo-theme">
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
@@ -1454,7 +1454,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <p class="ts-sub">Cats wander in needing someone. Look after them, and the cove slowly becomes theirs.</p>
       <button class="btn primary" id="ts-go">Begin</button>
       <p class="ts-hint">Cosier on a tablet 🐾</p>
-      <p class="ts-copy">© 2026 Midknight Studio Labs</p>
+      <p class="ts-copy">© 2026 Midknight Studio Labs · Catmint Cove</p>
     </div>
   </div>
   <div id="hud">
@@ -1483,7 +1483,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
   <div id="rest">
     <div class="rest-panel" id="restPanel">
-      <div class="rest-art" id="restArt">🌧️</div>
+      <div class="rest-art" id="restArt"><img src="art/icon-keepsake-rest.svg" width="40" height="40" alt=""></div>
       <h2>Rainy day</h2>
       <p>Everyone pads inside for a nap. Rain on the window, a warm fire — leave it running while you work.</p>
       <label><input type="checkbox" id="restRain" checked> Rain sound</label>
@@ -1759,7 +1759,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
   <!-- the cove roster / "while you were away" report — every cat, worst first -->
   <div class="sheet" id="roster" hidden>
-    <button class="x" id="roster-x" aria-label="Close">✕</button>
+    <button class="x" id="roster-x" aria-label="Close cats here"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
     <h2 id="roster-title">The cove</h2>
     <p class="muted" id="roster-sub" style="margin:0 0 .7rem"></p>
     <div class="roster-list" id="roster-list"></div>
@@ -2234,6 +2234,10 @@ function load() {
     if (!G.cosmetics.propBoxed || typeof G.cosmetics.propBoxed !== "object") G.cosmetics.propBoxed = {};
     if (!G.cosmetics.decorPos || typeof G.cosmetics.decorPos !== "object") G.cosmetics.decorPos = {};  // player-set cottage/tree/flower/station positions, keyed "type:index" ("station:fishing:0")
     if (!G.cosmetics.comfortPos || typeof G.cosmetics.comfortPos !== "object") G.cosmetics.comfortPos = {};  // player-set bowl/toy/bed/scratcher positions, keyed "type:index"
+    // Retired decorations: remove every owned slot and placement on save load.
+    for(const field of ['props','propPos','propBoxed']) for(const id of Object.keys(G.cosmetics[field])) {
+      if(['lanterns','rowboat'].includes(id.split('#')[0])) delete G.cosmetics[field][id];
+    }
     if (G.cosmetics.props) delete G.cosmetics.props.flagpole;   // flag pole parked — clear the seeded test grant
     delete G.cosmetics.flagCountry; delete G.cosmetics._flagpoleSeeded;
     if (!DECOR_THEMES[G.cosmetics.theme] || !G.cosmetics.themes[G.cosmetics.theme]) G.cosmetics.theme = "default";
@@ -2474,9 +2478,10 @@ function rebuildAttractors() {
   { const cp = cairnPos(W, H); if (G.cairn && !G.cairn.tidied && (G.cairn.size | 0) > 0) obstacles.push({ x: cp.sx, y: cp.gy, rx: 16, ry: 9 }); }
   // physical movable props (stepping stones stay walkable; hanging props aren't in the way)
   const PROP_SOLID = { lantern: [8, 11], birdbath: [15, 13], rowboat: [34, 14], windmill: [10, 13] };
-  if (G.cosmetics && G.cosmetics.props) for (const id in PROP_SOLID) {
+  if (G.cosmetics && G.cosmetics.props) for (const id of Object.keys(G.cosmetics.props)) {
+    if(!PROP_SOLID[id.split("#")[0]])continue;
     if (!G.cosmetics.props[id] || propBoxed(id)) continue;
-    const pp = propPos(id), r = PROP_SOLID[id];
+    const pp = propPos(id), r = PROP_SOLID[id.split("#")[0]];
     obstacles.push({ x: pp.x, y: pp.y - r[1] * 0.4, rx: r[0], ry: r[1] });
   }
   // food / toy / bed — placed clear of decor, stations, water and each other
@@ -4706,18 +4711,20 @@ let _placing = null;
 let _placeGhost = null;     // { x, y } world pos the ghost follows
 let _arranging = false;
 const PLACE_CELL=40;
+// Keep the complete placement footprint on grass, below the shoreline.
+function placementTop(){return H*.42;}
 let _placeDragOrigin=null;
 function placeFootprint(spec){
-  const id=spec.key||spec.id;
-  if(id==="rowboat"||id==="bunting")return [3,1];
-  if(id==="stones"||id==="birdbath")return [2,1];
+  const id=(spec.key||spec.id||" ").split("#")[0];
+  if(id==="rowboat"||id==="bunting"||id==="lanterns")return [3,1];
+  if(id==="stones"||id==="birdbath"||id==="windmill")return [2,1];
   const type=spec.dtype||spec.type;
   if(type==='station'||type==='cottage')return [3,2];
   if(type==='tree'||type==='cattree')return [2,2];
   return [1,1];
 }
 function placeSnap(x,y){
-  const [fw,fh]=placeFootprint(_placing||{}),ox=fw*PLACE_CELL/2,oy=H*.48+fh*PLACE_CELL/2;
+  const [fw,fh]=placeFootprint(_placing||{}),ox=fw*PLACE_CELL/2,oy=placementTop()+fh*PLACE_CELL/2;
   return {x:ox+Math.round((x-ox)/PLACE_CELL)*PLACE_CELL,y:oy+Math.round((y-oy)/PLACE_CELL)*PLACE_CELL};
 }
 function _ghostAt(cx,cy){
@@ -4727,7 +4734,7 @@ function _ghostAt(cx,cy){
 }
 function drawPlacementGrid(g){
   if(!_placing&&!_arranging)return;
-  const top=H*.48,bottom=catFloor();g.save();g.strokeStyle='rgba(255,249,218,.25)';g.lineWidth=1;g.beginPath();
+  const top=placementTop(),bottom=catFloor();g.save();g.strokeStyle='rgba(255,249,218,.25)';g.lineWidth=1;g.beginPath();
   for(let x=0;x<=W;x+=PLACE_CELL){g.moveTo(x,top);g.lineTo(x,bottom);}
   for(let y=top;y<=bottom;y+=PLACE_CELL){g.moveTo(0,y);g.lineTo(W,y);}g.stroke();
   if(_placing&&_placeGhost){const [fw,fh]=placeFootprint(_placing),p=_placeGhost,ok=_placeOK(p.x,p.y);
@@ -4744,11 +4751,15 @@ const COMFORT_TYPES = new Set(["food", "toy", "bed", "scratch"]);
 function positionPlaceActions(){
   const el=document.getElementById('placeBar');if(el.hidden)return;
   if(!_placing||!_placeGhost){el.style.position='';el.style.left='';el.style.top='';el.style.bottom='';el.style.transform='';return;}
-  const r=canvas.getBoundingClientRect(),w=el.offsetWidth,h=el.offsetHeight;
+  const stamp=[_placing.key,_placeGhost.x,_placeGhost.y,innerWidth,innerHeight,_camTx,_camTy,_camScale,displayScale,_worldOffX,_worldOffY].join(':');
+  if(el._placeStamp===stamp)return;
+  el._placeStamp=stamp;
+  const r=canvas.getBoundingClientRect(),w=el.offsetWidth||Math.min(232,innerWidth-24),h=el.offsetHeight||150;
   const x=r.left+(_ovActive?_camTx+_placeGhost.x*_camScale:(_placeGhost.x+_worldOffX)*displayScale),y=r.top+(_ovActive?_camTy+_placeGhost.y*_camScale:(_placeGhost.y+_worldOffY)*displayScale);
   let left=x+36,top=y-h/2;
   if(left+w>window.innerWidth-12)left=x-w-36;
   if(left<12){left=clamp(x-w/2,12,Math.max(12,window.innerWidth-w-12));top=y-h-24;if(top<60)top=y+32;}
+  left=clamp(left,12,Math.max(12,window.innerWidth-w-12));
   top=clamp(top,12,Math.max(12,window.innerHeight-h-12));
   el.style.position='fixed';el.style.transform='none';el.style.bottom='auto';el.style.left=left+'px';el.style.top=top+'px';
 }
@@ -4756,6 +4767,7 @@ function _beginPlace(spec) {
   document.getElementById("placeBarPutAway").hidden = false;
   if (!_arranging) closeAllPanels();
   _placing = spec;
+  document.getElementById("placeBar")._placeStamp=null;
   const start = spec._start || { x: W * 0.5, y: catFloor() - 60 };
   _placeGhost = { x: start.x, y: start.y };
   const pointer=_tpX!=null?screenToWorld(_tpX,_tpY):null;
@@ -4794,7 +4806,7 @@ function _placeOK(x,y){
   const legal=_placing.kind==='decor'?validDecorSpot(x,y,_placing.dtype,_placing.key):validPropSpot(x,y);
   if(!legal)return false;
   const [fw,fh]=placeFootprint(_placing);
-  if(x-fw*20<0||x+fw*20>W||y-fh*20<H*.48||y+fh*20>catFloor())return false;
+  if(x-fw*20<0||x+fw*20>W||y-fh*20<placementTop()||y+fh*20>catFloor())return false;
   const overlaps=(o,spec)=>{const [ow,oh]=placeFootprint(spec);return Math.abs(x-o.x)<(fw+ow)*20-1&&Math.abs(y-o.y)<(fh+oh)*20-1;};
   for(const d of decor){if(d.dkey===_placing.key)continue;if(DECOR_LABEL[d.type]&&overlaps(d,d))return false;}
   for(const a of attractors){if(a.key===_placing.key||!COMFORT_TYPES.has(a.type))continue;if(overlaps(a,a))return false;}
@@ -4902,6 +4914,11 @@ function dropComfortPos(type, newCount) {
 // the movable object under a world point. `tight` (long-press, where cats may be
 // milling around the piece) checks only the object's core so a dead-centre press
 // still grabs the cottage; the arrange-mode tap uses the full generous radius.
+function propGrabHit(id,x,y,pos){
+ const base=id.split('#')[0],scale=pos.s||1;
+ const shape={bunting:[70,108],lantern:[24,54],birdbath:[27,32],windmill:[38,106],stones:[42,14]}[base]||[28,30];
+ return Math.abs(x-pos.x)<=shape[0]*scale && y>=pos.y-shape[1]*scale-8 && y<=pos.y+18;
+}
 function movableAt(x, y, tight) {
   const f = tight ? 0.95 : 1.15;   // generous hit area — small screens, fat thumbs
   for (const d of decor) {
@@ -4911,7 +4928,7 @@ function movableAt(x, y, tight) {
   if (G.cosmetics && G.cosmetics.props) for (const p of DECOR_PROPS) {
     if (!p.movable || !G.cosmetics.props[p.id] || propBoxed(p.id)) continue;
     const pos = propPos(p.id);
-    if(p.id==="bunting"&&Math.abs(x-pos.x)<62*f&&y>=pos.y-100&&y<=pos.y+10)return {kind:"prop",id:p.id};
+    if(propGrabHit(p.id,x,y,pos))return {kind:"prop",id:p.id};
     if (Math.hypot(x - pos.x, y - (pos.y - 6)) < 26 * f) return { kind: "prop", id: p.id };
   }
   // bowls / toys / beds / scratchers — live in `attractors`, not `decor`
@@ -4971,7 +4988,7 @@ canvas.addEventListener("pointerdown", (e) => {
   ensureAudio();
   if (festMode) { if (festKind === "volley") volleyPointer(e); return; }   // festival modes own their taps; race/box use HTML buttons
   if (_placing) {
-    const w=screenToWorld(e.clientX,e.clientY),near=Math.hypot(w.x-_placeGhost.x,w.y-_placeGhost.y)<50;
+    const w=screenToWorld(e.clientX,e.clientY),near=_placing.kind==="prop"?propGrabHit(_placing.key,w.x,w.y,{..._placeGhost,s:PROP_BY_ID[_placing.key]?.place.s||1}):Math.hypot(w.x-_placeGhost.x,w.y-_placeGhost.y)<50;
     _placeDragOrigin=near?{x:_placeGhost.x-w.x,y:_placeGhost.y-w.y}:null;
     _tpX=e.clientX;_tpY=e.clientY;_tpMoved=false;return;
   }
@@ -5523,6 +5540,7 @@ cc.rehomeBtn.addEventListener("click", () => {
     save();toast(`${c.name} found a wonderful home.`);
   };
 });
+function coatRarityLabel(key){const coat=COAT_BY_KEY[key];return TIER_LABEL[coat?.tier]||'Everyday';}
 function starGlyphs(n) {
   return `<span style="color:${STAR_COL[n]}">${"★".repeat(n)}</span>` +
          `<span style="color:#cfc8b0">${"★".repeat(4 - n)}</span>` +
@@ -5543,7 +5561,7 @@ function showCatCard(c) {
       ? `  ·  ${c.lifeStage} (${Math.max(1, Math.round(c.growth * 20))}h old)`
       : c.title ? `  ·  ${c.title}` : "  ·  adult")) + acc;
   cc.starsEl.innerHTML = c.mascot ? `<span style="color:${STAR_COL[2]};font-weight:700">★ Mascot</span>`
-    : c.visitor ? `<span style="color:${STAR_COL[3]};font-weight:700">✦ Visitor</span>` : starGlyphs(c.star);
+    : c.visitor ? `<span style="color:${STAR_COL[3]};font-weight:700">✦ Visitor</span>` : `<span style="color:#61735c;font-weight:700">${coatRarityLabel(c.coatKey)}</span>`;
   cc.traits.innerHTML = c.traits.map(k => `<span class="trait">${TRAITS[k].label}</span>`).join("");
   cc.desc.textContent = c.mascot
     ? "Looks like he's drafting a complaint. Actually just wants to loaf near you. " + c.t1.desc
@@ -6135,7 +6153,8 @@ function renderShopDecor(list) {
     list.appendChild(row);
   }
   list.appendChild(shopHead("Props"));
-  for (const p of DECOR_PROPS) {
+  for (const p of DECOR_PROPS.filter(p=>!p.baseId&&!['lanterns','rowboat'].includes(p.id))) {
+    const copies=propCopies(p.id),count=copies.filter(p=>cm.props[p.id]).length;
     const owned = !!cm.props[p.id];
     const afford = G.shells >= p.price;
     const boxed = owned && propBoxed(p.id);
@@ -6146,7 +6165,10 @@ function renderShopDecor(list) {
     else if (!p.movable) action = `<span class="owned">In the cove</span>`;
     else if (boxed) action = `<button class="btn primary" data-place-prop="${p.id}">Place it</button>`;
     else action = `<button class="btn tiny" data-box-prop="${p.id}" title="Keep in inventory">Put away</button><button class="btn tiny" data-move-prop="${p.id}">Move</button>`;
-    row.innerHTML = `<div class="txt"><div class="name">${p.name}</div><div class="desc">${boxed ? "Packed away — tap Place it to set it down." : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
+    if(p.maxOwned) action=(count<p.maxOwned?`<button class="btn primary" data-buy-prop="${p.id}" ${afford?'':'disabled'}>${count?'Buy another':'Buy'} · ${p.price.toLocaleString()}</button>`:'<span class="owned">Collection complete</span>');
+    row.innerHTML = `<div class="txt"><div class="name">${p.name}${p.maxOwned?' · Owned '+count+'/8':''}</div><div class="desc">${boxed ? "Packed away — tap Place it to set it down." : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
+    const photo=document.createElement('canvas');photo.width=160;photo.height=120;photo.className='inventory-preview';photo.setAttribute('role','img');photo.setAttribute('aria-label',p.name+' preview');
+    const pg=photo.getContext('2d');pg.translate(80,106);pg.scale(p.id==='windmill'?.72:.82,p.id==='windmill'?.72:.82);if(p.render)p.render(pg,0,0,0,p.place.s);row.prepend(photo);
     list.appendChild(row);
   }
   list.querySelectorAll("[data-move-prop],[data-place-prop]").forEach(b => b.onclick = () => startPlacing(b.dataset.moveProp || b.dataset.placeProp));
@@ -6164,9 +6186,11 @@ function renderShopDecor(list) {
     toast(`${th.name} — the whole cove changes with the light now.`, 5);
   });
   list.querySelectorAll("[data-buy-prop]").forEach(b => b.onclick = () => {
-    const id = b.dataset.buyProp, p = DECOR_PROPS.find(x => x.id === id);
-    if (G.shells < p.price) return;
-    G.shells -= p.price; cm.props[id] = true;
+    const p = PROP_BY_ID[b.dataset.buyProp];
+    const slot=propCopies(p.id).find(q=>!cm.props[q.id]);
+    if (!slot || G.shells < p.price) return;
+    const id=slot.id;G.shells -= p.price; cm.props[id] = true;
+    cm.propBoxed ||= {};cm.propBoxed[id]=true;
     sfx("buy"); syncHud(); save();
     if (p.movable) { startPlacing(id); }                 // straight into placement mode
     else { spawnParticles(W / 2, H * 0.5, "spark", 10); renderShop(); toast(`A ${p.name.toLowerCase()} for the cove.`, 4); }
@@ -6312,6 +6336,8 @@ function renderInventory(list) {
     entries.push({...spec,label:item.name,stored:itemStored(spec.kind,spec.key)});
   }
   for (const p of DECOR_PROPS) if (p.movable && G.cosmetics.props[p.id]) entries.push({kind:"prop",key:p.id,label:p.name,stored:propBoxed(p.id)});
+  if(iapOwns('founding_covekeeper')) entries.push({kind:'founder',key:'founder-plaque',label:'Founding Covekeeper plaque',stored:!!G.cosmetics.founderStored});
+  if(G.cairn?.stage>=4) entries.push({kind:'cairn',key:'midknight-cairn',label:"Midknight's cairn",stored:!!G.cairn.tidied});
   const filters=document.createElement('div');filters.className='shop-actions';
   for(const [id,label] of [['stored','Stored'],['placed','In the Cove']]){const b=document.createElement('button');b.className='btn';b.textContent=label+' ('+entries.filter(e=>e.stored===(id==='stored')).length+')';b.setAttribute('aria-pressed',inventoryView===id);b.onclick=()=>{inventoryView=id;renderShop();};filters.appendChild(b);}list.appendChild(filters);
   for (const stored of [inventoryView==='stored']) {
@@ -6321,26 +6347,36 @@ function renderInventory(list) {
     if (!group.length) { const note=document.createElement("p"); note.className="muted"; note.textContent=stored?"Nothing stored yet. Choose Put away while moving an item.":"Your placed items will appear here."; list.appendChild(note); }
     for (const e of group) {
       const row=document.createElement("div"); row.className="shop-item";
-      row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}${e.quantity>1?" ×"+e.quantity:""}</div><div class="desc">${stored?"Ready to place":"Placed"}</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Put away</button>'}</div>`;
+      row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}${e.quantity>1?" ×"+e.quantity:""}</div><div class="desc">${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&o.stored).length} stored · ${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&!o.stored).length} placed</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Put away</button>'}</div>`;
+      if(e.kind==='cairn'||e.kind==='founder') {
+        row.classList.add('keepsake-item');
+        row.querySelector('.desc').textContent=stored?'Stored · returns beside the sign':'Beside the sign';
+        const place=row.querySelector('.inventory-place');place.textContent='Place';place.classList.add('primary');place.hidden=!stored;
+        row.querySelector('.inventory-store')?.classList.add('primary');
+      }
       row.querySelector(".inventory-place").onclick=()=>{
+        if(e.kind==='founder'){G.cosmetics.founderStored=false;save();closeAllPanels();toast('Your Founding Covekeeper plaque is back by the sign.',4);return;}
+        if(e.kind==='cairn'){G.cairn.tidied=false;G.cairn.size=3;save();rebuildAttractors();closeAllPanels();toast("Midknight's cairn is standing by the sign.",4);return;}
         if(e.kind==="prop") {startPlacing(e.key); return;}
         const obj=e.kind==="comfort"?attractors.find(a=>a.key===e.key):decor.find(d=>d.dkey===e.key);
         const pos=obj || (e.kind==="comfort"?G.cosmetics.comfortPos:G.cosmetics.decorPos)?.[e.key] || {x:W*.5,y:H*.7};
         _beginPlace({...e,r:30,from:stored?null:{x:pos.x,y:pos.y},_start:{x:pos.x,y:pos.y}});
       };
       const preview=document.createElement('canvas');preview.width=160;preview.height=120;preview.className='inventory-preview';preview.setAttribute('aria-label',e.label+' · '+(e.quantity||1)+' '+(stored?'stored':'placed'));row.prepend(preview);
-      const g=preview.getContext('2d');g.translate(80,85);g.scale(.85,.85);
-      if(e.kind==='prop'){const p=PROP_BY_ID[e.key];if(p?.render)p.render(g,0,0,0,.8);}
+      const g=preview.getContext('2d');g.translate(80,e.key==='windmill'?105:85);g.scale(e.key==='windmill'?.75:.85,e.key==='windmill'?.75:.85);
+      if(e.kind==='founder'){drawFounderPlaque(g);}
+      else if(e.kind==='cairn'){const original=G.cairn;try{G.cairn={...original,tidied:false,size:3};const cp=cairnPos(W,H);g.translate(-cp.sx,-cp.gy);drawCairn(g,W,H);}finally{G.cairn=original;}}
+      else if(e.kind==='prop'){const p=PROP_BY_ID[e.key];if(p?.render)p.render(g,0,0,0,.8);}
       else if(e.kind==='comfort')drawAttractor(g,{type:e.dtype,x:0,y:0});
       else {const d=decor.find(d=>d.dkey===e.key);drawDecor(g,{...(d||{}),type:e.dtype,x:0,y:0,dkey:e.key});}
       const count=document.createElement('span');count.className='inventory-quantity';count.textContent='×'+(e.quantity||1);row.prepend(count);
-      preview.style.touchAction='none';preview.onpointerdown=ev=>{if(!stored)return;ev.preventDefault();const x=ev.clientX,y=ev.clientY;let started=false;
-        const move=p=>{if(p.pointerId!==ev.pointerId)return;if(!started&&Math.hypot(p.clientX-x,p.clientY-y)>8){started=true;row.querySelector('.inventory-place').click();_placeDragOrigin=null;}if(started&&_placing){_placeGhost=_ghostAt(p.clientX,p.clientY);_placing._moved=true;positionPlaceActions();}p.preventDefault();};
+      preview.style.touchAction='none';preview.onpointerdown=ev=>{if(!stored||e.kind==='cairn'||e.kind==='founder')return;ev.preventDefault();const x=ev.clientX,y=ev.clientY;let started=false;
+        const move=p=>{if(p.pointerId!==ev.pointerId)return;if(!started&&Math.hypot(p.clientX-x,p.clientY-y)>8){started=true;row.querySelector('.inventory-place').click();_placeDragOrigin=null;}if(started&&_placing){_placeGhost=_ghostAt(p.clientX,p.clientY);_placing._moved=true;}p.preventDefault();};
         const end=p=>{if(p.pointerId!==ev.pointerId)return;document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',cancel);if(started&&_placing)finishPlacing();};
         const cancel=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',cancel);if(started&&_placing)cancelPlacing();};
         document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',end);document.addEventListener('pointercancel',cancel);
       };
-      const put=row.querySelector(".inventory-store"); if(put) put.onclick=()=>{putAwayItem(e.kind,e.key,e.label);renderShop();};
+      const put=row.querySelector(".inventory-store"); if(put) put.onclick=()=>{if(e.kind==='founder'){G.cosmetics.founderStored=true;save();}else if(e.kind==='cairn'){G.cairn.tidied=true;G.cairn.size=0;save();rebuildAttractors();}else putAwayItem(e.kind,e.key,e.label);renderShop();};
       list.appendChild(row);
     }
   }
@@ -6569,6 +6605,7 @@ function coveName() {
   return G.owner ? `${G.owner}’s Cove` : "Catmint Cove";
 }
 let _hudTitle = "", _hudFull = null;
+function setHudText(el,value){const text=String(value);if(el.textContent!==text)el.textContent=text;}
 function syncHud() {
   const wantTitle = G.owner ? `${esc(G.owner)}<b>’s Cove</b>` : "Catmint <b>Cove</b>";
   if (wantTitle !== _hudTitle) {
@@ -6577,11 +6614,11 @@ function syncHud() {
     pill.setAttribute('aria-label', coveName() + '. Rename your cove');
     pill.title = coveName();
   }
-  elShells.textContent = Math.floor(G.shells);
-  document.getElementById("pearls").textContent = G.pearls || 0;
+  setHudText(elShells,Math.floor(G.shells));
+  setHudText(document.getElementById("pearls"),G.pearls || 0);
   document.getElementById("pearls").closest(".pill").classList.toggle("empty", !(G.pearls > 0));
-  elCatCount.textContent = residentCount();
-  elCatCap.textContent = capacity();
+  setHudText(elCatCount,residentCount());
+  setHudText(elCatCap,capacity());
   const fl = document.getElementById("foodlevel");
   if (fl) {
     const dleft = foodDaysLeft();
@@ -6593,8 +6630,8 @@ function syncHud() {
       ? "The food store is empty — the cats can't eat. Tap to stock up."
       : `${Math.round(G.food)} servings · ${foodLeftText()}. Tap to stock up.`;
   }
-  document.getElementById("opens").textContent = G.opens;
-  document.getElementById("coaxCost").textContent = coaxPrice();
+  setHudText(document.getElementById("opens"),G.opens);
+  setHudText(document.getElementById("coaxCost"),coaxPrice());
   const cb = document.getElementById("coaxBtn");
   // never hard-disabled — a tap on a full cove explains why and opens the fix
   const full = residentCount() >= capacity();
@@ -6609,7 +6646,7 @@ function syncHud() {
     const cbc = cb.querySelector(".badge.cost");
     if (cbc) cbc.style.display = full ? "none" : "";
   }
-  document.getElementById("dexBadge").textContent = dexCount() + "";
+  setHudText(document.getElementById("dexBadge"),dexCount());
   document.getElementById("festBtn").hidden = !(festUnlocked() || volleyReady());
   const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
   const advBack = anyAdvBack();
@@ -7000,7 +7037,7 @@ function flushReveal() {
     <canvas width="220" height="205"></canvas>
     <h2>${rv.name}</h2>
     <div class="stars" style="color:${STAR_COL[rv.star]}">${"★".repeat(rv.star)}${'<span style="color:#d8d2bd">'+"★".repeat(4-rv.star)+"</span>"}</div>
-    <p class="sub">${rv.coatName} · ${STAR_NAME[rv.star]}<br>A new face. A little story waiting to happen.</p>
+    <p class="sub">${rv.coatName} · ${coatRarityLabel(rv.coatKey)}<br>A new face. A little story waiting to happen.</p>
     <button class="btn primary" id="rv-ok">${revealQueue.length ? "Next" : "Welcome them in"}</button>
   </div>`);
   miniCat(document.querySelector("#modal canvas"), rv.coatKey, rv.star, "loafing", false, 2.7);
@@ -7032,19 +7069,20 @@ function rampParam(p, target, secs = 0.4) {
   });
 }
 function openSound() {
+  const mb = document.getElementById("muteBtn");
   ensureAudio();
   const S = G.sound;
   const rows = [
-    ["cats", "🐾", "Cats", "meows, purrs, little chirrups"],
-    ["cove", "🌊", "Cove", "water, breeze, birds, crickets"],
-    ["music", "🎪", "Music", "festival tune, rest-mode rain"],
+    ["cats", neoUIIcon("catdex"), "Cats", "meows, purrs, little chirrups"],
+    ["cove", neoUIIcon("adventure"), "Cove", "water, breeze, birds, crickets"],
+    ["music", neoUIIcon("festival"), "Music", "festival tune, rest-mode rain"],
   ];
   openModal(`<div class="reveal snd">
     <div class="kicker">Sound</div>
     <h2>Sound</h2>
     <p class="sub">How loud each part of the cove is. Saved on this device.</p>
     <button class="snd-master" id="sndMaster" aria-pressed="${S.on}">
-      <span class="lab"><span class="ic">${S.on ? "🔊" : "🔇"}</span> All sound</span>
+      <span class="lab"><span class="ic">${neoUIIcon(S.on ? "sound" : "muted")}</span> All sound</span>
       <span class="tgl${S.on ? "" : " off"}"></span>
     </button>
     <div class="snd-rows${S.on ? "" : " off"}" id="sndRows">
@@ -7218,7 +7256,7 @@ function endColdOpen(skipped) {
   visitorTimer = rand(45, 90);   // a third cat wanders in soon after the intro — "oh, they just turn up"
   save();
   // an honest reason to come back — the things that really change overnight
-  setTimeout(() => toast("You’re home. Activities has games and adventures; Shop has My inventory for free redecorating. Journal keeps your memories. Tap ? for the guide, including A Little Hello.", 6), 500);
+  setTimeout(() => toast("You’re home. Tap ? → Take a guided tour for a hands-on tour of inventory, activities and memories.", 6), 500);
   setTimeout(() => { try { checkOffline(afterReturn); } catch (e) {} }, 700);
   setTimeout(() => { try { maybePanHint(); } catch (e) {} }, 3200);
   syncHud();
@@ -7226,38 +7264,53 @@ function endColdOpen(skipped) {
 
 /* ---------- reference card (the "?" button) ---------- */
 const GUIDE = [
-  ["A Little Hello · a curious visitor", "Tap empty ground near the bottom 3–5 times in quick succession. A cat may peek over the screen edge for five seconds. Pause less than 2.5 seconds between taps, then wait 30 seconds before trying again. Use the normal Cove view with menus closed. Sleeping and sick cats sit this one out. No cost or rewards—just company."],
+  ["A Little Hello · a curious visitor", "Tap empty ground near the bottom 3–5 times in quick succession. A cat may peek over the screen edge for a few seconds. Pause less than 2.5 seconds between taps, then wait 30 seconds before trying again. Use the normal Cove view with menus closed. Sleeping and sick cats sit this one out. No cost or rewards—just company."],
   ["Redecorate · keep what you own", "Press and hold an item to move it on the grid. Set here keeps its new spot; Cancel leaves it unchanged; Put away stores it. Shop → My inventory separates In storage from In the cove. Place is free. Sell refunds shells and removes ownership. Red cells mean a blocked spot. Capacity upgrades stay yours in storage."],
-  ["Catmint Café and Cove Garden", "Open their Cove entrances or choose them in Activities. Plant crops, harvest when ready, cook batches and stock the café counter. Treats sell automatically, including while away; collect the shells in the café. Crops and food never spoil. Make it yours saves tablecloths and seating styles. Add patches or tables gradually with shells. Festival now contains Race, Volleyball and Tug of Paws."],
+  ["Catmint Café and Cove Garden", "Find Cove Garden in Activities: plant crops, harvest them, and use or sell your harvest. Catmint Café is under development. Festival contains Race, Volleyball and Tug of Paws."],
   ["Adventures · postcards from your cats", "Choose a destination, cats and trip length in Activities. When they return, open their results for rewards and a keepsake postcard. Different destinations bring different finds. Longer trips suit time away; short trips suit an active visit."],
   ["Your view · zoom buttons", "Use the zoom icon to change your view. Double-tapping does not zoom, leaving quick foreground taps available for A Little Hello."],
   ["Catdex · your little neighbors", "Find cats by name, tap their portraits for personalities and memories, or invite a new friend. Coats you have met are collected below."],
   ["Activities · play or unwind", "Visit the Festival, send a cat on an adventure, or settle into the rainy retreat. Festival games stay available day and night once unlocked; each game shows how many cats it needs."],
-  ["Shop · make it cozy", "Find bowls, beds, toys, decorations and outfits here. Check an item's description and price before choosing it."],
+  ["Shop · make it cozy", "Find bowls, beds, toys, decorations and outfits here. See the actual item preview and price before buying. My inventory shows item pictures and counts; drag a stored item into the Cove or choose Place."],
   ["Journal · moments worth keeping", "Collect your daily welcome, choose optional rituals, see postcards and memories, or capture a photo. You can swap unfinished rituals. Missing a day never resets your lovely days."],
+  ["Health and sound", "Tap the cat counter for everyone’s mood and wellbeing, with percentages. Tap a cat for care options. The sound button opens volume settings; All sound switches left/gray when off and right/green when on."],
   ["Say hello", "Tap a cat to get to know them. Some love cuddles; others appreciate a little space. Their personalities unfold as you spend time together."],
   ["Little shore finds", "Tap glowing shells and driftwood to collect them. Uncollected drops bank themselves. Driftwood helps restore places such as the old dock."],
   ["Community Pantry · a helping hand", "In Catdex, this free help tops food up to one day, eases hunger and thirst, clears sickness and restores health to at least 70%. It tells you what changed—or that everyone is already cared for."],
   ["Rest without worry", "Rainy retreat has rain, an optional fireplace and a sleep timer. Back to the cove returns you home. Your cats are looked after while you are away."],
 
 ];
-function openGuide() {
-  ensureAudio();
-  const card = tutEl.querySelector(".card");
-  const rows = GUIDE.filter(([h]) => h !== "The Cove Festival" || festUnlocked());   // not a spoiler before it exists
-  card.innerHTML = `<h2 style="margin:.1rem 0 .2rem">Make yourself at home</h2>
-    <p>There’s no rush. Say hello, make a cozy corner, and discover a little at a time.</p><div class="row guide-links"><button class="btn" data-guide="dex">Catdex</button><button class="btn" data-guide="explore">Activities</button><button class="btn" data-guide="shop">Shop</button><button class="btn" data-guide="today">Journal</button></div><div class="guide-list">${rows.map(([h, b]) => `<div class="guide-row"><b>${esc(h)}</b><p>${esc(b)}</p></div>`).join("")}</div>
-    <div class="row guide-foot">
-      <button class="btn primary" id="guideOk">Got it</button>
-      <button class="btn" id="guideCares">❤️ Cove Cares</button>
-      <button class="btn" id="guideCredits">🐾 Credits</button>
-    </div>`;
-  tutEl.classList.add("on");
-  card.querySelectorAll("[data-guide]").forEach(b=>b.onclick=()=>{tutEl.classList.remove("on");if(b.dataset.guide==="explore")neoOpenExplore();else togglePanel(b.dataset.guide);});
-  document.getElementById("guideOk").onclick = () => tutEl.classList.remove("on");
-  document.getElementById("guideCares").onclick = () => { tutEl.classList.remove("on"); openCares(); };
-  document.getElementById("guideCredits").onclick = () => { tutEl.classList.remove("on"); openCredits(); };
+const HELP_TOPICS=[
+ ['Meet your cats','catdex',['Tap a portrait in Catdex to meet your cat and see care options.','The cat counter shows mood and wellbeing.','For Little Hello, close menus and tap empty foreground ground 3–5 times.'],'dex'],
+ ['Decorate your Cove','shop',['Shop pictures show what you are buying.','My inventory separates Stored items from In the Cove.','Hold a decoration to drag it. Put away stores it; Place brings it back for free.'],'shop'],
+ ['Explore & play','activities',['Choose an adventure destination, cats, and trip length.','Visit the garden or play a festival game in Activities.','Rainy Retreat is a quiet place to rest together.'],'explore'],
+ ['Settings & saves','sound',['Use Sound for the master switch and individual volumes.','Use the view controls or pinch to adjust the Cove view.','Journal has Back up / restore. Purchased support packs can be restored through the purchase controls.'],'today']
+];
+function openGuide(){
+ ensureAudio();document.getElementById('neo-tour')?.remove();
+ const card=tutEl.querySelector('.card');card.classList.add('help-home');tutEl.classList.add('on');
+ const close=()=>{tutEl.classList.remove('on');card.classList.remove('help-home');};
+ const home=()=>{
+ card.innerHTML='<div class="help-head"><h2>How can we help?</h2><button class="btn" id="helpClose" aria-label="Close help">×</button></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="linkbtn" id="guideTour">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideCredits">Credits</button><button class="linkbtn" id="guideCares">Cove Cares</button></footer>';
+ card.querySelector('#helpClose').onclick=close;
+ card.querySelectorAll('[data-topic]').forEach(el=>el.onclick=()=>topic(+el.dataset.topic));
+ card.querySelector('#guideTour').onclick=()=>{close();neoStartTour();};
+ card.querySelector('#guideCredits').onclick=()=>{close();openCredits();};card.querySelector('#guideCares').onclick=()=>{close();openCares();};
+ };
+ const topic=i=>{const t=HELP_TOPICS[i];card.innerHTML='<div class="help-head"><button class="linkbtn" id="helpBack">‹ All topics</button><button class="btn" id="helpClose" aria-label="Close help">×</button></div><div class="help-visual">'+neoUIIcon(t[1])+'</div><h2>'+t[0]+'</h2><ol class="help-steps">'+t[2].map(x=>'<li>'+x+'</li>').join('')+'</ol><button class="btn primary" id="helpShow">Show me</button>';card.querySelector('#helpBack').onclick=home;card.querySelector('#helpClose').onclick=close;card.querySelector('#helpShow').onclick=()=>{close();closeAllPanels();if(t[3]==='explore')neoOpenExplore();else togglePanel(t[3]);};};home();
 }
+function neoStartTour(){
+ document.getElementById('neo-tour')?.remove();closeAllPanels();
+ const steps=[['Meet your cats','Tap Catdex to open your cats.','#dexBtn'],['Browse the shop','Tap Shop to see what you can add.','#shopBtn'],['Find your belongings','Tap My inventory in the Shop.','#shopTabs [data-tab="inventory"]'],['Your placed items','Tap In the Cove to see what you can put away.','#shop .shop-actions button[aria-pressed]']];
+ let i=0;const box=document.createElement('aside');box.id='neo-tour';box.setAttribute('aria-label','Guided tour');document.body.append(box);
+ const finish=()=>{document.removeEventListener('click',clicked,true);window.removeEventListener('resize',position);box.remove();};
+ const position=()=>{const target=document.querySelector(steps[i]?.[2]);if(!target)return;const r=target.getBoundingClientRect();box.style.left=Math.max(12,Math.min(innerWidth-box.offsetWidth-12,r.left))+'px';box.style.top=Math.max(12,Math.min(innerHeight-box.offsetHeight-12,r.top-box.offsetHeight-12))+'px';box.style.bottom='auto';};
+ const show=()=>{box.innerHTML='<small>Getting comfortable · '+(i+1)+' / '+steps.length+'</small><b>'+steps[i][0]+'</b><p>'+steps[i][1]+'</p><div><button class="btn" id="tourSkip">Skip</button><button class="btn" id="tourExit">Exit tour</button></div>';box.querySelector('#tourSkip').onclick=next;box.querySelector('#tourExit').onclick=finish;requestAnimationFrame(position);};
+ const next=()=>{if(++i>=steps.length){finish();toast('You know your way around. Make yourself at home.',3);return;}if(i===2 && panels.shop.hidden)togglePanel('shop');if(i===3){shopTab='inventory';renderShop();}show();};
+ const clicked=e=>{if(!box.isConnected){finish();return;}if(e.target.closest('#neo-tour'))return;const el=e.target.closest(steps[i][2]);if(!el)return;if(i===3&&!el.textContent.includes('In the Cove'))return;setTimeout(next,0);};
+ document.addEventListener('click',clicked,true);window.addEventListener('resize',position);show();
+}
+
 // open a URL in the OS browser, never inside the game's WebView. Capacitor
 // recognises the "_system" target on iOS + Android; plain web gets a new tab.
 function openExternal(url) {
@@ -8847,35 +8900,28 @@ function restLayout(vw) {
     // the fireplace + rug clear the bottom edge / the rest bar.
     hbase = H * 0.85;
     hx = cx - vw * 0.27;
-    rugRx = W * 0.24; rugRy = H * 0.08;
-    rugX = cx + vw * 0.22; rugY = H * 0.72;
-    napX = cx + vw * 0.22; napY = H * 0.655; napSpread = W * 0.075; napRowH = H * 0.05;
+    const rugLeft=hx+hw/2+36, rugRight=Math.min(W-28,cx+vis/2-24);
+    rugRx = Math.max(60,(rugRight-rugLeft)/2); rugRy = H * 0.115;
+    rugX = (rugLeft+rugRight)/2; rugY = H * 0.75;
+    napX = rugX; napY = H * 0.70; napSpread = W * 0.075; napRowH = H * 0.05;
     napHalfW = rugRx * 0.82;
   } else {
     // phone — the room is cropped to a ~360-wide centre strip. Nudge the
     // fireplace off the left edge, then fit the rug + nap pile into whatever
     // strip is left of it, centred, so nothing is clipped by the screen edge.
-    hbase = H * 0.88;
-    const visL = cx - vis / 2, visR = cx + vis / 2;
-    hx = Math.max(cx - vw * 0.27, visL + hw / 2 + 6);
-    const fireR = hx + hw / 2;                                  // right edge of the fireplace surround
-    napSpread = clamp(vis * 0.11, 30, 44);
-    napRowH = H * 0.036;
-    const halfPile = napSpread + 46;                            // pile half-width incl. a wide sleeping cat
-    napX = clamp((fireR + 14 + visR) / 2, fireR + 14 + halfPile, visR - halfPile);
-    napY = H * 0.70;
-    rugX = napX;
-    rugY = H * 0.77;
-    rugRx = Math.max(60, Math.min(vis * 0.30, napX - fireR - 6, visR - napX + 18));
-    rugRy = H * 0.072;
-    napHalfW = Math.min(rugRx * 0.9, visR - napX - 34, napX - fireR - 10);   // pile stays on screen + off the fire
+    hbase=H*.68;
+    const visL=cx-vis/2,visR=cx+vis/2;
+    hx=visL+hw/2+12;
+    napX=cx;napY=H*.75;napSpread=clamp(vis*.16,32,52);napRowH=H*.04;
+    rugX=cx;rugY=H*.82;rugRx=vis*.44;rugRy=H*.11;
+    napHalfW=Math.max(32,rugRx-36);
   }
   const htop = hbase - hh2;
 
   return {
     wx, wy, ww, wh,
     hx, hw, hh2, htop, hbase,
-    sillX: cx, sillY: wy + wh + 5,
+    sillX: cx, sillY: wy + wh - 17,
     fireX: hx + hw * 0.5 + 14, fireY: hbase - 4,
     rugX, rugY, rugRx, rugRy,
     napX, napY, napSpread, napRowH, napHalfW,
@@ -8888,6 +8934,7 @@ function restSeatCats() {
   // different every time you start one — a fresh cat gets the windowsill
   const rnd = mulberry32(((restStartedAt || Date.now()) >>> 0) ^ 0x5ca7);
   const list = [...cats];
+  for(const c of list)c._restNapScale=1;
   const seat = (c, o) => Object.assign(c, { vx: 0, vy: 0, walkAmt: 0, walk: 0, blink: 3, stateDur: 1e6, stateT: rnd() * 3, _station: null, _fx: null, ...o });
 
   // Midknight always claims the fire (founder's privilege)
@@ -8904,7 +8951,7 @@ function restSeatCats() {
     let t = w.reduce((a, b) => a + b, 0), r = rnd() * t;
     for (let i = 0; i < others.length; i++) { r -= w[i]; if (r <= 0) { sill = others[i]; break; } }
     sill = sill || others[0];
-    seat(sill, { x: L.sillX, y: L.sillY, face: rnd() < 0.5 ? -1 : 1, state: "loafing" });
+    seat(sill, { x: L.sillX, y: L.sillY, face: rnd() < 0.5 ? -1 : 1, state: "sleeping" });
   }
 
   // everyone else: a shuffled nap pile on the rug. It grows WIDE, not tall — a
@@ -8912,21 +8959,16 @@ function restSeatCats() {
   // the back rows off the bottom of the screen / behind the rest bar.
   const pile = others.filter(c => c !== sill);
   for (let i = pile.length - 1; i > 0; i--) { const j = (rnd() * (i + 1)) | 0; [pile[i], pile[j]] = [pile[j], pile[i]]; }
-  const sp = L.napSpread, rh = L.napRowH || H * 0.05;
-  const halfW = Math.max(L.napHalfW || L.rugRx * 0.82, sp * 0.9);   // keep the pile on the rug + on screen
-  const colsMax = Math.max(3, Math.floor((halfW * 2) / sp) + 1);
-  const cols = clamp(Math.round(Math.sqrt(pile.length * 1.7)) || 1, 1, colsMax);
-  const rows = Math.max(1, Math.ceil(pile.length / cols));
-  const colStep = cols > 1 ? Math.min(sp, (halfW * 2) / (cols - 1)) : 0;
-  const rowStep = rows > 1 ? Math.min(rh, (H * (L.cramped ? 0.12 : 0.15)) / (rows - 1)) : 0;
-  const x0 = L.napX - colStep * (cols - 1) / 2;
-  pile.forEach((c, i) => {
-    const col = i % cols, row = (i / cols) | 0;
-    seat(c, {
-      x: x0 + col * colStep + (row % 2) * colStep * 0.28,
-      y: L.napY + row * rowStep,
-      face: i % 2 ? 1 : -1, state: "sleeping",
-    });
+  // Give each sleeper a separate cell inside the rug, with a little breathing space.
+  const cols=Math.min(L.cramped?5:6,Math.max(1,Math.ceil(Math.sqrt(pile.length*1.3))));
+  const rows=Math.max(1,Math.ceil(pile.length/cols));
+  const areaW=L.rugRx*1.45,areaH=L.rugRy*1.15;
+  const cellW=areaW/cols,cellH=areaH/rows;
+  const scale=Math.min(1.18,cellW/58,cellH/25);
+  pile.forEach((c,i)=>{
+    const row=Math.floor(i/cols),col=i%cols,count=Math.min(cols,pile.length-row*cols);
+    c._restNapScale=scale;
+    seat(c,{x:L.rugX+(col-(count-1)/2)*cellW,y:L.rugY-areaH*.48+(row+.65)*cellH,face:i%2?1:-1,state:'sleeping'});
   });
 }
 
@@ -9134,6 +9176,12 @@ function renderRest(dt) {
   g.moveTo(wx, wy + wh / 2); g.lineTo(wx + ww, wy + wh / 2); g.stroke();
   g.fillStyle = "#66573f"; g.fillRect(wx - 12, wy + wh + 2, ww + 24, 7);   // sill
 
+  // A linen window hammock, suspended inside the frame.
+  const hamX=L.sillX,hamY=L.sillY;
+  g.strokeStyle='#a68e67';g.lineWidth=2.2;
+  for(const side of [-1,1]){g.beginPath();g.moveTo(hamX+side*47,hamY-47);g.lineTo(hamX+side*40,hamY-5);g.stroke();g.fillStyle='#867555';g.beginPath();g.arc(hamX+side*47,hamY-47,3,0,Math.PI*2);g.fill();}
+  g.fillStyle='#c8b58b';g.beginPath();g.moveTo(hamX-43,hamY-6);g.quadraticCurveTo(hamX,hamY+19,hamX+43,hamY-6);g.lineTo(hamX+39,hamY+5);g.quadraticCurveTo(hamX,hamY+29,hamX-39,hamY+5);g.closePath();g.fill();
+  g.strokeStyle='#8b7958';g.lineWidth=1.4;g.stroke();
   // Linen curtains frame the rain without covering the view or sill cats.
   g.fillStyle="#8b8771";
   for(const side of [-1,1]){
@@ -9145,53 +9193,19 @@ function renderRest(dt) {
   }
   g.strokeStyle="#736046";g.lineWidth=4;g.beginPath();g.moveTo(wx-23,wy-17);g.lineTo(wx+ww+24,wy-17);g.stroke();
 
-  // --- wall clock: a cat-silhouette pendulum clock, its tail swinging like the
-  //     pendulum. Off the visible strip on a phone, so skip it there.
+  // A quiet round timber clock, with no moving ornament or second hand.
   if (!L.cramped) {
-  const ck = clamp(Math.min(W, H) * 0.05, 16, 32);
-  g.save(); g.translate(W * 0.84, H * 0.2);
-  // the tail is a RIGID pendulum: one fixed shape, pivoting from inside the
-  // body and swinging as a solid piece — a wall-clock pendulum, not a cat's flick
-  const swing = Math.sin(pn / 380) * 0.16;
-  g.save(); g.translate(0, ck * 0.95); g.rotate(swing);
-  g.fillStyle = "#1a1a1c"; g.beginPath();
-  g.moveTo(-ck * 0.16, 0);
-  g.lineTo(-ck * 0.10, ck * 2.68);
-  g.quadraticCurveTo(-ck * 0.10, ck * 3.04, ck * 0.06, ck * 3.04);
-  g.quadraticCurveTo(ck * 0.24, ck * 3.04, ck * 0.22, ck * 2.70);   // a rounded weight at the tip
-  g.lineTo(ck * 0.16, 0);
-  g.closePath(); g.fill();
-  g.restore();
-  // the body — a cat sitting with its back to the room: narrow shoulders, wide haunches
-  g.fillStyle = "#1b1b1d"; g.beginPath();
-  g.moveTo(-ck * 0.52, -ck * 0.58);
-  g.bezierCurveTo(-ck * 1.04, ck * 0.05, -ck * 1.12, ck * 1.05, -ck * 0.54, ck * 1.5);
-  g.bezierCurveTo(-ck * 0.2, ck * 1.72, ck * 0.2, ck * 1.72, ck * 0.54, ck * 1.5);
-  g.bezierCurveTo(ck * 1.12, ck * 1.05, ck * 1.04, ck * 0.05, ck * 0.52, -ck * 0.58);
-  g.bezierCurveTo(ck * 0.3, -ck * 0.94, -ck * 0.3, -ck * 0.94, -ck * 0.52, -ck * 0.58);
-  g.closePath(); g.fill();
-  // head + tall ears
-  g.beginPath(); g.arc(0, -ck * 1.12, ck * 0.64, 0, 7); g.fill();
-  g.beginPath(); g.moveTo(-ck * 0.62, -ck * 1.34); g.lineTo(-ck * 0.6, -ck * 2.12); g.lineTo(-ck * 0.02, -ck * 1.48); g.closePath(); g.fill();
-  g.beginPath(); g.moveTo(ck * 0.62, -ck * 1.34); g.lineTo(ck * 0.6, -ck * 2.12); g.lineTo(ck * 0.02, -ck * 1.48); g.closePath(); g.fill();
-  // the dial, low on the belly like the reference
-  const dy = ck * 0.56, nowd = new Date();
-  if (!dim) {
-    g.fillStyle = "rgba(255,255,255,0.8)";
-    for (let i = 0; i < 12; i++) { const a = i / 12 * 7, rr = ck * 0.7;
-      g.beginPath(); g.arc(Math.sin(a) * rr, dy - Math.cos(a) * rr, i % 3 === 0 ? 1.6 : 1, 0, 7); g.fill(); }
-  }
-  const hAng = ((nowd.getHours() % 12) + nowd.getMinutes() / 60) / 12 * 7, mAng = nowd.getMinutes() / 60 * 7;
-  g.strokeStyle = "#f5f0e4"; g.lineCap = "round";
-  g.lineWidth = 2.6; g.beginPath(); g.moveTo(0, dy); g.lineTo(Math.sin(hAng) * ck * 0.36, dy - Math.cos(hAng) * ck * 0.36); g.stroke();
-  g.lineWidth = 2; g.beginPath(); g.moveTo(0, dy); g.lineTo(Math.sin(mAng) * ck * 0.56, dy - Math.cos(mAng) * ck * 0.56); g.stroke();
-  if (!dim) {
-    g.strokeStyle = "rgba(214,98,74,0.92)"; g.lineWidth = 1.1;
-    const sAng = (nowd.getSeconds() + (pn % 1000) / 1000) / 60 * 7;
-    g.beginPath(); g.moveTo(0, dy); g.lineTo(Math.sin(sAng) * ck * 0.6, dy - Math.cos(sAng) * ck * 0.6); g.stroke();
-  }
-  g.fillStyle = "#d0d3d7"; g.beginPath(); g.arc(0, dy, 2, 0, 7); g.fill();
-  g.restore();
+    const r=clamp(Math.min(W,H)*.055,20,35);
+    g.save();g.translate(W*.84,Math.max(r+24,H*.26));
+    g.fillStyle='#987958';g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.fill();
+    g.strokeStyle='#715c45';g.lineWidth=1.5;g.stroke();
+    g.fillStyle=dim?'#c2b89e':'#e9dfc7';g.beginPath();g.arc(0,0,r-5,0,Math.PI*2);g.fill();
+    g.strokeStyle='#8a8f74';g.lineCap='round';
+    for(let i=0;i<12;i++){const a=i*Math.PI/6;g.lineWidth=i%3===0?2:1;g.beginPath();g.moveTo(Math.sin(a)*r*.68,-Math.cos(a)*r*.68);g.lineTo(Math.sin(a)*r*.76,-Math.cos(a)*r*.76);g.stroke();}
+    const d=new Date(),ha=((d.getHours()%12)+d.getMinutes()/60)*Math.PI/6,ma=d.getMinutes()*Math.PI/30;
+    g.strokeStyle='#58634e';g.lineWidth=2.7;g.beginPath();g.moveTo(0,0);g.lineTo(Math.sin(ha)*r*.39,-Math.cos(ha)*r*.39);g.stroke();
+    g.lineWidth=1.9;g.beginPath();g.moveTo(0,0);g.lineTo(Math.sin(ma)*r*.59,-Math.cos(ma)*r*.59);g.stroke();
+    g.fillStyle='#a88450';g.beginPath();g.arc(0,0,2.5,0,Math.PI*2);g.fill();g.restore();
   }
 
   // --- fireplace (bottom-left) — stone surround, a short wide firebox opening, tall flames
@@ -9249,11 +9263,13 @@ function renderRest(dt) {
     g.restore();
   }
 
+  // Local firelight warms the resting area while the window remains cool.
+  if(!dim){const glow=g.createRadialGradient(L.hx,L.hbase-30,10,L.hx,L.hbase-30,L.hw*2.1);glow.addColorStop(0,'rgba(237,169,83,.16)');glow.addColorStop(1,'rgba(237,169,83,0)');g.fillStyle=glow;g.fillRect(L.hx-L.hw*2.1,L.hbase-L.hw*2.1,L.hw*4.2,L.hw*4.2);}
   // --- a rug, and a low table with a steaming mug (the table is off-strip on a phone)
   g.fillStyle = "rgba(113,115,90,0.7)"; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx, L.rugRy, 0, 0, 7); g.fill();
   g.strokeStyle = "rgba(81,101,82,0.65)"; g.lineWidth = 2; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx * 0.84, L.rugRy * 0.82, 0, 0, 7); g.stroke();
-  if (!L.cramped) {
-  const tbx = W * 0.9, tby = H * 0.66;
+  {
+  const tbx = L.cramped ? L.napX+L.rugRx*.57 : W*.9, tby = L.cramped ? H*.68 : H*.66;
   g.fillStyle = "#6b4f3a"; roundRect(g, tbx - 20, tby, 40, 7, 2); g.fill();
   g.fillStyle = "#5a3f2e"; g.fillRect(tbx - 16, tby + 7, 4, 15); g.fillRect(tbx + 12, tby + 7, 4, 15);
   g.fillStyle = "#e2dac9"; roundRect(g, tbx - 6, tby - 9, 13, 10, 2); g.fill();
@@ -9265,11 +9281,24 @@ function renderRest(dt) {
   }
   }
 
+  // Soft cushions and a folded woven blanket frame the shared nap pile.
+  for(const [u,v,col] of [[-.68,-.40,'#b18a68'],[.68,-.40,'#8a9775']]){
+    g.fillStyle=col;g.beginPath();g.ellipse(L.rugX+L.rugRx*u,L.rugY+L.rugRy*v,L.rugRx*.14,L.rugRy*.18,0,0,Math.PI*2);g.fill();
+    g.strokeStyle='rgba(236,219,183,.28)';g.lineWidth=1.2;g.stroke();
+  }
+  g.save();g.translate(L.rugX+L.rugRx*.5,L.rugY+L.rugRy*.58);g.rotate(-.08);
+  g.fillStyle='#a67960';roundRect(g,-30,-8,60,18,5);g.fill();g.strokeStyle='#d0b694';g.lineWidth=2;
+  for(let i=-22;i<26;i+=10){g.beginPath();g.moveTo(i,-6);g.lineTo(i,8);g.stroke();}g.restore();
   // --- the cats, back-to-front (windowsill / fireside / nap pile)
   _restOrder.length = 0;
   for (const c of cats) _restOrder.push(c);
   _restOrder.sort((a, b) => a.y - b.y);
-  for (const c of _restOrder) drawCat(g, c, false);
+  for (const c of _restOrder) {
+    g.save();
+    if(c._restNapScale && c._restNapScale!==1){g.translate(c.x,c.y);g.scale(c._restNapScale,c._restNapScale);g.translate(-c.x,-c.y);}
+    if(c.state==='sleeping'&&!_reduceMotion){const breath=1+Math.sin(pn/1500+c.x*.03)*.012;g.translate(c.x,c.y);g.scale(1,breath);g.translate(-c.x,-c.y);}
+    drawCat(g,c,false);g.restore();
+  }
   if (particles.length) drawFX(g);
 
   // --- vignette + idle dim (cached vignette)
@@ -10004,6 +10033,7 @@ function drawBunting(g, x0, y, w, h, t, opts = {}) {
   for (let i = 0; i < n; i++) {
     const f = (i + 0.5) / n, x = x0 + f * w, yy = sagAt(f);
     g.save(); g.translate(x, yy); g.rotate(Math.sin(t * 1.3 + i * 0.9) * 0.05);
+    if((g._nightGlow||0)>.3){const glow=g.createRadialGradient(0,0,0,0,0,8);glow.addColorStop(0,'rgba(255,221,150,.22)');glow.addColorStop(1,'rgba(255,221,150,0)');g.fillStyle=glow;g.beginPath();g.arc(0,0,8,0,Math.PI*2);g.fill();g.fillStyle='#ffe3a4';g.beginPath();g.arc(0,-1,1.7,0,Math.PI*2);g.fill();}
     g.fillStyle = cols[i % cols.length];
     g.beginPath(); g.moveTo(-11, 0); g.lineTo(11, 0); g.lineTo(0, h * 0.92); g.closePath(); g.fill();
     g.restore();
@@ -13790,13 +13820,19 @@ const DECOR_PROPS = [
     movable:true, place:{ x:W*0.76, y:H*0.90, s:1.25 }, render(g,t,x,y,s){ propLantern(g, x, y, s, t); } },
   { id:"birdbath", name:"Birdbath",        price: 2400, blurb:"A shallow basin on a pedestal. The water catches the light.",
     movable:true, place:{ x:W*0.63, y:H*0.85, s:1.15 }, render(g,t,x,y,s){ propBirdbath(g, x, y, s, t); } },
-  { id:"lanterns", name:"Lantern string",  price: 3000, blurb:"Warm bulbs slung from the sign to a pole. Flicker faintly at dusk.",
-    draw(g,t){ propLanterns(g, t); } },
+  { id:"lanterns", name:"Lantern string",  price: 3000, blurb:"Warm bulbs between two freestanding poles. Move them along the shore.",
+    movable:true, place:{x:W*.4,y:H*.48,s:1}, render(g,t,x,y){ propLanterns(g,t,x,y); } },
   { id:"rowboat",  name:"Rowboat",         price: 5500, blurb:"Beached by the shore. Someone's asleep in it more often than not.",
     movable:true, place:{ x:W*0.075, y:H*0.90, s:1.1 }, render(g,t,x,y,s){ propRowboat(g, x, y, s); } },
-  { id:"windmill", name:"Pole windmill",   price: 8000, blurb:"A little pole windmill. The sails turn on their own.",
+  { id:"windmill", name:"Pole windmill",   price: 8000, blurb:"A warm timber windmill with terracotta and parchment sails turning gently in the sea breeze.",
     movable:true, place:{ x:W*0.91, y:H*0.60, s:1.25 }, render(g,t,x,y,s){ propWindmill(g, x, y, s, t); } },
 ];
+// Stable slots keep the original id and saved position for the first copy.
+for(const base of DECOR_PROPS.slice()) if(['bunting','lantern','lanterns'].includes(base.id)){
+ base.maxOwned=8;
+ for(let i=2;i<=8;i++) DECOR_PROPS.push({...base,id:base.id+'#'+i,baseId:base.id});
+}
+function propCopies(id){return DECOR_PROPS.filter(p=>(p.baseId||p.id)===id);}
 const PROP_BY_ID = Object.fromEntries(DECOR_PROPS.map(p => [p.id, p]));
 function propPos(id) {
   const p = PROP_BY_ID[id]; if (!p) return { x: 0, y: 0, s: 1 };
@@ -13823,7 +13859,7 @@ function offBigStructure(x, y, pad, exceptKey) {
 }
 function validPropSpot(x, y) {
   if (x < 44 || x > W - 44) return false;
-  if (y < H * 0.62 + 6 || y > catFloor() - 6) return false;
+  if (y < placementTop() + PLACE_CELL/2 || y > catFloor() - 6) return false;
   for (const o of obstacles) if (o.water && Math.hypot((x - o.x) / (o.rx + 20), (y - o.y) / (o.ry + 14)) < 1) return false;
   if (x < W * 0.30 && y < H * 0.56) return false;                       // the cove sign corner
   if (!offBigStructure(x, y, (_placing && _placing.r || 24) * 0.5)) return false;
@@ -13835,7 +13871,7 @@ function validPropSpot(x, y) {
 function validDecorSpot(x, y, dtype, exceptKey) {
   const clr = DECOR_CLEAR[dtype] || 30;
   if (x < 40 + clr * 0.4 || x > W - (40 + clr * 0.4)) return false;
-  if (y < (dtype === "station" ? H * 0.44 : H * 0.50) || y > catFloor() - 8) return false;
+  if (y < placementTop() + PLACE_CELL/2 || y > catFloor() - 8) return false;
   for (const o of obstacles) if (o.water && Math.hypot((x - o.x) / (o.rx + clr), (y - o.y) / (o.ry + clr * 0.7)) < 1) return false;
   if (x < W * 0.30 && y < H * 0.56) return false;                       // the cove sign corner
   if (!offBigStructure(x, y, clr * 0.45, exceptKey)) return false;
@@ -14257,7 +14293,9 @@ function updateBird(dt) {
   if (_reduceMotion) return;
   if (_bird) {
     const b = _bird; b.t += dt;
-    const sx = clamp(W * 0.12, 70, W - 70), sy = H * 0.42 - 22;   // perched on the sign board
+    const bath=b.target==='birdbath'&&G.cosmetics.props.birdbath&&!propBoxed('birdbath')?propPos('birdbath'):null;
+    if(b.target==='birdbath'&&!bath&&b.phase!=='out'){b.phase='out';b.dir=1;}
+    const sx=bath?bath.x+7*bath.s:clamp(W*.12,70,W-70),sy=bath?bath.y-24*bath.s:H*.42-22;
     if (b.phase === "in") {
       b.x += (sx - b.x) * dt * 2.6; b.y += (sy - b.y) * dt * 2.6 + Math.sin(b.t * 9) * 8 * dt;
       if (Math.hypot(sx - b.x, sy - b.y) < 4) { b.phase = "perch"; b.x = sx; b.y = sy; b.until = b.t + rand(3.5, 8); }
@@ -14274,7 +14312,9 @@ function updateBird(dt) {
   _birdTimer -= dt;
   if (_birdTimer <= 0 && _dayLit() && G && G.tutorialDone) {
     _birdTimer = rand(70, 180);
-    _bird = { x: Math.random() < 0.5 ? -20 : W + 20, y: H * 0.2, t: 0, phase: "in", hop: 0 };
+    const morning=nowHours()>=6&&nowHours()<12;
+    const target=morning&&G.cosmetics.props.birdbath&&!propBoxed('birdbath')&&Math.random()<.75?'birdbath':'sign';
+    _bird = { target, x: Math.random() < 0.5 ? -20 : W + 20, y: H * 0.2, t: 0, phase: "in", hop: 0 };
   }
 }
 function drawBird(g) {
@@ -14523,7 +14563,11 @@ function drawProps(g) {
   }
   // the piece currently being positioned: a ghost at the pointer + a validity ring
   if (_placing && _placeGhost) {
-    const gh = _placeGhost, ok = _placeOK(gh.x, gh.y);
+    const ok = _placeOK(_placeGhost.x, _placeGhost.y);
+    const now=performance.now(),v=_placing._visual||(_placing._visual={..._placeGhost,at:now});
+    const blend=_reduceMotion?1:1-Math.exp(-Math.min(100,now-v.at)/35);
+    v.x+=(_placeGhost.x-v.x)*blend;v.y+=(_placeGhost.y-v.y)*blend;v.at=now;
+    const gh=v;
     g.save();
     // the no-go zone around the dock / bakery / other fixed structures
     g.setLineDash([4, 4]); g.lineWidth = 1.4; g.strokeStyle = "rgba(201,80,63,.4)";
@@ -14590,6 +14634,7 @@ function propBunting(g, t, x, y) {
     g.save(); g.translate(px, py); g.rotate(Math.sin(t * 1.2 + i * 0.8) * 0.05);
     g.fillStyle = cols[i % cols.length];
     g.beginPath(); g.moveTo(-4, 0); g.lineTo(4, 0); g.lineTo(0, 9); g.closePath(); g.fill();
+    if((g._nightGlow||0)>.3){const glow=g.createRadialGradient(0,0,1,0,0,11);glow.addColorStop(0,'rgba(255,220,140,.36)');glow.addColorStop(1,'rgba(255,220,140,0)');g.fillStyle=glow;g.beginPath();g.arc(0,0,11,0,Math.PI*2);g.fill();g.fillStyle='#ffe6a6';g.beginPath();g.arc(0,-1,2.3,0,Math.PI*2);g.fill();}
     g.restore();
   }
   g.restore();
@@ -14601,7 +14646,7 @@ function propLantern(g, x, y, s, t) {
   g.fillStyle = "#6b5636"; g.fillRect(-2, -34, 4, 38);
   g.fillStyle = "#7d6544"; g.beginPath(); g.moveTo(-7, -34); g.lineTo(7, -34); g.lineTo(4, -46); g.lineTo(-4, -46); g.closePath(); g.fill();
   if (lit) { const fl = 0.6 + Math.sin(t * 5) * 0.2;
-    const gl = g.createRadialGradient(0, -40, 1, 0, -40, 26); gl.addColorStop(0, `rgba(255,210,130,${0.5 * fl})`); gl.addColorStop(1, "rgba(255,210,130,0)");
+    const gl = g.createRadialGradient(0, -40, 1, 0, -40, 26); gl.addColorStop(0, `rgba(255,210,130,${0.22 * fl})`); gl.addColorStop(1, "rgba(255,210,130,0)");
     g.fillStyle = gl; g.beginPath(); g.arc(0, -40, 26, 0, 7); g.fill(); }
   g.fillStyle = lit ? "#ffe6a8" : "#cbb98c"; g.fillRect(-4.5, -44, 9, 10);
   g.strokeStyle = "#5b4634"; g.lineWidth = 1; g.strokeRect(-4.5, -44, 9, 10);
@@ -14618,14 +14663,25 @@ function propBirdbath(g, x, y, s, t) {
   g.strokeStyle = "rgba(255,255,255,0.4)"; g.lineWidth = 0.8;
   for (let k = 0; k < 2; k++) { const ry = -22 + k * 2.4 + Math.sin(t * 0.9 + k) * 0.6;
     g.beginPath(); g.moveTo(-8, ry); g.quadraticCurveTo(0, ry + 1, 8, ry); g.stroke(); }
+  // A small amber inset lamp, softly lighting only the pedestal base.
+  const night=clamp(((g._nightGlow||0)-.25)/.5,0,1);
+  if(night>0){
+    const glow=g.createRadialGradient(0,-5,1,0,-5,15);
+    glow.addColorStop(0,'rgba(255,215,145,'+(.18*night)+')');
+    glow.addColorStop(1,'rgba(255,215,145,0)');
+    g.fillStyle=glow;g.beginPath();g.ellipse(0,-5,15,10,0,0,Math.PI*2);g.fill();
+  }
+  g.fillStyle='#80765f';roundRect(g,-3,-9,6,5,1.5);g.fill();
+  g.fillStyle=night>0?'#edcd8b':'#b2a88c';roundRect(g,-2,-8,4,3,1);g.fill();
   g.restore();
 }
-function propLanterns(g, t) {
+function propLanterns(g, t, x, y) {
   const lit = (g._nightGlow || 0) > 0.3;
-  const s = coveSignFestoon(g);
-  const sx = s.tx, sy = s.ty, ex = s.tx + 150, ey = s.ty - 2, sag = 30, n = 7;
+  const s = {tx:x-55,ty:y-60,footY:y};
+  const sx = s.tx, sy = s.ty, ex = x+55, ey = s.ty - 2, sag = 24, n = 7;
   const cy = Math.max(sy, ey) + sag;
   g.save();
+  drawFestoonPole(g, sx, sy, s.footY);
   drawFestoonPole(g, ex, ey, s.footY);
   g.strokeStyle = "rgba(50,38,26,0.6)"; g.lineWidth = 1.3;
   g.beginPath(); g.moveTo(sx, sy); g.quadraticCurveTo((sx + ex) / 2, cy, ex, ey); g.stroke();
@@ -14635,7 +14691,7 @@ function propLanterns(g, t) {
     const px = sx + (ex - sx) * u;
     const py = (1 - u) * (1 - u) * sy + 2 * (1 - u) * u * cy + u * u * ey;
     if (lit) { const fl = 0.6 + Math.sin(t * 4 + i) * 0.25;
-      const gl = g.createRadialGradient(px, py, 1, px, py, 14); gl.addColorStop(0, `rgba(255,214,140,${0.6 * fl})`); gl.addColorStop(1, "rgba(255,214,140,0)");
+      const gl = g.createRadialGradient(px, py, 1, px, py, 14); gl.addColorStop(0, `rgba(255,214,140,${0.24 * fl})`); gl.addColorStop(1, "rgba(255,214,140,0)");
       g.fillStyle = gl; g.beginPath(); g.arc(px, py, 14, 0, 7); g.fill(); }
     g.fillStyle = lit ? "#ffdf9e" : bulbCols[i % bulbCols.length];
     g.beginPath(); g.arc(px, py + 3, 3.2, 0, 7); g.fill();
@@ -14655,17 +14711,22 @@ function propRowboat(g, x, y, s) {
   g.restore();
 }
 function propWindmill(g, x, y, s, t) {
-  s = s || 1;
-  g.save(); g.translate(x, y); g.scale(s, s);
-  g.fillStyle = "rgba(36,31,23,0.12)"; g.beginPath(); g.ellipse(0, 4, 8, 3, 0, 0, 7); g.fill();
-  g.fillStyle = "#8a6b4a"; g.fillRect(-2.2, -46, 4.4, 50);
-  g.save(); g.translate(0, -46); g.rotate(t * 1.4);
-  for (let i = 0; i < 4; i++) { g.rotate(Math.PI / 2);
-    g.fillStyle = i % 2 ? "#e7dcc6" : "#d98b7a";
-    g.beginPath(); g.moveTo(0, 0); g.lineTo(3, -18); g.lineTo(-3, -18); g.closePath(); g.fill(); }
-  g.fillStyle = "#5b4634"; g.beginPath(); g.arc(0, 0, 2.4, 0, 7); g.fill();
-  g.restore();
-  g.restore();
+  g.save();g.translate(x,y);g.scale(s||1,s||1);
+  g.fillStyle='rgba(36,31,23,.12)';g.beginPath();g.ellipse(0,4,17,5,0,0,Math.PI*2);g.fill();
+  // A broad timber stand, with quiet painted details and linen sails.
+  g.fillStyle='#8a6b4a';g.beginPath();g.moveTo(-13,2);g.lineTo(-7,-66);g.lineTo(7,-66);g.lineTo(13,2);g.closePath();g.fill();
+  g.strokeStyle='#5b4634';g.lineWidth=1.5;g.stroke();
+  g.fillStyle='#a17d52';g.fillRect(-9,-15,18,4);g.fillRect(-7,-43,14,3);
+  g.fillStyle='#6c7854';roundRect(g,-5,-28,10,9,2);g.fill();
+  g.save();g.translate(0,-67);g.rotate(_reduceMotion?0:t*.48);
+  for(let i=0;i<4;i++){
+    g.save();g.rotate(i*Math.PI/2);
+    g.strokeStyle='#6b5636';g.lineWidth=2;g.beginPath();g.moveTo(0,0);g.lineTo(0,-29);g.stroke();
+    g.fillStyle=i%2?'#d6c49a':'#bb7d5d';g.beginPath();g.moveTo(1,-9);g.lineTo(12,-15);g.lineTo(10,-30);g.lineTo(0,-30);g.closePath();g.fill();
+    g.strokeStyle='#735a41';g.lineWidth=.8;g.stroke();g.beginPath();g.moveTo(1,-20);g.lineTo(11,-23);g.stroke();g.restore();
+  }
+  g.fillStyle='#c79b52';g.beginPath();g.arc(0,0,5,0,Math.PI*2);g.fill();g.strokeStyle='#6b5636';g.lineWidth=1.3;g.stroke();
+  g.restore();g.restore();
 }
 // a "needs work" marker: a still pond, a few broken planks, a rope, a hand-lettered
 // sign. while building: a bit of scaffold + planks going in ∝ progress.
@@ -15192,24 +15253,11 @@ function drawCoveSign(g, W, H) {
   _founderPlaque=null;
   // Founding Covekeeper — a small brass plaque on its own post, standing clear
   // to the right of the sign (a ~20px gap so it never crowds the cove name).
-  if (typeof iapOwns === "function" && iapOwns("founding_covekeeper")) {
+  if (typeof iapOwns === "function" && iapOwns("founding_covekeeper") && !G.cosmetics.founderStored) {
     g.save();
     _founderPlaque={x:x+bw/2+46,y:y-13.5};
     g.translate(bw / 2 + 46, 0);
-    g.fillStyle = "rgba(36,31,23,0.10)"; g.beginPath(); g.ellipse(0, 26, 18, 4.5, 0, 0, 7); g.fill();
-    g.fillStyle = "#8a6a4a"; g.fillRect(-2.5, -4, 5, 30);                // post
-    const pw = 50, ph = 25, py = -26;
-    const grad = g.createLinearGradient(0, py, 0, py + ph);
-    grad.addColorStop(0, "#e0c684"); grad.addColorStop(1, "#b6984c");
-    g.fillStyle = grad; roundRect(g, -pw / 2, py, pw, ph, 3); g.fill();
-    g.strokeStyle = "rgba(74,53,36,0.45)"; g.lineWidth = 1.2; roundRect(g, -pw / 2, py, pw, ph, 3); g.stroke();
-    g.fillStyle = "rgba(255,255,255,0.28)"; roundRect(g, -pw / 2, py, pw, 6, 3); g.fill();
-    g.fillStyle = "#5a4527"; g.textAlign = "center"; g.textBaseline = "middle";
-    g.font = "700 6.6px 'Fraunces', Georgia, serif";
-    g.fillText("FOUNDING", 0, py + 7);
-    g.fillText("COVEKEEPER", 0, py + 14);
-    g.font = "700 5px 'Fraunces', Georgia, serif"; g.fillStyle = "#7a5c38";
-    g.fillText("· 2026 ·", 0, py + 20.5);
+    drawFounderPlaque(g);
     g.restore();
   }
   // Welcome Pack — a little trail of amber paw prints pressed into the earth in
@@ -15943,7 +15991,7 @@ function drawCat(g, c, isPhoto) {
              + wriggle * 0.05                                                             // catmint: a happy wriggle
              + (c._tugLean || 0);                                                         // Tug of Paws: brace-and-heave on the rope
   const walkLift = wk * (3.5 + CHARM * 1.5) + (scratching ? 5 : 0);   // scratch: up onto the hind feet
-  const earFlop = wk * CHARM * Math.sin(gp * 2 + 0.6) * 0.11;
+  const earFlop = wk * CHARM * Math.sin(gp * 2 + 0.6) * 0.11 + (restMode && c.state==='sleeping' && !_reduceMotion ? Math.pow(Math.max(0,Math.sin(performance.now()/3700+c.x)),24)*.07 : 0);
 
   // whisker/eye blink bookkeeping
   const blinking = c.blink < 0.12;
@@ -16769,6 +16817,22 @@ function labubuTick() {
    nosing at it, then quietly stacking a little tower of borrowed things over a
    few days. When it's done you're asked to leave it or tidy it away — leaving
    it makes a permanent cairn by the sign. Authored, one-time, per cove. */
+function drawFounderPlaque(g){g.save();
+    g.fillStyle = "rgba(36,31,23,0.10)"; g.beginPath(); g.ellipse(0, 26, 18, 4.5, 0, 0, 7); g.fill();
+    g.fillStyle = "#8a6a4a"; g.fillRect(-2.5, -4, 5, 30);                // post
+    const pw = 50, ph = 25, py = -26;
+    const grad = g.createLinearGradient(0, py, 0, py + ph);
+    grad.addColorStop(0, "#e0c684"); grad.addColorStop(1, "#b6984c");
+    g.fillStyle = grad; roundRect(g, -pw / 2, py, pw, ph, 3); g.fill();
+    g.strokeStyle = "rgba(74,53,36,0.45)"; g.lineWidth = 1.2; roundRect(g, -pw / 2, py, pw, ph, 3); g.stroke();
+    g.fillStyle = "rgba(255,255,255,0.28)"; roundRect(g, -pw / 2, py, pw, 6, 3); g.fill();
+    g.fillStyle = "#5a4527"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.font = "700 6.6px 'Fraunces', Georgia, serif";
+    g.fillText("FOUNDING", 0, py + 7);
+    g.fillText("COVEKEEPER", 0, py + 14);
+    g.font = "700 5px 'Fraunces', Georgia, serif"; g.fillStyle = "#7a5c38";
+    g.fillText("· 2026 ·", 0, py + 20.5);
+g.restore();}
 function cairnJunkCount() {
   return (G.keepsakes || []).filter(k => k && k.from === "labubu").length;
 }
@@ -16822,7 +16886,7 @@ function offerCairnChoice() {
     </div></div>`);
   const done = () => { _cairnAsking = false; closeModal(); save(); syncHud(); };
   document.getElementById("cairn-keep").onclick = () => {
-    G.cairn.stage = 4; G.cairn.size = 3; G.cairn.nextAt = 0;
+    G.cairn.stage = 4; G.cairn.size = 3; G.cairn.nextAt = 0; G.cairn.tidied = false;
     logMoment("🗿", "Midknight's cairn stands by the sign now — a little monument to everything worth carrying home.", "tale");
     toast("The cairn stays. Midknight seems satisfied. 🗿", 5);
     const sx = clamp(W * 0.12, 70, W - 70);
@@ -16832,8 +16896,8 @@ function offerCairnChoice() {
   };
   document.getElementById("cairn-tidy").onclick = () => {
     G.cairn.stage = 4; G.cairn.size = 0; G.cairn.nextAt = 0; G.cairn.tidied = true;
-    logMoment("🧹", "You tidied the pile away. Midknight watched you do it, then padded off to start another one somewhere you won't find it.", "tale");
-    toast("All tidied. Labubu's finds are still on the shelf.", 5);
+    logMoment("🧹", "You stored Midknight's cairn safely in inventory, ready to return by the sign.", "tale");
+    toast("Cairn stored in My inventory. You can return it by the sign anytime.", 5);
     done();
   };
 }
@@ -17091,6 +17155,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 function frameBody(now) {
+  if (document.hidden) { last = now; simAccum = 0; return; }
   _frameCount++;   // real average fps over the whole session = _frameCount / sessSec — a cross-check
   let frameDt = (now - last) / 1000;
   last = now;
@@ -18001,7 +18066,8 @@ function showPostcard(text, cat, dest, onDone, card) {
   document.getElementById("pc-ok").onclick = () => { closeModal(); if (onDone) setTimeout(onDone, 250); };
 }
 function showFounderDescription(){
-  openModal(`<div class="reveal"><div class="kicker">A LITTLE THANK-YOU · 2026</div><h2>Founding Covekeeper</h2><p>This plaque marks your support for Catmint Cove during its founding days. You helped give this little home a beginning.</p><p>Your keepsakes include the dated plaque and founder accessories: a ribbon, halo, and hero mask. They celebrate your support and give no gameplay advantage.</p><p class="muted">Thank you for helping the Cove grow.</p><button class="btn" id="founder-close">Back to my cove</button></div>`);
+  openModal(`<div class="reveal"><div class="kicker">A LITTLE THANK-YOU · 2026</div><h2>Founding Covekeeper</h2><p>This plaque marks your support for Catmint Cove during its founding days. You helped give this little home a beginning.</p><p>Your keepsakes include the dated plaque and founder accessories: a ribbon, halo, and hero mask. They celebrate your support and give no gameplay advantage.</p><p class="muted">Thank you for helping the Cove grow.</p><button class="btn" id="founder-store">Put away in inventory</button><button class="btn" id="founder-close">Back to my cove</button></div>`);
+  document.getElementById('founder-store').onclick=()=>{G.cosmetics.founderStored=true;save();closeModal();toast('Plaque stored in My inventory.');};
   document.getElementById('founder-close').onclick=closeModal;
 }
 function latestPostcardFor(cat) {
@@ -18087,7 +18153,7 @@ function renderAdventureCard() {
 }
 function openAdventurePicker() {
   if (!advSlotOpen()) { toast("Both expeditions are already out.", 3.5); return; }
-  const dests=Object.entries(ADV_DESTS).map(([k,d])=>`<button class="pick-dest" data-d="${k}" aria-pressed="false"><span>${neoUIIcon("adventure")}</span><b>${esc(d.name)}</b><i>${esc(d.blurb)}</i></button>`).join("");
+  const dests=Object.entries(ADV_DESTS).map(([k,d])=>`<button class="pick-dest" data-d="${k}" aria-pressed="false"><span>${neoUIIcon("dest-"+k)}</span><b>${esc(d.name)}</b><i>${esc(d.blurb)}</i></button>`).join("");
   const tiers=Object.values(ADV_TIERS).map(t=>`<button class="pick-tier${t.key==='day'?' on':''}" data-t="${t.key}" aria-pressed="${t.key==='day'}"><b>${esc(t.label)}</b><i>${esc(t.note)}</i></button>`).join("");
   openModal(`<div class="reveal adv-flow"><div class="kicker">Adventure · 1 of 2</div><h2>Plan a little adventure</h2><p class="sub">Choose a place and how long your cats will be away.</p><div class="pick-list">${dests}</div><div class="pick-label">How long?</div><div class="pick-tiers">${tiers}</div><p class="adv-selection" id="adv-selection" role="status">Choose a destination to continue.</p><div class="row"><button class="btn primary" id="adv-continue" disabled>Choose cats</button><button class="btn" id="pick-cancel">Cancel</button></div></div>`);
   let tier='day',dest=null;
@@ -18907,6 +18973,35 @@ function neoFestivalLanterns(g,x0,y,w,sagAt){
 }
 // A Little Hello: empty foreground taps, no rewards or camera changes.
 let neoHelloCount=0,neoHelloTarget=3+Math.floor(Math.random()*3),neoHelloLast=0,neoHelloUntil=0,neoHelloPrevious=null;
+// Small three-beat visits, remembered across sessions to avoid repeating greetings.
+function neoHelloDialogue(c){
+  const scenes=[
+    ['Tap tap. {cat} reporting for duty.','A very close inspection.','You passed. Carry on being you.'],
+    ['{cat} heard a tiny knock.','Sniff… sniff.','Oh. My favorite visitor.'],
+    ['{cat} has one important question.','Is this the snack window?','I will check again. For science.'],
+    ['{cat} would like your attention.','All of it, please.','Thank you. You may blink now.'],
+    ['A special delivery from {cat}.','One very small hello.','No signature needed.'],
+    ['{cat} found you.','You are terrible at hiding.','Please stay terrible at it.'],
+    ['{cat} is checking the view.','Sea. Sky. You.','Excellent view.'],
+    ['{cat} has paused a busy schedule.','Nap. Nap. Visit you.','Right. Back to the schedule.'],
+    ['{cat} noticed your tapping.','Was that a secret cat code?','I think it said “hello, lovely.”'],
+    ['{cat} came over just because.','No urgent cat business.','Just glad you are here.'],
+    ['{cat} is taking attendance.','You: here. Me: here.','Everyone important accounted for.'],
+    ['{cat} has a tiny confession.','I forgot why I came over.','Staying for the company.'],
+    ['{cat} is inspecting this corner.','Suspiciously cozy.','I approve.'],
+    ['{cat} brought you something.','It is invisible.','It is affection. Please be careful.'],
+    ['{cat} heard you calling.','Or possibly a cupboard.','Either way, happy to see you.'],
+    ['{cat} would like a quiet moment.','Nothing to do right now.','We can just be here.']
+  ];
+  if(c.mascot||c.name==='Midknight')scenes.push(
+    ['{cat}: official Cove inspection.','Cozy levels looking good.','You may remain in charge. For now.'],
+    ['{cat} has checked on everyone.','One last stop.','You. How are you doing?']);
+  const recent=Array.isArray(G.helloRecent)?G.helloRecent.filter(n=>Number.isInteger(n)):[];
+  const choices=scenes.map((_,i)=>i).filter(i=>!recent.includes(i));
+  const pool=choices.length?choices:scenes.map((_,i)=>i),pick=pool[Math.floor(Math.random()*pool.length)];
+  G.helloRecent=[...recent,pick].slice(-10);
+  return scenes[pick].map(line=>line.replaceAll('{cat}',c.name));
+}
 function neoHelloTap(x,y,sx,sy){
   const now=performance.now();
   if(!Number.isFinite(sx)||sy<innerHeight*.68||_focus||_placing||_arranging||restMode||festMode||anyPanelOpen()||now<neoHelloUntil||movableAt(x,y))return;
@@ -18920,19 +19015,19 @@ function neoHelloTap(x,y,sx,sy){
   const available=cats.filter(c=>!c.visitor&&!c.sick&&c.state!=='sleeping');if(!available.length)return;
   const choices=available.filter(c=>c!==neoHelloPrevious),pool=choices.length?choices:available;
   const c=pool[Math.floor(Math.random()*pool.length)];neoHelloPrevious=c;neoHelloUntil=now+30000;
-  G.littleHelloSeen=true;save();hideToast();
-  const shell=document.createElement('div');shell.className='neo-little-hello';shell.setAttribute('role','status');shell.setAttribute('aria-live','polite');
+  const dialogue=neoHelloDialogue(c);G.littleHelloSeen=true;save();hideToast();
+  const shell=document.createElement('div');shell.className='neo-little-hello';shell.style.animationDuration='6.5s';shell.setAttribute('role','status');shell.setAttribute('aria-live','polite');
   const size=Math.min(300,innerWidth*.68),center=clamp(sx,size/2+12,innerWidth-size/2-12);
   shell.style.width=size+'px';shell.style.left=center+'px';
   shell.style.setProperty('--hello-x',(center/innerWidth*100)+'vw');
   const portrait=document.createElement('canvas');portrait.width=400;portrait.height=320;portrait.setAttribute('aria-hidden','true');
-  const line=document.createElement('p');line.textContent=c.name+[' noticed your tapping.',' has come to investigate.',' heard there might be snacks.',' would like a word.'][Math.floor(Math.random()*4)];
+  const line=document.createElement('p');line.textContent=dialogue[0];
   // Attach to the viewport, not the Cove/menu layout: the shoulder crop meets the screen edge.
   shell.append(line,portrait);document.body.append(shell);
   const copy=new Cat({coatKey:c.coatKey,star:c.star,markSeed:c.markSeed,mascot:c.mascot,bornAt:c.bornAt,x:0,y:0});copy.worn=[...(c.worn||[])];Object.assign(copy,{mood:75,face:1,squash:0,bob:.6,tail:.3,blink:3,walk:0,walkAmt:0,state:'wantpet',stateT:0,stateDur:12});
   const g=portrait.getContext('2d');g.save();g.translate(200,435.2);g.scale(6,6);drawCat(g,copy,true);g.restore();
-  let step=0;const lines=['Sniff… sniff.','No snacks? Just you? Perfect.'];
-  const timer=setInterval(()=>{if(anyPanelOpen()||restMode||festMode||_placing||_arranging){clearInterval(timer);shell.remove();return;}step++;if(step===3)line.textContent=lines[0];if(step===6)line.textContent=lines[1];if(step>=10){clearInterval(timer);shell.remove();}},500);
+  let step=0;const lines=dialogue.slice(1);
+  const timer=setInterval(()=>{if(anyPanelOpen()||restMode||festMode||_placing||_arranging){clearInterval(timer);shell.remove();return;}step++;if(step===3)line.textContent=lines[0];if(step===6)line.textContent=lines[1];if(step>=10){clearInterval(timer);shell.remove();}},650);
 }
 
 // Permanent Cove activities. Timestamp-based progress; harvested stock never spoils.
@@ -19010,7 +19105,7 @@ function neoOpenHomestead(kind){
   if(!sheet){sheet=document.createElement('div');sheet.id='neo-homestead';sheet.className='sheet';document.getElementById('app').append(sheet);panels.homestead=sheet;}
   sheet.hidden=false;sheet.classList.toggle('cafe-full-room',!garden);
   const time=t=>Math.max(0,Math.ceil((t-Date.now())/1000));
-  sheet.innerHTML=`<button class="x" aria-label="Back to the Cove">×</button><div class="kicker">YOUR LITTLE CORNER OF THE COVE</div><h2>${garden?'Cove Garden':'Catmint Café'}</h2><p>${garden?'Grow café ingredients for less: 3 carrots cost 2 shells to grow, versus 4 to buy. Pumpkins and berries make bigger café batches. Keep your harvest for cooking, or sell spare crops for 1 shell each. Crops never wither.':'Choose what to cook and stock the counter. Guests arrive, take a seat, enjoy a treat and pay 2 shells. A visit takes one minute; stocked food also sells while you are away. Close the café to pause service while you cook or redecorate.'}</p><div class="homestead-stock">${Object.entries(COVE_CROPS).map(([k,c])=>`<span>${c.name}: <b>${h.stock[k]||0}</b></span>`).join('')}</div>`;
+  sheet.innerHTML=`<button class="x" aria-label="Back to the Cove">×</button><div class="kicker">YOUR LITTLE CORNER OF THE COVE</div><h2>${garden?'Cove Garden':'Catmint Café'}</h2><p>${garden?'Plant, harvest, and sell spare crops for 1 shell each. Crops never wither. Keep ingredients for the future café.':'Choose what to cook and stock the counter. Guests arrive, take a seat, enjoy a treat and pay 2 shells. A visit takes one minute; stocked food also sells while you are away. Close the café to pause service while you cook or redecorate.'}</p><div class="homestead-stock">${Object.entries(COVE_CROPS).map(([k,c])=>`<span>${c.name}: <b>${h.stock[k]||0}</b></span>`).join('')}</div>`;
   if(garden){
     const grid=document.createElement('div');grid.className='homestead-grid';
     h.plots.forEach((p,i)=>{const card=document.createElement('article');card.className='homestead-patch';card.innerHTML=`<h3>Patch ${i+1}</h3>${neoCropArt(p?.key||'carrot',!!p&&!time(p.ready))}`;
