@@ -8902,9 +8902,10 @@ function restLayout(vw) {
     // the fireplace + rug clear the bottom edge / the rest bar.
     hbase = H * 0.85;
     hx = cx - vw * 0.27;
-    rugRx = W * 0.27; rugRy = H * 0.115;
-    rugX = cx + vw * 0.17; rugY = H * 0.75;
-    napX = cx + vw * 0.17; napY = H * 0.70; napSpread = W * 0.075; napRowH = H * 0.05;
+    const rugLeft=hx+hw/2+36, rugRight=Math.min(W-28,cx+vis/2-24);
+    rugRx = Math.max(60,(rugRight-rugLeft)/2); rugRy = H * 0.115;
+    rugX = (rugLeft+rugRight)/2; rugY = H * 0.75;
+    napX = rugX; napY = H * 0.70; napSpread = W * 0.075; napRowH = H * 0.05;
     napHalfW = rugRx * 0.82;
   } else {
     // phone — the room is cropped to a ~360-wide centre strip. Nudge the
