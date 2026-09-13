@@ -8936,6 +8936,7 @@ function restSeatCats() {
   // different every time you start one — a fresh cat gets the windowsill
   const rnd = mulberry32(((restStartedAt || Date.now()) >>> 0) ^ 0x5ca7);
   const list = [...cats];
+  for(const c of list)c._restNapScale=1;
   const seat = (c, o) => Object.assign(c, { vx: 0, vy: 0, walkAmt: 0, walk: 0, blink: 3, stateDur: 1e6, stateT: rnd() * 3, _station: null, _fx: null, ...o });
 
   // Midknight always claims the fire (founder's privilege)
@@ -8960,21 +8961,16 @@ function restSeatCats() {
   // the back rows off the bottom of the screen / behind the rest bar.
   const pile = others.filter(c => c !== sill);
   for (let i = pile.length - 1; i > 0; i--) { const j = (rnd() * (i + 1)) | 0; [pile[i], pile[j]] = [pile[j], pile[i]]; }
-  const sp = L.napSpread, rh = L.napRowH || H * 0.05;
-  const halfW = Math.max(L.napHalfW || L.rugRx * 0.82, sp * 0.9);   // keep the pile on the rug + on screen
-  const colsMax = Math.max(3, Math.floor((halfW * 2) / sp) + 1);
-  const cols = clamp(Math.round(Math.sqrt(pile.length * 1.7)) || 1, 1, colsMax);
-  const rows = Math.max(1, Math.ceil(pile.length / cols));
-  const colStep = cols > 1 ? Math.min(sp, (halfW * 2) / (cols - 1)) : 0;
-  const rowStep = rows > 1 ? Math.min(rh, (H * (L.cramped ? 0.12 : 0.15)) / (rows - 1)) : 0;
-  const x0 = L.napX - colStep * (cols - 1) / 2;
-  pile.forEach((c, i) => {
-    const col = i % cols, row = (i / cols) | 0;
-    seat(c, {
-      x: x0 + col * colStep + (row % 2) * colStep * 0.28,
-      y: L.napY + row * rowStep,
-      face: i % 2 ? 1 : -1, state: "sleeping",
-    });
+  // Give each sleeper a separate cell inside the rug, with a little breathing space.
+  const cols=Math.min(L.cramped?5:6,Math.max(1,Math.ceil(Math.sqrt(pile.length*1.3))));
+  const rows=Math.max(1,Math.ceil(pile.length/cols));
+  const areaW=L.rugRx*1.45,areaH=L.rugRy*1.15;
+  const cellW=areaW/cols,cellH=areaH/rows;
+  const scale=Math.min(1.18,cellW/58,cellH/25);
+  pile.forEach((c,i)=>{
+    const row=Math.floor(i/cols),col=i%cols,count=Math.min(cols,pile.length-row*cols);
+    c._restNapScale=scale;
+    seat(c,{x:L.rugX+(col-(count-1)/2)*cellW,y:L.rugY-areaH*.48+(row+.65)*cellH,face:i%2?1:-1,state:'sleeping'});
   });
 }
 
@@ -9288,8 +9284,8 @@ function renderRest(dt) {
   }
 
   // Soft cushions and a folded woven blanket frame the shared nap pile.
-  for(const [u,v,col] of [[-.58,.15,'#b18a68'],[.58,.28,'#8a9775']]){
-    g.fillStyle=col;g.beginPath();g.ellipse(L.rugX+L.rugRx*u,L.rugY+L.rugRy*v,L.rugRx*.20,L.rugRy*.24,0,0,Math.PI*2);g.fill();
+  for(const [u,v,col] of [[-.68,-.40,'#b18a68'],[.68,-.40,'#8a9775']]){
+    g.fillStyle=col;g.beginPath();g.ellipse(L.rugX+L.rugRx*u,L.rugY+L.rugRy*v,L.rugRx*.14,L.rugRy*.18,0,0,Math.PI*2);g.fill();
     g.strokeStyle='rgba(236,219,183,.28)';g.lineWidth=1.2;g.stroke();
   }
   g.save();g.translate(L.rugX+L.rugRx*.5,L.rugY+L.rugRy*.58);g.rotate(-.08);
@@ -9301,6 +9297,7 @@ function renderRest(dt) {
   _restOrder.sort((a, b) => a.y - b.y);
   for (const c of _restOrder) {
     g.save();
+    if(c._restNapScale && c._restNapScale!==1){g.translate(c.x,c.y);g.scale(c._restNapScale,c._restNapScale);g.translate(-c.x,-c.y);}
     if(c.state==='sleeping'&&!_reduceMotion){const breath=1+Math.sin(pn/1500+c.x*.03)*.012;g.translate(c.x,c.y);g.scale(1,breath);g.translate(-c.x,-c.y);}
     drawCat(g,c,false);g.restore();
   }
