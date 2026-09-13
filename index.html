@@ -9185,53 +9185,19 @@ function renderRest(dt) {
   }
   g.strokeStyle="#736046";g.lineWidth=4;g.beginPath();g.moveTo(wx-23,wy-17);g.lineTo(wx+ww+24,wy-17);g.stroke();
 
-  // --- wall clock: a cat-silhouette pendulum clock, its tail swinging like the
-  //     pendulum. Off the visible strip on a phone, so skip it there.
+  // A quiet round timber clock, with no moving ornament or second hand.
   if (!L.cramped) {
-  const ck = clamp(Math.min(W, H) * 0.05, 16, 32);
-  g.save(); g.translate(W * 0.84, H * 0.2);
-  // the tail is a RIGID pendulum: one fixed shape, pivoting from inside the
-  // body and swinging as a solid piece — a wall-clock pendulum, not a cat's flick
-  const swing = Math.sin(pn / 380) * 0.16;
-  g.save(); g.translate(0, ck * 0.95); g.rotate(swing);
-  g.fillStyle = "#1a1a1c"; g.beginPath();
-  g.moveTo(-ck * 0.16, 0);
-  g.lineTo(-ck * 0.10, ck * 2.68);
-  g.quadraticCurveTo(-ck * 0.10, ck * 3.04, ck * 0.06, ck * 3.04);
-  g.quadraticCurveTo(ck * 0.24, ck * 3.04, ck * 0.22, ck * 2.70);   // a rounded weight at the tip
-  g.lineTo(ck * 0.16, 0);
-  g.closePath(); g.fill();
-  g.restore();
-  // the body — a cat sitting with its back to the room: narrow shoulders, wide haunches
-  g.fillStyle = "#1b1b1d"; g.beginPath();
-  g.moveTo(-ck * 0.52, -ck * 0.58);
-  g.bezierCurveTo(-ck * 1.04, ck * 0.05, -ck * 1.12, ck * 1.05, -ck * 0.54, ck * 1.5);
-  g.bezierCurveTo(-ck * 0.2, ck * 1.72, ck * 0.2, ck * 1.72, ck * 0.54, ck * 1.5);
-  g.bezierCurveTo(ck * 1.12, ck * 1.05, ck * 1.04, ck * 0.05, ck * 0.52, -ck * 0.58);
-  g.bezierCurveTo(ck * 0.3, -ck * 0.94, -ck * 0.3, -ck * 0.94, -ck * 0.52, -ck * 0.58);
-  g.closePath(); g.fill();
-  // head + tall ears
-  g.beginPath(); g.arc(0, -ck * 1.12, ck * 0.64, 0, 7); g.fill();
-  g.beginPath(); g.moveTo(-ck * 0.62, -ck * 1.34); g.lineTo(-ck * 0.6, -ck * 2.12); g.lineTo(-ck * 0.02, -ck * 1.48); g.closePath(); g.fill();
-  g.beginPath(); g.moveTo(ck * 0.62, -ck * 1.34); g.lineTo(ck * 0.6, -ck * 2.12); g.lineTo(ck * 0.02, -ck * 1.48); g.closePath(); g.fill();
-  // the dial, low on the belly like the reference
-  const dy = ck * 0.56, nowd = new Date();
-  if (!dim) {
-    g.fillStyle = "rgba(255,255,255,0.8)";
-    for (let i = 0; i < 12; i++) { const a = i / 12 * 7, rr = ck * 0.7;
-      g.beginPath(); g.arc(Math.sin(a) * rr, dy - Math.cos(a) * rr, i % 3 === 0 ? 1.6 : 1, 0, 7); g.fill(); }
-  }
-  const hAng = ((nowd.getHours() % 12) + nowd.getMinutes() / 60) / 12 * 7, mAng = nowd.getMinutes() / 60 * 7;
-  g.strokeStyle = "#f5f0e4"; g.lineCap = "round";
-  g.lineWidth = 2.6; g.beginPath(); g.moveTo(0, dy); g.lineTo(Math.sin(hAng) * ck * 0.36, dy - Math.cos(hAng) * ck * 0.36); g.stroke();
-  g.lineWidth = 2; g.beginPath(); g.moveTo(0, dy); g.lineTo(Math.sin(mAng) * ck * 0.56, dy - Math.cos(mAng) * ck * 0.56); g.stroke();
-  if (!dim) {
-    g.strokeStyle = "rgba(214,98,74,0.92)"; g.lineWidth = 1.1;
-    const sAng = (nowd.getSeconds() + (pn % 1000) / 1000) / 60 * 7;
-    g.beginPath(); g.moveTo(0, dy); g.lineTo(Math.sin(sAng) * ck * 0.6, dy - Math.cos(sAng) * ck * 0.6); g.stroke();
-  }
-  g.fillStyle = "#d0d3d7"; g.beginPath(); g.arc(0, dy, 2, 0, 7); g.fill();
-  g.restore();
+    const r=clamp(Math.min(W,H)*.055,20,35);
+    g.save();g.translate(W*.84,Math.max(r+24,H*.26));
+    g.fillStyle='#987958';g.beginPath();g.arc(0,0,r,0,Math.PI*2);g.fill();
+    g.strokeStyle='#715c45';g.lineWidth=1.5;g.stroke();
+    g.fillStyle=dim?'#c2b89e':'#e9dfc7';g.beginPath();g.arc(0,0,r-5,0,Math.PI*2);g.fill();
+    g.strokeStyle='#8a8f74';g.lineCap='round';
+    for(let i=0;i<12;i++){const a=i*Math.PI/6;g.lineWidth=i%3===0?2:1;g.beginPath();g.moveTo(Math.sin(a)*r*.68,-Math.cos(a)*r*.68);g.lineTo(Math.sin(a)*r*.76,-Math.cos(a)*r*.76);g.stroke();}
+    const d=new Date(),ha=((d.getHours()%12)+d.getMinutes()/60)*Math.PI/6,ma=d.getMinutes()*Math.PI/30;
+    g.strokeStyle='#58634e';g.lineWidth=2.7;g.beginPath();g.moveTo(0,0);g.lineTo(Math.sin(ha)*r*.39,-Math.cos(ha)*r*.39);g.stroke();
+    g.lineWidth=1.9;g.beginPath();g.moveTo(0,0);g.lineTo(Math.sin(ma)*r*.59,-Math.cos(ma)*r*.59);g.stroke();
+    g.fillStyle='#a88450';g.beginPath();g.arc(0,0,2.5,0,Math.PI*2);g.fill();g.restore();
   }
 
   // --- fireplace (bottom-left) — stone surround, a short wide firebox opening, tall flames
