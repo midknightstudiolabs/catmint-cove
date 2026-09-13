@@ -1095,9 +1095,9 @@
   .snd-master .lab{display:flex;align-items:center;gap:.55rem;font-weight:700;font-size:.86rem;}
   .snd-master .lab .ic{font-size:1rem;}
   .snd-master .tgl{width:2.7rem;height:1.6rem;border-radius:999px;background:var(--accent);position:relative;flex:0 0 auto;transition:background .15s ease;}
-  .snd-master .tgl::after{content:"";position:absolute;top:.18rem;left:.18rem;width:1.24rem;height:1.24rem;border-radius:50%;background:#fff;transition:left .15s ease;}
+  .snd-master .tgl::after{content:"";position:absolute;top:.18rem;left:1.28rem;width:1.24rem;height:1.24rem;border-radius:50%;background:#fff;transition:left .15s ease;}
   .snd-master .tgl.off{background:#c9c2ad;}
-  .snd-master .tgl.off::after{left:1.28rem;}
+  .snd-master .tgl.off::after{left:.18rem;}
   .snd-rows{transition:opacity .15s ease;}
   .snd-rows.off{opacity:.4;pointer-events:none;}
   .snd-row{display:grid;grid-template-columns:1.4rem 1fr auto;align-items:center;gap:.7rem;padding:.6rem .1rem;text-align:left;}
@@ -7032,6 +7032,7 @@ function rampParam(p, target, secs = 0.4) {
   });
 }
 function openSound() {
+  const mb = document.getElementById("muteBtn");
   ensureAudio();
   const S = G.sound;
   const rows = [
