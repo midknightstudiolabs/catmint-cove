@@ -18088,7 +18088,7 @@ function renderAdventureCard() {
 }
 function openAdventurePicker() {
   if (!advSlotOpen()) { toast("Both expeditions are already out.", 3.5); return; }
-  const dests=Object.entries(ADV_DESTS).map(([k,d])=>`<button class="pick-dest" data-d="${k}" aria-pressed="false"><span>${neoUIIcon("adventure")}</span><b>${esc(d.name)}</b><i>${esc(d.blurb)}</i></button>`).join("");
+  const dests=Object.entries(ADV_DESTS).map(([k,d])=>`<button class="pick-dest" data-d="${k}" aria-pressed="false"><span>${neoUIIcon("dest-"+k)}</span><b>${esc(d.name)}</b><i>${esc(d.blurb)}</i></button>`).join("");
   const tiers=Object.values(ADV_TIERS).map(t=>`<button class="pick-tier${t.key==='day'?' on':''}" data-t="${t.key}" aria-pressed="${t.key==='day'}"><b>${esc(t.label)}</b><i>${esc(t.note)}</i></button>`).join("");
   openModal(`<div class="reveal adv-flow"><div class="kicker">Adventure · 1 of 2</div><h2>Plan a little adventure</h2><p class="sub">Choose a place and how long your cats will be away.</p><div class="pick-list">${dests}</div><div class="pick-label">How long?</div><div class="pick-tiers">${tiers}</div><p class="adv-selection" id="adv-selection" role="status">Choose a destination to continue.</p><div class="row"><button class="btn primary" id="adv-continue" disabled>Choose cats</button><button class="btn" id="pick-cancel">Cancel</button></div></div>`);
   let tier='day',dest=null;
