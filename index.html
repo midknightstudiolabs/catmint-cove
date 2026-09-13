@@ -8923,7 +8923,7 @@ function restLayout(vw) {
   return {
     wx, wy, ww, wh,
     hx, hw, hh2, htop, hbase,
-    sillX: cx, sillY: wy + wh + 5,
+    sillX: cx, sillY: wy + wh - 17,
     fireX: hx + hw * 0.5 + 14, fireY: hbase - 4,
     rugX, rugY, rugRx, rugRy,
     napX, napY, napSpread, napRowH, napHalfW,
@@ -8952,7 +8952,7 @@ function restSeatCats() {
     let t = w.reduce((a, b) => a + b, 0), r = rnd() * t;
     for (let i = 0; i < others.length; i++) { r -= w[i]; if (r <= 0) { sill = others[i]; break; } }
     sill = sill || others[0];
-    seat(sill, { x: L.sillX, y: L.sillY, face: rnd() < 0.5 ? -1 : 1, state: "loafing" });
+    seat(sill, { x: L.sillX, y: L.sillY, face: rnd() < 0.5 ? -1 : 1, state: "sleeping" });
   }
 
   // everyone else: a shuffled nap pile on the rug. It grows WIDE, not tall — a
@@ -9182,6 +9182,12 @@ function renderRest(dt) {
   g.moveTo(wx, wy + wh / 2); g.lineTo(wx + ww, wy + wh / 2); g.stroke();
   g.fillStyle = "#66573f"; g.fillRect(wx - 12, wy + wh + 2, ww + 24, 7);   // sill
 
+  // A linen window hammock, suspended inside the frame.
+  const hamX=L.sillX,hamY=L.sillY;
+  g.strokeStyle='#a68e67';g.lineWidth=2.2;
+  for(const side of [-1,1]){g.beginPath();g.moveTo(hamX+side*47,hamY-47);g.lineTo(hamX+side*40,hamY-5);g.stroke();g.fillStyle='#867555';g.beginPath();g.arc(hamX+side*47,hamY-47,3,0,Math.PI*2);g.fill();}
+  g.fillStyle='#c8b58b';g.beginPath();g.moveTo(hamX-43,hamY-6);g.quadraticCurveTo(hamX,hamY+19,hamX+43,hamY-6);g.lineTo(hamX+39,hamY+5);g.quadraticCurveTo(hamX,hamY+29,hamX-39,hamY+5);g.closePath();g.fill();
+  g.strokeStyle='#8b7958';g.lineWidth=1.4;g.stroke();
   // Linen curtains frame the rain without covering the view or sill cats.
   g.fillStyle="#8b8771";
   for(const side of [-1,1]){
