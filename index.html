@@ -7303,12 +7303,24 @@ function neoStartTour(){
  document.getElementById('neo-tour')?.remove();closeAllPanels();
  const steps=[['Meet your cats','Tap Catdex to open your cats.','#dexBtn'],['Browse the shop','Tap Shop to see what you can add.','#shopBtn'],['Find your belongings','Tap My inventory in the Shop.','#shopTabs [data-tab="inventory"]'],['Your placed items','Tap In the Cove to see what you can put away.','#shop .shop-actions button[aria-pressed]']];
  let i=0;const box=document.createElement('aside');box.id='neo-tour';box.setAttribute('aria-label','Guided tour');document.body.append(box);
- const finish=()=>{document.removeEventListener('click',clicked,true);window.removeEventListener('resize',position);box.remove();};
- const position=()=>{const target=document.querySelector(steps[i]?.[2]);if(!target)return;const r=target.getBoundingClientRect();box.style.left=Math.max(12,Math.min(innerWidth-box.offsetWidth-12,r.left))+'px';box.style.top=Math.max(12,Math.min(innerHeight-box.offsetHeight-12,r.top-box.offsetHeight-12))+'px';box.style.bottom='auto';};
+ const finish=()=>{document.removeEventListener('click',clicked,true);window.removeEventListener('resize',position);document.removeEventListener('scroll',position,true);box.remove();};
+ const tourTarget=()=>i===3?[...document.querySelectorAll(steps[i][2])].find(el=>el.textContent.includes('In the Cove')):document.querySelector(steps[i]?.[2]);
+ const position=()=>{
+  const target=tourTarget();if(!target||!box.isConnected)return;
+  const r=target.getBoundingClientRect(),gap=10,edge=12;
+  const above=Math.max(0,r.top-gap-edge),below=Math.max(0,innerHeight-r.bottom-gap-edge);
+  box.style.maxHeight=Math.max(above,below)+'px';
+  const h=box.offsetHeight,w=box.offsetWidth;
+  const useAbove=above>=h || above>=below;
+  box.style.maxHeight=(useAbove?above:below)+'px';
+  box.style.left=Math.max(edge,Math.min(innerWidth-w-edge,r.left))+'px';
+  box.style.top=(useAbove?r.top-gap-box.offsetHeight:r.bottom+gap)+'px';box.style.bottom='auto';
+ };
+
  const show=()=>{box.innerHTML='<small>Getting comfortable · '+(i+1)+' / '+steps.length+'</small><b>'+steps[i][0]+'</b><p>'+steps[i][1]+'</p><div><button class="btn" id="tourSkip">Skip</button><button class="btn" id="tourExit">Exit tour</button></div>';box.querySelector('#tourSkip').onclick=next;box.querySelector('#tourExit').onclick=finish;requestAnimationFrame(position);};
  const next=()=>{if(++i>=steps.length){finish();toast('You know your way around. Make yourself at home.',3);return;}if(i===2 && panels.shop.hidden)togglePanel('shop');if(i===3){shopTab='inventory';renderShop();}show();};
  const clicked=e=>{if(!box.isConnected){finish();return;}if(e.target.closest('#neo-tour'))return;const el=e.target.closest(steps[i][2]);if(!el)return;if(i===3&&!el.textContent.includes('In the Cove'))return;setTimeout(next,0);};
- document.addEventListener('click',clicked,true);window.addEventListener('resize',position);show();
+ document.addEventListener('click',clicked,true);window.addEventListener('resize',position);document.addEventListener('scroll',position,true);show();
 }
 
 // open a URL in the OS browser, never inside the game's WebView. Capacitor
