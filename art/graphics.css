@@ -1,0 +1,8 @@
+/* 2D paint-and-paper styling. All original controls and layout rules remain. */
+:root{--panel:#fff9e9;--panel-line:#e2d4b6;--accent:#597c4e;--accent-bright:#729454;--shadow:0 4px 12px -5px rgba(68,75,39,.25)}
+.pill{background:#fff8e7;border-color:#e8daba;box-shadow:0 3px 0 rgba(140,122,75,.12)}
+.btn{box-shadow:0 2px 0 rgba(126,103,59,.12)}
+.btn.primary{background:#648a55;border-color:#4d7040;color:#fff7df}
+.sheet{background:#fff9e9;border:1px solid #e6d8bc;box-shadow:0 10px 30px rgba(50,65,33,.20)}
+#actions{filter:none}
+@media(prefers-reduced-motion:reduce){.btn,.pill{transition:none}}

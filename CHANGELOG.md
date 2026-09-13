@@ -1,3 +1,12 @@
+## Neo device test — 2026-09-13
+
+- Publish the current 2D local test build and its artwork for cross-device review.
+- Object placement takes priority over cat selection while arranging.
+- Shop products show framed previews of the actual in-game objects.
+- Compact Tug of Paws reels while preserving a 44px Spin touch target.
+- Larger Cove-name pill, 12-character limit for new names, and overflow handling for existing names.
+- Include the shell, driftwood and pearl economy changes documented in ECONOMY-UPDATE.md.
+- Browser checks at 320px, 390px and 1280px: no page overflow or script errors. Physical-device testing remains to be done.
 ## Café cooking and progression — 2026-09-12
 
 - Two parallel cooking stoves; café points unlock a third and fourth stove for 200 and 350 shells.
@@ -134,3 +143,4 @@ This release packages the current Catmint Cove Neo web build. Original character
 - A Little Hello (3–5 foreground taps) remains a parked prototype and is not enabled.
 - No new painted cat replacement, live-purchase certification, or cloud save system is claimed by this release.
 - Postcard fronts currently share the Cove illustration; destination-specific art remains future work.
+
