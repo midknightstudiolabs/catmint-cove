@@ -50,3 +50,5 @@
 #placeBar{box-sizing:border-box;max-width:calc(100vw - 24px);flex-wrap:wrap}#placeBarTxt{min-width:0;overflow-wrap:anywhere}
 
 #placeBar{transition:left 100ms ease-out,top 100ms ease-out} @media(prefers-reduced-motion:reduce){#placeBar{transition:none}}
+
+#shop .keepsake-item{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px 12px;align-items:center}#shop .keepsake-item .inventory-preview{grid-column:1;grid-row:1 / 3;width:64px;height:64px;object-fit:contain;margin:0}#shop .keepsake-item .txt{grid-column:2;min-width:0}#shop .keepsake-item .shop-actions{grid-column:2;margin:0;justify-content:flex-start}#shop .keepsake-item .inventory-quantity{display:none}#shop .keepsake-item button[hidden]{display:none}#shop .keepsake-item .primary{background:#477354;color:#fff;-webkit-text-fill-color:#fff;border:1px solid #477354;min-height:44px;padding:8px 20px;width:auto}#founder-store{background:#477354;color:#fff;-webkit-text-fill-color:#fff;border-color:#477354}

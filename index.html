@@ -1228,7 +1228,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?v=5">
+</style><link rel="stylesheet" href="ui/device-fixes.css?v=6">
 <style id="neo-theme">
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
@@ -6348,7 +6348,12 @@ function renderInventory(list) {
     for (const e of group) {
       const row=document.createElement("div"); row.className="shop-item";
       row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}${e.quantity>1?" ×"+e.quantity:""}</div><div class="desc">${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&o.stored).length} stored · ${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&!o.stored).length} placed</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Put away</button>'}</div>`;
-      if(e.kind==='cairn'||e.kind==='founder') row.querySelector('.inventory-place').textContent=stored?'Return by the sign · free':'View by the sign';
+      if(e.kind==='cairn'||e.kind==='founder') {
+        row.classList.add('keepsake-item');
+        row.querySelector('.desc').textContent=stored?'Stored · returns beside the sign':'Beside the sign';
+        const place=row.querySelector('.inventory-place');place.textContent='Place';place.classList.add('primary');place.hidden=!stored;
+        row.querySelector('.inventory-store')?.classList.add('primary');
+      }
       row.querySelector(".inventory-place").onclick=()=>{
         if(e.kind==='founder'){G.cosmetics.founderStored=false;save();closeAllPanels();toast('Your Founding Covekeeper plaque is back by the sign.',4);return;}
         if(e.kind==='cairn'){G.cairn.tidied=false;G.cairn.size=3;save();rebuildAttractors();closeAllPanels();toast("Midknight's cairn is standing by the sign.",4);return;}
