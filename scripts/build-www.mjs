@@ -45,3 +45,6 @@ await cp(join(root, "scripts", "capacitor-bridge.js"), join(www, "capacitor-brid
 console.log("built www/ from index.html + assets");
 // Graphics-only edition: include the new local illustrations and stylesheet.
 await cp(join(root, "art"), join(www, "art"), { recursive: true });
+
+// Neo UI styles must ship inside WKWebView and Android WebView.
+await cp(join(root, "ui"), join(www, "ui"), { recursive: true });

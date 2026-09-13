@@ -1,4 +1,6 @@
-Neo mobile candidate 3.0.1
+# Neo 3.0.3
 
-Web source: midknightstudiolabs/catmint-cove-neo commit edc04a6.
-Uses the existing app identifier, signing workflows and native bridge from the original repository. Original main is unchanged. Includes the approved V2 icon revisions and economy pass. The native packager includes art and the iOS-compatible MP3 rain loop.
+Game source: catmint-cove-neo commit 87aede1.
+Includes fixed SVG HUD icons, shop previews, placement fixes, Cove name sizing, compact Tug spinner, Catdex wellbeing and roster mood/health bars with explicit iOS colors. Existing Neo gameplay and saves retained.
+Clock drafts are excluded.
+Native bundle now includes ui/ styles. Android tag uploads target the alpha closed-testing track as a draft.

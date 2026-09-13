@@ -1210,6 +1210,24 @@
   #placeBar button{flex:0 0 auto;font:inherit;font-weight:700;font-size:.78rem;cursor:pointer;border:0;
     border-radius:999px;padding:.4rem .95rem;background:rgba(247,245,236,.94);color:var(--ink-soft);}
   #placeBar button.ok{background:var(--accent-bright);color:#fff;}
+/* Compact controls with finger-sized actions. */
+#titlePill{display:flex;font-size:1rem;line-height:1.2;min-height:44px;padding:.5rem .85rem;max-width:min(52vw,280px);}
+.cove-title-text{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.product-preview{width:96px;height:80px;object-fit:contain;flex:0 0 96px;border-radius:14px;border:1px solid var(--panel-line);}
+.shop-item .txt{min-width:0;flex:1;}
+#owner-limit{display:block;margin:.4rem 0 .8rem;color:var(--ink-soft);}
+.midk-console{max-width:calc(100vw - 24px);gap:.35rem;padding:.3rem .4rem;border-radius:14px;}
+.midk-console .mc-reels span{width:28px;height:30px;font-size:1rem;}
+.midk-spin{min-width:76px;min-height:44px;padding:.35rem .65rem;font-size:1rem;}
+@media(max-width:600px){
+ #titlePill{font-size:1rem;max-width:min(48vw,220px);}
+ .product-preview{width:68px;height:68px;flex-basis:68px;}
+ .shop-item{flex-wrap:wrap;gap:.55rem;}
+ .shop-item .shop-actions{margin-left:auto;}
+ .midk-hud{bottom:calc(env(safe-area-inset-bottom,0px) + 64px);gap:.25rem;}
+ .midk-console .mc-reels{gap:3px;}
+ .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
+}
 </style>
 <style id="neo-theme">
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
@@ -1447,9 +1465,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
         <div class="pill drift" id="driftPill" hidden data-tip="Driftwood — washes up on the shore and comes home from trips. A building material for restoring the cove."><span class="dot">🪵</span><span id="driftwood">0</span></div>
       </div>
       <div class="hud-stats">
-        <div class="hud-stat" id="catPill" data-tip="Cats here / room you have. Tap for the cove roster — how everyone's doing."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-paw.svg" alt="" aria-hidden="true" width="28" height="28"></span><span id="catcount">0</span>/<span id="catcap">0</span></div>
-        <div class="hud-stat" id="foodStat" data-tip="Food in the bowls. Tap a bowl to refill. Empty bowls mean hungry cats."><span class="ico">🍚</span><span id="foodlevel">0</span></div>
-        <div class="hud-stat opens" data-tip="Days you've dropped by the cove."><span class="ico">☀️</span><span id="opens">1</span></div>
+        <div class="hud-stat" id="catPill" data-tip="Cats here / room you have. Tap for the cove roster — how everyone's doing."><span class="ico"><img class="neo-ui-icon neo-hud-icon" src="art/icon-hud-cats.svg" alt="" aria-hidden="true" width="26" height="26"></span><span id="catcount">0</span>/<span id="catcap">0</span></div>
+        <div class="hud-stat" id="foodStat" data-tip="Food in the bowls. Tap a bowl to refill. Empty bowls mean hungry cats."><span class="ico"><img class="neo-ui-icon neo-hud-icon" src="art/icon-hud-food.svg" alt="" aria-hidden="true" width="26" height="26"></span><span id="foodlevel">0</span></div>
+        <div class="hud-stat opens" data-tip="Days you've dropped by the cove."><span class="ico"><img class="neo-ui-icon neo-hud-icon" src="art/icon-hud-day.svg" alt="" aria-hidden="true" width="26" height="26"></span><span id="opens">1</span></div>
       </div>
     </div>
     <div class="hud-group">
@@ -4669,6 +4687,7 @@ function screenToWorld(cx, cy) {
   return { x: (cx - r.left) / displayScale - _worldOffX, y: (cy - r.top) / displayScale - _worldOffY };
 }
 function catAt(x, y, rad) {
+  if (_placing || _arranging) return null; // cats never intercept decorating gestures
   let bc = null, bd = (rad || 40) * (rad || 40);
   for (const c of cats) { const d = dist2(x, y, c.x, c.y - 18); if (d < bd) { bd = d; bc = c; } }
   return bc;
@@ -5081,6 +5100,8 @@ function tokenAt(x, y, rad) {
   return bt;
 }
 function handleTap(x, y, screenX, screenY) {
+  if (_placing) { _placeGhost = placeSnap(x, y); finishPlacing(); return; }
+  if (_arranging) { const hit = movableAt(x,y); if(hit) grabMovable(hit); return; }
   // tokens first — they're the payout, and they win over everything under them
   const bt = tokenAt(x, y);
   if (bt) { hidePropCard(); collectToken(bt); return; }
@@ -5699,8 +5720,8 @@ function rosterRowEl(r) {
       `<span class="rline">${r.line}</span>` +
       (passive ? "" :
       `<span class="rbars">` +
-        `<span class="rb"><span class="rk">mood</span><span class="moodbar"><i style="width:${r.mood}%"></i></span></span>` +
-        `<span class="rb"><span class="rk">wellbeing</span><span class="moodbar well ${wc}"><i style="width:${r.health}%"></i></span></span>` +
+        `<span class="rb"><span class="rk">Mood <span>${Math.round(r.mood)}%</span></span><span class="moodbar"><i style="width:${r.mood}%"></i></span></span>` +
+        `<span class="rb"><span class="rk">Wellbeing <span>${Math.round(r.health)}%</span></span><span class="moodbar well ${wc}"><i style="width:${r.health}%"></i></span></span>` +
       `</span>`) +
     `</span>`;
   const cv = b.querySelector("canvas");
@@ -5972,6 +5993,28 @@ function shopBoostRow() {
   }
   return bc;
 }
+function productPreview(item) {
+  const type = item.type;
+  if (!type || !['food','toy','bed','scratch','tree','cottage','cattree','flowers','fishing','bakery','sunbeam','garden'].includes(type)) return null;
+  const cv = document.createElement('canvas'); cv.width=240; cv.height=200;
+  cv.className='product-preview'; cv.setAttribute('role','img'); cv.setAttribute('aria-label',item.name+' preview');
+  const g=cv.getContext('2d');
+  g.translate(120,160); g.scale(type==='cattree'?1.05:1.5,type==='cattree'?1.05:1.5);
+  if (['food','toy','bed','scratch'].includes(type)) drawAttractor(g,{type,x:0,y:0});
+  else if (STATION[type]) drawStation(g,type,7001);
+  else drawDecor(g,{type,x:0,y:0,seed:7001});
+  // Frame the actual artwork, rather than leaving small objects at world scale.
+  const pixels=g.getImageData(0,0,240,200).data;
+  let x0=240,y0=200,x1=0,y1=0;
+  for(let y=0;y<200;y++)for(let x=0;x<240;x++)if(pixels[(y*240+x)*4+3]>8){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);}
+  if(x1>=x0){
+    const copy=document.createElement('canvas');copy.width=240;copy.height=200;copy.getContext('2d').drawImage(cv,0,0);
+    g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,240,200);g.fillStyle='#eef0dc';g.fillRect(0,0,240,200);
+    const w=x1-x0+1,h=y1-y0+1,s=Math.min(192/w,152/h);
+    g.drawImage(copy,x0,y0,w,h,(240-w*s)/2,(200-h*s)/2,w*s,h*s);
+  }
+  return cv;
+}
 function shopItemRow(item) {
   const maxed = item.max != null && item.get() >= item.max;
   const price = priceOf(item);
@@ -5994,6 +6037,8 @@ function shopItemRow(item) {
       ${canRemove ? `<button class="btn tiny remove" title="Sell one — refunds ◈${refund}">Sell</button>` : ""}
       <button class="btn primary" ${maxed || lockMsg || !afford ? "disabled" : ""}>${!maxed && !lockMsg && !soonLook ? "Buy · " : ""}${priceLabel}</button>
     </div>`;
+  const preview = productPreview(item);
+  if(preview) row.prepend(preview);
   const rmBtn = row.querySelector(".remove");
   if (rmBtn) rmBtn.addEventListener("click", () => {
     if (item.get() <= (item.keepMin || 0)) return;
@@ -6526,7 +6571,12 @@ function coveName() {
 let _hudTitle = "", _hudFull = null;
 function syncHud() {
   const wantTitle = G.owner ? `${esc(G.owner)}<b>’s Cove</b>` : "Catmint <b>Cove</b>";
-  if (wantTitle !== _hudTitle) { document.getElementById("titlePill").innerHTML = _hudTitle = wantTitle; }
+  if (wantTitle !== _hudTitle) {
+    const pill = document.getElementById("titlePill");
+    pill.innerHTML = '<span class="cove-title-text">' + wantTitle + '</span>'; _hudTitle = wantTitle;
+    pill.setAttribute('aria-label', coveName() + '. Rename your cove');
+    pill.title = coveName();
+  }
   elShells.textContent = Math.floor(G.shells);
   document.getElementById("pearls").textContent = G.pearls || 0;
   document.getElementById("pearls").closest(".pill").classList.toggle("empty", !(G.pearls > 0));
@@ -7998,13 +8048,14 @@ function askOwnerName(firstTime) {
     <p class="sub">${firstTime
       ? "A few cats have wandered in and made themselves at home. Whose cove is this?"
       : "What should this little place be called?"}</p>
-    <input class="name-in" id="own-in" maxlength="18" placeholder="your name" autocomplete="off" spellcheck="false">
+    <input class="name-in" id="own-in" maxlength="12" aria-describedby="owner-limit" placeholder="your name" autocomplete="off" spellcheck="false">
     <div class="row">
       <button class="btn primary" id="own-ok">${firstTime ? "Open the cove" : "Save"}</button>
       <button class="btn" id="own-skip">${firstTime ? "Later" : "Cancel"}</button>
     </div>
   </div>`);
   const inp = document.getElementById("own-in");
+  inp.insertAdjacentHTML("afterend", '<small id="owner-limit">Up to 12 characters. We add “’s Cove” for you.</small>');
   inp.value = G.owner || "";
   setTimeout(() => { inp.focus(); inp.select(); }, 30);
   const finish = () => {
@@ -8015,7 +8066,7 @@ function askOwnerName(firstTime) {
     }
   };
   const submit = () => {
-    const v = inp.value.trim().replace(/\s+/g, " ").slice(0, 18);
+    const v = inp.value.trim().replace(/\s+/g, " ").slice(0, 12);
     if (v) { G.owner = v; if (!firstTime) toast(`Welcome to ${coveName()}`, 4); }   // first run: the cold open does the welcome
     finish();
   };
@@ -18737,6 +18788,7 @@ function neoOpenStory(c){
   openModal(`<div class="neo-story" role="dialog" aria-label="Cat story"><button class="x neo-story-x" id="neo-story-x" aria-label="Close cat story">✕</button><div class="kicker">A little life, shared with you</div>
     <canvas id="neo-portrait" width="220" height="180"></canvas>
     <h2>${esc(c.name)}</h2><p class="neo-story-sub">${esc(c.title||bondName(c.bond||0))}</p>
+    ${!c.visitor && !c.mascot ? `<section class="neo-wellbeing" aria-label="Cat wellbeing"><div class="neo-wellbeing-label"><b>Wellbeing</b><span>${Math.round(clamp(c.health ?? 100,0,100))}%</span></div><div class="moodbar well ${wellClass(c.health ?? 100)}" role="progressbar" aria-label="Wellbeing" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(clamp(c.health ?? 100,0,100))}"><i style="width:${clamp(c.health ?? 100,0,100)}%"></i></div><p>${c.sick?'Feeling unwell — medicine is available in the Shop.':catNeed(c)==='hungry'?'Hungry — refill a food bowl.':catNeed(c)==='thirsty'?'Thirsty — check the water supply.':(c.health ?? 100)<70?'Recovering — keep food and water available.':'Comfortable and cared for.'}</p></section>` : ''}
     <div class="neo-story-facts"><p><b>Loves</b> ${esc(catPrefLine(c))}</p>
     <p><b>Company</b> ${c.friend?esc(c.friend)+' is a familiar friend.':'Still finding their favorite company.'}</p>
     <p>${c.quirkKnown?esc(catQuirkLine(c)):'There are still little habits to discover together.'}</p></div>
