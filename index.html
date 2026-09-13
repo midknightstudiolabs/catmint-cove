@@ -1228,7 +1228,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?v=11">
+</style><link rel="stylesheet" href="ui/device-fixes.css?v=12">
 <style id="neo-theme">
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
@@ -4766,6 +4766,7 @@ function positionPlaceActions(){
   el.style.position='fixed';el.style.transform='none';el.style.bottom='auto';el.style.left=left+'px';el.style.top=top+'px';
 }
 function _beginPlace(spec) {
+ tutEl.classList.remove("on");closeModal();hidePropCard();
   document.getElementById("placeBarPutAway").hidden = false;
   if (!_arranging) closeAllPanels();
   _placing = spec;
@@ -5159,6 +5160,7 @@ function handleTap(x, y, screenX, screenY) {
   hideCatCard(); hidePropCard();
   neoHelloTap(x,y,screenX,screenY);
 }
+function storeCairn(){const cn=G.cairn;if(!cn)return;cn.storedSize=cn.size||3;cn.tidied=true;cn.size=0;save();rebuildAttractors();}
 function tapCairn(x, y) {
   const cn = G && G.cairn;
   if (!cn || cn.tidied) return false;
@@ -5167,9 +5169,10 @@ function tapCairn(x, y) {
   const { sx, gy } = cairnPos(W, H);
   if (dist2(x, y, sx, gy - 14) > 32 * 32) return false;
   hideCatCard();
-  showPropCard("Midknight's cairn", cn.stage >= 4
-    ? "A little monument to everything worth carrying home — Labubu's finds, and a few of his own."
-    : "Midknight's still rearranging this — Labubu's odds and ends, stacked just so.", sx, gy);
+  hidePropCard();
+  openModal(`<div class="reveal"><div class="kicker">A little keepsake</div><h2>Midknight’s cairn</h2><p>A small tower of treasures, carefully gathered and arranged. You can store it safely and bring it back from My inventory.</p><div class="cove-action-pair"><button class="btn" id="cairn-close">Back</button><button class="btn primary" id="cairn-store">Put away</button></div></div>`);
+  document.getElementById('cairn-close').onclick=closeModal;
+  document.getElementById('cairn-store').onclick=()=>{storeCairn();closeModal();toast('Cairn stored in My inventory.');};
   return true;
 }
 function petCat(c) {
@@ -5792,7 +5795,7 @@ function openRoster() {
     + (vet ? ` · ${vet} at the vet` : "");
   fillRoster(rows);
   const foot = document.getElementById("roster-foot");
-  foot.innerHTML = `<button id="roster-close">Close</button>`;
+  foot.innerHTML = `<button class="btn primary" id="roster-close">Back to the Cove</button>`;
   document.getElementById("roster-close").onclick = closeRoster;
   rosterEl.hidden = false;
 }
@@ -6339,7 +6342,7 @@ function renderInventory(list) {
   }
   for (const p of DECOR_PROPS) if (p.movable && G.cosmetics.props[p.id]) entries.push({kind:"prop",key:p.id,label:p.name,stored:propBoxed(p.id)});
   if(iapOwns('founding_covekeeper')) entries.push({kind:'founder',key:'founder-plaque',label:'Founding Covekeeper plaque',stored:!!G.cosmetics.founderStored});
-  if(G.cairn?.stage>=4) entries.push({kind:'cairn',key:'midknight-cairn',label:"Midknight's cairn",stored:!!G.cairn.tidied});
+  if(G.cairn && (G.cairn.stage>=4||G.cairn.size>0||G.cairn.tidied)) entries.push({kind:'cairn',key:'midknight-cairn',label:"Midknight's cairn",stored:!!G.cairn.tidied});
   const filters=document.createElement('div');filters.className='shop-actions';
   for(const [id,label] of [['stored','Stored'],['placed','In the Cove']]){const b=document.createElement('button');b.className='btn';b.textContent=label+' ('+entries.filter(e=>e.stored===(id==='stored')).length+')';b.setAttribute('aria-pressed',inventoryView===id);b.onclick=()=>{inventoryView=id;renderShop();};filters.appendChild(b);}list.appendChild(filters);
   for (const stored of [inventoryView==='stored']) {
@@ -6358,7 +6361,7 @@ function renderInventory(list) {
       }
       row.querySelector(".inventory-place").onclick=()=>{
         if(e.kind==='founder'){G.cosmetics.founderStored=false;save();closeAllPanels();toast('Your Founding Covekeeper plaque is back by the sign.',4);return;}
-        if(e.kind==='cairn'){G.cairn.tidied=false;G.cairn.size=3;save();rebuildAttractors();closeAllPanels();toast("Midknight's cairn is standing by the sign.",4);return;}
+        if(e.kind==='cairn'){G.cairn.tidied=false;G.cairn.size=G.cairn.storedSize||3;save();rebuildAttractors();closeAllPanels();toast("Midknight's cairn is standing by the sign.",4);return;}
         if(e.kind==="prop") {startPlacing(e.key); return;}
         const obj=e.kind==="comfort"?attractors.find(a=>a.key===e.key):decor.find(d=>d.dkey===e.key);
         const pos=obj || (e.kind==="comfort"?G.cosmetics.comfortPos:G.cosmetics.decorPos)?.[e.key] || {x:W*.5,y:H*.7};
@@ -6378,7 +6381,7 @@ function renderInventory(list) {
         const cancel=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',cancel);if(started&&_placing)cancelPlacing();};
         document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',end);document.addEventListener('pointercancel',cancel);
       };
-      const put=row.querySelector(".inventory-store"); if(put) put.onclick=()=>{if(e.kind==='founder'){G.cosmetics.founderStored=true;save();}else if(e.kind==='cairn'){G.cairn.tidied=true;G.cairn.size=0;save();rebuildAttractors();}else putAwayItem(e.kind,e.key,e.label);renderShop();};
+      const put=row.querySelector(".inventory-store"); if(put) put.onclick=()=>{if(e.kind==='founder'){G.cosmetics.founderStored=true;save();}else if(e.kind==='cairn'){storeCairn();}else putAwayItem(e.kind,e.key,e.label);renderShop();};
       list.appendChild(row);
     }
   }
@@ -7289,6 +7292,7 @@ const HELP_TOPICS=[
  ['Settings & saves','sound',['Use Sound for the master switch and individual volumes.','Use the view controls or pinch to adjust the Cove view.','Journal has Back up / restore. Purchased support packs can be restored through the purchase controls.'],'today']
 ];
 function openGuide(){
+ closeAllPanels();closeModal();hidePropCard();hideCatCard();rosterEl.hidden=true;
  ensureAudio();document.getElementById('neo-tour')?.remove();
  const card=tutEl.querySelector('.card');card.classList.add('help-home');tutEl.classList.add('on');
  const close=()=>{tutEl.classList.remove('on');card.classList.remove('help-home');};
@@ -7302,6 +7306,7 @@ function openGuide(){
  const topic=i=>{const t=HELP_TOPICS[i];card.innerHTML='<div class="help-head"><button class="linkbtn" id="helpBack">‹ All topics</button><button class="btn" id="helpClose" aria-label="Close help">×</button></div><div class="help-visual">'+neoUIIcon(t[1])+'</div><h2>'+t[0]+'</h2><ol class="help-steps">'+t[2].map(x=>'<li>'+x+'</li>').join('')+'</ol><button class="btn primary" id="helpShow">Show me</button>';card.querySelector('#helpBack').onclick=home;card.querySelector('#helpClose').onclick=close;card.querySelector('#helpShow').onclick=()=>{close();closeAllPanels();if(t[3]==='explore')neoOpenExplore();else togglePanel(t[3]);};};home();
 }
 function neoStartTour(){
+ tutEl.classList.remove("on");closeModal();hidePropCard();hideCatCard();rosterEl.hidden=true;
  document.getElementById('neo-tour')?.remove();closeAllPanels();
  const steps=[['Meet your cats','Tap Catdex to open your cats.','#dexBtn'],['Browse the shop','Tap Shop to see what you can add.','#shopBtn'],['Find your belongings','Tap My inventory in the Shop.','#shopTabs [data-tab="inventory"]'],['Your placed items','Tap In the Cove to see what you can put away.','#shop .shop-actions button[aria-pressed]']];
  let i=0;const box=document.createElement('aside');box.id='neo-tour';box.setAttribute('aria-label','Guided tour');document.body.append(box);
@@ -7332,6 +7337,7 @@ function openExternal(url) {
   catch (e) { try { window.open(url, "_blank", "noopener"); } catch (e2) {} }
 }
 function openCredits() {
+ tutEl.classList.remove("on");closeAllPanels();hidePropCard();
   ensureAudio();
   openModal(`<div class="reveal credits">
     <button class="cr-x" id="crX" aria-label="Close">✕</button>
@@ -7379,6 +7385,7 @@ function openCredits() {
 // can extend it without touching the card.
 function caresSupported() { return iapOwns("welcome_pack") && iapOwns("founding_covekeeper"); }
 function openCares() {
+ tutEl.classList.remove("on");closeAllPanels();hidePropCard();
   ensureAudio();
   if (G.ccc) G.ccc.seen = true;
   const done = caresSupported();
@@ -16875,7 +16882,7 @@ function cairnGap() { return rand(10, 16) * 60e3; }   // a beat every ~quarter h
 function cairnTick() {
   if (!G || !G.tutorialDone || restMode) return;
   const cn = G.cairn || (G.cairn = { stage: 0, progress: 0, size: 0, nextAt: 0 });
-  if (cn.stage >= 4) return;                                  // resolved (kept or tidied)
+  if (cn.stage >= 4 || cn.tidied) return;                                  // resolved (kept or tidied)
   if (!mkAtHome()) return;                                    // he only works on it when he's home
 
   if (cn.stage === 0) {
@@ -18098,7 +18105,7 @@ function showPostcard(text, cat, dest, onDone, card) {
   document.getElementById("pc-ok").onclick = () => { closeModal(); if (onDone) setTimeout(onDone, 250); };
 }
 function showFounderDescription(){
-  openModal(`<div class="reveal"><div class="kicker">A LITTLE THANK-YOU · 2026</div><h2>Founding Covekeeper</h2><p>This plaque marks your support for Catmint Cove during its founding days. You helped give this little home a beginning.</p><p>Your keepsakes include the dated plaque and founder accessories: a ribbon, halo, and hero mask. They celebrate your support and give no gameplay advantage.</p><p class="muted">Thank you for helping the Cove grow.</p><button class="btn" id="founder-store">Put away in inventory</button><button class="btn" id="founder-close">Back to my cove</button></div>`);
+  openModal(`<div class="reveal"><div class="kicker">A LITTLE THANK-YOU · 2026</div><h2>Founding Covekeeper</h2><p>This plaque marks your support for Catmint Cove during its founding days. You helped give this little home a beginning.</p><p>Your keepsakes include the dated plaque and founder accessories: a ribbon, halo, and hero mask. They celebrate your support and give no gameplay advantage.</p><p class="muted">Thank you for helping the Cove grow.</p><div class="cove-action-pair"><button class="btn" id="founder-close">Back</button><button class="btn primary" id="founder-store">Put away</button></div></div>`);
   document.getElementById('founder-store').onclick=()=>{G.cosmetics.founderStored=true;save();closeModal();toast('Plaque stored in My inventory.');};
   document.getElementById('founder-close').onclick=closeModal;
 }
