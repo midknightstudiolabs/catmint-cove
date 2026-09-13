@@ -6336,6 +6336,7 @@ function renderInventory(list) {
     entries.push({...spec,label:item.name,stored:itemStored(spec.kind,spec.key)});
   }
   for (const p of DECOR_PROPS) if (p.movable && G.cosmetics.props[p.id]) entries.push({kind:"prop",key:p.id,label:p.name,stored:propBoxed(p.id)});
+  if(iapOwns('founding_covekeeper')) entries.push({kind:'founder',key:'founder-plaque',label:'Founding Covekeeper plaque',stored:!!G.cosmetics.founderStored});
   if(G.cairn?.stage>=4) entries.push({kind:'cairn',key:'midknight-cairn',label:"Midknight's cairn",stored:!!G.cairn.tidied});
   const filters=document.createElement('div');filters.className='shop-actions';
   for(const [id,label] of [['stored','Stored'],['placed','In the Cove']]){const b=document.createElement('button');b.className='btn';b.textContent=label+' ('+entries.filter(e=>e.stored===(id==='stored')).length+')';b.setAttribute('aria-pressed',inventoryView===id);b.onclick=()=>{inventoryView=id;renderShop();};filters.appendChild(b);}list.appendChild(filters);
@@ -6347,8 +6348,9 @@ function renderInventory(list) {
     for (const e of group) {
       const row=document.createElement("div"); row.className="shop-item";
       row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}${e.quantity>1?" ×"+e.quantity:""}</div><div class="desc">${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&o.stored).length} stored · ${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&!o.stored).length} placed</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Put away</button>'}</div>`;
-      if(e.kind==='cairn') row.querySelector('.inventory-place').textContent=stored?'Return by the sign · free':'View by the sign';
+      if(e.kind==='cairn'||e.kind==='founder') row.querySelector('.inventory-place').textContent=stored?'Return by the sign · free':'View by the sign';
       row.querySelector(".inventory-place").onclick=()=>{
+        if(e.kind==='founder'){G.cosmetics.founderStored=false;save();closeAllPanels();toast('Your Founding Covekeeper plaque is back by the sign.',4);return;}
         if(e.kind==='cairn'){G.cairn.tidied=false;G.cairn.size=3;save();rebuildAttractors();closeAllPanels();toast("Midknight's cairn is standing by the sign.",4);return;}
         if(e.kind==="prop") {startPlacing(e.key); return;}
         const obj=e.kind==="comfort"?attractors.find(a=>a.key===e.key):decor.find(d=>d.dkey===e.key);
@@ -6357,18 +6359,19 @@ function renderInventory(list) {
       };
       const preview=document.createElement('canvas');preview.width=160;preview.height=120;preview.className='inventory-preview';preview.setAttribute('aria-label',e.label+' · '+(e.quantity||1)+' '+(stored?'stored':'placed'));row.prepend(preview);
       const g=preview.getContext('2d');g.translate(80,e.key==='windmill'?105:85);g.scale(e.key==='windmill'?.75:.85,e.key==='windmill'?.75:.85);
-      if(e.kind==='cairn'){const original=G.cairn;try{G.cairn={...original,tidied:false,size:3};const cp=cairnPos(W,H);g.translate(-cp.sx,-cp.gy);drawCairn(g,W,H);}finally{G.cairn=original;}}
+      if(e.kind==='founder'){drawFounderPlaque(g);}
+      else if(e.kind==='cairn'){const original=G.cairn;try{G.cairn={...original,tidied:false,size:3};const cp=cairnPos(W,H);g.translate(-cp.sx,-cp.gy);drawCairn(g,W,H);}finally{G.cairn=original;}}
       else if(e.kind==='prop'){const p=PROP_BY_ID[e.key];if(p?.render)p.render(g,0,0,0,.8);}
       else if(e.kind==='comfort')drawAttractor(g,{type:e.dtype,x:0,y:0});
       else {const d=decor.find(d=>d.dkey===e.key);drawDecor(g,{...(d||{}),type:e.dtype,x:0,y:0,dkey:e.key});}
       const count=document.createElement('span');count.className='inventory-quantity';count.textContent='×'+(e.quantity||1);row.prepend(count);
-      preview.style.touchAction='none';preview.onpointerdown=ev=>{if(!stored||e.kind==='cairn')return;ev.preventDefault();const x=ev.clientX,y=ev.clientY;let started=false;
+      preview.style.touchAction='none';preview.onpointerdown=ev=>{if(!stored||e.kind==='cairn'||e.kind==='founder')return;ev.preventDefault();const x=ev.clientX,y=ev.clientY;let started=false;
         const move=p=>{if(p.pointerId!==ev.pointerId)return;if(!started&&Math.hypot(p.clientX-x,p.clientY-y)>8){started=true;row.querySelector('.inventory-place').click();_placeDragOrigin=null;}if(started&&_placing){_placeGhost=_ghostAt(p.clientX,p.clientY);_placing._moved=true;}p.preventDefault();};
         const end=p=>{if(p.pointerId!==ev.pointerId)return;document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',cancel);if(started&&_placing)finishPlacing();};
         const cancel=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',cancel);if(started&&_placing)cancelPlacing();};
         document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',end);document.addEventListener('pointercancel',cancel);
       };
-      const put=row.querySelector(".inventory-store"); if(put) put.onclick=()=>{if(e.kind==='cairn'){G.cairn.tidied=true;G.cairn.size=0;save();rebuildAttractors();}else putAwayItem(e.kind,e.key,e.label);renderShop();};
+      const put=row.querySelector(".inventory-store"); if(put) put.onclick=()=>{if(e.kind==='founder'){G.cosmetics.founderStored=true;save();}else if(e.kind==='cairn'){G.cairn.tidied=true;G.cairn.size=0;save();rebuildAttractors();}else putAwayItem(e.kind,e.key,e.label);renderShop();};
       list.appendChild(row);
     }
   }
@@ -15237,24 +15240,11 @@ function drawCoveSign(g, W, H) {
   _founderPlaque=null;
   // Founding Covekeeper — a small brass plaque on its own post, standing clear
   // to the right of the sign (a ~20px gap so it never crowds the cove name).
-  if (typeof iapOwns === "function" && iapOwns("founding_covekeeper")) {
+  if (typeof iapOwns === "function" && iapOwns("founding_covekeeper") && !G.cosmetics.founderStored) {
     g.save();
     _founderPlaque={x:x+bw/2+46,y:y-13.5};
     g.translate(bw / 2 + 46, 0);
-    g.fillStyle = "rgba(36,31,23,0.10)"; g.beginPath(); g.ellipse(0, 26, 18, 4.5, 0, 0, 7); g.fill();
-    g.fillStyle = "#8a6a4a"; g.fillRect(-2.5, -4, 5, 30);                // post
-    const pw = 50, ph = 25, py = -26;
-    const grad = g.createLinearGradient(0, py, 0, py + ph);
-    grad.addColorStop(0, "#e0c684"); grad.addColorStop(1, "#b6984c");
-    g.fillStyle = grad; roundRect(g, -pw / 2, py, pw, ph, 3); g.fill();
-    g.strokeStyle = "rgba(74,53,36,0.45)"; g.lineWidth = 1.2; roundRect(g, -pw / 2, py, pw, ph, 3); g.stroke();
-    g.fillStyle = "rgba(255,255,255,0.28)"; roundRect(g, -pw / 2, py, pw, 6, 3); g.fill();
-    g.fillStyle = "#5a4527"; g.textAlign = "center"; g.textBaseline = "middle";
-    g.font = "700 6.6px 'Fraunces', Georgia, serif";
-    g.fillText("FOUNDING", 0, py + 7);
-    g.fillText("COVEKEEPER", 0, py + 14);
-    g.font = "700 5px 'Fraunces', Georgia, serif"; g.fillStyle = "#7a5c38";
-    g.fillText("· 2026 ·", 0, py + 20.5);
+    drawFounderPlaque(g);
     g.restore();
   }
   // Welcome Pack — a little trail of amber paw prints pressed into the earth in
@@ -16814,6 +16804,22 @@ function labubuTick() {
    nosing at it, then quietly stacking a little tower of borrowed things over a
    few days. When it's done you're asked to leave it or tidy it away — leaving
    it makes a permanent cairn by the sign. Authored, one-time, per cove. */
+function drawFounderPlaque(g){g.save();
+    g.fillStyle = "rgba(36,31,23,0.10)"; g.beginPath(); g.ellipse(0, 26, 18, 4.5, 0, 0, 7); g.fill();
+    g.fillStyle = "#8a6a4a"; g.fillRect(-2.5, -4, 5, 30);                // post
+    const pw = 50, ph = 25, py = -26;
+    const grad = g.createLinearGradient(0, py, 0, py + ph);
+    grad.addColorStop(0, "#e0c684"); grad.addColorStop(1, "#b6984c");
+    g.fillStyle = grad; roundRect(g, -pw / 2, py, pw, ph, 3); g.fill();
+    g.strokeStyle = "rgba(74,53,36,0.45)"; g.lineWidth = 1.2; roundRect(g, -pw / 2, py, pw, ph, 3); g.stroke();
+    g.fillStyle = "rgba(255,255,255,0.28)"; roundRect(g, -pw / 2, py, pw, 6, 3); g.fill();
+    g.fillStyle = "#5a4527"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.font = "700 6.6px 'Fraunces', Georgia, serif";
+    g.fillText("FOUNDING", 0, py + 7);
+    g.fillText("COVEKEEPER", 0, py + 14);
+    g.font = "700 5px 'Fraunces', Georgia, serif"; g.fillStyle = "#7a5c38";
+    g.fillText("· 2026 ·", 0, py + 20.5);
+g.restore();}
 function cairnJunkCount() {
   return (G.keepsakes || []).filter(k => k && k.from === "labubu").length;
 }
@@ -18046,7 +18052,8 @@ function showPostcard(text, cat, dest, onDone, card) {
   document.getElementById("pc-ok").onclick = () => { closeModal(); if (onDone) setTimeout(onDone, 250); };
 }
 function showFounderDescription(){
-  openModal(`<div class="reveal"><div class="kicker">A LITTLE THANK-YOU · 2026</div><h2>Founding Covekeeper</h2><p>This plaque marks your support for Catmint Cove during its founding days. You helped give this little home a beginning.</p><p>Your keepsakes include the dated plaque and founder accessories: a ribbon, halo, and hero mask. They celebrate your support and give no gameplay advantage.</p><p class="muted">Thank you for helping the Cove grow.</p><button class="btn" id="founder-close">Back to my cove</button></div>`);
+  openModal(`<div class="reveal"><div class="kicker">A LITTLE THANK-YOU · 2026</div><h2>Founding Covekeeper</h2><p>This plaque marks your support for Catmint Cove during its founding days. You helped give this little home a beginning.</p><p>Your keepsakes include the dated plaque and founder accessories: a ribbon, halo, and hero mask. They celebrate your support and give no gameplay advantage.</p><p class="muted">Thank you for helping the Cove grow.</p><button class="btn" id="founder-store">Put away in inventory</button><button class="btn" id="founder-close">Back to my cove</button></div>`);
+  document.getElementById('founder-store').onclick=()=>{G.cosmetics.founderStored=true;save();closeModal();toast('Plaque stored in My inventory.');};
   document.getElementById('founder-close').onclick=closeModal;
 }
 function latestPostcardFor(cat) {
