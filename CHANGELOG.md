@@ -1,3 +1,11 @@
+## Repeatable shoreline decorations — 2026-09-13
+
+- Allow eight bunting, garden lantern, and lantern-string copies at unchanged prices.
+- Preserve original item ids and positions; additional copies have independent placement and storage.
+- Show shop ownership limits and inventory stored/placed totals.
+- Extend placement grid toward the shore; make lantern strings freestanding and soften light halos.
+- Keep placement actions within the phone viewport.
+
 ## Help and guided tour — 2026-09-13
 
 - Replace the expanded help wall with searchable, collapsible topics.

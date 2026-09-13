@@ -46,3 +46,5 @@
 #roster #roster-x:active{background:#e4e7d5}
 #roster h2,#roster>p.muted{padding-right:68px}
 #roster-close{appearance:none;-webkit-appearance:none;background:#f1ecdc;color:#454e3c;-webkit-text-fill-color:#454e3c;border:1px solid #d8d3bf;min-height:44px}
+
+#placeBar{box-sizing:border-box;max-width:calc(100vw - 24px);flex-wrap:wrap}#placeBarTxt{min-width:0;overflow-wrap:anywhere}

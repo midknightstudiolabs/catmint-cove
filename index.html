@@ -1228,7 +1228,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?v=3">
+</style><link rel="stylesheet" href="ui/device-fixes.css?v=4">
 <style id="neo-theme">
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
@@ -2474,9 +2474,10 @@ function rebuildAttractors() {
   { const cp = cairnPos(W, H); if (G.cairn && !G.cairn.tidied && (G.cairn.size | 0) > 0) obstacles.push({ x: cp.sx, y: cp.gy, rx: 16, ry: 9 }); }
   // physical movable props (stepping stones stay walkable; hanging props aren't in the way)
   const PROP_SOLID = { lantern: [8, 11], birdbath: [15, 13], rowboat: [34, 14], windmill: [10, 13] };
-  if (G.cosmetics && G.cosmetics.props) for (const id in PROP_SOLID) {
+  if (G.cosmetics && G.cosmetics.props) for (const id of Object.keys(G.cosmetics.props)) {
+    if(!PROP_SOLID[id.split("#")[0]])continue;
     if (!G.cosmetics.props[id] || propBoxed(id)) continue;
-    const pp = propPos(id), r = PROP_SOLID[id];
+    const pp = propPos(id), r = PROP_SOLID[id.split("#")[0]];
     obstacles.push({ x: pp.x, y: pp.y - r[1] * 0.4, rx: r[0], ry: r[1] });
   }
   // food / toy / bed — placed clear of decor, stations, water and each other
@@ -4708,8 +4709,8 @@ let _arranging = false;
 const PLACE_CELL=40;
 let _placeDragOrigin=null;
 function placeFootprint(spec){
-  const id=spec.key||spec.id;
-  if(id==="rowboat"||id==="bunting")return [3,1];
+  const id=(spec.key||spec.id||" ").split("#")[0];
+  if(id==="rowboat"||id==="bunting"||id==="lanterns")return [3,1];
   if(id==="stones"||id==="birdbath")return [2,1];
   const type=spec.dtype||spec.type;
   if(type==='station'||type==='cottage')return [3,2];
@@ -4717,7 +4718,7 @@ function placeFootprint(spec){
   return [1,1];
 }
 function placeSnap(x,y){
-  const [fw,fh]=placeFootprint(_placing||{}),ox=fw*PLACE_CELL/2,oy=H*.48+fh*PLACE_CELL/2;
+  const [fw,fh]=placeFootprint(_placing||{}),ox=fw*PLACE_CELL/2,oy=H*.42+fh*PLACE_CELL/2;
   return {x:ox+Math.round((x-ox)/PLACE_CELL)*PLACE_CELL,y:oy+Math.round((y-oy)/PLACE_CELL)*PLACE_CELL};
 }
 function _ghostAt(cx,cy){
@@ -4727,7 +4728,7 @@ function _ghostAt(cx,cy){
 }
 function drawPlacementGrid(g){
   if(!_placing&&!_arranging)return;
-  const top=H*.48,bottom=catFloor();g.save();g.strokeStyle='rgba(255,249,218,.25)';g.lineWidth=1;g.beginPath();
+  const top=H*.42,bottom=catFloor();g.save();g.strokeStyle='rgba(255,249,218,.25)';g.lineWidth=1;g.beginPath();
   for(let x=0;x<=W;x+=PLACE_CELL){g.moveTo(x,top);g.lineTo(x,bottom);}
   for(let y=top;y<=bottom;y+=PLACE_CELL){g.moveTo(0,y);g.lineTo(W,y);}g.stroke();
   if(_placing&&_placeGhost){const [fw,fh]=placeFootprint(_placing),p=_placeGhost,ok=_placeOK(p.x,p.y);
@@ -4744,11 +4745,12 @@ const COMFORT_TYPES = new Set(["food", "toy", "bed", "scratch"]);
 function positionPlaceActions(){
   const el=document.getElementById('placeBar');if(el.hidden)return;
   if(!_placing||!_placeGhost){el.style.position='';el.style.left='';el.style.top='';el.style.bottom='';el.style.transform='';return;}
-  const r=canvas.getBoundingClientRect(),w=el.offsetWidth,h=el.offsetHeight;
+  const r=canvas.getBoundingClientRect(),w=el.offsetWidth||Math.min(232,innerWidth-24),h=el.offsetHeight||150;
   const x=r.left+(_ovActive?_camTx+_placeGhost.x*_camScale:(_placeGhost.x+_worldOffX)*displayScale),y=r.top+(_ovActive?_camTy+_placeGhost.y*_camScale:(_placeGhost.y+_worldOffY)*displayScale);
   let left=x+36,top=y-h/2;
   if(left+w>window.innerWidth-12)left=x-w-36;
   if(left<12){left=clamp(x-w/2,12,Math.max(12,window.innerWidth-w-12));top=y-h-24;if(top<60)top=y+32;}
+  left=clamp(left,12,Math.max(12,window.innerWidth-w-12));
   top=clamp(top,12,Math.max(12,window.innerHeight-h-12));
   el.style.position='fixed';el.style.transform='none';el.style.bottom='auto';el.style.left=left+'px';el.style.top=top+'px';
 }
@@ -4794,7 +4796,7 @@ function _placeOK(x,y){
   const legal=_placing.kind==='decor'?validDecorSpot(x,y,_placing.dtype,_placing.key):validPropSpot(x,y);
   if(!legal)return false;
   const [fw,fh]=placeFootprint(_placing);
-  if(x-fw*20<0||x+fw*20>W||y-fh*20<H*.48||y+fh*20>catFloor())return false;
+  if(x-fw*20<0||x+fw*20>W||y-fh*20<H*.42||y+fh*20>catFloor())return false;
   const overlaps=(o,spec)=>{const [ow,oh]=placeFootprint(spec);return Math.abs(x-o.x)<(fw+ow)*20-1&&Math.abs(y-o.y)<(fh+oh)*20-1;};
   for(const d of decor){if(d.dkey===_placing.key)continue;if(DECOR_LABEL[d.type]&&overlaps(d,d))return false;}
   for(const a of attractors){if(a.key===_placing.key||!COMFORT_TYPES.has(a.type))continue;if(overlaps(a,a))return false;}
@@ -6135,7 +6137,8 @@ function renderShopDecor(list) {
     list.appendChild(row);
   }
   list.appendChild(shopHead("Props"));
-  for (const p of DECOR_PROPS) {
+  for (const p of DECOR_PROPS.filter(p=>!p.baseId)) {
+    const copies=propCopies(p.id),count=copies.filter(p=>cm.props[p.id]).length;
     const owned = !!cm.props[p.id];
     const afford = G.shells >= p.price;
     const boxed = owned && propBoxed(p.id);
@@ -6146,7 +6149,8 @@ function renderShopDecor(list) {
     else if (!p.movable) action = `<span class="owned">In the cove</span>`;
     else if (boxed) action = `<button class="btn primary" data-place-prop="${p.id}">Place it</button>`;
     else action = `<button class="btn tiny" data-box-prop="${p.id}" title="Keep in inventory">Put away</button><button class="btn tiny" data-move-prop="${p.id}">Move</button>`;
-    row.innerHTML = `<div class="txt"><div class="name">${p.name}</div><div class="desc">${boxed ? "Packed away — tap Place it to set it down." : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
+    if(p.maxOwned) action=(count<p.maxOwned?`<button class="btn primary" data-buy-prop="${p.id}" ${afford?'':'disabled'}>${count?'Buy another':'Buy'} · ${p.price.toLocaleString()}</button>`:'<span class="owned">Collection complete</span>');
+    row.innerHTML = `<div class="txt"><div class="name">${p.name}${p.maxOwned?' · Owned '+count+'/8':''}</div><div class="desc">${boxed ? "Packed away — tap Place it to set it down." : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
     list.appendChild(row);
   }
   list.querySelectorAll("[data-move-prop],[data-place-prop]").forEach(b => b.onclick = () => startPlacing(b.dataset.moveProp || b.dataset.placeProp));
@@ -6164,9 +6168,11 @@ function renderShopDecor(list) {
     toast(`${th.name} — the whole cove changes with the light now.`, 5);
   });
   list.querySelectorAll("[data-buy-prop]").forEach(b => b.onclick = () => {
-    const id = b.dataset.buyProp, p = DECOR_PROPS.find(x => x.id === id);
-    if (G.shells < p.price) return;
-    G.shells -= p.price; cm.props[id] = true;
+    const p = PROP_BY_ID[b.dataset.buyProp];
+    const slot=propCopies(p.id).find(q=>!cm.props[q.id]);
+    if (!slot || G.shells < p.price) return;
+    const id=slot.id;G.shells -= p.price; cm.props[id] = true;
+    cm.propBoxed ||= {};cm.propBoxed[id]=true;
     sfx("buy"); syncHud(); save();
     if (p.movable) { startPlacing(id); }                 // straight into placement mode
     else { spawnParticles(W / 2, H * 0.5, "spark", 10); renderShop(); toast(`A ${p.name.toLowerCase()} for the cove.`, 4); }
@@ -6322,7 +6328,7 @@ function renderInventory(list) {
     if (!group.length) { const note=document.createElement("p"); note.className="muted"; note.textContent=stored?"Nothing stored yet. Choose Put away while moving an item.":"Your placed items will appear here."; list.appendChild(note); }
     for (const e of group) {
       const row=document.createElement("div"); row.className="shop-item";
-      row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}${e.quantity>1?" ×"+e.quantity:""}</div><div class="desc">${stored?"Ready to place":"Placed"}</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Put away</button>'}</div>`;
+      row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}${e.quantity>1?" ×"+e.quantity:""}</div><div class="desc">${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&o.stored).length} stored · ${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&!o.stored).length} placed</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Put away</button>'}</div>`;
       if(e.kind==='cairn') row.querySelector('.inventory-place').textContent=stored?'Return by the sign · free':'View by the sign';
       row.querySelector(".inventory-place").onclick=()=>{
         if(e.kind==='cairn'){G.cairn.tidied=false;G.cairn.size=3;save();rebuildAttractors();closeAllPanels();toast("Midknight's cairn is standing by the sign.",4);return;}
@@ -13813,13 +13819,19 @@ const DECOR_PROPS = [
     movable:true, place:{ x:W*0.76, y:H*0.90, s:1.25 }, render(g,t,x,y,s){ propLantern(g, x, y, s, t); } },
   { id:"birdbath", name:"Birdbath",        price: 2400, blurb:"A shallow basin on a pedestal. The water catches the light.",
     movable:true, place:{ x:W*0.63, y:H*0.85, s:1.15 }, render(g,t,x,y,s){ propBirdbath(g, x, y, s, t); } },
-  { id:"lanterns", name:"Lantern string",  price: 3000, blurb:"Warm bulbs slung from the sign to a pole. Flicker faintly at dusk.",
-    draw(g,t){ propLanterns(g, t); } },
+  { id:"lanterns", name:"Lantern string",  price: 3000, blurb:"Warm bulbs between two freestanding poles. Move them along the shore.",
+    movable:true, place:{x:W*.4,y:H*.48,s:1}, render(g,t,x,y){ propLanterns(g,t,x,y); } },
   { id:"rowboat",  name:"Rowboat",         price: 5500, blurb:"Beached by the shore. Someone's asleep in it more often than not.",
     movable:true, place:{ x:W*0.075, y:H*0.90, s:1.1 }, render(g,t,x,y,s){ propRowboat(g, x, y, s); } },
   { id:"windmill", name:"Pole windmill",   price: 8000, blurb:"A little pole windmill. The sails turn on their own.",
     movable:true, place:{ x:W*0.91, y:H*0.60, s:1.25 }, render(g,t,x,y,s){ propWindmill(g, x, y, s, t); } },
 ];
+// Stable slots keep the original id and saved position for the first copy.
+for(const base of DECOR_PROPS.slice()) if(['bunting','lantern','lanterns'].includes(base.id)){
+ base.maxOwned=8;
+ for(let i=2;i<=8;i++) DECOR_PROPS.push({...base,id:base.id+'#'+i,baseId:base.id});
+}
+function propCopies(id){return DECOR_PROPS.filter(p=>(p.baseId||p.id)===id);}
 const PROP_BY_ID = Object.fromEntries(DECOR_PROPS.map(p => [p.id, p]));
 function propPos(id) {
   const p = PROP_BY_ID[id]; if (!p) return { x: 0, y: 0, s: 1 };
@@ -13846,7 +13858,7 @@ function offBigStructure(x, y, pad, exceptKey) {
 }
 function validPropSpot(x, y) {
   if (x < 44 || x > W - 44) return false;
-  if (y < H * 0.62 + 6 || y > catFloor() - 6) return false;
+  if (y < H * 0.42 + 20 || y > catFloor() - 6) return false;
   for (const o of obstacles) if (o.water && Math.hypot((x - o.x) / (o.rx + 20), (y - o.y) / (o.ry + 14)) < 1) return false;
   if (x < W * 0.30 && y < H * 0.56) return false;                       // the cove sign corner
   if (!offBigStructure(x, y, (_placing && _placing.r || 24) * 0.5)) return false;
@@ -14624,7 +14636,7 @@ function propLantern(g, x, y, s, t) {
   g.fillStyle = "#6b5636"; g.fillRect(-2, -34, 4, 38);
   g.fillStyle = "#7d6544"; g.beginPath(); g.moveTo(-7, -34); g.lineTo(7, -34); g.lineTo(4, -46); g.lineTo(-4, -46); g.closePath(); g.fill();
   if (lit) { const fl = 0.6 + Math.sin(t * 5) * 0.2;
-    const gl = g.createRadialGradient(0, -40, 1, 0, -40, 26); gl.addColorStop(0, `rgba(255,210,130,${0.5 * fl})`); gl.addColorStop(1, "rgba(255,210,130,0)");
+    const gl = g.createRadialGradient(0, -40, 1, 0, -40, 26); gl.addColorStop(0, `rgba(255,210,130,${0.22 * fl})`); gl.addColorStop(1, "rgba(255,210,130,0)");
     g.fillStyle = gl; g.beginPath(); g.arc(0, -40, 26, 0, 7); g.fill(); }
   g.fillStyle = lit ? "#ffe6a8" : "#cbb98c"; g.fillRect(-4.5, -44, 9, 10);
   g.strokeStyle = "#5b4634"; g.lineWidth = 1; g.strokeRect(-4.5, -44, 9, 10);
@@ -14643,12 +14655,13 @@ function propBirdbath(g, x, y, s, t) {
     g.beginPath(); g.moveTo(-8, ry); g.quadraticCurveTo(0, ry + 1, 8, ry); g.stroke(); }
   g.restore();
 }
-function propLanterns(g, t) {
+function propLanterns(g, t, x, y) {
   const lit = (g._nightGlow || 0) > 0.3;
-  const s = coveSignFestoon(g);
-  const sx = s.tx, sy = s.ty, ex = s.tx + 150, ey = s.ty - 2, sag = 30, n = 7;
+  const s = {tx:x-55,ty:y-60,footY:y};
+  const sx = s.tx, sy = s.ty, ex = x+55, ey = s.ty - 2, sag = 24, n = 7;
   const cy = Math.max(sy, ey) + sag;
   g.save();
+  drawFestoonPole(g, sx, sy, s.footY);
   drawFestoonPole(g, ex, ey, s.footY);
   g.strokeStyle = "rgba(50,38,26,0.6)"; g.lineWidth = 1.3;
   g.beginPath(); g.moveTo(sx, sy); g.quadraticCurveTo((sx + ex) / 2, cy, ex, ey); g.stroke();
@@ -14658,7 +14671,7 @@ function propLanterns(g, t) {
     const px = sx + (ex - sx) * u;
     const py = (1 - u) * (1 - u) * sy + 2 * (1 - u) * u * cy + u * u * ey;
     if (lit) { const fl = 0.6 + Math.sin(t * 4 + i) * 0.25;
-      const gl = g.createRadialGradient(px, py, 1, px, py, 14); gl.addColorStop(0, `rgba(255,214,140,${0.6 * fl})`); gl.addColorStop(1, "rgba(255,214,140,0)");
+      const gl = g.createRadialGradient(px, py, 1, px, py, 14); gl.addColorStop(0, `rgba(255,214,140,${0.24 * fl})`); gl.addColorStop(1, "rgba(255,214,140,0)");
       g.fillStyle = gl; g.beginPath(); g.arc(px, py, 14, 0, 7); g.fill(); }
     g.fillStyle = lit ? "#ffdf9e" : bulbCols[i % bulbCols.length];
     g.beginPath(); g.arc(px, py + 3, 3.2, 0, 7); g.fill();
