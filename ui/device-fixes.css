@@ -40,3 +40,9 @@
 }
 
 .guide-row summary{cursor:pointer;font-weight:600;padding:10px 0}.guide-row[hidden]{display:none}#neo-tour{position:fixed;z-index:150;bottom:calc(86px + env(safe-area-inset-bottom));left:12px;width:min(350px,calc(100vw - 24px));max-height:42dvh;overflow:auto;background:#fff8e7;color:#344331;border:1px solid #b8c5a5;border-radius:18px;padding:14px;box-sizing:border-box;box-shadow:0 4px 18px #0002}#neo-tour b{display:block}#neo-tour p{font-size:13px;margin:6px 0 10px}#neo-tour>div{display:flex;gap:5px;flex-wrap:wrap}#neo-tour .btn{font-size:12px;min-height:44px;padding:6px 10px}
+
+/* Consistent cozy roster dismissal, including iOS native button reset. */
+#roster #roster-x{appearance:none;-webkit-appearance:none;display:grid;place-items:center;box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:1px solid #d8d3bf;border-radius:50%;background:#f1ecdc;color:#61735c;-webkit-text-fill-color:#61735c;box-shadow:none;touch-action:manipulation}
+#roster #roster-x:active{background:#e4e7d5}
+#roster h2,#roster>p.muted{padding-right:68px}
+#roster-close{appearance:none;-webkit-appearance:none;background:#f1ecdc;color:#454e3c;-webkit-text-fill-color:#454e3c;border:1px solid #d8d3bf;min-height:44px}
