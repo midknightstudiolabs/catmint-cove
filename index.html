@@ -1228,7 +1228,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?v=6">
+</style><link rel="stylesheet" href="ui/device-fixes.css?v=7">
 <style id="neo-theme">
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
@@ -7255,7 +7255,7 @@ function endColdOpen(skipped) {
   visitorTimer = rand(45, 90);   // a third cat wanders in soon after the intro — "oh, they just turn up"
   save();
   // an honest reason to come back — the things that really change overnight
-  setTimeout(() => toast("You’re home. Tap ? → Show me around for a hands-on tour of inventory, activities and memories.", 6), 500);
+  setTimeout(() => toast("You’re home. Tap ? → Take a guided tour for a hands-on tour of inventory, activities and memories.", 6), 500);
   setTimeout(() => { try { checkOffline(afterReturn); } catch (e) {} }, 700);
   setTimeout(() => { try { maybePanHint(); } catch (e) {} }, 3200);
   syncHud();
@@ -7279,38 +7279,35 @@ const GUIDE = [
   ["Rest without worry", "Rainy retreat has rain, an optional fireplace and a sleep timer. Back to the cove returns you home. Your cats are looked after while you are away."],
 
 ];
-function openGuide() {
-  ensureAudio();
-  const card = tutEl.querySelector(".card");
-  const rows = GUIDE.filter(([h]) => h !== "The Cove Festival" || festUnlocked());   // not a spoiler before it exists
-  card.innerHTML = `<h2 style="margin:.1rem 0 .2rem">Make yourself at home</h2>
-    <p>There’s no rush. Say hello, make a cozy corner, and discover a little at a time.</p><div class="row guide-links"><button class="btn" data-guide="dex">Catdex</button><button class="btn" data-guide="explore">Activities</button><button class="btn" data-guide="shop">Shop</button><button class="btn" data-guide="today">Journal</button></div><button class="btn primary" id="guideTour">Show me around · 6 short steps</button><label for="guideSearch" style="display:block;margin-top:12px">What do you need help with?</label><input id="guideSearch" type="search" placeholder="Try inventory, health, sound…" style="width:100%;padding:10px;font:inherit"><div class="guide-list">${rows.map(([h, b]) => `<details class="guide-row"><summary>${esc(h)}</summary><p>${esc(b)}</p></details>`).join("")}</div><p id="guideEmpty" hidden>No matching topics. Try a shorter word.</p>
-    <div class="row guide-foot">
-      <button class="btn primary" id="guideOk">Got it</button>
-      <button class="btn" id="guideCares">❤️ Cove Cares</button>
-      <button class="btn" id="guideCredits">🐾 Credits</button>
-    </div>`;
-  tutEl.classList.add("on");
-  card.querySelector('#guideTour').onclick=()=>{tutEl.classList.remove('on');neoStartTour();};
-  card.querySelector('#guideSearch').oninput=e=>{const q=e.target.value.trim().toLowerCase();let matches=0;card.querySelectorAll('.guide-row').forEach(row=>{row.hidden=!row.textContent.toLowerCase().includes(q);if(!row.hidden)matches++;});card.querySelector('#guideEmpty').hidden=matches>0;};
-  card.querySelectorAll("[data-guide]").forEach(b=>b.onclick=()=>{tutEl.classList.remove("on");if(b.dataset.guide==="explore")neoOpenExplore();else togglePanel(b.dataset.guide);});
-  document.getElementById("guideOk").onclick = () => tutEl.classList.remove("on");
-  document.getElementById("guideCares").onclick = () => { tutEl.classList.remove("on"); openCares(); };
-  document.getElementById("guideCredits").onclick = () => { tutEl.classList.remove("on"); openCredits(); };
+const HELP_TOPICS=[
+ ['Meet your cats','catdex',['Tap a portrait in Catdex to meet your cat and see care options.','The cat counter shows mood and wellbeing.','For Little Hello, close menus and tap empty foreground ground 3–5 times.'],'dex'],
+ ['Decorate your Cove','shop',['Shop pictures show what you are buying.','My inventory separates Stored items from In the Cove.','Hold a decoration to drag it. Put away stores it; Place brings it back for free.'],'shop'],
+ ['Explore & play','activities',['Choose an adventure destination, cats, and trip length.','Visit the garden or play a festival game in Activities.','Rainy Retreat is a quiet place to rest together.'],'explore'],
+ ['Settings & saves','sound',['Use Sound for the master switch and individual volumes.','Use the view controls or pinch to adjust the Cove view.','Journal has Back up / restore. Purchased support packs can be restored through the purchase controls.'],'today']
+];
+function openGuide(){
+ ensureAudio();document.getElementById('neo-tour')?.remove();
+ const card=tutEl.querySelector('.card');card.classList.add('help-home');tutEl.classList.add('on');
+ const close=()=>{tutEl.classList.remove('on');card.classList.remove('help-home');};
+ const home=()=>{
+ card.innerHTML='<div class="help-head"><h2>How can we help?</h2><button class="btn" id="helpClose" aria-label="Close help">×</button></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="linkbtn" id="guideTour">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideCredits">Credits</button><button class="linkbtn" id="guideCares">Cove Cares</button></footer>';
+ card.querySelector('#helpClose').onclick=close;
+ card.querySelectorAll('[data-topic]').forEach(el=>el.onclick=()=>topic(+el.dataset.topic));
+ card.querySelector('#guideTour').onclick=()=>{close();neoStartTour();};
+ card.querySelector('#guideCredits').onclick=()=>{close();openCredits();};card.querySelector('#guideCares').onclick=()=>{close();openCares();};
+ };
+ const topic=i=>{const t=HELP_TOPICS[i];card.innerHTML='<div class="help-head"><button class="linkbtn" id="helpBack">‹ All topics</button><button class="btn" id="helpClose" aria-label="Close help">×</button></div><div class="help-visual">'+neoUIIcon(t[1])+'</div><h2>'+t[0]+'</h2><ol class="help-steps">'+t[2].map(x=>'<li>'+x+'</li>').join('')+'</ol><button class="btn primary" id="helpShow">Show me</button>';card.querySelector('#helpBack').onclick=home;card.querySelector('#helpClose').onclick=close;card.querySelector('#helpShow').onclick=()=>{close();closeAllPanels();if(t[3]==='explore')neoOpenExplore();else togglePanel(t[3]);};};home();
 }
-
 function neoStartTour(){
- document.getElementById('neo-tour')?.remove();
- const steps=[
- ['Meet your cats','Open Catdex and tap a portrait. You can see wellbeing, add a personal note, and pin a favorite.','dex'],
- ['See before you buy','Shop previews show the actual items. Browse freely; this tour never buys anything.','shop'],
- ['Your inventory','Stored items show pictures and counts. Drag one into the Cove or tap Place. Placed items are listed separately.','inventory'],
- ['Make a cozy corner','Press and hold an object. Use the grid, then Set here. Put away returns it to inventory; Cancel keeps its old spot. Cats do not block selection.','place'],
- ['A little adventure','Activities has destinations with distinct icons, trip lengths, and cat selection. Returned cats bring results and postcards. Garden and rainy retreat are here too.','explore'],
- ['Keep the little things','Journal holds memories and postcards. Back in the Cove, tap empty foreground ground 3–5 times for A Little Hello. Zoom with the view controls; adjust audio from Sound.','today']
- ];
+ document.getElementById('neo-tour')?.remove();closeAllPanels();
+ const steps=[['Meet your cats','Tap Catdex to open your cats.','#dexBtn'],['Browse the shop','Tap Shop to see what you can add.','#shopBtn'],['Find your belongings','Tap My inventory in the Shop.','#shopTabs [data-tab="inventory"]'],['Your placed items','Tap In the Cove to see what you can put away.','#shop .shop-actions button[aria-pressed]']];
  let i=0;const box=document.createElement('aside');box.id='neo-tour';box.setAttribute('aria-label','Guided tour');document.body.append(box);
- const show=()=>{const [title,body,target]=steps[i];box.innerHTML='<small>Make yourself at home · '+(i+1)+' / '+steps.length+'</small><b>'+title+'</b><button class="btn" id="tourFold" aria-expanded="true">Minimize</button><section><p>'+body+'</p><div><button class="btn" id="tourShow">Show me</button><button class="btn primary" id="tourNext">'+(i===steps.length-1?'Finish':'Next')+'</button><button class="btn" id="tourExit">Exit tour</button></div></section>';box.querySelector('#tourFold').onclick=e=>{const content=box.querySelector('section');content.hidden=!content.hidden;e.target.textContent=content.hidden?'Continue tour':'Minimize';e.target.setAttribute('aria-expanded',String(!content.hidden));};box.querySelector('#tourShow').onclick=()=>{closeAllPanels();if(target==='explore')neoOpenExplore();else if(target==='inventory'){shopTab='inventory';togglePanel('shop');}else if(target!=='place')togglePanel(target);else toast('Press and hold a decoration to try moving it. Cancel is always available.',4);};box.querySelector('#tourNext').onclick=()=>{if(++i===steps.length){box.remove();return;}show();};box.querySelector('#tourExit').onclick=()=>box.remove();};show();
+ const finish=()=>{document.removeEventListener('click',clicked,true);window.removeEventListener('resize',position);box.remove();};
+ const position=()=>{const target=document.querySelector(steps[i]?.[2]);if(!target)return;const r=target.getBoundingClientRect();box.style.left=Math.max(12,Math.min(innerWidth-box.offsetWidth-12,r.left))+'px';box.style.top=Math.max(12,Math.min(innerHeight-box.offsetHeight-12,r.top-box.offsetHeight-12))+'px';box.style.bottom='auto';};
+ const show=()=>{box.innerHTML='<small>Getting comfortable · '+(i+1)+' / '+steps.length+'</small><b>'+steps[i][0]+'</b><p>'+steps[i][1]+'</p><div><button class="btn" id="tourSkip">Skip</button><button class="btn" id="tourExit">Exit tour</button></div>';box.querySelector('#tourSkip').onclick=next;box.querySelector('#tourExit').onclick=finish;requestAnimationFrame(position);};
+ const next=()=>{if(++i>=steps.length){finish();toast('You know your way around. Make yourself at home.',3);return;}if(i===2 && panels.shop.hidden)togglePanel('shop');if(i===3){shopTab='inventory';renderShop();}show();};
+ const clicked=e=>{if(!box.isConnected){finish();return;}if(e.target.closest('#neo-tour'))return;const el=e.target.closest(steps[i][2]);if(!el)return;if(i===3&&!el.textContent.includes('In the Cove'))return;setTimeout(next,0);};
+ document.addEventListener('click',clicked,true);window.addEventListener('resize',position);show();
 }
 
 // open a URL in the OS browser, never inside the game's WebView. Capacitor
