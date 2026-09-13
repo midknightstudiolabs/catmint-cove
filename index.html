@@ -1228,7 +1228,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?v=10">
+</style><link rel="stylesheet" href="ui/device-fixes.css?v=11">
 <style id="neo-theme">
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
@@ -1489,6 +1489,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <label><input type="checkbox" id="restRain" checked> Rain sound</label>
       <label><input type="checkbox" id="restFire" checked> Fireplace</label>
       <label><input type="checkbox" id="restThunder"> Distant thunder</label>
+      <label><input type="checkbox" id="restDark"> Dim room</label>
       <div class="rest-timer" id="restTimer">
         <button data-h="1">1 hour</button>
         <button data-h="3">3 hours</button>
@@ -1503,6 +1504,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <div class="rest-bar" id="restBar" hidden>
       <button class="rb-back" id="restWake"><span>‹</span> Back to the cove</button>
       <span class="rb-time" id="restTime">resting</span>
+      <button class="rb-back" id="restDimToggle" aria-pressed="false">Dim room</button>
       <button class="rb-back" id="restRetryRain" hidden>Retry rain</button>
       <button class="rb-fs" id="restFs" title="Fullscreen">⤢</button>
     </div>
@@ -7428,6 +7430,13 @@ document.getElementById("restRain").addEventListener("change", e => {
   restOpts.rain = e.target.checked;
   if (restBus && actx) restBus.gain.linearRampToValueAtTime(muted || !restOpts.rain ? 0.0001 : 0.9, actx.currentTime + 0.6);
 });
+function syncRestDark(){
+ document.getElementById('restDark').checked=!!restOpts.dark;
+ const b=document.getElementById('restDimToggle');b.textContent=restOpts.dark?'Brighten room':'Dim room';b.setAttribute('aria-pressed',String(!!restOpts.dark));
+}
+function setRestDark(value){restOpts.dark=value;restIdleT=0;_restBarState=null;syncRestDark();if(G.rest?.on){G.rest.opts={...restOpts};save();}}
+document.getElementById('restDark').addEventListener('change',e=>setRestDark(e.target.checked));
+document.getElementById('restDimToggle').addEventListener('click',()=>setRestDark(!restOpts.dark));
 document.getElementById("restFire").addEventListener("change", e => { restOpts.fire = e.target.checked; });
 document.getElementById("restThunder").addEventListener("change", e => { restOpts.thunder = e.target.checked; });
 document.querySelectorAll("#restTimer button").forEach(b => b.addEventListener("click", () => {
@@ -7451,7 +7460,7 @@ document.getElementById("restFs").addEventListener("click", () => {
 // snaps the dim off at once and restores the bar this frame.
 document.getElementById("rest").addEventListener("pointerdown", () => {
   restIdleT = 0;
-  if (restDim > 0.01) {
+  if (restDim > 0.01 && !restOpts.dark) {
     restDim = 0; _restBarState = null;
     try { document.getElementById("restBar").classList.remove("dim", "ambient"); } catch (e) {}
   }
@@ -8702,7 +8711,7 @@ function scheduleChime() {
 
 /* ---------- rest / rainy-day mode — the "second monitor" companion ---------- */
 let restMode = false;
-let restOpts = { rain: true, fire: true, thunder: false, hours: 0 };
+let restOpts = { rain: true, fire: true, thunder: false, dark: false, hours: 0 };
 let restStartedAt = 0, restEndsAt = 0;
 let restIdleT = 0, restDim = 0, restDrift = 0, _restFlash = 0, _restRainScroll = 0, _restTimerIv = 0, _restAcc = 0, _restG = null;
 let _restVWW = W;   // world width the rest cabin sizes itself to (portrait phones show much less than W)
@@ -8994,6 +9003,7 @@ function restClearUI() {
   try { closeModal(); } catch (e) {}
 }
 function openRestPanel() {
+  syncRestDark();
   ensureAudio(); loadRainLoop(); initGlassDrops();
   if (_placing || _arranging) exitPlacement();
   exitFocus(); _focusT = 0; _wasFocusing = false;
@@ -9017,6 +9027,7 @@ function closeRestPanel() {
   for (const c of cats) { c.stateDur = 0; decide(c); }
 }
 function beginRest(resumed) {
+  syncRestDark();
   ensureAudio(); // unlock/resume synchronously in the Begin tap, before loading awaits
   document.getElementById("restPanel").hidden = true;
   document.getElementById("restBar").hidden = false;
@@ -9096,14 +9107,14 @@ function renderRest(dt) {
   _restRainScroll += dt;
   if (_restFlash > 0) _restFlash = Math.max(0, _restFlash - dt * 2.2);
   updateGlassDrops(dt);
-  const targetDim = restIdleT > 34 ? 0.6 : 0;
+  const targetDim = restOpts.dark ? 0.78 : restIdleT > 34 ? 0.6 : 0;
   restDim += (targetDim - restDim) * Math.min(1, dt * 0.9);
   // a big cove's nap pile is a background mass of curled sleepers — draw them
   // without the fine markings so a full house stays smooth on weak hardware
   _restLiteCats = cats.length > 10;
   // the way-out bar: full for the first ~4s (or after any touch), then it recedes,
   // then it's gone with the screensaver dim — only touch the DOM when it changes
-  const _rbState = restDim > 0.35 ? "dim" : (restIdleT > 4 ? "ambient" : "");
+  const _rbState = restIdleT > 34 && restDim > 0.35 ? "dim" : (restIdleT > 4 ? "ambient" : "");
   if (_rbState !== _restBarState) {
     _restBarState = _rbState;
     const _rb = document.getElementById("restBar");

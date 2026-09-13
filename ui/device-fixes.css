@@ -78,3 +78,5 @@
 #hud #titlePill{appearance:none;-webkit-appearance:none;color:var(--ink,#343d31);-webkit-text-fill-color:var(--ink,#343d31);text-decoration:none}
 #hud #titlePill .cove-title-text{color:var(--ink,#343d31);-webkit-text-fill-color:var(--ink,#343d31)}
 #hud #titlePill b{color:var(--accent-bright,#508363);-webkit-text-fill-color:var(--accent-bright,#508363)}
+
+#rest .rest-bar{flex-wrap:wrap;justify-content:center}#restDimToggle{min-height:40px;padding:6px 10px;border:1px solid #ffffff30;border-radius:999px;white-space:nowrap}#restDimToggle[aria-pressed="true"]{background:#e6dfc6;color:#344331}#rest .rest-bar .rb-time{min-width:50px}
