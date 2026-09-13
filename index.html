@@ -8902,28 +8902,20 @@ function restLayout(vw) {
     // the fireplace + rug clear the bottom edge / the rest bar.
     hbase = H * 0.85;
     hx = cx - vw * 0.27;
-    rugRx = W * 0.24; rugRy = H * 0.08;
-    rugX = cx + vw * 0.22; rugY = H * 0.72;
-    napX = cx + vw * 0.22; napY = H * 0.655; napSpread = W * 0.075; napRowH = H * 0.05;
+    rugRx = W * 0.27; rugRy = H * 0.115;
+    rugX = cx + vw * 0.17; rugY = H * 0.75;
+    napX = cx + vw * 0.17; napY = H * 0.70; napSpread = W * 0.075; napRowH = H * 0.05;
     napHalfW = rugRx * 0.82;
   } else {
     // phone — the room is cropped to a ~360-wide centre strip. Nudge the
     // fireplace off the left edge, then fit the rug + nap pile into whatever
     // strip is left of it, centred, so nothing is clipped by the screen edge.
-    hbase = H * 0.88;
-    const visL = cx - vis / 2, visR = cx + vis / 2;
-    hx = Math.max(cx - vw * 0.27, visL + hw / 2 + 6);
-    const fireR = hx + hw / 2;                                  // right edge of the fireplace surround
-    napSpread = clamp(vis * 0.11, 30, 44);
-    napRowH = H * 0.036;
-    const halfPile = napSpread + 46;                            // pile half-width incl. a wide sleeping cat
-    napX = clamp((fireR + 14 + visR) / 2, fireR + 14 + halfPile, visR - halfPile);
-    napY = H * 0.70;
-    rugX = napX;
-    rugY = H * 0.77;
-    rugRx = Math.max(60, Math.min(vis * 0.30, napX - fireR - 6, visR - napX + 18));
-    rugRy = H * 0.072;
-    napHalfW = Math.min(rugRx * 0.9, visR - napX - 34, napX - fireR - 10);   // pile stays on screen + off the fire
+    hbase=H*.68;
+    const visL=cx-vis/2,visR=cx+vis/2;
+    hx=visL+hw/2+12;
+    napX=cx;napY=H*.75;napSpread=clamp(vis*.16,32,52);napRowH=H*.04;
+    rugX=cx;rugY=H*.82;rugRx=vis*.44;rugRy=H*.11;
+    napHalfW=Math.max(32,rugRx-36);
   }
   const htop = hbase - hh2;
 
@@ -9270,11 +9262,13 @@ function renderRest(dt) {
     g.restore();
   }
 
+  // Local firelight warms the resting area while the window remains cool.
+  if(!dim){const glow=g.createRadialGradient(L.hx,L.hbase-30,10,L.hx,L.hbase-30,L.hw*2.1);glow.addColorStop(0,'rgba(237,169,83,.16)');glow.addColorStop(1,'rgba(237,169,83,0)');g.fillStyle=glow;g.fillRect(L.hx-L.hw*2.1,L.hbase-L.hw*2.1,L.hw*4.2,L.hw*4.2);}
   // --- a rug, and a low table with a steaming mug (the table is off-strip on a phone)
   g.fillStyle = "rgba(113,115,90,0.7)"; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx, L.rugRy, 0, 0, 7); g.fill();
   g.strokeStyle = "rgba(81,101,82,0.65)"; g.lineWidth = 2; g.beginPath(); g.ellipse(L.rugX, L.rugY, L.rugRx * 0.84, L.rugRy * 0.82, 0, 0, 7); g.stroke();
-  if (!L.cramped) {
-  const tbx = W * 0.9, tby = H * 0.66;
+  {
+  const tbx = L.cramped ? L.napX+L.rugRx*.57 : W*.9, tby = L.cramped ? H*.68 : H*.66;
   g.fillStyle = "#6b4f3a"; roundRect(g, tbx - 20, tby, 40, 7, 2); g.fill();
   g.fillStyle = "#5a3f2e"; g.fillRect(tbx - 16, tby + 7, 4, 15); g.fillRect(tbx + 12, tby + 7, 4, 15);
   g.fillStyle = "#e2dac9"; roundRect(g, tbx - 6, tby - 9, 13, 10, 2); g.fill();
@@ -9286,11 +9280,23 @@ function renderRest(dt) {
   }
   }
 
+  // Soft cushions and a folded woven blanket frame the shared nap pile.
+  for(const [u,v,col] of [[-.58,.15,'#b18a68'],[.58,.28,'#8a9775']]){
+    g.fillStyle=col;g.beginPath();g.ellipse(L.rugX+L.rugRx*u,L.rugY+L.rugRy*v,L.rugRx*.20,L.rugRy*.24,0,0,Math.PI*2);g.fill();
+    g.strokeStyle='rgba(236,219,183,.28)';g.lineWidth=1.2;g.stroke();
+  }
+  g.save();g.translate(L.rugX+L.rugRx*.5,L.rugY+L.rugRy*.58);g.rotate(-.08);
+  g.fillStyle='#a67960';roundRect(g,-30,-8,60,18,5);g.fill();g.strokeStyle='#d0b694';g.lineWidth=2;
+  for(let i=-22;i<26;i+=10){g.beginPath();g.moveTo(i,-6);g.lineTo(i,8);g.stroke();}g.restore();
   // --- the cats, back-to-front (windowsill / fireside / nap pile)
   _restOrder.length = 0;
   for (const c of cats) _restOrder.push(c);
   _restOrder.sort((a, b) => a.y - b.y);
-  for (const c of _restOrder) drawCat(g, c, false);
+  for (const c of _restOrder) {
+    g.save();
+    if(c.state==='sleeping'&&!_reduceMotion){const breath=1+Math.sin(pn/1500+c.x*.03)*.012;g.translate(c.x,c.y);g.scale(1,breath);g.translate(-c.x,-c.y);}
+    drawCat(g,c,false);g.restore();
+  }
   if (particles.length) drawFX(g);
 
   // --- vignette + idle dim (cached vignette)
@@ -15983,7 +15989,7 @@ function drawCat(g, c, isPhoto) {
              + wriggle * 0.05                                                             // catmint: a happy wriggle
              + (c._tugLean || 0);                                                         // Tug of Paws: brace-and-heave on the rope
   const walkLift = wk * (3.5 + CHARM * 1.5) + (scratching ? 5 : 0);   // scratch: up onto the hind feet
-  const earFlop = wk * CHARM * Math.sin(gp * 2 + 0.6) * 0.11;
+  const earFlop = wk * CHARM * Math.sin(gp * 2 + 0.6) * 0.11 + (restMode && c.state==='sleeping' && !_reduceMotion ? Math.pow(Math.max(0,Math.sin(performance.now()/3700+c.x)),24)*.07 : 0);
 
   // whisker/eye blink bookkeeping
   const blinking = c.blink < 0.12;
