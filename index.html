@@ -4707,6 +4707,7 @@ let _placing = null;
 let _placeGhost = null;     // { x, y } world pos the ghost follows
 let _arranging = false;
 const PLACE_CELL=40;
+function placementTop(){return H*.42-2*PLACE_CELL;}
 let _placeDragOrigin=null;
 function placeFootprint(spec){
   const id=(spec.key||spec.id||" ").split("#")[0];
@@ -4718,7 +4719,7 @@ function placeFootprint(spec){
   return [1,1];
 }
 function placeSnap(x,y){
-  const [fw,fh]=placeFootprint(_placing||{}),ox=fw*PLACE_CELL/2,oy=H*.42+fh*PLACE_CELL/2;
+  const [fw,fh]=placeFootprint(_placing||{}),ox=fw*PLACE_CELL/2,oy=placementTop()+fh*PLACE_CELL/2;
   return {x:ox+Math.round((x-ox)/PLACE_CELL)*PLACE_CELL,y:oy+Math.round((y-oy)/PLACE_CELL)*PLACE_CELL};
 }
 function _ghostAt(cx,cy){
@@ -4728,7 +4729,7 @@ function _ghostAt(cx,cy){
 }
 function drawPlacementGrid(g){
   if(!_placing&&!_arranging)return;
-  const top=H*.42,bottom=catFloor();g.save();g.strokeStyle='rgba(255,249,218,.25)';g.lineWidth=1;g.beginPath();
+  const top=placementTop(),bottom=catFloor();g.save();g.strokeStyle='rgba(255,249,218,.25)';g.lineWidth=1;g.beginPath();
   for(let x=0;x<=W;x+=PLACE_CELL){g.moveTo(x,top);g.lineTo(x,bottom);}
   for(let y=top;y<=bottom;y+=PLACE_CELL){g.moveTo(0,y);g.lineTo(W,y);}g.stroke();
   if(_placing&&_placeGhost){const [fw,fh]=placeFootprint(_placing),p=_placeGhost,ok=_placeOK(p.x,p.y);
@@ -4796,7 +4797,7 @@ function _placeOK(x,y){
   const legal=_placing.kind==='decor'?validDecorSpot(x,y,_placing.dtype,_placing.key):validPropSpot(x,y);
   if(!legal)return false;
   const [fw,fh]=placeFootprint(_placing);
-  if(x-fw*20<0||x+fw*20>W||y-fh*20<H*.42||y+fh*20>catFloor())return false;
+  if(x-fw*20<0||x+fw*20>W||y-fh*20<placementTop()||y+fh*20>catFloor())return false;
   const overlaps=(o,spec)=>{const [ow,oh]=placeFootprint(spec);return Math.abs(x-o.x)<(fw+ow)*20-1&&Math.abs(y-o.y)<(fh+oh)*20-1;};
   for(const d of decor){if(d.dkey===_placing.key)continue;if(DECOR_LABEL[d.type]&&overlaps(d,d))return false;}
   for(const a of attractors){if(a.key===_placing.key||!COMFORT_TYPES.has(a.type))continue;if(overlaps(a,a))return false;}
@@ -13858,7 +13859,7 @@ function offBigStructure(x, y, pad, exceptKey) {
 }
 function validPropSpot(x, y) {
   if (x < 44 || x > W - 44) return false;
-  if (y < H * 0.42 + 20 || y > catFloor() - 6) return false;
+  if (y < placementTop() + PLACE_CELL/2 || y > catFloor() - 6) return false;
   for (const o of obstacles) if (o.water && Math.hypot((x - o.x) / (o.rx + 20), (y - o.y) / (o.ry + 14)) < 1) return false;
   if (x < W * 0.30 && y < H * 0.56) return false;                       // the cove sign corner
   if (!offBigStructure(x, y, (_placing && _placing.r || 24) * 0.5)) return false;
@@ -13870,7 +13871,7 @@ function validPropSpot(x, y) {
 function validDecorSpot(x, y, dtype, exceptKey) {
   const clr = DECOR_CLEAR[dtype] || 30;
   if (x < 40 + clr * 0.4 || x > W - (40 + clr * 0.4)) return false;
-  if (y < (dtype === "station" ? H * 0.44 : H * 0.50) || y > catFloor() - 8) return false;
+  if (y < placementTop() + PLACE_CELL/2 || y > catFloor() - 8) return false;
   for (const o of obstacles) if (o.water && Math.hypot((x - o.x) / (o.rx + clr), (y - o.y) / (o.ry + clr * 0.7)) < 1) return false;
   if (x < W * 0.30 && y < H * 0.56) return false;                       // the cove sign corner
   if (!offBigStructure(x, y, clr * 0.45, exceptKey)) return false;
