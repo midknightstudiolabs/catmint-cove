@@ -1,3 +1,5 @@
+> Current release audit: see [RELEASE-AUDIT.md](RELEASE-AUDIT.md). The source-rebuild procedure below is historical and must not be used to overwrite the current Neo index.html. Native performance certification is still open.
+
 # Neo — A Place to Come Home To
 
 Release scope: personal-home product pass, September 12, 2026.

@@ -1228,7 +1228,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?v=8">
+</style><link rel="stylesheet" href="ui/device-fixes.css?v=9">
 <style id="neo-theme">
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
@@ -1483,7 +1483,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
   <div id="rest">
     <div class="rest-panel" id="restPanel">
-      <div class="rest-art" id="restArt">🌧️</div>
+      <div class="rest-art" id="restArt"><img src="art/icon-keepsake-rest.svg" width="40" height="40" alt=""></div>
       <h2>Rainy day</h2>
       <p>Everyone pads inside for a nap. Rain on the window, a warm fire — leave it running while you work.</p>
       <label><input type="checkbox" id="restRain" checked> Rain sound</label>
@@ -6605,6 +6605,7 @@ function coveName() {
   return G.owner ? `${G.owner}’s Cove` : "Catmint Cove";
 }
 let _hudTitle = "", _hudFull = null;
+function setHudText(el,value){const text=String(value);if(el.textContent!==text)el.textContent=text;}
 function syncHud() {
   const wantTitle = G.owner ? `${esc(G.owner)}<b>’s Cove</b>` : "Catmint <b>Cove</b>";
   if (wantTitle !== _hudTitle) {
@@ -6613,11 +6614,11 @@ function syncHud() {
     pill.setAttribute('aria-label', coveName() + '. Rename your cove');
     pill.title = coveName();
   }
-  elShells.textContent = Math.floor(G.shells);
-  document.getElementById("pearls").textContent = G.pearls || 0;
+  setHudText(elShells,Math.floor(G.shells));
+  setHudText(document.getElementById("pearls"),G.pearls || 0);
   document.getElementById("pearls").closest(".pill").classList.toggle("empty", !(G.pearls > 0));
-  elCatCount.textContent = residentCount();
-  elCatCap.textContent = capacity();
+  setHudText(elCatCount,residentCount());
+  setHudText(elCatCap,capacity());
   const fl = document.getElementById("foodlevel");
   if (fl) {
     const dleft = foodDaysLeft();
@@ -6629,8 +6630,8 @@ function syncHud() {
       ? "The food store is empty — the cats can't eat. Tap to stock up."
       : `${Math.round(G.food)} servings · ${foodLeftText()}. Tap to stock up.`;
   }
-  document.getElementById("opens").textContent = G.opens;
-  document.getElementById("coaxCost").textContent = coaxPrice();
+  setHudText(document.getElementById("opens"),G.opens);
+  setHudText(document.getElementById("coaxCost"),coaxPrice());
   const cb = document.getElementById("coaxBtn");
   // never hard-disabled — a tap on a full cove explains why and opens the fix
   const full = residentCount() >= capacity();
@@ -6645,7 +6646,7 @@ function syncHud() {
     const cbc = cb.querySelector(".badge.cost");
     if (cbc) cbc.style.display = full ? "none" : "";
   }
-  document.getElementById("dexBadge").textContent = dexCount() + "";
+  setHudText(document.getElementById("dexBadge"),dexCount());
   document.getElementById("festBtn").hidden = !(festUnlocked() || volleyReady());
   const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
   const advBack = anyAdvBack();
@@ -7072,16 +7073,16 @@ function openSound() {
   ensureAudio();
   const S = G.sound;
   const rows = [
-    ["cats", "🐾", "Cats", "meows, purrs, little chirrups"],
-    ["cove", "🌊", "Cove", "water, breeze, birds, crickets"],
-    ["music", "🎪", "Music", "festival tune, rest-mode rain"],
+    ["cats", neoUIIcon("catdex"), "Cats", "meows, purrs, little chirrups"],
+    ["cove", neoUIIcon("adventure"), "Cove", "water, breeze, birds, crickets"],
+    ["music", neoUIIcon("festival"), "Music", "festival tune, rest-mode rain"],
   ];
   openModal(`<div class="reveal snd">
     <div class="kicker">Sound</div>
     <h2>Sound</h2>
     <p class="sub">How loud each part of the cove is. Saved on this device.</p>
     <button class="snd-master" id="sndMaster" aria-pressed="${S.on}">
-      <span class="lab"><span class="ic">${S.on ? "🔊" : "🔇"}</span> All sound</span>
+      <span class="lab"><span class="ic">${neoUIIcon(S.on ? "sound" : "muted")}</span> All sound</span>
       <span class="tgl${S.on ? "" : " off"}"></span>
     </button>
     <div class="snd-rows${S.on ? "" : " off"}" id="sndRows">
@@ -17154,6 +17155,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 function frameBody(now) {
+  if (document.hidden) { last = now; simAccum = 0; return; }
   _frameCount++;   // real average fps over the whole session = _frameCount / sessSec — a cross-check
   let frameDt = (now - last) / 1000;
   last = now;
@@ -19103,7 +19105,7 @@ function neoOpenHomestead(kind){
   if(!sheet){sheet=document.createElement('div');sheet.id='neo-homestead';sheet.className='sheet';document.getElementById('app').append(sheet);panels.homestead=sheet;}
   sheet.hidden=false;sheet.classList.toggle('cafe-full-room',!garden);
   const time=t=>Math.max(0,Math.ceil((t-Date.now())/1000));
-  sheet.innerHTML=`<button class="x" aria-label="Back to the Cove">×</button><div class="kicker">YOUR LITTLE CORNER OF THE COVE</div><h2>${garden?'Cove Garden':'Catmint Café'}</h2><p>${garden?'Grow café ingredients for less: 3 carrots cost 2 shells to grow, versus 4 to buy. Pumpkins and berries make bigger café batches. Keep your harvest for cooking, or sell spare crops for 1 shell each. Crops never wither.':'Choose what to cook and stock the counter. Guests arrive, take a seat, enjoy a treat and pay 2 shells. A visit takes one minute; stocked food also sells while you are away. Close the café to pause service while you cook or redecorate.'}</p><div class="homestead-stock">${Object.entries(COVE_CROPS).map(([k,c])=>`<span>${c.name}: <b>${h.stock[k]||0}</b></span>`).join('')}</div>`;
+  sheet.innerHTML=`<button class="x" aria-label="Back to the Cove">×</button><div class="kicker">YOUR LITTLE CORNER OF THE COVE</div><h2>${garden?'Cove Garden':'Catmint Café'}</h2><p>${garden?'Plant, harvest, and sell spare crops for 1 shell each. Crops never wither. Keep ingredients for the future café.':'Choose what to cook and stock the counter. Guests arrive, take a seat, enjoy a treat and pay 2 shells. A visit takes one minute; stocked food also sells while you are away. Close the café to pause service while you cook or redecorate.'}</p><div class="homestead-stock">${Object.entries(COVE_CROPS).map(([k,c])=>`<span>${c.name}: <b>${h.stock[k]||0}</b></span>`).join('')}</div>`;
   if(garden){
     const grid=document.createElement('div');grid.className='homestead-grid';
     h.plots.forEach((p,i)=>{const card=document.createElement('article');card.className='homestead-patch';card.innerHTML=`<h3>Patch ${i+1}</h3>${neoCropArt(p?.key||'carrot',!!p&&!time(p.ready))}`;

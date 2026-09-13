@@ -1,3 +1,17 @@
+## Menu and release audit — 2026-09-13
+
+- Standardize sheet backgrounds and close buttons with the cream/sage palette.
+- Align adventure destination icons and text in separate columns.
+- Replace Sound and Rainy Retreat system emoji icons with existing V2 SVGs; fix standalone Journal SVG namespace.
+- Give Garden headers room beside Close and shorten the introductory text.
+- Keep Rainy Retreat setup scrollable on short landscape displays.
+- Make the phone wardrobe scroll as one page with a smaller preview; separate the cat-story heading from Close.
+- Skip hidden-page rendering and avoid repeated unchanged HUD counter writes.
+- Remove unused art experiments and review pages from the shipping tree; retain local backburner copies and Git history. No saves, currency, ownership or cat identities are removed.
+- Retain the compact four-topic Help and action-driven inventory tour.
+
+Performance caveat: automated 24-active-cat stress runs on this host missed 60 FPS. Do not describe this release as guaranteed 60 FPS; real iOS/Android testing remains required.
+
 ## Repeatable shoreline decorations — 2026-09-13
 
 - Allow eight bunting, garden lantern, and lantern-string copies at unchanged prices.
