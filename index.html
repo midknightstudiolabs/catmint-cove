@@ -2234,6 +2234,10 @@ function load() {
     if (!G.cosmetics.propBoxed || typeof G.cosmetics.propBoxed !== "object") G.cosmetics.propBoxed = {};
     if (!G.cosmetics.decorPos || typeof G.cosmetics.decorPos !== "object") G.cosmetics.decorPos = {};  // player-set cottage/tree/flower/station positions, keyed "type:index" ("station:fishing:0")
     if (!G.cosmetics.comfortPos || typeof G.cosmetics.comfortPos !== "object") G.cosmetics.comfortPos = {};  // player-set bowl/toy/bed/scratcher positions, keyed "type:index"
+    // Retired decorations: remove every owned slot and placement on save load.
+    for(const field of ['props','propPos','propBoxed']) for(const id of Object.keys(G.cosmetics[field])) {
+      if(['lanterns','rowboat'].includes(id.split('#')[0])) delete G.cosmetics[field][id];
+    }
     if (G.cosmetics.props) delete G.cosmetics.props.flagpole;   // flag pole parked — clear the seeded test grant
     delete G.cosmetics.flagCountry; delete G.cosmetics._flagpoleSeeded;
     if (!DECOR_THEMES[G.cosmetics.theme] || !G.cosmetics.themes[G.cosmetics.theme]) G.cosmetics.theme = "default";
