@@ -4914,6 +4914,11 @@ function dropComfortPos(type, newCount) {
 // the movable object under a world point. `tight` (long-press, where cats may be
 // milling around the piece) checks only the object's core so a dead-centre press
 // still grabs the cottage; the arrange-mode tap uses the full generous radius.
+function propGrabHit(id,x,y,pos){
+ const base=id.split('#')[0],scale=pos.s||1;
+ const shape={bunting:[70,108],lantern:[24,54],birdbath:[27,32],windmill:[38,106],stones:[42,14]}[base]||[28,30];
+ return Math.abs(x-pos.x)<=shape[0]*scale && y>=pos.y-shape[1]*scale-8 && y<=pos.y+18;
+}
 function movableAt(x, y, tight) {
   const f = tight ? 0.95 : 1.15;   // generous hit area — small screens, fat thumbs
   for (const d of decor) {
@@ -4923,7 +4928,7 @@ function movableAt(x, y, tight) {
   if (G.cosmetics && G.cosmetics.props) for (const p of DECOR_PROPS) {
     if (!p.movable || !G.cosmetics.props[p.id] || propBoxed(p.id)) continue;
     const pos = propPos(p.id);
-    if((p.baseId||p.id)==="bunting"&&Math.abs(x-pos.x)<70*f&&y>=pos.y-108&&y<=pos.y+16)return {kind:"prop",id:p.id};
+    if(propGrabHit(p.id,x,y,pos))return {kind:"prop",id:p.id};
     if (Math.hypot(x - pos.x, y - (pos.y - 6)) < 26 * f) return { kind: "prop", id: p.id };
   }
   // bowls / toys / beds / scratchers — live in `attractors`, not `decor`
@@ -4983,7 +4988,7 @@ canvas.addEventListener("pointerdown", (e) => {
   ensureAudio();
   if (festMode) { if (festKind === "volley") volleyPointer(e); return; }   // festival modes own their taps; race/box use HTML buttons
   if (_placing) {
-    const w=screenToWorld(e.clientX,e.clientY),near=(_placing.kind==="prop"&&_placing.key.split("#")[0]==="bunting")?Math.abs(w.x-_placeGhost.x)<80&&w.y>=_placeGhost.y-112&&w.y<=_placeGhost.y+24:Math.hypot(w.x-_placeGhost.x,w.y-_placeGhost.y)<50;
+    const w=screenToWorld(e.clientX,e.clientY),near=_placing.kind==="prop"?propGrabHit(_placing.key,w.x,w.y,{..._placeGhost,s:PROP_BY_ID[_placing.key]?.place.s||1}):Math.hypot(w.x-_placeGhost.x,w.y-_placeGhost.y)<50;
     _placeDragOrigin=near?{x:_placeGhost.x-w.x,y:_placeGhost.y-w.y}:null;
     _tpX=e.clientX;_tpY=e.clientY;_tpMoved=false;return;
   }
@@ -14613,6 +14618,7 @@ function propBunting(g, t, x, y) {
     g.save(); g.translate(px, py); g.rotate(Math.sin(t * 1.2 + i * 0.8) * 0.05);
     g.fillStyle = cols[i % cols.length];
     g.beginPath(); g.moveTo(-4, 0); g.lineTo(4, 0); g.lineTo(0, 9); g.closePath(); g.fill();
+    if((g._nightGlow||0)>.3){const glow=g.createRadialGradient(0,0,1,0,0,11);glow.addColorStop(0,'rgba(255,220,140,.36)');glow.addColorStop(1,'rgba(255,220,140,0)');g.fillStyle=glow;g.beginPath();g.arc(0,0,11,0,Math.PI*2);g.fill();g.fillStyle='#ffe6a6';g.beginPath();g.arc(0,-1,2.3,0,Math.PI*2);g.fill();}
     g.restore();
   }
   g.restore();
