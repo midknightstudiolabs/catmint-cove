@@ -5535,6 +5535,7 @@ cc.rehomeBtn.addEventListener("click", () => {
     save();toast(`${c.name} found a wonderful home.`);
   };
 });
+function coatRarityLabel(key){const coat=COAT_BY_KEY[key];return TIER_LABEL[coat?.tier]||'Everyday';}
 function starGlyphs(n) {
   return `<span style="color:${STAR_COL[n]}">${"★".repeat(n)}</span>` +
          `<span style="color:#cfc8b0">${"★".repeat(4 - n)}</span>` +
@@ -5555,7 +5556,7 @@ function showCatCard(c) {
       ? `  ·  ${c.lifeStage} (${Math.max(1, Math.round(c.growth * 20))}h old)`
       : c.title ? `  ·  ${c.title}` : "  ·  adult")) + acc;
   cc.starsEl.innerHTML = c.mascot ? `<span style="color:${STAR_COL[2]};font-weight:700">★ Mascot</span>`
-    : c.visitor ? `<span style="color:${STAR_COL[3]};font-weight:700">✦ Visitor</span>` : starGlyphs(c.star);
+    : c.visitor ? `<span style="color:${STAR_COL[3]};font-weight:700">✦ Visitor</span>` : `<span style="color:#61735c;font-weight:700">${coatRarityLabel(c.coatKey)}</span>`;
   cc.traits.innerHTML = c.traits.map(k => `<span class="trait">${TRAITS[k].label}</span>`).join("");
   cc.desc.textContent = c.mascot
     ? "Looks like he's drafting a complaint. Actually just wants to loaf near you. " + c.t1.desc
@@ -7022,7 +7023,7 @@ function flushReveal() {
     <canvas width="220" height="205"></canvas>
     <h2>${rv.name}</h2>
     <div class="stars" style="color:${STAR_COL[rv.star]}">${"★".repeat(rv.star)}${'<span style="color:#d8d2bd">'+"★".repeat(4-rv.star)+"</span>"}</div>
-    <p class="sub">${rv.coatName} · ${STAR_NAME[rv.star]}<br>A new face. A little story waiting to happen.</p>
+    <p class="sub">${rv.coatName} · ${coatRarityLabel(rv.coatKey)}<br>A new face. A little story waiting to happen.</p>
     <button class="btn primary" id="rv-ok">${revealQueue.length ? "Next" : "Welcome them in"}</button>
   </div>`);
   miniCat(document.querySelector("#modal canvas"), rv.coatKey, rv.star, "loafing", false, 2.7);
