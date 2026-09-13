@@ -4712,7 +4712,7 @@ let _placeDragOrigin=null;
 function placeFootprint(spec){
   const id=(spec.key||spec.id||" ").split("#")[0];
   if(id==="rowboat"||id==="bunting"||id==="lanterns")return [3,1];
-  if(id==="stones"||id==="birdbath")return [2,1];
+  if(id==="stones"||id==="birdbath"||id==="windmill")return [2,1];
   const type=spec.dtype||spec.type;
   if(type==='station'||type==='cottage')return [3,2];
   if(type==='tree'||type==='cattree')return [2,2];
@@ -6153,7 +6153,7 @@ function renderShopDecor(list) {
     if(p.maxOwned) action=(count<p.maxOwned?`<button class="btn primary" data-buy-prop="${p.id}" ${afford?'':'disabled'}>${count?'Buy another':'Buy'} · ${p.price.toLocaleString()}</button>`:'<span class="owned">Collection complete</span>');
     row.innerHTML = `<div class="txt"><div class="name">${p.name}${p.maxOwned?' · Owned '+count+'/8':''}</div><div class="desc">${boxed ? "Packed away — tap Place it to set it down." : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
     const photo=document.createElement('canvas');photo.width=160;photo.height=120;photo.className='inventory-preview';photo.setAttribute('role','img');photo.setAttribute('aria-label',p.name+' preview');
-    const pg=photo.getContext('2d');pg.translate(80,106);pg.scale(.82,.82);if(p.render)p.render(pg,0,0,0,p.place.s);row.prepend(photo);
+    const pg=photo.getContext('2d');pg.translate(80,106);pg.scale(p.id==='windmill'?.72:.82,p.id==='windmill'?.72:.82);if(p.render)p.render(pg,0,0,0,p.place.s);row.prepend(photo);
     list.appendChild(row);
   }
   list.querySelectorAll("[data-move-prop],[data-place-prop]").forEach(b => b.onclick = () => startPlacing(b.dataset.moveProp || b.dataset.placeProp));
@@ -6341,7 +6341,7 @@ function renderInventory(list) {
         _beginPlace({...e,r:30,from:stored?null:{x:pos.x,y:pos.y},_start:{x:pos.x,y:pos.y}});
       };
       const preview=document.createElement('canvas');preview.width=160;preview.height=120;preview.className='inventory-preview';preview.setAttribute('aria-label',e.label+' · '+(e.quantity||1)+' '+(stored?'stored':'placed'));row.prepend(preview);
-      const g=preview.getContext('2d');g.translate(80,85);g.scale(.85,.85);
+      const g=preview.getContext('2d');g.translate(80,e.key==='windmill'?105:85);g.scale(e.key==='windmill'?.75:.85,e.key==='windmill'?.75:.85);
       if(e.kind==='cairn'){const original=G.cairn;try{G.cairn={...original,tidied:false,size:3};const cp=cairnPos(W,H);g.translate(-cp.sx,-cp.gy);drawCairn(g,W,H);}finally{G.cairn=original;}}
       else if(e.kind==='prop'){const p=PROP_BY_ID[e.key];if(p?.render)p.render(g,0,0,0,.8);}
       else if(e.kind==='comfort')drawAttractor(g,{type:e.dtype,x:0,y:0});
@@ -13827,7 +13827,7 @@ const DECOR_PROPS = [
     movable:true, place:{x:W*.4,y:H*.48,s:1}, render(g,t,x,y){ propLanterns(g,t,x,y); } },
   { id:"rowboat",  name:"Rowboat",         price: 5500, blurb:"Beached by the shore. Someone's asleep in it more often than not.",
     movable:true, place:{ x:W*0.075, y:H*0.90, s:1.1 }, render(g,t,x,y,s){ propRowboat(g, x, y, s); } },
-  { id:"windmill", name:"Pole windmill",   price: 8000, blurb:"A little pole windmill. The sails turn on their own.",
+  { id:"windmill", name:"Pole windmill",   price: 8000, blurb:"A warm timber windmill with sage and linen sails turning gently in the sea breeze.",
     movable:true, place:{ x:W*0.91, y:H*0.60, s:1.25 }, render(g,t,x,y,s){ propWindmill(g, x, y, s, t); } },
 ];
 // Stable slots keep the original id and saved position for the first copy.
@@ -14699,17 +14699,22 @@ function propRowboat(g, x, y, s) {
   g.restore();
 }
 function propWindmill(g, x, y, s, t) {
-  s = s || 1;
-  g.save(); g.translate(x, y); g.scale(s, s);
-  g.fillStyle = "rgba(36,31,23,0.12)"; g.beginPath(); g.ellipse(0, 4, 8, 3, 0, 0, 7); g.fill();
-  g.fillStyle = "#8a6b4a"; g.fillRect(-2.2, -46, 4.4, 50);
-  g.save(); g.translate(0, -46); g.rotate(t * 1.4);
-  for (let i = 0; i < 4; i++) { g.rotate(Math.PI / 2);
-    g.fillStyle = i % 2 ? "#e7dcc6" : "#d98b7a";
-    g.beginPath(); g.moveTo(0, 0); g.lineTo(3, -18); g.lineTo(-3, -18); g.closePath(); g.fill(); }
-  g.fillStyle = "#5b4634"; g.beginPath(); g.arc(0, 0, 2.4, 0, 7); g.fill();
-  g.restore();
-  g.restore();
+  g.save();g.translate(x,y);g.scale(s||1,s||1);
+  g.fillStyle='rgba(36,31,23,.12)';g.beginPath();g.ellipse(0,4,17,5,0,0,Math.PI*2);g.fill();
+  // A broad timber stand, with quiet painted details and linen sails.
+  g.fillStyle='#9b7954';g.beginPath();g.moveTo(-13,2);g.lineTo(-7,-66);g.lineTo(7,-66);g.lineTo(13,2);g.closePath();g.fill();
+  g.strokeStyle='#735a41';g.lineWidth=1.5;g.stroke();
+  g.fillStyle='#c3a17b';g.fillRect(-9,-15,18,4);g.fillRect(-7,-43,14,3);
+  g.fillStyle='#7f9474';roundRect(g,-5,-28,10,9,2);g.fill();
+  g.save();g.translate(0,-67);g.rotate(_reduceMotion?0:t*.48);
+  for(let i=0;i<4;i++){
+    g.save();g.rotate(i*Math.PI/2);
+    g.strokeStyle='#806343';g.lineWidth=2;g.beginPath();g.moveTo(0,0);g.lineTo(0,-29);g.stroke();
+    g.fillStyle=i%2?'#eadfc5':'#a6b796';g.beginPath();g.moveTo(1,-9);g.lineTo(12,-15);g.lineTo(10,-30);g.lineTo(0,-30);g.closePath();g.fill();
+    g.strokeStyle='#897955';g.lineWidth=.8;g.stroke();g.beginPath();g.moveTo(1,-20);g.lineTo(11,-23);g.stroke();g.restore();
+  }
+  g.fillStyle='#d6ac69';g.beginPath();g.arc(0,0,5,0,Math.PI*2);g.fill();g.strokeStyle='#806343';g.lineWidth=1.3;g.stroke();
+  g.restore();g.restore();
 }
 // a "needs work" marker: a still pond, a few broken planks, a rope, a hand-lettered
 // sign. while building: a bit of scaffold + planks going in ∝ progress.
