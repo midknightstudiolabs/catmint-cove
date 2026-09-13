@@ -1228,7 +1228,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?v=1">
+</style><link rel="stylesheet" href="ui/device-fixes.css?v=2">
 <style id="neo-theme">
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
@@ -7219,7 +7219,7 @@ function endColdOpen(skipped) {
   visitorTimer = rand(45, 90);   // a third cat wanders in soon after the intro — "oh, they just turn up"
   save();
   // an honest reason to come back — the things that really change overnight
-  setTimeout(() => toast("You’re home. Activities has games and adventures; Shop has My inventory for free redecorating. Journal keeps your memories. Tap ? for the guide, including A Little Hello.", 6), 500);
+  setTimeout(() => toast("You’re home. Tap ? → Show me around for a hands-on tour of inventory, activities and memories.", 6), 500);
   setTimeout(() => { try { checkOffline(afterReturn); } catch (e) {} }, 700);
   setTimeout(() => { try { maybePanHint(); } catch (e) {} }, 3200);
   syncHud();
@@ -7227,15 +7227,16 @@ function endColdOpen(skipped) {
 
 /* ---------- reference card (the "?" button) ---------- */
 const GUIDE = [
-  ["A Little Hello · a curious visitor", "Tap empty ground near the bottom 3–5 times in quick succession. A cat may peek over the screen edge for five seconds. Pause less than 2.5 seconds between taps, then wait 30 seconds before trying again. Use the normal Cove view with menus closed. Sleeping and sick cats sit this one out. No cost or rewards—just company."],
+  ["A Little Hello · a curious visitor", "Tap empty ground near the bottom 3–5 times in quick succession. A cat may peek over the screen edge for a few seconds. Pause less than 2.5 seconds between taps, then wait 30 seconds before trying again. Use the normal Cove view with menus closed. Sleeping and sick cats sit this one out. No cost or rewards—just company."],
   ["Redecorate · keep what you own", "Press and hold an item to move it on the grid. Set here keeps its new spot; Cancel leaves it unchanged; Put away stores it. Shop → My inventory separates In storage from In the cove. Place is free. Sell refunds shells and removes ownership. Red cells mean a blocked spot. Capacity upgrades stay yours in storage."],
-  ["Catmint Café and Cove Garden", "Open their Cove entrances or choose them in Activities. Plant crops, harvest when ready, cook batches and stock the café counter. Treats sell automatically, including while away; collect the shells in the café. Crops and food never spoil. Make it yours saves tablecloths and seating styles. Add patches or tables gradually with shells. Festival now contains Race, Volleyball and Tug of Paws."],
+  ["Catmint Café and Cove Garden", "Find Cove Garden in Activities: plant crops, harvest them, and use or sell your harvest. Catmint Café is under development. Festival contains Race, Volleyball and Tug of Paws."],
   ["Adventures · postcards from your cats", "Choose a destination, cats and trip length in Activities. When they return, open their results for rewards and a keepsake postcard. Different destinations bring different finds. Longer trips suit time away; short trips suit an active visit."],
   ["Your view · zoom buttons", "Use the zoom icon to change your view. Double-tapping does not zoom, leaving quick foreground taps available for A Little Hello."],
   ["Catdex · your little neighbors", "Find cats by name, tap their portraits for personalities and memories, or invite a new friend. Coats you have met are collected below."],
   ["Activities · play or unwind", "Visit the Festival, send a cat on an adventure, or settle into the rainy retreat. Festival games stay available day and night once unlocked; each game shows how many cats it needs."],
-  ["Shop · make it cozy", "Find bowls, beds, toys, decorations and outfits here. Check an item's description and price before choosing it."],
+  ["Shop · make it cozy", "Find bowls, beds, toys, decorations and outfits here. See the actual item preview and price before buying. My inventory shows item pictures and counts; drag a stored item into the Cove or choose Place."],
   ["Journal · moments worth keeping", "Collect your daily welcome, choose optional rituals, see postcards and memories, or capture a photo. You can swap unfinished rituals. Missing a day never resets your lovely days."],
+  ["Health and sound", "Tap the cat counter for everyone’s mood and wellbeing, with percentages. Tap a cat for care options. The sound button opens volume settings; All sound switches left/gray when off and right/green when on."],
   ["Say hello", "Tap a cat to get to know them. Some love cuddles; others appreciate a little space. Their personalities unfold as you spend time together."],
   ["Little shore finds", "Tap glowing shells and driftwood to collect them. Uncollected drops bank themselves. Driftwood helps restore places such as the old dock."],
   ["Community Pantry · a helping hand", "In Catdex, this free help tops food up to one day, eases hunger and thirst, clears sickness and restores health to at least 70%. It tells you what changed—or that everyone is already cared for."],
@@ -7247,18 +7248,35 @@ function openGuide() {
   const card = tutEl.querySelector(".card");
   const rows = GUIDE.filter(([h]) => h !== "The Cove Festival" || festUnlocked());   // not a spoiler before it exists
   card.innerHTML = `<h2 style="margin:.1rem 0 .2rem">Make yourself at home</h2>
-    <p>There’s no rush. Say hello, make a cozy corner, and discover a little at a time.</p><div class="row guide-links"><button class="btn" data-guide="dex">Catdex</button><button class="btn" data-guide="explore">Activities</button><button class="btn" data-guide="shop">Shop</button><button class="btn" data-guide="today">Journal</button></div><div class="guide-list">${rows.map(([h, b]) => `<div class="guide-row"><b>${esc(h)}</b><p>${esc(b)}</p></div>`).join("")}</div>
+    <p>There’s no rush. Say hello, make a cozy corner, and discover a little at a time.</p><div class="row guide-links"><button class="btn" data-guide="dex">Catdex</button><button class="btn" data-guide="explore">Activities</button><button class="btn" data-guide="shop">Shop</button><button class="btn" data-guide="today">Journal</button></div><button class="btn primary" id="guideTour">Show me around · 6 short steps</button><label for="guideSearch" style="display:block;margin-top:12px">What do you need help with?</label><input id="guideSearch" type="search" placeholder="Try inventory, health, sound…" style="width:100%;padding:10px;font:inherit"><div class="guide-list">${rows.map(([h, b]) => `<details class="guide-row"><summary>${esc(h)}</summary><p>${esc(b)}</p></details>`).join("")}</div><p id="guideEmpty" hidden>No matching topics. Try a shorter word.</p>
     <div class="row guide-foot">
       <button class="btn primary" id="guideOk">Got it</button>
       <button class="btn" id="guideCares">❤️ Cove Cares</button>
       <button class="btn" id="guideCredits">🐾 Credits</button>
     </div>`;
   tutEl.classList.add("on");
+  card.querySelector('#guideTour').onclick=()=>{tutEl.classList.remove('on');neoStartTour();};
+  card.querySelector('#guideSearch').oninput=e=>{const q=e.target.value.trim().toLowerCase();let matches=0;card.querySelectorAll('.guide-row').forEach(row=>{row.hidden=!row.textContent.toLowerCase().includes(q);if(!row.hidden)matches++;});card.querySelector('#guideEmpty').hidden=matches>0;};
   card.querySelectorAll("[data-guide]").forEach(b=>b.onclick=()=>{tutEl.classList.remove("on");if(b.dataset.guide==="explore")neoOpenExplore();else togglePanel(b.dataset.guide);});
   document.getElementById("guideOk").onclick = () => tutEl.classList.remove("on");
   document.getElementById("guideCares").onclick = () => { tutEl.classList.remove("on"); openCares(); };
   document.getElementById("guideCredits").onclick = () => { tutEl.classList.remove("on"); openCredits(); };
 }
+
+function neoStartTour(){
+ document.getElementById('neo-tour')?.remove();
+ const steps=[
+ ['Meet your cats','Open Catdex and tap a portrait. You can see wellbeing, add a personal note, and pin a favorite.','dex'],
+ ['See before you buy','Shop previews show the actual items. Browse freely; this tour never buys anything.','shop'],
+ ['Your inventory','Stored items show pictures and counts. Drag one into the Cove or tap Place. Placed items are listed separately.','inventory'],
+ ['Make a cozy corner','Press and hold an object. Use the grid, then Set here. Put away returns it to inventory; Cancel keeps its old spot. Cats do not block selection.','place'],
+ ['A little adventure','Activities has destinations with distinct icons, trip lengths, and cat selection. Returned cats bring results and postcards. Garden and rainy retreat are here too.','explore'],
+ ['Keep the little things','Journal holds memories and postcards. Back in the Cove, tap empty foreground ground 3–5 times for A Little Hello. Zoom with the view controls; adjust audio from Sound.','today']
+ ];
+ let i=0;const box=document.createElement('aside');box.id='neo-tour';box.setAttribute('aria-label','Guided tour');document.body.append(box);
+ const show=()=>{const [title,body,target]=steps[i];box.innerHTML='<small>Make yourself at home · '+(i+1)+' / '+steps.length+'</small><b>'+title+'</b><button class="btn" id="tourFold" aria-expanded="true">Minimize</button><section><p>'+body+'</p><div><button class="btn" id="tourShow">Show me</button><button class="btn primary" id="tourNext">'+(i===steps.length-1?'Finish':'Next')+'</button><button class="btn" id="tourExit">Exit tour</button></div></section>';box.querySelector('#tourFold').onclick=e=>{const content=box.querySelector('section');content.hidden=!content.hidden;e.target.textContent=content.hidden?'Continue tour':'Minimize';e.target.setAttribute('aria-expanded',String(!content.hidden));};box.querySelector('#tourShow').onclick=()=>{closeAllPanels();if(target==='explore')neoOpenExplore();else if(target==='inventory'){shopTab='inventory';togglePanel('shop');}else if(target!=='place')togglePanel(target);else toast('Press and hold a decoration to try moving it. Cancel is always available.',4);};box.querySelector('#tourNext').onclick=()=>{if(++i===steps.length){box.remove();return;}show();};box.querySelector('#tourExit').onclick=()=>box.remove();};show();
+}
+
 // open a URL in the OS browser, never inside the game's WebView. Capacitor
 // recognises the "_system" target on iOS + Android; plain web gets a new tab.
 function openExternal(url) {

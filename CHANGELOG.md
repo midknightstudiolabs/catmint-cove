@@ -1,3 +1,10 @@
+## Help and guided tour — 2026-09-13
+
+- Replace the expanded help wall with searchable, collapsible topics.
+- Add a six-step guided tour opening the real Catdex, Shop, inventory, Activities, and Journal panels, with minimize and exit controls.
+- Update guidance for inventory placement and storage, wellbeing, sound, Little Hello, and current Activities.
+- Check mobile and desktop layouts and tour navigation without changing saves or buying items.
+
 ## HUD icons — option B — 2026-09-13
 
 - Use fixed V2-style SVGs for cat capacity (cat silhouette), food supply (sage bowl), and Cove day (calendar).
