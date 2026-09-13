@@ -1,6 +1,4 @@
-# Neo 3.0.3
+# Neo iOS 3.0.4
 
-Game source: catmint-cove-neo commit 87aede1.
-Includes fixed SVG HUD icons, shop previews, placement fixes, Cove name sizing, compact Tug spinner, Catdex wellbeing and roster mood/health bars with explicit iOS colors. Existing Neo gameplay and saves retained.
-Clock drafts are excluded.
-Native bundle now includes ui/ styles. Android tag uploads target the alpha closed-testing track as a draft.
+Source: Neo b597f8e.
+Loads ui/device-fixes.css explicitly, restoring roster mood/wellbeing bar sizing and name colors in WKWebView. Includes the responsive small-phone HUD layout.
