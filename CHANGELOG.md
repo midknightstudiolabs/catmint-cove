@@ -1,12 +1,9 @@
-## Neo device test — 2026-09-13
+## Neo hotfix recovery — 2026-09-13
 
-- Publish the current 2D local test build and its artwork for cross-device review.
-- Object placement takes priority over cat selection while arranging.
-- Shop products show framed previews of the actual in-game objects.
-- Compact Tug of Paws reels while preserving a 44px Spin touch target.
-- Larger Cove-name pill, 12-character limit for new names, and overflow handling for existing names.
-- Include the shell, driftwood and pearl economy changes documented in ECONOMY-UPDATE.md.
-- Browser checks at 320px, 390px and 1280px: no page overflow or script errors. Physical-device testing remains to be done.
+- Restore the full existing Neo implementation after an incorrect redesign-copy deployment.
+- Preserve placement grid and footprints, inventory counts and dragging, nearby placement actions, V2 icons, Activities, and existing progression.
+- Apply only the requested fixes: ignore cats during placement, actual shop product previews, compact mobile Tug spinner, and Cove-name sizing with a 12-character limit.
+- Checked JavaScript and layouts at 320px, 390px, and 1280px without runtime errors or page overflow.
 ## Café cooking and progression — 2026-09-12
 
 - Two parallel cooking stoves; café points unlock a third and fourth stove for 200 and 350 shells.
