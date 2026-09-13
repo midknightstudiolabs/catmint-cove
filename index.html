@@ -14639,6 +14639,16 @@ function propBirdbath(g, x, y, s, t) {
   g.strokeStyle = "rgba(255,255,255,0.4)"; g.lineWidth = 0.8;
   for (let k = 0; k < 2; k++) { const ry = -22 + k * 2.4 + Math.sin(t * 0.9 + k) * 0.6;
     g.beginPath(); g.moveTo(-8, ry); g.quadraticCurveTo(0, ry + 1, 8, ry); g.stroke(); }
+  // A small amber inset lamp, softly lighting only the pedestal base.
+  const night=clamp(((g._nightGlow||0)-.25)/.5,0,1);
+  if(night>0){
+    const glow=g.createRadialGradient(0,-5,1,0,-5,15);
+    glow.addColorStop(0,'rgba(255,215,145,'+(.18*night)+')');
+    glow.addColorStop(1,'rgba(255,215,145,0)');
+    g.fillStyle=glow;g.beginPath();g.ellipse(0,-5,15,10,0,0,Math.PI*2);g.fill();
+  }
+  g.fillStyle='#80765f';roundRect(g,-3,-9,6,5,1.5);g.fill();
+  g.fillStyle=night>0?'#edcd8b':'#b2a88c';roundRect(g,-2,-8,4,3,1);g.fill();
   g.restore();
 }
 function propLanterns(g, t, x, y) {
