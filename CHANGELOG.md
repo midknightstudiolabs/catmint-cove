@@ -1,3 +1,14 @@
+## Neo web 2026.09.14.1 - Menu audit fixes
+
+- Added a visible Back to Cove action to Little Matches completion and disabled already-spent favour options when resuming.
+- Added a reachable close control to both adventure-planning steps; removed the duplicate Festival exit.
+- Enlarged Backup, Credits, Cove Cares, Rainy Rest and Dress-up controls. Rainy Rest durations now use two clear rows.
+- Moved paid cosmetic packs to Featured, shortened Inventory guidance and made Garden planting choices easier to read.
+- Put Little Matches first in Activities, consistently called its stages levels, and compacted the disabled cafe entry.
+- Reused custom icons in audited Shop, Dress-up, Journal and Credits elements; framed memory-card object art to fill available space.
+- Added the Neo web build identifier to Credits without changing native version numbers.
+- Validation: all 30 levels, six reward unlocks/equip/save/reload, 72 menu entry states across four sizes, targeted exits/favour state and no page errors in those checks. Native release and device performance verification remain separate.
+
 ## Little Matches rewards and companions — 2026-09-14
 
 - Progress through 30 levels in order; unlock level selection after completing all 30. Existing completions and unfinished rounds remain saved.

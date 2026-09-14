@@ -1438,6 +1438,26 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .inventory-item{position:relative;flex-wrap:wrap;gap:10px}
 .inventory-preview{position:static!important;width:80px!important;height:60px!important;flex:0 0 80px;background:#eef0df;border-radius:12px;cursor:grab}
 .inventory-quantity{position:absolute;left:8px;top:5px;background:#faf6e9;color:#43543f;border-radius:10px;padding:2px 6px;font-weight:700;font-size:12px;pointer-events:none}
+
+/* Menu audit: consistent exits and comfortable touch areas. */
+.audit-close{position:sticky;top:0;float:right;z-index:3;display:grid;place-items:center;width:44px;height:44px;min-width:44px;padding:0;border:1px solid var(--panel-line);border-radius:50%;background:var(--panel);color:var(--ink);font:24px/1 sans-serif;cursor:pointer}
+.adv-flow>.kicker,.adv-flow>h2{padding-right:48px}
+#bk-close,#bk-iap{min-height:44px;padding:10px 12px}
+.credits .cr-x,.cares .cr-x{width:44px;height:44px;min-width:44px;min-height:44px}
+#rest .rest-timer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#rest .rest-timer button{min-height:44px;padding:10px 12px}
+#restPanel .btn-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+#restPanel .btn-row .btn{min-width:0}
+#hintGo{min-height:44px}#festBack{min-height:44px}
+#neo-go-cafe{grid-column:1/-1;display:grid;grid-template-columns:32px 1fr;gap:4px 10px;min-height:0;padding:12px}
+#neo-go-cafe>span{grid-row:1/3}#neo-go-cafe b,#neo-go-cafe small{margin:0}
+.shop-item .name .neo-ui-icon,.credits .kicker .neo-ui-icon{width:22px;height:22px;vertical-align:middle}
+.ci-dot .neo-ui-icon{width:18px;height:18px}.adv-emoji .neo-ui-icon{width:28px;height:28px}
+.homestead-patch .crop-choice{display:flex;flex-direction:column;gap:4px;width:100%;border-radius:14px;padding:10px 8px;line-height:1.3;min-height:72px}
+.crop-choice span,.crop-choice small{font-size:12px}
+.audit-close:hover,.credits .cr-x:hover,.cares .cr-x:hover{background:#e2e8d5}
+#shop [data-nav]{width:44px;height:44px;min-width:44px;min-height:44px}.dp-rack h4 .neo-ui-icon{width:22px;height:22px;vertical-align:middle}
+.audit-close:focus-visible{outline:3px solid #789578;outline-offset:2px}
 </style>
 
 <div id="app">
@@ -1518,7 +1538,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <h2>Cove Festival</h2>
       <p>Pick an event. The cats will handle the rest.</p>
       <div class="fc-cards" id="festEventCards"></div>
-      <div class="btn-row"><button class="btn" id="festChooseBack">Back to the Cove</button></div>
+
     </div>
     <div class="fest-panel" id="festPanel" hidden>
       <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg?v=3" alt="" aria-hidden="true" width="28" height="28"></div>
@@ -1815,7 +1835,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <p><b>Catmint Cove</b> is played upright.<br>Turn your phone back and the cove's right there. 🐾</p>
 </div>
 
-<script src="ui/memory-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=6"><script src="ui/little-matches.js?v=8"></script>
+<script src="ui/memory-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=7"><script src="ui/little-matches.js?v=9"></script>
 <script>
 (() => {
 "use strict";
@@ -5855,12 +5875,12 @@ document.getElementById("roster-x").onclick = () => {
 
 /* ---------- shop ---------- */
 const SHOP_TABS = [
-  { id:"inventory", label:"My inventory", intro:"Everything you own, ready to rearrange. Store item keeps an item; Place costs nothing. Capacity upgrades stay yours." },
+  { id:"inventory", label:"My inventory", intro:"Store items here and place them back in your Cove for free." },
   { id:"featured", label:"Featured", intro:"Optional ways to support Catmint Cove — no pressure, and appreciated. See ❤️ Cove Cares in Help." },
   { id:"comforts", label:"Comforts", intro:"More comforts draw more cats — and the right one keeps each personality happy." },
   { id:"stations", label:"Stations", intro:"Spots where cats work: bigger output while they're busy, plus a mood lift." },
   { id:"dress",    label:"Dress-up", intro:"Pick a cat, then pick a look. Each piece is bought for that one cat." },
-  { id:"decor",    label:"Decor",    intro:"Dress the whole cove. An atmosphere theme, and props to scatter about — bought once, kept forever." },
+  { id:"decor",    label:"Decor",    intro:"Make yourself at home. Preview a decoration, then choose a place for it." },
   { id:"upgrades", label:"Upgrades", intro:"Cove-wide boosts and expansions." },
 ];
 const SHOP = [
@@ -5973,46 +5993,43 @@ function shopPackRow() {
   pack.className = "shop-item pack";
   pack.innerHTML = Ads.owned()
     ? `<div class="txt"><div class="name">Founding Covekeeper</div>
-         <div class="desc">Your plaque's by the sign${ADS_ENABLED ? " · ads off" : ""} · thank you 🧡</div></div>
+         <div class="desc">Your plaque's by the sign${ADS_ENABLED ? " · ads off" : ""} · thank you </div></div>
        <button class="btn" data-founder-info>About your plaque</button>`
-    : `<div class="txt"><div class="name">❤️ Founding Covekeeper</div>
+    : `<div class="txt"><div class="name">${neoUIIcon("paw")} Founding Covekeeper</div>
          <div class="desc">For the hoomans helping our little Cove grow from the start · a limited 2026 founder's plaque, ribbon, halo &amp; hero mask · ad-free forever</div></div>
        <button class="btn primary">${IAP_PRODUCTS.founding_covekeeper.price}</button>`;
   const pb = pack.querySelector("button");
   if (pb) pb.addEventListener("click", () => pb.hasAttribute("data-founder-info") ? showFounderDescription() : showPackOffer(false));
   return pack;
 }
-// the Welcome Pack — a small first-purchase row (the welcome paw is decor, so
-// it also pins to the top of the Decor tab). Shows once you're a little settled
-// or already own it. `keepsake` = the pinned, highlighted treatment.
+// Welcome cosmetics are browsable in Featured.
 function shopWelcomeRow(keepsake) {
   const owned = iapOwns("welcome_pack");
   if (!owned && !(G.tutorialDone && residentCount() >= 2)) return null;
   const row = document.createElement("div");
   row.className = "shop-item pack" + (keepsake ? " keepsake" : "");
   row.innerHTML = owned
-    ? `<div class="txt"><div class="name">🐾 Welcome Pack</div>
-         <div class="desc">The amber ribbon's in the dress-up rack · welcome paw's by the sign · thank you 🧡</div></div>
+    ? `<div class="txt"><div class="name">${neoUIIcon("paw")} Welcome Pack</div>
+         <div class="desc">The amber ribbon's in the dress-up rack · welcome paw's by the sign · thank you </div></div>
        <span class="owned">Owned</span>`
-    : `<div class="txt"><div class="name">🐾 Welcome Pack</div>
-         <div class="desc">An amber ribbon for every cat + a carved welcome paw by the sign · purely cosmetic · ❤️ supports the Cove</div></div>
+    : `<div class="txt"><div class="name">${neoUIIcon("paw")} Welcome Pack</div>
+         <div class="desc">An amber ribbon for every cat + a carved welcome paw by the sign · purely cosmetic · ${neoUIIcon("paw")} supports the Cove</div></div>
        <button class="btn primary">${IAP_PRODUCTS.welcome_pack.price}</button>`;
   const b = row.querySelector("button");
   if (b) b.addEventListener("click", () => showWelcomeOffer(false));
   return row;
 }
-// the Sparkle Pack — the glow/wings/rainbow cosmetics. Pinned highlighted to the
-// top of the Decor tab (its contents are also in the dress-up rack header).
+// Sparkle cosmetics are browsable in Featured and Dress-up.
 function shopSparkleRow(keepsake) {
   const owned = iapOwns("sparkle_pack");
   if (!owned && !(G.tutorialDone && residentCount() >= 2)) return null;
   const row = document.createElement("div");
   row.className = "shop-item pack" + (keepsake ? " keepsake" : "");
   row.innerHTML = owned
-    ? `<div class="txt"><div class="name">✦ Sparkle Pack</div>
-         <div class="desc">Glow collar, little wings & rainbow trail — unlocked for every cat · thank you 🧡</div></div>
+    ? `<div class="txt"><div class="name">${neoUIIcon("trophy")} Sparkle Pack</div>
+         <div class="desc">Glow collar, little wings & rainbow trail — unlocked for every cat · thank you </div></div>
        <span class="owned">Owned</span>`
-    : `<div class="txt"><div class="name">✦ Sparkle Pack</div>
+    : `<div class="txt"><div class="name">${neoUIIcon("trophy")} Sparkle Pack</div>
          <div class="desc">Glow collar, little wings & rainbow trail — for every cat, now and later · purely cosmetic</div></div>
        <button class="btn primary">${IAP_PRODUCTS.sparkle_pack.price}</button>`;
   const b = row.querySelector("button");
@@ -6023,12 +6040,12 @@ function shopBoostRow() {
   const bc = document.createElement("div");
   bc.className = "shop-item boostcard";
   if (boostActive()) {
-    bc.innerHTML = `<div class="txt"><div class="name">⚡ The cove is buzzing</div>
+    bc.innerHTML = `<div class="txt"><div class="name">${neoUIIcon("garden")} The cove is buzzing</div>
       <div class="desc">2× earnings — ${fmtTime((G.boostUntil - Date.now()) / 1000)} left</div></div>
       <span class="owned">active</span>`;
   } else {
     const bp = boostPrice();
-    bc.innerHTML = `<div class="txt"><div class="name">⚡ Fresh catnip</div>
+    bc.innerHTML = `<div class="txt"><div class="name">${neoUIIcon("garden")} Fresh catnip</div>
       <div class="desc">The whole cove perks up — 2× earnings for 20 minutes.</div></div>
       <button class="btn primary" ${G.shells < bp ? "disabled" : ""}>◈ ${bp}</button>`;
     const bb = bc.querySelector("button");
@@ -6146,10 +6163,6 @@ function drawAccPreview(cv, key, coat) {
 
 function renderShopDecor(list) {
   const cm = G.cosmetics;
-  const wp = shopWelcomeRow(true);   // the welcome paw is decor — pin the pack up top, highlighted
-  if (wp) list.appendChild(wp);
-  const sp = shopSparkleRow(true);   // the Sparkle Pack's home tab — glow/wings/rainbow for the whole cove
-  if (sp) list.appendChild(sp);
   const decorCount = (G.decor.cottage || 0) + (G.decor.tree || 0) + (G.decor.flowers || 0);
   const propCount = DECOR_PROPS.filter(p => p.movable && cm.props[p.id] && !propBoxed(p.id)).length;
   const comfortCount = (G.bowls || 0) + (G.toys || 0) + (G.beds || 0) + (G.scratch || 0);
@@ -6247,9 +6260,9 @@ function renderShopDress(list) {
   list.classList.add("dressmode");
 
   const PACK_GROUP = {   // groups whose items are all unlocked by one IAP
-    Sparkle: { id: "sparkle_pack", icon: "✦" },
-    Welcome: { id: "welcome_pack", icon: "🐾" },
-    Founder: { id: "founding_covekeeper", icon: "🎖️" },
+    Sparkle: { id: "sparkle_pack", icon: neoUIIcon("trophy") },
+    Welcome: { id: "welcome_pack", icon: neoUIIcon("paw") },
+    Founder: { id: "founding_covekeeper", icon: neoUIIcon("trophy") },
   };
   const rackAcc = ACCESSORIES.filter(a => !a.hidden);   // `hidden` items are auto-equipped only (e.g. the founder's ribbon)
   const groups = [...new Set(rackAcc.map(a => a.group))];
@@ -6262,7 +6275,7 @@ function renderShopDress(list) {
     return head + `<div class="dp-grid">` + items.map(a => {
       const owned = accOwned(c, a.key), on = _dressWorn.includes(a.key);
       const locked = !!(a.iap || a.memoryLevel) && !owned;
-      const cost = a.memoryLevel ? `Level ${a.memoryLevel}` : locked ? "🔒" : a.pearls ? `✦ ${a.pearls}` : `◈ ${a.price}`;
+      const cost = a.memoryLevel ? `Level ${a.memoryLevel}` : locked ? "Locked" : a.pearls ? `✦ ${a.pearls}` : `◈ ${a.price}`;
       return `<button class="dp-acc${on ? " on" : ""}${a.premium ? " premium" : ""}${owned ? " owned" : ""}${locked ? " locked" : ""}" data-acc="${a.key}" title="${esc(a.blurb)}">
         <span class="dp-nm">${a.label}</span>
         <span class="dp-cost">${owned ? "yours" : cost}</span>
@@ -6439,11 +6452,10 @@ function renderShop() {
 
   if (shopTab === "inventory") { renderInventory(list); return; }
   if (shopTab === "featured") {
-    // the two "support the cove" keepsakes live here — Welcome, then Founding
-    // Covekeeper. The Sparkle Pack isn't a support tier; it's browsable in the
-    // Decor tab + the dress-up rack, not here.
+    // Paid cosmetic packs live in Featured; ordinary decorations stay in Decor.
     const wpRow = !iapOwns("welcome_pack") && shopWelcomeRow();
     if (wpRow) list.appendChild(wpRow);
+    const spRow = shopSparkleRow(); if (spRow) list.appendChild(spRow);
     const fcRow = !iapOwns("founding_covekeeper") && shopPackRow();
     if (fcRow) list.appendChild(fcRow);
     list.appendChild(shopBoostRow());
@@ -7381,7 +7393,7 @@ function openCredits() {
   ensureAudio();
   openModal(`<div class="reveal credits">
     <button class="cr-x" id="crX" aria-label="Close">✕</button>
-    <div class="kicker">Made with 🐾</div>
+    <div class="kicker">Made with ${neoUIIcon("paw")}</div>
     <h2>Catmint Cove</h2>
     <p class="cr-ver" id="crVer"></p>
     <p class="cr-lead">Made by one hooman at Midknight Studio Labs, with Midknight supervising 24/7 — mostly by sleeping near the keyboard and judging every decision.</p>
@@ -7410,7 +7422,7 @@ function openCredits() {
       `voices ${u.filter(x => _sfxBuf[x]).length}/${u.length} ${src} · ${_sfxErr || "ok"} · ${location.protocol} · audio ${actx ? actx.state : "off"}`; }
   { const nv = window.CoveNative && window.CoveNative.appVersion;
     const native = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-    document.getElementById("crVer").textContent = "Version " + (nv || (native ? APP_VERSION : APP_VERSION + " · web")); }
+    document.getElementById("crVer").textContent = "Version " + (nv || (native ? APP_VERSION : APP_VERSION + " · web · Neo 2026.09.14.1")); }
   document.querySelectorAll(".credits .cr-links a").forEach(a =>
     a.addEventListener("click", e => { e.preventDefault(); openExternal(a.href); }));
   document.getElementById("crClose").onclick = closeModal;
@@ -10638,7 +10650,6 @@ function festBackToChooser() {
   renderFestChooser();
   document.getElementById("festChoose").hidden = false;
 }
-document.getElementById("festChooseBack").addEventListener("click", closeFest);
 document.getElementById("boxCancel").addEventListener("click", closeFest);
 document.getElementById("boxStart").addEventListener("click", startBoxChallenge);
 document.getElementById("volleyCancel").addEventListener("click", closeFest);
@@ -17411,12 +17422,12 @@ function renderCheckinCard() {
   const dots = CHECKIN_REWARDS.map((r, i) => {
     const claimed = i < pos;
     const isToday = i === pos;
-    const lbl = r.pearls && !r.shells ? "✦" : r.keepsake ? "🎁" : "◈";
+    const lbl = r.keepsake ? neoUIIcon("box") : r.pearls && !r.shells ? "&#10022;" : "&#9672;";
     return `<span class="ci-dot${claimed ? " done" : ""}${isToday ? " now" : ""}">${claimed ? "✓" : lbl}</span>`;
   }).join("");
   if (avail) {
     el.className = "adv-card ready";
-    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">📅</span>
+    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">${neoUIIcon("journal")}</span>
       <div><div class="adv-title">A welcome is waiting</div>
       <div class="adv-sub">day ${pos + 1} of the week &middot; ${rewardBits(CHECKIN_REWARDS[pos])}</div></div></div>
       <div class="ci-dots">${dots}</div>
@@ -17424,7 +17435,7 @@ function renderCheckinCard() {
     document.getElementById("ci-claim").onclick = claimCheckin;
   } else {
     el.className = "adv-card done";
-    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">📅</span>
+    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">${neoUIIcon("journal")}</span>
       <div><div class="adv-title">Checked in today</div>
       <div class="adv-sub">day ${pos === 0 ? 7 : pos} done &middot; next welcome tomorrow</div></div></div>
       <div class="ci-dots">${dots}</div>`;
@@ -18238,12 +18249,13 @@ function openAdventurePicker() {
   if (!advSlotOpen()) { toast("Both expeditions are already out.", 3.5); return; }
   const dests=Object.entries(ADV_DESTS).map(([k,d])=>`<button class="pick-dest" data-d="${k}" aria-pressed="false"><span>${neoUIIcon("dest-"+k)}</span><b>${esc(d.name)}</b><i>${esc(d.blurb)}</i></button>`).join("");
   const tiers=Object.values(ADV_TIERS).map(t=>`<button class="pick-tier${t.key==='day'?' on':''}" data-t="${t.key}" aria-pressed="${t.key==='day'}"><b>${esc(t.label)}</b><i>${esc(t.note)}</i></button>`).join("");
-  openModal(`<div class="reveal adv-flow"><div class="kicker">Adventure · 1 of 2</div><h2>Plan a little adventure</h2><p class="sub">Choose a place and how long your cats will be away.</p><div class="pick-list">${dests}</div><div class="pick-label">How long?</div><div class="pick-tiers">${tiers}</div><p class="adv-selection" id="adv-selection" role="status">Choose a destination to continue.</p><div class="row"><button class="btn primary" id="adv-continue" disabled>Choose cats</button><button class="btn" id="pick-cancel">Cancel</button></div></div>`);
+  openModal(`<div class="reveal adv-flow"><button class="audit-close" id="adv-close" aria-label="Close adventure planner">&times;</button><div class="kicker">Adventure · 1 of 2</div><h2>Plan a little adventure</h2><p class="sub">Choose a place and how long your cats will be away.</p><div class="pick-list">${dests}</div><div class="pick-label">How long?</div><div class="pick-tiers">${tiers}</div><p class="adv-selection" id="adv-selection" role="status">Choose a destination to continue.</p><div class="row"><button class="btn primary" id="adv-continue" disabled>Choose cats</button><button class="btn" id="pick-cancel">Cancel</button></div></div>`);
   let tier='day',dest=null;
   const sync=()=>{document.getElementById('adv-continue').disabled=!dest;document.getElementById('adv-selection').textContent=dest?ADV_DESTS[dest].name+' · '+advTier(tier).label:'Choose a destination to continue.';};
   document.querySelectorAll('#modal .pick-tier').forEach(b=>b.onclick=()=>{document.querySelectorAll('#modal .pick-tier').forEach(x=>{x.classList.remove('on');x.setAttribute('aria-pressed','false')});b.classList.add('on');b.setAttribute('aria-pressed','true');tier=b.dataset.t;sync();});
   document.querySelectorAll('#modal .pick-dest').forEach(b=>b.onclick=()=>{document.querySelectorAll('#modal .pick-dest').forEach(x=>{x.classList.remove('on');x.setAttribute('aria-pressed','false')});b.classList.add('on');b.setAttribute('aria-pressed','true');dest=b.dataset.d;sync();});
   document.getElementById('pick-cancel').onclick=closeModal;
+  document.getElementById('adv-close').onclick=closeModal;
   document.getElementById('adv-continue').onclick=()=>{if(dest)pickAdventureCat(dest,tier);};
 }
 const PARTY_MAX = 3;
@@ -18255,7 +18267,8 @@ function pickAdventureCat(dest, tier) {
     openModal(`<div class="reveal"><div class="kicker">${esc(ADV_DESTS[dest].name)}</div><h2>Who's going?</h2>
       <p class="sub">Nobody's around to send. Coax a cat first.</p>
       <button class="btn primary" id="pc-back">Back</button></div>`);
-    document.getElementById("pc-back").onclick = openAdventurePicker;
+    document.getElementById("adv-close").onclick = closeModal;
+  document.getElementById("pc-back").onclick = openAdventurePicker;
     return;
   }
   const listHtml = goers.map(c => {
@@ -18263,7 +18276,7 @@ function pickAdventureCat(dest, tier) {
     return `<button class="pick-cat${c.mascot ? " mk" : ""}" data-c="${esc(c.name)}" aria-pressed="false"><canvas width="100" height="94" aria-hidden="true"></canvas><b>${esc(c.name)}</b>
       <i>${c.traits.map(t => TRAITS[t] ? TRAITS[t].label : t).join(" · ")}</i>${hint ? `<em>${esc(hint)}</em>` : ""}</button>`;
   }).join("");
-  openModal(`<div class="reveal adv-flow"><div class="kicker">Adventure · 2 of 2</div><p class="adv-selection">${esc(ADV_DESTS[dest].name)} · ${esc(T.label)}</p><h2>Who's going?</h2>
+  openModal(`<div class="reveal adv-flow"><button class="audit-close" id="adv-close" aria-label="Close adventure planner">&times;</button><div class="kicker">Adventure · 2 of 2</div><p class="adv-selection">${esc(ADV_DESTS[dest].name)} · ${esc(T.label)}</p><h2>Who's going?</h2>
     <p class="sub" style="margin:.1rem 0 .1rem">Pick up to ${room} — more cats, a little more brought home.</p>
     <div class="pick-list cats">${listHtml}</div>
     <div class="row"><button class="btn primary" id="pc-send" disabled>Send adventure</button>
@@ -18272,6 +18285,7 @@ function pickAdventureCat(dest, tier) {
   const sel = new Set();
   const sendBtn = document.getElementById("pc-send");
   const sync = () => { sendBtn.disabled = !sel.size; sendBtn.textContent = sel.size ? `Send ${sel.size} ${sel.size===1?"cat":"cats"} · ${T.label}` : "Select cats to send"; };
+  document.getElementById("adv-close").onclick = closeModal;
   document.getElementById("pc-back").onclick = openAdventurePicker;
   document.querySelectorAll("#modal .pick-cat").forEach(b => b.onclick = () => {
     const n = b.dataset.c;
@@ -19193,7 +19207,7 @@ function neoOpenHomestead(kind){
     const grid=document.createElement('div');grid.className='homestead-grid';
     h.plots.forEach((p,i)=>{const card=document.createElement('article');card.className='homestead-patch';card.innerHTML=`<h3>Patch ${i+1}</h3>${neoCropArt(p?.key||'carrot',!!p&&!time(p.ready))}`;
       if(p){card.innerHTML+=`<p>${COVE_CROPS[p.key].name}</p><button class="btn" data-ready="${p.ready}" ${time(p.ready)?'disabled':''}>${time(p.ready)?'Growing · '+time(p.ready)+'s':'Harvest'}</button>`;card.querySelector('button').onclick=()=>neoHarvest(i);}
-      else for(const [k,c]of Object.entries(COVE_CROPS)){const b=document.createElement('button');b.className='btn';b.textContent=`${c.name} · Harvest ${c.yield} · ${c.cost} shells · ${c.seconds<60?c.seconds+'s':c.seconds/60+'m'}`;b.disabled=G.shells<c.cost;b.onclick=()=>neoPlant(i,k);card.append(b);}
+      else for(const [k,c]of Object.entries(COVE_CROPS)){const b=document.createElement('button');b.className='btn';b.classList.add('crop-choice');b.innerHTML='<strong>Plant '+esc(c.name)+'</strong><span>'+c.cost+' shells &middot; '+(c.seconds<60?c.seconds+'s':c.seconds/60+'m')+'</span><small>Harvest '+c.yield+'</small>';b.disabled=G.shells<c.cost;b.onclick=()=>neoPlant(i,k);card.append(b);}
       grid.append(card);});sheet.append(grid);const market=document.createElement('div');market.className='homestead-stock';for(const [key,crop] of Object.entries(COVE_CROPS)){const sell=document.createElement('button');sell.className='btn';sell.textContent='Sell 1 '+crop.name.toLowerCase()+' · 1 shell';sell.disabled=!(h.stock[key]>0);sell.onclick=()=>neoSellHarvest(key);market.append(sell);}sheet.append(market);
   }else{
     const door=document.createElement('button');door.className='btn';door.textContent=h.open?'Open for guests · Close café':'Café closed · Open café';door.onclick=()=>{neoCafeSettle();h.open=!h.open;h.lastSale=Date.now();save();neoOpenHomestead('cafe');};sheet.append(door);
@@ -19741,6 +19755,17 @@ document.getElementById('photoClose').addEventListener('click',neoRevealPhoto);
 
 
 // Little Matches reuses Cove artwork; no extra bitmap pack or duplicate economy.
+// Fit object illustrations to the memory card's available space.
+function memoryObjectImage(source){
+ const w=source.width,h=source.height,data=source.getContext('2d').getImageData(0,0,w,h).data;
+ let left=w,top=h,right=-1,bottom=-1;
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(data[(y*w+x)*4+3]>16){left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y)}
+ if(right<left)return source.toDataURL();
+ const cv=document.createElement('canvas');cv.width=240;cv.height=200;
+ const sw=right-left+1,sh=bottom-top+1,scale=Math.min(204/sw,164/sh);
+ cv.getContext('2d').drawImage(source,left,top,sw,sh,(240-sw*scale)/2,(200-sh*scale)/2,sw*scale,sh*scale);
+ return cv.toDataURL();
+}
 const memoryPortraits=new WeakMap();
 const littleMatches=createLittleMatches({
  rewards:window.LITTLE_MATCH_REWARDS,
@@ -19751,11 +19776,11 @@ const littleMatches=createLittleMatches({
  hide:()=>{closeAllPanels();closeModal();hideCatCard();hidePropCard();},
  cats:()=>cats.filter(c=>!c.visitor&&!c._gone&&!c._leaving).map(c=>{const cv=document.createElement('canvas');cv.width=240;cv.height=200;neoPortrait(cv,c,3);return{id:c.journalId,name:c.name,key:c.coatKey,markSeed:c.markSeed,mascot:c.mascot,worn:[...(c.worn||[])],image:cv.toDataURL()}}),
  catalog:()=>{const out={};for(const coat of COATS){const cv=document.createElement('canvas');cv.width=240;cv.height=200;neoPortrait(cv,{coatKey:coat.key,markSeed:4242,star:0,bornAt:0,worn:[]},3);out['cat:'+coat.key]={name:coat.name,image:cv.toDataURL()}}
- for(const type of ['food','bed','toy','flowers']){const name={food:'Food bowl',bed:'Cozy bed',toy:'Cat toy',flowers:'Flowers'}[type];out['obj:'+type]={name,image:productPreview({type,name}).toDataURL()}}
- for(const key of ['lantern','birdbath','windmill','bunting']){const cv=document.createElement('canvas');cv.width=240;cv.height=200;const g=cv.getContext('2d');g.translate(120,175);const p=PROP_BY_ID[key];p.render(g,0,0,0,key==='windmill'?.9:1);out['obj:'+key]={name:p.name,image:cv.toDataURL()}}return out;},
+ for(const type of ['food','bed','toy','flowers']){const name={food:'Food bowl',bed:'Cozy bed',toy:'Cat toy',flowers:'Flowers'}[type];out['obj:'+type]={name,image:memoryObjectImage(productPreview({type,name}))}}
+ for(const key of ['lantern','birdbath','windmill','bunting']){const cv=document.createElement('canvas');cv.width=240;cv.height=200;const g=cv.getContext('2d');g.translate(120,175);const p=PROP_BY_ID[key];p.render(g,0,0,0,key==='windmill'?.9:1);out['obj:'+key]={name:p.name,image:memoryObjectImage(cv)}}return out;},
  keepsake:(level,c)=>{const j=G.littleVictories ||= {counts:{},entries:[],rotation:{}};const mark='memory:'+level;if(j.counts[mark])return;j.counts[mark]=1;const names={1:'A Familiar Face',5:'Gingham Bow',10:'Daisy Crown',15:'Cozy Neckerchief',20:'Sleepy Bonnet',25:'Explorer Hat',30:'Little Lion'};const lines={1:'Found a friend. Then found the same friend again. An excellent start.',5:'A little bow. A very accomplished companion.',10:'Ten levels together. A crown of daisies felt appropriate.',15:'Dressed for a small adventure. Possibly to the food bowl.',20:'Twenty levels remembered. Permission to nap: granted.',25:'A fine hat for someone who knows their way around.',30:'Small paws. A mighty finish. The mane is magnificent. The roar needs practice.'};j.entries.unshift({activity:'memory',members:[{id:c.id,name:c.name,coatKey:c.key,star:0,markSeed:c.markSeed||4242}],won:true,milestone:level,award:names[level],title:level===30?'You remembered the little things.':'Another little memory, kept.',line:lines[level],day:new Date().toLocaleDateString(),time:Date.now(),count:1,results:[{level}]});save();}
 });
-const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 pages, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();document.querySelector('#neo-explore .neo-explore-grid').appendChild(matchesButton);
+const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 levels, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();const activityGrid=document.querySelector('#neo-explore .neo-explore-grid');activityGrid.prepend(matchesButton);activityGrid.appendChild(document.getElementById('neo-go-cafe'));
 })();
 </script>
 
