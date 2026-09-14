@@ -13955,7 +13955,7 @@ const DECOR_THEMES = {
   seaside:  { name:"Bright seaside",     price: 26000, sky:["#8fd1e7","#d8f0f5","#f4f8ef"], ground:"#e7ddc0", grass:"#a6bd78", grassAlt:"#b7cd8c", weather:"none",
              blurb:"Pale sand, a wide clean sky. Smells of salt, somehow." },
   autumn:   { name:"Golden autumn",      price: 28000, sky:["#e7b587","#f1dabd","#f7edda"], ground:"#c9975f", grass:"#b0863a", grassAlt:"#c29a4a", weather:"leaves",
-             blurb:"Everything the colour of a good afternoon in late October." },
+             blurb:"Honey-gold ground, copper foliage and little drifts of fallen leaves." },
   frost:    { name:"First frost",        price: 32000, sky:["#93a1c6","#c9d1e2","#e9e6e2"], ground:"#dbe1e5", grass:"#9fb0a7", grassAlt:"#b0bfb6", weather:"snow",
              blurb:"Cold light, quiet ground. The cats do not mind at all." },
 };
@@ -19505,7 +19505,7 @@ function neoCovePlate(){
  const cv=document.createElement('canvas');cv.width=im.naturalWidth;cv.height=im.naturalHeight;
  const g=cv.getContext('2d');g.drawImage(im,0,0);
  const data=g.getImageData(0,0,cv.width,cv.height),a=data.data;
- const palettes={meadow:[133,178,96],seaside:[231,216,175],autumn:[194,146,77],frost:[216,228,230]};
+ const palettes={meadow:[133,178,96],seaside:[231,216,175],autumn:[197,160,103],frost:[216,228,230]};
  const base=palettes[key];if(!base)return im;
  for(let y=Math.floor(cv.height*.30);y<cv.height;y++)for(let x=0;x<cv.width;x++){
   const i=(y*cv.width+x)*4,r=a[i],green=a[i+1],b=a[i+2];
@@ -19513,8 +19513,14 @@ function neoCovePlate(){
   if(ground){
    // Retain the illustration's shadows, rock shapes and texture.
    const lum=(r*.3+green*.59+b*.11)/170;
-   const strength=key==='frost'?.88:key==='seaside'?.86:.70;
-   for(let c=0;c<3;c++)a[i+c]=a[i+c]*(1-strength)+Math.min(255,base[c]*lum)*strength;
+   const foliage=key==='autumn'&&green>r*1.04&&green>b*1.12&&(r*.3+green*.59+b*.11)<175;
+   const tint=foliage?((x+Math.floor(y/24)*13)%91<45?[185,104,58]:[210,158,66]):base;
+   const strength=key==='frost'?.88:key==='seaside'?.86:key==='autumn'?.85:.70;
+   for(let c=0;c<3;c++)a[i+c]=a[i+c]*(1-strength)+Math.min(255,tint[c]*lum)*strength;
+  }else if(key==='autumn'&&y>cv.height*.24&&green>r*1.08&&green>b*1.02){
+   // Warm the distant green tree silhouettes, preserving the blue mountains.
+   const lum=(r*.3+green*.59+b*.11)/170;
+   const tint=[192,146,85];for(let c=0;c<3;c++)a[i+c]=a[i+c]*.3+tint[c]*lum*.7;
   }else if(y<cv.height*.40&&b>r*1.05){
    const water=key==='seaside'?[91,181,188]:key==='frost'?[157,187,205]:null;
    if(water)for(let c=0;c<3;c++)a[i+c]=a[i+c]*.52+water[c]*.48;
@@ -19539,7 +19545,14 @@ function neoCovePlate(){
   }else if(key==='frost'){
    g.fillStyle='rgba(249,253,250,.65)';g.beginPath();g.ellipse(x,y,size*4,size*1.3,-.12,0,7);g.fill();
   }else if(key==='autumn'){
-   g.fillStyle=['#b96b3f','#e5b552','#b48743'][i%3];g.beginPath();g.ellipse(x,y,size*1.4,size*.6,i,0,7);g.fill();
+   // Small maple-like leaves, gathered at the edges rather than covering the board.
+   const count=edge?3:1;
+   for(let n=0;n<count;n++){
+    g.save();g.translate(x+n*size*2.7,y+(n%2)*size*1.8);g.rotate(i+n*1.7);g.scale(size*.85,size*.85);
+    g.fillStyle=['#b66c42','#deb45d','#a87948'][(i+n)%3];
+    g.beginPath();g.moveTo(0,1.2);g.lineTo(-1.7,.5);g.lineTo(-1.1,-.15);g.lineTo(-1.8,-1.1);g.lineTo(-.65,-.9);g.lineTo(0,-2.2);g.lineTo(.65,-.9);g.lineTo(1.8,-1.1);g.lineTo(1.1,-.15);g.lineTo(1.7,.5);g.closePath();g.fill();
+    g.strokeStyle='#88643e';g.lineWidth=.18;g.beginPath();g.moveTo(0,1.7);g.lineTo(0,-1.1);g.stroke();g.restore();
+   }
   }
  }
  neoThemePlateKey=key;neoThemePlate=cv;return cv;
