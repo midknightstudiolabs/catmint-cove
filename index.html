@@ -1228,8 +1228,13 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?v=9">
+</style><link rel="stylesheet" href="ui/device-fixes.css?v=18">
 <style id="neo-theme">
+#atmosphere-preview{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;touch-action:none}
+#atmosphere-preview section{width:min(440px,100%);box-sizing:border-box;padding:18px;background:#faf7ea;color:#395447;border:1px solid #d8ddc7;border-radius:24px;box-shadow:0 8px 32px #243c3426;text-align:center}
+#atmosphere-preview small{font-size:11px;letter-spacing:.06em}#atmosphere-preview h3{margin:8px 0 14px;font-family:Georgia,serif;font-size:22px}
+.atmosphere-actions{display:flex;gap:10px}.atmosphere-actions button{flex:1;min-width:0;min-height:44px;text-align:center}
+
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
 #restRetryRain[hidden]{display:none;}
@@ -1438,6 +1443,46 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .inventory-item{position:relative;flex-wrap:wrap;gap:10px}
 .inventory-preview{position:static!important;width:80px!important;height:60px!important;flex:0 0 80px;background:#eef0df;border-radius:12px;cursor:grab}
 .inventory-quantity{position:absolute;left:8px;top:5px;background:#faf6e9;color:#43543f;border-radius:10px;padding:2px 6px;font-weight:700;font-size:12px;pointer-events:none}
+
+/* Menu audit: consistent exits and comfortable touch areas. */
+.audit-close{position:sticky;top:0;float:right;z-index:3;display:grid;place-items:center;width:44px;height:44px;min-width:44px;padding:0;border:1px solid var(--panel-line);border-radius:50%;background:var(--panel);color:var(--ink);font:24px/1 sans-serif;cursor:pointer}
+.adv-flow>.kicker,.adv-flow>h2{padding-right:48px}
+#bk-close,#bk-iap{min-height:44px;padding:10px 12px}
+.credits .cr-x,.cares .cr-x{width:44px;height:44px;min-width:44px;min-height:44px}
+#rest .rest-timer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#rest .rest-timer button{min-height:44px;padding:10px 12px}
+#restPanel .btn-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+#restPanel .btn-row .btn{min-width:0}
+#hintGo{min-height:44px}#festBack{min-height:44px}
+#neo-go-cafe{grid-column:1/-1;display:grid;grid-template-columns:32px 1fr;gap:4px 10px;min-height:0;padding:12px}
+#neo-go-cafe>span{grid-row:1/3}#neo-go-cafe b,#neo-go-cafe small{margin:0}
+.shop-item .name .neo-ui-icon,.credits .kicker .neo-ui-icon{width:22px;height:22px;vertical-align:middle}
+.ci-dot .neo-ui-icon{width:18px;height:18px}.adv-emoji .neo-ui-icon{width:28px;height:28px}
+.homestead-patch .crop-choice{display:flex;flex-direction:column;gap:4px;width:100%;border-radius:14px;padding:10px 8px;line-height:1.3;min-height:72px}
+.crop-choice span,.crop-choice small{font-size:12px}
+.audit-close:hover,.credits .cr-x:hover,.cares .cr-x:hover{background:#e2e8d5}
+#shop [data-nav]{width:44px;height:44px;min-width:44px;min-height:44px}.dp-rack h4 .neo-ui-icon{width:22px;height:22px;vertical-align:middle}
+.audit-close:focus-visible{outline:3px solid #789578;outline-offset:2px}
+
+#modal .cove-bottom-dialog{display:flex;flex-direction:column;max-height:calc(100dvh - 120px);overflow:hidden;padding:0}
+.cove-dialog-body{overflow:auto;min-height:0;padding:18px 8px;overscroll-behavior:contain}
+.cove-dialog-footer{position:static!important;flex-shrink:0;display:flex!important;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:0!important;padding:12px 0!important;border-top:1px solid var(--panel-line);background:var(--panel)}
+.cove-dialog-footer .btn{min-height:44px;flex:1 1 0;min-width:0;width:auto;text-align:center}
+#roster .x{display:none}
+#modal .adv-flow .kicker,#modal .adv-flow h2{padding-right:0}
+#modal .credits .row,#modal .cares .row{position:static;transform:none;width:auto}
+
+.cove-bottom-sheet:not([hidden]){display:flex!important;flex-direction:column;overflow:hidden!important}
+.cove-sheet-body{overflow:auto;min-height:0;flex:1 1 auto;overscroll-behavior:contain}
+.cove-sheet-footer{flex-shrink:0;border-top:1px solid var(--panel-line);padding:10px 12px;background:var(--panel);text-align:center}
+.cove-sheet-footer .btn{min-height:44px;width:100%;text-align:center}
+#shop .cove-sheet-body{display:flex;flex-direction:column;overflow:hidden}
+#shopList{min-height:0}
+.cove-bottom-help{display:flex!important;flex-direction:column;overflow:hidden!important;max-height:calc(100dvh - 40px)}
+.cove-bottom-help .cove-dialog-body{padding:0;flex:1 1 auto}
+
+[aria-label="Sell from your pantry"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}[aria-label="Sell from your pantry"] .btn{min-width:0;padding:8px 4px;font-size:12px;min-height:48px}
+.garden-purpose{background:#eef0df;border:1px solid var(--panel-line);border-radius:14px;padding:12px;margin:12px 0;font-size:13px;line-height:1.45}.garden-purpose p{margin:7px 0}.garden-purpose small{color:var(--ink-soft)}
 </style>
 
 <div id="app">
@@ -1489,6 +1534,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <label><input type="checkbox" id="restRain" checked> Rain sound</label>
       <label><input type="checkbox" id="restFire" checked> Fireplace</label>
       <label><input type="checkbox" id="restThunder"> Distant thunder</label>
+      <label><input type="checkbox" id="restDark"> Dim room</label>
       <div class="rest-timer" id="restTimer">
         <button data-h="1">1 hour</button>
         <button data-h="3">3 hours</button>
@@ -1503,6 +1549,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <div class="rest-bar" id="restBar" hidden>
       <button class="rb-back" id="restWake"><span>‹</span> Back to the cove</button>
       <span class="rb-time" id="restTime">resting</span>
+      <button class="rb-back" id="restDimToggle" aria-pressed="false">Dim room</button>
       <button class="rb-back" id="restRetryRain" hidden>Retry rain</button>
       <button class="rb-fs" id="restFs" title="Fullscreen">⤢</button>
     </div>
@@ -1516,7 +1563,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <h2>Cove Festival</h2>
       <p>Pick an event. The cats will handle the rest.</p>
       <div class="fc-cards" id="festEventCards"></div>
-      <div class="btn-row"><button class="btn" id="festChooseBack">Back to the Cove</button></div>
+
     </div>
     <div class="fest-panel" id="festPanel" hidden>
       <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg?v=3" alt="" aria-hidden="true" width="28" height="28"></div>
@@ -1793,7 +1840,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <input class="cap-in" id="photoCap" maxlength="42" placeholder="write a caption…">
     <p class="hint" id="photoHint">Screenshot this to share it — in the shipped game this is a one-tap export with an install link.</p>
     <div class="row" style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;">
-      <button class="btn primary" id="photoSave"><span class="ico">💾</span> Save photo</button>
+      <button class="btn primary" id="photoSave">Save photo</button>
       <button class="btn" id="photoClose">Back to the cove</button>
     </div>
   </div>
@@ -1802,7 +1849,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <div id="placeBar" hidden>
     <span id="placeBarTxt">Tap where it should go</span>
     <button id="placeBarInventory">Inventory</button>
-    <button id="placeBarPutAway" hidden>Put away</button>
+    <button id="placeBarPutAway" hidden>Store item</button>
     <button id="placeBarCancel">Cancel</button>
     <button id="placeBarDone" class="ok">Set here</button>
   </div>
@@ -1813,6 +1860,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <p><b>Catmint Cove</b> is played upright.<br>Turn your phone back and the cove's right there. 🐾</p>
 </div>
 
+<script src="ui/memory-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=10"><script src="ui/little-matches.js?v=12"></script>
 <script>
 (() => {
 "use strict";
@@ -2171,6 +2219,7 @@ function newGame() {
     ads: newAdsState(),    // monetization: supporter status, age treatment, frequency caps
     owner: null,           // the player names their cove on first run
     opens: 1,
+    coveDayAt: Date.now(),
     firstSeen: Date.now(),
     lastSeen: Date.now(),
     ratePerSec: 0,
@@ -2299,21 +2348,35 @@ function load() {
       G.econReset1 = true;
       if (G.shells > 80) { _econJustReset = Math.floor(G.shells); G.shells = 25; G.allTimeSec = 0; }
     }
-    G.opens = (G.opens || 1) + 1;
+    advanceCoveDay();
   } catch (e) { G = newGame(); }
 }
 let _dead = false;
 let _econJustReset = 0;   // > 0 → this load did the one-time economy reset (old balance)
+// Keep the existing day/progression field, but advance by real elapsed days.
+// coveDayAt retains partial days; lastSeen remains the offline-reward checkpoint.
+function advanceCoveDay(now=Date.now()) {
+  if(!G)return;
+  G.opens=Math.max(1,Math.floor(Number(G.opens)||1));
+  if(!Number.isFinite(G.coveDayAt)||G.coveDayAt<=0){
+    G.coveDayAt=Number.isFinite(G.lastSeen)&&G.lastSeen>0?Math.min(now,G.lastSeen):now;
+  }
+  const elapsed=now-G.coveDayAt;
+  if(elapsed<0)return; // Clock rollback cannot subtract or re-award days.
+  const days=Math.floor(elapsed/86400000);
+  if(days>0){G.opens+=days;G.coveDayAt+=days*86400000;}
+}
 function save() {
   if (_dead || !G) return;
   try {
+    advanceCoveDay();
     G.lastSeen = Date.now();
     G.ratePerSec = aggregateRate();
     G.allTimeSec = (G.allTimeSec || 0) + (performance.now() - lastSaveClock) / 1000;
     lastSaveClock = performance.now();
     if (typeof dedupeCats === "function") dedupeCats();   // a dup never makes it to disk
     G.cats = cats.filter(c => !c.visitor).map(c => ({     // Labubu is a guest — never saved as a resident
-      name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
+      journalId:c.journalId, name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
       mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood), worn:c.worn || [], owned:c.owned || [],
       bond:Math.round(c.bond || 0), bondSeen:c.bondSeen || 0, bondDay:c.bondDay || "",
       pref:c.pref, quirk:c.quirk, quirkKnown:!!c.quirkKnown, friend:c.friend || null,
@@ -2855,6 +2918,7 @@ let _fishFireLit = 0;                 // how many cats are cooking a catch right
 let _bakeOvenLit = 0;                 // how many cats have a tray in the oven right now (drives the oven glow)
 class Cat {
   constructor(o = {}) {
+    this.journalId = o.journalId || (crypto.randomUUID ? crypto.randomUUID() : Date.now()+"-"+Math.random());
     this.name = o.name || uniqueName();
     this.traits = o.traits || rollTraits();
     this.coatKey = o.coatKey || (COAT_BY_KEY[o.coat] ? o.coat : weightedCoat());
@@ -3256,7 +3320,7 @@ function restoreCats() {
   if (G.cats && G.cats.length) {
     for (const s of G.cats) {
       cats.push(new Cat({
-        name:s.name, traits:s.traits, coatKey:s.coatKey, markSeed:s.markSeed, star:s.star,
+        journalId:s.journalId, name:s.name, traits:s.traits, coatKey:s.coatKey, markSeed:s.markSeed, star:s.star,
         mascot: s.mascot || s.coatKey === "midknight" || s.name === "Midknight",
         worn: s.worn, accessory: s.accessory, owned: s.owned,
         bornAt: s.bornAt ?? (Date.now() - KITTEN_MS * 3), mood:s.mood,
@@ -4764,6 +4828,7 @@ function positionPlaceActions(){
   el.style.position='fixed';el.style.transform='none';el.style.bottom='auto';el.style.left=left+'px';el.style.top=top+'px';
 }
 function _beginPlace(spec) {
+ tutEl.classList.remove("on");closeModal();hidePropCard();
   document.getElementById("placeBarPutAway").hidden = false;
   if (!_arranging) closeAllPanels();
   _placing = spec;
@@ -5157,6 +5222,7 @@ function handleTap(x, y, screenX, screenY) {
   hideCatCard(); hidePropCard();
   neoHelloTap(x,y,screenX,screenY);
 }
+function storeCairn(){const cn=G.cairn;if(!cn)return;cn.storedSize=cn.size||3;cn.tidied=true;cn.size=0;save();rebuildAttractors();}
 function tapCairn(x, y) {
   const cn = G && G.cairn;
   if (!cn || cn.tidied) return false;
@@ -5165,9 +5231,10 @@ function tapCairn(x, y) {
   const { sx, gy } = cairnPos(W, H);
   if (dist2(x, y, sx, gy - 14) > 32 * 32) return false;
   hideCatCard();
-  showPropCard("Midknight's cairn", cn.stage >= 4
-    ? "A little monument to everything worth carrying home — Labubu's finds, and a few of his own."
-    : "Midknight's still rearranging this — Labubu's odds and ends, stacked just so.", sx, gy);
+  hidePropCard();
+  openModal(`<div class="reveal"><div class="kicker">A little keepsake</div><h2>Midknight’s cairn</h2><p>A small tower of treasures, carefully gathered and arranged. You can store it safely and bring it back from My inventory.</p><div class="cove-action-pair"><button class="btn" id="cairn-close">Keep here</button><button class="btn primary" id="cairn-store">Store item</button></div></div>`);
+  document.getElementById('cairn-close').onclick=closeModal;
+  document.getElementById('cairn-store').onclick=()=>{storeCairn();closeModal();toast('Cairn stored in My inventory.');};
   return true;
 }
 function petCat(c) {
@@ -5418,6 +5485,7 @@ const ACCESSORIES = [
   { key:"wings",       label:"Little wings", iap:"sparkle_pack", slot:"back", group:"Sparkle", premium:true, blurb:"Small feathered wings that flutter on the cat's back — a slow flap at rest, faster on the zoomies." },
   { key:"rainbow",     label:"Rainbow trail",iap:"sparkle_pack", slot:"aura", group:"Sparkle", premium:true, blurb:"A ribbon of colour that streams behind the cat as it moves and fades when it settles." },
 ];
+ACCESSORIES.push(...window.LITTLE_MATCH_REWARDS.map(r=>({...r,memoryLevel:r.level,group:'Little Matches',price:0})));
 const ACC_BY_KEY = Object.fromEntries(ACCESSORIES.map(a => [a.key, a]));
 const ACC_LABEL  = Object.fromEntries(ACCESSORIES.map(a => [a.key, a.label.toLowerCase()]));
 const ACC_SLOTS  = ["aura", "back", "neck", "ear", "face", "head"];   // also the draw order (aura/back behind, head on top)
@@ -5441,6 +5509,7 @@ function normalizeWorn(list) {   // at most one item per slot, valid keys only
 function accOwned(c, key) {
   if (!key) return true;
   const a = ACC_BY_KEY[key];
+  if (a && a.memoryLevel) return !!G.littleMatches?.done?.[a.memoryLevel];
   if (a && a.iap) return iapOwns(a.iap);                    // the Sparkle Pack owns it for every cat, derived — never materialised into c.owned
   return !!(c && c.owned && c.owned.includes(key));
 }
@@ -5461,6 +5530,7 @@ function equipAccessory(c, key, forceOn) {
 function buyAccessory(c, key) {                   // buy + wear; returns true on success
   const a = ACC_BY_KEY[key]; if (!a || !c) return false;
   if (accOwned(c, key)) { equipAccessory(c, key, true); return true; }
+  if (a.memoryLevel) { toast('Complete Little Matches Level '+a.memoryLevel+' to earn this accessory.'); return false; }
   if (a.iap) { showIapOffer(a.iap); return false; }   // premium cosmetics only come from their pack
   if (a.pearls) {
     if ((G.pearls || 0) < a.pearls) { toast(`${a.label} is ✦${a.pearls} — earn a few more pearls from the Catdex or daily goals.`); return false; }
@@ -5484,7 +5554,7 @@ function renderWardrobe(c) {
   cc.dress.hidden = false;
   const worn = new Set(c.worn || []);
   const bySlot = {};
-  const ownedKeys = [...(c.owned || []), ...ACCESSORIES.filter(a => a.iap && !a.hidden && accOwned(c, a.key)).map(a => a.key)];
+  const ownedKeys = [...(c.owned || []), ...ACCESSORIES.filter(a => (a.iap || a.memoryLevel) && !a.hidden && accOwned(c, a.key)).map(a => a.key)];
   for (const k of ownedKeys) { const a = ACC_BY_KEY[k]; if (a && !(bySlot[a.slot] || []).includes(k)) (bySlot[a.slot] = bySlot[a.slot] || []).push(k); }
   const slots = ACC_SLOTS.filter(s => bySlot[s]);
   let html = `<div class="dl">Dress up</div>`;
@@ -5790,7 +5860,7 @@ function openRoster() {
     + (vet ? ` · ${vet} at the vet` : "");
   fillRoster(rows);
   const foot = document.getElementById("roster-foot");
-  foot.innerHTML = `<button id="roster-close">Close</button>`;
+  foot.innerHTML = `<button class="btn primary" id="roster-close">Back to the Cove</button>`;
   document.getElementById("roster-close").onclick = closeRoster;
   rosterEl.hidden = false;
 }
@@ -5830,12 +5900,12 @@ document.getElementById("roster-x").onclick = () => {
 
 /* ---------- shop ---------- */
 const SHOP_TABS = [
-  { id:"inventory", label:"My inventory", intro:"Everything you own, ready to rearrange. Put away keeps an item; Place costs nothing. Capacity upgrades stay yours." },
+  { id:"inventory", label:"My inventory", intro:"Store items here and place them back in your Cove for free." },
   { id:"featured", label:"Featured", intro:"Optional ways to support Catmint Cove — no pressure, and appreciated. See ❤️ Cove Cares in Help." },
   { id:"comforts", label:"Comforts", intro:"More comforts draw more cats — and the right one keeps each personality happy." },
   { id:"stations", label:"Stations", intro:"Spots where cats work: bigger output while they're busy, plus a mood lift." },
   { id:"dress",    label:"Dress-up", intro:"Pick a cat, then pick a look. Each piece is bought for that one cat." },
-  { id:"decor",    label:"Decor",    intro:"Dress the whole cove. An atmosphere theme, and props to scatter about — bought once, kept forever." },
+  { id:"decor",    label:"Decor",    intro:"Make yourself at home. Preview a decoration, then choose a place for it." },
   { id:"upgrades", label:"Upgrades", intro:"Cove-wide boosts and expansions." },
 ];
 const SHOP = [
@@ -5948,46 +6018,43 @@ function shopPackRow() {
   pack.className = "shop-item pack";
   pack.innerHTML = Ads.owned()
     ? `<div class="txt"><div class="name">Founding Covekeeper</div>
-         <div class="desc">Your plaque's by the sign${ADS_ENABLED ? " · ads off" : ""} · thank you 🧡</div></div>
+         <div class="desc">Your plaque's by the sign${ADS_ENABLED ? " · ads off" : ""} · thank you </div></div>
        <button class="btn" data-founder-info>About your plaque</button>`
-    : `<div class="txt"><div class="name">❤️ Founding Covekeeper</div>
+    : `<div class="txt"><div class="name">${neoUIIcon("paw")} Founding Covekeeper</div>
          <div class="desc">For the hoomans helping our little Cove grow from the start · a limited 2026 founder's plaque, ribbon, halo &amp; hero mask · ad-free forever</div></div>
        <button class="btn primary">${IAP_PRODUCTS.founding_covekeeper.price}</button>`;
   const pb = pack.querySelector("button");
   if (pb) pb.addEventListener("click", () => pb.hasAttribute("data-founder-info") ? showFounderDescription() : showPackOffer(false));
   return pack;
 }
-// the Welcome Pack — a small first-purchase row (the welcome paw is decor, so
-// it also pins to the top of the Decor tab). Shows once you're a little settled
-// or already own it. `keepsake` = the pinned, highlighted treatment.
+// Welcome cosmetics are browsable in Featured.
 function shopWelcomeRow(keepsake) {
   const owned = iapOwns("welcome_pack");
   if (!owned && !(G.tutorialDone && residentCount() >= 2)) return null;
   const row = document.createElement("div");
   row.className = "shop-item pack" + (keepsake ? " keepsake" : "");
   row.innerHTML = owned
-    ? `<div class="txt"><div class="name">🐾 Welcome Pack</div>
-         <div class="desc">The amber ribbon's in the dress-up rack · welcome paw's by the sign · thank you 🧡</div></div>
+    ? `<div class="txt"><div class="name">${neoUIIcon("paw")} Welcome Pack</div>
+         <div class="desc">The amber ribbon's in the dress-up rack · welcome paw's by the sign · thank you </div></div>
        <span class="owned">Owned</span>`
-    : `<div class="txt"><div class="name">🐾 Welcome Pack</div>
-         <div class="desc">An amber ribbon for every cat + a carved welcome paw by the sign · purely cosmetic · ❤️ supports the Cove</div></div>
+    : `<div class="txt"><div class="name">${neoUIIcon("paw")} Welcome Pack</div>
+         <div class="desc">An amber ribbon for every cat + a carved welcome paw by the sign · purely cosmetic · ${neoUIIcon("paw")} supports the Cove</div></div>
        <button class="btn primary">${IAP_PRODUCTS.welcome_pack.price}</button>`;
   const b = row.querySelector("button");
   if (b) b.addEventListener("click", () => showWelcomeOffer(false));
   return row;
 }
-// the Sparkle Pack — the glow/wings/rainbow cosmetics. Pinned highlighted to the
-// top of the Decor tab (its contents are also in the dress-up rack header).
+// Sparkle cosmetics are browsable in Featured and Dress-up.
 function shopSparkleRow(keepsake) {
   const owned = iapOwns("sparkle_pack");
   if (!owned && !(G.tutorialDone && residentCount() >= 2)) return null;
   const row = document.createElement("div");
   row.className = "shop-item pack" + (keepsake ? " keepsake" : "");
   row.innerHTML = owned
-    ? `<div class="txt"><div class="name">✦ Sparkle Pack</div>
-         <div class="desc">Glow collar, little wings & rainbow trail — unlocked for every cat · thank you 🧡</div></div>
+    ? `<div class="txt"><div class="name">${neoUIIcon("trophy")} Sparkle Pack</div>
+         <div class="desc">Glow collar, little wings & rainbow trail — unlocked for every cat · thank you </div></div>
        <span class="owned">Owned</span>`
-    : `<div class="txt"><div class="name">✦ Sparkle Pack</div>
+    : `<div class="txt"><div class="name">${neoUIIcon("trophy")} Sparkle Pack</div>
          <div class="desc">Glow collar, little wings & rainbow trail — for every cat, now and later · purely cosmetic</div></div>
        <button class="btn primary">${IAP_PRODUCTS.sparkle_pack.price}</button>`;
   const b = row.querySelector("button");
@@ -5998,12 +6065,12 @@ function shopBoostRow() {
   const bc = document.createElement("div");
   bc.className = "shop-item boostcard";
   if (boostActive()) {
-    bc.innerHTML = `<div class="txt"><div class="name">⚡ The cove is buzzing</div>
+    bc.innerHTML = `<div class="txt"><div class="name">${neoUIIcon("garden")} The cove is buzzing</div>
       <div class="desc">2× earnings — ${fmtTime((G.boostUntil - Date.now()) / 1000)} left</div></div>
       <span class="owned">active</span>`;
   } else {
     const bp = boostPrice();
-    bc.innerHTML = `<div class="txt"><div class="name">⚡ Fresh catnip</div>
+    bc.innerHTML = `<div class="txt"><div class="name">${neoUIIcon("garden")} Fresh catnip</div>
       <div class="desc">The whole cove perks up — 2× earnings for 20 minutes.</div></div>
       <button class="btn primary" ${G.shells < bp ? "disabled" : ""}>◈ ${bp}</button>`;
     const bb = bc.querySelector("button");
@@ -6119,12 +6186,27 @@ function drawAccPreview(cv, key, coat) {
   g.restore();
 }
 
+// Transient preview: never changes ownership, shells, or the saved theme.
+let atmospherePreview = null;
+function endAtmospherePreview() {
+ atmospherePreview=null; document.getElementById('atmosphere-preview')?.remove();
+ _todCache=null; _skyGrad=null; _weatherP.length=0;
+}
+function previewAtmosphere(key) {
+ endAtmospherePreview(); closeAllPanels(); hideCatCard(); hidePropCard(); hideToast();
+ atmospherePreview={key,hour:12};
+ const overlay=document.createElement('div'); overlay.id='atmosphere-preview';
+ overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Atmosphere preview');
+ overlay.innerHTML=`<section><small>PREVIEW · No shells spent</small><h3>${DECOR_THEMES[key].name}</h3><div class="atmosphere-actions"><button class="btn" id="atmosphere-light">View at night</button><button class="btn primary" id="atmosphere-back">Back to shop</button></div></section>`;
+ document.body.append(overlay);
+ overlay.querySelector('#atmosphere-light').onclick=e=>{atmospherePreview.hour=atmospherePreview.hour===12?22:12;e.currentTarget.textContent=atmospherePreview.hour===12?'View at night':'View in daylight';_todCache=null;_skyGrad=null;};
+ const back=()=>{endAtmospherePreview();shopTab='decor';togglePanel('shop');document.querySelector(`[data-preview-theme="${key}"]`)?.focus();};
+ overlay.querySelector('#atmosphere-back').onclick=back;
+ overlay.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();back();}if(e.key==='Tab'){e.preventDefault();const b=overlay.querySelectorAll('button');(document.activeElement===b[0]?b[1]:b[0]).focus();}};
+ overlay.querySelector('#atmosphere-back').focus();
+}
 function renderShopDecor(list) {
   const cm = G.cosmetics;
-  const wp = shopWelcomeRow(true);   // the welcome paw is decor — pin the pack up top, highlighted
-  if (wp) list.appendChild(wp);
-  const sp = shopSparkleRow(true);   // the Sparkle Pack's home tab — glow/wings/rainbow for the whole cove
-  if (sp) list.appendChild(sp);
   const decorCount = (G.decor.cottage || 0) + (G.decor.tree || 0) + (G.decor.flowers || 0);
   const propCount = DECOR_PROPS.filter(p => p.movable && cm.props[p.id] && !propBoxed(p.id)).length;
   const comfortCount = (G.bowls || 0) + (G.toys || 0) + (G.beds || 0) + (G.scratch || 0);
@@ -6149,7 +6231,8 @@ function renderShopDecor(list) {
     const action = active ? `<span class="owned">Active</span>`
       : owned ? `<button class="btn primary" data-set="${key}">Set</button>`
       : `<button class="btn primary" data-buy-theme="${key}" ${afford ? "" : "disabled"}>◈ ${th.price.toLocaleString()}</button>`;
-    row.innerHTML = `<div class="txt"><div class="name">${th.name}</div><div class="desc">${th.blurb}</div></div><div class="shop-actions">${action}</div>`;
+    row.innerHTML = `<div class="txt"><div class="name">${th.name}</div><div class="desc">${th.blurb}</div></div><div class="shop-actions"><button class="btn" data-preview-theme="${key}">Preview</button>${action}</div>`;
+    row.querySelector("[data-preview-theme]").onclick=()=>previewAtmosphere(key);
     list.appendChild(row);
   }
   list.appendChild(shopHead("Props"));
@@ -6164,7 +6247,7 @@ function renderShopDecor(list) {
     if (!owned) action = `<button class="btn primary" data-buy-prop="${p.id}" ${afford ? "" : "disabled"}>◈ ${p.price.toLocaleString()}</button>`;
     else if (!p.movable) action = `<span class="owned">In the cove</span>`;
     else if (boxed) action = `<button class="btn primary" data-place-prop="${p.id}">Place it</button>`;
-    else action = `<button class="btn tiny" data-box-prop="${p.id}" title="Keep in inventory">Put away</button><button class="btn tiny" data-move-prop="${p.id}">Move</button>`;
+    else action = `<button class="btn tiny" data-box-prop="${p.id}" title="Keep in inventory">Store item</button><button class="btn tiny" data-move-prop="${p.id}">Move</button>`;
     if(p.maxOwned) action=(count<p.maxOwned?`<button class="btn primary" data-buy-prop="${p.id}" ${afford?'':'disabled'}>${count?'Buy another':'Buy'} · ${p.price.toLocaleString()}</button>`:'<span class="owned">Collection complete</span>');
     row.innerHTML = `<div class="txt"><div class="name">${p.name}${p.maxOwned?' · Owned '+count+'/8':''}</div><div class="desc">${boxed ? "Packed away — tap Place it to set it down." : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
     const photo=document.createElement('canvas');photo.width=160;photo.height=120;photo.className='inventory-preview';photo.setAttribute('role','img');photo.setAttribute('aria-label',p.name+' preview');
@@ -6222,9 +6305,9 @@ function renderShopDress(list) {
   list.classList.add("dressmode");
 
   const PACK_GROUP = {   // groups whose items are all unlocked by one IAP
-    Sparkle: { id: "sparkle_pack", icon: "✦" },
-    Welcome: { id: "welcome_pack", icon: "🐾" },
-    Founder: { id: "founding_covekeeper", icon: "🎖️" },
+    Sparkle: { id: "sparkle_pack", icon: neoUIIcon("trophy") },
+    Welcome: { id: "welcome_pack", icon: neoUIIcon("paw") },
+    Founder: { id: "founding_covekeeper", icon: neoUIIcon("trophy") },
   };
   const rackAcc = ACCESSORIES.filter(a => !a.hidden);   // `hidden` items are auto-equipped only (e.g. the founder's ribbon)
   const groups = [...new Set(rackAcc.map(a => a.group))];
@@ -6236,8 +6319,8 @@ function renderShopDress(list) {
       : `<h4>${grp}</h4>`;
     return head + `<div class="dp-grid">` + items.map(a => {
       const owned = accOwned(c, a.key), on = _dressWorn.includes(a.key);
-      const locked = !!a.iap && !owned;
-      const cost = locked ? "🔒" : a.pearls ? `✦ ${a.pearls}` : `◈ ${a.price}`;
+      const locked = !!(a.iap || a.memoryLevel) && !owned;
+      const cost = a.memoryLevel ? `Level ${a.memoryLevel}` : locked ? "Locked" : a.pearls ? `✦ ${a.pearls}` : `◈ ${a.price}`;
       return `<button class="dp-acc${on ? " on" : ""}${a.premium ? " premium" : ""}${owned ? " owned" : ""}${locked ? " locked" : ""}" data-acc="${a.key}" title="${esc(a.blurb)}">
         <span class="dp-nm">${a.label}</span>
         <span class="dp-cost">${owned ? "yours" : cost}</span>
@@ -6294,6 +6377,7 @@ function renderShopDress(list) {
     if (gp) { showIapOffer(gp.dataset.getpack); return; }
     const b = e.target.closest(".dp-acc"); if (!b) return;
     const k = b.dataset.acc, slot = accSlot(k), a = ACC_BY_KEY[k];
+    if (a && a.memoryLevel && !accOwned(c,k)) { toast('Complete Little Matches Level '+a.memoryLevel+' to earn it.'); return; }
     if (a && a.iap && !accOwned(c, k)) { showIapOffer(a.iap); return; }   // locked — the pack, not a toggle
     if (_dressWorn.includes(k)) _dressWorn = _dressWorn.filter(x => x !== k);
     else _dressWorn = _dressWorn.filter(x => accSlot(x) !== slot).concat(k);
@@ -6306,6 +6390,7 @@ function renderShopDress(list) {
     shopDressCat = next; _dressWorn = null; renderShop();
   });
   saveBtn.onclick = () => {
+    if ((_dressWorn||[]).some(k=>ACC_BY_KEY[k]?.memoryLevel&&!accOwned(c,k))) return;
     const news = dressNewItems(c);
     const cS = news.reduce((s, a) => s + (a.price || 0), 0);
     const cP = news.reduce((s, a) => s + (a.pearls || 0), 0);
@@ -6329,6 +6414,21 @@ function inventoryItemKey(item, i) {
   return null;
 }
 let inventoryView = 'stored';
+function placedInventoryDecor() {
+  return DECOR_PROPS.filter(p => p.movable && !['lanterns','rowboat'].includes(p.baseId||p.id) && G.cosmetics.props[p.id] && !propBoxed(p.id));
+}
+function confirmStoreAllDecor() {
+  if (!placedInventoryDecor().length) return;
+  openModal(`<h2>Store all decor?</h2><p>Store all placed decorations? You can place them again anytime.</p><p class="muted">Bowls, beds, stations, and keepsakes stay in the Cove.</p><div class="cove-action-pair"><button class="btn" id="cancelStoreDecor">Cancel</button><button class="btn primary" id="confirmStoreDecor">Store all decor</button></div>`);
+  document.getElementById('cancelStoreDecor').onclick=closeModal;
+  document.getElementById('confirmStoreDecor').onclick=()=>{
+    const placed=placedInventoryDecor();
+    G.cosmetics.propBoxed ||= {};
+    for(const p of placed) G.cosmetics.propBoxed[p.id]=true;
+    rebuildAttractors();save();syncHud();closeModal();renderShop();
+    toast(`${placed.length} decorations stored. Place them again for free.`,4);
+  };
+}
 function renderInventory(list) {
   const entries = [];
   for (const item of SHOP) for (let i=0; i<item.get(); i++) {
@@ -6337,17 +6437,18 @@ function renderInventory(list) {
   }
   for (const p of DECOR_PROPS) if (p.movable && G.cosmetics.props[p.id]) entries.push({kind:"prop",key:p.id,label:p.name,stored:propBoxed(p.id)});
   if(iapOwns('founding_covekeeper')) entries.push({kind:'founder',key:'founder-plaque',label:'Founding Covekeeper plaque',stored:!!G.cosmetics.founderStored});
-  if(G.cairn?.stage>=4) entries.push({kind:'cairn',key:'midknight-cairn',label:"Midknight's cairn",stored:!!G.cairn.tidied});
+  if(G.cairn && (G.cairn.stage>=4||G.cairn.size>0||G.cairn.tidied)) entries.push({kind:'cairn',key:'midknight-cairn',label:"Midknight's cairn",stored:!!G.cairn.tidied});
   const filters=document.createElement('div');filters.className='shop-actions';
   for(const [id,label] of [['stored','Stored'],['placed','In the Cove']]){const b=document.createElement('button');b.className='btn';b.textContent=label+' ('+entries.filter(e=>e.stored===(id==='stored')).length+')';b.setAttribute('aria-pressed',inventoryView===id);b.onclick=()=>{inventoryView=id;renderShop();};filters.appendChild(b);}list.appendChild(filters);
+  const storeAll=document.createElement('button');storeAll.className='btn';storeAll.textContent='Store all decor';storeAll.disabled=!placedInventoryDecor().length;storeAll.onclick=confirmStoreAllDecor;filters.appendChild(storeAll);
   for (const stored of [inventoryView==='stored']) {
     const matching = entries.filter(e=>e.stored===stored);
     const group=stored?Array.from(matching.reduce((m,e)=>{const k=e.kind+':'+e.label;if(m.has(k))m.get(k).quantity++;else m.set(k,{...e,quantity:1});return m;},new Map()).values()):matching;
     
-    if (!group.length) { const note=document.createElement("p"); note.className="muted"; note.textContent=stored?"Nothing stored yet. Choose Put away while moving an item.":"Your placed items will appear here."; list.appendChild(note); }
+    if (!group.length) { const note=document.createElement("p"); note.className="muted"; note.textContent=stored?"Nothing stored yet. Choose Store item while moving an item.":"Your placed items will appear here."; list.appendChild(note); }
     for (const e of group) {
-      const row=document.createElement("div"); row.className="shop-item";
-      row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}${e.quantity>1?" ×"+e.quantity:""}</div><div class="desc">${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&o.stored).length} stored · ${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&!o.stored).length} placed</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Put away</button>'}</div>`;
+      const row=document.createElement("div"); row.className="shop-item inventory-item";
+      row.innerHTML=`<div class="txt"><div class="name">${esc(e.label)}${e.quantity>1?" ×"+e.quantity:""}</div><div class="desc">${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&o.stored).length} stored · ${entries.filter(o=>o.kind===e.kind&&o.label===e.label&&!o.stored).length} placed</div></div><div class="shop-actions"><button class="btn inventory-place">${stored?"Place · free":"Move"}</button>${stored?"":'<button class="btn inventory-store">Store item</button>'}</div>`;
       if(e.kind==='cairn'||e.kind==='founder') {
         row.classList.add('keepsake-item');
         row.querySelector('.desc').textContent=stored?'Stored · returns beside the sign':'Beside the sign';
@@ -6356,7 +6457,7 @@ function renderInventory(list) {
       }
       row.querySelector(".inventory-place").onclick=()=>{
         if(e.kind==='founder'){G.cosmetics.founderStored=false;save();closeAllPanels();toast('Your Founding Covekeeper plaque is back by the sign.',4);return;}
-        if(e.kind==='cairn'){G.cairn.tidied=false;G.cairn.size=3;save();rebuildAttractors();closeAllPanels();toast("Midknight's cairn is standing by the sign.",4);return;}
+        if(e.kind==='cairn'){G.cairn.tidied=false;G.cairn.size=G.cairn.storedSize||3;save();rebuildAttractors();closeAllPanels();toast("Midknight's cairn is standing by the sign.",4);return;}
         if(e.kind==="prop") {startPlacing(e.key); return;}
         const obj=e.kind==="comfort"?attractors.find(a=>a.key===e.key):decor.find(d=>d.dkey===e.key);
         const pos=obj || (e.kind==="comfort"?G.cosmetics.comfortPos:G.cosmetics.decorPos)?.[e.key] || {x:W*.5,y:H*.7};
@@ -6376,7 +6477,7 @@ function renderInventory(list) {
         const cancel=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',end);document.removeEventListener('pointercancel',cancel);if(started&&_placing)cancelPlacing();};
         document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',end);document.addEventListener('pointercancel',cancel);
       };
-      const put=row.querySelector(".inventory-store"); if(put) put.onclick=()=>{if(e.kind==='founder'){G.cosmetics.founderStored=true;save();}else if(e.kind==='cairn'){G.cairn.tidied=true;G.cairn.size=0;save();rebuildAttractors();}else putAwayItem(e.kind,e.key,e.label);renderShop();};
+      const put=row.querySelector(".inventory-store"); if(put) put.onclick=()=>{if(e.kind==='founder'){G.cosmetics.founderStored=true;save();}else if(e.kind==='cairn'){storeCairn();}else putAwayItem(e.kind,e.key,e.label);renderShop();};
       list.appendChild(row);
     }
   }
@@ -6396,11 +6497,10 @@ function renderShop() {
 
   if (shopTab === "inventory") { renderInventory(list); return; }
   if (shopTab === "featured") {
-    // the two "support the cove" keepsakes live here — Welcome, then Founding
-    // Covekeeper. The Sparkle Pack isn't a support tier; it's browsable in the
-    // Decor tab + the dress-up rack, not here.
+    // Paid cosmetic packs live in Featured; ordinary decorations stay in Decor.
     const wpRow = !iapOwns("welcome_pack") && shopWelcomeRow();
     if (wpRow) list.appendChild(wpRow);
+    const spRow = shopSparkleRow(); if (spRow) list.appendChild(spRow);
     const fcRow = !iapOwns("founding_covekeeper") && shopPackRow();
     if (fcRow) list.appendChild(fcRow);
     list.appendChild(shopBoostRow());
@@ -6483,11 +6583,11 @@ document.getElementById("photoSave").addEventListener("click", savePhoto);
 function openPhoto() {
   ensureAudio();
   if (_placing || _arranging) exitPlacement();
-  composePhoto();
-  photoEl.classList.add("on");
+  neoPhotoSource=null;composePhoto();
+  photoEl.classList.add("on");neoPrintPhoto();
   sfx("photo");
 }
-function composePhoto() {
+function composePhotoScene() {
   const S = 900, M = 26;              // canvas size, frame margin
   pctx.clearRect(0, 0, S, S);
   pctx.save();
@@ -6607,6 +6707,7 @@ function coveName() {
 let _hudTitle = "", _hudFull = null;
 function setHudText(el,value){const text=String(value);if(el.textContent!==text)el.textContent=text;}
 function syncHud() {
+  advanceCoveDay();
   const wantTitle = G.owner ? `${esc(G.owner)}<b>’s Cove</b>` : "Catmint <b>Cove</b>";
   if (wantTitle !== _hudTitle) {
     const pill = document.getElementById("titlePill");
@@ -6772,6 +6873,13 @@ const panels = {
 };
 function anyPanelOpen() { for (const k in panels) if (!panels[k].hidden) return true; return false; }
 function closeAllPanels() { for (const k in panels) panels[k].hidden = true; stopDressLoop(); _dressWorn = null; }
+function neoSheetFooter(sheet){
+ if(!sheet||sheet.querySelector(':scope > .cove-sheet-footer'))return;
+ const exit=sheet.querySelector('.x');if(!exit)return;
+ exit.className='btn';exit.textContent='Back to Cove';exit.setAttribute('aria-label','Back to Cove');
+ exit.remove();const body=document.createElement('div');body.className='cove-sheet-body';while(sheet.firstChild)body.append(sheet.firstChild);
+ const footer=document.createElement('div');footer.className='cove-sheet-footer';footer.append(exit);sheet.classList.add('cove-bottom-sheet');sheet.append(body,footer);
+}
 function togglePanel(name) {
   ensureAudio();
   exitFocus();
@@ -6781,6 +6889,7 @@ function togglePanel(name) {
   if (!wasOpen) {
     hideCatCard(); hideToast(); hidePropCard();   // clear anything floating over the cove before the panel comes up
     panels[name].hidden = false;
+    neoSheetFooter(panels[name]);
     if (name === "shop") renderShop();
     if (name === "dex") { renderDex(); neoRenderCats(); }
     if (name === "today") {
@@ -7265,11 +7374,12 @@ function endColdOpen(skipped) {
 /* ---------- reference card (the "?" button) ---------- */
 const GUIDE = [
   ["A Little Hello · a curious visitor", "Tap empty ground near the bottom 3–5 times in quick succession. A cat may peek over the screen edge for a few seconds. Pause less than 2.5 seconds between taps, then wait 30 seconds before trying again. Use the normal Cove view with menus closed. Sleeping and sick cats sit this one out. No cost or rewards—just company."],
-  ["Redecorate · keep what you own", "Press and hold an item to move it on the grid. Set here keeps its new spot; Cancel leaves it unchanged; Put away stores it. Shop → My inventory separates In storage from In the cove. Place is free. Sell refunds shells and removes ownership. Red cells mean a blocked spot. Capacity upgrades stay yours in storage."],
+  ["Redecorate · keep what you own", "Press and hold an item to move it on the grid. Set here keeps its new spot; Cancel leaves it unchanged; Store item stores it. Shop → My inventory separates In storage from In the cove. Place is free. Sell refunds shells and removes ownership. Red cells mean a blocked spot. Capacity upgrades stay yours in storage."],
   ["Catmint Café and Cove Garden", "Find Cove Garden in Activities: plant crops, harvest them, and use or sell your harvest. Catmint Café is under development. Festival contains Race, Volleyball and Tug of Paws."],
   ["Adventures · postcards from your cats", "Choose a destination, cats and trip length in Activities. When they return, open their results for rewards and a keepsake postcard. Different destinations bring different finds. Longer trips suit time away; short trips suit an active visit."],
   ["Your view · zoom buttons", "Use the zoom icon to change your view. Double-tapping does not zoom, leaving quick foreground taps available for A Little Hello."],
   ["Catdex · your little neighbors", "Find cats by name, tap their portraits for personalities and memories, or invite a new friend. Coats you have met are collected below."],
+  ["Little Matches", "Choose a cat and one free favour. Match identical cards without a timer. Little peek reveals four chosen cards; Find a friend matches one exposed card; Second look repeats your last pair. Your unfinished round saves when you leave. Complete levels in order to earn an accessory every five levels. Tap the reward trail to preview outfits. Your companion hops for matches, grooms while you think, and naps when you pause. Finish all 30 levels to unlock replay selection. Earned outfits are available for all resident cats in Dress-up."],
   ["Activities · play or unwind", "Visit the Festival, send a cat on an adventure, or settle into the rainy retreat. Festival games stay available day and night once unlocked; each game shows how many cats it needs."],
   ["Shop · make it cozy", "Find bowls, beds, toys, decorations and outfits here. See the actual item preview and price before buying. My inventory shows item pictures and counts; drag a stored item into the Cove or choose Place."],
   ["Journal · moments worth keeping", "Collect your daily welcome, choose optional rituals, see postcards and memories, or capture a photo. You can swap unfinished rituals. Missing a day never resets your lovely days."],
@@ -7282,33 +7392,48 @@ const GUIDE = [
 ];
 const HELP_TOPICS=[
  ['Meet your cats','catdex',['Tap a portrait in Catdex to meet your cat and see care options.','The cat counter shows mood and wellbeing.','For Little Hello, close menus and tap empty foreground ground 3–5 times.'],'dex'],
- ['Decorate your Cove','shop',['Shop pictures show what you are buying.','My inventory separates Stored items from In the Cove.','Hold a decoration to drag it. Put away stores it; Place brings it back for free.'],'shop'],
+ ['Decorate your Cove','shop',['Shop pictures show what you are buying.','My inventory separates Stored items from In the Cove.','Hold a decoration to drag it. Store item stores it; Place brings it back for free.'],'shop'],
  ['Explore & play','activities',['Choose an adventure destination, cats, and trip length.','Visit the garden or play a festival game in Activities.','Rainy Retreat is a quiet place to rest together.'],'explore'],
  ['Settings & saves','sound',['Use Sound for the master switch and individual volumes.','Use the view controls or pinch to adjust the Cove view.','Journal has Back up / restore. Purchased support packs can be restored through the purchase controls.'],'today']
 ];
 function openGuide(){
+ closeAllPanels();closeModal();hidePropCard();hideCatCard();rosterEl.hidden=true;
  ensureAudio();document.getElementById('neo-tour')?.remove();
  const card=tutEl.querySelector('.card');card.classList.add('help-home');tutEl.classList.add('on');
  const close=()=>{tutEl.classList.remove('on');card.classList.remove('help-home');};
+ const helpFooter=()=>{const footer=document.createElement('div');footer.className='cove-dialog-footer';const show=card.querySelector('#helpShow');if(show)footer.append(show);const exit=document.createElement('button');exit.id='helpClose';exit.className='btn';exit.textContent='Back to Cove';exit.onclick=close;footer.append(exit);const body=document.createElement('div');body.className='cove-dialog-body';while(card.firstChild)body.append(card.firstChild);card.classList.add('cove-bottom-help');card.append(body,footer);};
  const home=()=>{
- card.innerHTML='<div class="help-head"><h2>How can we help?</h2><button class="btn" id="helpClose" aria-label="Close help">×</button></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="linkbtn" id="guideTour">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideCredits">Credits</button><button class="linkbtn" id="guideCares">Cove Cares</button></footer>';
- card.querySelector('#helpClose').onclick=close;
+ card.innerHTML='<div class="help-head"><h2>How can we help?</h2></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="linkbtn" id="guideTour">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideCredits">Credits</button><button class="linkbtn" id="guideCares">Cove Cares</button></footer>';
+ helpFooter();
  card.querySelectorAll('[data-topic]').forEach(el=>el.onclick=()=>topic(+el.dataset.topic));
  card.querySelector('#guideTour').onclick=()=>{close();neoStartTour();};
  card.querySelector('#guideCredits').onclick=()=>{close();openCredits();};card.querySelector('#guideCares').onclick=()=>{close();openCares();};
  };
- const topic=i=>{const t=HELP_TOPICS[i];card.innerHTML='<div class="help-head"><button class="linkbtn" id="helpBack">‹ All topics</button><button class="btn" id="helpClose" aria-label="Close help">×</button></div><div class="help-visual">'+neoUIIcon(t[1])+'</div><h2>'+t[0]+'</h2><ol class="help-steps">'+t[2].map(x=>'<li>'+x+'</li>').join('')+'</ol><button class="btn primary" id="helpShow">Show me</button>';card.querySelector('#helpBack').onclick=home;card.querySelector('#helpClose').onclick=close;card.querySelector('#helpShow').onclick=()=>{close();closeAllPanels();if(t[3]==='explore')neoOpenExplore();else togglePanel(t[3]);};};home();
+ const topic=i=>{const t=HELP_TOPICS[i];card.innerHTML='<div class="help-head"><button class="linkbtn" id="helpBack">‹ All topics</button></div><div class="help-visual">'+neoUIIcon(t[1])+'</div><h2>'+t[0]+'</h2><ol class="help-steps">'+t[2].map(x=>'<li>'+x+'</li>').join('')+'</ol><button class="btn primary" id="helpShow">Show me</button>';card.querySelector('#helpBack').onclick=home;helpFooter();card.querySelector('#helpShow').onclick=()=>{close();closeAllPanels();if(t[3]==='explore')neoOpenExplore();else togglePanel(t[3]);};};home();
 }
 function neoStartTour(){
+ tutEl.classList.remove("on");closeModal();hidePropCard();hideCatCard();rosterEl.hidden=true;
  document.getElementById('neo-tour')?.remove();closeAllPanels();
- const steps=[['Meet your cats','Tap Catdex to open your cats.','#dexBtn'],['Browse the shop','Tap Shop to see what you can add.','#shopBtn'],['Find your belongings','Tap My inventory in the Shop.','#shopTabs [data-tab="inventory"]'],['Your placed items','Tap In the Cove to see what you can put away.','#shop .shop-actions button[aria-pressed]']];
+ const steps=[['Meet your cats','Tap Catdex to open your cats.','#dexBtn'],['Browse the shop','Tap Shop to see what you can add.','#shopBtn'],['Find your belongings','Tap My inventory in the Shop.','#shopTabs [data-tab="inventory"]'],['Your placed items','Tap In the Cove to see what you can store.','#shop .shop-actions button[aria-pressed]']];
  let i=0;const box=document.createElement('aside');box.id='neo-tour';box.setAttribute('aria-label','Guided tour');document.body.append(box);
- const finish=()=>{document.removeEventListener('click',clicked,true);window.removeEventListener('resize',position);box.remove();};
- const position=()=>{const target=document.querySelector(steps[i]?.[2]);if(!target)return;const r=target.getBoundingClientRect();box.style.left=Math.max(12,Math.min(innerWidth-box.offsetWidth-12,r.left))+'px';box.style.top=Math.max(12,Math.min(innerHeight-box.offsetHeight-12,r.top-box.offsetHeight-12))+'px';box.style.bottom='auto';};
+ const finish=()=>{document.removeEventListener('click',clicked,true);window.removeEventListener('resize',position);document.removeEventListener('scroll',position,true);box.remove();};
+ const tourTarget=()=>i===3?[...document.querySelectorAll(steps[i][2])].find(el=>el.textContent.includes('In the Cove')):document.querySelector(steps[i]?.[2]);
+ const position=()=>{
+  const target=tourTarget();if(!target||!box.isConnected)return;
+  const r=target.getBoundingClientRect(),gap=10,edge=12;
+  const above=Math.max(0,r.top-gap-edge),below=Math.max(0,innerHeight-r.bottom-gap-edge);
+  box.style.maxHeight=Math.max(above,below)+'px';
+  const h=box.offsetHeight,w=box.offsetWidth;
+  const useAbove=above>=h || above>=below;
+  box.style.maxHeight=(useAbove?above:below)+'px';
+  box.style.left=Math.max(edge,Math.min(innerWidth-w-edge,r.left))+'px';
+  box.style.top=(useAbove?r.top-gap-box.offsetHeight:r.bottom+gap)+'px';box.style.bottom='auto';
+ };
+
  const show=()=>{box.innerHTML='<small>Getting comfortable · '+(i+1)+' / '+steps.length+'</small><b>'+steps[i][0]+'</b><p>'+steps[i][1]+'</p><div><button class="btn" id="tourSkip">Skip</button><button class="btn" id="tourExit">Exit tour</button></div>';box.querySelector('#tourSkip').onclick=next;box.querySelector('#tourExit').onclick=finish;requestAnimationFrame(position);};
  const next=()=>{if(++i>=steps.length){finish();toast('You know your way around. Make yourself at home.',3);return;}if(i===2 && panels.shop.hidden)togglePanel('shop');if(i===3){shopTab='inventory';renderShop();}show();};
  const clicked=e=>{if(!box.isConnected){finish();return;}if(e.target.closest('#neo-tour'))return;const el=e.target.closest(steps[i][2]);if(!el)return;if(i===3&&!el.textContent.includes('In the Cove'))return;setTimeout(next,0);};
- document.addEventListener('click',clicked,true);window.addEventListener('resize',position);show();
+ document.addEventListener('click',clicked,true);window.addEventListener('resize',position);document.addEventListener('scroll',position,true);show();
 }
 
 // open a URL in the OS browser, never inside the game's WebView. Capacitor
@@ -7318,10 +7443,10 @@ function openExternal(url) {
   catch (e) { try { window.open(url, "_blank", "noopener"); } catch (e2) {} }
 }
 function openCredits() {
+ tutEl.classList.remove("on");closeAllPanels();hidePropCard();
   ensureAudio();
   openModal(`<div class="reveal credits">
-    <button class="cr-x" id="crX" aria-label="Close">✕</button>
-    <div class="kicker">Made with 🐾</div>
+    <div class="kicker">Made with ${neoUIIcon("paw")}</div>
     <h2>Catmint Cove</h2>
     <p class="cr-ver" id="crVer"></p>
     <p class="cr-lead">Made by one hooman at Midknight Studio Labs, with Midknight supervising 24/7 — mostly by sleeping near the keyboard and judging every decision.</p>
@@ -7350,11 +7475,10 @@ function openCredits() {
       `voices ${u.filter(x => _sfxBuf[x]).length}/${u.length} ${src} · ${_sfxErr || "ok"} · ${location.protocol} · audio ${actx ? actx.state : "off"}`; }
   { const nv = window.CoveNative && window.CoveNative.appVersion;
     const native = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-    document.getElementById("crVer").textContent = "Version " + (nv || (native ? APP_VERSION : APP_VERSION + " · web")); }
+    document.getElementById("crVer").textContent = "Version " + (nv || (native ? APP_VERSION : APP_VERSION + " · web · Neo 2026.09.14.2")); }
   document.querySelectorAll(".credits .cr-links a").forEach(a =>
     a.addEventListener("click", e => { e.preventDefault(); openExternal(a.href); }));
   document.getElementById("crClose").onclick = closeModal;
-  document.getElementById("crX").onclick = closeModal;
   { const cc = document.getElementById("crCares");
     if (cc) cc.onclick = e => { e.preventDefault(); closeModal(); setTimeout(openCares, 90); }; }
 }
@@ -7365,6 +7489,7 @@ function openCredits() {
 // can extend it without touching the card.
 function caresSupported() { return iapOwns("welcome_pack") && iapOwns("founding_covekeeper"); }
 function openCares() {
+ tutEl.classList.remove("on");closeAllPanels();hidePropCard();
   ensureAudio();
   if (G.ccc) G.ccc.seen = true;
   const done = caresSupported();
@@ -7382,7 +7507,6 @@ function openCares() {
          <div class="row"><button class="btn primary" id="cc-support">❤️ Support the Cove</button></div>
        </div>`;
   openModal(`<div class="reveal cares">
-    <button class="cr-x" id="ccX" aria-label="Close">✕</button>
     <div class="kicker">❤️ Catmint Cove Cares</div>
     <h2>A little Cove can do a little good.</h2>
     <p class="cc-body">Catmint Cove started because of one very real cat — Midknight. He got us thinking about a little world where cats can just be cats: cared for, comfortable, curious, and completely themselves.</p>
@@ -7392,7 +7516,6 @@ function openCares() {
     <p class="cc-fine">Optional purchases support Catmint Cove. Catmint Cove Cares is our hope that, as the game grows, some of what it earns can go toward animal-welfare efforts. It's an aim, not a fixed amount — we're not partnered with a specific charity yet, and no purchase is a donation.</p>
     <div class="row"><button class="btn${done ? " primary" : ""}" id="ccBack">Back to the cove</button></div>
   </div>`);
-  document.getElementById("ccX").onclick = closeModal;
   document.getElementById("ccBack").onclick = closeModal;
   { const sb = document.getElementById("cc-support");
     if (sb) sb.onclick = () => {
@@ -7416,6 +7539,13 @@ document.getElementById("restRain").addEventListener("change", e => {
   restOpts.rain = e.target.checked;
   if (restBus && actx) restBus.gain.linearRampToValueAtTime(muted || !restOpts.rain ? 0.0001 : 0.9, actx.currentTime + 0.6);
 });
+function syncRestDark(){
+ document.getElementById('restDark').checked=!!restOpts.dark;
+ const b=document.getElementById('restDimToggle');b.textContent=restOpts.dark?'Brighten room':'Dim room';b.setAttribute('aria-pressed',String(!!restOpts.dark));
+}
+function setRestDark(value){restOpts.dark=value;restIdleT=0;_restBarState=null;syncRestDark();if(G.rest?.on){G.rest.opts={...restOpts};save();}}
+document.getElementById('restDark').addEventListener('change',e=>setRestDark(e.target.checked));
+document.getElementById('restDimToggle').addEventListener('click',()=>setRestDark(!restOpts.dark));
 document.getElementById("restFire").addEventListener("change", e => { restOpts.fire = e.target.checked; });
 document.getElementById("restThunder").addEventListener("change", e => { restOpts.thunder = e.target.checked; });
 document.querySelectorAll("#restTimer button").forEach(b => b.addEventListener("click", () => {
@@ -7439,7 +7569,7 @@ document.getElementById("restFs").addEventListener("click", () => {
 // snaps the dim off at once and restores the bar this frame.
 document.getElementById("rest").addEventListener("pointerdown", () => {
   restIdleT = 0;
-  if (restDim > 0.01) {
+  if (restDim > 0.01 && !restOpts.dark) {
     restDim = 0; _restBarState = null;
     try { document.getElementById("restBar").classList.remove("dim", "ambient"); } catch (e) {}
   }
@@ -8090,7 +8220,18 @@ function checkOffline(then) {
   setTimeout(earningsThen, 300);
 }
 const scrim = document.getElementById("scrim");
-function openModal(html) { document.getElementById("modal").innerHTML = html; scrim.classList.add("on"); }
+function openModal(html) {
+ const modal=document.getElementById("modal");modal.innerHTML=html;
+ const card=modal.firstElementChild;
+ if(card){
+  const actions=[...card.children].filter(e=>e.matches('.row,.cove-action-pair,.btn-row'));
+  let footer=actions.at(-1);
+  const story=card.querySelector(':scope > .neo-story-x');
+  if(story){footer=document.createElement('div');footer.className='row';story.className='btn';story.textContent='Back to Cove';footer.append(story)}
+  if(footer){footer.remove();const body=document.createElement('div');body.className='cove-dialog-body';while(card.firstChild)body.append(card.firstChild);footer.classList.add('cove-dialog-footer');card.classList.add('cove-bottom-dialog');card.append(body,footer)}
+ }
+ scrim.classList.add("on");
+}
 function closeModal() { scrim.classList.remove("on"); }
 
 /* ---------- ownership: name your cove ---------- */
@@ -8690,7 +8831,7 @@ function scheduleChime() {
 
 /* ---------- rest / rainy-day mode — the "second monitor" companion ---------- */
 let restMode = false;
-let restOpts = { rain: true, fire: true, thunder: false, hours: 0 };
+let restOpts = { rain: true, fire: true, thunder: false, dark: false, hours: 0 };
 let restStartedAt = 0, restEndsAt = 0;
 let restIdleT = 0, restDim = 0, restDrift = 0, _restFlash = 0, _restRainScroll = 0, _restTimerIv = 0, _restAcc = 0, _restG = null;
 let _restVWW = W;   // world width the rest cabin sizes itself to (portrait phones show much less than W)
@@ -8934,7 +9075,7 @@ function restSeatCats() {
   // different every time you start one — a fresh cat gets the windowsill
   const rnd = mulberry32(((restStartedAt || Date.now()) >>> 0) ^ 0x5ca7);
   const list = [...cats];
-  for(const c of list)c._restNapScale=1;
+  for(const c of list){c._restNapScale=1;c._restHammock=false;}
   const seat = (c, o) => Object.assign(c, { vx: 0, vy: 0, walkAmt: 0, walk: 0, blink: 3, stateDur: 1e6, stateT: rnd() * 3, _station: null, _fx: null, ...o });
 
   // Midknight always claims the fire (founder's privilege)
@@ -8951,7 +9092,7 @@ function restSeatCats() {
     let t = w.reduce((a, b) => a + b, 0), r = rnd() * t;
     for (let i = 0; i < others.length; i++) { r -= w[i]; if (r <= 0) { sill = others[i]; break; } }
     sill = sill || others[0];
-    seat(sill, { x: L.sillX, y: L.sillY, face: rnd() < 0.5 ? -1 : 1, state: "sleeping" });
+    seat(sill, { x: L.sillX, y: L.sillY + 4, _restHammock: true, face: rnd() < 0.5 ? -1 : 1, state: "sleeping" });
   }
 
   // everyone else: a shuffled nap pile on the rug. It grows WIDE, not tall — a
@@ -8982,6 +9123,7 @@ function restClearUI() {
   try { closeModal(); } catch (e) {}
 }
 function openRestPanel() {
+  syncRestDark();
   ensureAudio(); loadRainLoop(); initGlassDrops();
   if (_placing || _arranging) exitPlacement();
   exitFocus(); _focusT = 0; _wasFocusing = false;
@@ -9005,6 +9147,7 @@ function closeRestPanel() {
   for (const c of cats) { c.stateDur = 0; decide(c); }
 }
 function beginRest(resumed) {
+  syncRestDark();
   ensureAudio(); // unlock/resume synchronously in the Begin tap, before loading awaits
   document.getElementById("restPanel").hidden = true;
   document.getElementById("restBar").hidden = false;
@@ -9084,14 +9227,14 @@ function renderRest(dt) {
   _restRainScroll += dt;
   if (_restFlash > 0) _restFlash = Math.max(0, _restFlash - dt * 2.2);
   updateGlassDrops(dt);
-  const targetDim = restIdleT > 34 ? 0.6 : 0;
+  const targetDim = restOpts.dark ? 0.78 : restIdleT > 34 ? 0.6 : 0;
   restDim += (targetDim - restDim) * Math.min(1, dt * 0.9);
   // a big cove's nap pile is a background mass of curled sleepers — draw them
   // without the fine markings so a full house stays smooth on weak hardware
   _restLiteCats = cats.length > 10;
   // the way-out bar: full for the first ~4s (or after any touch), then it recedes,
   // then it's gone with the screensaver dim — only touch the DOM when it changes
-  const _rbState = restDim > 0.35 ? "dim" : (restIdleT > 4 ? "ambient" : "");
+  const _rbState = restIdleT > 34 && restDim > 0.35 ? "dim" : (restIdleT > 4 ? "ambient" : "");
   if (_rbState !== _restBarState) {
     _restBarState = _rbState;
     const _rb = document.getElementById("restBar");
@@ -9180,7 +9323,7 @@ function renderRest(dt) {
   const hamX=L.sillX,hamY=L.sillY;
   g.strokeStyle='#a68e67';g.lineWidth=2.2;
   for(const side of [-1,1]){g.beginPath();g.moveTo(hamX+side*47,hamY-47);g.lineTo(hamX+side*40,hamY-5);g.stroke();g.fillStyle='#867555';g.beginPath();g.arc(hamX+side*47,hamY-47,3,0,Math.PI*2);g.fill();}
-  g.fillStyle='#c8b58b';g.beginPath();g.moveTo(hamX-43,hamY-6);g.quadraticCurveTo(hamX,hamY+19,hamX+43,hamY-6);g.lineTo(hamX+39,hamY+5);g.quadraticCurveTo(hamX,hamY+29,hamX-39,hamY+5);g.closePath();g.fill();
+  g.fillStyle='#c8b58b';g.beginPath();g.moveTo(hamX-43,hamY-6);g.quadraticCurveTo(hamX,hamY+11,hamX+43,hamY-6);g.lineTo(hamX+39,hamY+5);g.quadraticCurveTo(hamX,hamY+23,hamX-39,hamY+5);g.closePath();g.fill();
   g.strokeStyle='#8b7958';g.lineWidth=1.4;g.stroke();
   // Linen curtains frame the rain without covering the view or sill cats.
   g.fillStyle="#8b8771";
@@ -9298,6 +9441,15 @@ function renderRest(dt) {
     if(c._restNapScale && c._restNapScale!==1){g.translate(c.x,c.y);g.scale(c._restNapScale,c._restNapScale);g.translate(-c.x,-c.y);}
     if(c.state==='sleeping'&&!_reduceMotion){const breath=1+Math.sin(pn/1500+c.x*.03)*.012;g.translate(c.x,c.y);g.scale(1,breath);g.translate(-c.x,-c.y);}
     drawCat(g,c,false);g.restore();
+  }
+  // The near edge sits in front of the sleeper, cradling the lower body.
+  // Its contact point matches restSeatCats; breathing pivots at that same base.
+  if(cats.some(c=>c._restHammock)){
+    g.fillStyle='#c8b58b';g.strokeStyle='#8b7958';g.lineWidth=1.4;
+    g.beginPath();g.moveTo(hamX-43,hamY-6);g.quadraticCurveTo(hamX,hamY+11,hamX+43,hamY-6);
+    g.lineTo(hamX+39,hamY+5);g.quadraticCurveTo(hamX,hamY+23,hamX-39,hamY+5);g.closePath();g.fill();g.stroke();
+    g.strokeStyle='#e3d5b5';g.lineWidth=1;
+    g.beginPath();g.moveTo(hamX-36,hamY);g.quadraticCurveTo(hamX,hamY+15,hamX+36,hamY);g.stroke();
   }
   if (particles.length) drawFX(g);
 
@@ -10174,6 +10326,7 @@ function showFestPodium() {
   // tighter 56x48/scale-1 fit
   display.forEach((r, i) => miniCat(cols[i].querySelector("canvas"), r.cat.coatKey, r.cat.star, "loafing", false, 0.85));
   const place = order.findIndex(r => r.cat === racePick);
+  if(racePick) neoRecordVictory(raceCats,"race",[racePick],place===0,{place:place+1});
   // roll the reward once, up front — reused for both the line below and the
   // actual grant, so what's printed always matches what's paid (in
   // particular the pearl chance mustn't get rolled twice)
@@ -10558,7 +10711,6 @@ function festBackToChooser() {
   renderFestChooser();
   document.getElementById("festChoose").hidden = false;
 }
-document.getElementById("festChooseBack").addEventListener("click", closeFest);
 document.getElementById("boxCancel").addEventListener("click", closeFest);
 document.getElementById("boxStart").addEventListener("click", startBoxChallenge);
 document.getElementById("volleyCancel").addEventListener("click", closeFest);
@@ -11983,6 +12135,7 @@ function showVolleyResult() {
   res.querySelector(".fr-emoji").innerHTML = neoUIIcon("volley");
   document.getElementById("festAgain").textContent = "Play again";
   const cove = volleyParts.filter(p => p.side === "cove");
+  neoRecordVictory(volleyParts,"volley",cove.map(p=>p.cat),won,{home:volleyScore.cove,away:volleyScore.visit,opponent:volleyVisitName});
   document.getElementById("festPodium").innerHTML =
     `<div class="vb-final">
        <div class="vb-final-row${won ? " win" : ""}"><span>${esc(coveName())}</span><b>${volleyScore.cove}</b></div>
@@ -12692,6 +12845,7 @@ function showMidkResult() {
   res.querySelector(".fr-emoji").innerHTML = neoUIIcon("tug");
   document.getElementById("festAgain").textContent = "Rematch";
   const cove = midkParts.filter(p => p.side === "cove");
+  neoRecordVictory(midkParts,"tug",cove.map(p=>p.cat),won,{opponent:midkVisitName});
   const base = goalShells(0.42);
   const margin = won ? _midkLead.cove : _midkLead.visit;   // px past centre the winner got
   const marginK = clamp(margin / (MIDK_WIN_Y.cove - MIDK_START_Y), 0, 1);
@@ -13913,6 +14067,7 @@ function mixHex(a, b, t){
   return `rgb(${Math.round(A[0]+(B[0]-A[0])*t)},${Math.round(A[1]+(B[1]-A[1])*t)},${Math.round(A[2]+(B[2]-A[2])*t)})`;
 }
 function nowHours(){
+  if(atmospherePreview) return atmospherePreview.hour;
   if (_clockOverride != null) return _clockOverride;
   const elapsedMin = (performance.now() - _dayAnchorMs) / 60000;
   return (((_dayAnchorHour + elapsedMin * (24 / DAY_CYCLE_MIN)) % 24) + 24) % 24;
@@ -13934,7 +14089,7 @@ function timeOfDay(){
   };
   // atmosphere theme — bends the daytime palette toward the chosen look, fading
   // out at night so "time is weather" still holds and every theme goes dark
-  const th = (typeof G !== "undefined" && G && G.cosmetics) ? DECOR_THEMES[G.cosmetics.theme] : null;
+  const th = (typeof G !== "undefined" && G && G.cosmetics) ? DECOR_THEMES[atmospherePreview ? atmospherePreview.key : G.cosmetics.theme] : null;
   if (th && th.sky && _todCache.df > 0.05) {
     const k = _todCache.df * 0.82;
     _todCache.top = mixHex(_todCache.top, th.sky[0], k);
@@ -14191,7 +14346,7 @@ function drawButterfly(g) {
 /* ---------- renewable decor: ambient weather from the atmosphere theme ---------- */
 let _weatherP = [];
 function updateWeather(dt) {
-  const th = (G && G.cosmetics) ? DECOR_THEMES[G.cosmetics.theme] : null;
+  const th = (G && G.cosmetics) ? DECOR_THEMES[atmospherePreview ? atmospherePreview.key : G.cosmetics.theme] : null;
   const kind = th && th.weather && th.weather !== "none" ? th.weather : null;
   // v3: a bought atmosphere theme shows its weather whatever the cove clock is
   // doing — no more "sometimes it's there, sometimes it isn't" from the
@@ -15362,6 +15517,7 @@ function drawEar(g, side, P, coat, back, flop = 0, kit = false) {
   g.restore();
 }
 function drawAccessory(g, kind, P, coat, kit) {
+  if(window.drawMemoryAccessory(g,kind,P,coat,kit,coatLum(coat.base)))return;
   const hr = P.hr, hx = P.hx, hy = P.hy;
   g.save();
   g.lineJoin = "round"; g.lineCap = "round";
@@ -16843,7 +16999,7 @@ function cairnGap() { return rand(10, 16) * 60e3; }   // a beat every ~quarter h
 function cairnTick() {
   if (!G || !G.tutorialDone || restMode) return;
   const cn = G.cairn || (G.cairn = { stage: 0, progress: 0, size: 0, nextAt: 0 });
-  if (cn.stage >= 4) return;                                  // resolved (kept or tidied)
+  if (cn.stage >= 4 || cn.tidied) return;                                  // resolved (kept or tidied)
   if (!mkAtHome()) return;                                    // he only works on it when he's home
 
   if (cn.stage === 0) {
@@ -17328,12 +17484,12 @@ function renderCheckinCard() {
   const dots = CHECKIN_REWARDS.map((r, i) => {
     const claimed = i < pos;
     const isToday = i === pos;
-    const lbl = r.pearls && !r.shells ? "✦" : r.keepsake ? "🎁" : "◈";
+    const lbl = r.keepsake ? neoUIIcon("box") : r.pearls && !r.shells ? "&#10022;" : "&#9672;";
     return `<span class="ci-dot${claimed ? " done" : ""}${isToday ? " now" : ""}">${claimed ? "✓" : lbl}</span>`;
   }).join("");
   if (avail) {
     el.className = "adv-card ready";
-    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">📅</span>
+    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">${neoUIIcon("journal")}</span>
       <div><div class="adv-title">A welcome is waiting</div>
       <div class="adv-sub">day ${pos + 1} of the week &middot; ${rewardBits(CHECKIN_REWARDS[pos])}</div></div></div>
       <div class="ci-dots">${dots}</div>
@@ -17341,7 +17497,7 @@ function renderCheckinCard() {
     document.getElementById("ci-claim").onclick = claimCheckin;
   } else {
     el.className = "adv-card done";
-    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">📅</span>
+    el.innerHTML = `<div class="adv-top"><span class="adv-emoji">${neoUIIcon("journal")}</span>
       <div><div class="adv-title">Checked in today</div>
       <div class="adv-sub">day ${pos === 0 ? 7 : pos} done &middot; next welcome tomorrow</div></div></div>
       <div class="ci-dots">${dots}</div>`;
@@ -18066,7 +18222,7 @@ function showPostcard(text, cat, dest, onDone, card) {
   document.getElementById("pc-ok").onclick = () => { closeModal(); if (onDone) setTimeout(onDone, 250); };
 }
 function showFounderDescription(){
-  openModal(`<div class="reveal"><div class="kicker">A LITTLE THANK-YOU · 2026</div><h2>Founding Covekeeper</h2><p>This plaque marks your support for Catmint Cove during its founding days. You helped give this little home a beginning.</p><p>Your keepsakes include the dated plaque and founder accessories: a ribbon, halo, and hero mask. They celebrate your support and give no gameplay advantage.</p><p class="muted">Thank you for helping the Cove grow.</p><button class="btn" id="founder-store">Put away in inventory</button><button class="btn" id="founder-close">Back to my cove</button></div>`);
+  openModal(`<div class="reveal"><div class="kicker">A LITTLE THANK-YOU · 2026</div><h2>Founding Covekeeper</h2><p>This plaque marks your support for Catmint Cove during its founding days. You helped give this little home a beginning.</p><p>Your keepsakes include the dated plaque and founder accessories: a ribbon, halo, and hero mask. They celebrate your support and give no gameplay advantage.</p><p class="muted">Thank you for helping the Cove grow.</p><div class="cove-action-pair"><button class="btn" id="founder-close">Keep here</button><button class="btn primary" id="founder-store">Store item</button></div></div>`);
   document.getElementById('founder-store').onclick=()=>{G.cosmetics.founderStored=true;save();closeModal();toast('Plaque stored in My inventory.');};
   document.getElementById('founder-close').onclick=closeModal;
 }
@@ -18172,7 +18328,7 @@ function pickAdventureCat(dest, tier) {
     openModal(`<div class="reveal"><div class="kicker">${esc(ADV_DESTS[dest].name)}</div><h2>Who's going?</h2>
       <p class="sub">Nobody's around to send. Coax a cat first.</p>
       <button class="btn primary" id="pc-back">Back</button></div>`);
-    document.getElementById("pc-back").onclick = openAdventurePicker;
+  document.getElementById("pc-back").onclick = openAdventurePicker;
     return;
   }
   const listHtml = goers.map(c => {
@@ -18184,8 +18340,9 @@ function pickAdventureCat(dest, tier) {
     <p class="sub" style="margin:.1rem 0 .1rem">Pick up to ${room} — more cats, a little more brought home.</p>
     <div class="pick-list cats">${listHtml}</div>
     <div class="row"><button class="btn primary" id="pc-send" disabled>Send adventure</button>
-    <button class="btn" id="pc-back">Back</button></div></div>`);
+    <button class="btn" id="pc-back">Back</button><button class="btn" id="pc-exit">Back to Cove</button></div></div>`);
   document.querySelectorAll('#modal .pick-cat').forEach(b=>{const c=goers.find(c=>c.name===b.dataset.c);if(c)neoPortrait(b.querySelector('canvas'),c,1.3);});
+  document.getElementById("pc-exit").onclick = closeModal;
   const sel = new Set();
   const sendBtn = document.getElementById("pc-send");
   const sync = () => { sendBtn.disabled = !sel.size; sendBtn.textContent = sel.size ? `Send ${sel.size} ${sel.size===1?"cat":"cats"} · ${T.label}` : "Select cats to send"; };
@@ -18841,7 +18998,7 @@ function neoEvent(name){
 function neoPortrait(canvasEl,c,scale){
   const g=canvasEl.getContext('2d');g.clearRect(0,0,canvasEl.width,canvasEl.height);
   const portrait=new Cat({coatKey:c.coatKey,star:c.star,markSeed:c.markSeed,mascot:c.mascot,bornAt:c.bornAt,x:0,y:0});
-  portrait.worn=[...(c.worn||[])];portrait.state='loafing';portrait.blink=3;portrait.bob=.6;portrait.tail=.3;portrait.trotting=false;
+  portrait.coatKey=c.coatKey;portrait.worn=[...(c.worn||[])];portrait.state='loafing';portrait.blink=3;portrait.bob=.6;portrait.tail=.3;portrait.trotting=false;
   g.save();g.translate(canvasEl.width/2,canvasEl.height-6);g.scale(scale,scale);drawCat(g,portrait,true);g.restore();
 }
 function neoCatStoryLink(c){
@@ -18945,7 +19102,7 @@ function neoBuildNavigation(){
   <button class="neo-destination" id="neo-go-garden"><span><img class="neo-ui-icon" src="art/icon-keepsake-garden.svg" alt="" width="36" height="36"></span><b>Cove Garden</b><small>Plant, grow and gather something good.</small></button>
   <button class="neo-destination" id="neo-go-rest"><span>${neoUIIcon("rest")}</span><b>Rainy retreat</b><small>No chores. Just rain and company.</small></button>
   </div>
-  <details class="neo-feedback"><summary>Help shape the Cove</summary><p>Your feedback can help us make this little home better.</p><button class="btn" id="neo-playtest">Private playtest notebook</button></details>`;
+  <div class="neo-feedback"><p>Your feedback can help us make this little home better.</p><button class="btn primary" id="neo-feedback-contact" type="button">Give feedback</button></div>`;
   document.getElementById('app').append(sheet);panels.explore=sheet;
   document.getElementById('neo-explore-close').onclick=closeAllPanels;
   document.getElementById('neo-go-festival').onclick=()=>{closeAllPanels();document.getElementById('festBtn').click();};
@@ -18953,8 +19110,8 @@ function neoBuildNavigation(){
   // Café development continues in the neo-catmint-cafe branch; saved progress is retained.
   document.getElementById('neo-go-garden').onclick=()=>neoOpenHomestead('garden');
   document.getElementById('neo-go-rest').onclick=()=>{closeAllPanels();document.getElementById('restBtn').click();};
-  document.getElementById('neo-playtest').onclick=neoPlaytest;
-  panels.dex.querySelector('h2').textContent='Catdex';panels.shop.querySelector('h2').textContent='Tideline Shop';
+  document.getElementById('neo-feedback-contact').onclick=()=>openExternal('https://www.catmintcove.com/#contact');
+  panels.dex.querySelector('h2').textContent='Catdex';panels.shop.querySelector('h2').textContent='Cove Shop';
 }
 function neoPlaytest(){
   const h=neoHome();openModal(`<h2>Your private playtest notebook</h2><p>Optional interaction counts stay on this device. No names, notes, or memories are exported. Nothing is sent automatically.</p><button class="btn" id="neo-metrics">${h.metrics?'Stop':'Start'} recording interactions</button><button class="btn" id="neo-export">Download anonymous counts</button><button class="btn" id="neo-metrics-close">Close</button>`);
@@ -19105,13 +19262,14 @@ function neoOpenHomestead(kind){
   if(!sheet){sheet=document.createElement('div');sheet.id='neo-homestead';sheet.className='sheet';document.getElementById('app').append(sheet);panels.homestead=sheet;}
   sheet.hidden=false;sheet.classList.toggle('cafe-full-room',!garden);
   const time=t=>Math.max(0,Math.ceil((t-Date.now())/1000));
-  sheet.innerHTML=`<button class="x" aria-label="Back to the Cove">×</button><div class="kicker">YOUR LITTLE CORNER OF THE COVE</div><h2>${garden?'Cove Garden':'Catmint Café'}</h2><p>${garden?'Plant, harvest, and sell spare crops for 1 shell each. Crops never wither. Keep ingredients for the future café.':'Choose what to cook and stock the counter. Guests arrive, take a seat, enjoy a treat and pay 2 shells. A visit takes one minute; stocked food also sells while you are away. Close the café to pause service while you cook or redecorate.'}</p><div class="homestead-stock">${Object.entries(COVE_CROPS).map(([k,c])=>`<span>${c.name}: <b>${h.stock[k]||0}</b></span>`).join('')}</div>`;
+  sheet.innerHTML=`<button class="x" aria-label="Back to the Cove">×</button><div class="kicker">YOUR LITTLE CORNER OF THE COVE</div><h2>${garden?'Cove Garden':'Catmint Café'}</h2><p>${garden?'A little harvest for today, and something to save for tomorrow. Crops never wither.':'Choose what to cook and stock the counter. Guests arrive, take a seat, enjoy a treat and pay 2 shells. A visit takes one minute; stocked food also sells while you are away. Close the café to pause service while you cook or redecorate.'}</p><div class="homestead-stock">${Object.entries(COVE_CROPS).map(([k,c])=>`<span>${c.name}: <b>${h.stock[k]||0}</b></span>`).join('')}</div>`;
   if(garden){
+    const purpose=document.createElement('aside');purpose.className='garden-purpose';purpose.innerHTML='<strong>Sell now, or save for the caf&eacute;</strong><p><b>Sell now</b> &mdash; trade each crop for 1 shell.</p><p><b>Save for later</b> &mdash; keep crops in your pantry for planned Catmint Caf&eacute; recipes.</p><small>Caf&eacute; cooking is planned for a future update.</small>';sheet.insertBefore(purpose,sheet.querySelector('.homestead-stock'));
     const grid=document.createElement('div');grid.className='homestead-grid';
     h.plots.forEach((p,i)=>{const card=document.createElement('article');card.className='homestead-patch';card.innerHTML=`<h3>Patch ${i+1}</h3>${neoCropArt(p?.key||'carrot',!!p&&!time(p.ready))}`;
       if(p){card.innerHTML+=`<p>${COVE_CROPS[p.key].name}</p><button class="btn" data-ready="${p.ready}" ${time(p.ready)?'disabled':''}>${time(p.ready)?'Growing · '+time(p.ready)+'s':'Harvest'}</button>`;card.querySelector('button').onclick=()=>neoHarvest(i);}
-      else for(const [k,c]of Object.entries(COVE_CROPS)){const b=document.createElement('button');b.className='btn';b.textContent=`${c.name} · Harvest ${c.yield} · ${c.cost} shells · ${c.seconds<60?c.seconds+'s':c.seconds/60+'m'}`;b.disabled=G.shells<c.cost;b.onclick=()=>neoPlant(i,k);card.append(b);}
-      grid.append(card);});sheet.append(grid);const market=document.createElement('div');market.className='homestead-stock';for(const [key,crop] of Object.entries(COVE_CROPS)){const sell=document.createElement('button');sell.className='btn';sell.textContent='Sell 1 '+crop.name.toLowerCase()+' · 1 shell';sell.disabled=!(h.stock[key]>0);sell.onclick=()=>neoSellHarvest(key);market.append(sell);}sheet.append(market);
+      else for(const [k,c]of Object.entries(COVE_CROPS)){const b=document.createElement('button');b.className='btn';b.classList.add('crop-choice');b.innerHTML='<strong>Plant '+esc(c.name)+'</strong><span>'+c.cost+' shells &middot; '+(c.seconds<60?c.seconds+'s':c.seconds/60+'m')+'</span><small>Harvest '+c.yield+' &middot; Sell for '+c.yield+' shells</small>';b.disabled=G.shells<c.cost;b.onclick=()=>neoPlant(i,k);card.append(b);}
+      grid.append(card);});sheet.append(grid);const market=document.createElement('div');market.className='homestead-stock';for(const [key,crop] of Object.entries(COVE_CROPS)){const sell=document.createElement('button');sell.className='btn';sell.textContent='Sell 1 '+crop.name.toLowerCase()+' · 1 shell';sell.disabled=!(h.stock[key]>0);sell.onclick=()=>neoSellHarvest(key);market.append(sell);}market.setAttribute('aria-label','Sell from your pantry');sheet.insertBefore(market,grid);
   }else{
     const door=document.createElement('button');door.className='btn';door.textContent=h.open?'Open for guests · Close café':'Café closed · Open café';door.onclick=()=>{neoCafeSettle();h.open=!h.open;h.lastSale=Date.now();save();neoOpenHomestead('cafe');};sheet.append(door);
     const room=document.createElement('div');room.className='homestead-cafe-room';room.innerHTML=`<p>${h.counter} treats on the counter · ${h.served} served</p><div class="homestead-tables">${Array.from({length:h.tables},(_,i)=>`<span>Table ${i+1}<br>${h.counter?'Open for guests':'Waiting for treats'}</span>`).join('')}</div>`;sheet.append(room);
@@ -19133,7 +19291,7 @@ function neoOpenHomestead(kind){
   const n=garden?h.plots.length:h.tables,max=garden?8:5,cost=garden?100+(n-4)*75:150+(n-3)*100;
   if(n<max){const expand=document.createElement('button');expand.className='btn';expand.textContent=`Add ${garden?'a garden patch':'a table'} · ${cost} shells`;expand.disabled=G.shells<cost;expand.onclick=()=>{if(neoExpandHomestead(kind))neoOpenHomestead(kind);};sheet.append(expand);}
   const other=document.createElement('button');other.className='btn';other.textContent=garden?'Catmint Café · Under development':'Visit Cove Garden';other.disabled=garden;other.onclick=()=>neoOpenHomestead(garden?'cafe':'garden');sheet.append(other);
-  sheet.querySelector('.x').onclick=()=>{sheet.hidden=true;clearInterval(neoHomesteadTimer);cancelAnimationFrame(neoCafeFrame);};
+  sheet.querySelector('.x').onclick=()=>{sheet.hidden=true;clearInterval(neoHomesteadTimer);cancelAnimationFrame(neoCafeFrame);};neoSheetFooter(sheet);
   neoHomesteadTimer=setInterval(()=>{if(sheet.hidden){clearInterval(neoHomesteadTimer);return;}if(document.hidden)return;const before=h.served;neoCafeSettle();if(before!==h.served){save();const trays=sheet.querySelector('#neo-cafe-trays');if(trays)trays.innerHTML=h.trays.map((t,i)=>`<span>Counter ${i+1}: <b>${t.servings?COVE_RECIPES[t.key].name+' · '+t.servings:'Empty'}</b></span>`).join('');const count=sheet.querySelector('.homestead-cafe-room > p');if(count)count.textContent=h.counter+' treats on the counter · '+h.served+' served';const collect=sheet.querySelector('[data-cafe-collect]');if(collect){collect.textContent='Collect '+h.earned+' shells';collect.disabled=!h.earned;}}for(const b of sheet.querySelectorAll('[data-ready]')){const seconds=time(+b.dataset.ready);b.disabled=seconds>0;b.textContent=seconds?`${garden?'Growing':'Cooking'} · ${seconds}s`:garden?'Harvest':'Stock the counter';}},1000);
 }
 
@@ -19162,7 +19320,7 @@ function neoCafeCanPlace(items,id,x,y){
 function neoPaintCafe(cv,h){
   cancelAnimationFrame(neoCafeFrame);cv.width=720;cv.height=560;
   const room=cv.parentElement,items=neoCafeFurniture(h),g=cv.getContext('2d');
-  const toolbar=document.createElement('div');toolbar.className='cafe-room-tools';toolbar.innerHTML='<button class="btn" data-edit>Arrange café</button><button class="btn" data-store disabled>Put away</button><select aria-label="Stored café furniture"><option value="">Stored furniture</option></select><span role="status">Tap the stove to cook, or the counter to stock treats.</span>';room.insertBefore(toolbar,cv);
+  const toolbar=document.createElement('div');toolbar.className='cafe-room-tools';toolbar.innerHTML='<button class="btn" data-edit>Arrange café</button><button class="btn" data-store disabled>Store item</button><select aria-label="Stored café furniture"><option value="">Stored furniture</option></select><span role="status">Tap the stove to cook, or the counter to stock treats.</span>';room.insertBefore(toolbar,cv);
   let editing=false,selected=null,drag=null,ghost=null,last=0;
   const status=toolbar.querySelector('span'),select=toolbar.querySelector('select');
   function controls(){toolbar.querySelector('[data-edit]').textContent=editing?'Done arranging':'Arrange café';toolbar.querySelector('[data-store]').disabled=!editing||!selected||['oven','counter'].includes(selected.type)||(selected.type==='table'&&items.filter(f=>f.type==='table'&&!f.boxed).length<=1);select.innerHTML='<option value="">Stored furniture</option>'+items.filter(f=>f.boxed).map(f=>`<option value="${f.id}">${f.type==='table'?'Table & chair':f.type}</option>`).join('');}
@@ -19603,5 +19761,97 @@ function neoFestivalGroundLights(g,w,h,horizon){
 }
 
 /* NEO_SCENERY_END */
+
+// Little victories: new results only; never grants currency a second time.
+const neoRecordedMatches=new WeakSet();
+function neoRecordVictory(match,activity,participants,won,result){
+ if(neoRecordedMatches.has(match)||!participants.length)return;neoRecordedMatches.add(match);
+ const j=G.littleVictories ||= {counts:{},entries:[],rotation:{}};
+ const key=activity==='race'?'race:'+participants[0].journalId:activity;
+ const n=won?(j.counts[key]=(j.counts[key]||0)+1):(j.counts[key]||0);
+ const firstCove=won&&activity==='race'&&!j.counts.race; if(won&&activity==='race')j.counts.race=(j.counts.race||0)+1;
+ const milestone=won&&[1,5,10,25,50].includes(n)?n:0;
+ const name=participants.map(c=>c.name).join(' & '),now=new Date(),day=now.toLocaleDateString();
+ let title=activity==='race'?name+' had plans today.':activity==='volley'?'An afternoon at the net.':'Small paws. Strong feelings.';
+ let line='';
+ if(activity==='race'){
+ const lines={1:`${name} crossed the line first. Then turned around. You were the important part.`,5:`Five wins for ${name}. The walk to the starting line has acquired a little swagger.`,10:`Ten victories. ${name} still makes sure you saw.`,25:`You knew which little face to look for. There was ${name}, coming home first.`,50:'Fifty wins together. The ribbons tell some of the story. You remember the rest.'};
+ if(milestone){line=lines[n];title=n===1?'That little look back.':n===50?'Look how far those paws have come.':'Still your little show-off.'}
+ else {const options=won?[`${name} accepted the honour by sitting on it.`,`${name} crossed first. Returned at a much more sensible speed.`,`${name} had a very productive interruption to nap time.`]:[`${name} made it back. There was still a warm welcome.`,`${name} left the ribbons to someone else today.`];const k=activity+won;const i=j.rotation[k]||0;line=options[i%options.length];j.rotation[k]=i+1;}
+ }else if(activity==='volley'){
+ line=won?(result.away===2?'One last point. Then a celebration that needed considerably more room.':result.away===0?'Three points, a good team, and absolutely no modesty on the walk home.':'One point slipped by. They found their rhythm again.'):(result.home===2?'One point short. You were proud of them before the score was settled.':result.home===0?'The visitors took the points. Your cats found a lovely patch of shade.':'One point worth cheering. Several paws worth being proud of.');
+ }else line=won?'The rope moved. For a moment, nobody quite believed it.':'The yarn went the other way. Your cats still came home to you.';
+ if(milestone&&activity!=='race')line=({1:activity==='volley'?`${name} won their first match together. The ball received no thanks.`:line,5:'Five victories. Small paws, increasingly big opinions.',10:'Ten wins for the Cove. Plenty of familiar paws have helped along the way.',25:'Twenty-five victories. Plenty of afternoons worth keeping.',50:'Fifty victories. A whole collection of afternoons worth keeping.'})[n];
+ if(!milestone&&activity!=='race'){const k=activity+':'+won+':'+(result.home??'')+':'+(result.away??'');const i=j.rotation[k]||0;const alternatives=won?[line,'A good afternoon together. The walk home took its time.','Another little victory. Someone is looking rather pleased.']:[line,'No ribbon this time. There was still a warm welcome.','A match to remember, and familiar company afterwards.'];line=alternatives[i%alternatives.length];j.rotation[k]=i+1;}
+ const award=milestone?(activity==='race'?(n===1?'First Finish-Line Ribbon':n+' race wins'):activity==='volley'?(n===1?'First Team Cheer':n+' team victories'):(n===1?'First Mighty Pull':n+' tug victories')):'';
+ const members=participants.map(c=>({id:c.journalId,name:c.name,coatKey:c.coatKey,star:c.star,markSeed:c.markSeed,mascot:c.mascot}));
+ const group=activity+':'+members.map(c=>c.id).sort().join(',')+':'+day+':'+won;
+ const existing=!milestone&&j.entries.find(e=>!e.milestone&&e.group===group);
+ if(existing){existing.count++;existing.line=line;existing.results.push(result);existing.results=existing.results.slice(-20);existing.time=now.getTime();}
+ else j.entries.unshift({activity,members,won,milestone,award,firstCove,title,line,day,time:now.getTime(),group,count:1,results:[result]});
+ // Keepsakes survive; bound ordinary history to avoid growing saves forever.
+ const ordinary=j.entries.filter(e=>!e.milestone).slice(0,100);j.entries=j.entries.filter(e=>e.milestone||ordinary.includes(e));save();
+}
+const neoJournalBeforeVictories=neoRenderJournal;
+neoRenderJournal=function(){neoJournalBeforeVictories();const root=document.getElementById('neoJournal');const section=document.createElement('section');section.className='neo-victories';section.innerHTML='<h3>Little victories</h3><p class="muted">The little things worth remembering.</p>';root.appendChild(section);const entries=G.littleVictories?.entries||[];
+ if(!entries.length){section.insertAdjacentHTML('beforeend','<p class="muted">Your next festival results and Little Matches keepsakes will find a home here.</p>');return}
+ let shown=0;const more=document.createElement('button');more.className='btn';more.textContent='More memories';const render=()=>{for(const e of entries.slice(shown,shown+10)){const card=document.createElement('article');card.className='neo-victory';card.innerHTML=`<small>${esc(e.day)} · ${esc({race:'Race',volley:'Volleyball',tug:'Tug of Paws',memory:'Little Matches'}[e.activity])}</small><h4>${esc(e.title)}</h4><div class="neo-victory-cats"></div>${e.award?`<p class="neo-award">${esc(e.award)}${e.firstCove?' · Your Cove’s first race victory':''}</p>`:''}<p class="neo-victory-line">${esc(e.line)}</p><p>${esc(e.members.map(m=>m.name).join(' & '))}${e.count>1?' · '+e.count+' '+(e.won?'wins':'matches')+' today':''}</p><details><summary>See results</summary>${e.results.map(r=>`<p>${e.activity==='memory'?`Level ${r.level} completed`:e.activity==='volley'?`${esc(coveName())} ${r.home} · ${esc(r.opponent)} ${r.away}`:e.activity==='race'?`Place ${r.place}`:`${e.won?'Won':'Finished'} · vs ${esc(r.opponent)}`}</p>`).join('')}<small>Keepsakes are saved automatically. No additional claim needed.</small></details>`;for(const m of e.members){const cv=document.createElement('canvas');cv.width=120;cv.height=100;cv.setAttribute('aria-label',m.name);card.querySelector('.neo-victory-cats').appendChild(cv);neoPortrait(cv,{...m,bornAt:0},1.5)}for(const m of e.members){const current=cats.find(c=>c.journalId===m.id);if(!current)continue;const link=document.createElement('button');link.className='btn';link.textContent='View '+current.name;link.onclick=()=>{closeAllPanels();neoOpenStory(current)};card.appendChild(link)}section.insertBefore(card,more)}shown+=10;more.hidden=shown>=entries.length};section.appendChild(more);more.onclick=render;render();};
+
+let neoPhotoSource=null,neoPhotoFrame='cream',neoPhotoDate=null,neoPhotoTimers=[];
+function composePhoto(){
+ if(!neoPhotoSource){composePhotoScene();neoPhotoSource=document.createElement('canvas');neoPhotoSource.width=neoPhotoSource.height=900;neoPhotoSource.getContext('2d').drawImage(pc,0,0);neoPhotoDate=new Date()}
+ const g=pctx;g.clearRect(0,0,900,900);g.fillStyle=neoPhotoFrame==='sage'?'#ccd8bf':neoPhotoFrame==='postcard'?'#f3e6cc':'#fbf7ed';g.fillRect(0,0,900,900);
+ if(neoPhotoFrame==='sage'){g.strokeStyle='#70876220';g.lineWidth=1;for(let i=0;i<900;i+=8){g.beginPath();g.moveTo(i,0);g.lineTo(i,900);g.moveTo(0,i);g.lineTo(900,i);g.stroke()}}
+ g.drawImage(neoPhotoSource,26,26,848,700,35,35,830,650);
+ if(neoPhotoFrame==='postcard'){g.strokeStyle='#a58a65';g.lineWidth=2;g.setLineDash([7,8]);g.strokeRect(16,16,868,868);g.setLineDash([]);g.strokeRect(780,740,65,75);g.font='16px Georgia';g.fillStyle='#866b4b';g.textAlign='center';g.fillText('COVE',812,783)}
+ g.fillStyle='#3d5847';g.textAlign='center';g.textBaseline='alphabetic';g.font='italic 28px Georgia';g.fillText((document.getElementById('photoCap').value||'A quiet afternoon, together.').slice(0,42),450,760,neoPhotoFrame==='postcard'?600:790);g.font='20px Georgia';g.fillText('Catmint Cove · '+coveName(),450,815,750);g.font='16px sans-serif';g.fillText(neoPhotoDate.toLocaleDateString(),450,850);g.textAlign='left';
+}
+function neoRevealPhoto(){neoPhotoTimers.forEach(clearTimeout);neoPhotoTimers=[];photoEl.classList.add('photo-ready');photoEl.classList.remove('printing','developing');document.getElementById('photoReveal').hidden=true;document.getElementById('photoSave').disabled=false;document.getElementById('photoShare').disabled=false;document.getElementById('photoFrames').hidden=false;document.getElementById('photoHint').textContent='A little moment, ready to keep.';}
+function neoPrintPhoto(){neoRevealPhoto();if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;photoEl.classList.remove('photo-ready');photoEl.classList.add('printing','developing');document.getElementById('photoReveal').hidden=false;document.getElementById('photoSave').disabled=true;document.getElementById('photoShare').disabled=true;document.getElementById('photoFrames').hidden=true;document.getElementById('photoHint').textContent='Printing your little moment…';neoPhotoTimers.push(setTimeout(()=>{photoEl.classList.remove('printing');photoEl.classList.remove('developing');document.getElementById('photoHint').textContent='Let the colors come softly to life…';},1700),setTimeout(neoRevealPhoto,4600));}
+const photoBay=document.createElement('div');photoBay.id='photoBay';pc.before(photoBay);photoBay.appendChild(pc);
+const frameBar=document.createElement('div');frameBar.id='photoFrames';frameBar.className='row';frameBar.setAttribute('aria-label','Photo frame');for(const [key,label]of [['cream','Classic Cream'],['sage','Sage Linen'],['postcard','Cove Postcard']]){const b=document.createElement('button');b.className='btn';b.textContent=label;b.setAttribute('aria-pressed',key===neoPhotoFrame);b.onclick=()=>{neoPhotoFrame=key;[...frameBar.children].forEach(x=>x.setAttribute('aria-pressed',x===b));composePhoto()};frameBar.appendChild(b)}photoBay.after(frameBar);
+const revealPhoto=document.createElement('button');revealPhoto.id='photoReveal';revealPhoto.className='btn';revealPhoto.textContent='Reveal now';revealPhoto.hidden=true;revealPhoto.onclick=neoRevealPhoto;frameBar.after(revealPhoto);
+const sharePhoto=document.createElement('button');sharePhoto.id='photoShare';sharePhoto.className='btn';sharePhoto.textContent='Share';document.getElementById('photoSave').after(sharePhoto);sharePhoto.onclick=async()=>{composePhoto();const hint=document.getElementById('photoHint');try{if(window.CoveNative?.savePhoto&&window.CoveNative.savePhoto(pc.toDataURL('image/png'))){hint.textContent='Opening device share options…';return}const blob=await new Promise(r=>pc.toBlob(r,'image/png'));if(!blob)throw Error('No photo');const files=[new File([blob],'catmint-cove.png',{type:'image/png'})];if(!navigator.canShare?.({files})){hint.textContent='Save your photo, then choose it in your social app.';return}await navigator.share({files,title:'A little moment in Catmint Cove'});hint.textContent='Your photo was handed to the share sheet.'}catch(e){hint.textContent=e.name==='AbortError'?'Your photo is here whenever you’re ready.':'Sharing could not open. Try Save photo.'}};
+document.getElementById('photoClose').addEventListener('click',neoRevealPhoto);
+
+
+// Little Matches reuses Cove artwork; no extra bitmap pack or duplicate economy.
+// Fit object illustrations to the memory card's available space.
+function memoryObjectImage(source){
+ const w=source.width,h=source.height,data=source.getContext('2d').getImageData(0,0,w,h).data;
+ let left=w,top=h,right=-1,bottom=-1;
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(data[(y*w+x)*4+3]>16){left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y)}
+ if(right<left)return source.toDataURL();
+ const cv=document.createElement('canvas');cv.width=240;cv.height=200;
+ const sw=right-left+1,sh=bottom-top+1,scale=Math.min(204/sw,164/sh);
+ cv.getContext('2d').drawImage(source,left,top,sw,sh,(240-sw*scale)/2,(200-sh*scale)/2,sw*scale,sh*scale);
+ return cv.toDataURL();
+}
+const memoryPortraits=new WeakMap();
+// Short synthesized feedback: no downloads, and routed through the Cove volume bus.
+function memoryFeedback(kind){
+ const sound=G.sound;if(sound?.on===false||sound?.cove===0)return;
+ ensureAudio();if(!actx||muted||!coveGain)return;
+ const notes={tap:[[392,.06,0,.008]],flip:[[440,.09,0,.012]],miss:[[330,.14,0,.012],[294,.16,.09,.009]],match:[[523,.17,0,.018],[659,.2,.11,.014]],win:[[440,.2,0,.02],[523,.22,.14,.018],[659,.28,.28,.016],[784,.32,.44,.012]]}[kind];
+ if(!notes)return;
+ for(const [freq,duration,delay,volume]of notes){const t=actx.currentTime+delay,o=actx.createOscillator(),g=actx.createGain();o.type='sine';o.frequency.setValueAtTime(freq,t);o.connect(g);g.connect(coveGain);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(volume,t+.009);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.start(t);o.stop(t+duration+.02);o.onended=()=>{o.disconnect();g.disconnect()};}
+}
+const littleMatches=createLittleMatches({
+ feedback:memoryFeedback,
+ rewards:window.LITTLE_MATCH_REWARDS,
+ rewardImage:(c,key)=>{const cv=document.createElement('canvas');cv.width=280;cv.height=250;neoPortrait(cv,{coatKey:c.key||'midknight',markSeed:c.markSeed||4242,star:0,bornAt:0,mascot:c.mascot,worn:key?[key]:(c.worn||[])},3.2);return cv.toDataURL()},
+ wear:(c,key)=>{const actual=cats.find(x=>x.journalId===c.id);if(!actual||actual.visitor||!accOwned(actual,key))return false;equipAccessory(actual,key,true);c.worn=[...actual.worn];return true;},
+ draw:(cv,c,mood,jump,walk)=>{let entry=memoryPortraits.get(cv);if(!entry||entry.id!==c.id){entry={id:c.id,cat:new Cat({coatKey:c.key||'midknight',markSeed:c.markSeed||4242,mascot:c.mascot,star:0,bornAt:0,x:0,y:0})};memoryPortraits.set(cv,entry)}const pet=entry.cat;pet.worn=c.worn||[];pet.state=mood==='sleep'?'sleeping':mood==='groom'?'grooming':'loafing';pet.stateT=performance.now()/1000;pet._groomMove='face';pet._jumpT=jump>0?CAT_JUMP_DUR*(1-jump):0;pet._jumpH=14;pet.walkAmt=walk ? .7 : 0;pet.walk=performance.now()/110;pet.blink=3;const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);g.save();g.translate(cv.width/2,cv.height-8);g.scale(cv.width/95,cv.width/95);drawCat(g,pet,true);g.restore();},
+ state:()=>G.littleMatches ||= {v:1,done:{},tone:'sage',round:null},save,
+ hide:()=>{closeAllPanels();closeModal();hideCatCard();hidePropCard();},
+ cats:()=>cats.filter(c=>!c.visitor&&!c._gone&&!c._leaving).map(c=>{const cv=document.createElement('canvas');cv.width=240;cv.height=200;neoPortrait(cv,c,3);return{id:c.journalId,name:c.name,key:c.coatKey,markSeed:c.markSeed,mascot:c.mascot,worn:[...(c.worn||[])],image:cv.toDataURL()}}),
+ catalog:()=>{const out={};for(const coat of COATS){const cv=document.createElement('canvas');cv.width=240;cv.height=200;neoPortrait(cv,{coatKey:coat.key,markSeed:4242,star:0,bornAt:0,worn:[]},3);out['cat:'+coat.key]={name:coat.name,image:cv.toDataURL()}}
+ for(const type of ['food','bed','toy','flowers']){const name={food:'Food bowl',bed:'Cozy bed',toy:'Cat toy',flowers:'Flowers'}[type];out['obj:'+type]={name,image:memoryObjectImage(productPreview({type,name}))}}
+ for(const key of ['lantern','birdbath','windmill','bunting']){const cv=document.createElement('canvas');cv.width=240;cv.height=200;const g=cv.getContext('2d');g.translate(120,175);const p=PROP_BY_ID[key];p.render(g,0,0,0,key==='windmill'?.9:1);out['obj:'+key]={name:p.name,image:memoryObjectImage(cv)}}return out;},
+ keepsake:(level,c)=>{const j=G.littleVictories ||= {counts:{},entries:[],rotation:{}};const mark='memory:'+level;if(j.counts[mark])return;j.counts[mark]=1;const names={1:'A Familiar Face',5:'Gingham Bow',10:'Daisy Crown',15:'Cozy Neckerchief',20:'Sleepy Bonnet',25:'Explorer Hat',30:'Little Lion'};const lines={1:'Found a friend. Then found the same friend again. An excellent start.',5:'A little bow. A very accomplished companion.',10:'Ten levels together. A crown of daisies felt appropriate.',15:'Dressed for a small adventure. Possibly to the food bowl.',20:'Twenty levels remembered. Permission to nap: granted.',25:'A fine hat for someone who knows their way around.',30:'Small paws. A mighty finish. The mane is magnificent. The roar needs practice.'};j.entries.unshift({activity:'memory',members:[{id:c.id,name:c.name,coatKey:c.key,star:0,markSeed:c.markSeed||4242}],won:true,milestone:level,award:names[level],title:level===30?'You remembered the little things.':'Another little memory, kept.',line:lines[level],day:new Date().toLocaleDateString(),time:Date.now(),count:1,results:[{level}]});save();}
+});
+const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 levels, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();const activityGrid=document.querySelector('#neo-explore .neo-explore-grid');activityGrid.prepend(matchesButton);activityGrid.appendChild(document.getElementById('neo-go-cafe'));
 })();
 </script>
+
+

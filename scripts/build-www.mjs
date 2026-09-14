@@ -16,6 +16,8 @@ await mkdir(www, { recursive: true });
 // 1. index.html — inject the native bridge immediately before the game's own
 //    <script> so window.CoveNative is set up before the game boots
 let html = await readFile(join(root, "index.html"), "utf8");
+const pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+html = html.replace(/const APP_VERSION = "[^"]*"/, `const APP_VERSION = "${pkg.version}"`);
 const marker = /<script>\s*\(\(\)\s*=>\s*\{/;   // the game IIFE: `<script>\n(() => {`
 if (!marker.test(html)) throw new Error("build-www: could not find the game <script> to inject the bridge before");
 html = html.replace(marker, '<script src="capacitor-bridge.js"></script>\n$&');

@@ -73,3 +73,47 @@
 
 #modal .neo-story{padding-top:68px}#modal .neo-story>.kicker{font-size:11px;line-height:1.4}#modal .neo-story .neo-story-x{top:6px;right:0}
 @media(max-width:559px){#shopList.dressmode{display:block;overflow-y:auto}.dp{overflow:visible}.dp-stage{padding:10px 12px}.dp-platform{max-width:150px}.dp-rack{flex:none;overflow:visible}.dp-switch button{min-width:36px;min-height:36px}.dp-actions{max-width:100%}}
+
+/* WKWebView: the rename button must never inherit native blue text. */
+#hud #titlePill{appearance:none;-webkit-appearance:none;color:var(--ink,#343d31);-webkit-text-fill-color:var(--ink,#343d31);text-decoration:none}
+#hud #titlePill .cove-title-text{color:var(--ink,#343d31);-webkit-text-fill-color:var(--ink,#343d31)}
+#hud #titlePill b{color:var(--accent-bright,#508363);-webkit-text-fill-color:var(--accent-bright,#508363)}
+
+#rest .rest-bar{flex-wrap:wrap;justify-content:center}#restDimToggle{min-height:40px;padding:6px 10px;border:1px solid #ffffff30;border-radius:999px;white-space:nowrap}#restDimToggle[aria-pressed="true"]{background:#e6dfc6;color:#344331}#rest .rest-bar .rb-time{min-width:50px}
+
+/* Consistent action pairs and tactile feedback without shifting layout. */
+.cove-action-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.cove-action-pair .btn{width:100%;min-width:0;min-height:44px;padding:10px 12px;margin:0;white-space:normal}#roster-close.btn.primary{background:#477354;color:#fff;-webkit-text-fill-color:#fff;border-color:#477354;width:100%;border-radius:12px}
+.btn,.linkbtn,.sheet button,.cove-action-pair button{transition:background-color .15s ease,box-shadow .15s ease,filter .15s ease;touch-action:manipulation}button:enabled:active{filter:brightness(.92);box-shadow:inset 0 2px 4px #243b2920}button:disabled{cursor:default}button:focus-visible{outline:2px solid #789578;outline-offset:3px}@media(hover:hover){.btn:enabled:hover,.linkbtn:enabled:hover{filter:brightness(.96)}}@media(prefers-reduced-motion:reduce){button{transition:none!important}}
+
+/* Shared action-label alignment; retain each control's existing layout. */
+.btn,#placeBar button,.cove-action-pair button{text-align:center;justify-content:center}.cove-action-pair .btn{display:flex;align-items:center}#placeBar button{white-space:normal}
+
+/* Festival choices are icon-led rows, rather than centered action labels. */
+#fest .fc-card{text-align:left!important;grid-template-columns:32px minmax(0,1fr) 16px;column-gap:12px;row-gap:3px;width:100%;touch-action:manipulation;transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease}
+#fest .fc-card .fc-emoji{grid-column:1;grid-row:1 / 4;align-self:center;display:grid;place-items:center}
+#fest .fc-card .fc-name,#fest .fc-card .fc-desc,#fest .fc-card .fc-lock{grid-column:2;text-align:left;min-width:0;overflow-wrap:anywhere}
+#fest .fc-card .fc-name{grid-row:1}#fest .fc-card .fc-desc{grid-row:2}#fest .fc-card .fc-lock{grid-row:3}
+#fest .fc-card:not(.locked)::after{content:'›';grid-column:3;grid-row:1 / 4;align-self:center;color:#68825d;font-size:24px}
+#fest .fc-card:not(.locked):active{background:#e0e8d4;box-shadow:inset 0 0 0 1px #789578}
+#fest .fc-card:focus-visible{outline:2px solid #477354;outline-offset:2px}
+@media(hover:hover){#fest .fc-card:not(.locked):hover{background:#e7eddb;border-color:#91a781}}
+@media(max-width:360px){#fest .fc-card{padding:10px;column-gap:9px}#fest .fc-card .fc-name{font-size:.95rem}}
+
+/* Compact phone spin control: ID specificity survives later legacy theme rules. */
+@media(max-width:600px),(max-height:500px){
+ #fest #midkHud .midk-console{padding:6px 8px 10px;gap:8px;border-radius:14px;max-width:calc(100vw - 24px)}
+ #fest #midkHud .midk-spin{min-height:44px;height:44px;min-width:88px;padding:6px 10px;font-size:17px;line-height:1;gap:6px}
+ #fest #midkHud .midk-spin .ms-paw{font-size:16px}
+ #fest #midkHud .mc-reels{gap:3px}
+ #fest #midkHud .mc-reels span{width:26px;height:28px;font-size:16px}
+ #fest #midkHud .mc-bar{left:8px;width:84px;bottom:4px;height:3px}
+ #fest #midkHud .mc-msg{left:8px;width:84px;font-size:11px;line-height:1.2}
+}
+/* Journal keepsakes and instant-photo capture. */
+.neo-victory{border:1px solid #d8ddcb;border-radius:16px;padding:16px;margin:14px 0;background:#faf6e9}.neo-victory h4{font:22px Georgia;margin:8px 0}.neo-victory-line{font:italic 18px/1.5 Georgia}.neo-victory-cats{display:flex;flex-wrap:wrap;background:#edf0e3;border-radius:12px;justify-content:center}.neo-victory-cats canvas{width:90px;height:75px}.neo-award{color:#75613c;font-size:13px}.neo-victory summary{min-height:44px;padding:10px 0;cursor:pointer}.neo-victory small{color:#65745f}
+#photo{overflow:auto;padding:20px 12px;justify-content:flex-start}#photoBay{width:min(70vh,440px,88vw);flex-shrink:0;overflow:hidden;position:relative;padding:0 8px 12px}#photo #photoCanvas{width:100%;height:auto;max-height:none;object-fit:contain;box-shadow:0 4px 12px #273a2933}#photo.printing #photoCanvas{animation:neoPrintUp 1.7s ease-out both}#photo.printing #photoBay:after{content:'';position:absolute;bottom:0;left:0;right:0;height:12px;border-radius:8px;background:#4e654d}#photo.developing #photoCanvas{opacity:.1;filter:sepia(1) blur(4px)}#photo:not(.developing) #photoCanvas{transition:filter 2.8s,opacity 2.8s}#photoFrames{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}#photoFrames button{font-size:12px;padding:9px 12px}#photoFrames [aria-pressed=true]{background:#4b775c;color:white}#photo .cap-in{flex-shrink:0}#photo .hint{margin:8px 0}@keyframes neoPrintUp{from{transform:translateY(105%)}to{transform:translateY(0)}}@media(prefers-reduced-motion:reduce){#photo #photoCanvas{animation:none!important;transition:none!important}}
+#photo.photo-ready #photoCanvas{transition:none}#photoFrames[hidden],#photoReveal[hidden]{display:none!important}
+/* Unavailable café: no hover/press invitation, native disabled blocks activation. */
+#neo-go-cafe:disabled,#neo-go-cafe:disabled:hover,#neo-go-cafe:disabled:active,#neo-go-cafe:disabled:focus{background:#e5e5de!important;border-color:#d1d3c9!important;color:#7a7e73!important;box-shadow:none!important;transform:none!important;filter:none!important;cursor:not-allowed;opacity:1}
+#neo-go-cafe:disabled .neo-ui-icon{filter:grayscale(1);opacity:.45}
+#neo-go-cafe:disabled b,#neo-go-cafe:disabled small{color:#7a7e73!important}
