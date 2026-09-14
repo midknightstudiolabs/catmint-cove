@@ -1421,7 +1421,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-little-hello p{overflow-wrap:anywhere}
 @media(max-width:480px){
   #shop .shop-item{flex-wrap:wrap}
-  #shop .shop-item .txt{flex-basis:100%}
+  #shop .shop-item .txt{flex:1 1 0;min-width:120px}
   #shop .shop-actions{width:100%;justify-content:flex-start}
   #shop .shop-actions button{flex:1 1 auto}
   #shopTabs button{font-size:13px;padding:8px 10px}
@@ -9235,14 +9235,22 @@ function endRest(auto) {
   document.getElementById("restBar").hidden = true;
   G.rest = null; save();
   try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
-  _restDPR = 0; _restLiteCats = false; resize();   // restore the pannable cove canvas (full DPR) + re-clamp the scroll
-  rebuildAttractors();
-  for (const c of cats) decide(c);
-  syncHud();
-  if (mins >= 1 || auto) {
-    const h = Math.floor(mins / 60), m = mins % 60;
-    toast(`Rested for ${h ? h + "h " : ""}${m}m — the whole cove is cozy${earned > 0 ? `.  +◈${earned}` : ""}.`, 5);
-  }
+  // Everything above already paints the rest overlay gone; the resize (a
+  // full canvas backing-store reallocation back to full DPR) plus rebuilding
+  // every obstacle and re-deciding every cat is the expensive part. On a
+  // slow device that used to all run in the same tap's call stack, so the
+  // panel visibly hung open for a beat before the cove reappeared. Deferring
+  // it one frame lets the immediate UI change paint first.
+  requestAnimationFrame(() => {
+    _restDPR = 0; _restLiteCats = false; resize();   // restore the pannable cove canvas (full DPR) + re-clamp the scroll
+    rebuildAttractors();
+    for (const c of cats) decide(c);
+    syncHud();
+    if (mins >= 1 || auto) {
+      const h = Math.floor(mins / 60), m = mins % 60;
+      toast(`Rested for ${h ? h + "h " : ""}${m}m — the whole cove is cozy${earned > 0 ? `.  +◈${earned}` : ""}.`, 5);
+    }
+  });
 }
 function resumeRest(saved) {
   restOpts = { ...restOpts, ...(saved.opts || {}) };
