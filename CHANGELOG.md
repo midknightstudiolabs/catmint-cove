@@ -1,3 +1,12 @@
+## Neo web 2026.09.14.2 - Bottom actions and seasonal welcome
+
+- Moved reward collection, completion and modal actions to fixed bottom footers with independently scrolling content.
+- Moved sheet exits for Shop, Catdex, Journal, Activities and Garden to bottom controls; grouped Help and adventure actions below their content.
+- Removed duplicate top exits in roster, Credits and Cove Cares. Cat stories now exit from the footer.
+- Added the first-visit Little Matches introduction: 30 levels, a free favour each level, six earned accessories and new drops every season. Acknowledgement is saved; earned progress is preserved.
+- Reward preview Back returns to the collection when opened there.
+- Checked 72 menu entry states, phone portrait/landscape footers, Help, storage actions and all 30 levels with reward/save/reload coverage.
+
 ## Neo web 2026.09.14.1 - Menu audit fixes
 
 - Added a visible Back to Cove action to Little Matches completion and disabled already-spent favour options when resuming.

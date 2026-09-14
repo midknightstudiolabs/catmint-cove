@@ -1458,6 +1458,23 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .audit-close:hover,.credits .cr-x:hover,.cares .cr-x:hover{background:#e2e8d5}
 #shop [data-nav]{width:44px;height:44px;min-width:44px;min-height:44px}.dp-rack h4 .neo-ui-icon{width:22px;height:22px;vertical-align:middle}
 .audit-close:focus-visible{outline:3px solid #789578;outline-offset:2px}
+
+#modal .cove-bottom-dialog{display:flex;flex-direction:column;max-height:calc(100dvh - 120px);overflow:hidden;padding:0}
+.cove-dialog-body{overflow:auto;min-height:0;padding:18px 8px;overscroll-behavior:contain}
+.cove-dialog-footer{position:static!important;flex-shrink:0;display:flex!important;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:0!important;padding:12px 0!important;border-top:1px solid var(--panel-line);background:var(--panel)}
+.cove-dialog-footer .btn{min-height:44px;flex:1 1 0;min-width:0;width:auto;text-align:center}
+#roster .x{display:none}
+#modal .adv-flow .kicker,#modal .adv-flow h2{padding-right:0}
+#modal .credits .row,#modal .cares .row{position:static;transform:none;width:auto}
+
+.cove-bottom-sheet:not([hidden]){display:flex!important;flex-direction:column;overflow:hidden!important}
+.cove-sheet-body{overflow:auto;min-height:0;flex:1 1 auto;overscroll-behavior:contain}
+.cove-sheet-footer{flex-shrink:0;border-top:1px solid var(--panel-line);padding:10px 12px;background:var(--panel);text-align:center}
+.cove-sheet-footer .btn{min-height:44px;width:100%;text-align:center}
+#shop .cove-sheet-body{display:flex;flex-direction:column;overflow:hidden}
+#shopList{min-height:0}
+.cove-bottom-help{display:flex!important;flex-direction:column;overflow:hidden!important;max-height:calc(100dvh - 40px)}
+.cove-bottom-help .cove-dialog-body{padding:0;flex:1 1 auto}
 </style>
 
 <div id="app">
@@ -1835,7 +1852,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <p><b>Catmint Cove</b> is played upright.<br>Turn your phone back and the cove's right there. 🐾</p>
 </div>
 
-<script src="ui/memory-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=7"><script src="ui/little-matches.js?v=9"></script>
+<script src="ui/memory-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=8"><script src="ui/little-matches.js?v=10"></script>
 <script>
 (() => {
 "use strict";
@@ -6828,6 +6845,13 @@ const panels = {
 };
 function anyPanelOpen() { for (const k in panels) if (!panels[k].hidden) return true; return false; }
 function closeAllPanels() { for (const k in panels) panels[k].hidden = true; stopDressLoop(); _dressWorn = null; }
+function neoSheetFooter(sheet){
+ if(!sheet||sheet.querySelector(':scope > .cove-sheet-footer'))return;
+ const exit=sheet.querySelector('.x');if(!exit)return;
+ exit.className='btn';exit.textContent='Back to Cove';exit.setAttribute('aria-label','Back to Cove');
+ exit.remove();const body=document.createElement('div');body.className='cove-sheet-body';while(sheet.firstChild)body.append(sheet.firstChild);
+ const footer=document.createElement('div');footer.className='cove-sheet-footer';footer.append(exit);sheet.classList.add('cove-bottom-sheet');sheet.append(body,footer);
+}
 function togglePanel(name) {
   ensureAudio();
   exitFocus();
@@ -6837,6 +6861,7 @@ function togglePanel(name) {
   if (!wasOpen) {
     hideCatCard(); hideToast(); hidePropCard();   // clear anything floating over the cove before the panel comes up
     panels[name].hidden = false;
+    neoSheetFooter(panels[name]);
     if (name === "shop") renderShop();
     if (name === "dex") { renderDex(); neoRenderCats(); }
     if (name === "today") {
@@ -7348,14 +7373,15 @@ function openGuide(){
  ensureAudio();document.getElementById('neo-tour')?.remove();
  const card=tutEl.querySelector('.card');card.classList.add('help-home');tutEl.classList.add('on');
  const close=()=>{tutEl.classList.remove('on');card.classList.remove('help-home');};
+ const helpFooter=()=>{const footer=document.createElement('div');footer.className='cove-dialog-footer';const show=card.querySelector('#helpShow');if(show)footer.append(show);const exit=document.createElement('button');exit.id='helpClose';exit.className='btn';exit.textContent='Back to Cove';exit.onclick=close;footer.append(exit);const body=document.createElement('div');body.className='cove-dialog-body';while(card.firstChild)body.append(card.firstChild);card.classList.add('cove-bottom-help');card.append(body,footer);};
  const home=()=>{
- card.innerHTML='<div class="help-head"><h2>How can we help?</h2><button class="btn" id="helpClose" aria-label="Close help">×</button></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="linkbtn" id="guideTour">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideCredits">Credits</button><button class="linkbtn" id="guideCares">Cove Cares</button></footer>';
- card.querySelector('#helpClose').onclick=close;
+ card.innerHTML='<div class="help-head"><h2>How can we help?</h2></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="linkbtn" id="guideTour">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideCredits">Credits</button><button class="linkbtn" id="guideCares">Cove Cares</button></footer>';
+ helpFooter();
  card.querySelectorAll('[data-topic]').forEach(el=>el.onclick=()=>topic(+el.dataset.topic));
  card.querySelector('#guideTour').onclick=()=>{close();neoStartTour();};
  card.querySelector('#guideCredits').onclick=()=>{close();openCredits();};card.querySelector('#guideCares').onclick=()=>{close();openCares();};
  };
- const topic=i=>{const t=HELP_TOPICS[i];card.innerHTML='<div class="help-head"><button class="linkbtn" id="helpBack">‹ All topics</button><button class="btn" id="helpClose" aria-label="Close help">×</button></div><div class="help-visual">'+neoUIIcon(t[1])+'</div><h2>'+t[0]+'</h2><ol class="help-steps">'+t[2].map(x=>'<li>'+x+'</li>').join('')+'</ol><button class="btn primary" id="helpShow">Show me</button>';card.querySelector('#helpBack').onclick=home;card.querySelector('#helpClose').onclick=close;card.querySelector('#helpShow').onclick=()=>{close();closeAllPanels();if(t[3]==='explore')neoOpenExplore();else togglePanel(t[3]);};};home();
+ const topic=i=>{const t=HELP_TOPICS[i];card.innerHTML='<div class="help-head"><button class="linkbtn" id="helpBack">‹ All topics</button></div><div class="help-visual">'+neoUIIcon(t[1])+'</div><h2>'+t[0]+'</h2><ol class="help-steps">'+t[2].map(x=>'<li>'+x+'</li>').join('')+'</ol><button class="btn primary" id="helpShow">Show me</button>';card.querySelector('#helpBack').onclick=home;helpFooter();card.querySelector('#helpShow').onclick=()=>{close();closeAllPanels();if(t[3]==='explore')neoOpenExplore();else togglePanel(t[3]);};};home();
 }
 function neoStartTour(){
  tutEl.classList.remove("on");closeModal();hidePropCard();hideCatCard();rosterEl.hidden=true;
@@ -7392,7 +7418,6 @@ function openCredits() {
  tutEl.classList.remove("on");closeAllPanels();hidePropCard();
   ensureAudio();
   openModal(`<div class="reveal credits">
-    <button class="cr-x" id="crX" aria-label="Close">✕</button>
     <div class="kicker">Made with ${neoUIIcon("paw")}</div>
     <h2>Catmint Cove</h2>
     <p class="cr-ver" id="crVer"></p>
@@ -7422,11 +7447,10 @@ function openCredits() {
       `voices ${u.filter(x => _sfxBuf[x]).length}/${u.length} ${src} · ${_sfxErr || "ok"} · ${location.protocol} · audio ${actx ? actx.state : "off"}`; }
   { const nv = window.CoveNative && window.CoveNative.appVersion;
     const native = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-    document.getElementById("crVer").textContent = "Version " + (nv || (native ? APP_VERSION : APP_VERSION + " · web · Neo 2026.09.14.1")); }
+    document.getElementById("crVer").textContent = "Version " + (nv || (native ? APP_VERSION : APP_VERSION + " · web · Neo 2026.09.14.2")); }
   document.querySelectorAll(".credits .cr-links a").forEach(a =>
     a.addEventListener("click", e => { e.preventDefault(); openExternal(a.href); }));
   document.getElementById("crClose").onclick = closeModal;
-  document.getElementById("crX").onclick = closeModal;
   { const cc = document.getElementById("crCares");
     if (cc) cc.onclick = e => { e.preventDefault(); closeModal(); setTimeout(openCares, 90); }; }
 }
@@ -7455,7 +7479,6 @@ function openCares() {
          <div class="row"><button class="btn primary" id="cc-support">❤️ Support the Cove</button></div>
        </div>`;
   openModal(`<div class="reveal cares">
-    <button class="cr-x" id="ccX" aria-label="Close">✕</button>
     <div class="kicker">❤️ Catmint Cove Cares</div>
     <h2>A little Cove can do a little good.</h2>
     <p class="cc-body">Catmint Cove started because of one very real cat — Midknight. He got us thinking about a little world where cats can just be cats: cared for, comfortable, curious, and completely themselves.</p>
@@ -7465,7 +7488,6 @@ function openCares() {
     <p class="cc-fine">Optional purchases support Catmint Cove. Catmint Cove Cares is our hope that, as the game grows, some of what it earns can go toward animal-welfare efforts. It's an aim, not a fixed amount — we're not partnered with a specific charity yet, and no purchase is a donation.</p>
     <div class="row"><button class="btn${done ? " primary" : ""}" id="ccBack">Back to the cove</button></div>
   </div>`);
-  document.getElementById("ccX").onclick = closeModal;
   document.getElementById("ccBack").onclick = closeModal;
   { const sb = document.getElementById("cc-support");
     if (sb) sb.onclick = () => {
@@ -8170,7 +8192,18 @@ function checkOffline(then) {
   setTimeout(earningsThen, 300);
 }
 const scrim = document.getElementById("scrim");
-function openModal(html) { document.getElementById("modal").innerHTML = html; scrim.classList.add("on"); }
+function openModal(html) {
+ const modal=document.getElementById("modal");modal.innerHTML=html;
+ const card=modal.firstElementChild;
+ if(card){
+  const actions=[...card.children].filter(e=>e.matches('.row,.cove-action-pair,.btn-row'));
+  let footer=actions.at(-1);
+  const story=card.querySelector(':scope > .neo-story-x');
+  if(story){footer=document.createElement('div');footer.className='row';story.className='btn';story.textContent='Back to Cove';footer.append(story)}
+  if(footer){footer.remove();const body=document.createElement('div');body.className='cove-dialog-body';while(card.firstChild)body.append(card.firstChild);footer.classList.add('cove-dialog-footer');card.classList.add('cove-bottom-dialog');card.append(body,footer)}
+ }
+ scrim.classList.add("on");
+}
 function closeModal() { scrim.classList.remove("on"); }
 
 /* ---------- ownership: name your cove ---------- */
@@ -18249,13 +18282,12 @@ function openAdventurePicker() {
   if (!advSlotOpen()) { toast("Both expeditions are already out.", 3.5); return; }
   const dests=Object.entries(ADV_DESTS).map(([k,d])=>`<button class="pick-dest" data-d="${k}" aria-pressed="false"><span>${neoUIIcon("dest-"+k)}</span><b>${esc(d.name)}</b><i>${esc(d.blurb)}</i></button>`).join("");
   const tiers=Object.values(ADV_TIERS).map(t=>`<button class="pick-tier${t.key==='day'?' on':''}" data-t="${t.key}" aria-pressed="${t.key==='day'}"><b>${esc(t.label)}</b><i>${esc(t.note)}</i></button>`).join("");
-  openModal(`<div class="reveal adv-flow"><button class="audit-close" id="adv-close" aria-label="Close adventure planner">&times;</button><div class="kicker">Adventure · 1 of 2</div><h2>Plan a little adventure</h2><p class="sub">Choose a place and how long your cats will be away.</p><div class="pick-list">${dests}</div><div class="pick-label">How long?</div><div class="pick-tiers">${tiers}</div><p class="adv-selection" id="adv-selection" role="status">Choose a destination to continue.</p><div class="row"><button class="btn primary" id="adv-continue" disabled>Choose cats</button><button class="btn" id="pick-cancel">Cancel</button></div></div>`);
+  openModal(`<div class="reveal adv-flow"><div class="kicker">Adventure · 1 of 2</div><h2>Plan a little adventure</h2><p class="sub">Choose a place and how long your cats will be away.</p><div class="pick-list">${dests}</div><div class="pick-label">How long?</div><div class="pick-tiers">${tiers}</div><p class="adv-selection" id="adv-selection" role="status">Choose a destination to continue.</p><div class="row"><button class="btn primary" id="adv-continue" disabled>Choose cats</button><button class="btn" id="pick-cancel">Cancel</button></div></div>`);
   let tier='day',dest=null;
   const sync=()=>{document.getElementById('adv-continue').disabled=!dest;document.getElementById('adv-selection').textContent=dest?ADV_DESTS[dest].name+' · '+advTier(tier).label:'Choose a destination to continue.';};
   document.querySelectorAll('#modal .pick-tier').forEach(b=>b.onclick=()=>{document.querySelectorAll('#modal .pick-tier').forEach(x=>{x.classList.remove('on');x.setAttribute('aria-pressed','false')});b.classList.add('on');b.setAttribute('aria-pressed','true');tier=b.dataset.t;sync();});
   document.querySelectorAll('#modal .pick-dest').forEach(b=>b.onclick=()=>{document.querySelectorAll('#modal .pick-dest').forEach(x=>{x.classList.remove('on');x.setAttribute('aria-pressed','false')});b.classList.add('on');b.setAttribute('aria-pressed','true');dest=b.dataset.d;sync();});
   document.getElementById('pick-cancel').onclick=closeModal;
-  document.getElementById('adv-close').onclick=closeModal;
   document.getElementById('adv-continue').onclick=()=>{if(dest)pickAdventureCat(dest,tier);};
 }
 const PARTY_MAX = 3;
@@ -18267,7 +18299,6 @@ function pickAdventureCat(dest, tier) {
     openModal(`<div class="reveal"><div class="kicker">${esc(ADV_DESTS[dest].name)}</div><h2>Who's going?</h2>
       <p class="sub">Nobody's around to send. Coax a cat first.</p>
       <button class="btn primary" id="pc-back">Back</button></div>`);
-    document.getElementById("adv-close").onclick = closeModal;
   document.getElementById("pc-back").onclick = openAdventurePicker;
     return;
   }
@@ -18276,16 +18307,16 @@ function pickAdventureCat(dest, tier) {
     return `<button class="pick-cat${c.mascot ? " mk" : ""}" data-c="${esc(c.name)}" aria-pressed="false"><canvas width="100" height="94" aria-hidden="true"></canvas><b>${esc(c.name)}</b>
       <i>${c.traits.map(t => TRAITS[t] ? TRAITS[t].label : t).join(" · ")}</i>${hint ? `<em>${esc(hint)}</em>` : ""}</button>`;
   }).join("");
-  openModal(`<div class="reveal adv-flow"><button class="audit-close" id="adv-close" aria-label="Close adventure planner">&times;</button><div class="kicker">Adventure · 2 of 2</div><p class="adv-selection">${esc(ADV_DESTS[dest].name)} · ${esc(T.label)}</p><h2>Who's going?</h2>
+  openModal(`<div class="reveal adv-flow"><div class="kicker">Adventure · 2 of 2</div><p class="adv-selection">${esc(ADV_DESTS[dest].name)} · ${esc(T.label)}</p><h2>Who's going?</h2>
     <p class="sub" style="margin:.1rem 0 .1rem">Pick up to ${room} — more cats, a little more brought home.</p>
     <div class="pick-list cats">${listHtml}</div>
     <div class="row"><button class="btn primary" id="pc-send" disabled>Send adventure</button>
-    <button class="btn" id="pc-back">Back</button></div></div>`);
+    <button class="btn" id="pc-back">Back</button><button class="btn" id="pc-exit">Back to Cove</button></div></div>`);
   document.querySelectorAll('#modal .pick-cat').forEach(b=>{const c=goers.find(c=>c.name===b.dataset.c);if(c)neoPortrait(b.querySelector('canvas'),c,1.3);});
+  document.getElementById("pc-exit").onclick = closeModal;
   const sel = new Set();
   const sendBtn = document.getElementById("pc-send");
   const sync = () => { sendBtn.disabled = !sel.size; sendBtn.textContent = sel.size ? `Send ${sel.size} ${sel.size===1?"cat":"cats"} · ${T.label}` : "Select cats to send"; };
-  document.getElementById("adv-close").onclick = closeModal;
   document.getElementById("pc-back").onclick = openAdventurePicker;
   document.querySelectorAll("#modal .pick-cat").forEach(b => b.onclick = () => {
     const n = b.dataset.c;
@@ -19230,7 +19261,7 @@ function neoOpenHomestead(kind){
   const n=garden?h.plots.length:h.tables,max=garden?8:5,cost=garden?100+(n-4)*75:150+(n-3)*100;
   if(n<max){const expand=document.createElement('button');expand.className='btn';expand.textContent=`Add ${garden?'a garden patch':'a table'} · ${cost} shells`;expand.disabled=G.shells<cost;expand.onclick=()=>{if(neoExpandHomestead(kind))neoOpenHomestead(kind);};sheet.append(expand);}
   const other=document.createElement('button');other.className='btn';other.textContent=garden?'Catmint Café · Under development':'Visit Cove Garden';other.disabled=garden;other.onclick=()=>neoOpenHomestead(garden?'cafe':'garden');sheet.append(other);
-  sheet.querySelector('.x').onclick=()=>{sheet.hidden=true;clearInterval(neoHomesteadTimer);cancelAnimationFrame(neoCafeFrame);};
+  sheet.querySelector('.x').onclick=()=>{sheet.hidden=true;clearInterval(neoHomesteadTimer);cancelAnimationFrame(neoCafeFrame);};neoSheetFooter(sheet);
   neoHomesteadTimer=setInterval(()=>{if(sheet.hidden){clearInterval(neoHomesteadTimer);return;}if(document.hidden)return;const before=h.served;neoCafeSettle();if(before!==h.served){save();const trays=sheet.querySelector('#neo-cafe-trays');if(trays)trays.innerHTML=h.trays.map((t,i)=>`<span>Counter ${i+1}: <b>${t.servings?COVE_RECIPES[t.key].name+' · '+t.servings:'Empty'}</b></span>`).join('');const count=sheet.querySelector('.homestead-cafe-room > p');if(count)count.textContent=h.counter+' treats on the counter · '+h.served+' served';const collect=sheet.querySelector('[data-cafe-collect]');if(collect){collect.textContent='Collect '+h.earned+' shells';collect.disabled=!h.earned;}}for(const b of sheet.querySelectorAll('[data-ready]')){const seconds=time(+b.dataset.ready);b.disabled=seconds>0;b.textContent=seconds?`${garden?'Growing':'Cooking'} · ${seconds}s`:garden?'Harvest':'Stock the counter';}},1000);
 }
 
