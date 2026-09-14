@@ -6257,13 +6257,13 @@ function renderShopDecor(list) {
   list.querySelectorAll("[data-move-prop],[data-place-prop]").forEach(b => b.onclick = () => startPlacing(b.dataset.moveProp || b.dataset.placeProp));
   list.querySelectorAll("[data-box-prop]").forEach(b => b.onclick = () => boxProp(b.dataset.boxProp));
   list.querySelectorAll("[data-set]").forEach(b => b.onclick = () => {
-    cm.theme = b.dataset.set; sfx("buy"); _todCache = null; _skyGrad = null; save(); renderShop();
+    cm.theme = b.dataset.set; _weatherP.length=0; sfx("buy"); _todCache = null; _skyGrad = null; save(); renderShop();
     toast(`The cove takes on its ${DECOR_THEMES[cm.theme].name.toLowerCase()} look.`, 4);
   });
   list.querySelectorAll("[data-buy-theme]").forEach(b => b.onclick = () => {
     const key = b.dataset.buyTheme, th = DECOR_THEMES[key];
     if (G.shells < th.price) return;
-    G.shells -= th.price; cm.themes[key] = true; cm.theme = key;
+    G.shells -= th.price; cm.themes[key] = true; cm.theme = key; _weatherP.length=0;
     _todCache = null; _skyGrad = null;
     sfx("buy"); spawnParticles(W / 2, H * 0.4, "twinkle", 18); syncHud(); save(); renderShop();
     toast(`${th.name} — the whole cove changes with the light now.`, 5);
@@ -6626,7 +6626,8 @@ function composePhotoScene() {
   pctx.translate(offX, offY);
   pctx.scale(s, s);
   if(art2dReady(ART2D.cove)){
-    pctx.drawImage(ART2D.cove,-_overX,0,W+2*_overX,H);
+    pctx.drawImage(neoCovePlate(),-_overX,0,W+2*_overX,H);
+    neoExtendCove(pctx);
     if(sky){neoClearSky(pctx,W,H*300/1024,_overX);neoAtmosphere(pctx,sky,W,H,H*300/1024,_overX);drawCelestial(pctx,sky);}
   }
   drawCoveSign(pctx, W, H);
@@ -6638,15 +6639,23 @@ function composePhotoScene() {
   for (const d of decor) players.push({y:d.y-(d.type==="cattree"?9:0),d});
   for (const f of foreground) players.push({ y: f.y, f });
   for (const a of attractors) if (COMFORT_TYPES.has(a.type)) players.push({ y: a.y, a });
+  for(const prop of DECOR_PROPS){
+    if(!G.cosmetics.props[prop.id]||propBoxed(prop.id)||!prop.movable)continue;
+    const pos=propPos(prop.id);
+    if(prop.id==='stones'){prop.render(pctx,pgt,pos.x,pos.y,pos.s);continue;}
+    players.push({y:pos.y,prop,pos});
+  }
   players.sort((p, q) => p.y - q.y);
   for (const it of players) {
+    if(it.prop){pctx.save();pctx._nightGlow=pnight;it.prop.render(pctx,pgt,it.pos.x,it.pos.y,it.pos.s);pctx.restore();continue;}
     if(it.d){drawDecor(pctx,it.d);continue;}
     if(it.c && it.c.state==="indoors" && it.c._perchKind!=="perch" && it.c._perchKind!=="step"){drawCottageFace(pctx,it.c,it.c._perchKind==="cubby");continue;}
     if (it.a) { drawAttractor(pctx, it.a); continue; }
     if (it.c) { drawCat(pctx, it.c, true); if (it.c.state === "fishing" && it.c._station === "fishing" && it.c._fx) drawFishingRig(pctx, it.c); if (it.c.state === "baking" && it.c._station === "bakery" && it.c._fx) drawBakeryRig(pctx, it.c); }
     else drawGrassTuft(pctx, it.f, pgt, pnight);
   }
-  neoCoveForeground(pctx,0);
+  neoCoveForeground(pctx,_overX);
+  drawWeather(pctx);
   pctx.restore();
 
   pctx.restore(); // unclip
@@ -19587,7 +19596,7 @@ drawBackground = function(dt) {
 // Shared outdoor plate: one existing image, no per-frame texture generation.
 function neoOutdoor(g,w,h,horizon,over,sand=false) {
   if(!art2dReady(ART2D.cove)) return;
-  const im=ART2D.cove,iw=im.naturalWidth,ih=im.naturalHeight;
+  const im=neoCovePlate(),iw=im.width||im.naturalWidth,ih=im.height||im.naturalHeight;
   // Cover the visible world even when a portrait activity fits a wide screen.
   const tr=g.getTransform();
   if(tr.a>0 && tr.d>0){
@@ -19744,9 +19753,10 @@ function neoExtendCove(g){
     if(row===0)g.drawImage(im,0,0,width+.25,H+.25);
     else {
       // Only continue the last grass strip: do not repeat upside-down rocks or shrubs.
-      g.drawImage(im,0,im.naturalHeight-2,im.naturalWidth,2,0,0,width+.25,H+.25);
+      g.drawImage(im,0,(im.height||im.naturalHeight)-2,im.width||im.naturalWidth,2,0,0,width+.25,H+.25);
       const fade=g.createLinearGradient(0,0,0,120);
-      fade.addColorStop(0,'rgba(166,192,111,0)');fade.addColorStop(1,'#a6c06f');
+      const ground=DECOR_THEMES[neoThemeKey()]?.ground||'#a6c06f';
+      fade.addColorStop(0,ground+'00');fade.addColorStop(1,ground);
       g.fillStyle=fade;g.fillRect(0,0,width+.25,H+.25);
     }
     g.restore();
@@ -19757,10 +19767,11 @@ function neoExtendCove(g){
 // Keep a generous bank of solid grass behind it, independent of crowd size.
 function neoRaceMeadow(g,w,h){
   if(!art2dReady(ART2D.cove))return;
-  const im=ART2D.cove,iw=im.naturalWidth,ih=im.naturalHeight,bank=170;
+  const im=neoCovePlate(),iw=im.width||im.naturalWidth,ih=im.height||im.naturalHeight,bank=170;
   g.save();
   const sky=g.createLinearGradient(0,0,0,bank);
-  sky.addColorStop(0,'#91d0ed');sky.addColorStop(1,'#d2e8d7');
+  const theme=DECOR_THEMES[neoThemeKey()];
+  sky.addColorStop(0,theme?.sky?.[0]||'#91d0ed');sky.addColorStop(1,theme?.sky?.[1]||'#d2e8d7');
   g.fillStyle=sky;g.fillRect(0,0,w,h);
   g.fillStyle='#91b798';g.beginPath();g.moveTo(0,bank);
   g.bezierCurveTo(w*.18,80,w*.27,155,w*.43,130);
