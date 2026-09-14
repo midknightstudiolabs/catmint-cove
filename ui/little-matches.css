@@ -10,3 +10,5 @@
 @media(prefers-reduced-motion:reduce){.lm-walker,.lm-trail-fill{transition:none}.lm-unlock,.lm-sparks span{animation:none}.lm-sparks{display:none}}
 
 @media(max-width:700px) and (max-height:700px){.lm-side{grid-template-columns:72px 1fr}.lm-side .lm-companion{width:72px}.lm-side .lm-speech{font-size:12px}.lm-board{max-width:240px;margin:7px auto}.lm-card>span:not(.lm-card-back){font-size:10px}.lm-actions{margin-top:8px}.lm-hint{font-size:11px;margin:5px 0}.lm-track{height:64px}.lm-trail{margin-top:6px}.lm-trail-head .lm-btn{padding:6px 10px}}
+
+.lm-next-reward{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px;border:1px solid #cbd5bc;border-radius:16px;background:#eef0df;color:#3e5944;cursor:pointer;text-align:left;font:inherit;min-width:0}.lm-next-reward img{width:76px;height:72px;object-fit:contain;flex-shrink:0}.lm-next-reward span{display:block}.lm-next-reward strong{display:block;font-size:15px}.lm-next-reward span span{font-size:12px;margin-top:4px}.lm-next-reward:hover{background:#e3ebd7}.lm-next-reward:focus-visible{outline:3px solid #b28642;outline-offset:3px}
