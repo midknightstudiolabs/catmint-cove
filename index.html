@@ -1815,7 +1815,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <p><b>Catmint Cove</b> is played upright.<br>Turn your phone back and the cove's right there. 🐾</p>
 </div>
 
-<link rel="stylesheet" href="ui/little-matches.css?v=4"><script src="ui/little-matches.js?v=4"></script>
+<script src="ui/memory-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=5"><script src="ui/little-matches.js?v=5"></script>
 <script>
 (() => {
 "use strict";
@@ -5440,6 +5440,7 @@ const ACCESSORIES = [
   { key:"wings",       label:"Little wings", iap:"sparkle_pack", slot:"back", group:"Sparkle", premium:true, blurb:"Small feathered wings that flutter on the cat's back — a slow flap at rest, faster on the zoomies." },
   { key:"rainbow",     label:"Rainbow trail",iap:"sparkle_pack", slot:"aura", group:"Sparkle", premium:true, blurb:"A ribbon of colour that streams behind the cat as it moves and fades when it settles." },
 ];
+ACCESSORIES.push(...window.LITTLE_MATCH_REWARDS.map(r=>({...r,memoryLevel:r.level,group:'Little Matches',price:0})));
 const ACC_BY_KEY = Object.fromEntries(ACCESSORIES.map(a => [a.key, a]));
 const ACC_LABEL  = Object.fromEntries(ACCESSORIES.map(a => [a.key, a.label.toLowerCase()]));
 const ACC_SLOTS  = ["aura", "back", "neck", "ear", "face", "head"];   // also the draw order (aura/back behind, head on top)
@@ -5463,6 +5464,7 @@ function normalizeWorn(list) {   // at most one item per slot, valid keys only
 function accOwned(c, key) {
   if (!key) return true;
   const a = ACC_BY_KEY[key];
+  if (a && a.memoryLevel) return !!G.littleMatches?.done?.[a.memoryLevel];
   if (a && a.iap) return iapOwns(a.iap);                    // the Sparkle Pack owns it for every cat, derived — never materialised into c.owned
   return !!(c && c.owned && c.owned.includes(key));
 }
@@ -5483,6 +5485,7 @@ function equipAccessory(c, key, forceOn) {
 function buyAccessory(c, key) {                   // buy + wear; returns true on success
   const a = ACC_BY_KEY[key]; if (!a || !c) return false;
   if (accOwned(c, key)) { equipAccessory(c, key, true); return true; }
+  if (a.memoryLevel) { toast('Complete Little Matches Level '+a.memoryLevel+' to earn this accessory.'); return false; }
   if (a.iap) { showIapOffer(a.iap); return false; }   // premium cosmetics only come from their pack
   if (a.pearls) {
     if ((G.pearls || 0) < a.pearls) { toast(`${a.label} is ✦${a.pearls} — earn a few more pearls from the Catdex or daily goals.`); return false; }
@@ -5506,7 +5509,7 @@ function renderWardrobe(c) {
   cc.dress.hidden = false;
   const worn = new Set(c.worn || []);
   const bySlot = {};
-  const ownedKeys = [...(c.owned || []), ...ACCESSORIES.filter(a => a.iap && !a.hidden && accOwned(c, a.key)).map(a => a.key)];
+  const ownedKeys = [...(c.owned || []), ...ACCESSORIES.filter(a => (a.iap || a.memoryLevel) && !a.hidden && accOwned(c, a.key)).map(a => a.key)];
   for (const k of ownedKeys) { const a = ACC_BY_KEY[k]; if (a && !(bySlot[a.slot] || []).includes(k)) (bySlot[a.slot] = bySlot[a.slot] || []).push(k); }
   const slots = ACC_SLOTS.filter(s => bySlot[s]);
   let html = `<div class="dl">Dress up</div>`;
@@ -6258,8 +6261,8 @@ function renderShopDress(list) {
       : `<h4>${grp}</h4>`;
     return head + `<div class="dp-grid">` + items.map(a => {
       const owned = accOwned(c, a.key), on = _dressWorn.includes(a.key);
-      const locked = !!a.iap && !owned;
-      const cost = locked ? "🔒" : a.pearls ? `✦ ${a.pearls}` : `◈ ${a.price}`;
+      const locked = !!(a.iap || a.memoryLevel) && !owned;
+      const cost = a.memoryLevel ? `Level ${a.memoryLevel}` : locked ? "🔒" : a.pearls ? `✦ ${a.pearls}` : `◈ ${a.price}`;
       return `<button class="dp-acc${on ? " on" : ""}${a.premium ? " premium" : ""}${owned ? " owned" : ""}${locked ? " locked" : ""}" data-acc="${a.key}" title="${esc(a.blurb)}">
         <span class="dp-nm">${a.label}</span>
         <span class="dp-cost">${owned ? "yours" : cost}</span>
@@ -6316,6 +6319,7 @@ function renderShopDress(list) {
     if (gp) { showIapOffer(gp.dataset.getpack); return; }
     const b = e.target.closest(".dp-acc"); if (!b) return;
     const k = b.dataset.acc, slot = accSlot(k), a = ACC_BY_KEY[k];
+    if (a && a.memoryLevel && !accOwned(c,k)) { toast('Complete Little Matches Level '+a.memoryLevel+' to earn it.'); return; }
     if (a && a.iap && !accOwned(c, k)) { showIapOffer(a.iap); return; }   // locked — the pack, not a toggle
     if (_dressWorn.includes(k)) _dressWorn = _dressWorn.filter(x => x !== k);
     else _dressWorn = _dressWorn.filter(x => accSlot(x) !== slot).concat(k);
@@ -6328,6 +6332,7 @@ function renderShopDress(list) {
     shopDressCat = next; _dressWorn = null; renderShop();
   });
   saveBtn.onclick = () => {
+    if ((_dressWorn||[]).some(k=>ACC_BY_KEY[k]?.memoryLevel&&!accOwned(c,k))) return;
     const news = dressNewItems(c);
     const cS = news.reduce((s, a) => s + (a.price || 0), 0);
     const cP = news.reduce((s, a) => s + (a.pearls || 0), 0);
@@ -7309,7 +7314,7 @@ const GUIDE = [
   ["Adventures · postcards from your cats", "Choose a destination, cats and trip length in Activities. When they return, open their results for rewards and a keepsake postcard. Different destinations bring different finds. Longer trips suit time away; short trips suit an active visit."],
   ["Your view · zoom buttons", "Use the zoom icon to change your view. Double-tapping does not zoom, leaving quick foreground taps available for A Little Hello."],
   ["Catdex · your little neighbors", "Find cats by name, tap their portraits for personalities and memories, or invite a new friend. Coats you have met are collected below."],
-  ["Little Matches", "Choose a cat and one free favour. Match identical cards without a timer. Little peek reveals four chosen cards; Find a friend matches one exposed card; Second look repeats your last pair. Your unfinished round saves when you leave. Chapters add permanent details to your nook and keepsakes to the Journal."],
+  ["Little Matches", "Choose a cat and one free favour. Match identical cards without a timer. Little peek reveals four chosen cards; Find a friend matches one exposed card; Second look repeats your last pair. Your unfinished round saves when you leave. Complete levels in order to earn an accessory every five levels. Tap the reward trail to preview outfits. Your companion hops for matches, grooms while you think, and naps when you pause. Finish all 30 levels to unlock replay selection. Earned outfits are available for all resident cats in Dress-up."],
   ["Activities · play or unwind", "Visit the Festival, send a cat on an adventure, or settle into the rainy retreat. Festival games stay available day and night once unlocked; each game shows how many cats it needs."],
   ["Shop · make it cozy", "Find bowls, beds, toys, decorations and outfits here. See the actual item preview and price before buying. My inventory shows item pictures and counts; drag a stored item into the Cove or choose Place."],
   ["Journal · moments worth keeping", "Collect your daily welcome, choose optional rituals, see postcards and memories, or capture a photo. You can swap unfinished rituals. Missing a day never resets your lovely days."],
@@ -15439,6 +15444,7 @@ function drawEar(g, side, P, coat, back, flop = 0, kit = false) {
   g.restore();
 }
 function drawAccessory(g, kind, P, coat, kit) {
+  if(window.drawMemoryAccessory(g,kind,P,coat,kit,coatLum(coat.base)))return;
   const hr = P.hr, hx = P.hx, hy = P.hy;
   g.save();
   g.lineJoin = "round"; g.lineCap = "round";
@@ -19714,7 +19720,7 @@ function neoRecordVictory(match,activity,participants,won,result){
 const neoJournalBeforeVictories=neoRenderJournal;
 neoRenderJournal=function(){neoJournalBeforeVictories();const root=document.getElementById('neoJournal');const section=document.createElement('section');section.className='neo-victories';section.innerHTML='<h3>Little victories</h3><p class="muted">The little things worth remembering.</p>';root.appendChild(section);const entries=G.littleVictories?.entries||[];
  if(!entries.length){section.insertAdjacentHTML('beforeend','<p class="muted">Your next festival results and Little Matches keepsakes will find a home here.</p>');return}
- let shown=0;const more=document.createElement('button');more.className='btn';more.textContent='More memories';const render=()=>{for(const e of entries.slice(shown,shown+10)){const card=document.createElement('article');card.className='neo-victory';card.innerHTML=`<small>${esc(e.day)} · ${esc({race:'Race',volley:'Volleyball',tug:'Tug of Paws',memory:'Little Matches'}[e.activity])}</small><h4>${esc(e.title)}</h4><div class="neo-victory-cats"></div>${e.award?`<p class="neo-award">${esc(e.award)}${e.firstCove?' · Your Cove’s first race victory':''}</p>`:''}<p class="neo-victory-line">${esc(e.line)}</p><p>${esc(e.members.map(m=>m.name).join(' & '))}${e.count>1?' · '+e.count+' '+(e.won?'wins':'matches')+' today':''}</p><details><summary>See results</summary>${e.results.map(r=>`<p>${e.activity==='memory'?`Page ${r.level} completed`:e.activity==='volley'?`${esc(coveName())} ${r.home} · ${esc(r.opponent)} ${r.away}`:e.activity==='race'?`Place ${r.place}`:`${e.won?'Won':'Finished'} · vs ${esc(r.opponent)}`}</p>`).join('')}<small>Keepsakes are saved automatically. No additional claim needed.</small></details>`;for(const m of e.members){const cv=document.createElement('canvas');cv.width=120;cv.height=100;cv.setAttribute('aria-label',m.name);card.querySelector('.neo-victory-cats').appendChild(cv);neoPortrait(cv,{...m,bornAt:0},1.5)}for(const m of e.members){const current=cats.find(c=>c.journalId===m.id);if(!current)continue;const link=document.createElement('button');link.className='btn';link.textContent='View '+current.name;link.onclick=()=>{closeAllPanels();neoOpenStory(current)};card.appendChild(link)}section.insertBefore(card,more)}shown+=10;more.hidden=shown>=entries.length};section.appendChild(more);more.onclick=render;render();};
+ let shown=0;const more=document.createElement('button');more.className='btn';more.textContent='More memories';const render=()=>{for(const e of entries.slice(shown,shown+10)){const card=document.createElement('article');card.className='neo-victory';card.innerHTML=`<small>${esc(e.day)} · ${esc({race:'Race',volley:'Volleyball',tug:'Tug of Paws',memory:'Little Matches'}[e.activity])}</small><h4>${esc(e.title)}</h4><div class="neo-victory-cats"></div>${e.award?`<p class="neo-award">${esc(e.award)}${e.firstCove?' · Your Cove’s first race victory':''}</p>`:''}<p class="neo-victory-line">${esc(e.line)}</p><p>${esc(e.members.map(m=>m.name).join(' & '))}${e.count>1?' · '+e.count+' '+(e.won?'wins':'matches')+' today':''}</p><details><summary>See results</summary>${e.results.map(r=>`<p>${e.activity==='memory'?`Level ${r.level} completed`:e.activity==='volley'?`${esc(coveName())} ${r.home} · ${esc(r.opponent)} ${r.away}`:e.activity==='race'?`Place ${r.place}`:`${e.won?'Won':'Finished'} · vs ${esc(r.opponent)}`}</p>`).join('')}<small>Keepsakes are saved automatically. No additional claim needed.</small></details>`;for(const m of e.members){const cv=document.createElement('canvas');cv.width=120;cv.height=100;cv.setAttribute('aria-label',m.name);card.querySelector('.neo-victory-cats').appendChild(cv);neoPortrait(cv,{...m,bornAt:0},1.5)}for(const m of e.members){const current=cats.find(c=>c.journalId===m.id);if(!current)continue;const link=document.createElement('button');link.className='btn';link.textContent='View '+current.name;link.onclick=()=>{closeAllPanels();neoOpenStory(current)};card.appendChild(link)}section.insertBefore(card,more)}shown+=10;more.hidden=shown>=entries.length};section.appendChild(more);more.onclick=render;render();};
 
 let neoPhotoSource=null,neoPhotoFrame='cream',neoPhotoDate=null,neoPhotoTimers=[];
 function composePhoto(){
@@ -19735,14 +19741,19 @@ document.getElementById('photoClose').addEventListener('click',neoRevealPhoto);
 
 
 // Little Matches reuses Cove artwork; no extra bitmap pack or duplicate economy.
+const memoryPortraits=new WeakMap();
 const littleMatches=createLittleMatches({
+ rewards:window.LITTLE_MATCH_REWARDS,
+ rewardImage:(c,key)=>{const cv=document.createElement('canvas');cv.width=280;cv.height=250;neoPortrait(cv,{coatKey:c.key||'midknight',markSeed:c.markSeed||4242,star:0,bornAt:0,mascot:c.mascot,worn:key?[key]:(c.worn||[])},3.2);return cv.toDataURL()},
+ wear:(c,key)=>{const actual=cats.find(x=>x.journalId===c.id);if(!actual||actual.visitor||!accOwned(actual,key))return false;equipAccessory(actual,key,true);c.worn=[...actual.worn];return true;},
+ draw:(cv,c,mood,jump,walk)=>{let entry=memoryPortraits.get(cv);if(!entry||entry.id!==c.id){entry={id:c.id,cat:new Cat({coatKey:c.key||'midknight',markSeed:c.markSeed||4242,mascot:c.mascot,star:0,bornAt:0,x:0,y:0})};memoryPortraits.set(cv,entry)}const pet=entry.cat;pet.worn=c.worn||[];pet.state=mood==='sleep'?'sleeping':mood==='groom'?'grooming':'loafing';pet.stateT=performance.now()/1000;pet._groomMove='face';pet._jumpT=jump>0?CAT_JUMP_DUR*(1-jump):0;pet._jumpH=14;pet.walkAmt=walk ? .7 : 0;pet.walk=performance.now()/110;pet.blink=3;const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);g.save();g.translate(cv.width/2,cv.height-8);g.scale(cv.width/95,cv.width/95);drawCat(g,pet,true);g.restore();},
  state:()=>G.littleMatches ||= {v:1,done:{},tone:'sage',round:null},save,
  hide:()=>{closeAllPanels();closeModal();hideCatCard();hidePropCard();},
- cats:()=>cats.filter(c=>!c.visitor&&!c._gone&&!c._leaving).map(c=>{const cv=document.createElement('canvas');cv.width=240;cv.height=200;neoPortrait(cv,c,3);return{id:c.journalId,name:c.name,key:c.coatKey,image:cv.toDataURL()}}),
+ cats:()=>cats.filter(c=>!c.visitor&&!c._gone&&!c._leaving).map(c=>{const cv=document.createElement('canvas');cv.width=240;cv.height=200;neoPortrait(cv,c,3);return{id:c.journalId,name:c.name,key:c.coatKey,markSeed:c.markSeed,mascot:c.mascot,worn:[...(c.worn||[])],image:cv.toDataURL()}}),
  catalog:()=>{const out={};for(const coat of COATS){const cv=document.createElement('canvas');cv.width=240;cv.height=200;neoPortrait(cv,{coatKey:coat.key,markSeed:4242,star:0,bornAt:0,worn:[]},3);out['cat:'+coat.key]={name:coat.name,image:cv.toDataURL()}}
  for(const type of ['food','bed','toy','flowers']){const name={food:'Food bowl',bed:'Cozy bed',toy:'Cat toy',flowers:'Flowers'}[type];out['obj:'+type]={name,image:productPreview({type,name}).toDataURL()}}
  for(const key of ['lantern','birdbath','windmill','bunting']){const cv=document.createElement('canvas');cv.width=240;cv.height=200;const g=cv.getContext('2d');g.translate(120,175);const p=PROP_BY_ID[key];p.render(g,0,0,0,key==='windmill'?.9:1);out['obj:'+key]={name:p.name,image:cv.toDataURL()}}return out;},
- keepsake:(level,c)=>{const j=G.littleVictories ||= {counts:{},entries:[],rotation:{}};const mark='memory:'+level;if(j.counts[mark])return;j.counts[mark]=1;const names={1:'A Familiar Face',10:'First Friends',20:'Little Comforts',30:'A Place Together'};const lines={1:'Found a friend. Then found the same friend again. An excellent start.',10:'Ten pages ago, you were learning their coats. Now you notice who’s missing.',20:'The bowls, the beds, the favourite places. You remembered what makes this home.',30:'The familiar faces. The favourite corners. Thirty pages of a place that became yours.'};j.entries.unshift({activity:'memory',members:[{id:c.id,name:c.name,coatKey:c.key,star:0,markSeed:4242}],won:true,milestone:level,award:names[level],title:level===30?'You remembered the little things.':'Another little memory, kept.',line:lines[level],day:new Date().toLocaleDateString(),time:Date.now(),count:1,results:[{level}]});save();}
+ keepsake:(level,c)=>{const j=G.littleVictories ||= {counts:{},entries:[],rotation:{}};const mark='memory:'+level;if(j.counts[mark])return;j.counts[mark]=1;const names={1:'A Familiar Face',5:'Gingham Bow',10:'Daisy Crown',15:'Cozy Neckerchief',20:'Sleepy Bonnet',25:'Explorer Hat',30:'Little Lion'};const lines={1:'Found a friend. Then found the same friend again. An excellent start.',5:'A little bow. A very accomplished companion.',10:'Ten levels together. A crown of daisies felt appropriate.',15:'Dressed for a small adventure. Possibly to the food bowl.',20:'Twenty levels remembered. Permission to nap: granted.',25:'A fine hat for someone who knows their way around.',30:'Small paws. A mighty finish. The mane is magnificent. The roar needs practice.'};j.entries.unshift({activity:'memory',members:[{id:c.id,name:c.name,coatKey:c.key,star:0,markSeed:c.markSeed||4242}],won:true,milestone:level,award:names[level],title:level===30?'You remembered the little things.':'Another little memory, kept.',line:lines[level],day:new Date().toLocaleDateString(),time:Date.now(),count:1,results:[{level}]});save();}
 });
 const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 pages, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();document.querySelector('#neo-explore .neo-explore-grid').appendChild(matchesButton);
 })();

@@ -1,3 +1,16 @@
+## Little Matches rewards and companions — 2026-09-14
+
+- Progress through 30 levels in order; unlock level selection after completing all 30. Existing completions and unfinished rounds remain saved.
+- Add six earned accessories at levels 5/10/15/20/25/30: Gingham Bow, Daisy Crown, Cozy Neckerchief, Sleepy Bonnet, Explorer Hat, and Little Lion.
+- Preview rewards on the selected cat from the five-level progress trail or reward collection. Earned outfits belong to all resident cats and cannot be bought before unlocking.
+- Add companion hops, grooming, and naps using the existing cat renderer. Remove the furnished nook; no beds or props accumulate beside the board.
+- Add milestone reveals, Wear it, Journal keepsakes, and the 30-level finale with the next-season message. No currency payout or entry fee changes.
+- Preserve earned rewards on legacy saves with gaps; complete remaining levels before replay unlocks.
+- Fix interrupted Little peek consumption and prevent Second look from being spent on a matched pair. Keep personal-best metadata tied to the corresponding attempt.
+- Respect reduced motion and stop companion animation when the activity closes. Update Help and mobile layouts.
+
+GitHub web release only; native iOS/Android packaging is not updated by this change.
+
 ## Menu and release audit — 2026-09-13
 
 - Standardize sheet backgrounds and close buttons with the cream/sage palette.
