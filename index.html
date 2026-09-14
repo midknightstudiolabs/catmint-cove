@@ -226,7 +226,7 @@
     #actions .btn.primary .badge.cost{background:var(--accent);}
     /* the cat card / toast / dev panel sit above the taller bar */
     #catcard{bottom:auto;}
-    #toast{bottom:calc(6.6rem + env(safe-area-inset-bottom));}
+    #toast{bottom:calc(7.2rem + env(safe-area-inset-bottom));}
     #dev{bottom:calc(4.4rem + env(safe-area-inset-bottom));}
   }
 
@@ -1032,16 +1032,16 @@
   #hint #hintX{flex:0 0 auto;width:1.5rem;height:1.5rem;border-radius:50%;border:none;
     background:#eef1e3;color:var(--ink-soft);cursor:pointer;font-size:.7rem;line-height:1;padding:0;}
   #app.resting #hint,#app.resting #toast{opacity:0;pointer-events:none;}
-  @media(max-width:600px){ #hint{bottom:calc(5.6rem + env(safe-area-inset-bottom));font-size:.8rem;} }
+  @media(max-width:600px){ #hint{bottom:calc(6.2rem + env(safe-area-inset-bottom));font-size:.8rem;} }
   /* when the next-action hint is up, float the toast clear above it (it shares the bottom strip) */
-  #app.has-hint #toast{bottom:calc(8.4rem + env(safe-area-inset-bottom));}
+  #app.has-hint #toast{bottom:calc(9rem + env(safe-area-inset-bottom));}
   button.btn.primary.full{background:#c9b98f;color:#4a4230;}
   /* ---- cold open: a small speech card — Midknight's line + the cue ---- */
   #hint.cold{flex-direction:column;align-items:stretch;gap:.3rem;text-align:left;
     width:min(90vw,360px);max-width:none;padding:.7rem .85rem .62rem;border-radius:16px;
     bottom:calc(4rem + env(safe-area-inset-bottom));}
-  @media(max-width:600px){ #hint.cold{bottom:calc(4.6rem + env(safe-area-inset-bottom));} }
-  #app.cold-open #toast{bottom:calc(8.4rem + env(safe-area-inset-bottom));}   /* the taller card — keep toasts clear */
+  @media(max-width:600px){ #hint.cold{bottom:calc(5.2rem + env(safe-area-inset-bottom));} }
+  #app.cold-open #toast{bottom:calc(9rem + env(safe-area-inset-bottom));}   /* the taller card — keep toasts clear */
   #hint.cold #hintDot{display:none;}
   #hint .cold-who{display:block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.6rem;
     letter-spacing:.15em;text-transform:uppercase;color:var(--apricot);}
