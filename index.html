@@ -2173,6 +2173,7 @@ function newGame() {
     ads: newAdsState(),    // monetization: supporter status, age treatment, frequency caps
     owner: null,           // the player names their cove on first run
     opens: 1,
+    coveDayAt: Date.now(),
     firstSeen: Date.now(),
     lastSeen: Date.now(),
     ratePerSec: 0,
@@ -2301,14 +2302,28 @@ function load() {
       G.econReset1 = true;
       if (G.shells > 80) { _econJustReset = Math.floor(G.shells); G.shells = 25; G.allTimeSec = 0; }
     }
-    G.opens = (G.opens || 1) + 1;
+    advanceCoveDay();
   } catch (e) { G = newGame(); }
 }
 let _dead = false;
 let _econJustReset = 0;   // > 0 → this load did the one-time economy reset (old balance)
+// Keep the existing day/progression field, but advance by real elapsed days.
+// coveDayAt retains partial days; lastSeen remains the offline-reward checkpoint.
+function advanceCoveDay(now=Date.now()) {
+  if(!G)return;
+  G.opens=Math.max(1,Math.floor(Number(G.opens)||1));
+  if(!Number.isFinite(G.coveDayAt)||G.coveDayAt<=0){
+    G.coveDayAt=Number.isFinite(G.lastSeen)&&G.lastSeen>0?Math.min(now,G.lastSeen):now;
+  }
+  const elapsed=now-G.coveDayAt;
+  if(elapsed<0)return; // Clock rollback cannot subtract or re-award days.
+  const days=Math.floor(elapsed/86400000);
+  if(days>0){G.opens+=days;G.coveDayAt+=days*86400000;}
+}
 function save() {
   if (_dead || !G) return;
   try {
+    advanceCoveDay();
     G.lastSeen = Date.now();
     G.ratePerSec = aggregateRate();
     G.allTimeSec = (G.allTimeSec || 0) + (performance.now() - lastSaveClock) / 1000;
@@ -6629,6 +6644,7 @@ function coveName() {
 let _hudTitle = "", _hudFull = null;
 function setHudText(el,value){const text=String(value);if(el.textContent!==text)el.textContent=text;}
 function syncHud() {
+  advanceCoveDay();
   const wantTitle = G.owner ? `${esc(G.owner)}<b>’s Cove</b>` : "Catmint <b>Cove</b>";
   if (wantTitle !== _hudTitle) {
     const pill = document.getElementById("titlePill");
