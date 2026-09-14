@@ -612,7 +612,15 @@
   .modal h2{font-family:"Fraunces",serif;font-size:1.35rem;margin:.2rem 0 .4rem;}
   .modal p{color:var(--ink-soft);margin:0 0 1rem;font-size:.92rem;}
   .modal .big{font-family:"Fraunces",serif;font-size:2.2rem;color:var(--accent-bright);font-variant-numeric:tabular-nums;}
-  .modal .row{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-top:.4rem;}
+  /* Sibling action buttons get equal width (Apple's action-sheet/alert
+     convention) so a short "Close" next to a longer label never reads as
+     a mismatched pair — each grows from its own min-content but shares
+     the row evenly once there's room. */
+  .modal .row{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-top:.4rem;}
+  /* Match .cove-dialog-footer .btn exactly (same explicit 44px tap target,
+     same equal-width sibling rule) — this older .row system was missing
+     the explicit min-height, which is what let it drift out of sync. */
+  .modal .row button.btn{flex:1 1 0;min-width:max-content;min-height:44px;}
   /* stacked "how to help" options — a title + a line of detail each */
   .care-opts{display:flex;flex-direction:column;gap:.5rem;margin:.2rem 0 .1rem;text-align:left;}
   .care-opts button{width:100%;flex-direction:column;align-items:flex-start;gap:.12rem;
@@ -4848,19 +4856,14 @@ const DECOR_CLEAR = { cottage: 40, tree: 30, cattree: 40, flowers: 22, station: 
 const STATION_LABEL = { fishing: "fishing dock", bakery: "bakery oven", sunbeam: "sunbeam", garden: "catmint patch" };
 const COMFORT_TYPES = new Set(["food", "toy", "bed", "scratch"]);
 function positionPlaceActions(){
+  // Used to chase the dragged item around the screen (recomputed every
+  // frame the ghost moved) — that made the action card an unpredictable,
+  // sometimes drop-target-obscuring moving target, and cost a layout pass
+  // per frame while dragging. It now just docks at its default bottom-
+  // center CSS position (see #placeBar) and stays there for the whole
+  // placement, same spot every time, on every screen size.
   const el=document.getElementById('placeBar');if(el.hidden)return;
-  if(!_placing||!_placeGhost){el.style.position='';el.style.left='';el.style.top='';el.style.bottom='';el.style.transform='';return;}
-  const stamp=[_placing.key,_placeGhost.x,_placeGhost.y,innerWidth,innerHeight,_camTx,_camTy,_camScale,displayScale,_worldOffX,_worldOffY].join(':');
-  if(el._placeStamp===stamp)return;
-  el._placeStamp=stamp;
-  const r=canvas.getBoundingClientRect(),w=el.offsetWidth||Math.min(232,innerWidth-24),h=el.offsetHeight||150;
-  const x=r.left+(_ovActive?_camTx+_placeGhost.x*_camScale:(_placeGhost.x+_worldOffX)*displayScale),y=r.top+(_ovActive?_camTy+_placeGhost.y*_camScale:(_placeGhost.y+_worldOffY)*displayScale);
-  let left=x+36,top=y-h/2;
-  if(left+w>window.innerWidth-12)left=x-w-36;
-  if(left<12){left=clamp(x-w/2,12,Math.max(12,window.innerWidth-w-12));top=y-h-24;if(top<60)top=y+32;}
-  left=clamp(left,12,Math.max(12,window.innerWidth-w-12));
-  top=clamp(top,12,Math.max(12,window.innerHeight-h-12));
-  el.style.position='fixed';el.style.transform='none';el.style.bottom='auto';el.style.left=left+'px';el.style.top=top+'px';
+  if(el.style.position){el.style.position='';el.style.left='';el.style.top='';el.style.bottom='';el.style.transform='';}
 }
 function _beginPlace(spec) {
  tutEl.classList.remove("on");closeModal();hidePropCard();
@@ -7449,7 +7452,7 @@ function openGuide(){
  const close=()=>{tutEl.classList.remove('on');card.classList.remove('help-home');};
  const helpFooter=()=>{const footer=document.createElement('div');footer.className='cove-dialog-footer';const show=card.querySelector('#helpShow');if(show)footer.append(show);const exit=document.createElement('button');exit.id='helpClose';exit.className='btn';exit.textContent='Back to Cove';exit.onclick=close;footer.append(exit);const body=document.createElement('div');body.className='cove-dialog-body';while(card.firstChild)body.append(card.firstChild);card.classList.add('cove-bottom-help');card.append(body,footer);};
  const home=()=>{
- card.innerHTML='<div class="help-head"><h2>How can we help?</h2></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="linkbtn" id="guideTour">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideCredits">Credits</button><button class="linkbtn" id="guideCares">Catmint Cove Cares</button></footer>';
+ card.innerHTML='<div class="help-head"><h2>How can we help?</h2></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="btn" id="guideTour" style="width:100%;justify-content:center;margin:.9rem 0 .2rem">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideCredits">Credits</button><button class="linkbtn" id="guideCares">Catmint Cove Cares</button></footer>';
  helpFooter();
  card.querySelectorAll('[data-topic]').forEach(el=>el.onclick=()=>topic(+el.dataset.topic));
  card.querySelector('#guideTour').onclick=()=>{close();neoStartTour();};
