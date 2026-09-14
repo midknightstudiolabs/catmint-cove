@@ -492,6 +492,7 @@
   /* ---- reveal celebration ---- */
   .reveal{text-align:center;}
   .reveal .kicker{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--apricot);}
+  .cr-logo{width:min(190px,55%);display:block;margin:.35rem auto .25rem;}
   .reveal canvas{width:150px;height:140px;margin:.3rem auto .1rem;display:block;}
   .reveal h2{font-family:"Fraunces",serif;font-size:1.5rem;margin:.2rem 0 .1rem;}
   .reveal .stars{font-size:1.1rem;letter-spacing:2px;margin-bottom:.5rem;}
@@ -1478,11 +1479,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #modal .adv-flow .kicker,#modal .adv-flow h2{padding-right:0}
 #modal .credits .row,#modal .cares .row{position:static;transform:none;width:auto}
 
-.cove-bottom-sheet:not([hidden]){display:flex!important;flex-direction:column;overflow:hidden!important}
-.cove-sheet-body{overflow:auto;min-height:0;flex:1 1 auto;overscroll-behavior:contain}
+.cove-bottom-sheet:not([hidden]){display:flex!important;flex-direction:column;overflow:hidden!important;padding-left:0;padding-right:0}
+.cove-sheet-body{overflow:auto;min-height:0;flex:1 1 auto;overscroll-behavior:contain;padding-left:1.15rem;padding-right:1.15rem}
 .cove-sheet-footer{flex-shrink:0;border-top:1px solid var(--panel-line);padding:10px 12px;background:var(--panel);text-align:center}
 .cove-sheet-footer .btn{min-height:44px;width:100%;text-align:center}
-#shop .cove-sheet-body{display:flex;flex-direction:column;overflow:hidden}
+#shop .cove-sheet-body{display:flex;flex-direction:column;overflow:hidden;padding-left:0;padding-right:0}
 #shopList{min-height:0}
 .cove-bottom-help{display:flex!important;flex-direction:column;overflow:hidden!important;max-height:calc(100dvh - 40px)}
 .cove-bottom-help .cove-dialog-body{padding:0;flex:1 1 auto}
@@ -1494,8 +1495,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
    Real cats walk in while real assets load (see the trailing script),
    settle in place, then this same card reveals its existing subtitle and
    Begin/Continue button right where the loading status was. */
-.ls-cats{display:flex;gap:8px;height:52px;margin:.2rem 0 .6rem;align-items:flex-end;justify-content:center;}
-.ls-cats canvas{width:44px;height:44px;opacity:0;}
+.ls-cats{display:flex;flex-wrap:wrap;gap:8px;max-width:min(560px,90vw);max-height:150px;overflow:hidden;margin:.2rem auto .6rem;align-items:flex-end;justify-content:center;}
+.ls-cats canvas{width:var(--ls-cat-size,60px);height:var(--ls-cat-size,60px);opacity:0;}
 .ls-loading{transition:opacity .3s ease;}
 .ls-loading[hidden]{display:none;}
 .ls-progress{height:6px;width:min(220px,64vw);border-radius:999px;background:#e0e5d4;overflow:hidden;margin:0 auto .6rem;}
@@ -1890,7 +1891,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <p><b>Catmint Cove</b> is played upright.<br>Turn your phone back and the cove's right there. 🐾</p>
 </div>
 
-<script src="ui/memory-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=11"><script src="ui/little-matches.js?v=13"></script>
+<script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=11"><script src="ui/little-matches.js?v=13"></script>
 <script>
 (() => {
 "use strict";
@@ -5516,6 +5517,8 @@ const ACCESSORIES = [
   { key:"rainbow",     label:"Rainbow trail",iap:"sparkle_pack", slot:"aura", group:"Sparkle", premium:true, blurb:"A ribbon of colour that streams behind the cat as it moves and fades when it settles." },
 ];
 ACCESSORIES.push(...window.LITTLE_MATCH_REWARDS.map(r=>({...r,memoryLevel:r.level,group:'Little Matches',price:0})));
+// DRAFT — endless-mode milestone rewards, previewed but not yet grantable in play.
+if(window.ENDLESS_REWARDS)ACCESSORIES.push(...window.ENDLESS_REWARDS.map(r=>({...r,endlessRound:r.round,group:'Endless',price:0,hidden:true})));
 const ACC_BY_KEY = Object.fromEntries(ACCESSORIES.map(a => [a.key, a]));
 const ACC_LABEL  = Object.fromEntries(ACCESSORIES.map(a => [a.key, a.label.toLowerCase()]));
 const ACC_SLOTS  = ["aura", "back", "neck", "ear", "face", "head"];   // also the draw order (aura/back behind, head on top)
@@ -5931,7 +5934,7 @@ document.getElementById("roster-x").onclick = () => {
 /* ---------- shop ---------- */
 const SHOP_TABS = [
   { id:"inventory", label:"My inventory", intro:"Store items here and place them back in your Cove for free." },
-  { id:"featured", label:"Featured", intro:"Optional ways to support Catmint Cove — no pressure, and appreciated. See ❤️ Cove Cares in Help." },
+  { id:"featured", label:"Featured", intro:"Optional ways to support Catmint Cove — no pressure, and appreciated. See ❤️ Catmint Cove Cares in Help." },
   { id:"comforts", label:"Comforts", intro:"More comforts draw more cats — and the right one keeps each personality happy." },
   { id:"stations", label:"Stations", intro:"Spots where cats work: bigger output while they're busy, plus a mood lift." },
   { id:"dress",    label:"Dress-up", intro:"Pick a cat, then pick a look. Each piece is bought for that one cat." },
@@ -7442,7 +7445,7 @@ function openGuide(){
  const close=()=>{tutEl.classList.remove('on');card.classList.remove('help-home');};
  const helpFooter=()=>{const footer=document.createElement('div');footer.className='cove-dialog-footer';const show=card.querySelector('#helpShow');if(show)footer.append(show);const exit=document.createElement('button');exit.id='helpClose';exit.className='btn';exit.textContent='Back to Cove';exit.onclick=close;footer.append(exit);const body=document.createElement('div');body.className='cove-dialog-body';while(card.firstChild)body.append(card.firstChild);card.classList.add('cove-bottom-help');card.append(body,footer);};
  const home=()=>{
- card.innerHTML='<div class="help-head"><h2>How can we help?</h2></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="linkbtn" id="guideTour">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideCredits">Credits</button><button class="linkbtn" id="guideCares">Cove Cares</button></footer>';
+ card.innerHTML='<div class="help-head"><h2>How can we help?</h2></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="linkbtn" id="guideTour">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideCredits">Credits</button><button class="linkbtn" id="guideCares">Catmint Cove Cares</button></footer>';
  helpFooter();
  card.querySelectorAll('[data-topic]').forEach(el=>el.onclick=()=>topic(+el.dataset.topic));
  card.querySelector('#guideTour').onclick=()=>{close();neoStartTour();};
@@ -7485,17 +7488,15 @@ function openCredits() {
  tutEl.classList.remove("on");closeAllPanels();hidePropCard();
   ensureAudio();
   openModal(`<div class="reveal credits">
-    <div class="kicker">Made with ${neoUIIcon("paw")}</div>
-    <h2>Catmint Cove</h2>
+    <div class="kicker">Made with ❤️</div>
+    <img class="cr-logo" src="art/wordmark-transparent.png" alt="Catmint Cove">
     <p class="cr-ver" id="crVer"></p>
     <p class="cr-lead">Made by one hooman at Midknight Studio Labs, with Midknight supervising 24/7 — mostly by sleeping near the keyboard and judging every decision.</p>
     <div class="cr-sec"><h3>Founder &amp; Developer</h3><p>Carlos and Midknight</p></div>
-    <div class="cr-sec"><h3>Co-Founders</h3><p>Yhelle · Cel · Olive</p><p class="cr-note">The hoomans who somehow agreed this was a good idea.</p></div>
+    <div class="cr-sec"><h3>Co-Founders</h3><p>Yhelle · Cel · Olive</p></div>
     <div class="cr-sec"><h3>Special Thanks</h3>
-      <p>To our testers who helped shape the Cove:<br>Shang · Mikay · Goldie · Gladys · Jonnel</p>
-      <p class="cr-note">And to all the other hoomans who tested, broke things we thought were working, found things we didn't know were broken, and shared feedback to make the Cove better.</p>
+      <p>Shang · Mikay · Goldie · Gladys · Jonnel — and everyone else who tested, broke things, and helped make the Cove better.</p>
     </div>
-    <p class="cr-lead">Thanks for helping us build the best little Cove we can.</p>
     <p class="cr-cares"><a href="#" id="crCares">❤️ Catmint Cove Cares — a little Cove can do a little good</a></p>
     <p class="cr-note">Any remaining bugs are probably Midknight's fault.<br>Midknight strongly disagrees.</p>
     <p class="cr-legal">© 2026 Midknight Studio Labs. All rights reserved.<br>
@@ -15565,6 +15566,7 @@ function drawEar(g, side, P, coat, back, flop = 0, kit = false) {
 }
 function drawAccessory(g, kind, P, coat, kit) {
   if(window.drawMemoryAccessory(g,kind,P,coat,kit,coatLum(coat.base)))return;
+  if(window.drawEndlessAccessory?.(g,kind,P,coat,kit,coatLum(coat.base)))return;
   const hr = P.hr, hx = P.hx, hy = P.hy;
   g.save();
   g.lineJoin = "round"; g.lineCap = "round";
@@ -19960,7 +19962,8 @@ const littleMatches=createLittleMatches({
  catalog:()=>{const out={};for(const coat of COATS){const cv=document.createElement('canvas');cv.width=240;cv.height=200;neoPortrait(cv,{coatKey:coat.key,markSeed:4242,star:0,bornAt:0,worn:[]},3);out['cat:'+coat.key]={name:coat.name,image:cv.toDataURL()}}
  for(const type of ['food','bed','toy','flowers']){const name={food:'Food bowl',bed:'Cozy bed',toy:'Cat toy',flowers:'Flowers'}[type];out['obj:'+type]={name,image:memoryObjectImage(productPreview({type,name}))}}
  for(const key of ['lantern','birdbath','windmill','bunting']){const cv=document.createElement('canvas');cv.width=240;cv.height=200;const g=cv.getContext('2d');g.translate(120,175);const p=PROP_BY_ID[key];p.render(g,0,0,0,key==='windmill'?.9:1);out['obj:'+key]={name:p.name,image:memoryObjectImage(cv)}}return out;},
- keepsake:(level,c)=>{const j=G.littleVictories ||= {counts:{},entries:[],rotation:{}};const mark='memory:'+level;if(j.counts[mark])return;j.counts[mark]=1;const names={1:'A Familiar Face',5:'Gingham Bow',10:'Daisy Crown',15:'Cozy Neckerchief',20:'Sleepy Bonnet',25:'Explorer Hat',30:'Little Lion'};const lines={1:'Found a friend. Then found the same friend again. An excellent start.',5:'A little bow. A very accomplished companion.',10:'Ten levels together. A crown of daisies felt appropriate.',15:'Dressed for a small adventure. Possibly to the food bowl.',20:'Twenty levels remembered. Permission to nap: granted.',25:'A fine hat for someone who knows their way around.',30:'Small paws. A mighty finish. The mane is magnificent. The roar needs practice.'};j.entries.unshift({activity:'memory',members:[{id:c.id,name:c.name,coatKey:c.key,star:0,markSeed:c.markSeed||4242}],won:true,milestone:level,award:names[level],title:level===30?'You remembered the little things.':'Another little memory, kept.',line:lines[level],day:new Date().toLocaleDateString(),time:Date.now(),count:1,results:[{level}]});save();}
+ keepsake:(level,c)=>{const j=G.littleVictories ||= {counts:{},entries:[],rotation:{}};const mark='memory:'+level;if(j.counts[mark])return;j.counts[mark]=1;const names={1:'A Familiar Face',5:'Gingham Bow',10:'Daisy Crown',15:'Cozy Neckerchief',20:'Sleepy Bonnet',25:'Explorer Hat',30:'Little Lion'};const lines={1:'Found a friend. Then found the same friend again. An excellent start.',5:'A little bow. A very accomplished companion.',10:'Ten levels together. A crown of daisies felt appropriate.',15:'Dressed for a small adventure. Possibly to the food bowl.',20:'Twenty levels remembered. Permission to nap: granted.',25:'A fine hat for someone who knows their way around.',30:'Small paws. A mighty finish. The mane is magnificent. The roar needs practice.'};j.entries.unshift({activity:'memory',members:[{id:c.id,name:c.name,coatKey:c.key,star:0,markSeed:c.markSeed||4242}],won:true,milestone:level,award:names[level],title:level===30?'You remembered the little things.':'Another little memory, kept.',line:lines[level],day:new Date().toLocaleDateString(),time:Date.now(),count:1,results:[{level}]});save();},
+ pearls:(n)=>{G.pearls=(G.pearls||0)+n;syncHud();save();}
 });
 const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 levels, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();const activityGrid=document.querySelector('#neo-explore .neo-explore-grid');activityGrid.prepend(matchesButton);activityGrid.appendChild(document.getElementById('neo-go-cafe'));
 (function () {
@@ -19992,29 +19995,54 @@ const matchesButton=document.createElement('button');matchesButton.className='ne
       : 'Everyone\u2019s here. Welcome home.';
   }
 
+  // The bundled assets are tiny and load near-instantly (especially on
+  // native, where they're already on disk), so driving the bar purely off
+  // real completion made it snap in 1-2 big jumps instead of filling
+  // smoothly. FLOOR_MS paces the bar over a minimum, deliberate duration —
+  // it's still tied to the real load (never reports done before assets
+  // actually finish), just never allowed to look instant either.
+  var t0Progress = performance.now();
+  var FLOOR_MS = 2600;
   var assets = ['art/cove-2d.png', 'art/wordmark-transparent.png'];
   var doneCount = 0;
   function loadOne(src) {
     return new Promise(function (resolve) {
       var img = new Image();
-      function finish() { doneCount++; setProgress(doneCount / assets.length); resolve(); }
+      function finish() { doneCount++; resolve(); }
       img.onload = finish; img.onerror = finish;
       img.src = src;
     });
   }
   var assetsReady = Promise.all(assets.map(loadOne));
+  var floorReady = new Promise(function (resolve) {
+    setTimeout(resolve, FLOOR_MS);
+  });
+
+  (function paceProgress() {
+    var elapsed = performance.now() - t0Progress;
+    var paced = Math.min(1, elapsed / FLOOR_MS);
+    var frac = doneCount >= assets.length ? paced : Math.min(paced, 0.9);
+    setProgress(frac);
+    if (frac < 1) requestAnimationFrame(paceProgress);
+  })();
 
   function walkCatsIn() {
     return new Promise(function (resolve) {
       var roster;
-      try { roster = (typeof cats !== 'undefined' ? cats.filter(function (c) { return !c.visitor; }) : []).slice(0, 5); }
+      try { roster = (typeof cats !== 'undefined' ? cats.filter(function (c) { return !c.visitor; }) : []); }
       catch (e) { roster = []; }
       if (!roster.length) { resolve(); return; }
-      var walkMs = 620, stagger = 240, lead = 100;
+      // The cove can hold up to 30 cats — shrink them and tighten the
+      // stagger as the roster grows so a full cove still walks in within
+      // the same couple of seconds instead of queuing forever.
+      var n = roster.length;
+      var size = n <= 6 ? 60 : n <= 12 ? 48 : n <= 20 ? 40 : 32;
+      catsRow.style.setProperty('--ls-cat-size', size + 'px');
+      var walkMs = 620, stagger = Math.max(50, Math.min(240, 1800 / n)), lead = 100;
       var t0 = performance.now();
       var walkers = roster.map(function (c) {
         var cv = document.createElement('canvas');
-        cv.width = 96; cv.height = 96;
+        cv.width = 132; cv.height = 132;
         catsRow.appendChild(cv);
         var fake = new Cat({ coatKey: c.coatKey, star: c.star, markSeed: c.markSeed, mascot: c.mascot, bornAt: c.bornAt, x: 0, y: 0 });
         fake.worn = (c.worn || []).slice(); fake.blink = 3; fake.bob = .6; fake.tail = .3;
@@ -20035,7 +20063,7 @@ const matchesButton=document.createElement('button');matchesButton.className='ne
           w.fake.trotting = p < 1; w.fake.walkAmt = p < 1 ? .7 : 0; w.fake.walk = now / 110; w.fake.state = 'loafing';
           var g = w.cv.getContext('2d');
           g.clearRect(0, 0, w.cv.width, w.cv.height);
-          g.save(); g.translate(w.cv.width / 2, w.cv.height - 6); g.scale(1.05, 1.05);
+          g.save(); g.translate(w.cv.width / 2, w.cv.height - 8); g.scale(1.43, 1.43);
           drawCat(g, w.fake, true);
           g.restore();
         });
@@ -20046,7 +20074,7 @@ const matchesButton=document.createElement('button');matchesButton.className='ne
   }
   var walkReady = walkCatsIn();
 
-  Promise.all([assetsReady, walkReady]).then(function () {
+  Promise.all([assetsReady, walkReady, floorReady]).then(function () {
     setProgress(1);
     setTimeout(function () {
       loading.hidden = true;

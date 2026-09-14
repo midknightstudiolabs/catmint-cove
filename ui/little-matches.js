@@ -5,26 +5,32 @@ const rewards=api.rewards;
 let previewCat=null;
 let raf=0,lastFrame=0,lastAction=Date.now(),mood='watching',jumpAt=-10000,walkUntil=0,misses=0,finishTimer=0,activePopup=null;
 const chapters=['Familiar Faces','Favourite Things','A Place Together'];
-const curve=[3,3,4,3,4,4,3,4,4,4,4,4,5,4,5,5,4,6,5,6,5,6,6,5,6,7,5,7,7,8];
+// Pair counts stay in {3,4,6,8} on purpose — deck.length (size*2) then always
+// divides evenly into the board's 3-or-4-column grid (renderBoard's --cols).
+// 5s and 7s used to sneak in here and leave a half-empty last row of 2 cards
+// on about a third of the levels.
+const curve=[3,3,4,3,4,4,3,4,4,4,4,4,6,4,6,6,4,6,4,6,6,8,6,8,6,8,6,8,6,8];
 const coatPools=[['ginger','black','white','siamese','calico','rosewater','tuxedo','browntab'],['ginger','white','calico','siamese','tuxedo','russian','cream','rosewater'],['prism','rosewater','van','smoke','lynxpoint','silver','greytab','tuxedo','ginger','white']];
 const objKeys=['food','bed','toy','flowers','lantern','birdbath','windmill','bunting'];
 const favours={peek:['Little peek','Choose four cards to see briefly.'],friend:['Find a friend','Turn over one card; your cat finds its pair.'],second:['Second look','See your previous two cards again.']};
-let roster=[],catalog=null,dlg=null,round=null,first=null,busy=false,picking=false,picks=[],timer=null,epoch=0,revealed=[],speaker=0;
+let roster=[],catalog=null,dlg=null,round=null,first=null,busy=false,picking=false,picks=[],timer=null,countdownTimer=null,epoch=0,revealed=[],speaker=0;
 const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
-const state=()=>{const s=api.state();s.done ||= {};s.tone ||= 'sage';return s};
+const state=()=>{const s=api.state();s.done ||= {};s.tone ||= 'sage';s.endless ||= {rounds:0};return s};
 const persist=()=>{state().round=round;api.save()};
 function rng(seed){return()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}}
 function shuffle(a,r){a=a.slice();for(let i=a.length-1;i;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function build(n){const r=rng(n*1777+83),ch=Math.floor((n-1)/10),size=curve[n-1];let keys=shuffle(coatPools[ch],r).slice(0,ch===0?size:Math.ceil(size/2)).map(k=>'cat:'+k);if(ch>0)keys.push(...shuffle(objKeys,r).slice(0,size-keys.length).map(k=>'obj:'+k));return shuffle(keys.flatMap(k=>[k,k]),r)}
+function buildEndless(){const size=8,pool=[...new Set(coatPools.flat())];let keys=shuffle(pool,Math.random).slice(0,Math.ceil(size/2)).map(k=>'cat:'+k);keys.push(...shuffle(objKeys,Math.random).slice(0,size-keys.length).map(k=>'obj:'+k));return shuffle(keys.flatMap(k=>[k,k]),Math.random)}
 function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
 function button(text,fn,primary=false){const b=el('button','lm-btn'+(primary?' lm-primary':''),text);b.type='button';b.onclick=()=>{if(text)api.feedback?.('tap');fn()};return b}
 function img(key,cls){const i=el('img',cls);i.src=catalog[key].image;i.alt='';return i}
 function companion(){return roster.find(c=>c.id===(previewCat||round?.cat))||roster[0]||{name:'Your companion',key:'midknight'}}
 function say(text){const t=dlg.querySelector('.lm-speech');if(t)t.textContent=text}
-function clear(){cancelAnimationFrame(raf);raf=0;clearTimeout(finishTimer);finishTimer=0;activePopup?.close();activePopup?.remove();activePopup=null;if(round?.shufflePending)openingShuffle();epoch++;clearTimeout(timer);timer=null;busy=false;picking=false;picks=[];revealed=[];first=null}
+function clear(){cancelAnimationFrame(raf);raf=0;clearTimeout(finishTimer);finishTimer=0;activePopup?.close();activePopup?.remove();activePopup=null;if(round?.shufflePending)openingShuffle();epoch++;clearTimeout(timer);timer=null;clearInterval(countdownTimer);countdownTimer=null;busy=false;picking=false;picks=[];revealed=[];first=null}
 function close(){clear();persist();dlg.close()}
 function pauseReveal(indices,message,wrong=false){busy=true;revealed=indices;renderBoard();if(wrong){api.feedback?.('miss');for(const i of indices){const card=dlg.querySelector('[data-card="'+i+'"]');card?.classList.add('lm-miss');if(card&&!reduced())card.animate([{transform:'scale(1)'},{transform:'scale(.985)'},{transform:'scale(1)'}],{duration:380,easing:'ease-in-out'})}}say(message);const e=epoch;timer=setTimeout(()=>{if(e!==epoch)return;revealed=[];busy=false;renderBoard();persist()},2200)}
 function start(n,favour,cat){clear();if(!allDone())n=nextLevel();lastAction=Date.now();mood='watching';misses=0;round={level:n,deck:build(n),matched:[],turns:0,used:false,favour,cat,last:[],finished:false};persist();play();openingLook();}
+function startEndless(favour,cat){if(state().endless.rounds>=1000){home();return}clear();lastAction=Date.now();mood='watching';misses=0;round={endless:true,deck:buildEndless(),matched:[],turns:0,used:false,favour,cat,last:[],finished:false};persist();play();openingLook();}
 function openingShuffle(){
  let order=shuffle(round.deck.map((_,i)=>i),Math.random);
  if(order.every((old,i)=>round.deck[old]===round.deck[i])){const shift=round.deck.findIndex(k=>k!==round.deck[0]);order=round.deck.map((_,i)=>(i+shift)%round.deck.length);}
@@ -34,10 +40,18 @@ function openingLook(){
  busy=true;round.shufflePending=true;persist();revealed=round.deck.map((_,i)=>i);renderBoard();say('Meet this little gathering. A shuffle comes next.');
  const board=dlg.querySelector('.lm-board');if(!reduced())board.classList.add('lm-deal');
  let mixing=false;
- const skip=button('Start now',()=>{if(e!==epoch||mixing)return;clearTimeout(timer);mix();},true);skip.id='lm-start-now';dlg.querySelector('.lm-main .lm-actions').prepend(skip);
+ const AUTO_MS=3000;
+ const skip=button('',()=>{if(e!==epoch||mixing)return;clearTimeout(timer);mix();},true);skip.id='lm-start-now';dlg.querySelector('.lm-main .lm-actions').prepend(skip);
  const e=epoch;
- function finish(){if(e!==epoch)return;clearTimeout(timer);timer=null;board.getAnimations?.({subtree:true}).forEach(a=>a.cancel());revealed=[];busy=false;board.classList.remove('lm-deal');skip.remove();renderBoard();say('Find their friends. Their places stay fixed now.');persist();}
- function mix(){if(e!==epoch||mixing)return;mixing=true;skip.disabled=true;skip.textContent='Shuffling…';revealed=[];board.classList.remove('lm-deal');renderBoard();const old=[...board.children].map(c=>c.getBoundingClientRect());const order=openingShuffle();renderBoard();say('A little shuffle…');
+ const countStart=performance.now();
+ // A silent 3s wait read as "is this stuck?" — ticking the button's own
+ // label down doubles as the shuffle's countdown, so the pause reads as
+ // "starting" rather than "waiting."
+ function tickLabel(){const left=Math.max(0,Math.ceil((AUTO_MS-(performance.now()-countStart))/1000));skip.textContent=left>0?'Starting in '+left+'…':'Start now';}
+ tickLabel();
+ countdownTimer=setInterval(tickLabel,200);
+ function finish(){if(e!==epoch)return;clearTimeout(timer);timer=null;clearInterval(countdownTimer);countdownTimer=null;board.getAnimations?.({subtree:true}).forEach(a=>a.cancel());revealed=[];busy=false;board.classList.remove('lm-deal');skip.remove();renderBoard();say('Find their friends. Their places stay fixed now.');persist();}
+ function mix(){if(e!==epoch||mixing)return;mixing=true;clearInterval(countdownTimer);countdownTimer=null;skip.disabled=true;skip.textContent='Shuffling…';revealed=[];board.classList.remove('lm-deal');renderBoard();const old=[...board.children].map(c=>c.getBoundingClientRect());const order=openingShuffle();renderBoard();say('A little shuffle…');
  const still=reduced(),area=board.getBoundingClientRect();
  [...board.children].forEach((card,i)=>{
   const to=card.getBoundingClientRect(),from=old[order[i]];
@@ -50,19 +64,28 @@ function openingLook(){
  if(still)say('A gentle shuffle. New places, same little friends.');
  timer=setTimeout(finish,still?1000:1700);
  }
- timer=setTimeout(mix,3000);
+ timer=setTimeout(mix,AUTO_MS);
 }
 function nextLevel(){for(let n=1;n<=30;n++)if(!state().done[n])return n;return 30}
 function allDone(){return Array.from({length:30},(_,i)=>i+1).every(n=>state().done[n])}
 function home(){clear();dlg.replaceChildren();const top=el('div','lm-top');top.append(el('div','lm-kicker','LITTLE MATCHES · 30 LEVELS'));dlg.append(top,el('h2','','Little Matches'),el('p','lm-intro','Familiar faces. Favourite things. Your favourite company.'));
  const options=el('div','lm-setup'),label=el('label','','Keep me company'),select=el('select');select.id='lm-cat';for(const c of roster){const o=el('option','',c.name);o.value=c.id;select.append(o)}if(!select.children.length){const o=el('option','','Your companion');o.value='';select.append(o)}select.value=round?.cat||roster[0]?.id||'';previewCat=select.value;select.onchange=()=>{previewCat=select.value};label.append(select);options.append(label);
  let levels=null;if(allDone()){const l=el('label','','Replay a level');levels=el('select');levels.id='lm-level';for(let n=1;n<=30;n++){const o=el('option','','Level '+n);o.value=n;levels.append(o)}l.append(levels);options.append(l)}dlg.append(options);
- dlg.append(el('p','lm-note',allDone()?'All 30 levels complete. Every level is yours to revisit.':'Complete each level to continue. Earn an accessory every five levels. No timer, lives, or entry cost.'));
+ const endlessRounds=state().endless.rounds;
+ dlg.append(el('p','lm-note',allDone()?'All 30 levels complete. Every level is yours to revisit.'+(endlessRounds?' Endless rounds played: '+endlessRounds+'.':''):'Complete each level to continue. Earn an accessory every five levels. No timer, lives, or entry cost.'));
  const spent=!!(round&&!round.finished&&round.used);const f=el('fieldset','lm-favours');f.disabled=spent;f.append(el('legend','',spent?'Favour used for this level':'Choose one free favour'));if(spent)dlg.append(el('p','lm-note','Your next level comes with a fresh favour.'));for(const [key,[title,desc]]of Object.entries(favours)){const l=el('label');const input=el('input');input.type='radio';input.name='lm-favour';input.value=key;input.checked=key===(round?.favour||'peek');l.classList.toggle('lm-selected',input.checked);input.onchange=()=>f.querySelectorAll('label').forEach(x=>x.classList.toggle('lm-selected',x.querySelector('input').checked));l.append(input,el('strong','',title),el('small','',desc));f.append(l)}dlg.append(f);
- const acts=el('div','lm-actions');if(round&&!round.finished){acts.append(button('Continue · Level '+round.level,()=>{round.cat=select.value;persist();if(!round.used){round.favour=f.querySelector('input:checked').value;persist()}play()},true))}else acts.append(button(allDone()?'Play again':'Continue · Level '+nextLevel(),()=>start(levels?+levels.value:nextLevel(),f.querySelector('input:checked').value,select.value),true));acts.append(button('View rewards',showRewards),button('Back to Cove',close));dlg.append(acts);
+ const acts=el('div','lm-actions');
+ if(round&&!round.finished){acts.append(button(round.endless?'Continue · Endless':'Continue · Level '+round.level,()=>{round.cat=select.value;persist();if(!round.used){round.favour=f.querySelector('input:checked').value;persist()}play()},true))}
+ else{acts.append(button(allDone()?'Play again':'Continue · Level '+nextLevel(),()=>start(levels?+levels.value:nextLevel(),f.querySelector('input:checked').value,select.value),true));
+  if(allDone()){
+   if(endlessRounds>=1000){const capped=button('Endless complete ★',()=>{});capped.disabled=true;capped.title='All 1000 endless rounds played';acts.append(capped)}
+   else acts.append(button('Play Endless',()=>startEndless(f.querySelector('input:checked').value,select.value)))
+  }else{const locked=button('Endless \u{1F512}',()=>{});locked.disabled=true;locked.title='Unlocks once all 30 levels are complete';acts.append(locked)}}
+ acts.append(button('View rewards',showRewards),button('Back to Cove',close));dlg.append(acts);
+ if(!allDone())dlg.append(el('p','lm-note','Endless mode unlocks at Level 30 — a fresh board every round, a little something extra every 20 rounds, all the way to round 1000.'));
 }
 function nook(){const c=el('canvas','lm-companion');c.width=300;c.height=270;c.setAttribute('role','img');c.setAttribute('aria-label',companion().name+' keeping you company');return c}
-function play(){clear();previewCat=null;lastAction=Date.now();mood='watching';dlg.replaceChildren();const top=el('div','lm-top');top.append(button('Back',home),el('span','', 'Level '+round.level+' / 30'),button('Back to Cove',close));dlg.append(top);const layout=el('div','lm-layout'),side=el('aside','lm-side');side.append(nook(),el('p','lm-speech',companion().name+' is keeping you company.'));side.querySelector('.lm-speech').setAttribute('role','status');side.querySelector('.lm-speech').setAttribute('aria-live','polite');const main=el('section','lm-main');main.append(el('div','lm-stats'),el('div','lm-board'));const actions=el('div','lm-actions'),favour=button(favours[round.favour][0],useFavour);favour.id='lm-use';actions.append(favour);main.append(actions,el('p','lm-hint',favours[round.favour][1]+' No penalty for a helping paw.'));layout.append(side,main);dlg.append(layout);dlg.append(el('section','lm-trail'));renderBoard();renderTrail();animateCat();if(round.finished)finishView();}
+function play(){clear();previewCat=null;lastAction=Date.now();mood='watching';dlg.replaceChildren();const top=el('div','lm-top');top.append(button('Back',home),el('span','',round.endless?'Endless · Round '+(state().endless.rounds+1):'Level '+round.level+' / 30'),button('Back to Cove',close));dlg.append(top);const layout=el('div','lm-layout'),side=el('aside','lm-side');side.append(nook(),el('p','lm-speech',companion().name+' is keeping you company.'));side.querySelector('.lm-speech').setAttribute('role','status');side.querySelector('.lm-speech').setAttribute('aria-live','polite');const main=el('section','lm-main');main.append(el('div','lm-stats'),el('div','lm-board'));const actions=el('div','lm-actions'),favour=button(favours[round.favour][0],useFavour);favour.id='lm-use';actions.append(favour);main.append(actions,el('p','lm-hint',favours[round.favour][1]+' No penalty for a helping paw.'));layout.append(side,main);dlg.append(layout);renderBoard();if(round.endless){animateCat()}else{dlg.append(el('section','lm-trail'));renderTrail();animateCat()}if(round.finished)round.endless?finishEndlessView():finishView();}
 function touch(){lastAction=Date.now();mood='watching'}
 function refreshNook(){touch();jumpAt=performance.now()}
 function animateCat(now=performance.now()){if(!dlg.open)return;if(!document.hidden&&now-lastFrame>32){lastFrame=now;const idle=Date.now()-lastAction;if(!round.finished&&!busy){if(idle>16000)mood='sleep';else if(idle>8000)mood='groom'}const cv=dlg.querySelector('.lm-companion');const jump=(now-jumpAt)/700;if(cv)api.draw(cv,companion(),mood,reduced()?0:jump>0&&jump<1?jump:0,false);const marker=dlg.querySelector('.lm-walker');if(marker)api.draw(marker,companion(),'watching',0,!reduced()&&now<walkUntil)}raf=requestAnimationFrame(animateCat)}
@@ -74,7 +97,22 @@ function matched(a,b){api.feedback?.(round.matched.length+2===round.deck.length?
 function useFavour(){if(round.used||busy||round.finished)return;if(round.favour==='peek'){if(first!==null){say('Finish this pair before choosing your four cards.');return}picking=true;renderBoard();say('Tap four face-down cards for a little look.');return}
  if(round.favour==='friend'){if(first===null){say('Turn over one card first. Then ask for a helping paw.');return}const a=first,b=round.deck.findIndex((key,i)=>key===round.deck[a]&&i!==a&&!round.matched.includes(i));round.used=true;first=null;round.turns++;matched(a,b);return}
  if(first!==null||round.last.length!==2||round.last.some(i=>round.matched.includes(i))){say('Try an unmatched pair first, then ask for a second look.');return}round.used=true;persist();pauseReveal(round.last.slice(),`${companion().name} remembers these two.`);}
-function complete(){round.finished=true;const s=state(),previous=s.done[round.level],firstCompletion=!previous;if(!previous||round.turns<previous.turns)s.done[round.level]={turns:round.turns,helped:round.used};persist();if(firstCompletion&&(round.level===1||round.level%5===0))api.keepsake(round.level,companion());walkUntil=performance.now()+850;renderTrail(true);finishTimer=setTimeout(()=>{finishTimer=0;if(dlg.open){if(firstCompletion&&(allDone()||rewards.some(r=>r.level===round.level)))showReward(allDone()?rewards[5]:rewards.find(r=>r.level===round.level),true);else finishView()}},reduced()?0:950)}
+function complete(){round.finished=true;walkUntil=performance.now()+850;
+ if(round.endless){const s=state();s.endless.rounds++;const milestone=s.endless.rounds%20===0;persist();if(milestone)api.pearls(4);finishTimer=setTimeout(()=>{finishTimer=0;if(dlg.open)finishEndlessView(milestone)},reduced()?0:950);return}
+ const s=state(),previous=s.done[round.level],firstCompletion=!previous;if(!previous||round.turns<previous.turns)s.done[round.level]={turns:round.turns,helped:round.used};persist();if(firstCompletion&&(round.level===1||round.level%5===0))api.keepsake(round.level,companion());renderTrail(true);finishTimer=setTimeout(()=>{finishTimer=0;if(dlg.open){if(firstCompletion&&(allDone()||rewards.some(r=>r.level===round.level)))showReward(allDone()?rewards[5]:rewards.find(r=>r.level===round.level),true);else finishView()}},reduced()?0:950)}
+function finishEndlessView(milestone){
+ dlg.querySelector('.lm-finish')?.remove();
+ const rounds=state().endless.rounds,name=companion().name;
+ const quips=[name+' did the victory hop. You did the remembering.',name+' is taking the credit. We both know who turned the cards.',name+' checked under a paw. No missing matches.',name+' would high-five you, but that paw was just washed.'];
+ const capped=rounds>=1000;
+ const box=popup('Endless round complete');box.classList.add('lm-completion');
+ box.append(el('h2','',capped?'One thousand rounds.':'Round '+rounds+' complete!'),el('p','',capped?name+' has matched every little face a thousand times over. There may not be a thousand and first — for now, this is the top of the cove.':milestone?name+' has done this twenty more times now. A small pearl for the trouble.':quips[(rounds-1)%quips.length]));
+ if(milestone)box.append(el('p','lm-season',capped?'+4 pearls · the last of the endless rewards':'+4 pearls · every 20 rounds'));
+ const actions=el('div','lm-actions');
+ if(!capped)actions.append(button('Play again',()=>startEndless(round.favour,round.cat),true));
+ actions.append(button('Back to setup',home,capped));
+ popupLayout(box,actions);renderBoard();actions.querySelector('button')?.focus({preventScroll:true});
+}
 function finishView(){
  dlg.querySelector('.lm-finish')?.remove();
  const box=popup('Level '+round.level+' complete'),done=state().done,finished=allDone(),name=companion().name;box.classList.add('lm-completion');
