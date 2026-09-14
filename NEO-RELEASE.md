@@ -1,14 +1,13 @@
-# Neo mobile 3.0.6
+# Neo mobile 3.0.7
 
-Full runtime payload from Neo e48b96b, including all updates through September 14.
+Complete runtime payload from Neo 7f78120, preserving all 3.0.6 features and saves.
 
-- Little Matches: 30 sequential levels, six permanent accessories, cat reactions, visible shuffle, free favours, reward trail and seasonal intro/finale.
-- Cream/sage feedback, subtle effects and sound respecting Cove settings and ambience.
-- Theme previews: actual Cove, day/night toggle, no spending or ownership changes.
-- Menu footer actions, mobile touch targets, Help/tour, inventory and storage fixes.
-- Accumulated iOS name/bar fixes, decor placement and lighting, Rainy Retreat, journal keepsakes, instant photos and offline day progression.
-- Garden future-use explanation and current sale values.
+- Distinct meadow, seaside, frost and autumn scenery with cached theme artwork.
+- Golden ground, copper foliage and maple leaf clusters for Autumn.
+- Theme consistency in Festival, race, photo capture and extended ground; volleyball retains its sand court.
+- Photos include placed decor and weather with corrected foreground alignment.
+- Clear previous weather particles when switching themes.
 
-Source payload hashes: neo-payload-manifest.json. Native build only injects bridge, audio data and package version.
+Validation: 30 browser Festival transitions across five themes, three activities and two viewport/light configurations; no page errors. Native payload checksum verification and rendering smoke checks. Full matches, native photo sharing and sustained physical-device performance still require tester checks.
 
-Release destinations follow the existing workflows: iOS TestFlight; Google Play alpha draft. Store approval/public availability remains separate.
+Destinations: TestFlight and the existing Google Play alpha draft track. Upload success does not mean public store publication.
