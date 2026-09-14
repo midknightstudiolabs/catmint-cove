@@ -56,7 +56,7 @@
 #tut .guide-links{flex-wrap:wrap}#tut .guide-links .btn{min-height:44px}#tut .card{max-height:90dvh;overflow-y:auto}#tut .guide-list{max-height:45dvh}
 
 /* Catdex feels like a small keepsake album, with an understated close control. */
-#dex{background:#faf6e9;border:1px solid #d8d7bd;padding-top:0;scrollbar-width:thin;scrollbar-color:#b9c5aa transparent;box-shadow:0 16px 48px rgba(38,53,39,.20),inset 5px 0 #e2e8d2}
+#dex{background:#faf6e9;border:1px solid #d8d7bd;padding-top:0;box-shadow:0 16px 48px rgba(38,53,39,.20),inset 5px 0 #e2e8d2}
 .neo-dex-header{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0 13px;margin-bottom:12px;background:#faf6e9;border-bottom:1px solid #dce1cc}
 .neo-dex-kicker{display:block;font-size:10px;letter-spacing:.14em;color:#738168;margin-bottom:4px;font-weight:700}
 #dex .neo-dex-header h2{font-size:26px;color:#3d593f;margin:0}

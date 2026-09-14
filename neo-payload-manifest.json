@@ -1,8 +1,8 @@
 {
-  "source": "d310ee5",
-  "version": "3.0.8",
+  "source": "4b5d277",
+  "version": "3.0.9",
   "sha256": {
-    "index.html": "4b6f4cc9cf690b6da73391048d8cc88b121e9fa6bbb2bf35c44222c53202a130",
+    "index.html": "c495a04e4da8b69c91c2b3df40bae07647eebfef8aa84598707a54716626602c",
     "fest-bed-cafe.mp3": "371259132acaeed9a927f475ad71f929f8440d794dc94e5c5a7c1cfecbab1769",
     "fest-bed-hub.mp3": "a46df4cd7056e2e0bd4c5e114dd603389e6321a01522bbdd03720d8911ae7c5f",
     "fest-bed-race.mp3": "cca305b473fa26dfd745eccae6c39a675a4e7249ae74342ceb35aff595fe2207",
@@ -44,7 +44,7 @@
     "art/icon-keepsake-dest-island.svg": "f60ec0c5811198e20e1cefed075717a1e4fcfcd27e02a0f90825b15a702b24f3",
     "art/icon-keepsake-dest-peak.svg": "48eab2b64fa75c38002f63e30667cdccb5e2534e918b9421464dd55344337117",
     "ui/home.js": "e0ec82afbce42ccb807b8da805baffcdc0fd3b5c38f0c803ef06f28721e6738d",
-    "ui/home.css": "865bcc483c3f01c28523a61a62a2ce2c212edfb61dc7b07bb5a6eb5d912eab43",
+    "ui/home.css": "44b7a602066f98e58229efd71ddb7376b15847875f5d90ee2dace3934fc8d02f",
     "ui/homestead.js": "332ae33332b987a0f5bc75dca9420170221753d717dcf7c0cb11051ae6a85d49",
     "ui/cafe-room.js": "03afc33238ea732cb6e565f94951a06df9d716949d31ebe647c620319e3a2173",
     "ui/device-fixes.css": "ef0bde23ddc61261dc5702bed32bff48e1ecbd9abcf8f650eecfc8ac0e1522ed",

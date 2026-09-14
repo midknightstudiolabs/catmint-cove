@@ -36,9 +36,11 @@
     --warn:#d99a3f;
     --sick:#c46a86;
     --leave:#c9503f;
+    --scrollbar:#b9c5aa;
     --shadow:0 18px 40px -16px rgba(36,31,23,.35);
   }
   *{box-sizing:border-box;}
+  html{scrollbar-width:thin;scrollbar-color:var(--scrollbar) transparent;}
   html,body{height:100%;}
   body{
     margin:0;background:var(--sky-bot);color:var(--ink);
@@ -123,6 +125,12 @@
     border-radius:999px;padding:.55rem 1rem;margin-bottom:.85rem;}
   .name-in::placeholder{color:var(--ink-faint);}
 
+  /* Button convention: plain .btn is the neutral/default action (Cancel, Back,
+     Close, a secondary choice). .btn.primary (green) is the affirmative action
+     a dialog wants you to take (Save, Continue, Buy, Confirm) — at most one
+     per row. .btn.danger (warm red) is for choices with an irreversible or
+     hard-to-undo effect (e.g. rehoming a cat) so it never reads as "the
+     helpful green button to tap." */
   button.btn{
     font:inherit;font-weight:600;cursor:pointer;
     background:var(--panel);color:var(--ink);border:1px solid var(--panel-line);
@@ -133,6 +141,8 @@
   button.btn:active{transform:translateY(1px) scale(.98);}
   button.btn.primary{background:var(--accent);color:#fff;border-color:transparent;}
   button.btn.primary:hover{background:var(--accent-bright);}
+  button.btn.danger{background:var(--leave);color:#fff;border-color:transparent;}
+  button.btn.danger:hover{background:#b3432f;}
   button.btn:disabled{opacity:.45;cursor:not-allowed;}
   button.btn[hidden]{display:none!important;}   /* button.btn's display:flex otherwise outranks the UA [hidden] default (see #festBtn, #titleScreen) */
   .btn .ico{font-size:1.05rem;line-height:1;}
@@ -166,12 +176,7 @@
     transition:opacity .25s ease, transform .25s ease;}
   #titleScreen.out .ts-card{opacity:0;transform:scale(.9);}
   @keyframes tsIn{from{opacity:0;transform:translateY(10px);}}
-  .ts-emblem{font-size:2.4rem;margin-bottom:.3rem;
-    animation:tsBreathe 3.6s ease-in-out infinite;}
-  @keyframes tsBreathe{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
-  .ts-card h1{font-family:"Fraunces",Georgia,serif;font-weight:700;
-    font-size:clamp(1.7rem,7vw,2.3rem);margin:0 0 .5rem;color:var(--ink);}
-  .ts-card h1 b{color:var(--accent-bright);font-style:italic;font-weight:700;}
+  .ts-logo{width:min(240px,62vw);display:block;margin:0 auto .6rem;}
   .ts-sub{font-size:.92rem;line-height:1.5;color:var(--ink-soft);margin:0 0 1.4rem;}
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
   .ts-hint{display:none;margin:.9rem 0 0;font-size:.78rem;color:var(--ink-soft);opacity:.75;}
@@ -1322,7 +1327,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #tut .guide-links{flex-wrap:wrap}#tut .guide-links .btn{min-height:44px}#tut .card{max-height:90dvh;overflow-y:auto}#tut .guide-list{max-height:45dvh}
 
 /* Catdex feels like a small keepsake album, with an understated close control. */
-#dex{background:#faf6e9;border:1px solid #d8d7bd;padding-top:0;scrollbar-width:thin;scrollbar-color:#b9c5aa transparent;box-shadow:0 16px 48px rgba(38,53,39,.20),inset 5px 0 #e2e8d2}
+#dex{background:#faf6e9;border:1px solid #d8d7bd;padding-top:0;box-shadow:0 16px 48px rgba(38,53,39,.20),inset 5px 0 #e2e8d2}
 .neo-dex-header{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0 13px;margin-bottom:12px;background:#faf6e9;border-bottom:1px solid #dce1cc}
 .neo-dex-kicker{display:block;font-size:10px;letter-spacing:.14em;color:#738168;margin-bottom:4px;font-weight:700}
 #dex .neo-dex-header h2{font-size:26px;color:#3d593f;margin:0}
@@ -1416,7 +1421,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-little-hello p{overflow-wrap:anywhere}
 @media(max-width:480px){
   #shop .shop-item{flex-wrap:wrap}
-  #shop .shop-item .txt{flex-basis:100%}
+  #shop .shop-item .txt{flex:1 1 0;min-width:120px}
   #shop .shop-actions{width:100%;justify-content:flex-start}
   #shop .shop-actions button{flex:1 1 auto}
   #shopTabs button{font-size:13px;padding:8px 10px}
@@ -1464,6 +1469,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #shop [data-nav]{width:44px;height:44px;min-width:44px;min-height:44px}.dp-rack h4 .neo-ui-icon{width:22px;height:22px;vertical-align:middle}
 .audit-close:focus-visible{outline:3px solid #789578;outline-offset:2px}
 
+#modal:has(.cove-bottom-dialog){overflow:hidden;padding:0}
 #modal .cove-bottom-dialog{display:flex;flex-direction:column;max-height:calc(100dvh - 120px);overflow:hidden;padding:0}
 .cove-dialog-body{overflow:auto;min-height:0;padding:18px 8px;overscroll-behavior:contain}
 .cove-dialog-footer{position:static!important;flex-shrink:0;display:flex!important;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:0!important;padding:12px 0!important;border-top:1px solid var(--panel-line);background:var(--panel)}
@@ -1483,21 +1489,45 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
 [aria-label="Sell from your pantry"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}[aria-label="Sell from your pantry"] .btn{min-width:0;padding:8px 4px;font-size:12px;min-height:48px}
 .garden-purpose{background:#eef0df;border:1px solid var(--panel-line);border-radius:14px;padding:12px;margin:12px 0;font-size:13px;line-height:1.45}.garden-purpose p{margin:7px 0}.garden-purpose small{color:var(--ink-soft)}
+
+/* Loading state lives INSIDE the one #titleScreen card — no second page.
+   Real cats walk in while real assets load (see the trailing script),
+   settle in place, then this same card reveals its existing subtitle and
+   Begin/Continue button right where the loading status was. */
+.ls-cats{display:flex;gap:8px;height:52px;margin:.2rem 0 .6rem;align-items:flex-end;justify-content:center;}
+.ls-cats canvas{width:44px;height:44px;opacity:0;}
+.ls-loading{transition:opacity .3s ease;}
+.ls-loading[hidden]{display:none;}
+.ls-progress{height:6px;width:min(220px,64vw);border-radius:999px;background:#e0e5d4;overflow:hidden;margin:0 auto .6rem;}
+.ls-fill{height:100%;width:100%;transform:scaleX(0);transform-origin:left center;background:var(--accent-bright,#3f8159);border-radius:inherit;transition:transform .25s ease;}
+.ls-status{font-size:.8rem;color:var(--ink-soft);min-height:1.2em;text-align:center;margin:0 0 1.4rem;}
 </style>
 
 <div id="app">
+  <!-- Loading screen — paints above #titleScreen at the very first frame,
+       same as that screen's own "not [hidden] in markup" reasoning. Real
+       asset completion (art/cove-2d.png + the wordmark) drives the bar; see
+       the trailing script for the loader. Fades to reveal #titleScreen,
+       which is untouched underneath and was already there the whole time. -->
   <!-- the first thing anyone sees — covers the cove (already ticking away
        underneath) until the player taps in. Deliberately not [hidden] in
        markup: it needs to be the very first paint, before any script runs,
-       so there's never a flash of the busy scene first. -->
+       so there's never a flash of the busy scene first. One screen, not a
+       loading page that hands off to a separate title page: real cats walk
+       in while real assets load, then settle in place and the existing
+       subtitle/button fade in alongside them — see the trailing script. -->
   <div id="titleScreen">
     <div id="tsCurtainL"></div>
     <div id="tsCurtainR"></div>
     <div class="ts-card">
-      <div class="ts-emblem">🐾</div>
-      <h1>Catmint <b>Cove</b></h1>
-      <p class="ts-sub">Cats wander in needing someone. Look after them, and the cove slowly becomes theirs.</p>
-      <button class="btn primary" id="ts-go">Begin</button>
+      <img class="ts-logo" src="art/wordmark-transparent.png" alt="Catmint Cove">
+      <div class="ls-cats" id="lsCats" aria-hidden="true"></div>
+      <div class="ls-loading" id="tsLoading">
+        <div class="ls-progress" role="progressbar" aria-label="Loading the Cove" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="ls-fill" id="lsFill"></div></div>
+        <p class="ls-status" id="lsStatus" role="status">Finding a sunny spot…</p>
+      </div>
+      <p class="ts-sub" id="tsSub" hidden>Cats wander in needing someone. Look after them, and the cove slowly becomes theirs.</p>
+      <button class="btn primary" id="ts-go" hidden>Begin</button>
       <p class="ts-hint">Cosier on a tablet 🐾</p>
       <p class="ts-copy">© 2026 Midknight Studio Labs · Catmint Cove</p>
     </div>
@@ -5594,8 +5624,8 @@ cc.rehomeBtn.addEventListener("click", () => {
     <p class="sub">Send them off to a loving home? They'll always stay in your Catdex.
       Your shared memories stay in the journal. This is a goodbye, not a sale.</p>
     <div class="row">
-      <button class="btn primary" id="rh-yes">Wave goodbye</button>
-      <button class="btn" id="rh-no">Keep them</button>
+      <button class="btn danger" id="rh-yes">Wave goodbye</button>
+      <button class="btn primary" id="rh-no">Keep them</button>
     </div></div>`);
   miniCat(document.querySelector("#modal canvas"), c.coatKey, c.star);
   document.getElementById("rh-no").onclick = () => { cardTimer = 4; closeModal(); };
@@ -9205,14 +9235,22 @@ function endRest(auto) {
   document.getElementById("restBar").hidden = true;
   G.rest = null; save();
   try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
-  _restDPR = 0; _restLiteCats = false; resize();   // restore the pannable cove canvas (full DPR) + re-clamp the scroll
-  rebuildAttractors();
-  for (const c of cats) decide(c);
-  syncHud();
-  if (mins >= 1 || auto) {
-    const h = Math.floor(mins / 60), m = mins % 60;
-    toast(`Rested for ${h ? h + "h " : ""}${m}m — the whole cove is cozy${earned > 0 ? `.  +◈${earned}` : ""}.`, 5);
-  }
+  // Everything above already paints the rest overlay gone; the resize (a
+  // full canvas backing-store reallocation back to full DPR) plus rebuilding
+  // every obstacle and re-deciding every cat is the expensive part. On a
+  // slow device that used to all run in the same tap's call stack, so the
+  // panel visibly hung open for a beat before the cove reappeared. Deferring
+  // it one frame lets the immediate UI change paint first.
+  requestAnimationFrame(() => {
+    _restDPR = 0; _restLiteCats = false; resize();   // restore the pannable cove canvas (full DPR) + re-clamp the scroll
+    rebuildAttractors();
+    for (const c of cats) decide(c);
+    syncHud();
+    if (mins >= 1 || auto) {
+      const h = Math.floor(mins / 60), m = mins % 60;
+      toast(`Rested for ${h ? h + "h " : ""}${m}m — the whole cove is cozy${earned > 0 ? `.  +◈${earned}` : ""}.`, 5);
+    }
+  });
 }
 function resumeRest(saved) {
   restOpts = { ...restOpts, ...(saved.opts || {}) };
@@ -19925,7 +19963,97 @@ const littleMatches=createLittleMatches({
  keepsake:(level,c)=>{const j=G.littleVictories ||= {counts:{},entries:[],rotation:{}};const mark='memory:'+level;if(j.counts[mark])return;j.counts[mark]=1;const names={1:'A Familiar Face',5:'Gingham Bow',10:'Daisy Crown',15:'Cozy Neckerchief',20:'Sleepy Bonnet',25:'Explorer Hat',30:'Little Lion'};const lines={1:'Found a friend. Then found the same friend again. An excellent start.',5:'A little bow. A very accomplished companion.',10:'Ten levels together. A crown of daisies felt appropriate.',15:'Dressed for a small adventure. Possibly to the food bowl.',20:'Twenty levels remembered. Permission to nap: granted.',25:'A fine hat for someone who knows their way around.',30:'Small paws. A mighty finish. The mane is magnificent. The roar needs practice.'};j.entries.unshift({activity:'memory',members:[{id:c.id,name:c.name,coatKey:c.key,star:0,markSeed:c.markSeed||4242}],won:true,milestone:level,award:names[level],title:level===30?'You remembered the little things.':'Another little memory, kept.',line:lines[level],day:new Date().toLocaleDateString(),time:Date.now(),count:1,results:[{level}]});save();}
 });
 const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 levels, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();const activityGrid=document.querySelector('#neo-explore .neo-explore-grid');activityGrid.prepend(matchesButton);activityGrid.appendChild(document.getElementById('neo-go-cafe'));
+(function () {
+  // Loading folded into the one title card — no second page/handoff. Real
+  // cats walk in (actual walking pose via drawCat, not a placeholder fade)
+  // while real assets load; the subtitle/button only reveal once BOTH the
+  // real load and the walk-in animation are done, so a fast device never
+  // truncates the arrival — it just plays at full speed instead of being
+  // skipped. Must stay INSIDE the surrounding `(() => { ... })();` that
+  // wraps this whole script — `cats`/`Cat`/`drawCat` are declared inside
+  // it and aren't visible once it closes, even from later code in this
+  // same <script> tag.
+  var loading = document.getElementById('tsLoading');
+  if (!loading) return;
+  var fill = document.getElementById('lsFill');
+  var status = document.getElementById('lsStatus');
+  var bar = loading.querySelector('[role="progressbar"]');
+  var catsRow = document.getElementById('lsCats');
+  var sub = document.getElementById('tsSub');
+  var goBtn = document.getElementById('ts-go');
+
+  function setProgress(frac) {
+    frac = Math.max(0, Math.min(1, frac));
+    fill.style.transform = 'scaleX(' + frac + ')';
+    bar.setAttribute('aria-valuenow', Math.round(frac * 100));
+    status.textContent = frac < .35 ? 'Finding a sunny spot\u2026'
+      : frac < .7 ? 'Making room for everyone\u2026'
+      : frac < 1 ? 'Almost home\u2026'
+      : 'Everyone\u2019s here. Welcome home.';
+  }
+
+  var assets = ['art/cove-2d.png', 'art/wordmark-transparent.png'];
+  var doneCount = 0;
+  function loadOne(src) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      function finish() { doneCount++; setProgress(doneCount / assets.length); resolve(); }
+      img.onload = finish; img.onerror = finish;
+      img.src = src;
+    });
+  }
+  var assetsReady = Promise.all(assets.map(loadOne));
+
+  function walkCatsIn() {
+    return new Promise(function (resolve) {
+      var roster;
+      try { roster = (typeof cats !== 'undefined' ? cats.filter(function (c) { return !c.visitor; }) : []).slice(0, 5); }
+      catch (e) { roster = []; }
+      if (!roster.length) { resolve(); return; }
+      var walkMs = 620, stagger = 240, lead = 100;
+      var t0 = performance.now();
+      var walkers = roster.map(function (c) {
+        var cv = document.createElement('canvas');
+        cv.width = 96; cv.height = 96;
+        catsRow.appendChild(cv);
+        var fake = new Cat({ coatKey: c.coatKey, star: c.star, markSeed: c.markSeed, mascot: c.mascot, bornAt: c.bornAt, x: 0, y: 0 });
+        fake.worn = (c.worn || []).slice(); fake.blink = 3; fake.bob = .6; fake.tail = .3;
+        return { cv: cv, fake: fake };
+      });
+      function frame(now) {
+        var elapsedAll = now - t0;
+        var allDone = true;
+        walkers.forEach(function (w, i) {
+          var start = lead + i * stagger;
+          var elapsed = elapsedAll - start;
+          if (elapsed < 0) { allDone = false; w.cv.style.opacity = 0; return; }
+          var p = Math.min(1, elapsed / walkMs);
+          if (p < 1) allDone = false;
+          var ease = 1 - Math.pow(1 - p, 3);
+          w.cv.style.opacity = Math.min(1, elapsed / 140);
+          w.cv.style.transform = 'translateY(' + (8 * (1 - ease)) + 'px)';
+          w.fake.trotting = p < 1; w.fake.walkAmt = p < 1 ? .7 : 0; w.fake.walk = now / 110; w.fake.state = 'loafing';
+          var g = w.cv.getContext('2d');
+          g.clearRect(0, 0, w.cv.width, w.cv.height);
+          g.save(); g.translate(w.cv.width / 2, w.cv.height - 6); g.scale(1.05, 1.05);
+          drawCat(g, w.fake, true);
+          g.restore();
+        });
+        if (allDone) resolve(); else requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+  var walkReady = walkCatsIn();
+
+  Promise.all([assetsReady, walkReady]).then(function () {
+    setProgress(1);
+    setTimeout(function () {
+      loading.hidden = true;
+      sub.hidden = false;
+      goBtn.hidden = false;
+    }, 350);
+  });
+})();
 })();
 </script>
-
-
