@@ -1,13 +1,10 @@
-# Neo mobile 3.0.7
+# iOS 3.0.8 — Little Matches shuffle fix
 
-Complete runtime payload from Neo 7f78120, preserving all 3.0.6 features and saves.
+Full Neo d310ee5 payload; retains all 3.0.7 features and saves.
 
-- Distinct meadow, seaside, frost and autumn scenery with cached theme artwork.
-- Golden ground, copper foliage and maple leaf clusters for Autumn.
-- Theme consistency in Festival, race, photo capture and extended ground; volleyball retains its sand court.
-- Photos include placed decor and weather with corrected foreground alignment.
-- Clear previous weather particles when switching themes.
+- Start now begins the shuffle instead of skipping it.
+- CSS tile movement for normal motion; gentle opacity cue when Reduce Motion is enabled.
+- Prevent duplicate shuffle triggers; input stays disabled until shuffle completes.
 
-Validation: 30 browser Festival transitions across five themes, three activities and two viewport/light configurations; no page errors. Native payload checksum verification and rendering smoke checks. Full matches, native photo sharing and sustained physical-device performance still require tester checks.
-
-Destinations: TestFlight and the existing Google Play alpha draft track. Upload success does not mean public store publication.
+Destination: iOS TestFlight only. No Android release tag.
+Browser checks cover automatic/manual shuffle and both motion preferences. Physical iPhone verification remains necessary; local WebKit installation failed.

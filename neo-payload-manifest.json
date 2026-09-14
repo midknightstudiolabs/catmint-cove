@@ -1,8 +1,8 @@
 {
-  "source": "7f78120",
-  "version": "3.0.7",
+  "source": "d310ee5",
+  "version": "3.0.8",
   "sha256": {
-    "index.html": "d01b566c8d79a357bb197516f77b8d1b9397d95a2c636a8ffe74b738f9f26daf",
+    "index.html": "4b6f4cc9cf690b6da73391048d8cc88b121e9fa6bbb2bf35c44222c53202a130",
     "fest-bed-cafe.mp3": "371259132acaeed9a927f475ad71f929f8440d794dc94e5c5a7c1cfecbab1769",
     "fest-bed-hub.mp3": "a46df4cd7056e2e0bd4c5e114dd603389e6321a01522bbdd03720d8911ae7c5f",
     "fest-bed-race.mp3": "cca305b473fa26dfd745eccae6c39a675a4e7249ae74342ceb35aff595fe2207",
@@ -48,8 +48,8 @@
     "ui/homestead.js": "332ae33332b987a0f5bc75dca9420170221753d717dcf7c0cb11051ae6a85d49",
     "ui/cafe-room.js": "03afc33238ea732cb6e565f94951a06df9d716949d31ebe647c620319e3a2173",
     "ui/device-fixes.css": "ef0bde23ddc61261dc5702bed32bff48e1ecbd9abcf8f650eecfc8ac0e1522ed",
-    "ui/little-matches.js": "4a8ed18c64c3263381afb8435e4ce2eb54770d8bf4af1fec6840639ca9c377c7",
-    "ui/little-matches.css": "44243e7e423e6ececda0ea6bc2fc7681585dd123a841487e1e38b863ae31f61b",
+    "ui/little-matches.js": "f17b3e43e22f53044612090f16d5a7098cef3fe32b4800428e8d39bfce738eab",
+    "ui/little-matches.css": "54232cf55ee99a37b0c871bfbc8b87d08f627c75bc2eedc179475617e61fc32a",
     "ui/memory-rewards.js": "23df87efb7167083bc5302b560b22f1d116fa885b6394322ee531a3d41fb0624",
     "sfx/grumpy-1.wav": "eb3bdbb6defc55b00aebfca7e359ca8aaf0d7ef347c3fe2bce75c96ac64544dc",
     "sfx/grumpy-2.wav": "e13efc570e726b640ff046ccd97b9ce66254ebfc750c6908d78c187e29daebbe",

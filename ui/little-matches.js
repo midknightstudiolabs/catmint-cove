@@ -33,12 +33,22 @@ function openingShuffle(){
 function openingLook(){
  busy=true;round.shufflePending=true;persist();revealed=round.deck.map((_,i)=>i);renderBoard();say('Meet this little gathering. A shuffle comes next.');
  const board=dlg.querySelector('.lm-board');if(!reduced())board.classList.add('lm-deal');
- const skip=button('Start now',()=>{if(e!==epoch)return;if(round.shufflePending)openingShuffle();finish();},true);skip.id='lm-start-now';dlg.querySelector('.lm-main .lm-actions').prepend(skip);
+ let mixing=false;
+ const skip=button('Start now',()=>{if(e!==epoch||mixing)return;clearTimeout(timer);mix();},true);skip.id='lm-start-now';dlg.querySelector('.lm-main .lm-actions').prepend(skip);
  const e=epoch;
- function finish(){if(e!==epoch)return;clearTimeout(timer);timer=null;board.getAnimations({subtree:true}).forEach(a=>a.cancel());revealed=[];busy=false;board.classList.remove('lm-deal');skip.remove();renderBoard();say('Find their friends. Their places stay fixed now.');persist();}
- function mix(){if(e!==epoch)return;revealed=[];board.classList.remove('lm-deal');renderBoard();const old=[...board.children].map(c=>c.getBoundingClientRect());const order=openingShuffle();renderBoard();say('A little shuffle…');
- if(!reduced()){const area=board.getBoundingClientRect();[...board.children].forEach((card,i)=>{const to=card.getBoundingClientRect(),from=old[order[i]],cx=area.left+area.width/2-to.left-to.width/2,cy=area.top+area.height/2-to.top-to.height/2;card.style.zIndex=i+1;card.animate([{transform:'translate('+(from.x-to.x)+'px,'+(from.y-to.y)+'px)'},{transform:'translate('+cx+'px,'+cy+'px) rotate('+(i%2?8:-8)+'deg) scale(.88)',offset:.45},{transform:'translate(0,0) rotate(0) scale(1)'}],{duration:1600,easing:'ease-in-out'});});}
- timer=setTimeout(finish,reduced()?350:1700);
+ function finish(){if(e!==epoch)return;clearTimeout(timer);timer=null;board.getAnimations?.({subtree:true}).forEach(a=>a.cancel());revealed=[];busy=false;board.classList.remove('lm-deal');skip.remove();renderBoard();say('Find their friends. Their places stay fixed now.');persist();}
+ function mix(){if(e!==epoch||mixing)return;mixing=true;skip.disabled=true;skip.textContent='Shuffling…';revealed=[];board.classList.remove('lm-deal');renderBoard();const old=[...board.children].map(c=>c.getBoundingClientRect());const order=openingShuffle();renderBoard();say('A little shuffle…');
+ const still=reduced(),area=board.getBoundingClientRect();
+ [...board.children].forEach((card,i)=>{
+  const to=card.getBoundingClientRect(),from=old[order[i]];
+  card.style.zIndex=i+1;
+  card.style.setProperty('--from-x',(from.left-to.left)+'px');card.style.setProperty('--from-y',(from.top-to.top)+'px');
+  card.style.setProperty('--mix-x',(area.left+area.width/2-to.left-to.width/2)+'px');card.style.setProperty('--mix-y',(area.top+area.height/2-to.top-to.height/2)+'px');
+  card.style.setProperty('--mix-turn',(i%2?8:-8)+'deg');
+  card.classList.add(still?'lm-shuffle-gentle':'lm-shuffling');
+ });
+ if(still)say('A gentle shuffle. New places, same little friends.');
+ timer=setTimeout(finish,still?1000:1700);
  }
  timer=setTimeout(mix,3000);
 }
