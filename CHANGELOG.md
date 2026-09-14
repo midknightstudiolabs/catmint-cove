@@ -1,3 +1,10 @@
+## Little Matches feedback
+
+- Added card press/flip motion, amber mismatch feedback and match bounce.
+- Added soft tap, flip, mismatch, match and win tones using the existing Cove audio bus; master mute and Cove volume are respected.
+- Reduced-motion mode keeps static result feedback. Audio uses short synthesized notes with no new asset downloads.
+- Checked flip/mismatch/match behavior and mute gating in the browser.
+
 ## Neo web 2026.09.14.2 - Bottom actions and seasonal welcome
 
 - Moved reward collection, completion and modal actions to fixed bottom footers with independently scrolling content.
