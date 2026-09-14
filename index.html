@@ -1230,6 +1230,11 @@
 }
 </style><link rel="stylesheet" href="ui/device-fixes.css?v=18">
 <style id="neo-theme">
+#atmosphere-preview{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;touch-action:none}
+#atmosphere-preview section{width:min(440px,100%);box-sizing:border-box;padding:18px;background:#faf7ea;color:#395447;border:1px solid #d8ddc7;border-radius:24px;box-shadow:0 8px 32px #243c3426;text-align:center}
+#atmosphere-preview small{font-size:11px;letter-spacing:.06em}#atmosphere-preview h3{margin:8px 0 14px;font-family:Georgia,serif;font-size:22px}
+.atmosphere-actions{display:flex;gap:10px}.atmosphere-actions button{flex:1;min-width:0;min-height:44px;text-align:center}
+
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
 #restRetryRain[hidden]{display:none;}
@@ -6181,6 +6186,25 @@ function drawAccPreview(cv, key, coat) {
   g.restore();
 }
 
+// Transient preview: never changes ownership, shells, or the saved theme.
+let atmospherePreview = null;
+function endAtmospherePreview() {
+ atmospherePreview=null; document.getElementById('atmosphere-preview')?.remove();
+ _todCache=null; _skyGrad=null; _weatherP.length=0;
+}
+function previewAtmosphere(key) {
+ endAtmospherePreview(); closeAllPanels(); hideCatCard(); hidePropCard(); hideToast();
+ atmospherePreview={key,hour:12};
+ const overlay=document.createElement('div'); overlay.id='atmosphere-preview';
+ overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Atmosphere preview');
+ overlay.innerHTML=`<section><small>PREVIEW · No shells spent</small><h3>${DECOR_THEMES[key].name}</h3><div class="atmosphere-actions"><button class="btn" id="atmosphere-light">View at night</button><button class="btn primary" id="atmosphere-back">Back to shop</button></div></section>`;
+ document.body.append(overlay);
+ overlay.querySelector('#atmosphere-light').onclick=e=>{atmospherePreview.hour=atmospherePreview.hour===12?22:12;e.currentTarget.textContent=atmospherePreview.hour===12?'View at night':'View in daylight';_todCache=null;_skyGrad=null;};
+ const back=()=>{endAtmospherePreview();shopTab='decor';togglePanel('shop');document.querySelector(`[data-preview-theme="${key}"]`)?.focus();};
+ overlay.querySelector('#atmosphere-back').onclick=back;
+ overlay.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();back();}if(e.key==='Tab'){e.preventDefault();const b=overlay.querySelectorAll('button');(document.activeElement===b[0]?b[1]:b[0]).focus();}};
+ overlay.querySelector('#atmosphere-back').focus();
+}
 function renderShopDecor(list) {
   const cm = G.cosmetics;
   const decorCount = (G.decor.cottage || 0) + (G.decor.tree || 0) + (G.decor.flowers || 0);
@@ -6207,7 +6231,8 @@ function renderShopDecor(list) {
     const action = active ? `<span class="owned">Active</span>`
       : owned ? `<button class="btn primary" data-set="${key}">Set</button>`
       : `<button class="btn primary" data-buy-theme="${key}" ${afford ? "" : "disabled"}>◈ ${th.price.toLocaleString()}</button>`;
-    row.innerHTML = `<div class="txt"><div class="name">${th.name}</div><div class="desc">${th.blurb}</div></div><div class="shop-actions">${action}</div>`;
+    row.innerHTML = `<div class="txt"><div class="name">${th.name}</div><div class="desc">${th.blurb}</div></div><div class="shop-actions"><button class="btn" data-preview-theme="${key}">Preview</button>${action}</div>`;
+    row.querySelector("[data-preview-theme]").onclick=()=>previewAtmosphere(key);
     list.appendChild(row);
   }
   list.appendChild(shopHead("Props"));
@@ -14042,6 +14067,7 @@ function mixHex(a, b, t){
   return `rgb(${Math.round(A[0]+(B[0]-A[0])*t)},${Math.round(A[1]+(B[1]-A[1])*t)},${Math.round(A[2]+(B[2]-A[2])*t)})`;
 }
 function nowHours(){
+  if(atmospherePreview) return atmospherePreview.hour;
   if (_clockOverride != null) return _clockOverride;
   const elapsedMin = (performance.now() - _dayAnchorMs) / 60000;
   return (((_dayAnchorHour + elapsedMin * (24 / DAY_CYCLE_MIN)) % 24) + 24) % 24;
@@ -14063,7 +14089,7 @@ function timeOfDay(){
   };
   // atmosphere theme — bends the daytime palette toward the chosen look, fading
   // out at night so "time is weather" still holds and every theme goes dark
-  const th = (typeof G !== "undefined" && G && G.cosmetics) ? DECOR_THEMES[G.cosmetics.theme] : null;
+  const th = (typeof G !== "undefined" && G && G.cosmetics) ? DECOR_THEMES[atmospherePreview ? atmospherePreview.key : G.cosmetics.theme] : null;
   if (th && th.sky && _todCache.df > 0.05) {
     const k = _todCache.df * 0.82;
     _todCache.top = mixHex(_todCache.top, th.sky[0], k);
@@ -14320,7 +14346,7 @@ function drawButterfly(g) {
 /* ---------- renewable decor: ambient weather from the atmosphere theme ---------- */
 let _weatherP = [];
 function updateWeather(dt) {
-  const th = (G && G.cosmetics) ? DECOR_THEMES[G.cosmetics.theme] : null;
+  const th = (G && G.cosmetics) ? DECOR_THEMES[atmospherePreview ? atmospherePreview.key : G.cosmetics.theme] : null;
   const kind = th && th.weather && th.weather !== "none" ? th.weather : null;
   // v3: a bought atmosphere theme shows its weather whatever the cove clock is
   // doing — no more "sometimes it's there, sometimes it isn't" from the
