@@ -1490,23 +1490,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 [aria-label="Sell from your pantry"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}[aria-label="Sell from your pantry"] .btn{min-width:0;padding:8px 4px;font-size:12px;min-height:48px}
 .garden-purpose{background:#eef0df;border:1px solid var(--panel-line);border-radius:14px;padding:12px;margin:12px 0;font-size:13px;line-height:1.45}.garden-purpose p{margin:7px 0}.garden-purpose small{color:var(--ink-soft)}
 
-/* Loading screen — sits above #titleScreen (z-index 200) at first paint,
-   gated on real asset completion (see the trailing script), then fades to
-   reveal the existing title card underneath. Same curtain gradient as
-   #titleScreen so there's no color seam on handoff. */
-#loadingScreen{position:fixed;inset:0;z-index:210;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:linear-gradient(180deg,#cfe6d3 0%,#e6efdd 55%,#f4f2e7 100%);
-  padding:1.2rem;transition:opacity .5s ease;}
-#loadingScreen.done{opacity:0;pointer-events:none;}
-#loadingScreen[hidden]{display:none;}
-.ls-logo{width:min(300px,72vw);display:block;margin:0 auto .2rem;filter:drop-shadow(0 6px 18px rgba(36,31,23,.12));}
-.ls-tag{font-family:Georgia,serif;font-style:italic;font-size:.92rem;color:var(--ink-soft);margin:0 0 1.6rem;text-align:center;}
-.ls-cats{display:flex;gap:10px;height:52px;margin-bottom:1.1rem;align-items:flex-end;}
-.ls-cats canvas{width:44px;height:44px;opacity:0;transform:translateY(6px) scale(.85);transition:opacity .45s ease,transform .45s ease;}
-.ls-cats canvas.in{opacity:1;transform:translateY(0) scale(1);}
-.ls-progress{height:6px;width:min(240px,70vw);border-radius:999px;background:#e0e5d4;overflow:hidden;margin-bottom:.7rem;}
+/* Loading state lives INSIDE the one #titleScreen card — no second page.
+   Real cats walk in while real assets load (see the trailing script),
+   settle in place, then this same card reveals its existing subtitle and
+   Begin/Continue button right where the loading status was. */
+.ls-cats{display:flex;gap:8px;height:52px;margin:.2rem 0 .6rem;align-items:flex-end;justify-content:center;}
+.ls-cats canvas{width:44px;height:44px;opacity:0;}
+.ls-loading{transition:opacity .3s ease;}
+.ls-loading[hidden]{display:none;}
+.ls-progress{height:6px;width:min(220px,64vw);border-radius:999px;background:#e0e5d4;overflow:hidden;margin:0 auto .6rem;}
 .ls-fill{height:100%;width:100%;transform:scaleX(0);transform-origin:left center;background:var(--accent-bright,#3f8159);border-radius:inherit;transition:transform .25s ease;}
-.ls-status{font-size:.8rem;color:var(--ink-soft);min-height:1.2em;text-align:center;}
+.ls-status{font-size:.8rem;color:var(--ink-soft);min-height:1.2em;text-align:center;margin:0 0 1.4rem;}
 </style>
 
 <div id="app">
@@ -1515,24 +1509,25 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
        asset completion (art/cove-2d.png + the wordmark) drives the bar; see
        the trailing script for the loader. Fades to reveal #titleScreen,
        which is untouched underneath and was already there the whole time. -->
-  <div id="loadingScreen">
-    <img class="ls-logo" src="art/wordmark-transparent.png" alt="Catmint Cove">
-    <p class="ls-tag">A little home. Familiar paws.</p>
-    <div class="ls-cats" id="lsCats" aria-hidden="true"></div>
-    <div class="ls-progress" role="progressbar" aria-label="Loading the Cove" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="ls-fill" id="lsFill"></div></div>
-    <p class="ls-status" id="lsStatus" role="status">Finding a sunny spot…</p>
-  </div>
   <!-- the first thing anyone sees — covers the cove (already ticking away
        underneath) until the player taps in. Deliberately not [hidden] in
        markup: it needs to be the very first paint, before any script runs,
-       so there's never a flash of the busy scene first. -->
+       so there's never a flash of the busy scene first. One screen, not a
+       loading page that hands off to a separate title page: real cats walk
+       in while real assets load, then settle in place and the existing
+       subtitle/button fade in alongside them — see the trailing script. -->
   <div id="titleScreen">
     <div id="tsCurtainL"></div>
     <div id="tsCurtainR"></div>
     <div class="ts-card">
       <img class="ts-logo" src="art/wordmark-transparent.png" alt="Catmint Cove">
-      <p class="ts-sub">Cats wander in needing someone. Look after them, and the cove slowly becomes theirs.</p>
-      <button class="btn primary" id="ts-go">Begin</button>
+      <div class="ls-cats" id="lsCats" aria-hidden="true"></div>
+      <div class="ls-loading" id="tsLoading">
+        <div class="ls-progress" role="progressbar" aria-label="Loading the Cove" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="ls-fill" id="lsFill"></div></div>
+        <p class="ls-status" id="lsStatus" role="status">Finding a sunny spot…</p>
+      </div>
+      <p class="ts-sub" id="tsSub" hidden>Cats wander in needing someone. Look after them, and the cove slowly becomes theirs.</p>
+      <button class="btn primary" id="ts-go" hidden>Begin</button>
       <p class="ts-hint">Cosier on a tablet 🐾</p>
       <p class="ts-copy">© 2026 Midknight Studio Labs · Catmint Cove</p>
     </div>
@@ -19961,20 +19956,23 @@ const littleMatches=createLittleMatches({
 });
 const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 levels, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();const activityGrid=document.querySelector('#neo-explore .neo-explore-grid');activityGrid.prepend(matchesButton);activityGrid.appendChild(document.getElementById('neo-go-cafe'));
 (function () {
-  // Real loading screen: gates on actual asset completion, not a fixed
-  // timer. Two network-real assets matter at first paint (the cove
-  // background and the wordmark); a short floor just avoids an instant
-  // flash on a warm cache. Must stay INSIDE the surrounding `(() => {
-  // ... })();` that wraps this whole script (opened near the top, right
-  // after "use strict") — `cats`/`neoPortrait` are declared with
-  // let/function inside that wrapper, so code placed after its closing
-  // `})();` cannot see them even though it's the same <script> tag.
-  var screen = document.getElementById('loadingScreen');
-  if (!screen) return;
+  // Loading folded into the one title card — no second page/handoff. Real
+  // cats walk in (actual walking pose via drawCat, not a placeholder fade)
+  // while real assets load; the subtitle/button only reveal once BOTH the
+  // real load and the walk-in animation are done, so a fast device never
+  // truncates the arrival — it just plays at full speed instead of being
+  // skipped. Must stay INSIDE the surrounding `(() => { ... })();` that
+  // wraps this whole script — `cats`/`Cat`/`drawCat` are declared inside
+  // it and aren't visible once it closes, even from later code in this
+  // same <script> tag.
+  var loading = document.getElementById('tsLoading');
+  if (!loading) return;
   var fill = document.getElementById('lsFill');
   var status = document.getElementById('lsStatus');
-  var bar = screen.querySelector('[role="progressbar"]');
+  var bar = loading.querySelector('[role="progressbar"]');
   var catsRow = document.getElementById('lsCats');
+  var sub = document.getElementById('tsSub');
+  var goBtn = document.getElementById('ts-go');
 
   function setProgress(frac) {
     frac = Math.max(0, Math.min(1, frac));
@@ -19996,28 +19994,57 @@ const matchesButton=document.createElement('button');matchesButton.className='ne
       img.src = src;
     });
   }
+  var assetsReady = Promise.all(assets.map(loadOne));
 
-  function popInCats() {
-    try {
-      var roster = (typeof cats !== 'undefined' ? cats.filter(function (c) { return !c.visitor; }) : []).slice(0, 5);
-      roster.forEach(function (c, i) {
+  function walkCatsIn() {
+    return new Promise(function (resolve) {
+      var roster;
+      try { roster = (typeof cats !== 'undefined' ? cats.filter(function (c) { return !c.visitor; }) : []).slice(0, 5); }
+      catch (e) { roster = []; }
+      if (!roster.length) { resolve(); return; }
+      var walkMs = 620, stagger = 240, lead = 100;
+      var t0 = performance.now();
+      var walkers = roster.map(function (c) {
         var cv = document.createElement('canvas');
-        cv.width = 88; cv.height = 88;
+        cv.width = 96; cv.height = 96;
         catsRow.appendChild(cv);
-        neoPortrait(cv, c, 1.1);
-        setTimeout(function () { cv.classList.add('in'); }, 80 + i * 110);
+        var fake = new Cat({ coatKey: c.coatKey, star: c.star, markSeed: c.markSeed, mascot: c.mascot, bornAt: c.bornAt, x: 0, y: 0 });
+        fake.worn = (c.worn || []).slice(); fake.blink = 3; fake.bob = .6; fake.tail = .3;
+        return { cv: cv, fake: fake };
       });
-    } catch (e) {}
+      function frame(now) {
+        var elapsedAll = now - t0;
+        var allDone = true;
+        walkers.forEach(function (w, i) {
+          var start = lead + i * stagger;
+          var elapsed = elapsedAll - start;
+          if (elapsed < 0) { allDone = false; w.cv.style.opacity = 0; return; }
+          var p = Math.min(1, elapsed / walkMs);
+          if (p < 1) allDone = false;
+          var ease = 1 - Math.pow(1 - p, 3);
+          w.cv.style.opacity = Math.min(1, elapsed / 140);
+          w.cv.style.transform = 'translateY(' + (8 * (1 - ease)) + 'px)';
+          w.fake.trotting = p < 1; w.fake.walkAmt = p < 1 ? .7 : 0; w.fake.walk = now / 110; w.fake.state = 'loafing';
+          var g = w.cv.getContext('2d');
+          g.clearRect(0, 0, w.cv.width, w.cv.height);
+          g.save(); g.translate(w.cv.width / 2, w.cv.height - 6); g.scale(1.05, 1.05);
+          drawCat(g, w.fake, true);
+          g.restore();
+        });
+        if (allDone) resolve(); else requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    });
   }
+  var walkReady = walkCatsIn();
 
-  var minShow = new Promise(function (r) { setTimeout(r, 650); });
-  Promise.all(assets.map(loadOne).concat([minShow])).then(function () {
+  Promise.all([assetsReady, walkReady]).then(function () {
     setProgress(1);
-    popInCats();
     setTimeout(function () {
-      screen.classList.add('done');
-      setTimeout(function () { screen.remove(); }, 550);
-    }, 450);
+      loading.hidden = true;
+      sub.hidden = false;
+      goBtn.hidden = false;
+    }, 350);
   });
 })();
 })();
