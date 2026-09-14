@@ -36,9 +36,11 @@
     --warn:#d99a3f;
     --sick:#c46a86;
     --leave:#c9503f;
+    --scrollbar:#b9c5aa;
     --shadow:0 18px 40px -16px rgba(36,31,23,.35);
   }
   *{box-sizing:border-box;}
+  html{scrollbar-width:thin;scrollbar-color:var(--scrollbar) transparent;}
   html,body{height:100%;}
   body{
     margin:0;background:var(--sky-bot);color:var(--ink);
@@ -123,6 +125,12 @@
     border-radius:999px;padding:.55rem 1rem;margin-bottom:.85rem;}
   .name-in::placeholder{color:var(--ink-faint);}
 
+  /* Button convention: plain .btn is the neutral/default action (Cancel, Back,
+     Close, a secondary choice). .btn.primary (green) is the affirmative action
+     a dialog wants you to take (Save, Continue, Buy, Confirm) — at most one
+     per row. .btn.danger (warm red) is for choices with an irreversible or
+     hard-to-undo effect (e.g. rehoming a cat) so it never reads as "the
+     helpful green button to tap." */
   button.btn{
     font:inherit;font-weight:600;cursor:pointer;
     background:var(--panel);color:var(--ink);border:1px solid var(--panel-line);
@@ -133,6 +141,8 @@
   button.btn:active{transform:translateY(1px) scale(.98);}
   button.btn.primary{background:var(--accent);color:#fff;border-color:transparent;}
   button.btn.primary:hover{background:var(--accent-bright);}
+  button.btn.danger{background:var(--leave);color:#fff;border-color:transparent;}
+  button.btn.danger:hover{background:#b3432f;}
   button.btn:disabled{opacity:.45;cursor:not-allowed;}
   button.btn[hidden]{display:none!important;}   /* button.btn's display:flex otherwise outranks the UA [hidden] default (see #festBtn, #titleScreen) */
   .btn .ico{font-size:1.05rem;line-height:1;}
@@ -166,12 +176,7 @@
     transition:opacity .25s ease, transform .25s ease;}
   #titleScreen.out .ts-card{opacity:0;transform:scale(.9);}
   @keyframes tsIn{from{opacity:0;transform:translateY(10px);}}
-  .ts-emblem{font-size:2.4rem;margin-bottom:.3rem;
-    animation:tsBreathe 3.6s ease-in-out infinite;}
-  @keyframes tsBreathe{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
-  .ts-card h1{font-family:"Fraunces",Georgia,serif;font-weight:700;
-    font-size:clamp(1.7rem,7vw,2.3rem);margin:0 0 .5rem;color:var(--ink);}
-  .ts-card h1 b{color:var(--accent-bright);font-style:italic;font-weight:700;}
+  .ts-logo{width:min(240px,62vw);display:block;margin:0 auto .6rem;}
   .ts-sub{font-size:.92rem;line-height:1.5;color:var(--ink-soft);margin:0 0 1.4rem;}
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
   .ts-hint{display:none;margin:.9rem 0 0;font-size:.78rem;color:var(--ink-soft);opacity:.75;}
@@ -1322,7 +1327,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #tut .guide-links{flex-wrap:wrap}#tut .guide-links .btn{min-height:44px}#tut .card{max-height:90dvh;overflow-y:auto}#tut .guide-list{max-height:45dvh}
 
 /* Catdex feels like a small keepsake album, with an understated close control. */
-#dex{background:#faf6e9;border:1px solid #d8d7bd;padding-top:0;scrollbar-width:thin;scrollbar-color:#b9c5aa transparent;box-shadow:0 16px 48px rgba(38,53,39,.20),inset 5px 0 #e2e8d2}
+#dex{background:#faf6e9;border:1px solid #d8d7bd;padding-top:0;box-shadow:0 16px 48px rgba(38,53,39,.20),inset 5px 0 #e2e8d2}
 .neo-dex-header{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0 13px;margin-bottom:12px;background:#faf6e9;border-bottom:1px solid #dce1cc}
 .neo-dex-kicker{display:block;font-size:10px;letter-spacing:.14em;color:#738168;margin-bottom:4px;font-weight:700}
 #dex .neo-dex-header h2{font-size:26px;color:#3d593f;margin:0}
@@ -1464,6 +1469,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #shop [data-nav]{width:44px;height:44px;min-width:44px;min-height:44px}.dp-rack h4 .neo-ui-icon{width:22px;height:22px;vertical-align:middle}
 .audit-close:focus-visible{outline:3px solid #789578;outline-offset:2px}
 
+#modal:has(.cove-bottom-dialog){overflow:hidden;padding:0}
 #modal .cove-bottom-dialog{display:flex;flex-direction:column;max-height:calc(100dvh - 120px);overflow:hidden;padding:0}
 .cove-dialog-body{overflow:auto;min-height:0;padding:18px 8px;overscroll-behavior:contain}
 .cove-dialog-footer{position:static!important;flex-shrink:0;display:flex!important;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:0!important;padding:12px 0!important;border-top:1px solid var(--panel-line);background:var(--panel)}
@@ -1483,9 +1489,39 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
 [aria-label="Sell from your pantry"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}[aria-label="Sell from your pantry"] .btn{min-width:0;padding:8px 4px;font-size:12px;min-height:48px}
 .garden-purpose{background:#eef0df;border:1px solid var(--panel-line);border-radius:14px;padding:12px;margin:12px 0;font-size:13px;line-height:1.45}.garden-purpose p{margin:7px 0}.garden-purpose small{color:var(--ink-soft)}
+
+/* Loading screen — sits above #titleScreen (z-index 200) at first paint,
+   gated on real asset completion (see the trailing script), then fades to
+   reveal the existing title card underneath. Same curtain gradient as
+   #titleScreen so there's no color seam on handoff. */
+#loadingScreen{position:fixed;inset:0;z-index:210;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#cfe6d3 0%,#e6efdd 55%,#f4f2e7 100%);
+  padding:1.2rem;transition:opacity .5s ease;}
+#loadingScreen.done{opacity:0;pointer-events:none;}
+#loadingScreen[hidden]{display:none;}
+.ls-logo{width:min(300px,72vw);display:block;margin:0 auto .2rem;filter:drop-shadow(0 6px 18px rgba(36,31,23,.12));}
+.ls-tag{font-family:Georgia,serif;font-style:italic;font-size:.92rem;color:var(--ink-soft);margin:0 0 1.6rem;text-align:center;}
+.ls-cats{display:flex;gap:10px;height:52px;margin-bottom:1.1rem;align-items:flex-end;}
+.ls-cats canvas{width:44px;height:44px;opacity:0;transform:translateY(6px) scale(.85);transition:opacity .45s ease,transform .45s ease;}
+.ls-cats canvas.in{opacity:1;transform:translateY(0) scale(1);}
+.ls-progress{height:6px;width:min(240px,70vw);border-radius:999px;background:#e0e5d4;overflow:hidden;margin-bottom:.7rem;}
+.ls-fill{height:100%;width:100%;transform:scaleX(0);transform-origin:left center;background:var(--accent-bright,#3f8159);border-radius:inherit;transition:transform .25s ease;}
+.ls-status{font-size:.8rem;color:var(--ink-soft);min-height:1.2em;text-align:center;}
 </style>
 
 <div id="app">
+  <!-- Loading screen — paints above #titleScreen at the very first frame,
+       same as that screen's own "not [hidden] in markup" reasoning. Real
+       asset completion (art/cove-2d.png + the wordmark) drives the bar; see
+       the trailing script for the loader. Fades to reveal #titleScreen,
+       which is untouched underneath and was already there the whole time. -->
+  <div id="loadingScreen">
+    <img class="ls-logo" src="art/wordmark-transparent.png" alt="Catmint Cove">
+    <p class="ls-tag">A little home. Familiar paws.</p>
+    <div class="ls-cats" id="lsCats" aria-hidden="true"></div>
+    <div class="ls-progress" role="progressbar" aria-label="Loading the Cove" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="ls-fill" id="lsFill"></div></div>
+    <p class="ls-status" id="lsStatus" role="status">Finding a sunny spot…</p>
+  </div>
   <!-- the first thing anyone sees — covers the cove (already ticking away
        underneath) until the player taps in. Deliberately not [hidden] in
        markup: it needs to be the very first paint, before any script runs,
@@ -1494,8 +1530,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <div id="tsCurtainL"></div>
     <div id="tsCurtainR"></div>
     <div class="ts-card">
-      <div class="ts-emblem">🐾</div>
-      <h1>Catmint <b>Cove</b></h1>
+      <img class="ts-logo" src="art/wordmark-transparent.png" alt="Catmint Cove">
       <p class="ts-sub">Cats wander in needing someone. Look after them, and the cove slowly becomes theirs.</p>
       <button class="btn primary" id="ts-go">Begin</button>
       <p class="ts-hint">Cosier on a tablet 🐾</p>
@@ -5594,8 +5629,8 @@ cc.rehomeBtn.addEventListener("click", () => {
     <p class="sub">Send them off to a loving home? They'll always stay in your Catdex.
       Your shared memories stay in the journal. This is a goodbye, not a sale.</p>
     <div class="row">
-      <button class="btn primary" id="rh-yes">Wave goodbye</button>
-      <button class="btn" id="rh-no">Keep them</button>
+      <button class="btn danger" id="rh-yes">Wave goodbye</button>
+      <button class="btn primary" id="rh-no">Keep them</button>
     </div></div>`);
   miniCat(document.querySelector("#modal canvas"), c.coatKey, c.star);
   document.getElementById("rh-no").onclick = () => { cardTimer = 4; closeModal(); };
@@ -19925,7 +19960,65 @@ const littleMatches=createLittleMatches({
  keepsake:(level,c)=>{const j=G.littleVictories ||= {counts:{},entries:[],rotation:{}};const mark='memory:'+level;if(j.counts[mark])return;j.counts[mark]=1;const names={1:'A Familiar Face',5:'Gingham Bow',10:'Daisy Crown',15:'Cozy Neckerchief',20:'Sleepy Bonnet',25:'Explorer Hat',30:'Little Lion'};const lines={1:'Found a friend. Then found the same friend again. An excellent start.',5:'A little bow. A very accomplished companion.',10:'Ten levels together. A crown of daisies felt appropriate.',15:'Dressed for a small adventure. Possibly to the food bowl.',20:'Twenty levels remembered. Permission to nap: granted.',25:'A fine hat for someone who knows their way around.',30:'Small paws. A mighty finish. The mane is magnificent. The roar needs practice.'};j.entries.unshift({activity:'memory',members:[{id:c.id,name:c.name,coatKey:c.key,star:0,markSeed:c.markSeed||4242}],won:true,milestone:level,award:names[level],title:level===30?'You remembered the little things.':'Another little memory, kept.',line:lines[level],day:new Date().toLocaleDateString(),time:Date.now(),count:1,results:[{level}]});save();}
 });
 const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 levels, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();const activityGrid=document.querySelector('#neo-explore .neo-explore-grid');activityGrid.prepend(matchesButton);activityGrid.appendChild(document.getElementById('neo-go-cafe'));
+(function () {
+  // Real loading screen: gates on actual asset completion, not a fixed
+  // timer. Two network-real assets matter at first paint (the cove
+  // background and the wordmark); a short floor just avoids an instant
+  // flash on a warm cache. Must stay INSIDE the surrounding `(() => {
+  // ... })();` that wraps this whole script (opened near the top, right
+  // after "use strict") — `cats`/`neoPortrait` are declared with
+  // let/function inside that wrapper, so code placed after its closing
+  // `})();` cannot see them even though it's the same <script> tag.
+  var screen = document.getElementById('loadingScreen');
+  if (!screen) return;
+  var fill = document.getElementById('lsFill');
+  var status = document.getElementById('lsStatus');
+  var bar = screen.querySelector('[role="progressbar"]');
+  var catsRow = document.getElementById('lsCats');
+
+  function setProgress(frac) {
+    frac = Math.max(0, Math.min(1, frac));
+    fill.style.transform = 'scaleX(' + frac + ')';
+    bar.setAttribute('aria-valuenow', Math.round(frac * 100));
+    status.textContent = frac < .35 ? 'Finding a sunny spot\u2026'
+      : frac < .7 ? 'Making room for everyone\u2026'
+      : frac < 1 ? 'Almost home\u2026'
+      : 'Everyone\u2019s here. Welcome home.';
+  }
+
+  var assets = ['art/cove-2d.png', 'art/wordmark-transparent.png'];
+  var doneCount = 0;
+  function loadOne(src) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      function finish() { doneCount++; setProgress(doneCount / assets.length); resolve(); }
+      img.onload = finish; img.onerror = finish;
+      img.src = src;
+    });
+  }
+
+  function popInCats() {
+    try {
+      var roster = (typeof cats !== 'undefined' ? cats.filter(function (c) { return !c.visitor; }) : []).slice(0, 5);
+      roster.forEach(function (c, i) {
+        var cv = document.createElement('canvas');
+        cv.width = 88; cv.height = 88;
+        catsRow.appendChild(cv);
+        neoPortrait(cv, c, 1.1);
+        setTimeout(function () { cv.classList.add('in'); }, 80 + i * 110);
+      });
+    } catch (e) {}
+  }
+
+  var minShow = new Promise(function (r) { setTimeout(r, 650); });
+  Promise.all(assets.map(loadOne).concat([minShow])).then(function () {
+    setProgress(1);
+    popInCats();
+    setTimeout(function () {
+      screen.classList.add('done');
+      setTimeout(function () { screen.remove(); }, 550);
+    }, 450);
+  });
+})();
 })();
 </script>
-
-
