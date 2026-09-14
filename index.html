@@ -1228,7 +1228,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?v=16">
+</style><link rel="stylesheet" href="ui/device-fixes.css?v=17">
 <style id="neo-theme">
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
@@ -1795,7 +1795,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <input class="cap-in" id="photoCap" maxlength="42" placeholder="write a caption…">
     <p class="hint" id="photoHint">Screenshot this to share it — in the shipped game this is a one-tap export with an install link.</p>
     <div class="row" style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;">
-      <button class="btn primary" id="photoSave"><span class="ico">💾</span> Save photo</button>
+      <button class="btn primary" id="photoSave">Save photo</button>
       <button class="btn" id="photoClose">Back to the cove</button>
     </div>
   </div>
@@ -2315,7 +2315,7 @@ function save() {
     lastSaveClock = performance.now();
     if (typeof dedupeCats === "function") dedupeCats();   // a dup never makes it to disk
     G.cats = cats.filter(c => !c.visitor).map(c => ({     // Labubu is a guest — never saved as a resident
-      name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
+      journalId:c.journalId, name:c.name, traits:c.traits, coatKey:c.coatKey, markSeed:c.markSeed, star:c.star,
       mascot:c.mascot, bornAt:c.bornAt, mood:Math.round(c.mood), worn:c.worn || [], owned:c.owned || [],
       bond:Math.round(c.bond || 0), bondSeen:c.bondSeen || 0, bondDay:c.bondDay || "",
       pref:c.pref, quirk:c.quirk, quirkKnown:!!c.quirkKnown, friend:c.friend || null,
@@ -2857,6 +2857,7 @@ let _fishFireLit = 0;                 // how many cats are cooking a catch right
 let _bakeOvenLit = 0;                 // how many cats have a tray in the oven right now (drives the oven glow)
 class Cat {
   constructor(o = {}) {
+    this.journalId = o.journalId || (crypto.randomUUID ? crypto.randomUUID() : Date.now()+"-"+Math.random());
     this.name = o.name || uniqueName();
     this.traits = o.traits || rollTraits();
     this.coatKey = o.coatKey || (COAT_BY_KEY[o.coat] ? o.coat : weightedCoat());
@@ -3258,7 +3259,7 @@ function restoreCats() {
   if (G.cats && G.cats.length) {
     for (const s of G.cats) {
       cats.push(new Cat({
-        name:s.name, traits:s.traits, coatKey:s.coatKey, markSeed:s.markSeed, star:s.star,
+        journalId:s.journalId, name:s.name, traits:s.traits, coatKey:s.coatKey, markSeed:s.markSeed, star:s.star,
         mascot: s.mascot || s.coatKey === "midknight" || s.name === "Midknight",
         worn: s.worn, accessory: s.accessory, owned: s.owned,
         bornAt: s.bornAt ?? (Date.now() - KITTEN_MS * 3), mood:s.mood,
@@ -6504,11 +6505,11 @@ document.getElementById("photoSave").addEventListener("click", savePhoto);
 function openPhoto() {
   ensureAudio();
   if (_placing || _arranging) exitPlacement();
-  composePhoto();
-  photoEl.classList.add("on");
+  neoPhotoSource=null;composePhoto();
+  photoEl.classList.add("on");neoPrintPhoto();
   sfx("photo");
 }
-function composePhoto() {
+function composePhotoScene() {
   const S = 900, M = 26;              // canvas size, frame margin
   pctx.clearRect(0, 0, S, S);
   pctx.save();
@@ -10229,6 +10230,7 @@ function showFestPodium() {
   // tighter 56x48/scale-1 fit
   display.forEach((r, i) => miniCat(cols[i].querySelector("canvas"), r.cat.coatKey, r.cat.star, "loafing", false, 0.85));
   const place = order.findIndex(r => r.cat === racePick);
+  if(racePick) neoRecordVictory(raceCats,"race",[racePick],place===0,{place:place+1});
   // roll the reward once, up front — reused for both the line below and the
   // actual grant, so what's printed always matches what's paid (in
   // particular the pearl chance mustn't get rolled twice)
@@ -12038,6 +12040,7 @@ function showVolleyResult() {
   res.querySelector(".fr-emoji").innerHTML = neoUIIcon("volley");
   document.getElementById("festAgain").textContent = "Play again";
   const cove = volleyParts.filter(p => p.side === "cove");
+  neoRecordVictory(volleyParts,"volley",cove.map(p=>p.cat),won,{home:volleyScore.cove,away:volleyScore.visit,opponent:volleyVisitName});
   document.getElementById("festPodium").innerHTML =
     `<div class="vb-final">
        <div class="vb-final-row${won ? " win" : ""}"><span>${esc(coveName())}</span><b>${volleyScore.cove}</b></div>
@@ -12747,6 +12750,7 @@ function showMidkResult() {
   res.querySelector(".fr-emoji").innerHTML = neoUIIcon("tug");
   document.getElementById("festAgain").textContent = "Rematch";
   const cove = midkParts.filter(p => p.side === "cove");
+  neoRecordVictory(midkParts,"tug",cove.map(p=>p.cat),won,{opponent:midkVisitName});
   const base = goalShells(0.42);
   const margin = won ? _midkLead.cove : _midkLead.visit;   // px past centre the winner got
   const marginK = clamp(margin / (MIDK_WIN_Y.cove - MIDK_START_Y), 0, 1);
@@ -18896,7 +18900,7 @@ function neoEvent(name){
 function neoPortrait(canvasEl,c,scale){
   const g=canvasEl.getContext('2d');g.clearRect(0,0,canvasEl.width,canvasEl.height);
   const portrait=new Cat({coatKey:c.coatKey,star:c.star,markSeed:c.markSeed,mascot:c.mascot,bornAt:c.bornAt,x:0,y:0});
-  portrait.worn=[...(c.worn||[])];portrait.state='loafing';portrait.blink=3;portrait.bob=.6;portrait.tail=.3;portrait.trotting=false;
+  portrait.coatKey=c.coatKey;portrait.worn=[...(c.worn||[])];portrait.state='loafing';portrait.blink=3;portrait.bob=.6;portrait.tail=.3;portrait.trotting=false;
   g.save();g.translate(canvasEl.width/2,canvasEl.height-6);g.scale(scale,scale);drawCat(g,portrait,true);g.restore();
 }
 function neoCatStoryLink(c){
@@ -19658,6 +19662,59 @@ function neoFestivalGroundLights(g,w,h,horizon){
 }
 
 /* NEO_SCENERY_END */
+
+// Little victories: new results only; never grants currency a second time.
+const neoRecordedMatches=new WeakSet();
+function neoRecordVictory(match,activity,participants,won,result){
+ if(neoRecordedMatches.has(match)||!participants.length)return;neoRecordedMatches.add(match);
+ const j=G.littleVictories ||= {counts:{},entries:[],rotation:{}};
+ const key=activity==='race'?'race:'+participants[0].journalId:activity;
+ const n=won?(j.counts[key]=(j.counts[key]||0)+1):(j.counts[key]||0);
+ const firstCove=won&&activity==='race'&&!j.counts.race; if(won&&activity==='race')j.counts.race=(j.counts.race||0)+1;
+ const milestone=won&&[1,5,10,25,50].includes(n)?n:0;
+ const name=participants.map(c=>c.name).join(' & '),now=new Date(),day=now.toLocaleDateString();
+ let title=activity==='race'?name+' had plans today.':activity==='volley'?'An afternoon at the net.':'Small paws. Strong feelings.';
+ let line='';
+ if(activity==='race'){
+ const lines={1:`${name} crossed the line first. Then turned around. You were the important part.`,5:`Five wins for ${name}. The walk to the starting line has acquired a little swagger.`,10:`Ten victories. ${name} still makes sure you saw.`,25:`You knew which little face to look for. There was ${name}, coming home first.`,50:'Fifty wins together. The ribbons tell some of the story. You remember the rest.'};
+ if(milestone){line=lines[n];title=n===1?'That little look back.':n===50?'Look how far those paws have come.':'Still your little show-off.'}
+ else {const options=won?[`${name} accepted the honour by sitting on it.`,`${name} crossed first. Returned at a much more sensible speed.`,`${name} had a very productive interruption to nap time.`]:[`${name} made it back. There was still a warm welcome.`,`${name} left the ribbons to someone else today.`];const k=activity+won;const i=j.rotation[k]||0;line=options[i%options.length];j.rotation[k]=i+1;}
+ }else if(activity==='volley'){
+ line=won?(result.away===2?'One last point. Then a celebration that needed considerably more room.':result.away===0?'Three points, a good team, and absolutely no modesty on the walk home.':'One point slipped by. They found their rhythm again.'):(result.home===2?'One point short. You were proud of them before the score was settled.':result.home===0?'The visitors took the points. Your cats found a lovely patch of shade.':'One point worth cheering. Several paws worth being proud of.');
+ }else line=won?'The rope moved. For a moment, nobody quite believed it.':'The yarn went the other way. Your cats still came home to you.';
+ if(milestone&&activity!=='race')line=({1:activity==='volley'?`${name} won their first match together. The ball received no thanks.`:line,5:'Five victories. Small paws, increasingly big opinions.',10:'Ten wins for the Cove. Plenty of familiar paws have helped along the way.',25:'Twenty-five victories. Plenty of afternoons worth keeping.',50:'Fifty victories. A whole collection of afternoons worth keeping.'})[n];
+ if(!milestone&&activity!=='race'){const k=activity+':'+won+':'+(result.home??'')+':'+(result.away??'');const i=j.rotation[k]||0;const alternatives=won?[line,'A good afternoon together. The walk home took its time.','Another little victory. Someone is looking rather pleased.']:[line,'No ribbon this time. There was still a warm welcome.','A match to remember, and familiar company afterwards.'];line=alternatives[i%alternatives.length];j.rotation[k]=i+1;}
+ const award=milestone?(activity==='race'?(n===1?'First Finish-Line Ribbon':n+' race wins'):activity==='volley'?(n===1?'First Team Cheer':n+' team victories'):(n===1?'First Mighty Pull':n+' tug victories')):'';
+ const members=participants.map(c=>({id:c.journalId,name:c.name,coatKey:c.coatKey,star:c.star,markSeed:c.markSeed,mascot:c.mascot}));
+ const group=activity+':'+members.map(c=>c.id).sort().join(',')+':'+day+':'+won;
+ const existing=!milestone&&j.entries.find(e=>!e.milestone&&e.group===group);
+ if(existing){existing.count++;existing.line=line;existing.results.push(result);existing.results=existing.results.slice(-20);existing.time=now.getTime();}
+ else j.entries.unshift({activity,members,won,milestone,award,firstCove,title,line,day,time:now.getTime(),group,count:1,results:[result]});
+ // Keepsakes survive; bound ordinary history to avoid growing saves forever.
+ const ordinary=j.entries.filter(e=>!e.milestone).slice(0,100);j.entries=j.entries.filter(e=>e.milestone||ordinary.includes(e));save();
+}
+const neoJournalBeforeVictories=neoRenderJournal;
+neoRenderJournal=function(){neoJournalBeforeVictories();const root=document.getElementById('neoJournal');const section=document.createElement('section');section.className='neo-victories';section.innerHTML='<h3>Little victories</h3><p class="muted">The little things worth remembering.</p>';root.appendChild(section);const entries=G.littleVictories?.entries||[];
+ if(!entries.length){section.insertAdjacentHTML('beforeend','<p class="muted">Your next festival results will find a home here.</p>');return}
+ let shown=0;const more=document.createElement('button');more.className='btn';more.textContent='More memories';const render=()=>{for(const e of entries.slice(shown,shown+10)){const card=document.createElement('article');card.className='neo-victory';card.innerHTML=`<small>${esc(e.day)} · ${esc({race:'Race',volley:'Volleyball',tug:'Tug of Paws'}[e.activity])}</small><h4>${esc(e.title)}</h4><div class="neo-victory-cats"></div>${e.award?`<p class="neo-award">${esc(e.award)}${e.firstCove?' · Your Cove’s first race victory':''}</p>`:''}<p class="neo-victory-line">${esc(e.line)}</p><p>${esc(e.members.map(m=>m.name).join(' & '))}${e.count>1?' · '+e.count+' '+(e.won?'wins':'matches')+' today':''}</p><details><summary>See results</summary>${e.results.map(r=>`<p>${e.activity==='volley'?`${esc(coveName())} ${r.home} · ${esc(r.opponent)} ${r.away}`:e.activity==='race'?`Place ${r.place}`:`${e.won?'Won':'Finished'} · vs ${esc(r.opponent)}`}</p>`).join('')}<small>Activity rewards were handled at the finish. No additional claim needed.</small></details>`;for(const m of e.members){const cv=document.createElement('canvas');cv.width=120;cv.height=100;cv.setAttribute('aria-label',m.name);card.querySelector('.neo-victory-cats').appendChild(cv);neoPortrait(cv,{...m,bornAt:0},1.5)}for(const m of e.members){const current=cats.find(c=>c.journalId===m.id);if(!current)continue;const link=document.createElement('button');link.className='btn';link.textContent='View '+current.name;link.onclick=()=>{closeAllPanels();neoOpenStory(current)};card.appendChild(link)}section.insertBefore(card,more)}shown+=10;more.hidden=shown>=entries.length};section.appendChild(more);more.onclick=render;render();};
+
+let neoPhotoSource=null,neoPhotoFrame='cream',neoPhotoDate=null,neoPhotoTimers=[];
+function composePhoto(){
+ if(!neoPhotoSource){composePhotoScene();neoPhotoSource=document.createElement('canvas');neoPhotoSource.width=neoPhotoSource.height=900;neoPhotoSource.getContext('2d').drawImage(pc,0,0);neoPhotoDate=new Date()}
+ const g=pctx;g.clearRect(0,0,900,900);g.fillStyle=neoPhotoFrame==='sage'?'#ccd8bf':neoPhotoFrame==='postcard'?'#f3e6cc':'#fbf7ed';g.fillRect(0,0,900,900);
+ if(neoPhotoFrame==='sage'){g.strokeStyle='#70876220';g.lineWidth=1;for(let i=0;i<900;i+=8){g.beginPath();g.moveTo(i,0);g.lineTo(i,900);g.moveTo(0,i);g.lineTo(900,i);g.stroke()}}
+ g.drawImage(neoPhotoSource,26,26,848,700,35,35,830,650);
+ if(neoPhotoFrame==='postcard'){g.strokeStyle='#a58a65';g.lineWidth=2;g.setLineDash([7,8]);g.strokeRect(16,16,868,868);g.setLineDash([]);g.strokeRect(780,740,65,75);g.font='16px Georgia';g.fillStyle='#866b4b';g.textAlign='center';g.fillText('COVE',812,783)}
+ g.fillStyle='#3d5847';g.textAlign='center';g.textBaseline='alphabetic';g.font='italic 28px Georgia';g.fillText((document.getElementById('photoCap').value||'A quiet afternoon, together.').slice(0,42),450,760,neoPhotoFrame==='postcard'?600:790);g.font='20px Georgia';g.fillText('Catmint Cove · '+coveName(),450,815,750);g.font='16px sans-serif';g.fillText(neoPhotoDate.toLocaleDateString(),450,850);g.textAlign='left';
+}
+function neoRevealPhoto(){neoPhotoTimers.forEach(clearTimeout);neoPhotoTimers=[];photoEl.classList.add('photo-ready');photoEl.classList.remove('printing','developing');document.getElementById('photoReveal').hidden=true;document.getElementById('photoSave').disabled=false;document.getElementById('photoShare').disabled=false;document.getElementById('photoFrames').hidden=false;document.getElementById('photoHint').textContent='A little moment, ready to keep.';}
+function neoPrintPhoto(){neoRevealPhoto();if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;photoEl.classList.remove('photo-ready');photoEl.classList.add('printing','developing');document.getElementById('photoReveal').hidden=false;document.getElementById('photoSave').disabled=true;document.getElementById('photoShare').disabled=true;document.getElementById('photoFrames').hidden=true;document.getElementById('photoHint').textContent='Printing your little moment…';neoPhotoTimers.push(setTimeout(()=>{photoEl.classList.remove('printing');photoEl.classList.remove('developing');document.getElementById('photoHint').textContent='Let the colors come softly to life…';},1700),setTimeout(neoRevealPhoto,4600));}
+const photoBay=document.createElement('div');photoBay.id='photoBay';pc.before(photoBay);photoBay.appendChild(pc);
+const frameBar=document.createElement('div');frameBar.id='photoFrames';frameBar.className='row';frameBar.setAttribute('aria-label','Photo frame');for(const [key,label]of [['cream','Classic Cream'],['sage','Sage Linen'],['postcard','Cove Postcard']]){const b=document.createElement('button');b.className='btn';b.textContent=label;b.setAttribute('aria-pressed',key===neoPhotoFrame);b.onclick=()=>{neoPhotoFrame=key;[...frameBar.children].forEach(x=>x.setAttribute('aria-pressed',x===b));composePhoto()};frameBar.appendChild(b)}photoBay.after(frameBar);
+const revealPhoto=document.createElement('button');revealPhoto.id='photoReveal';revealPhoto.className='btn';revealPhoto.textContent='Reveal now';revealPhoto.hidden=true;revealPhoto.onclick=neoRevealPhoto;frameBar.after(revealPhoto);
+const sharePhoto=document.createElement('button');sharePhoto.id='photoShare';sharePhoto.className='btn';sharePhoto.textContent='Share';document.getElementById('photoSave').after(sharePhoto);sharePhoto.onclick=async()=>{composePhoto();const hint=document.getElementById('photoHint');try{if(window.CoveNative?.savePhoto&&window.CoveNative.savePhoto(pc.toDataURL('image/png'))){hint.textContent='Opening device share options…';return}const blob=await new Promise(r=>pc.toBlob(r,'image/png'));if(!blob)throw Error('No photo');const files=[new File([blob],'catmint-cove.png',{type:'image/png'})];if(!navigator.canShare?.({files})){hint.textContent='Save your photo, then choose it in your social app.';return}await navigator.share({files,title:'A little moment in Catmint Cove'});hint.textContent='Your photo was handed to the share sheet.'}catch(e){hint.textContent=e.name==='AbortError'?'Your photo is here whenever you’re ready.':'Sharing could not open. Try Save photo.'}};
+document.getElementById('photoClose').addEventListener('click',neoRevealPhoto);
+
 })();
 </script>
 
