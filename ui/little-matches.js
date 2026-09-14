@@ -18,17 +18,26 @@ function button(text,fn,primary=false){const b=el('button','lm-btn'+(primary?' l
 function img(key,cls){const i=el('img',cls);i.src=catalog[key].image;i.alt='';return i}
 function companion(){return roster.find(c=>c.id===round?.cat)||roster[0]||{name:'Your companion',key:'midknight'}}
 function say(text){const t=dlg.querySelector('.lm-speech');if(t)t.textContent=text}
-function clear(){epoch++;clearTimeout(timer);timer=null;busy=false;picking=false;picks=[];revealed=[];first=null}
+function clear(){if(round?.shufflePending)openingShuffle();epoch++;clearTimeout(timer);timer=null;busy=false;picking=false;picks=[];revealed=[];first=null}
 function close(){clear();persist();dlg.close()}
 function pauseReveal(indices,message){busy=true;revealed=indices;renderBoard();say(message);const e=epoch;timer=setTimeout(()=>{if(e!==epoch)return;revealed=[];busy=false;renderBoard();persist()},2200)}
 function start(n,favour,cat){clear();round={level:n,deck:build(n),matched:[],turns:0,used:false,favour,cat,last:[],finished:false};persist();play();openingLook();}
+function openingShuffle(){
+ let order=shuffle(round.deck.map((_,i)=>i),Math.random);
+ if(order.every((old,i)=>round.deck[old]===round.deck[i])){const shift=round.deck.findIndex(k=>k!==round.deck[0]);order=round.deck.map((_,i)=>(i+shift)%round.deck.length);}
+ round.deck=order.map(i=>round.deck[i]);round.shufflePending=false;persist();return order;
+}
 function openingLook(){
- busy=true;revealed=round.deck.map((_,i)=>i);renderBoard();say('Take a little look. These places will stay the same.');
+ busy=true;round.shufflePending=true;persist();revealed=round.deck.map((_,i)=>i);renderBoard();say('Meet this little gathering. A shuffle comes next.');
  const board=dlg.querySelector('.lm-board');if(!reduced())board.classList.add('lm-deal');
- const skip=button('Start now',endLook,true);skip.id='lm-start-now';dlg.querySelector('.lm-main .lm-actions').prepend(skip);
+ const skip=button('Start now',()=>{if(e!==epoch)return;if(round.shufflePending)openingShuffle();finish();},true);skip.id='lm-start-now';dlg.querySelector('.lm-main .lm-actions').prepend(skip);
  const e=epoch;
- function endLook(){if(e!==epoch)return;clearTimeout(timer);timer=null;revealed=[];busy=false;board.classList.remove('lm-deal');skip.remove();renderBoard();say('Find their friends. Take your time.');persist();}
- timer=setTimeout(endLook,3000);
+ function finish(){if(e!==epoch)return;clearTimeout(timer);timer=null;board.getAnimations({subtree:true}).forEach(a=>a.cancel());revealed=[];busy=false;board.classList.remove('lm-deal');skip.remove();renderBoard();say('Find their friends. Their places stay fixed now.');persist();}
+ function mix(){if(e!==epoch)return;revealed=[];board.classList.remove('lm-deal');renderBoard();const old=[...board.children].map(c=>c.getBoundingClientRect());const order=openingShuffle();renderBoard();say('A little shuffle…');
+ if(!reduced()){[...board.children].forEach((card,i)=>{const to=card.getBoundingClientRect(),from=old[order[i]];card.animate([{transform:'translate('+ (from.x-to.x)+'px,'+(from.y-to.y)+'px) scale(.88)'},{transform:'translate(0,0) scale(1)'}],{duration:950,easing:'ease-in-out'});});}
+ timer=setTimeout(finish,reduced()?350:1050);
+ }
+ timer=setTimeout(mix,3000);
 }
 function home(){clear();dlg.replaceChildren();const top=el('div','lm-top');top.append(el('div','lm-kicker','WEB PLAYTEST · 30 LEVELS'),button('Back to Cove',close));dlg.append(top,el('h2','','Little Matches'),el('p','lm-intro','Familiar faces. Favourite things. A little place together.'));
  const options=el('div','lm-setup');const label=el('label','','Keep me company');const select=el('select');select.id='lm-cat';for(const c of roster){const o=el('option','',c.name);o.value=c.id;select.append(o)}if(!select.children.length){const o=el('option','','Midknight');o.value='';select.append(o)}label.append(select);options.append(label);
