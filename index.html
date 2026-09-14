@@ -368,7 +368,7 @@
   .modal .packperks{list-style:none;padding:0;margin:.1rem 0 1rem;font-size:.9rem;color:var(--ink-soft);text-align:left;}
   .modal .packperks li{padding:.16rem 0 .16rem 1.3rem;position:relative;}
   .modal .packperks li::before{content:"✓";position:absolute;left:0;color:var(--accent-bright);font-weight:700;}
-  .modal .food-tiers{display:flex;flex-direction:column;gap:.45rem;margin:.2rem 0 1rem;}
+  .modal .food-tiers{display:flex;flex-direction:column;gap:.6rem;margin:.2rem 0 1rem;}
   .modal .food-tier{display:flex;align-items:center;justify-content:space-between;gap:.6rem;
     font:inherit;text-align:left;padding:.6rem .9rem;border-radius:12px;cursor:pointer;
     border:1px solid var(--panel-line);background:#f3ede0;color:var(--ink-soft);}
@@ -1032,7 +1032,7 @@
   #hint #hintX{flex:0 0 auto;width:1.5rem;height:1.5rem;border-radius:50%;border:none;
     background:#eef1e3;color:var(--ink-soft);cursor:pointer;font-size:.7rem;line-height:1;padding:0;}
   #app.resting #hint,#app.resting #toast{opacity:0;pointer-events:none;}
-  @media(max-width:600px){ #hint{bottom:calc(4.45rem + env(safe-area-inset-bottom));font-size:.8rem;} }
+  @media(max-width:600px){ #hint{bottom:calc(5.6rem + env(safe-area-inset-bottom));font-size:.8rem;} }
   /* when the next-action hint is up, float the toast clear above it (it shares the bottom strip) */
   #app.has-hint #toast{bottom:calc(8.4rem + env(safe-area-inset-bottom));}
   button.btn.primary.full{background:#c9b98f;color:#4a4230;}
@@ -1495,7 +1495,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
    Real cats walk in while real assets load (see the trailing script),
    settle in place, then this same card reveals its existing subtitle and
    Begin/Continue button right where the loading status was. */
-.ls-cats{display:flex;flex-wrap:wrap;gap:8px;max-width:min(560px,90vw);max-height:150px;overflow:hidden;margin:.2rem auto .6rem;align-items:flex-end;justify-content:center;}
+.ls-cats{display:flex;flex-wrap:nowrap;gap:6px;max-width:min(560px,90vw);margin:.2rem auto .6rem;align-items:flex-end;justify-content:center;}
 .ls-cats canvas{width:var(--ls-cat-size,60px);height:var(--ls-cat-size,60px);opacity:0;}
 .ls-loading{transition:opacity .3s ease;}
 .ls-loading[hidden]{display:none;}
@@ -1527,7 +1527,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
         <div class="ls-progress" role="progressbar" aria-label="Loading the Cove" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="ls-fill" id="lsFill"></div></div>
         <p class="ls-status" id="lsStatus" role="status">Finding a sunny spot…</p>
       </div>
-      <p class="ts-sub" id="tsSub" hidden>Cats wander in needing someone. Look after them, and the cove slowly becomes theirs.</p>
+      <p class="ts-sub" id="tsSub" hidden>You didn't adopt them. They adopted you — and slowly, this cove became theirs.</p>
       <button class="btn primary" id="ts-go" hidden>Begin</button>
       <p class="ts-hint">Cosier on a tablet 🐾</p>
       <p class="ts-copy">© 2026 Midknight Studio Labs · Catmint Cove</p>
@@ -3186,7 +3186,11 @@ function openFoodRefill() {
   ].map(t => ({ ...t, ...foodBulk(t.days) }));
   const row = (t) => {
     const afford = G.shells >= t.cost;
-    return `<button class="btn food-tier${afford && !stocked ? " primary" : ""}" data-days="${t.days}" ${(!afford || stocked) ? "disabled" : ""}>
+    // Only the recommended middle tier gets the green treatment — every
+    // affordable row turning solid green at once read as a wall of
+    // identical, equally "urgent" buttons instead of one clear pick.
+    const recommended = t.days === 3;
+    return `<button class="btn food-tier${afford && !stocked && recommended ? " primary" : ""}" data-days="${t.days}" ${(!afford || stocked) ? "disabled" : ""}>
       <b>${t.label}</b><span>${t.servings} servings · ◈ ${t.cost}</span></button>`;
   };
   openModal(`<div class="reveal">
@@ -20026,17 +20030,18 @@ const matchesButton=document.createElement('button');matchesButton.className='ne
     if (frac < 1) requestAnimationFrame(paceProgress);
   })();
 
+  // A fixed showcase cast, not the player's own roster — the loading
+  // screen is a consistent "welcome" moment for every player, on their
+  // first launch and their thousandth, regardless of how many cats
+  // they've actually collected.
+  var SHOWCASE_COATS = ['tuxedo', 'ginger', 'greytab', 'midknight', 'labubu', 'prism', 'white'];
   function walkCatsIn() {
     return new Promise(function (resolve) {
-      var roster;
-      try { roster = (typeof cats !== 'undefined' ? cats.filter(function (c) { return !c.visitor; }) : []); }
-      catch (e) { roster = []; }
-      if (!roster.length) { resolve(); return; }
-      // The cove can hold up to 30 cats — shrink them and tighten the
-      // stagger as the roster grows so a full cove still walks in within
-      // the same couple of seconds instead of queuing forever.
+      var roster = SHOWCASE_COATS.map(function (key) { return { coatKey: key }; });
       var n = roster.length;
-      var size = n <= 6 ? 60 : n <= 12 ? 48 : n <= 20 ? 40 : 32;
+      var gap = 6;
+      var maxRowWidth = Math.min(560, window.innerWidth * 0.9);
+      var size = Math.max(10, Math.min(60, Math.floor((maxRowWidth - (n - 1) * gap) / n)));
       catsRow.style.setProperty('--ls-cat-size', size + 'px');
       var walkMs = 620, stagger = Math.max(50, Math.min(240, 1800 / n)), lead = 100;
       var t0 = performance.now();
@@ -20044,8 +20049,14 @@ const matchesButton=document.createElement('button');matchesButton.className='ne
         var cv = document.createElement('canvas');
         cv.width = 132; cv.height = 132;
         catsRow.appendChild(cv);
-        var fake = new Cat({ coatKey: c.coatKey, star: c.star, markSeed: c.markSeed, mascot: c.mascot, bornAt: c.bornAt, x: 0, y: 0 });
-        fake.worn = (c.worn || []).slice(); fake.blink = 3; fake.bob = .6; fake.tail = .3;
+        // A soft outline shadow — otherwise a white/pale coat all but
+        // disappears against the light title-screen background. Applied
+        // once as a CSS filter (GPU-composited) rather than a per-frame
+        // canvas filter, which re-runs the blur in software on every
+        // drawCat() call and visibly stutters with several cats animating.
+        cv.style.filter = 'drop-shadow(0 1px 0 rgba(60,48,28,.28)) drop-shadow(0 0 5px rgba(60,48,28,.16))';
+        var fake = new Cat({ coatKey: c.coatKey, star: 0, markSeed: 4242, bornAt: 0, x: 0, y: 0 });
+        fake.worn = []; fake.blink = 3; fake.bob = .6; fake.tail = .3;
         return { cv: cv, fake: fake };
       });
       function frame(now) {
