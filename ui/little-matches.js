@@ -209,7 +209,22 @@ function endlessSetup(){clear();dlg.replaceChildren();dlg.classList.add('lm-setu
  dlg.append(sec);
 }
 function nook(){const c=el('canvas','lm-companion');c.width=300;c.height=270;c.setAttribute('role','img');c.setAttribute('aria-label',companion().name+' keeping you company');return c}
-function play(){clear();previewCat=null;lastAction=Date.now();mood='watching';dlg.replaceChildren();const top=el('div','lm-top');top.append(button('Back',()=>round.endless?endlessSetup():seasonSetup()),el('span','',round.endless?'Endless · Round '+(state().endless.rounds+1):'Level '+round.level+' / 30'),button('Back to Cove',close));dlg.append(top);const layout=el('div','lm-layout'),side=el('aside','lm-side');side.append(nook(),el('p','lm-speech',companion().name+' is keeping you company.'));side.querySelector('.lm-speech').setAttribute('role','status');side.querySelector('.lm-speech').setAttribute('aria-live','polite');const main=el('section','lm-main');main.append(el('div','lm-stats'),el('div','lm-board'));const actions=el('div','lm-actions'),favour=button(favours[round.favour][0],useFavour);favour.id='lm-use';actions.append(favour);main.append(actions,el('p','lm-hint',favours[round.favour][1]+' No penalty for a helping paw.'));layout.append(side,main);dlg.append(layout);renderBoard();if(round.endless){animateCat()}else{dlg.append(el('section','lm-trail'));renderTrail();animateCat()}if(round.finished)round.endless?finishEndlessView():finishView();}
+function play(){clear();previewCat=null;lastAction=Date.now();mood='watching';dlg.replaceChildren();
+ const top=el('div','lm-top');
+ const roundLabel=el('span','lm-round-label');
+ if(round.endless){roundLabel.innerHTML=neoUIIcon('infinity')+'<span>ENDLESS · ROUND '+(state().endless.rounds+1)+'</span>';}
+ else{roundLabel.textContent='LEVEL '+round.level+' / 30';}
+ top.append(iconButton('back','Little Matches',()=>round.endless?endlessSetup():seasonSetup()),roundLabel,iconButton('back','Back to Cove',close));
+ dlg.append(top);
+ const layout=el('div','lm-layout'),side=el('aside','lm-side');
+ side.append(nook(),el('p','lm-speech',companion().name+' is keeping you company.'));
+ side.querySelector('.lm-speech').setAttribute('role','status');side.querySelector('.lm-speech').setAttribute('aria-live','polite');
+ const main=el('section','lm-main');main.append(el('div','lm-stats'),el('div','lm-board'));
+ const actions=el('div','lm-actions'),favour=button(favours[round.favour][0],useFavour);favour.id='lm-use';actions.append(favour);
+ main.append(actions,el('p','lm-hint',favours[round.favour][1]+' No penalty for a helping paw.'));
+ layout.append(side,main);dlg.append(layout);renderBoard();
+ if(round.endless){animateCat()}else{dlg.append(el('section','lm-trail'));renderTrail();animateCat()}
+ if(round.finished)round.endless?finishEndlessView():finishView();}
 function touch(){lastAction=Date.now();mood='watching'}
 function refreshNook(){touch();jumpAt=performance.now()}
 function animateCat(now=performance.now()){if(!dlg.open)return;if(!document.hidden&&now-lastFrame>32){lastFrame=now;const idle=Date.now()-lastAction;if(!round.finished&&!busy){if(idle>16000)mood='sleep';else if(idle>8000)mood='groom'}const cv=dlg.querySelector('.lm-companion');const jump=(now-jumpAt)/700;if(cv)api.draw(cv,companion(),mood,reduced()?0:jump>0&&jump<1?jump:0,false);const marker=dlg.querySelector('.lm-walker');if(marker)api.draw(marker,companion(),'watching',0,!reduced()&&now<walkUntil)}raf=requestAnimationFrame(animateCat)}
