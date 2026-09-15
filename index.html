@@ -155,18 +155,14 @@
      seamless backdrop. */
   #titleScreen{
     position:fixed;inset:0;z-index:200;
-    /* Pinning the logo to the top and the copyright to the bottom (an
-       earlier pass at this) just stretched one small cluster of content
-       across the whole screen, leaving a dead, empty gap in the middle —
-       worse than the plain centered version it replaced. A title screen
-       should read as one confident, deliberately placed composition, not
-       UI scattered to the edges with nothing between. Anchoring the
-       whole card in the upper-middle (rather than dead-center or split
-       apart) keeps it feeling intentional and gives the logo room to
-       breathe above it without inventing empty space to fill. */
-    display:flex;align-items:flex-start;justify-content:center;
-    padding-top:max(64px,12vh);
+    display:flex;justify-content:center;
+    padding:max(28px,env(safe-area-inset-top)) 0 max(20px,env(safe-area-inset-bottom));
     box-sizing:border-box;
+    /* .ts-card stretches to the full height here (no align-items:center)
+       so it can split into three real zones — logo up top, the
+       loading/CTA cluster genuinely centered in the middle, copyright at
+       the bottom — see .ts-mid below for how the middle actually gets
+       centered rather than just left stranded under the logo. */
   }
   #titleScreen[hidden]{display:none;}   /* the ID rule above otherwise outranks the UA [hidden] default */
   #tsCurtainL,#tsCurtainR{
@@ -182,17 +178,24 @@
   #titleScreen.out #tsCurtainR{transform:translateX(100%);}
   #titleScreen.out{pointer-events:none;}
   .ts-card{position:relative;z-index:1;
-    text-align:center;max-width:min(88vw,360px);padding:0 1rem;
+    display:flex;flex-direction:column;align-items:center;
+    text-align:center;max-width:min(88vw,360px);padding:max(32px,8vh) 1rem 0;
     animation:tsIn 1.1s cubic-bezier(.16,1,.3,1) both;
     transition:opacity .25s ease, transform .25s ease;}
   #titleScreen.out .ts-card{opacity:0;transform:scale(.9);}
   @keyframes tsIn{from{opacity:0;transform:translateY(10px);}}
-  .ts-logo{width:min(240px,62vw);display:block;margin:0 auto .6rem;}
+  .ts-logo{width:min(240px,62vw);display:block;margin:0 auto;flex-shrink:0;}
+  /* The actual three-zone trick: .ts-mid takes an equal, automatic share
+     of whatever room is left above and below it, so it lands truly
+     centered between the logo and the copyright — not just "whatever's
+     left over after the logo," which is what stacking these plainly
+     would give you. */
+  .ts-mid{display:flex;flex-direction:column;align-items:center;width:100%;margin:auto 0;}
   .ts-sub{font-size:.92rem;line-height:1.5;color:var(--ink-soft);margin:0 0 1.4rem;}
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
   .ts-hint{display:none;margin:.9rem 0 0;font-size:.78rem;color:var(--ink-soft);opacity:.75;}
   #app.panning .ts-hint{display:block;}
-  .ts-copy{margin:2rem 0 0;font-size:.66rem;letter-spacing:.02em;color:var(--ink-soft);opacity:.6;}
+  .ts-copy{margin:0 0 max(12px,env(safe-area-inset-bottom));font-size:.66rem;letter-spacing:.02em;color:var(--ink-soft);opacity:.6;flex-shrink:0;}
 
   /* ---- bottom action bar ---- */
   /* --navh: the nav bar's real rendered height (safe-area inset included),
@@ -1612,14 +1615,16 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <div id="tsCurtainR"></div>
     <div class="ts-card">
       <img class="ts-logo" src="art/wordmark-transparent.png" alt="Catmint Cove">
-      <div class="ls-cats" id="lsCats" aria-hidden="true"></div>
-      <div class="ls-loading" id="tsLoading">
-        <div class="ls-progress" role="progressbar" aria-label="Loading the Cove" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="ls-fill" id="lsFill"></div></div>
-        <p class="ls-status" id="lsStatus" role="status">Finding a sunny spot…</p>
+      <div class="ts-mid">
+        <div class="ls-cats" id="lsCats" aria-hidden="true"></div>
+        <div class="ls-loading" id="tsLoading">
+          <div class="ls-progress" role="progressbar" aria-label="Loading the Cove" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="ls-fill" id="lsFill"></div></div>
+          <p class="ls-status" id="lsStatus" role="status">Finding a sunny spot…</p>
+        </div>
+        <p class="ts-sub" id="tsSub" hidden>You didn't adopt them. They adopted you — and slowly, this cove became theirs.</p>
+        <button class="btn primary" id="ts-go" hidden>Begin</button>
+        <p class="ts-hint">Cosier on a tablet 🐾</p>
       </div>
-      <p class="ts-sub" id="tsSub" hidden>You didn't adopt them. They adopted you — and slowly, this cove became theirs.</p>
-      <button class="btn primary" id="ts-go" hidden>Begin</button>
-      <p class="ts-hint">Cosier on a tablet 🐾</p>
       <p class="ts-copy">© 2026 Midknight Studio Labs · Catmint Cove</p>
     </div>
   </div>
