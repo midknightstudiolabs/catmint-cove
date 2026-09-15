@@ -414,9 +414,9 @@
      bright "Take a guided tour" button above them — giving them the
      app's accent color (same one used for other tappable links, like
      the shop tabs) marks them as links without pulling in a new color. */
-  .help-footer .linkbtn{color:var(--accent-bright);transition:opacity .12s ease;}
+  .help-footer .linkbtn{color:var(--accent-bright);transition:color .12s ease,opacity .12s ease;}
   .help-footer .linkbtn:active{opacity:.55;}
-  @media(hover:hover){.help-footer .linkbtn:hover{opacity:.75;}}
+  @media(hover:hover){.help-footer .linkbtn:hover{color:#2d5039;}}
   .shop-item .lv{font-size:.72rem;color:var(--accent-bright);font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
   .shop-item.pack{background:linear-gradient(180deg,#fff8ec,#fdeeceff);border-radius:14px;padding:.75rem;margin:.35rem 0;border-top:none;}
   .shop-item.pack .name{color:var(--apricot);}
@@ -5681,8 +5681,10 @@ const ACCESSORIES = [
   { key:"rainbow",     label:"Rainbow trail",iap:"sparkle_pack", slot:"aura", group:"Sparkle", premium:true, blurb:"A ribbon of colour that streams behind the cat as it moves and fades when it settles." },
 ];
 ACCESSORIES.push(...window.LITTLE_MATCH_REWARDS.map(r=>({...r,memoryLevel:r.level,group:'Little Matches',price:0})));
-// DRAFT — endless-mode milestone rewards, previewed but not yet grantable in play.
-if(window.ENDLESS_REWARDS)ACCESSORIES.push(...window.ENDLESS_REWARDS.map(r=>({...r,endlessRound:r.round,group:'Endless',price:0,hidden:true})));
+// Endless-mode milestone cosmetics — granted every 50 rounds (see
+// little-matches.js's complete()), gated the same way memoryLevel rewards
+// are: accOwned() checks G.littleMatches.endless.rounds against endlessRound.
+if(window.ENDLESS_REWARDS)ACCESSORIES.push(...window.ENDLESS_REWARDS.map(r=>({...r,endlessRound:r.round,group:'Endless',price:0})));
 const ACC_BY_KEY = Object.fromEntries(ACCESSORIES.map(a => [a.key, a]));
 const ACC_LABEL  = Object.fromEntries(ACCESSORIES.map(a => [a.key, a.label.toLowerCase()]));
 const ACC_SLOTS  = ["aura", "back", "neck", "ear", "face", "head"];   // also the draw order (aura/back behind, head on top)
@@ -5707,6 +5709,7 @@ function accOwned(c, key) {
   if (!key) return true;
   const a = ACC_BY_KEY[key];
   if (a && a.memoryLevel) return !!G.littleMatches?.done?.[a.memoryLevel];
+  if (a && a.endlessRound) return (G.littleMatches?.endless?.rounds || 0) >= a.endlessRound;
   if (a && a.iap) return iapOwns(a.iap);                    // the Sparkle Pack owns it for every cat, derived — never materialised into c.owned
   return !!(c && c.owned && c.owned.includes(key));
 }
@@ -5728,6 +5731,7 @@ function buyAccessory(c, key) {                   // buy + wear; returns true on
   const a = ACC_BY_KEY[key]; if (!a || !c) return false;
   if (accOwned(c, key)) { equipAccessory(c, key, true); return true; }
   if (a.memoryLevel) { toast('Complete Little Matches Level '+a.memoryLevel+' to earn this accessory.'); return false; }
+  if (a.endlessRound) { toast('Reach Endless round '+a.endlessRound+' in Little Matches to earn this accessory.'); return false; }
   if (a.iap) { showIapOffer(a.iap); return false; }   // premium cosmetics only come from their pack
   if (a.pearls) {
     if ((G.pearls || 0) < a.pearls) { toast(`${a.label} is ✦${a.pearls} — earn a few more pearls from the Catdex or daily goals.`); return false; }
@@ -5751,7 +5755,7 @@ function renderWardrobe(c) {
   cc.dress.hidden = false;
   const worn = new Set(c.worn || []);
   const bySlot = {};
-  const ownedKeys = [...(c.owned || []), ...ACCESSORIES.filter(a => (a.iap || a.memoryLevel) && !a.hidden && accOwned(c, a.key)).map(a => a.key)];
+  const ownedKeys = [...(c.owned || []), ...ACCESSORIES.filter(a => (a.iap || a.memoryLevel || a.endlessRound) && !a.hidden && accOwned(c, a.key)).map(a => a.key)];
   for (const k of ownedKeys) { const a = ACC_BY_KEY[k]; if (a && !(bySlot[a.slot] || []).includes(k)) (bySlot[a.slot] = bySlot[a.slot] || []).push(k); }
   const slots = ACC_SLOTS.filter(s => bySlot[s]);
   let html = `<div class="dl">Dress up</div>`;
@@ -6516,8 +6520,8 @@ function renderShopDress(list) {
       : `<h4>${grp}</h4>`;
     return head + `<div class="dp-grid">` + items.map(a => {
       const owned = accOwned(c, a.key), on = _dressWorn.includes(a.key);
-      const locked = !!(a.iap || a.memoryLevel) && !owned;
-      const cost = a.memoryLevel ? `Level ${a.memoryLevel}` : locked ? "Locked" : a.pearls ? `✦ ${a.pearls}` : `◈ ${a.price}`;
+      const locked = !!(a.iap || a.memoryLevel || a.endlessRound) && !owned;
+      const cost = a.memoryLevel ? `Level ${a.memoryLevel}` : a.endlessRound ? `Round ${a.endlessRound}` : locked ? "Locked" : a.pearls ? `✦ ${a.pearls}` : `◈ ${a.price}`;
       return `<button class="dp-acc${on ? " on" : ""}${a.premium ? " premium" : ""}${owned ? " owned" : ""}${locked ? " locked" : ""}" data-acc="${a.key}" title="${esc(a.blurb)}">
         <span class="dp-nm">${a.label}</span>
         <span class="dp-cost">${owned ? "yours" : cost}</span>
@@ -6575,6 +6579,7 @@ function renderShopDress(list) {
     const b = e.target.closest(".dp-acc"); if (!b) return;
     const k = b.dataset.acc, slot = accSlot(k), a = ACC_BY_KEY[k];
     if (a && a.memoryLevel && !accOwned(c,k)) { toast('Complete Little Matches Level '+a.memoryLevel+' to earn it.'); return; }
+    if (a && a.endlessRound && !accOwned(c,k)) { toast('Reach Endless round '+a.endlessRound+' to earn it.'); return; }
     if (a && a.iap && !accOwned(c, k)) { showIapOffer(a.iap); return; }   // locked — the pack, not a toggle
     if (_dressWorn.includes(k)) _dressWorn = _dressWorn.filter(x => x !== k);
     else _dressWorn = _dressWorn.filter(x => accSlot(x) !== slot).concat(k);
