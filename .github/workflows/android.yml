@@ -39,9 +39,13 @@ jobs:
         id: ver
         run: |
           NAME="${GITHUB_REF_NAME#android-v}"
-          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="2.0.$GITHUB_RUN_NUMBER"; fi
+          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="3.1.$GITHUB_RUN_NUMBER"; fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
-          echo "code=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
+          # +500 offset: Play's alpha track already has versionCode 129 from an
+          # earlier manual upload that predates this run-number-based scheme, so
+          # a bare $GITHUB_RUN_NUMBER (~35) reads as a downgrade and Play refuses
+          # the rollout. The offset keeps us comfortably ahead of any prior code.
+          echo "code=$((500 + GITHUB_RUN_NUMBER))" >> "$GITHUB_OUTPUT"
 
       - name: Have we got a signing keystore?
         id: keys
