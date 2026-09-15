@@ -20,21 +20,24 @@ const marker = /<script>\s*\(\(\)\s*=>\s*\{/;   // the game IIFE: `<script>\n(()
 if (!marker.test(html)) throw new Error("build-www: could not find the game <script> to inject the bridge before");
 
 // iOS WKWebView won't fetch() a bundled capacitor:// asset, so the festival
-// music never loads on device. But <script src> uses the resource loader, not
-// fetch — so ship the clips as base64 in their own fest-audio-data.js and load
-// it before the game. The web index.html has no such file → fetch() path.
-const festAudio = ["fest-bed-hub.mp3", "fest-bed-race.mp3", "fest-bed-volley.mp3", "fest-bed-tug.mp3", "fest-bed-cafe.mp3", "fest-win.mp3"];
+// music never loads on device. The game has a guarded loader for this
+// (_festAudioBuf reads a local `FEST_AUDIO_DATA` object, falling back to
+// fetch() on web) — the marker below is that object's declaration; swap in
+// the real base64 data for the native build instead of leaving it empty.
+const festAudio = ["fest-bed-hub.mp3", "fest-bed-race.mp3", "fest-bed-volley.mp3", "fest-bed-tug.mp3", "fest-bed-cafe.mp3", "fest-win.mp3", "rain-loop.mp3"];
 const fa = {};
 for (const f of festAudio) {
   if (await exists(join(root, f))) fa[f] = "data:audio/mpeg;base64," + (await readFile(join(root, f))).toString("base64");
 }
-await writeFile(join(www, "fest-audio-data.js"), "window.__FEST_AUDIO_DATA = " + JSON.stringify(fa) + ";\n");
+const festAudioMarker = "const FEST_AUDIO_DATA = {};   /* @native-fest-audio */";
+if (!html.includes(festAudioMarker)) throw new Error("build-www: @native-fest-audio marker not found — index.html changed shape, update this script");
+html = html.replace(festAudioMarker, "const FEST_AUDIO_DATA = " + JSON.stringify(fa) + ";");
 
-html = html.replace(marker, '<script src="capacitor-bridge.js"></script>\n<script src="fest-audio-data.js"></script>\n$&');
+html = html.replace(marker, '<script src="capacitor-bridge.js"></script>\n$&');
 await writeFile(join(www, "index.html"), html);
 
 // 2. runtime assets the game fetch()es by relative path
-for (const asset of ["rain-loop.opus", "fest-bed-hub.mp3", "fest-bed-race.mp3", "fest-bed-volley.mp3", "fest-bed-tug.mp3", "fest-bed-cafe.mp3", "fest-win.mp3", "sfx"]) {
+for (const asset of ["fest-bed-hub.mp3", "fest-bed-race.mp3", "fest-bed-volley.mp3", "fest-bed-tug.mp3", "fest-bed-cafe.mp3", "fest-win.mp3", "rain-loop.mp3", "sfx", "art", "ui"]) {
   if (await exists(join(root, asset))) await cp(join(root, asset), join(www, asset), { recursive: true });
 }
 

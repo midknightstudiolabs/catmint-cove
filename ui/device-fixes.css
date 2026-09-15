@@ -1,0 +1,135 @@
+/* Keep the established festival layout; compact only the spinner. */
+#fest .midk-console{padding:8px 10px 13px;gap:8px}
+#fest .midk-spin{min-height:44px;min-width:92px;font-size:18px;padding:8px 12px}
+#fest .midk-spin .ms-paw{font-size:18px}
+#fest .midk-console .mc-reels span{width:28px;height:30px}
+#fest .midk-console .mc-bar,#fest .midk-console .mc-msg{left:10px;width:92px}
+@media(max-width:370px){#fest .midk-console{gap:6px}#fest .midk-spin{min-width:82px;font-size:16px}#fest .midk-console .mc-reels span{width:25px;height:28px}}
+
+/* Approved option B: fixed artwork across mobile and desktop. */
+#hud .neo-hud-icon{width:26px;height:26px;display:block;object-fit:contain;filter:none}
+#hud .hud-stat .ico:has(.neo-hud-icon){display:inline-flex;align-items:center;flex-shrink:0;text-shadow:none}
+
+/* Explicit block sizing for wellbeing in Safari / WKWebView. */
+.neo-wellbeing{text-align:left;margin:16px 0;padding:12px 14px;border:1px solid #d8ddc7;border-radius:14px;background:#f4f1e3}.neo-wellbeing-label{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;font-size:14px}.neo-wellbeing p{font-size:13px;margin:8px 0 0;color:#53644e}.neo-wellbeing .moodbar,#cc-wellwrap .moodbar{display:block;width:100%;height:9px;min-height:9px;flex-shrink:0}.neo-wellbeing .moodbar i,#cc-well{display:block;height:9px;min-height:9px}
+
+/* Roster: span tracks need block layout; iOS buttons need an explicit ink. */
+#roster .rrow{appearance:none;-webkit-appearance:none;color:var(--ink,#302c24)}
+#roster .rnm{color:var(--ink,#302c24);-webkit-text-fill-color:var(--ink,#302c24)}
+#roster .rmeat,#roster .rb{display:block;min-width:0}
+#roster .rb{flex:1 1 0}
+#roster .rb .rk{display:flex;justify-content:space-between;gap:4px}
+#roster .rb .moodbar{display:block;width:100%;height:7px;min-height:7px;border-radius:5px;background:#e4e0cf;overflow:hidden}
+#roster .rb .moodbar i{display:block;height:7px;min-height:7px}
+/* Small-screen HUD: separate controls from resources so neither overlaps. */
+@media(max-width:600px){
+ #hud{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:calc(env(safe-area-inset-top,0px) + 8px) max(8px,env(safe-area-inset-right,0px)) 0 max(8px,env(safe-area-inset-left,0px));width:100%;box-sizing:border-box}
+ #hud>.hud-group:last-child{order:0;display:flex;align-items:center;justify-content:flex-end;gap:4px;width:100%;min-width:0}
+ #hud>.hud-group:first-child{order:1;display:flex;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 10px;width:100%;min-width:0}
+ #hud #titlePill{flex:1 1 0;min-width:0;max-width:none;height:44px;min-height:44px;padding:6px 10px;font-size:15px;color:var(--ink,#302c24);-webkit-text-fill-color:var(--ink,#302c24);justify-content:center}
+ #hud>.hud-group:last-child>.btn{flex:0 0 44px;width:44px;min-width:44px;height:44px;min-height:44px;padding:8px;box-sizing:border-box}
+ #hud>.hud-group:last-child>.btn[hidden]{display:none}
+ #hud .hud-row{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+ #hud .hud-stats{display:flex;flex-wrap:wrap;gap:9px;padding:0;min-width:0}
+ #hud .hud-stat{font-size:12px;gap:3px}
+ #hud .hud-stat.opens{display:flex}
+ #hud .neo-hud-icon{width:22px;height:22px}
+ #hud .pill:not(#titlePill){font-size:12px;padding:5px 7px;min-width:0}
+ #hud .cove-title-text{max-width:100%}
+ #bar{padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+}
+
+.guide-row summary{cursor:pointer;font-weight:600;padding:10px 0}.guide-row[hidden]{display:none}#neo-tour{position:fixed;z-index:150;bottom:calc(var(--navh, 70px) + 15px);left:12px;width:min(350px,calc(100vw - 24px));max-height:42dvh;overflow:auto;background:#fff8e7;color:#344331;border:1px solid #b8c5a5;border-radius:18px;padding:14px;box-sizing:border-box;box-shadow:0 4px 18px #0002}#neo-tour b{display:block}#neo-tour p{font-size:13px;margin:6px 0 10px}#neo-tour>div{display:flex;gap:5px;flex-wrap:wrap}#neo-tour .btn{font-size:12px;min-height:44px;padding:6px 10px}
+
+/* Consistent cozy roster dismissal, including iOS native button reset. */
+#roster #roster-x{appearance:none;-webkit-appearance:none;display:grid;place-items:center;box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:1px solid #d8d3bf;border-radius:50%;background:#f1ecdc;color:#61735c;-webkit-text-fill-color:#61735c;box-shadow:none;touch-action:manipulation}
+#roster #roster-x:active{background:#e4e7d5}
+#roster h2,#roster>p.muted{padding-right:68px}
+#roster-close{appearance:none;-webkit-appearance:none;background:#f1ecdc;color:#454e3c;-webkit-text-fill-color:#454e3c;border:1px solid #d8d3bf;min-height:44px}
+
+#placeBar{box-sizing:border-box;max-width:calc(100vw - 24px);flex-wrap:wrap}#placeBarTxt{min-width:0;overflow-wrap:anywhere}
+
+#placeBar{transition:left 100ms ease-out,top 100ms ease-out} @media(prefers-reduced-motion:reduce){#placeBar{transition:none}}
+
+#shop .keepsake-item{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px 12px;align-items:center}#shop .keepsake-item .inventory-preview{grid-column:1;grid-row:1 / 3;width:64px;height:64px;object-fit:contain;margin:0}#shop .keepsake-item .txt{grid-column:2;min-width:0}#shop .keepsake-item .shop-actions{grid-column:2;margin:0;justify-content:flex-start}#shop .keepsake-item .inventory-quantity{display:none}#shop .keepsake-item button[hidden]{display:none}#shop .keepsake-item .primary{background:#477354;color:#fff;-webkit-text-fill-color:#fff;border:1px solid #477354;min-height:44px;padding:8px 20px;width:auto}#founder-store{background:#477354;color:#fff;-webkit-text-fill-color:#fff;border-color:#477354}
+
+.help-home{width:min(440px,calc(100vw - 24px))!important;box-sizing:border-box;background:#faf6e9!important;padding:20px!important}.help-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.help-head h2{margin:0;font-size:23px}.help-head>.btn{width:44px;height:44px;padding:0;flex-shrink:0}.help-choices{display:grid;gap:10px;margin:20px 0}.help-choice{display:flex;align-items:center;gap:14px;width:100%;padding:14px;border:1px solid #d8ddc7;border-radius:14px;background:#f2efdf;color:#43543f;font:600 16px inherit;text-align:left;min-height:64px}.help-choice span:nth-child(2){flex:1}.help-choice img{width:32px;height:32px}.help-footer{display:flex;justify-content:center;gap:8px 22px;border-top:1px solid #dddcc9;margin-top:18px;padding-top:12px;flex-wrap:wrap}.help-home .linkbtn{color:#526b50;min-height:44px}.help-visual{margin-top:18px}.help-visual img{width:52px;height:52px}.help-steps{padding-left:22px;line-height:1.6}.help-steps li{margin:14px 0}.help-home #helpShow{width:100%;background:#477354;color:white}.help-home button{-webkit-appearance:none}.help-home .help-choice{font-family:inherit;font-size:16px}#neo-tour{width:min(290px,calc(100vw - 24px));font-size:14px}
+
+.help-head>.btn{display:grid;place-items:center;border-radius:50%;color:#526b50}.help-home #helpShow{-webkit-text-fill-color:#fff}
+
+/* Compact Help: one quiet list, no stacked cards or oversized footer. */
+#tut .card.help-home{width:min(380px,calc(100vw - 24px))!important;padding:18px!important;text-align:left;border-radius:20px;max-height:calc(100dvh - 32px)}
+/* This rule's own padding:18px!important included the bottom side, which
+   then stacked underneath the footer's own padding once the footer got
+   appended (.cove-bottom-help) — the same "card never gives back its own
+   bottom padding" bug fixed elsewhere for #modal and .cove-bottom-sheet,
+   just re-introduced here by a !important that outranks a plain
+   override. Needs matching specificity AND !important to actually win. */
+#tut .card.help-home.cove-bottom-help{padding-bottom:0!important}
+#tut .help-head{gap:8px;margin:0 0 8px}#tut .help-head h2{font-size:21px;margin:0;line-height:1.2}#tut .help-head>.btn{width:44px;min-width:44px;height:44px;min-height:44px;background:#efecdf;border:0;box-shadow:none}
+#tut .help-choices{gap:0;margin:4px 0 12px}#tut .help-choice{min-height:64px;padding:10px 4px;border:0;border-bottom:1px solid #dedfce;border-radius:0;background:transparent;box-shadow:none;gap:12px;font-size:15px;font-weight:600;cursor:pointer;-webkit-text-fill-color:#43543f}#tut .help-choice:last-child{border-bottom:0}#tut .help-choice img{width:30px;height:30px}#tut .help-choice:hover{background:#efefdf;border-radius:10px}#tut .help-choice:active{background:#e4e8d5}#tut .help-choice span:last-child{color:#88917b;font-size:20px;font-weight:400}
+#tut .help-home .linkbtn{margin:0;padding:8px;min-height:44px;line-height:1.2;text-decoration:none}#tut #guideTour{display:block;width:100%;border:1px solid #b7c4aa;border-radius:12px;background:#e9eddf;font-size:13px;color:#435f46}#tut .help-footer{margin:10px 0 0;padding:0;border:0;gap:4px 14px;justify-content:center;flex-wrap:wrap}
+/* Credits / Catmint Cove Cares should read as links (accent color, same as
+   everywhere else they appear) and meet the same 44px tap target as every
+   other control in this panel — this compact variant had shrunk both. */
+#tut .help-footer .linkbtn{font-size:11px;font-weight:400;color:var(--accent-bright,#508363);min-height:44px;padding:8px 4px}
+#tut .help-visual{margin:12px 0 8px}#tut .help-visual img{width:40px;height:40px}#tut .help-steps{font-size:14px;line-height:1.5;margin:12px 0 18px;padding-left:20px}#tut .help-steps li{margin:10px 0;padding-left:4px}#tut #helpShow{min-height:44px;border-radius:12px}
+
+/* Release audit: shared panels, readable icon/text alignment and short screens. */
+.sheet{background:#faf6e9!important}.sheet>h2,.sheet>.kicker{padding-right:48px;overflow-wrap:anywhere}.sheet .x{display:grid;place-items:center;width:44px;height:44px;padding:0;background:#efecdf;color:#526b50;-webkit-text-fill-color:#526b50;box-shadow:none;appearance:none}
+#modal .pick-dest{display:grid;grid-template-columns:30px minmax(0,1fr);column-gap:10px;align-items:center;text-align:left}#modal .pick-dest>span{float:none;margin:0;grid-row:1 / 3}#modal .pick-dest>b,#modal .pick-dest>i{grid-column:2;min-width:0}#modal .pick-dest>i{line-height:1.4}
+.snd .ic .neo-ui-icon{width:24px;height:24px;display:block}.snd .snd-master .lab{display:flex;align-items:center;gap:8px}#rest .rest-art img{display:block;margin:0 auto}#rest .rest-panel{max-height:calc(100dvh - 24px);overflow-y:auto;box-sizing:border-box}#rest .rest-panel .row{display:flex;gap:8px}#rest .rest-panel .row .btn{flex:1;min-width:0;padding:10px}
+#neo-homestead>.kicker{font-size:10px;letter-spacing:.08em;line-height:1.5}#neo-homestead>p{font-size:14px;line-height:1.5}#neo-homestead .homestead-patch .btn{white-space:normal;overflow-wrap:anywhere}
+@media(max-height:480px){#rest .rest-panel{padding:16px}#rest .rest-art{display:none}#rest p{margin-bottom:8px}#rest .rest-timer{margin:8px 0}#tut .card.help-home{max-height:calc(100dvh - 16px)}}
+
+#modal .neo-story{padding-top:68px}#modal .neo-story>.kicker{font-size:11px;line-height:1.4}#modal .neo-story .neo-story-x{top:6px;right:0}
+@media(max-width:559px){#shopList.dressmode{display:block;overflow-y:auto}.dp{overflow:visible}.dp-stage{padding:10px 12px}.dp-platform{max-width:150px}.dp-rack{flex:none;overflow:visible}.dp-switch button{min-width:36px;min-height:36px}.dp-actions{max-width:100%}}
+
+/* WKWebView: the rename button must never inherit native blue text. */
+#hud #titlePill{appearance:none;-webkit-appearance:none;color:var(--ink,#343d31);-webkit-text-fill-color:var(--ink,#343d31);text-decoration:none}
+#hud #titlePill .cove-title-text{color:var(--ink,#343d31);-webkit-text-fill-color:var(--ink,#343d31)}
+#hud #titlePill b{color:var(--accent-bright,#508363);-webkit-text-fill-color:var(--accent-bright,#508363)}
+
+#rest .rest-bar{flex-wrap:wrap;justify-content:center}#restDimToggle{min-height:40px;padding:6px 10px;border:1px solid #ffffff30;border-radius:999px;white-space:nowrap}#restDimToggle[aria-pressed="true"]{background:#e6dfc6;color:#344331}#rest .rest-bar .rb-time{min-width:50px}
+
+/* Consistent action pairs and tactile feedback without shifting layout. */
+/* .btn's own padding (.5rem .95rem) already gives every other dialog
+   button its shape — this pair used to override it to 10px/12px for no
+   reason tied to being a pair, so it read as a slightly different button
+   style depending on whether a dialog happened to use .cove-action-pair
+   or a plain .row. */
+.cove-action-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.cove-action-pair .btn{width:100%;min-width:0;min-height:44px;margin:0;white-space:normal}#roster-close.btn.primary{background:#477354;color:#fff;-webkit-text-fill-color:#fff;border-color:#477354;width:100%;border-radius:12px}
+.btn,.linkbtn,.sheet button,.cove-action-pair button{transition:background-color .15s ease,box-shadow .15s ease,filter .15s ease;touch-action:manipulation}button:enabled:active{filter:brightness(.92);box-shadow:inset 0 2px 4px #243b2920}button:disabled{cursor:default}button:focus-visible{outline:2px solid #789578;outline-offset:3px}@media(hover:hover){.btn:enabled:hover,.linkbtn:enabled:hover{filter:brightness(.96)}}@media(prefers-reduced-motion:reduce){button{transition:none!important}}
+
+/* Shared action-label alignment; retain each control's existing layout. */
+.btn,#placeBar button,.cove-action-pair button{text-align:center;justify-content:center}.cove-action-pair .btn{display:flex;align-items:center}#placeBar button{white-space:normal}
+
+/* Festival choices are icon-led rows, rather than centered action labels. */
+#fest .fc-card{text-align:left!important;grid-template-columns:32px minmax(0,1fr) 16px;column-gap:12px;row-gap:3px;width:100%;touch-action:manipulation;transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease}
+#fest .fc-card .fc-emoji{grid-column:1;grid-row:1 / 4;align-self:center;display:grid;place-items:center}
+#fest .fc-card .fc-name,#fest .fc-card .fc-desc,#fest .fc-card .fc-lock{grid-column:2;text-align:left;min-width:0;overflow-wrap:anywhere}
+#fest .fc-card .fc-name{grid-row:1}#fest .fc-card .fc-desc{grid-row:2}#fest .fc-card .fc-lock{grid-row:3}
+#fest .fc-card:not(.locked)::after{content:'›';grid-column:3;grid-row:1 / 4;align-self:center;color:#68825d;font-size:24px}
+#fest .fc-card:not(.locked):active{background:#e0e8d4;box-shadow:inset 0 0 0 1px #789578}
+#fest .fc-card:focus-visible{outline:2px solid #477354;outline-offset:2px}
+@media(hover:hover){#fest .fc-card:not(.locked):hover{background:#e7eddb;border-color:#91a781}}
+@media(max-width:360px){#fest .fc-card{padding:10px;column-gap:9px}#fest .fc-card .fc-name{font-size:.95rem}}
+
+/* Compact phone spin control: ID specificity survives later legacy theme rules. */
+@media(max-width:600px),(max-height:500px){
+ #fest #midkHud .midk-console{padding:6px 8px 10px;gap:8px;border-radius:14px;max-width:calc(100vw - 24px)}
+ #fest #midkHud .midk-spin{min-height:44px;height:44px;min-width:88px;padding:6px 10px;font-size:17px;line-height:1;gap:6px}
+ #fest #midkHud .midk-spin .ms-paw{font-size:16px}
+ #fest #midkHud .mc-reels{gap:3px}
+ #fest #midkHud .mc-reels span{width:26px;height:28px;font-size:16px}
+ #fest #midkHud .mc-bar{left:8px;width:84px;bottom:4px;height:3px}
+ #fest #midkHud .mc-msg{left:8px;width:84px;font-size:11px;line-height:1.2}
+}
+/* Journal keepsakes and instant-photo capture. */
+.neo-victory{border:1px solid #d8ddcb;border-radius:16px;padding:16px;margin:14px 0;background:#faf6e9}.neo-victory h4{font:22px Georgia;margin:8px 0}.neo-victory-line{font:italic 18px/1.5 Georgia}.neo-victory-cats{display:flex;flex-wrap:wrap;background:#edf0e3;border-radius:12px;justify-content:center}.neo-victory-cats canvas{width:90px;height:75px}.neo-award{color:#75613c;font-size:13px}.neo-victory summary{min-height:44px;padding:10px 0;cursor:pointer}.neo-victory small{color:#65745f}
+#photo{overflow:auto;padding:20px 12px;justify-content:flex-start}#photoBay{width:min(70vh,440px,88vw);flex-shrink:0;overflow:hidden;position:relative;padding:0 8px 12px}#photo #photoCanvas{width:100%;height:auto;max-height:none;object-fit:contain;box-shadow:0 4px 12px #273a2933}#photo.printing #photoCanvas{animation:neoPrintUp 1.7s ease-out both}#photo.printing #photoBay:after{content:'';position:absolute;bottom:0;left:0;right:0;height:12px;border-radius:8px;background:#4e654d}#photo.developing #photoCanvas{opacity:.1;filter:sepia(1) blur(4px)}#photo:not(.developing) #photoCanvas{transition:filter 2.8s,opacity 2.8s}#photoFrames{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}#photoFrames button{font-size:12px;padding:9px 12px}#photoFrames [aria-pressed=true]{background:#4b775c;color:white}#photo .cap-in{flex-shrink:0}#photo .hint{margin:8px 0}@keyframes neoPrintUp{from{transform:translateY(105%)}to{transform:translateY(0)}}@media(prefers-reduced-motion:reduce){#photo #photoCanvas{animation:none!important;transition:none!important}}
+#photo.photo-ready #photoCanvas{transition:none}#photoFrames[hidden],#photoReveal[hidden]{display:none!important}
+/* Unavailable café: no hover/press invitation, native disabled blocks activation. */
+#neo-go-cafe:disabled,#neo-go-cafe:disabled:hover,#neo-go-cafe:disabled:active,#neo-go-cafe:disabled:focus{background:#e5e5de!important;border-color:#d1d3c9!important;color:#7a7e73!important;box-shadow:none!important;transform:none!important;filter:none!important;cursor:not-allowed;opacity:1}
+#neo-go-cafe:disabled .neo-ui-icon{filter:grayscale(1);opacity:.45}
+#neo-go-cafe:disabled b,#neo-go-cafe:disabled small{color:#7a7e73!important}
