@@ -185,12 +185,14 @@
   #titleScreen.out .ts-card{opacity:0;transform:scale(.9);}
   @keyframes tsIn{from{opacity:0;transform:translateY(10px);}}
   .ts-logo{width:min(240px,62vw);display:block;margin:0 auto;flex-shrink:0;}
-  /* The actual three-zone trick: .ts-mid takes an equal, automatic share
-     of whatever room is left above and below it, so it lands truly
-     centered between the logo and the copyright — not just "whatever's
-     left over after the logo," which is what stacking these plainly
-     would give you. */
-  .ts-mid{display:flex;flex-direction:column;align-items:center;width:100%;margin:auto 0;}
+  /* Splitting the leftover space evenly (margin:auto on both sides) put
+     the cats/subtitle/button cluster at ~45% down the screen — dead
+     center of the gap, but far enough from the logo to look adrift from
+     it. A small fixed gap under the logo instead (~20% down overall)
+     keeps the cluster visually grouped with the logo above it, while
+     margin-bottom:auto still soaks up the rest of the space before the
+     copyright, so the button isn't glued to it either. */
+  .ts-mid{display:flex;flex-direction:column;align-items:center;width:100%;margin:1.2rem 0 auto;}
   .ts-sub{font-size:.92rem;line-height:1.5;color:var(--ink-soft);margin:0 0 1.4rem;}
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
   .ts-hint{display:none;margin:.9rem 0 0;font-size:.78rem;color:var(--ink-soft);opacity:.75;}
