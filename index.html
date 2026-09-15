@@ -277,14 +277,20 @@
     border:1px solid var(--panel-line);background:#fff;cursor:pointer;font-size:1rem;color:var(--ink-soft);}
 
   #shop[hidden]{display:none;}
+  /* height, not max-height: the shop's own content (My inventory, Decor,
+     Upgrades...) varies a lot in length from tab to tab, and a max-height
+     box shrinks to fit whatever's shortest — so the whole panel visibly
+     grew and shrank every time you switched tabs. A fixed height plus the
+     existing internal #shopList scroll keeps the panel — and "Back to
+     Cove" below it — planted in the same place no matter which tab is open. */
   #shop{left:50%;top:50%;transform:translate(-50%,-50%);
-    width:min(96vw,560px);max-height:82vh;display:flex;flex-direction:column;
+    width:min(96vw,560px);height:82vh;display:flex;flex-direction:column;
     padding:0;overflow:hidden;border-radius:22px;}
   #shop h2{padding:.95rem 1.15rem .1rem;}
   #shop .x{z-index:3;}
   @media(max-width:600px){
     #shop{top:auto;bottom:var(--navh);transform:translateX(-50%);
-      width:100vw;max-height:78dvh;border-radius:20px 20px 0 0;}
+      width:100vw;height:78dvh;border-radius:20px 20px 0 0;}
   }
   .shop-tabs{display:flex;gap:.15rem;padding:.5rem .8rem 0;overflow-x:auto;flex:0 0 auto;
     border-bottom:1px solid var(--panel-line);scrollbar-width:none;}
