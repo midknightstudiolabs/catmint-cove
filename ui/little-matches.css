@@ -86,7 +86,7 @@
 .lm-companion-text{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
 .lm-companion-text select{min-height:38px;padding:5px 8px;font-weight:700}
 .lm-section-label{font:700 11px "IBM Plex Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:#6b7a5e;margin:18px 0 8px}
-.lm-favours label{padding:16px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px;position:relative;transition:background-color .15s ease,border-color .15s ease}
+.lm-favours label{height:159px;box-sizing:border-box;padding:16px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:5px;position:relative;transition:background-color .15s ease,border-color .15s ease}
 .lm-favours input{position:absolute!important;opacity:0!important;width:1px!important;height:1px!important;margin:0!important;pointer-events:none}
 .lm-favour-icon{font-size:26px;line-height:1}
 .lm-favour-text strong{display:block;font-size:14px}
@@ -101,7 +101,13 @@
  .lm-round-progress{flex-wrap:wrap;gap:8px 12px}
  .lm-round-next{order:3;width:100%;text-align:center}
  .lm-companion-preview{width:54px;height:46px}
- .lm-favours label{padding:12px 8px}
+ /* flex-basis:0 (from the shared "flex:1" used for equal-width columns on
+    desktop) becomes the MAIN-axis size once .lm-favours switches to
+    flex-direction:column here — that's height, so it silently overrides
+    the fixed height above instead of just being unused cross-axis sizing
+    like it is in the row layout. flex:none stops that so the fixed
+    height actually applies here too. */
+ .lm-favours label{flex:none;height:136px;padding:12px 8px}
  .lm-favour-icon{font-size:22px}
 }
 
