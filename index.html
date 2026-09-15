@@ -1589,8 +1589,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 /* padding:0 on the sides was fine for the one full-bleed button this was
    built for (Help's "Back to Cove"), but any modal auto-upgraded into
    this footer with two buttons side by side (e.g. the rehome confirm)
-   had them flush against the card's true edge with zero breathing room. */
-.cove-dialog-footer{position:static!important;flex-shrink:0;display:flex!important;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:0!important;padding:12px 14px!important;border-top:1px solid var(--panel-line);background:var(--panel)}
+   had them flush against the card's true edge with zero breathing room.
+   18px (not 12px) so the footer's own bottom padding matches
+   .cove-dialog-body's 18px top padding — the card's top and bottom
+   breathing room read as the same weight, not a roomy top and a
+   pinched bottom. */
+.cove-dialog-footer{position:static!important;flex-shrink:0;display:flex!important;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:0!important;padding:18px 14px!important;border-top:1px solid var(--panel-line);background:var(--panel)}
 .cove-dialog-footer .btn{min-height:44px;flex:1 1 0;min-width:0;width:auto;text-align:center}
 #roster .x{display:none}
 #modal .adv-flow .kicker,#modal .adv-flow h2{padding-right:0}
@@ -1609,8 +1613,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .cove-sheet-body{overflow:auto;min-height:0;flex:1 1 auto;overscroll-behavior:contain;padding-left:1.15rem;padding-right:1.15rem}
 /* Same padding as .cove-dialog-footer — same role (sticky footer under a
    scrollable body), just a different name because the modal and sheet
-   systems grew up separately. They'd drifted to 10px/12px vs 12px/14px. */
-.cove-sheet-footer{flex-shrink:0;border-top:1px solid var(--panel-line);padding:12px 14px;background:var(--panel);text-align:center}
+   systems grew up separately. They'd drifted to 10px/12px vs 12px/14px,
+   then both got bumped to 18px vertical to match .cove-sheet-body/
+   .cove-dialog-body's own 18px top padding (see that comment). */
+.cove-sheet-footer{flex-shrink:0;border-top:1px solid var(--panel-line);padding:18px 14px;background:var(--panel);text-align:center}
 .cove-sheet-footer .btn{min-height:44px;width:100%;text-align:center}
 #shop .cove-sheet-body{display:flex;flex-direction:column;overflow:hidden;padding-left:0;padding-right:0}
 #shopList{min-height:0}
