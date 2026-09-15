@@ -2056,7 +2056,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <p><b>Catmint Cove</b> is played upright.<br>Turn your phone back and the cove's right there. 🐾</p>
 </div>
 
-<script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=11"><script src="ui/little-matches.js?v=13"></script>
+<script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=12"><script src="ui/little-matches.js?v=14"></script>
 <script>
 (() => {
 "use strict";
@@ -10911,7 +10911,7 @@ function enterFestVolley() {
   document.getElementById("festVolleyPanel").hidden = false;
   trackEvent("volleyball_card_opened");
 }
-function neoUIIcon(key){return `<img class="neo-ui-icon" src="art/icon-keepsake-${key}.svg?v=3" alt="" aria-hidden="true" width="28" height="28">`;}
+window.neoUIIcon=function(key){return `<img class="neo-ui-icon" src="art/icon-keepsake-${key}.svg?v=3" alt="" aria-hidden="true" width="28" height="28">`;}
 const FEST_EVENTS = [
   { key: "race", emoji: "🚩", name: "Cove Race",
     desc: "Pick a cat and cheer them all the way to the finish.",
