@@ -821,10 +821,10 @@
     transform:translateX(-50%);width:min(88vw,360px);display:flex;align-items:center;gap:0;
     background:rgba(17,14,21,.9);border:1px solid rgba(255,255,255,.14);border-radius:999px;
     box-shadow:0 6px 20px rgba(0,0,0,.34);color:rgba(255,255,255,.92);font-size:.8rem;
-    padding:.34rem .35rem;}
+    padding:.22rem .26rem;}
   .fest-bar[hidden]{display:none;}
   .fest-bar .rb-back{display:flex;align-items:center;gap:.35rem;background:none;border:none;
-    color:#fff;font:inherit;font-weight:600;font-size:.82rem;padding:.42rem .8rem;
+    color:#fff;font:inherit;font-weight:600;font-size:.82rem;padding:.3rem .75rem;
     border-radius:999px;cursor:pointer;white-space:nowrap;}
   .fest-bar .rb-back:hover{background:rgba(255,255,255,.12);}
   .fest-bar .rb-back span{font-size:1.05rem;line-height:1;opacity:.75;}
@@ -1506,7 +1506,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #fest .midk-spin .ms-paw{font-size:22px}#fest .midk-console .mc-reels span{width:36px;height:36px}
 #fest .midk-console .mc-bar{bottom:6px;left:12px;width:116px;height:4px}
 #fest .midk-console .mc-msg{left:12px;width:116px}
-#fest .fest-bar{min-height:48px;box-sizing:border-box;bottom:calc(12px + env(safe-area-inset-bottom))}
+#fest .fest-bar{min-height:44px;box-sizing:border-box;bottom:calc(10px + env(safe-area-inset-bottom))}
 /* #fest #cafeBoard (2 ids) always outranks a plain #cafeBoard rule, so
    two other max-height guesses elsewhere (34vh mobile, 44vh unconditional)
    never actually applied — removed those; this is the one that renders.
@@ -2117,6 +2117,10 @@ const W = 1150, H = 780;
 let displayScale = 1;   // css px per world unit
 let _worldOffX = 0, _worldOffY = 0, _overX = 0;   // FILL mode centres/crops the cove to cover the viewport; PAN mode leaves both 0
 let _viewBottomY = 780, _narrowUI = false;        // world-y at the bottom of the viewport, and whether the mobile tab bar is up
+// world units reserved above the fixed mobile tab bar so cats/drops never sit behind it — measured live in
+// resize() from #actions' real rendered height (button min-height + safe-area-inset-bottom vary by device;
+// a flat guess under-reserved on tall-safe-area phones, letting cats wander in behind the bar). +6 for margin.
+let _actionsBarH = 84;
 let _panning = false;                             // true when the cove is wider than the screen (you drag to see it all — a bigger screen shows the lot)
 
 /* ---------- trait model ---------- */
@@ -2630,7 +2634,7 @@ const STATION_HOME = {   // each station has a canonical corner of the cove
 // stations they work clear of the fixed action bar at the bottom of the screen
 // lowest a cat / usable attractor sits — clear of the action bar, and above the
 // FILL-mode crop so nobody's feet get shaved off at the bottom of the screen
-const catFloor = () => _viewBottomY - (_narrowUI ? 84 : 62);
+const catFloor = () => _viewBottomY - (_narrowUI ? _actionsBarH : 62);
 // Place a set of footprints so nothing lands on top of anything else.
 // Each item: { r (footprint radius), seed (stable), yBand:[lo,hi] }. Returns [{x,y}].
 // `avoid` is a list of pre-placed footprints { x, y, r } the new items must clear too.
@@ -18671,6 +18675,14 @@ function resize() {
   _overX = Math.max(0, _worldOffX) + 6;
   _viewBottomY = H + Math.min(0, _worldOffY);   // world-y at the viewport's bottom edge
   _narrowUI = fvw < 600;                        // the fixed mobile tab bar is up
+  if (_narrowUI) {
+    // measure the REAL bar (button min-height + safe-area-inset-bottom vary by
+    // device — a flat guess under-reserved on tall-safe-area phones) instead of
+    // guessing its height, so catFloor() always clears it exactly, plus a margin.
+    const abEl = document.getElementById("actions");
+    const abH = abEl && abEl.getBoundingClientRect().height;
+    if (abH > 0) _actionsBarH = abH / displayScale + 6;
+  }
   canvas.style.width = Math.round(cssW) + "px";
   canvas.style.height = Math.round(cssH) + "px";
   const bw = Math.round(cssW * DPR), bh = Math.round(cssH * DPR);
