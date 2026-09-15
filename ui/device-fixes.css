@@ -72,7 +72,14 @@
 /* Credits / Catmint Cove Cares should read as links (accent color, same as
    everywhere else they appear) and meet the same 44px tap target as every
    other control in this panel — this compact variant had shrunk both. */
-#tut .help-footer .linkbtn{font-size:11px;font-weight:400;color:var(--accent-bright,#508363);min-height:44px;padding:8px 4px}
+#tut .help-footer .linkbtn{font-size:11px;font-weight:400;color:#7ba888;min-height:44px;padding:8px 4px;transition:color .12s ease,opacity .12s ease}
+#tut .help-footer .linkbtn:active{opacity:.55}
+/* This #tut-scoped rule's ID beats .help-footer .linkbtn:hover's plain
+   classes regardless of hover state (an ID always outranks any number
+   of classes, :hover included) — so the intended hover color in the
+   main stylesheet never actually got a chance to apply here. Needs its
+   own hover rule at the same specificity to win instead. */
+@media(hover:hover){#tut .help-footer .linkbtn:hover{color:#2d5039}}
 #tut .help-visual{margin:12px 0 8px}#tut .help-visual img{width:40px;height:40px}#tut .help-steps{font-size:14px;line-height:1.5;margin:12px 0 18px;padding-left:20px}#tut .help-steps li{margin:10px 0;padding-left:4px}#tut #helpShow{min-height:44px;border-radius:12px}
 
 /* Release audit: shared panels, readable icon/text alignment and short screens. */
