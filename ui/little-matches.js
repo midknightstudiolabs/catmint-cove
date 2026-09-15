@@ -57,14 +57,20 @@ function openingLook(){
  function finish(){if(e!==epoch)return;clearTimeout(timer);timer=null;clearInterval(countdownTimer);countdownTimer=null;board.getAnimations?.({subtree:true}).forEach(a=>a.cancel());revealed=[];busy=false;board.classList.remove('lm-deal');skip.remove();renderBoard();say('Find their friends. Their places stay fixed now.');persist();}
  function mix(){if(e!==epoch||mixing)return;mixing=true;clearInterval(countdownTimer);countdownTimer=null;skip.disabled=true;skip.textContent='Shuffling…';revealed=[];board.classList.remove('lm-deal');renderBoard();const old=[...board.children].map(c=>c.getBoundingClientRect());const order=openingShuffle();renderBoard();say('A little shuffle…');
  const still=reduced(),area=board.getBoundingClientRect();
- [...board.children].forEach((card,i)=>{
+ const cards=[...board.children];
+ cards.forEach((card,i)=>{
   const to=card.getBoundingClientRect(),from=old[order[i]];
   card.style.zIndex=i+1;
   card.style.setProperty('--from-x',(from.left-to.left)+'px');card.style.setProperty('--from-y',(from.top-to.top)+'px');
   card.style.setProperty('--mix-x',(area.left+area.width/2-to.left-to.width/2)+'px');card.style.setProperty('--mix-y',(area.top+area.height/2-to.top-to.height/2)+'px');
   card.style.setProperty('--mix-turn',(i%2?8:-8)+'deg');
-  card.classList.add(still?'lm-shuffle-gentle':'lm-shuffling');
  });
+ // Force a style flush before starting the animation class — Safari can start a
+ // CSS animation that reads a custom property in the same tick it was set using
+ // the PREVIOUS value (a stale snapshot), which reads as "the shuffle just didn't
+ // happen." Reading a layout property forces the custom properties to commit first.
+ void board.offsetWidth;
+ cards.forEach(card=>card.classList.add(still?'lm-shuffle-gentle':'lm-shuffling'));
  if(still)say('A gentle shuffle. New places, same little friends.');
  timer=setTimeout(finish,still?1000:1700);
  }
