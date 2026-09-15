@@ -260,10 +260,19 @@
     }
     #actions .badge.cost{background:var(--accent);color:#fff;left:calc(50% + .35rem);}
     #actions .btn.primary .badge.cost{background:var(--accent);}
-    /* the cat card / toast / dev panel sit above the taller bar */
+    /* the cat card / toast / dev panel sit above the taller bar.
+       #toast and #dev each also have a later, unconditional desktop rule
+       for the same "bottom" property (99.2px and 57.6px respectively) —
+       same specificity, later in the document, so on mobile it silently
+       won instead of these two, and the "sit above the taller bar" intent
+       never actually applied. Both happened to still clear the current
+       bar height by coincidence, but !important (matching this file's
+       own established fix for this exact situation) makes it deliberate
+       instead of lucky, and var(--navh) keeps it correct if the bar's
+       height ever changes again. */
     #catcard{bottom:auto;}
-    #toast{bottom:calc(7.2rem + env(safe-area-inset-bottom));}
-    #dev{bottom:calc(4.4rem + env(safe-area-inset-bottom));}
+    #toast{bottom:calc(var(--navh) + 1.6rem) !important;}
+    #dev{bottom:var(--navh) !important;}
     /* #scrim centers modals in the full viewport by default, so a modal's
        gap to the nav bar below it depended entirely on how tall that
        modal's own content happened to be — short ones floated with a big
