@@ -72,6 +72,12 @@ jobs:
           npx @capacitor/assets generate --android
           npx cap sync android
 
+      - name: Fix the Android splash black-flash
+        run: |
+          node scripts/patch-android-splash.mjs
+          grep -n "windowSplashScreenBackground" android/app/src/main/res/values/styles.xml
+          grep -n "installSplashScreen" android/app/src/main/java/com/midknightstudiolabs/catmintcove/MainActivity.java
+
       - name: Lock the app to portrait
         run: |
           M=android/app/src/main/AndroidManifest.xml
