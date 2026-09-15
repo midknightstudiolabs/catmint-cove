@@ -155,7 +155,14 @@
      seamless backdrop. */
   #titleScreen{
     position:fixed;inset:0;z-index:200;
-    display:flex;align-items:center;justify-content:center;
+    display:flex;justify-content:center;
+    padding:max(28px,env(safe-area-inset-top)) 0 max(20px,env(safe-area-inset-bottom));
+    box-sizing:border-box;
+    /* no align-items:center here on purpose — .ts-card stretches to the
+       full height (flex's default cross-axis behavior) so it can spread
+       its own content top-to-bottom, instead of shrink-wrapping into one
+       small block that gets centered with a huge, equal void above and
+       below it. */
   }
   #titleScreen[hidden]{display:none;}   /* the ID rule above otherwise outranks the UA [hidden] default */
   #tsCurtainL,#tsCurtainR{
@@ -171,7 +178,8 @@
   #titleScreen.out #tsCurtainR{transform:translateX(100%);}
   #titleScreen.out{pointer-events:none;}
   .ts-card{position:relative;z-index:1;
-    text-align:center;max-width:min(88vw,360px);padding:0 1rem;
+    display:flex;flex-direction:column;align-items:center;
+    text-align:center;max-width:min(88vw,360px);padding:max(48px,12vh) 1rem 0;
     animation:tsIn 1.1s cubic-bezier(.16,1,.3,1) both;
     transition:opacity .25s ease, transform .25s ease;}
   #titleScreen.out .ts-card{opacity:0;transform:scale(.9);}
@@ -181,7 +189,11 @@
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
   .ts-hint{display:none;margin:.9rem 0 0;font-size:.78rem;color:var(--ink-soft);opacity:.75;}
   #app.panning .ts-hint{display:block;}
-  .ts-copy{margin:1.3rem 0 0;font-size:.66rem;letter-spacing:.02em;color:var(--ink-soft);opacity:.6;}
+  /* margin-top:auto is the whole trick: it pushes the copyright (and the
+     tablet hint above it, when that's showing) all the way down to the
+     bottom of .ts-card's now full-height box, instead of leaving it
+     bunched right under the button with a huge empty gap below. */
+  .ts-copy{margin:auto 0 0;font-size:.66rem;letter-spacing:.02em;color:var(--ink-soft);opacity:.6;}
 
   /* ---- bottom action bar ---- */
   /* --navh: the nav bar's real rendered height (safe-area inset included),
@@ -199,31 +211,40 @@
     pointer-events:none;
   }
   #actions button{pointer-events:auto;min-height:44px;}
-  /* phones/tablets in portrait: a fixed bottom tab bar — all 5 fit, no scrolling */
+  /* phones/tablets in portrait: a fixed bottom tab bar — all 5 fit, no scrolling.
+     This used to be one of THREE separate #actions mobile rulesets scattered
+     across three different <style> blocks in this file (this one, plus two
+     more later tagged "neo-home-style") — each written at a different time
+     to tweak fit/sizing, none of them replacing the others. Whichever was
+     last in the document silently won property-by-property, so editing the
+     "obvious" block here did nothing for gap/padding/min-height/font-size,
+     which were actually coming from hundreds of lines further down. This is
+     now the one place that controls it — see the removed duplicates further
+     down for what used to fight over these same properties. */
   @media (max-width:600px){
     #actions{
       position:fixed;left:0;right:0;bottom:0;z-index:20;
-      display:flex;gap:0;flex-wrap:nowrap;justify-content:stretch;
-      padding:.28rem calc(.15rem + env(safe-area-inset-left))
-              calc(.28rem + env(safe-area-inset-bottom)) calc(.15rem + env(safe-area-inset-right));
+      display:flex;gap:3px;flex-wrap:nowrap;justify-content:stretch;
+      padding:6px max(5px,env(safe-area-inset-right))
+              max(8px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left));
       background:var(--panel);border-top:1px solid var(--panel-line);
       box-shadow:0 -10px 26px -14px rgba(36,31,23,.3);
       overflow:visible;-webkit-mask-image:none;
     }
     #actions button{
-      flex:1 1 0;min-width:0;min-height:0;
-      flex-direction:column;gap:.1rem;position:relative;
+      flex:1 1 0;min-width:0;min-height:56px;
+      flex-direction:column;gap:4px;position:relative;
       background:none;border:none;box-shadow:none;border-radius:12px;
-      padding:.4rem .1rem .3rem;
-      color:var(--ink-soft);font-size:.62rem;font-weight:700;
+      padding:6px 1px;
+      color:var(--ink-soft);font-size:11px;font-weight:700;
       transition:background .12s ease,color .12s ease,transform .06s ease;
     }
     #actions button:hover{background:none;}
     #actions button:active{transform:scale(.94);background:rgba(53,107,76,.09);}
     #actions button.primary{background:none;color:var(--accent-bright);}
     #actions button:disabled{opacity:.42;}
-    #actions .btn .ico{font-size:1.4rem;line-height:1;}
-    #actions .lbl{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+    #actions .btn .ico{font-size:22px;line-height:24px;}
+    #actions .lbl{display:block;white-space:nowrap;overflow:visible;text-overflow:clip;max-width:100%;}
     #actions .lbl-x{display:none;}
     #actions .badge{
       position:absolute;top:-.05rem;left:calc(50% + .55rem);
@@ -1327,10 +1348,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 </style>
 <style id="neo-home-style">/* Soft coastal interface: clear hierarchy, comfortable text and stable layout. */
 .neo-secondary-action{display:none!important}
-#actions{gap:8px;padding-bottom:max(10px,env(safe-area-inset-bottom));}
+/* Desktop-only sizing for the row of pill buttons #actions is on wider
+   screens — left unscoped before, so it was silently outranking the
+   mobile tab-bar block's own gap/padding/min-height for the same
+   element on phones (equal specificity, later in the document wins,
+   regardless of either rule being inside a media query). */
+@media(min-width:601px){
+  #actions{gap:8px;padding-bottom:max(10px,env(safe-area-inset-bottom));}
+  #actions>.btn{min-height:48px;min-width:88px;justify-content:center}
+}
 #dexBtn .badge{display:none}
 .neo-story-x{position:absolute;top:0;right:0;float:none;z-index:2;min-height:44px;min-width:44px}
-#actions>.btn{min-height:48px;min-width:88px;justify-content:center}
 #neo-explore{max-width:650px}
 .neo-explore-grid,.neo-cat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
 .neo-destination,.neo-cat-tile{border:1px solid #d7ddc9;border-radius:20px;background:#fffdf4;color:#384c3e;padding:20px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;font:inherit;cursor:pointer}
@@ -1347,16 +1375,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-note-label{display:block;text-align:left;font-weight:600;margin-bottom:8px}.neo-story textarea{width:100%;min-height:90px;background:#fffdf6;border:1px solid #c6d1bd;border-radius:12px;padding:12px;color:#3b493d;font:inherit;resize:vertical;margin-bottom:12px}
 .neo-memory-list{text-align:left;border-left:2px solid #ccd7be;padding-left:18px;margin:24px 4px}.neo-memory-list article{padding:8px 0}.neo-memory-list span{font-size:12px;color:#738067}.neo-memory-list p{margin:6px 0;line-height:1.5}
 .goal .linkbtn{min-height:44px}.sheet .x{min-width:44px;min-height:44px}.sheet:focus-visible,button:focus-visible{outline:3px solid #a16c31;outline-offset:3px}
-@media(max-width:600px){#actions{gap:5px;left:8px;right:8px}#actions>.btn{min-width:0;flex:1;font-size:14px;padding:10px 8px}.neo-explore-grid{gap:9px}.neo-destination{padding:16px 12px}.neo-destination b{font-size:16px}.neo-destination small{font-size:13px}#cafeBoard .cs-jn,#cafeBoard .cs-st,#cafeBoard .cs-swap{font-size:11px}#cafeBoard .cs-nm{font-size:14px}#cafeHint{font-size:12px}#cafeBoard button{min-height:44px}#cafeBoard{max-height:34vh;overflow:auto}.neo-journal-cover{padding:20px}.neo-journal-cover h3{font-size:26px}}
+@media(max-width:600px){.neo-explore-grid{gap:9px}.neo-destination{padding:16px 12px}.neo-destination b{font-size:16px}.neo-destination small{font-size:13px}#cafeBoard .cs-jn,#cafeBoard .cs-st,#cafeBoard .cs-swap{font-size:11px}#cafeBoard .cs-nm{font-size:14px}#cafeHint{font-size:12px}#cafeBoard button{min-height:44px}#cafeBoard{max-height:34vh;overflow:auto}.neo-journal-cover{padding:20px}.neo-journal-cover h3{font-size:26px}}
 @media(prefers-reduced-motion:reduce){.neo-destination,.neo-cat-tile{transition:none}}
-
-/* Four equally weighted destinations stay visible. */
-@media(max-width:600px){
-  #actions{left:0;right:0;gap:3px;padding:6px max(5px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left))}
-  #actions>.btn{flex:1 1 0;min-width:0;min-height:56px;font-size:11px;padding:6px 1px;gap:4px}
-  #actions>.btn .ico{font-size:22px;line-height:24px}
-  #actions>.btn .lbl{overflow:visible;text-overflow:clip}
-}
+/* The mobile #actions/#actions>.btn rules that used to live here (gap,
+   padding, min-height, font-size — two competing versions of them) are
+   consolidated into the single mobile nav-bar block near the top of the
+   file now; see the comment there. */
 
 /* Compact collection and consistently anchored activity sheet. */
 #neo-explore{left:50%;top:50%;transform:translate(-50%,-50%);width:min(96vw,600px);max-height:calc(100dvh - 150px);overflow-y:auto;padding-top:24px;overscroll-behavior:contain}
