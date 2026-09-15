@@ -184,6 +184,14 @@
   .ts-copy{margin:1.3rem 0 0;font-size:.66rem;letter-spacing:.02em;color:var(--ink-soft);opacity:.6;}
 
   /* ---- bottom action bar ---- */
+  /* --navh: the nav bar's real rendered height (safe-area inset included),
+     kept in sync by syncNavH() below. Every panel that has to clear the bar
+     on mobile reads this one number instead of guessing at a rem value —
+     the guesses have drifted from the bar's actual height more than once
+     (76px, 3.5rem, 4.75rem all showed up in different panels), which is
+     exactly what made the reserved gap look different from panel to panel.
+     The calc() fallback only matters for the first frame before JS runs. */
+  :root{--navh:calc(3.5rem + env(safe-area-inset-bottom));}
   #actions{
     position:absolute;left:0;right:0;bottom:0;z-index:20;
     display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;
@@ -228,6 +236,27 @@
     #catcard{bottom:auto;}
     #toast{bottom:calc(7.2rem + env(safe-area-inset-bottom));}
     #dev{bottom:calc(4.4rem + env(safe-area-inset-bottom));}
+    /* #scrim centers modals in the full viewport by default, so a modal's
+       gap to the nav bar below it depended entirely on how tall that
+       modal's own content happened to be — short ones floated with a big
+       gap, tall ones landed almost flush against the bar. Pulling the
+       scrim's own bottom edge up by the bar's height (instead of adding
+       bottom padding) means the flexbox centers within the space *above*
+       the bar using the SAME padding on every side, so the gap above and
+       below a short dialog comes out equal, not just present. The
+       dialog's own max-height is capped by the same amount so it can
+       never grow back into the space this reserves. */
+    #scrim{bottom:var(--navh) !important;}
+    #modal .cove-bottom-dialog{max-height:calc(100dvh - 120px - var(--navh)) !important;}
+    /* #roster and #neo-homestead center on the raw viewport (top:50%) with
+       no idea the fixed nav bar covers the bottom of it, so their true
+       midpoint sits noticeably lower than it looks — same bug as #scrim
+       above, just expressed as an off-center card instead of an uneven
+       gap. Shifting the center up by half the bar's reserved height (and
+       trimming max-height by the same) keeps them centered in the space
+       actually visible above the bar. */
+    #roster{top:calc(50% - (var(--navh) / 2)) !important;max-height:calc(84vh - var(--navh)) !important;}
+    #neo-homestead{top:calc(50% - (var(--navh) / 2)) !important;max-height:calc(100dvh - 150px - var(--navh)) !important;}
   }
 
   #stage{position:absolute;inset:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior:none;
@@ -254,7 +283,7 @@
   #shop h2{padding:.95rem 1.15rem .1rem;}
   #shop .x{z-index:3;}
   @media(max-width:600px){
-    #shop{top:auto;bottom:calc(3.5rem + env(safe-area-inset-bottom));transform:translateX(-50%);
+    #shop{top:auto;bottom:var(--navh);transform:translateX(-50%);
       width:100vw;max-height:78dvh;border-radius:20px 20px 0 0;}
   }
   .shop-tabs{display:flex;gap:.15rem;padding:.5rem .8rem 0;overflow-x:auto;flex:0 0 auto;
@@ -332,6 +361,11 @@
     padding:.6rem .7rem;margin:.2rem 0 .9rem;word-break:break-all;}
   .linkbtn{background:none;border:none;color:var(--ink-soft);font:inherit;font-weight:600;font-size:.82rem;
     cursor:pointer;margin-top:.7rem;text-decoration:underline;}
+  /* Credits / Catmint Cove Cares read as plain muted text next to the
+     bright "Take a guided tour" button above them — giving them the
+     app's accent color (same one used for other tappable links, like
+     the shop tabs) marks them as links without pulling in a new color. */
+  .help-footer .linkbtn{color:var(--accent-bright);}
   .shop-item .lv{font-size:.72rem;color:var(--accent-bright);font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
   .shop-item.pack{background:linear-gradient(180deg,#fff8ec,#fdeeceff);border-radius:14px;padding:.75rem;margin:.35rem 0;border-top:none;}
   .shop-item.pack .name{color:var(--apricot);}
@@ -382,7 +416,7 @@
 
   /* ---- catdex / field guide ---- */
   #dex{left:50%;top:50%;transform:translate(-50%,-50%);width:min(96vw,520px);max-height:82vh;overflow-y:auto;border-radius:22px;}
-  @media(max-width:600px){#dex{top:auto;bottom:calc(3.5rem + env(safe-area-inset-bottom));transform:translateX(-50%);width:100vw;max-height:78dvh;border-radius:20px 20px 0 0;}}
+  @media(max-width:600px){#dex{top:auto;bottom:var(--navh);transform:translateX(-50%);width:100vw;max-height:78dvh;border-radius:20px 20px 0 0;}}
   .dex-tier{margin:0 0 1.15rem;}
   .dex-th{display:flex;justify-content:space-between;align-items:baseline;margin:.1rem .1rem .35rem;}
   .dex-th .tn{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:.95rem;color:var(--ink);}
@@ -405,7 +439,7 @@
 
   /* ---- today ---- */
   #today{left:50%;top:50%;transform:translate(-50%,-50%);width:min(96vw,480px);max-height:82vh;overflow-y:auto;border-radius:22px;}
-  @media(max-width:600px){#today{top:auto;bottom:calc(3.5rem + env(safe-area-inset-bottom));transform:translateX(-50%);width:100vw;max-height:78dvh;border-radius:20px 20px 0 0;}}
+  @media(max-width:600px){#today{top:auto;bottom:var(--navh);transform:translateX(-50%);width:100vw;max-height:78dvh;border-radius:20px 20px 0 0;}}
 
   /* ---- v3: adventures, vignettes, moments ---- */
   .vig-art{font-size:2.6rem;line-height:1;margin:.1rem 0 .5rem;}
@@ -633,6 +667,7 @@
   /* ---- tutorial ---- */
   #tut{position:absolute;inset:0;z-index:70;background:rgba(28,24,16,.55);
     display:none;align-items:center;justify-content:center;padding:1.2rem;backdrop-filter:blur(2px);}
+  @media(max-width:600px){ #tut{bottom:var(--navh) !important;} }
   #tut.on{display:flex;}
   #tut .card{background:var(--panel);border:1px solid var(--panel-line);border-radius:22px;box-shadow:var(--shadow);
     width:min(92vw,380px);padding:1.4rem 1.3rem 1.15rem;text-align:center;}
@@ -1326,14 +1361,19 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #neo-cat-search{width:100%;min-height:44px;padding:10px 12px;border:1px solid #cbd5bd;border-radius:12px;background:#fffdf5;color:#384c3e;font:inherit}
 #neo-cat-count{margin:8px 0;font-size:12px}
 @media(max-width:600px){
- #neo-explore{top:auto;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);width:calc(100vw - 12px);max-height:calc(100dvh - 155px);border-radius:20px}
- #dex{bottom:calc(76px + env(safe-area-inset-bottom));max-height:calc(100dvh - 155px)}
+ /* 3.5rem matches the bottom-nav reservation every other bottom-anchored
+    panel uses (#shop, #today, #tut, #modal) — this pair used to reserve
+    76px instead, an inconsistency that made the gap look different
+    panel to panel. */
+ #neo-explore{top:auto;bottom:var(--navh);transform:translateX(-50%);width:calc(100vw - 12px);max-height:calc(100dvh - 135px);border-radius:20px}
+ #dex{bottom:var(--navh);max-height:calc(100dvh - 135px)}
  .neo-cat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 
 #neo-care-desc{margin-top:12px;line-height:1.5;font-size:13px}#neo-care-status:not(:empty){padding:12px;border-radius:12px;background:#e8efdb;color:#38513d;line-height:1.5;font-size:14px}
 
 #tut .guide-links{flex-wrap:wrap}#tut .guide-links .btn{min-height:44px}#tut .card{max-height:90dvh;overflow-y:auto}#tut .guide-list{max-height:45dvh}
+@media(max-width:600px){ #tut .card{max-height:calc(90dvh - var(--navh)) !important;} }
 
 /* Catdex feels like a small keepsake album, with an understated close control. */
 #dex{background:#faf6e9;border:1px solid #d8d7bd;padding-top:0;box-shadow:0 16px 48px rgba(38,53,39,.20),inset 5px 0 #e2e8d2}
@@ -18484,9 +18524,19 @@ function resize() {
   stage.scrollLeft = clamp(stage.scrollLeft, 0, Math.max(0, cssW - fvw));
   refreshShellAnchor();
 }
+// keeps --navh (the mobile bottom-nav's real height) matching the actual
+// bar, so every panel that reserves space for it clears the same amount —
+// measuring beats guessing a rem value, since the bar's true height has
+// drifted from every hand-picked guess we've tried.
+function syncNavH() {
+  if (!window.matchMedia("(max-width:600px)").matches) return;
+  const el = document.getElementById("actions");
+  if (el) document.documentElement.style.setProperty("--navh", el.getBoundingClientRect().height + "px");
+}
 // wired to every way the viewport can change (iOS rotate, address bar, split view)
 let _lastViewBottom = 780, _relayoutT = 0;
 function onViewportChange() {
+  syncNavH();
   _resizeRetry = 0;                   // a real viewport event — let resize() retry from scratch if needed
   resize();                          // keep the canvas backing store matched to the box — immediately
   if (restMode) fitRestCanvas();     // ...but rest wants its own small canvas, not the pannable one
@@ -19420,6 +19470,7 @@ function neoPaintCafe(cv,h){
 }
 
 /* NEO_HOME_END */
+syncNavH();
 resize();
 _lastViewBottom = _viewBottomY;
 load();

@@ -39,7 +39,7 @@
  #bar{padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
 }
 
-.guide-row summary{cursor:pointer;font-weight:600;padding:10px 0}.guide-row[hidden]{display:none}#neo-tour{position:fixed;z-index:150;bottom:calc(86px + env(safe-area-inset-bottom));left:12px;width:min(350px,calc(100vw - 24px));max-height:42dvh;overflow:auto;background:#fff8e7;color:#344331;border:1px solid #b8c5a5;border-radius:18px;padding:14px;box-sizing:border-box;box-shadow:0 4px 18px #0002}#neo-tour b{display:block}#neo-tour p{font-size:13px;margin:6px 0 10px}#neo-tour>div{display:flex;gap:5px;flex-wrap:wrap}#neo-tour .btn{font-size:12px;min-height:44px;padding:6px 10px}
+.guide-row summary{cursor:pointer;font-weight:600;padding:10px 0}.guide-row[hidden]{display:none}#neo-tour{position:fixed;z-index:150;bottom:calc(var(--navh, 70px) + 15px);left:12px;width:min(350px,calc(100vw - 24px));max-height:42dvh;overflow:auto;background:#fff8e7;color:#344331;border:1px solid #b8c5a5;border-radius:18px;padding:14px;box-sizing:border-box;box-shadow:0 4px 18px #0002}#neo-tour b{display:block}#neo-tour p{font-size:13px;margin:6px 0 10px}#neo-tour>div{display:flex;gap:5px;flex-wrap:wrap}#neo-tour .btn{font-size:12px;min-height:44px;padding:6px 10px}
 
 /* Consistent cozy roster dismissal, including iOS native button reset. */
 #roster #roster-x{appearance:none;-webkit-appearance:none;display:grid;place-items:center;box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:1px solid #d8d3bf;border-radius:50%;background:#f1ecdc;color:#61735c;-webkit-text-fill-color:#61735c;box-shadow:none;touch-action:manipulation}
@@ -61,7 +61,11 @@
 #tut .card.help-home{width:min(380px,calc(100vw - 24px))!important;padding:18px!important;text-align:left;border-radius:20px;max-height:calc(100dvh - 32px)}
 #tut .help-head{gap:8px;margin:0 0 8px}#tut .help-head h2{font-size:21px;margin:0;line-height:1.2}#tut .help-head>.btn{width:40px;min-width:40px;height:40px;min-height:40px;background:#efecdf;border:0;box-shadow:none}
 #tut .help-choices{gap:0;margin:4px 0 12px}#tut .help-choice{min-height:62px;padding:10px 4px;border:0;border-bottom:1px solid #dedfce;border-radius:0;background:transparent;box-shadow:none;gap:12px;font-size:15px;font-weight:600;cursor:pointer;-webkit-text-fill-color:#43543f}#tut .help-choice:last-child{border-bottom:0}#tut .help-choice img{width:30px;height:30px}#tut .help-choice:hover{background:#efefdf;border-radius:10px}#tut .help-choice:active{background:#e4e8d5}#tut .help-choice span:last-child{color:#88917b;font-size:20px;font-weight:400}
-#tut .help-home .linkbtn{margin:0;padding:8px;min-height:44px;line-height:1.2;text-decoration:none}#tut #guideTour{display:block;width:100%;border:1px solid #b7c4aa;border-radius:12px;background:#e9eddf;font-size:13px;color:#435f46}#tut .help-footer{margin:10px 0 0;padding:0;border:0;gap:16px;justify-content:center}#tut .help-footer .linkbtn{font-size:11px;font-weight:400;color:#777d6b;min-height:36px;padding:8px 4px}
+#tut .help-home .linkbtn{margin:0;padding:8px;min-height:44px;line-height:1.2;text-decoration:none}#tut #guideTour{display:block;width:100%;border:1px solid #b7c4aa;border-radius:12px;background:#e9eddf;font-size:13px;color:#435f46}#tut .help-footer{margin:10px 0 0;padding:0;border:0;gap:16px;justify-content:center}
+/* Credits / Catmint Cove Cares should read as links (accent color, same as
+   everywhere else they appear) and meet the same 44px tap target as every
+   other control in this panel — this compact variant had shrunk both. */
+#tut .help-footer .linkbtn{font-size:11px;font-weight:400;color:var(--accent-bright,#508363);min-height:44px;padding:8px 4px}
 #tut .help-visual{margin:12px 0 8px}#tut .help-visual img{width:40px;height:40px}#tut .help-steps{font-size:14px;line-height:1.5;margin:12px 0 18px;padding-left:20px}#tut .help-steps li{margin:10px 0;padding-left:4px}#tut #helpShow{min-height:44px;border-radius:12px}
 
 /* Release audit: shared panels, readable icon/text alignment and short screens. */
