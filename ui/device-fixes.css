@@ -112,15 +112,15 @@
 .btn,#placeBar button,.cove-action-pair button{text-align:center;justify-content:center}.cove-action-pair .btn{display:flex;align-items:center}#placeBar button{white-space:normal}
 
 /* Festival choices are icon-led rows, rather than centered action labels. */
-#fest .fc-card{text-align:left!important;grid-template-columns:40px minmax(0,1fr) 16px;column-gap:14px;row-gap:3px;width:100%;touch-action:manipulation;transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease}
+#fest .fc-card{text-align:left!important;grid-template-columns:30px minmax(0,1fr) 14px;column-gap:11px;row-gap:2px;width:100%;touch-action:manipulation;transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease}
 #fest .fc-card .fc-emoji{grid-column:1;grid-row:1 / 4;align-self:center;display:grid;place-items:center}
 #fest .fc-card .fc-name,#fest .fc-card .fc-desc,#fest .fc-card .fc-lock{grid-column:2;text-align:left;min-width:0;overflow-wrap:anywhere}
 #fest .fc-card .fc-name{grid-row:1}#fest .fc-card .fc-desc{grid-row:2}#fest .fc-card .fc-lock{grid-row:3}
-#fest .fc-card:not(.locked)::after{content:'›';grid-column:3;grid-row:1 / 4;align-self:center;color:#68825d;font-size:24px}
+#fest .fc-card:not(.locked)::after{content:'›';grid-column:3;grid-row:1 / 4;align-self:center;color:#68825d;font-size:20px}
 #fest .fc-card:not(.locked):active{background:#e0e8d4;box-shadow:inset 0 0 0 1px #789578}
 #fest .fc-card:focus-visible{outline:2px solid #477354;outline-offset:2px}
 @media(hover:hover){#fest .fc-card:not(.locked):hover{background:#e7eddb;border-color:#91a781}}
-@media(max-width:360px){#fest .fc-card{padding:10px;column-gap:9px}#fest .fc-card .fc-name{font-size:.95rem}}
+@media(max-width:360px){#fest .fc-card{padding:8px;column-gap:8px}#fest .fc-card .fc-name{font-size:.82rem}}
 
 /* Compact phone spin control: ID specificity survives later legacy theme rules. */
 @media(max-width:600px),(max-height:500px){
