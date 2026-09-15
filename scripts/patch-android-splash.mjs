@@ -34,8 +34,8 @@ writeFileSync(
   '<?xml version="1.0" encoding="utf-8"?>\n' +
     "<resources>\n" +
     "    <!-- Matches capacitor.config.json backgroundColor / SplashScreen.backgroundColor\n" +
-    "         and the web app's own body background (--sky-bot) — keeping this the same\n" +
-    "         cream avoids a color flash between the native launch frame and the JS splash. -->\n" +
+    "         and the web app's own body background (its sky-bot token) — keeping this\n" +
+    "         the same cream avoids a color flash between the native launch frame and the JS splash. -->\n" +
     '    <color name="splashBackground">#eef3e6</color>\n' +
     "</resources>\n"
 );
