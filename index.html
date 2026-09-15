@@ -1481,7 +1481,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #modal:has(.cove-bottom-dialog){overflow:hidden;padding:0}
 #modal .cove-bottom-dialog{display:flex;flex-direction:column;max-height:calc(100dvh - 120px);overflow:hidden;padding:0}
 .cove-dialog-body{overflow:auto;min-height:0;padding:18px 8px;overscroll-behavior:contain}
-.cove-dialog-footer{position:static!important;flex-shrink:0;display:flex!important;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:0!important;padding:12px 0!important;border-top:1px solid var(--panel-line);background:var(--panel)}
+/* padding:0 on the sides was fine for the one full-bleed button this was
+   built for (Help's "Back to Cove"), but any modal auto-upgraded into
+   this footer with two buttons side by side (e.g. the rehome confirm)
+   had them flush against the card's true edge with zero breathing room. */
+.cove-dialog-footer{position:static!important;flex-shrink:0;display:flex!important;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:0!important;padding:12px 14px!important;border-top:1px solid var(--panel-line);background:var(--panel)}
 .cove-dialog-footer .btn{min-height:44px;flex:1 1 0;min-width:0;width:auto;text-align:center}
 #roster .x{display:none}
 #modal .adv-flow .kicker,#modal .adv-flow h2{padding-right:0}
