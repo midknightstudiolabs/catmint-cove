@@ -92,12 +92,10 @@ function catPicker(){const options=el('div','lm-setup'),select=el('select');sele
  options.append(companionBox);
  return{options,select}}
 const favourIcons={peek:'peek',friend:'friend',second:'rewind'};
-// Each card leads with the ACTUAL companion portrait (same render used
-// everywhere else in the game) instead of a hand-drawn face — a small
-// abstract badge in the corner is enough to tell the three apart, and
-// the cat itself carries the visual quality rather than a flat icon
-// trying to imitate one.
-function favourFieldset(spent,skipLegend){const f=el('fieldset','lm-favours');f.disabled=spent;if(!skipLegend)f.append(el('legend','',spent?'Favour used':'Choose one free favour'));const c=companion();for(const [key,[title,desc]]of Object.entries(favours)){const l=el('label');const input=el('input');input.type='radio';input.name='lm-favour';input.value=key;input.checked=key===(round?.favour||'peek');l.classList.toggle('lm-selected',input.checked);input.onchange=()=>f.querySelectorAll('label').forEach(x=>x.classList.toggle('lm-selected',x.querySelector('input').checked));const icon=el('span','lm-favour-icon');if(c&&c.image){const portrait=el('img');portrait.src=c.image;portrait.alt='';icon.append(portrait);}const badge=el('span','lm-favour-badge');badge.innerHTML=neoUIIcon(favourIcons[key]||'paw');icon.append(badge);l.append(input,icon);const textWrap=el('div','lm-favour-text');textWrap.append(el('strong','',title),el('small','',desc));l.append(textWrap,el('span','lm-favour-check','✓ Selected'));f.append(l)}return f}
+// 'friend' is its own dedicated icon key rather than reusing the shared
+// 'paw' glyph — 'paw' shows up elsewhere (IAP labels, postcards, the
+// intro paw trail) and swapping its art in place would've changed those too.
+function favourFieldset(spent,skipLegend){const f=el('fieldset','lm-favours');f.disabled=spent;if(!skipLegend)f.append(el('legend','',spent?'Favour used':'Choose one free favour'));for(const [key,[title,desc]]of Object.entries(favours)){const l=el('label');const input=el('input');input.type='radio';input.name='lm-favour';input.value=key;input.checked=key===(round?.favour||'peek');l.classList.toggle('lm-selected',input.checked);input.onchange=()=>f.querySelectorAll('label').forEach(x=>x.classList.toggle('lm-selected',x.querySelector('input').checked));const icon=el('span','lm-favour-icon');icon.innerHTML=neoUIIcon(favourIcons[key]||'paw');l.append(input,icon);const textWrap=el('div','lm-favour-text');textWrap.append(el('strong','',title),el('small','',desc));l.append(textWrap,el('span','lm-favour-check','✓ Selected'));f.append(l)}return f}
 function modeSelect(){clear();dlg.replaceChildren();
  const top=el('div','lm-top');top.append(el('div','lm-kicker','LITTLE MATCHES'));
  dlg.append(top,el('h2','','Little Matches'),el('p','lm-intro','Choose how you’d like to play.'));
