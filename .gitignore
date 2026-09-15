@@ -1,0 +1,16 @@
+node_modules/
+
+# --- Capacitor / app build ---
+# Native projects are generated fresh in CI (`npx cap add …`) so they never
+# drift from capacitor.config.json. Everything that shapes the build lives in
+# package.json / capacitor.config.json / scripts/ / assets/ / .github/.
+www/
+android/
+ios/
+*.keystore
+*.jks
+*.mobileprovision
+*.p12
+google-services.json
+GoogleService-Info.plist
+agconnect-services.json

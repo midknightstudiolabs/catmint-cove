@@ -1,0 +1,206 @@
+name: iOS build (TestFlight)
+
+# Manual trigger, or push a tag like  ios-v3.0.11
+#
+# No Mac needed. This runs on a GitHub-hosted macOS runner and uses an
+# App Store Connect API key for BOTH code signing (xcodebuild manages the
+# cert + provisioning profile automatically) and the TestFlight upload — so
+# there is no .p12 / Keychain / manual profile dance.
+#
+# Capacitor 8 scaffolds a Swift Package Manager iOS project (App.xcodeproj +
+# CapApp-SPM/, no Podfile / no .xcworkspace) — hence -project, not -workspace,
+# and no `pod install`.
+#
+# Secrets (same values as the catmint-cove repo):
+#   ASC_KEY_ID          - the App Store Connect API key's Key ID
+#   ASC_ISSUER_ID       - the API key's Issuer ID
+#   ASC_KEY_P8_BASE64   - base64 of the AuthKey_XXXX.p8 file
+#   IOS_TEAM_ID         - 10-char Apple Developer Team ID
+# Until those exist the workflow still runs — it does a simulator compile
+# check and stops before signing.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["ios-v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26   # Apple requires the iOS 26 SDK (Xcode 26) for App Store uploads
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: |
+          ls -d /Applications/Xcode_26*.app 2>/dev/null || ls -d /Applications/Xcode*.app
+          DEV="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)/Contents/Developer"
+          if [ ! -d "$DEV" ]; then DEV="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)/Contents/Developer"; fi
+          sudo xcode-select -s "$DEV"
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i "iphoneos" || true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Work out the version
+        id: ver
+        run: |
+          # marketing version (CFBundleShortVersionString) = the App Store version
+          # users see; must match the version on the App Store Connect version page.
+          # tag ios-v1.2.3 -> 1.2.3 ; a plain run -> 3.0. Build number always = run number.
+          NAME="${GITHUB_REF_NAME#ios-v}"
+          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="3.0"; fi
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "build=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
+
+      - name: Have we got the App Store Connect key?
+        id: keys
+        env:
+          K: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: |
+          if [ -n "$K" ] && [ -n "${{ secrets.IOS_TEAM_ID }}" ]; then
+            echo "have=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No ASC_KEY_P8_BASE64 / IOS_TEAM_ID — simulator compile check only. Add the App Store Connect key secrets (same values as the catmint-cove repo) to archive + upload to TestFlight."
+          fi
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Generate the native project
+        run: |
+          rm -rf ios
+          # @capacitor/assets prefers assets/logo.png over assets/icon.png. Keep
+          # icon.png the single source of truth — a stray logo.png (old concept art)
+          # would silently ship instead.
+          [ ! -e assets/logo.png ] || { echo "::error::assets/logo.png exists — delete it; assets/icon.png is the canonical app icon"; exit 1; }
+          npx cap add ios
+          npx @capacitor/assets generate --ios
+          npx cap sync ios
+
+      - name: App icon sanity check — must be regenerated from assets/icon.png
+        run: |
+          ICON=ios/App/App/Assets.xcassets/AppIcon.appiconset
+          echo "--- $ICON ---"
+          ls -la "$ICON" || { echo "::error::AppIcon.appiconset missing — @capacitor/assets did not run"; exit 1; }
+          BIG=$(find "$ICON" -name '*.png' -size +10k | wc -l | tr -d ' ')
+          echo "icon PNGs over 10k: $BIG"
+          [ "$BIG" -ge 1 ] || { echo "::error::AppIcon looks empty — the build would ship Apple's default white icon, not the green + gold Midknight one"; exit 1; }
+          # the 1024 marketing slot must match assets/icon.png byte-for-byte (that's what @capacitor/assets copies in)
+          MKT=$(find "$ICON" -name '*1024*.png' | head -1)
+          if [ -n "$MKT" ]; then
+            cmp -s "$MKT" assets/icon.png && echo "1024 AppIcon matches assets/icon.png ✓" \
+              || echo "::warning::1024 AppIcon differs from assets/icon.png — @capacitor/assets may have re-encoded it (usually fine)"
+          fi
+
+      - name: Info.plist — orientation + export compliance
+        run: |
+          P=ios/App/App/Info.plist
+          plutil -replace UISupportedInterfaceOrientations -json '["UIInterfaceOrientationPortrait"]' "$P"
+          plutil -replace 'UISupportedInterfaceOrientations~ipad' -json '["UIInterfaceOrientationPortrait","UIInterfaceOrientationPortraitUpsideDown","UIInterfaceOrientationLandscapeLeft","UIInterfaceOrientationLandscapeRight"]' "$P"
+          # stay full-screen (no Split View / Slide Over) but still auto-rotate on iPad
+          plutil -replace UIRequiresFullScreen -bool true "$P"
+          # FULL-SCREEN LAUNCH — iOS letterboxes the whole app window (grey bars
+          # top + bottom) when it can't find a valid launch screen. @capacitor/assets
+          # 3.x runs against Capacitor 8's newer SPM template and can leave
+          # LaunchScreen.storyboard in a state iOS won't accept. The modern
+          # UILaunchScreen key (empty dict = plain full-bleed launch, every screen
+          # size supported) sidesteps the storyboard entirely; the SplashScreen
+          # plugin still paints the branded splash right after.
+          plutil -replace UILaunchScreen -json '{}' "$P"
+          # immersive game: no status bar (clock / battery / wifi hidden)
+          plutil -replace UIStatusBarHidden -bool true "$P"
+          plutil -replace 'UIStatusBarHidden~ipad' -bool true "$P"
+          plutil -replace UIViewControllerBasedStatusBarAppearance -bool false "$P"
+          # only standard HTTPS → exempt; stops TestFlight asking on every build
+          plutil -replace ITSAppUsesNonExemptEncryption -bool false "$P"
+          plutil -p "$P" | grep -A5 -iE 'Orientation|FullScreen|Encryption|StatusBar|LaunchScreen|LaunchStoryboard'
+
+      # Capacitor 8's `cap add ios` scaffolds a Swift Package Manager project
+      # (ios-spm-template) — App.xcodeproj + CapApp-SPM/, no Podfile, no
+      # .xcworkspace. So: no `pod install`, and xcodebuild targets -project.
+      - name: Resolve Swift packages
+        run: |
+          cd ios/App
+          xcodebuild -resolvePackageDependencies -project App.xcodeproj -scheme App
+
+      # --- no signing key: just prove it compiles, then stop -------------------
+      - name: Simulator compile check
+        if: ${{ steps.keys.outputs.have != 'true' }}
+        run: |
+          cd ios/App
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO clean build
+
+      # --- with the ASC key: archive with automatic signing, export, upload ---
+      - name: App Store Connect API key
+        if: ${{ steps.keys.outputs.have == 'true' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/asc" "$HOME/.appstoreconnect/private_keys"
+          P8="AuthKey_${{ secrets.ASC_KEY_ID }}.p8"
+          echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/asc/$P8"
+          cp "$RUNNER_TEMP/asc/$P8" "$HOME/.appstoreconnect/private_keys/$P8"   # where xcrun altool looks
+
+      # Archive WITHOUT signing. Automatic signing during `archive` provisions an
+      # "iOS App Development" profile (which needs registered devices — CI has
+      # none). The App Store distribution cert + profile are created and applied
+      # in the Export step below, from the ExportOptions method.
+      - name: Archive (unsigned)
+        if: ${{ steps.keys.outputs.have == 'true' }}
+        run: |
+          cd ios/App
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -destination "generic/platform=iOS" \
+            -skipPackagePluginValidation \
+            clean archive \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM="${{ secrets.IOS_TEAM_ID }}" \
+            MARKETING_VERSION="${{ steps.ver.outputs.name }}" \
+            CURRENT_PROJECT_VERSION="${{ steps.ver.outputs.build }}"
+
+      - name: Export .ipa
+        if: ${{ steps.keys.outputs.have == 'true' }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${{ secrets.IOS_TEAM_ID }}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+          </dict></plist>
+          EOF
+          cd ios/App
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey_${{ secrets.ASC_KEY_ID }}.p8" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
+
+      - name: Upload to TestFlight
+        if: ${{ steps.keys.outputs.have == 'true' }}
+        run: |
+          xcrun altool --upload-app -f "$RUNNER_TEMP"/export/*.ipa -t ios \
+            --apiKey "${{ secrets.ASC_KEY_ID }}" --apiIssuer "${{ secrets.ASC_ISSUER_ID }}"
+
+      - name: Keep the .ipa as an artifact
+        if: ${{ always() && steps.keys.outputs.have == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: catmint-cove-${{ steps.ver.outputs.name }}.ipa
+          path: ${{ runner.temp }}/export/*.ipa
+          if-no-files-found: warn

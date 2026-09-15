@@ -1,0 +1,149 @@
+name: Android build
+
+# Manual trigger, or push a tag like  android-v3.0.11
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: "Google Play track"
+        type: choice
+        options: [none, internal, alpha, beta, production]
+        default: none
+  push:
+    tags: ["android-v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"   # Capacitor 8 (AGP 8.13 / Gradle 8.14) needs JDK 21
+
+      - name: Work out the version
+        id: ver
+        run: |
+          NAME="${GITHUB_REF_NAME#android-v}"
+          if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME="3.0.$GITHUB_RUN_NUMBER"; fi
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
+
+      - name: Have we got a signing keystore?
+        id: keys
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          SA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -n "$KS" ]; then
+            echo "have=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret — building an UNSIGNED bundle. Add the keystore secrets (same values as the catmint-cove repo) before you can upload to Play."
+          fi
+          # only try the Play upload when the service-account JSON is actually set —
+          # otherwise the run stays green and you grab the .aab from the artifacts
+          if [ -n "$SA" ]; then echo "play=true" >> "$GITHUB_OUTPUT"; else echo "play=false" >> "$GITHUB_OUTPUT"; fi
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Generate the native project
+        run: |
+          rm -rf android
+          # keep assets/icon.png the single source of truth — @capacitor/assets
+          # prefers a logo.png (old concept art) over it if one is present.
+          [ ! -e assets/logo.png ] || { echo "::error::assets/logo.png exists — delete it; assets/icon.png is the canonical app icon"; exit 1; }
+          npx cap add android
+          npx @capacitor/assets generate --android
+          npx cap sync android
+
+      - name: Fix the Android splash black-flash
+        run: |
+          node scripts/patch-android-splash.mjs
+          grep -n "windowSplashScreenBackground" android/app/src/main/res/values/styles.xml
+          grep -n "installSplashScreen" android/app/src/main/java/com/midknightstudiolabs/catmintcove/MainActivity.java
+
+      - name: Lock the app to portrait
+        run: |
+          M=android/app/src/main/AndroidManifest.xml
+          grep -q 'android:screenOrientation' "$M" || \
+            sed -i -E 's#(\s*)android:name="\.MainActivity"#\1android:screenOrientation="portrait"\n\1android:name=".MainActivity"#' "$M"
+          grep -n 'screenOrientation' "$M"
+
+      - name: Stamp the version
+        run: |
+          G=android/app/build.gradle
+          sed -i "s/versionCode 1$/versionCode ${{ steps.ver.outputs.code }}/" "$G"
+          sed -i -E "s/versionName \"[^\"]*\"/versionName \"${{ steps.ver.outputs.name }}\"/" "$G"
+          grep -q "versionCode ${{ steps.ver.outputs.code }}$" "$G" || { echo "::error::versionCode not stamped — Capacitor template format changed, fix the sed"; exit 1; }
+          grep -q "versionName \"${{ steps.ver.outputs.name }}\"" "$G" || { echo "::error::versionName not stamped"; exit 1; }
+          grep -nE "versionCode|versionName" "$G"
+
+      - name: Build release bundle (.aab)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon --stacktrace
+          ls -lh app/build/outputs/bundle/release
+
+      - name: Sign the bundle
+        id: sign
+        if: ${{ steps.keys.outputs.have == 'true' }}
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: android/app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "36.0.0"
+
+      - name: Pick the file to keep
+        id: out
+        run: |
+          if [ "${{ steps.keys.outputs.have }}" = "true" ]; then
+            echo "file=${{ steps.sign.outputs.signedReleaseFile }}" >> "$GITHUB_OUTPUT"
+            echo "name=catmint-cove-${{ steps.ver.outputs.name }}.aab" >> "$GITHUB_OUTPUT"
+          else
+            AAB=$(ls android/app/build/outputs/bundle/release/*.aab | head -1)
+            echo "found unsigned bundle: $AAB"
+            echo "file=$AAB" >> "$GITHUB_OUTPUT"
+            echo "name=catmint-cove-${{ steps.ver.outputs.name }}-UNSIGNED.aab" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Keep the .aab as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.out.outputs.name }}
+          path: ${{ steps.out.outputs.file }}
+          if-no-files-found: error
+
+      - name: No Play upload — grab the .aab from the artifacts
+        if: ${{ inputs.track != '' && inputs.track != 'none' && steps.keys.outputs.have == 'true' && steps.keys.outputs.play != 'true' }}
+        run: echo "::warning::track=${{ inputs.track }} was requested but PLAY_SERVICE_ACCOUNT_JSON isn't set — skipping the auto-upload. Download catmint-cove-${{ steps.ver.outputs.name }}.aab from this run's Artifacts and upload it in Play Console."
+
+      - name: Upload to Google Play
+        if: ${{ inputs.track != '' && inputs.track != 'none' && steps.keys.outputs.have == 'true' && steps.keys.outputs.play == 'true' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.midknightstudiolabs.catmintcove
+          releaseFiles: ${{ steps.sign.outputs.signedReleaseFile }}
+          track: ${{ inputs.track }}
+          status: ${{ inputs.track == 'production' && 'completed' || 'draft' }}
