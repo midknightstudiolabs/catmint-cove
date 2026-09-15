@@ -179,23 +179,21 @@
   #titleScreen.out{pointer-events:none;}
   .ts-card{position:relative;z-index:1;
     display:flex;flex-direction:column;align-items:center;
-    text-align:center;max-width:min(88vw,360px);padding:calc(max(32px,8vh) + 10px) 1rem 0;
+    text-align:center;max-width:min(88vw,360px);padding:10px 1rem 0;
     animation:tsIn 1.1s cubic-bezier(.16,1,.3,1) both;
     transition:opacity .25s ease, transform .25s ease;}
   #titleScreen.out .ts-card{opacity:0;transform:scale(.9);}
   @keyframes tsIn{from{opacity:0;transform:translateY(10px);}}
-  .ts-logo{width:min(240px,62vw);display:block;margin:0 auto;flex-shrink:0;}
-  /* Splitting the leftover space evenly (margin:auto on both sides) put
-     the cats/subtitle/button cluster at ~45% down the screen — dead
-     center of the gap, but far enough from the logo to look adrift from
-     it. A small fixed gap under the logo instead (~20% down overall)
-     keeps the cluster visually grouped with the logo above it, while
-     margin-bottom:auto still soaks up the rest of the space before the
-     copyright, so the button isn't glued to it either. */
-  /* A bit lower than logo-hugging distance — on a phone held one-handed,
-     the progress bar and Continue button should sit closer to where a
-     thumb naturally rests, not right under the wordmark. */
-  .ts-mid{display:flex;flex-direction:column;align-items:center;width:100%;margin:max(2rem,12vh) 0 auto;}
+  /* margin:auto top+bottom centers the logo in the gap above .ts-mid —
+     the two auto margins on this one element always split evenly
+     between themselves, so the space above the logo equals the space
+     below it (before the progress bar/button), regardless of how much
+     room is left over below for the copyright. */
+  .ts-logo{width:min(240px,62vw);display:block;margin:auto 0;flex-shrink:0;}
+  /* .ts-mid no longer needs its own top margin — the logo's own
+     margin-bottom:auto now creates that gap. margin-bottom:auto here
+     still soaks up the space before the copyright. */
+  .ts-mid{display:flex;flex-direction:column;align-items:center;width:100%;margin:0 0 auto;}
   .ts-sub{font-size:.92rem;line-height:1.5;color:var(--ink-soft);margin:0 0 1.4rem;}
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
   .ts-hint{display:none;margin:.9rem 0 0;font-size:.78rem;color:var(--ink-soft);opacity:.75;}
