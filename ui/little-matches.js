@@ -79,7 +79,7 @@ function allDone(){return Array.from({length:30},(_,i)=>i+1).every(n=>state().do
 // mode they're in and re-asking would just be an extra click.
 function home(){modeSelect();}
 function catPicker(){const options=el('div','lm-setup'),label=el('label','','Keep me company'),select=el('select');select.id='lm-cat';for(const c of roster){const o=el('option','',c.name);o.value=c.id;select.append(o)}if(!select.children.length){const o=el('option','','Your companion');o.value='';select.append(o)}select.value=round?.cat||roster[0]?.id||'';previewCat=select.value;select.onchange=()=>{previewCat=select.value};label.append(select);options.append(label);return{options,select}}
-const favourIcons={peek:'peek',friend:'paw',second:'rewind'};
+const favourIcons={peek:'peek',friend:'friend',second:'rewind'};
 // Each card leads with the ACTUAL companion portrait (same render used
 // everywhere else in the game) instead of a hand-drawn face — a small
 // abstract badge in the corner is enough to tell the three apart, and
