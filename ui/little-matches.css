@@ -86,7 +86,7 @@
 .lm-companion-text{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
 .lm-companion-text select{min-height:38px;padding:5px 8px;font-weight:700}
 .lm-section-label{font:700 11px "IBM Plex Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:#6b7a5e;margin:18px 0 8px}
-.lm-favours label{padding:16px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px;position:relative;transition:background-color .15s ease,border-color .15s ease}
+.lm-favours label{height:159px;box-sizing:border-box;padding:16px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:5px;position:relative;transition:background-color .15s ease,border-color .15s ease}
 .lm-favours input{position:absolute!important;opacity:0!important;width:1px!important;height:1px!important;margin:0!important;pointer-events:none}
 .lm-favour-icon{font-size:26px;line-height:1}
 .lm-favour-text strong{display:block;font-size:14px}
@@ -101,7 +101,13 @@
  .lm-round-progress{flex-wrap:wrap;gap:8px 12px}
  .lm-round-next{order:3;width:100%;text-align:center}
  .lm-companion-preview{width:54px;height:46px}
- .lm-favours label{padding:12px 8px}
+ /* flex-basis:0 (from the shared "flex:1" used for equal-width columns on
+    desktop) becomes the MAIN-axis size once .lm-favours switches to
+    flex-direction:column here — that's height, so it silently overrides
+    the fixed height above instead of just being unused cross-axis sizing
+    like it is in the row layout. flex:none stops that so the fixed
+    height actually applies here too. */
+ .lm-favours label{flex:none;height:136px;padding:12px 8px}
  .lm-favour-icon{font-size:22px}
 }
 
@@ -110,7 +116,6 @@
 .lm-icon-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .lm-icon-btn .neo-ui-icon{width:20px;height:20px}
 .lm-mode-cta.lm-icon-btn .neo-ui-icon{width:22px;height:22px}
-.lm-favour-icon .neo-ui-icon{width:30px;height:30px}
 .lm-mode-tag .neo-ui-icon{width:15px;height:15px;vertical-align:-2px;margin-right:3px}
 .lm-mode-badge{display:inline-flex;align-items:center;gap:5px}
 .lm-mode-badge .neo-ui-icon{width:15px;height:15px}
@@ -119,7 +124,6 @@
 .lm-inline-icon{display:inline-flex;vertical-align:-3px}
 .lm-inline-icon .neo-ui-icon{width:16px;height:16px}
 .lm-paw-trail .neo-ui-icon{width:16px;height:16px;opacity:.75}
-@media(max-width:700px){.lm-favour-icon .neo-ui-icon{width:24px;height:24px}}
 
 /* Gameplay screen polish: board as the visual hero, physical-feeling
    cards, a grounded companion, and a real speech bubble — all CSS/markup
@@ -165,14 +169,6 @@
  .lm-round-label{font-size:11px;white-space:nowrap}
 }
 
-/* Favour cards lead with the real companion portrait instead of a
-   hand-drawn face icon — a small badge in the corner is all that's
-   needed to tell the three favours apart, so the cat itself (already
-   rendered at full game quality) carries the visual instead of a flat
-   icon trying to imitate one. */
-.lm-favour-icon{position:relative;width:58px;height:50px;margin:0 auto}
-.lm-favour-icon img{width:100%;height:100%;object-fit:contain;display:block}
-.lm-favour-badge{position:absolute;bottom:-5px;right:-8px;width:26px;height:26px;background:#faf6e9;border:1.5px solid #d5ddc8;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px #26302026}
-.lm-favour-badge .neo-ui-icon{width:15px;height:15px}
-.lm-favours label.lm-selected .lm-favour-badge{border-color:#4b775c;background:#eef4e6}
-@media(max-width:700px){.lm-favour-icon{width:50px;height:44px}.lm-favour-badge{width:22px;height:22px}.lm-favour-badge .neo-ui-icon{width:13px;height:13px}}
+.lm-favour-icon{display:block;width:36px;height:36px;margin:0 auto}
+.lm-favour-icon .neo-ui-icon{width:36px;height:36px}
+@media(max-width:700px){.lm-favour-icon{width:28px;height:28px}.lm-favour-icon .neo-ui-icon{width:28px;height:28px}}
