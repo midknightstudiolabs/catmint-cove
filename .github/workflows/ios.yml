@@ -103,6 +103,18 @@ jobs:
               || echo "::warning::1024 AppIcon differs from assets/icon.png — @capacitor/assets may have re-encoded it (usually fine)"
           fi
 
+      - name: Launch screen background color — avoid the white/icon flash
+        run: |
+          # UILaunchScreen with no color/image falls back to iOS's bare default
+          # launch (reads as a plain white screen with the app icon centered),
+          # which flashes against the cream (#eef3e6) the SplashScreen plugin
+          # and the web app itself use a moment later. Give it a real color set
+          # instead so the very first frame is already the right cream.
+          CS=ios/App/App/Assets.xcassets/LaunchBackground.colorset
+          mkdir -p "$CS"
+          printf '%s' '{"colors":[{"idiom":"universal","color":{"color-space":"srgb","components":{"red":"0.933","green":"0.953","blue":"0.902","alpha":"1.000"}}}],"info":{"version":1,"author":"xcode"}}' > "$CS/Contents.json"
+          plutil -p "$CS/Contents.json" >/dev/null
+
       - name: Info.plist — orientation + export compliance
         run: |
           P=ios/App/App/Info.plist
@@ -114,10 +126,10 @@ jobs:
           # top + bottom) when it can't find a valid launch screen. @capacitor/assets
           # 3.x runs against Capacitor 8's newer SPM template and can leave
           # LaunchScreen.storyboard in a state iOS won't accept. The modern
-          # UILaunchScreen key (empty dict = plain full-bleed launch, every screen
-          # size supported) sidesteps the storyboard entirely; the SplashScreen
-          # plugin still paints the branded splash right after.
-          plutil -replace UILaunchScreen -json '{}' "$P"
+          # UILaunchScreen key sidesteps the storyboard entirely — pointing it at
+          # LaunchBackground (cream, matches the web app) instead of leaving it an
+          # empty dict is what stops the white/icon flash before the JS splash.
+          plutil -replace UILaunchScreen -json '{"UIColorName":"LaunchBackground"}' "$P"
           # immersive game: no status bar (clock / battery / wifi hidden)
           plutil -replace UIStatusBarHidden -bool true "$P"
           plutil -replace 'UIStatusBarHidden~ipad' -bool true "$P"

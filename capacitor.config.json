@@ -22,6 +22,6 @@
   "ios": {
     "contentInset": "never",
     "scrollEnabled": false,
-    "backgroundColor": "#356b4c"
+    "backgroundColor": "#eef3e6"
   }
 }
