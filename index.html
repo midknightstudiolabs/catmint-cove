@@ -184,17 +184,19 @@
     transition:opacity .25s ease, transform .25s ease;}
   #titleScreen.out .ts-card{opacity:0;transform:scale(.9);}
   @keyframes tsIn{from{opacity:0;transform:translateY(10px);}}
-  /* margin:auto top+bottom centers the logo in the gap above .ts-mid —
-     the two auto margins on this one element always split evenly
-     between themselves, so the space above the logo equals the space
-     below it (before the progress bar/button), regardless of how much
-     room is left over below for the copyright. */
-  .ts-logo{width:min(240px,62vw);display:block;margin:auto 0;flex-shrink:0;}
-  /* .ts-mid no longer needs its own top margin — the logo's own
-     margin-bottom:auto now creates that gap. margin-bottom:auto here
-     still soaks up the space before the copyright. */
-  .ts-mid{display:flex;flex-direction:column;align-items:center;width:100%;margin:0 0 auto;}
-  .ts-sub{font-size:.92rem;line-height:1.5;color:var(--ink-soft);margin:0 0 1.4rem;}
+  /* Logo and the button/hint block (.ts-cta) both hold a fixed distance
+     from their neighbor — logo from the top, .ts-cta from the
+     copyright — so neither moves. .ts-mid (cats + subtitle) is the only
+     one with auto margins on both sides, so IT'S the one that centers
+     in whatever room is left between those two fixed points. */
+  .ts-logo{width:min(240px,62vw);display:block;margin:max(2rem,17vh) 0 0;flex-shrink:0;}
+  .ts-mid{display:flex;flex-direction:column;align-items:center;width:100%;margin:auto 0;}
+  .ts-cta{display:flex;flex-direction:column;align-items:center;width:100%;margin:0 0 max(2rem,17vh);}
+  /* Used to reserve 1.4rem below itself for the button that lived right
+     after it in the same wrapper — now the button's in its own .ts-cta
+     block with its own externally-centered gap, so that trailing margin
+     was just adding lopsided extra space on top of it. */
+  .ts-sub{font-size:.92rem;line-height:1.5;color:var(--ink-soft);margin:0;}
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
   .ts-hint{display:none;margin:.9rem 0 0;font-size:.78rem;color:var(--ink-soft);opacity:.75;}
   #app.panning .ts-hint{display:block;}
@@ -1625,7 +1627,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .ls-loading[hidden]{display:none;}
 .ls-progress{height:3px;width:min(220px,64vw);border-radius:999px;background:#e0e5d4;overflow:hidden;margin:0 auto .6rem;}
 .ls-fill{height:100%;width:100%;transform:scaleX(0);transform-origin:left center;background:var(--accent-bright,#3f8159);border-radius:inherit;transition:transform .25s ease;}
-.ls-status{font-size:.8rem;color:var(--ink-soft);min-height:1.2em;text-align:center;margin:0 0 1.4rem;}
+.ls-status{font-size:.8rem;color:var(--ink-soft);min-height:1.2em;text-align:center;margin:0;}
 </style>
 
 <div id="app">
@@ -1653,6 +1655,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
           <p class="ls-status" id="lsStatus" role="status">Finding a sunny spot…</p>
         </div>
         <p class="ts-sub" id="tsSub" hidden>You didn't adopt them. They adopted you — and slowly, this cove became theirs.</p>
+      </div>
+      <div class="ts-cta">
         <button class="btn primary" id="ts-go" hidden>Begin</button>
         <p class="ts-hint">Cosier on a tablet 🐾</p>
       </div>
