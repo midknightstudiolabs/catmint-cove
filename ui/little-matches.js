@@ -78,7 +78,19 @@ function allDone(){return Array.from({length:30},(_,i)=>i+1).every(n=>state().do
 // seasonSetup()/endlessSetup() directly, since they already know which
 // mode they're in and re-asking would just be an extra click.
 function home(){modeSelect();}
-function catPicker(){const options=el('div','lm-setup'),label=el('label','','Keep me company'),select=el('select');select.id='lm-cat';for(const c of roster){const o=el('option','',c.name);o.value=c.id;select.append(o)}if(!select.children.length){const o=el('option','','Your companion');o.value='';select.append(o)}select.value=round?.cat||roster[0]?.id||'';previewCat=select.value;select.onchange=()=>{previewCat=select.value};label.append(select);options.append(label);return{options,select}}
+function catPicker(){const options=el('div','lm-setup'),select=el('select');select.id='lm-cat';for(const c of roster){const o=el('option','',c.name);o.value=c.id;select.append(o)}if(!select.children.length){const o=el('option','','Your companion');o.value='';select.append(o)}select.value=round?.cat||roster[0]?.id||'';previewCat=select.value;
+ // Same real-portrait pattern as Endless's companion picker — no reason
+ // Season 1 should be the one screen still asking you to pick a cat by
+ // name alone.
+ const preview=el('img','lm-companion-preview');
+ const setPreview=()=>{const c=roster.find(x=>x.id===select.value)||roster[0];if(c){preview.src=c.image;preview.alt=c.name}};
+ setPreview();
+ select.onchange=()=>{previewCat=select.value;setPreview()};
+ const companionBox=el('div','lm-companion-picker');
+ const textCol=el('div','lm-companion-text');textCol.append(el('label','','Keep me company'),select);
+ companionBox.append(preview,textCol);
+ options.append(companionBox);
+ return{options,select}}
 const favourIcons={peek:'peek',friend:'friend',second:'rewind'};
 // Each card leads with the ACTUAL companion portrait (same render used
 // everywhere else in the game) instead of a hand-drawn face — a small
