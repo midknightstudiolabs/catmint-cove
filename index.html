@@ -1590,7 +1590,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
    Real cats walk in while real assets load (see the trailing script),
    settle in place, then this same card reveals its existing subtitle and
    Begin/Continue button right where the loading status was. */
-.ls-cats{display:flex;flex-wrap:nowrap;gap:6px;max-width:min(560px,90vw);margin:.2rem auto .6rem;align-items:flex-end;justify-content:center;}
+/* margin:auto for centering breaks the moment this row is wider than its
+   card (7 cats × 60px routinely is): flexbox auto-margins collapse to
+   zero under negative free space and the row silently anchors to the
+   left edge instead of centering, spilling entirely off to the right.
+   .ts-mid's own align-items:center centers it correctly even when it
+   overflows — margin just needs to stay out of the way. */
+.ls-cats{display:flex;flex-wrap:nowrap;gap:6px;max-width:min(560px,90vw);margin:.2rem 0 .6rem;align-items:flex-end;justify-content:center;}
 .ls-cats canvas{width:var(--ls-cat-size,60px);height:var(--ls-cat-size,60px);opacity:0;}
 .ls-loading{transition:opacity .3s ease;}
 .ls-loading[hidden]{display:none;}
