@@ -180,7 +180,7 @@ function endlessSetup(){clear();dlg.replaceChildren();dlg.classList.add('lm-setu
  const dot=el('span','lm-progress-dot');dot.style.left=pct+'%';
  track.append(fill,dot);
  const nextEl=el('span','lm-round-next');
- if(nextEndlessReward){nextEl.innerHTML=neoUIIcon('box');nextEl.append(' Round '+nextEndlessReward.round)}else{nextEl.textContent='All rewards earned'}
+ if(nextEndlessReward){nextEl.innerHTML=neoUIIcon('box');nextEl.append(' Next reward · Round '+nextEndlessReward.round)}else{nextEl.textContent='All rewards earned'}
  progress.append(track,nextEl);
  dlg.append(progress);
 
