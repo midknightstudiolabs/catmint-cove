@@ -414,7 +414,9 @@
      bright "Take a guided tour" button above them — giving them the
      app's accent color (same one used for other tappable links, like
      the shop tabs) marks them as links without pulling in a new color. */
-  .help-footer .linkbtn{color:var(--accent-bright);}
+  .help-footer .linkbtn{color:var(--accent-bright);transition:opacity .12s ease;}
+  .help-footer .linkbtn:active{opacity:.55;}
+  @media(hover:hover){.help-footer .linkbtn:hover{opacity:.75;}}
   .shop-item .lv{font-size:.72rem;color:var(--accent-bright);font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
   .shop-item.pack{background:linear-gradient(180deg,#fff8ec,#fdeeceff);border-radius:14px;padding:.75rem;margin:.35rem 0;border-top:none;}
   .shop-item.pack .name{color:var(--apricot);}
@@ -1152,15 +1154,21 @@
   .credits *{text-align:center;}
   .credits .cr-x{position:absolute;top:0;right:0;width:1.9rem;height:1.9rem;border:none;border-radius:50%;
     background:#eef1e3;color:var(--ink-soft);font-size:.8rem;line-height:1;cursor:pointer;z-index:2;}
-  .credits h2{margin:.15rem 0 .45rem;text-wrap:balance;}
+  .credits h2,.about h2{margin:.15rem 0 .45rem;text-wrap:balance;}
   .credits .cr-ver{margin:0 0 .2rem;font-size:.72rem;letter-spacing:.03em;color:var(--ink-faint);font-variant-numeric:tabular-nums;}
-  .credits p{margin-left:auto;margin-right:auto;text-wrap:balance;}
-  .credits .cr-lead{color:var(--ink);font-size:.88rem;line-height:1.5;margin:.6rem auto 0;max-width:26rem;}
+  .credits p,.about p{margin-left:auto;margin-right:auto;text-wrap:balance;}
+  .credits .cr-lead,.about .cr-lead{color:var(--ink);font-size:.88rem;line-height:1.5;margin:.6rem auto 0;max-width:26rem;}
   .credits .cr-sec{margin:.95rem 0 0;}
   .credits .cr-sec h3{font-family:"IBM Plex Mono",monospace;font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--apricot);margin:0 0 .22rem;text-wrap:balance;}
   .credits .cr-sec p{margin:.1rem auto;font-size:.9rem;color:var(--ink);max-width:26rem;}
-  .credits .cr-note{color:var(--ink-soft);font-size:.78rem;line-height:1.48;font-style:italic;margin:.3rem auto 0;max-width:24rem;text-wrap:pretty;}
-  .credits .cr-legal{color:var(--ink-soft);font-size:.66rem;line-height:1.55;margin:1rem auto .1rem;max-width:24rem;
+  .credits .cr-note,.about .cr-note{color:var(--ink-soft);font-size:.78rem;line-height:1.48;font-style:italic;margin:.3rem auto 0;max-width:24rem;text-wrap:pretty;}
+  .about .cr-note{font-size:.86rem;font-weight:600;}
+  /* .cr-lead has no bottom margin of its own (fine in Credits, where it's
+     always followed by a .cr-sec block with its own top margin) — here
+     it's followed directly by a plain <p>, whose margin-top is zeroed by
+     .modal p, so the two ran together with no visible gap at all. */
+  .about .cr-lead{margin-bottom:.9rem;}
+  .credits .cr-legal,.about .cr-legal{color:var(--ink-soft);font-size:.66rem;line-height:1.55;margin:1rem auto .1rem;max-width:24rem;
     border-top:1px solid var(--panel-line);padding-top:.75rem;text-wrap:pretty;opacity:.85;}
   .credits .cr-links{margin:.5rem auto 0;font-size:.74rem;color:var(--ink-faint);}
   .credits .cr-links a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;white-space:nowrap;}
@@ -7601,11 +7609,11 @@ function openGuide(){
  const close=()=>{tutEl.classList.remove('on');card.classList.remove('help-home');};
  const helpFooter=()=>{const footer=document.createElement('div');footer.className='cove-dialog-footer';const show=card.querySelector('#helpShow');if(show)footer.append(show);const exit=document.createElement('button');exit.id='helpClose';exit.className='btn';exit.textContent='Back to Cove';exit.onclick=close;footer.append(exit);const body=document.createElement('div');body.className='cove-dialog-body';while(card.firstChild)body.append(card.firstChild);card.classList.add('cove-bottom-help');card.append(body,footer);};
  const home=()=>{
- card.innerHTML='<div class="help-head"><h2>How can we help?</h2></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="btn" id="guideTour" style="width:100%;justify-content:center;margin:.9rem 0 .2rem">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideCredits">Credits</button><button class="linkbtn" id="guideCares">Catmint Cove Cares</button></footer>';
+ card.innerHTML='<div class="help-head"><h2>How can we help?</h2></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="btn" id="guideTour" style="width:100%;justify-content:center;margin:.9rem 0 .2rem">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideAbout">About Catmint Cove</button><button class="linkbtn" id="guideCares">Catmint Cove Cares</button><button class="linkbtn" id="guideCredits">Credits</button></footer>';
  helpFooter();
  card.querySelectorAll('[data-topic]').forEach(el=>el.onclick=()=>topic(+el.dataset.topic));
  card.querySelector('#guideTour').onclick=()=>{close();neoStartTour();};
- card.querySelector('#guideCredits').onclick=()=>{close();openCredits();};card.querySelector('#guideCares').onclick=()=>{close();openCares();};
+ card.querySelector('#guideAbout').onclick=()=>{close();openAbout();};card.querySelector('#guideCredits').onclick=()=>{close();openCredits();};card.querySelector('#guideCares').onclick=()=>{close();openCares();};
  };
  const topic=i=>{const t=HELP_TOPICS[i];card.innerHTML='<div class="help-head"><button class="linkbtn" id="helpBack">‹ All topics</button></div><div class="help-visual">'+neoUIIcon(t[1])+'</div><h2>'+t[0]+'</h2><ol class="help-steps">'+t[2].map(x=>'<li>'+x+'</li>').join('')+'</ol><button class="btn primary" id="helpShow">Show me</button>';card.querySelector('#helpBack').onclick=home;helpFooter();card.querySelector('#helpShow').onclick=()=>{close();closeAllPanels();if(t[3]==='explore')neoOpenExplore();else togglePanel(t[3]);};};home();
 }
@@ -7677,6 +7685,25 @@ function openCredits() {
   document.getElementById("crClose").onclick = closeModal;
   { const cc = document.getElementById("crCares");
     if (cc) cc.onclick = e => { e.preventDefault(); closeModal(); setTimeout(openCares, 90); }; }
+}
+
+function openAbout() {
+ tutEl.classList.remove("on");closeAllPanels();hidePropCard();
+  ensureAudio();
+  openModal(`<div class="reveal about">
+    <div class="kicker">🐾 A little story</div>
+    <h2>About Catmint Cove</h2>
+    <p class="cr-lead">It started with our playful cats.</p>
+    <p>Midknight, our tuxedo Persian, and Labubu, our Siamese — their mischief, their habits, their small everyday moments — became the seed of something bigger.</p>
+    <p>We turned that into a game. A little hobby, made just for us and our family to enjoy.</p>
+    <p>What started as a family project became something we wanted to share with everyone.</p>
+    <p>Some of what you see in the Cove is made up. Most of it comes from the cats we've loved and raised.</p>
+    <p class="cr-note">The adventures are imaginary.<br>The love behind them is real.</p>
+    <p class="cr-lead">Welcome to our little Cove. 🐾</p>
+    <p class="cr-legal">Small Games. Big Adventures.</p>
+    <div class="row"><button class="btn primary" id="abtClose">Back to the cove</button></div>
+  </div>`);
+  document.getElementById("abtClose").onclick = closeModal;
 }
 
 /* ---------- Catmint Cove Cares — "a little Cove can do a little good" ---------- */
