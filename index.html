@@ -184,20 +184,18 @@
     transition:opacity .25s ease, transform .25s ease;}
   #titleScreen.out .ts-card{opacity:0;transform:scale(.9);}
   @keyframes tsIn{from{opacity:0;transform:translateY(10px);}}
-  /* Logo and the button/hint block (.ts-cta) both hold a fixed distance
-     from their neighbor — logo from the top, .ts-cta from the
-     copyright — so neither moves. .ts-mid (cats + subtitle) is the only
+  /* Logo holds a fixed distance from the top; .ts-cta (now just a spacer
+     — the Continue/Begin button and hint moved into .ts-mid, right under
+     the tagline, so the CTA reads as one group with the loading content
+     instead of stranded near the copyright) holds a fixed distance from
+     the copyright. .ts-mid (cats/loading/subtitle/button/hint) is the
      one with auto margins on both sides, so IT'S the one that centers
      in whatever room is left between those two fixed points. */
-  .ts-logo{width:min(240px,62vw);display:block;margin:max(2rem,17vh) 0 0;flex-shrink:0;}
+  .ts-logo{width:min(272px,68vw);display:block;margin:max(2rem,17vh) 0 0;flex-shrink:0;}
   .ts-mid{display:flex;flex-direction:column;align-items:center;width:100%;margin:auto 0;}
   .ts-cta{display:flex;flex-direction:column;align-items:center;width:100%;margin:0 0 max(2rem,17vh);}
-  /* Used to reserve 1.4rem below itself for the button that lived right
-     after it in the same wrapper — now the button's in its own .ts-cta
-     block with its own externally-centered gap, so that trailing margin
-     was just adding lopsided extra space on top of it. */
   .ts-sub{font-size:.92rem;line-height:1.5;color:var(--ink-soft);margin:0;}
-  #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
+  #ts-go{margin:1rem auto 0;padding:.65rem 1.8rem;font-size:.95rem;}
   .ts-hint{display:none;margin:.9rem 0 0;font-size:.78rem;color:var(--ink-soft);opacity:.75;}
   #app.panning .ts-hint{display:block;}
   .ts-copy{margin:0 0 max(12px,env(safe-area-inset-bottom));font-size:.66rem;letter-spacing:.02em;color:var(--ink-soft);opacity:.6;flex-shrink:0;}
@@ -1690,11 +1688,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
           <p class="ls-status" id="lsStatus" role="status">Finding a sunny spot…</p>
         </div>
         <p class="ts-sub" id="tsSub" hidden>You didn't adopt them. They adopted you — and slowly, this cove became theirs.</p>
-      </div>
-      <div class="ts-cta">
         <button class="btn primary" id="ts-go" hidden>Begin</button>
         <p class="ts-hint">Cosier on a tablet 🐾</p>
       </div>
+      <div class="ts-cta"></div>
       <p class="ts-copy">© 2026 Midknight Studio Labs · Catmint Cove</p>
     </div>
   </div>
