@@ -179,7 +179,7 @@
   #titleScreen.out{pointer-events:none;}
   .ts-card{position:relative;z-index:1;
     display:flex;flex-direction:column;align-items:center;
-    text-align:center;max-width:min(88vw,360px);padding:max(32px,8vh) 1rem 0;
+    text-align:center;max-width:min(88vw,360px);padding:calc(max(32px,8vh) + 10px) 1rem 0;
     animation:tsIn 1.1s cubic-bezier(.16,1,.3,1) both;
     transition:opacity .25s ease, transform .25s ease;}
   #titleScreen.out .ts-card{opacity:0;transform:scale(.9);}
@@ -195,7 +195,7 @@
   /* A bit lower than logo-hugging distance — on a phone held one-handed,
      the progress bar and Continue button should sit closer to where a
      thumb naturally rests, not right under the wordmark. */
-  .ts-mid{display:flex;flex-direction:column;align-items:center;width:100%;margin:max(1.5rem,10vh) 0 auto;}
+  .ts-mid{display:flex;flex-direction:column;align-items:center;width:100%;margin:max(2rem,12vh) 0 auto;}
   .ts-sub{font-size:.92rem;line-height:1.5;color:var(--ink-soft);margin:0 0 1.4rem;}
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
   .ts-hint{display:none;margin:.9rem 0 0;font-size:.78rem;color:var(--ink-soft);opacity:.75;}
