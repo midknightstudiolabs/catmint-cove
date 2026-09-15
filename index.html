@@ -1356,7 +1356,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .shop-tabs button.on{background:#e8eedc;border-radius:10px 10px 0 0;}
 #fest .fest-panel{background:var(--panel);color:var(--ink);}
 #fest .fest-panel--hub{width:min(90vw,420px);padding:.75rem;max-height:calc(100dvh - 110px);}
-#fest .fest-panel--hub h2{font-size:1.1rem;}
+/* Flag icon dropped (2026-09-16): its own row of vertical space, purely
+   decorative above a title that already says the same thing — cutting it
+   lets more of the festival scene/cats show below the card. */
+#fest .fest-panel--hub .fp-art{display:none;}
+#fest .fest-panel--hub h2{font-size:1.1rem;margin-top:0;}
 #fest .fest-panel--hub p{font-size:.78rem;margin:.15rem 0 .55rem;}
 #fest .fc-cards{gap:.4rem;}
 /* Compact cards (2026-09-16): shrunk from a fixed 103px so the festival scene
