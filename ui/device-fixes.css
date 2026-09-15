@@ -59,6 +59,13 @@
 
 /* Compact Help: one quiet list, no stacked cards or oversized footer. */
 #tut .card.help-home{width:min(380px,calc(100vw - 24px))!important;padding:18px!important;text-align:left;border-radius:20px;max-height:calc(100dvh - 32px)}
+/* This rule's own padding:18px!important included the bottom side, which
+   then stacked underneath the footer's own padding once the footer got
+   appended (.cove-bottom-help) — the same "card never gives back its own
+   bottom padding" bug fixed elsewhere for #modal and .cove-bottom-sheet,
+   just re-introduced here by a !important that outranks a plain
+   override. Needs matching specificity AND !important to actually win. */
+#tut .card.help-home.cove-bottom-help{padding-bottom:0!important}
 #tut .help-head{gap:8px;margin:0 0 8px}#tut .help-head h2{font-size:21px;margin:0;line-height:1.2}#tut .help-head>.btn{width:44px;min-width:44px;height:44px;min-height:44px;background:#efecdf;border:0;box-shadow:none}
 #tut .help-choices{gap:0;margin:4px 0 12px}#tut .help-choice{min-height:64px;padding:10px 4px;border:0;border-bottom:1px solid #dedfce;border-radius:0;background:transparent;box-shadow:none;gap:12px;font-size:15px;font-weight:600;cursor:pointer;-webkit-text-fill-color:#43543f}#tut .help-choice:last-child{border-bottom:0}#tut .help-choice img{width:30px;height:30px}#tut .help-choice:hover{background:#efefdf;border-radius:10px}#tut .help-choice:active{background:#e4e8d5}#tut .help-choice span:last-child{color:#88917b;font-size:20px;font-weight:400}
 #tut .help-home .linkbtn{margin:0;padding:8px;min-height:44px;line-height:1.2;text-decoration:none}#tut #guideTour{display:block;width:100%;border:1px solid #b7c4aa;border-radius:12px;background:#e9eddf;font-size:13px;color:#435f46}#tut .help-footer{margin:10px 0 0;padding:0;border:0;gap:16px;justify-content:center}

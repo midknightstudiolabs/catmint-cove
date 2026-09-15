@@ -1596,7 +1596,16 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #modal .adv-flow .kicker,#modal .adv-flow h2{padding-right:0}
 #modal .credits .row,#modal .cares .row{position:static;transform:none;width:auto}
 
-.cove-bottom-sheet:not([hidden]){display:flex!important;flex-direction:column;overflow:hidden!important;padding-left:0;padding-right:0}
+/* padding-left/right:0 here was only ever half the job — the sheet's own
+   bottom padding (1.2rem, from the base .sheet rule) was never zeroed,
+   so it kept adding an extra ~19px BELOW the footer's own padding with
+   nothing above the footer to match it, making every sheet's footer
+   button look bottom-heavy (#dex, #today, #neo-homestead — anything
+   using neoSheetFooter). #shop dodged this only because it happens to
+   set its own padding:0 already. Only adding padding-bottom:0 here
+   (leaving top alone) since top is already handled per-sheet and isn't
+   part of this bug. */
+.cove-bottom-sheet:not([hidden]){display:flex!important;flex-direction:column;overflow:hidden!important;padding-left:0;padding-right:0;padding-bottom:0}
 .cove-sheet-body{overflow:auto;min-height:0;flex:1 1 auto;overscroll-behavior:contain;padding-left:1.15rem;padding-right:1.15rem}
 /* Same padding as .cove-dialog-footer — same role (sticky footer under a
    scrollable body), just a different name because the modal and sheet
@@ -1605,7 +1614,19 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .cove-sheet-footer .btn{min-height:44px;width:100%;text-align:center}
 #shop .cove-sheet-body{display:flex;flex-direction:column;overflow:hidden;padding-left:0;padding-right:0}
 #shopList{min-height:0}
+/* Same bug as .cove-bottom-sheet: #tut .card's own bottom padding
+   (1.15rem) never got zeroed when the footer was appended, so it
+   stacked underneath the footer's own padding with nothing matching it
+   above — the footer button always looked bottom-heavy. #modal has its
+   own #modal:has(.cove-bottom-dialog){padding:0} for exactly this;
+   .cove-bottom-help never had the equivalent. Only touching
+   padding-bottom — the card's top/side padding still gives the topic
+   list and headings their usual breathing room. */
 .cove-bottom-help{display:flex!important;flex-direction:column;overflow:hidden!important;max-height:calc(100dvh - 40px)}
+/* #tut .card{padding:...} (an id + class selector) outranks a plain
+   .cove-bottom-help class rule, so padding-bottom:0 above never actually
+   applied — needs the same id+class specificity to win. */
+#tut .card.cove-bottom-help{padding-bottom:0}
 .cove-bottom-help .cove-dialog-body{padding:0;flex:1 1 auto}
 
 [aria-label="Sell from your pantry"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}[aria-label="Sell from your pantry"] .btn{min-width:0;padding:8px 4px;font-size:12px;min-height:48px}
