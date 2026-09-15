@@ -105,7 +105,7 @@
 .btn,#placeBar button,.cove-action-pair button{text-align:center;justify-content:center}.cove-action-pair .btn{display:flex;align-items:center}#placeBar button{white-space:normal}
 
 /* Festival choices are icon-led rows, rather than centered action labels. */
-#fest .fc-card{text-align:left!important;grid-template-columns:32px minmax(0,1fr) 16px;column-gap:12px;row-gap:3px;width:100%;touch-action:manipulation;transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease}
+#fest .fc-card{text-align:left!important;grid-template-columns:40px minmax(0,1fr) 16px;column-gap:14px;row-gap:3px;width:100%;touch-action:manipulation;transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease}
 #fest .fc-card .fc-emoji{grid-column:1;grid-row:1 / 4;align-self:center;display:grid;place-items:center}
 #fest .fc-card .fc-name,#fest .fc-card .fc-desc,#fest .fc-card .fc-lock{grid-column:2;text-align:left;min-width:0;overflow-wrap:anywhere}
 #fest .fc-card .fc-name{grid-row:1}#fest .fc-card .fc-desc{grid-row:2}#fest .fc-card .fc-lock{grid-row:3}
