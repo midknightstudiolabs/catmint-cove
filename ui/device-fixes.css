@@ -59,8 +59,8 @@
 
 /* Compact Help: one quiet list, no stacked cards or oversized footer. */
 #tut .card.help-home{width:min(380px,calc(100vw - 24px))!important;padding:18px!important;text-align:left;border-radius:20px;max-height:calc(100dvh - 32px)}
-#tut .help-head{gap:8px;margin:0 0 8px}#tut .help-head h2{font-size:21px;margin:0;line-height:1.2}#tut .help-head>.btn{width:40px;min-width:40px;height:40px;min-height:40px;background:#efecdf;border:0;box-shadow:none}
-#tut .help-choices{gap:0;margin:4px 0 12px}#tut .help-choice{min-height:62px;padding:10px 4px;border:0;border-bottom:1px solid #dedfce;border-radius:0;background:transparent;box-shadow:none;gap:12px;font-size:15px;font-weight:600;cursor:pointer;-webkit-text-fill-color:#43543f}#tut .help-choice:last-child{border-bottom:0}#tut .help-choice img{width:30px;height:30px}#tut .help-choice:hover{background:#efefdf;border-radius:10px}#tut .help-choice:active{background:#e4e8d5}#tut .help-choice span:last-child{color:#88917b;font-size:20px;font-weight:400}
+#tut .help-head{gap:8px;margin:0 0 8px}#tut .help-head h2{font-size:21px;margin:0;line-height:1.2}#tut .help-head>.btn{width:44px;min-width:44px;height:44px;min-height:44px;background:#efecdf;border:0;box-shadow:none}
+#tut .help-choices{gap:0;margin:4px 0 12px}#tut .help-choice{min-height:64px;padding:10px 4px;border:0;border-bottom:1px solid #dedfce;border-radius:0;background:transparent;box-shadow:none;gap:12px;font-size:15px;font-weight:600;cursor:pointer;-webkit-text-fill-color:#43543f}#tut .help-choice:last-child{border-bottom:0}#tut .help-choice img{width:30px;height:30px}#tut .help-choice:hover{background:#efefdf;border-radius:10px}#tut .help-choice:active{background:#e4e8d5}#tut .help-choice span:last-child{color:#88917b;font-size:20px;font-weight:400}
 #tut .help-home .linkbtn{margin:0;padding:8px;min-height:44px;line-height:1.2;text-decoration:none}#tut #guideTour{display:block;width:100%;border:1px solid #b7c4aa;border-radius:12px;background:#e9eddf;font-size:13px;color:#435f46}#tut .help-footer{margin:10px 0 0;padding:0;border:0;gap:16px;justify-content:center}
 /* Credits / Catmint Cove Cares should read as links (accent color, same as
    everywhere else they appear) and meet the same 44px tap target as every
@@ -86,7 +86,12 @@
 #rest .rest-bar{flex-wrap:wrap;justify-content:center}#restDimToggle{min-height:40px;padding:6px 10px;border:1px solid #ffffff30;border-radius:999px;white-space:nowrap}#restDimToggle[aria-pressed="true"]{background:#e6dfc6;color:#344331}#rest .rest-bar .rb-time{min-width:50px}
 
 /* Consistent action pairs and tactile feedback without shifting layout. */
-.cove-action-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.cove-action-pair .btn{width:100%;min-width:0;min-height:44px;padding:10px 12px;margin:0;white-space:normal}#roster-close.btn.primary{background:#477354;color:#fff;-webkit-text-fill-color:#fff;border-color:#477354;width:100%;border-radius:12px}
+/* .btn's own padding (.5rem .95rem) already gives every other dialog
+   button its shape — this pair used to override it to 10px/12px for no
+   reason tied to being a pair, so it read as a slightly different button
+   style depending on whether a dialog happened to use .cove-action-pair
+   or a plain .row. */
+.cove-action-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.cove-action-pair .btn{width:100%;min-width:0;min-height:44px;margin:0;white-space:normal}#roster-close.btn.primary{background:#477354;color:#fff;-webkit-text-fill-color:#fff;border-color:#477354;width:100%;border-radius:12px}
 .btn,.linkbtn,.sheet button,.cove-action-pair button{transition:background-color .15s ease,box-shadow .15s ease,filter .15s ease;touch-action:manipulation}button:enabled:active{filter:brightness(.92);box-shadow:inset 0 2px 4px #243b2920}button:disabled{cursor:default}button:focus-visible{outline:2px solid #789578;outline-offset:3px}@media(hover:hover){.btn:enabled:hover,.linkbtn:enabled:hover{filter:brightness(.96)}}@media(prefers-reduced-motion:reduce){button{transition:none!important}}
 
 /* Shared action-label alignment; retain each control's existing layout. */
