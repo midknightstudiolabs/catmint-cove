@@ -23,13 +23,13 @@
     --sky-bot:#eef3e6;
     --ground:#d8d2bd;
     --ground-2:#cfc8b0;
-    --ink:#241f17;
-    --ink-soft:#5b5343;
-    --ink-faint:#938a76;
-    --panel:#f7f5ec;
-    --panel-line:#ddd7c2;
-    --accent:#356b4c;
-    --accent-bright:#3f8159;
+    --ink:#343d31;
+    --ink-soft:#58604f;
+    --ink-faint:#69715d;
+    --panel:#faf6e9;
+    --panel-line:#d6d9bf;
+    --accent:#3f7152;
+    --accent-bright:#508363;
     --apricot:#c47a35;
     --shell:#e8b45a;
     --heart:#d6688a;
@@ -192,7 +192,10 @@
      keeps the cluster visually grouped with the logo above it, while
      margin-bottom:auto still soaks up the rest of the space before the
      copyright, so the button isn't glued to it either. */
-  .ts-mid{display:flex;flex-direction:column;align-items:center;width:100%;margin:1.2rem 0 auto;}
+  /* A bit lower than logo-hugging distance — on a phone held one-handed,
+     the progress bar and Continue button should sit closer to where a
+     thumb naturally rests, not right under the wordmark. */
+  .ts-mid{display:flex;flex-direction:column;align-items:center;width:100%;margin:max(1.5rem,10vh) 0 auto;}
   .ts-sub{font-size:.92rem;line-height:1.5;color:var(--ink-soft);margin:0 0 1.4rem;}
   #ts-go{margin:0 auto;padding:.65rem 1.8rem;font-size:.95rem;}
   .ts-hint{display:none;margin:.9rem 0 0;font-size:.78rem;color:var(--ink-soft);opacity:.75;}
@@ -1324,7 +1327,12 @@
 #todayBadge.gift-ready{background:#f0dfb5;color:#5e4d2f;box-shadow:none;}
 #hint:not(.cold) #hintX{min-width:32px;min-height:32px;}
 #restRetryRain[hidden]{display:none;}
-:root{--panel:#faf6e9;--panel-line:#d6d9bf;--ink:#343d31;--ink-soft:#58604f;--ink-faint:#69715d;--accent:#3f7152;--accent-bright:#508363;}
+/* This used to redeclare --panel/--ink/--accent etc. a second time with
+   slightly warmer values than the :root block at the top of the file —
+   same variable names, later in the document, so this silently won for
+   every one of them and the original block's colors were dead weight.
+   Merged into the one :root now; this file's own color documentation
+   was lying about the theme it actually renders. */
 .sheet,.modal,.fest-panel,.fest-result{border:1px solid var(--panel-line);box-shadow:0 10px 30px #293f302b;}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #487c63;outline-offset:3px;}
 .btn,.shop-tabs button,.sheet .x{min-height:44px;}
@@ -1379,7 +1387,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-note-label{display:block;text-align:left;font-weight:600;margin-bottom:8px}.neo-story textarea{width:100%;min-height:90px;background:#fffdf6;border:1px solid #c6d1bd;border-radius:12px;padding:12px;color:#3b493d;font:inherit;resize:vertical;margin-bottom:12px}
 .neo-memory-list{text-align:left;border-left:2px solid #ccd7be;padding-left:18px;margin:24px 4px}.neo-memory-list article{padding:8px 0}.neo-memory-list span{font-size:12px;color:#738067}.neo-memory-list p{margin:6px 0;line-height:1.5}
 .goal .linkbtn{min-height:44px}.sheet .x{min-width:44px;min-height:44px}.sheet:focus-visible,button:focus-visible{outline:3px solid #a16c31;outline-offset:3px}
-@media(max-width:600px){.neo-explore-grid{gap:9px}.neo-destination{padding:16px 12px}.neo-destination b{font-size:16px}.neo-destination small{font-size:13px}#cafeBoard .cs-jn,#cafeBoard .cs-st,#cafeBoard .cs-swap{font-size:11px}#cafeBoard .cs-nm{font-size:14px}#cafeHint{font-size:12px}#cafeBoard button{min-height:44px}#cafeBoard{max-height:34vh;overflow:auto}.neo-journal-cover{padding:20px}.neo-journal-cover h3{font-size:26px}}
+@media(max-width:600px){.neo-explore-grid{gap:9px}.neo-destination{padding:16px 12px}.neo-destination b{font-size:16px}.neo-destination small{font-size:13px}#cafeBoard .cs-jn,#cafeBoard .cs-st,#cafeBoard .cs-swap{font-size:11px}#cafeBoard .cs-nm{font-size:14px}#cafeHint{font-size:12px}#cafeBoard button{min-height:44px}.neo-journal-cover{padding:20px}.neo-journal-cover h3{font-size:26px}}
 @media(prefers-reduced-motion:reduce){.neo-destination,.neo-cat-tile{transition:none}}
 /* The mobile #actions/#actions>.btn rules that used to live here (gap,
    padding, min-height, font-size — two competing versions of them) are
@@ -1469,7 +1477,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
 .neo-little-hello{position:fixed;bottom:0;transform:translateX(-50%);z-index:55;pointer-events:none;text-align:center;animation:neo-hello-arrive 5s ease both}.neo-little-hello canvas{position:static!important;display:block;width:100%;height:auto}.neo-little-hello p{font-size:14px;line-height:1.4;color:#43543f;background:#fff9e9;border:1px solid #d9dec7;border-radius:18px;padding:10px 14px;margin:0 0 -6px;box-shadow:0 3px 10px #334c4112}@keyframes neo-hello-arrive{0%{opacity:0;translate:0 0}12%,85%{opacity:1;translate:0 0}100%{opacity:0;translate:0 0}}@media(prefers-reduced-motion:reduce){.neo-little-hello{animation:none}}
 
-.neo-cafe-tables{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.neo-cafe-tables .btn{display:flex;flex-direction:column;gap:3px;min-width:0;padding:8px 5px;font-size:12px}.neo-cafe-tables .btn:not(:disabled){background:#edf2dc;border-color:#789878}.neo-cafe-tables .btn:disabled{opacity:.7}.neo-cafe-tables meter{width:80%;height:7px}.neo-cafe-queue{font-size:12px;margin:3px 0 7px;text-align:center}#cafeBoard{max-height:44vh;overflow:auto}#cafeSlots .cs-tr{display:none}#cafeSlots .cs-cat{min-height:44px;padding:5px}#cafeSlots .cs-jn{font-size:11px}#cafeSlots .cs-st{font-size:10px}
+.neo-cafe-tables{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.neo-cafe-tables .btn{display:flex;flex-direction:column;gap:3px;min-width:0;padding:8px 5px;font-size:12px}.neo-cafe-tables .btn:not(:disabled){background:#edf2dc;border-color:#789878}.neo-cafe-tables .btn:disabled{opacity:.7}.neo-cafe-tables meter{width:80%;height:7px}.neo-cafe-queue{font-size:12px;margin:3px 0 7px;text-align:center}#cafeSlots .cs-tr{display:none}#cafeSlots .cs-cat{min-height:44px;padding:5px}#cafeSlots .cs-jn{font-size:11px}#cafeSlots .cs-st{font-size:10px}
 
 #fest .midk-hud{bottom:calc(88px + env(safe-area-inset-bottom));gap:10px}
 #fest .midk-console{padding:10px 12px 14px;gap:12px;max-width:calc(100vw - 32px);box-sizing:border-box}
@@ -1478,7 +1486,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #fest .midk-console .mc-bar{bottom:6px;left:12px;width:116px;height:4px}
 #fest .midk-console .mc-msg{left:12px;width:116px}
 #fest .fest-bar{min-height:48px;box-sizing:border-box;bottom:calc(12px + env(safe-area-inset-bottom))}
-#fest #cafeBoard{bottom:calc(78px + env(safe-area-inset-bottom));max-height:38vh}
+/* #fest #cafeBoard (2 ids) always outranks a plain #cafeBoard rule, so
+   two other max-height guesses elsewhere (34vh mobile, 44vh unconditional)
+   never actually applied — removed those; this is the one that renders.
+   overflow:auto moved here too, since it used to ride along with the dead
+   max-height declarations rather than living with the rule that wins. */
+#fest #cafeBoard{bottom:calc(78px + env(safe-area-inset-bottom));max-height:38vh;overflow:auto}
 #neo-cafe-clock{display:none;position:absolute;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:68;background:#fff9e9;color:#43543f;border:1px solid #d8d9bf;border-radius:20px;padding:12px 22px;font-size:clamp(20px,3vw,28px);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none}
 #fest:has(#cafeBoard:not([hidden])) #neo-cafe-clock{display:block}
 @media(max-width:370px){#fest .midk-spin{min-width:108px;font-size:21px;padding:10px 14px}#fest .midk-console{gap:8px;padding-left:8px;padding-right:8px}#fest .midk-console .mc-reels span{width:30px;height:32px}}
@@ -1514,8 +1527,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   #shop .shop-actions{width:100%;justify-content:flex-start}
   #shop .shop-actions button{flex:1 1 auto}
   #shopTabs button{font-size:13px;padding:8px 10px}
-  #placeBar{width:calc(100vw - 24px);gap:6px;padding:10px}
-  #placeBar button{flex:1 1 40%;padding:8px;font-size:13px}
+  /* #placeBar's own width/flex here used to disagree with the unconditional,
+     later "Compact object-local actions" rule further down (232px fixed vs
+     this block's calc(100vw-24px)) — same specificity, later wins, so this
+     never actually applied. Removed rather than "fixed" since the fixed
+     232px is the current intentional design. */
   #neo-cafe-clock{padding:8px 16px;font-size:20px;max-width:calc(100vw - 24px)}
 }
 @media(max-height:500px) and (orientation:landscape){
