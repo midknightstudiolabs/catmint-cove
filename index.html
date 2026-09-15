@@ -7678,7 +7678,25 @@ function openCredits() {
       `voices ${u.filter(x => _sfxBuf[x]).length}/${u.length} ${src} · ${_sfxErr || "ok"} · ${location.protocol} · audio ${actx ? actx.state : "off"}`; }
   { const nv = window.CoveNative && window.CoveNative.appVersion;
     const native = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-    document.getElementById("crVer").textContent = "Version " + (nv || (native ? APP_VERSION : APP_VERSION + " · web · Neo 2026.09.14.2")); }
+    const verEl = document.getElementById("crVer");
+    if (nv) { verEl.textContent = "Version " + nv; }
+    else if (native) { verEl.textContent = "Version " + APP_VERSION; }
+    else {
+      // The web build has no real release pipeline (just a push to main,
+      // auto-deployed by GitHub Pages) — a hand-typed build-date string
+      // here would go stale the moment someone forgets to bump it on a
+      // push, same as every other silently-dead value this session.
+      // Reading the page's own Last-Modified header instead is always
+      // truthful, no upkeep required.
+      verEl.textContent = "Version " + APP_VERSION + " · web";
+      fetch(location.href, { method: "HEAD", cache: "no-store" }).then(r => {
+        const lm = r.headers.get("Last-Modified");
+        if (!lm) return;
+        const d = new Date(lm);
+        const stamp = d.getFullYear() + "." + String(d.getMonth() + 1).padStart(2, "0") + "." + String(d.getDate()).padStart(2, "0");
+        verEl.textContent = "Version " + APP_VERSION + " · web · " + stamp;
+      }).catch(() => {});
+    } }
   document.querySelectorAll(".credits .cr-links a").forEach(a =>
     a.addEventListener("click", e => { e.preventDefault(); openExternal(a.href); }));
   document.getElementById("crClose").onclick = closeModal;
