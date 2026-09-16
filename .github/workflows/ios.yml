@@ -130,12 +130,18 @@ jobs:
           # LaunchBackground (cream, matches the web app) instead of leaving it an
           # empty dict is what stops the white/icon flash before the JS splash.
           plutil -replace UILaunchScreen -json '{"UIColorName":"LaunchBackground"}' "$P"
+          # BUT Capacitor's template also still sets UILaunchStoryboardName, and when
+          # both keys exist iOS gives the legacy storyboard priority over UILaunchScreen
+          # — so the broken generated LaunchScreen.storyboard was winning regardless of
+          # the line above, and this fix silently did nothing. Remove the legacy key.
+          plutil -remove UILaunchStoryboardName "$P" 2>/dev/null || true
           # immersive game: no status bar (clock / battery / wifi hidden)
           plutil -replace UIStatusBarHidden -bool true "$P"
           plutil -replace 'UIStatusBarHidden~ipad' -bool true "$P"
           plutil -replace UIViewControllerBasedStatusBarAppearance -bool false "$P"
           # only standard HTTPS → exempt; stops TestFlight asking on every build
           plutil -replace ITSAppUsesNonExemptEncryption -bool false "$P"
+          plutil -p "$P" | grep -qi 'UILaunchStoryboardName' && { echo "::error::UILaunchStoryboardName still present — it outranks UILaunchScreen and will bring back the icon flash"; exit 1; }
           plutil -p "$P" | grep -A5 -iE 'Orientation|FullScreen|Encryption|StatusBar|LaunchScreen|LaunchStoryboard'
 
       # Capacitor 8's `cap add ios` scaffolds a Swift Package Manager project
