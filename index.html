@@ -821,7 +821,7 @@
     transform:translateX(-50%);width:min(88vw,360px);display:flex;align-items:center;gap:0;
     background:rgba(17,14,21,.9);border:1px solid rgba(255,255,255,.14);border-radius:999px;
     box-shadow:0 6px 20px rgba(0,0,0,.34);color:rgba(255,255,255,.92);font-size:.8rem;
-    padding:.22rem .26rem;}
+    padding:.1rem .12rem;}
   .fest-bar[hidden]{display:none;}
   .fest-bar .rb-back{display:flex;align-items:center;gap:.35rem;background:none;border:none;
     color:#fff;font:inherit;font-weight:600;font-size:.82rem;padding:.3rem .75rem;
@@ -1506,7 +1506,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #fest .midk-spin .ms-paw{font-size:22px}#fest .midk-console .mc-reels span{width:36px;height:36px}
 #fest .midk-console .mc-bar{bottom:6px;left:12px;width:116px;height:4px}
 #fest .midk-console .mc-msg{left:12px;width:116px}
-#fest .fest-bar{min-height:44px;box-sizing:border-box;bottom:calc(10px + env(safe-area-inset-bottom))}
+/* no min-height here — #festBack (the real tap target inside) already
+   enforces 44px; this outer pill should just hug it, not double up. */
+#fest .fest-bar{box-sizing:border-box;bottom:calc(10px + env(safe-area-inset-bottom))}
 /* #fest #cafeBoard (2 ids) always outranks a plain #cafeBoard rule, so
    two other max-height guesses elsewhere (34vh mobile, 44vh unconditional)
    never actually applied — removed those; this is the one that renders.
