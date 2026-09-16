@@ -61,16 +61,23 @@ function openingLook(){
  cards.forEach((card,i)=>{
   const to=card.getBoundingClientRect(),from=old[order[i]];
   card.style.zIndex=i+1;
-  card.style.setProperty('--from-x',(from.left-to.left)+'px');card.style.setProperty('--from-y',(from.top-to.top)+'px');
-  card.style.setProperty('--mix-x',(area.left+area.width/2-to.left-to.width/2)+'px');card.style.setProperty('--mix-y',(area.top+area.height/2-to.top-to.height/2)+'px');
-  card.style.setProperty('--mix-turn',(i%2?8:-8)+'deg');
+  if(still){card.classList.add('lm-shuffle-gentle');return}
+  // Driven via the Web Animations API with plain computed px/deg values instead
+  // of CSS custom properties + a toggled class — Safari has a known class of bug
+  // where a CSS animation started in the same tick a custom property is set can
+  // read the PREVIOUS value (a stale snapshot), which read as "the shuffle just
+  // didn't happen" on iPhone. .animate() takes the values directly, no property
+  // resolution involved, and this same API already drives the match/flip
+  // animations below without issue.
+  const fromX=from.left-to.left, fromY=from.top-to.top;
+  const mixX=area.left+area.width/2-to.left-to.width/2, mixY=area.top+area.height/2-to.top-to.height/2;
+  const turn=i%2?8:-8;
+  card.animate([
+   {transform:`translate3d(${fromX}px,${fromY}px,0)`},
+   {offset:0.45,transform:`translate3d(${mixX}px,${mixY}px,0) rotate(${turn}deg) scale(.88)`},
+   {transform:'translate3d(0,0,0) rotate(0deg) scale(1)'}
+  ],{duration:1600,easing:'ease-in-out',fill:'both'});
  });
- // Force a style flush before starting the animation class — Safari can start a
- // CSS animation that reads a custom property in the same tick it was set using
- // the PREVIOUS value (a stale snapshot), which reads as "the shuffle just didn't
- // happen." Reading a layout property forces the custom properties to commit first.
- void board.offsetWidth;
- cards.forEach(card=>card.classList.add(still?'lm-shuffle-gentle':'lm-shuffling'));
  if(still)say('A gentle shuffle. New places, same little friends.');
  timer=setTimeout(finish,still?1000:1700);
  }
