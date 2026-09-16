@@ -4123,6 +4123,7 @@ function updateCat(c, dt) {
     for (const o of cats) {
       if (o === c || o === c.partner || o._perchKind) continue;   // sit close to a friend on purpose; a cat up the cat tree is out of everyone's way
       let ox = c.x - o.x, oy = (c.y - o.y) * 0.55;   // vertical proximity matters less — the y-sort layers them by depth
+      if (ox > R || ox < -R || oy > R || oy < -R) continue;   // cheap bbox reject before the sqrt below — this is all-pairs, so it matters once the cove has a dozen+ cats
       let od = Math.hypot(ox, oy);
       if (od < 0.001) { ox = (Math.random() - 0.5); oy = (Math.random() - 0.5); od = Math.hypot(ox, oy) || 1; }  // exact overlap → break the tie
       if (od < R) { const f = (R - od) / R; sx += (ox / od) * f; sy += (oy / od) * f; hits++; }
