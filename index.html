@@ -9029,7 +9029,7 @@ function applyAmbienceDayNight(f, ramp = 4) {
   dayFactor = clamp(f, 0, 1);
   if (!ambience || !actx) return;
   const t = actx.currentTime;
-  rampParam(ambience.birdGain.gain, 0.7 * dayFactor, ramp);
+  rampParam(ambience.birdGain.gain, 0.4 * dayFactor, ramp);
   rampParam(ambience.crickGain.gain, 0.022 * (1 - dayFactor), ramp);
   rampParam(ambience.waterGain.gain, 0.055 + 0.015 * dayFactor, ramp);
 }
@@ -9052,11 +9052,12 @@ function scheduleBird() {
   if (!ambience) return;
   setTimeout(() => {
     if (ambClamp() && dayFactor > 0.15) {
-      const n = 1 + (Math.random() < 0.55 ? 1 : 0) + (Math.random() < 0.22 ? 1 : 0);
+      // less frequent, and mostly single chirps rather than 2-3 note bursts
+      const n = 1 + (Math.random() < 0.3 ? 1 : 0) + (Math.random() < 0.1 ? 1 : 0);
       for (let i = 0; i < n; i++) chirp(i * (0.13 + Math.random() * 0.1));
     }
     scheduleBird();
-  }, (2.2 + Math.random() * 6) * 1000);
+  }, (5 + Math.random() * 10) * 1000);
 }
 function scheduleChime() {
   if (!ambience) return;
