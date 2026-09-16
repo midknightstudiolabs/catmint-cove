@@ -10627,7 +10627,7 @@ function hubFit() {
   return { sc, ox: (vw * rd - HUB_W * sc) / 2, oy: (vh * rd - HUB_H * sc) / 2 };
 }
 function festGroundsCats(roster) {
-  const spots = [{ x: 120, y: 876 }, { x: 300, y: 906 }, { x: 448, y: 872 }, { x: 206, y: 930 }, { x: 378, y: 936 }];
+  const spots = [{ x: 120, y: 836 }, { x: 300, y: 866 }, { x: 448, y: 832 }, { x: 206, y: 890 }, { x: 378, y: 896 }];
   _hubCats = (roster || cats.filter(c => !c.visitor)).slice(0, 5).map((c, i) => {
     Object.assign(c, { x: spots[i].x, y: spots[i].y, face: i % 2 ? 1 : -1,
       state: "seeking",
@@ -10655,7 +10655,7 @@ function renderFestGrounds(dt) {
     if (c._wanderAt <= 0) {
       c._wanderAt = rand(9, 20);
       c._hx = clamp(c._hx + rand(-40, 40), 110, 452);
-      c._hy = clamp(c._hy + rand(-16, 16), 856, 952);
+      c._hy = clamp(c._hy + rand(-16, 16), 816, 912);
     }
     const dx = c._hx - c.x, dy = c._hy - c.y, dist = Math.hypot(dx, dy);
     const m = catMotion(c);
@@ -10714,11 +10714,11 @@ function drawFestGroundsScene(g) {
   }
   neoOutdoor(g,HUB_W,HUB_H,HZ,OV);
   g.fillStyle = "rgba(232,214,170,0.42)";                                  // a sandy patch = "the festival area"
-  g.beginPath(); g.ellipse(HUB_W / 2, 916, 330, 138, 0, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(HUB_W / 2, 876, 330, 138, 0, 0, 7); g.fill();
   // bunting — one run strung between two poles across the grounds
   drawBunting(g, 20, 96, HUB_W - 40, 30, _hubT, { posts: true, groundY: 262 });
   // a little market stall, left of centre — sits along the bottom, below the card
-  g.save(); g.translate(HUB_W * 0.40, 828);
+  g.save(); g.translate(HUB_W * 0.40, 788);
   g.fillStyle = "rgba(90,70,50,0.12)"; g.beginPath(); g.ellipse(0, 80, 84, 11, 0, 0, 7); g.fill();
   g.strokeStyle = "#8a6f4e"; g.lineWidth = 5;
   g.beginPath(); g.moveTo(-70, 2); g.lineTo(-70, 78); g.moveTo(70, 2); g.lineTo(70, 78); g.stroke();
@@ -10738,7 +10738,7 @@ function drawFestGroundsScene(g) {
   for (let i = -4; i <= 4; i++) { g.beginPath(); g.arc(i * 21, 2, 10, 0, Math.PI); g.fill(); }   // scalloped valance
   g.restore();
   // LEFT — a soft pennant on a post (a gentle fair marker; no stark checker)
-  g.save(); g.translate(76, 908);
+  g.save(); g.translate(76, 868);
   const flut = Math.sin(_hubT * 2.2) * 3;
   g.strokeStyle = "#7c6142"; g.lineWidth = 5; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 60); g.stroke();
   g.fillStyle = "#e08b6a";
@@ -10747,7 +10747,7 @@ function drawFestGroundsScene(g) {
   g.beginPath(); g.moveTo(2, -36); g.lineTo(20, -30 + flut * 0.6); g.lineTo(2, -22); g.closePath(); g.fill();
   g.restore();
   // RIGHT — a little net + a beach ball (Volleyball, subtly)
-  g.save(); g.translate(HUB_W - 80, 906);
+  g.save(); g.translate(HUB_W - 80, 866);
   g.strokeStyle = "#8a7052"; g.lineWidth = 5;
   g.beginPath(); g.moveTo(-38, 6); g.lineTo(-40, -38); g.moveTo(38, 6); g.lineTo(40, -38); g.stroke();
   g.strokeStyle = "rgba(240,236,224,0.85)"; g.lineWidth = 2;
@@ -10763,9 +10763,9 @@ function drawFestGroundsScene(g) {
   g.globalAlpha = 1; g.restore();
   g.restore();
   // odds and ends — kept sparse
-  drawHubLantern(g, HUB_W - 150, 892);
-  g.fillStyle = "#d97a5f"; g.beginPath(); g.ellipse(150, 940, 22, 13, 0, 0, 7); g.fill();    // a cushion on the grass
-  g.fillStyle = "rgba(255,255,255,0.14)"; g.beginPath(); g.ellipse(144, 936, 10, 5, 0, 0, 7); g.fill();
+  drawHubLantern(g, HUB_W - 150, 852);
+  g.fillStyle = "#d97a5f"; g.beginPath(); g.ellipse(150, 900, 22, 13, 0, 0, 7); g.fill();    // a cushion on the grass
+  g.fillStyle = "rgba(255,255,255,0.14)"; g.beginPath(); g.ellipse(144, 896, 10, 5, 0, 0, 7); g.fill();
 }
 function renderFest(dt) {
   if (festKind === "hub") { renderFestGrounds(dt); return; }
