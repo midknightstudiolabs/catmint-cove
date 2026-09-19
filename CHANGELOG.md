@@ -254,6 +254,8 @@ This release packages the current Catmint Cove Neo web build. Original character
 - Added free building previews, savings information and a confirmation step for expansions. Higher stages change the exterior and interior finish; machine speed remains separate.
 ## Neo café kiosk refresh
 
+- Added a seaside garden setting with flower beds, a stepping-stone path, soft clouds, garden lamps and a resting bench. Quiet periods retain a cat visitor; the purchased table gains a cup and companion. Added rotating customer greetings and a small bench interaction; reduced-motion preferences remain respected.
+
 - Café now opens as a full-screen visit with an unobstructed storefront, serving-window entry, inside/outside views and compact bottom management controls. Panels close independently; Return to Cove exits. Responsive scenery fills portrait screens, sales give brief feedback, and Garden remains linked from Pantry.
 - Matched the café Activities card to the standard destination cards and placed it before Cove Garden.
 
