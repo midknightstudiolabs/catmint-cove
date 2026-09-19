@@ -1,7 +1,8 @@
 import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
-const source=fs.readFileSync(new URL('../ui/homestead.js',import.meta.url),'utf8');
+await import('../ui/cafe-engine.js');
+const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const code=source.slice(source.indexOf('const COVE_CROPS'),source.indexOf('let neoHomesteadTimer'));
-const c={G:{shells:20},Date:{now:()=>100000},save:()=>{},syncHud:()=>{},neoOpenHomestead:()=>{}};vm.createContext(c);vm.runInContext(code,c);
+const c={G:{shells:20},CoveCafeEngine:globalThis.CoveCafeEngine,Date:{now:()=>100000},save:()=>{},syncHud:()=>{},neoOpenHomestead:()=>{}};vm.createContext(c);vm.runInContext(code,c);
 c.neoPlant(0,'carrot');assert.equal(c.G.shells,18);c.neoPlant(0,'carrot');assert.equal(c.G.shells,18);
 c.neoHarvest(0);assert(c.G.homestead.plots[0]);c.Date.now=()=>160000;c.neoHarvest(0);assert.equal(c.G.homestead.stock.carrot,5);
 c.neoCook('carrot');assert.equal(c.G.homestead.stock.carrot,3);c.neoStockCounter();assert.equal(c.G.homestead.counter,0);
@@ -17,3 +18,7 @@ console.log('PASS: seed costs, occupied plot protection, harvest/cooking timers,
 const h=c.neoHomestead();h.stock.carrot=10;c.neoCook('carrot');c.neoCook('carrot');assert.equal(h.stoves.filter(Boolean).length,2);c.neoCook('carrot');assert.equal(h.stock.carrot,6);c.Date.now=()=>220000;c.neoStockCounter(0);c.neoStockCounter(1);assert.equal(h.counter,8);assert.equal(h.trays[0].servings,8);c.neoStockCounter(1);assert.equal(h.counter,8);h.cafeXP=20;c.G.shells=200;c.neoAddStove();assert.equal(h.stoves.length,3);assert.equal(c.G.shells,0);c.neoAddStove();assert.equal(h.stoves.length,3);
 console.log('PASS: parallel cooking, batch stacking, duplicate stocking protection and level/cost equipment gates.');
 h.stock.carrot=1;c.G.shells=0;c.neoSellHarvest('carrot');assert.equal(c.G.shells,1);assert.equal(h.stock.carrot,0);c.neoSellHarvest('carrot');assert.equal(c.G.shells,1);console.log('PASS: harvest sale consumes stock and cannot sell empty inventory.');
+vm.runInContext('Object.assign(COVE_CROPS,CoveCafeEngine.ingredients)',c);
+c.G.shells=100;c.neoPlant(0,'coffee');const harvestAt=c.G.homestead.plots[0].ready;
+c.Date.now=()=>harvestAt;c.neoHarvest(0);assert.equal(c.G.homestead.stock.coffee,10);assert.equal(c.G.cafe.basis.coffee,1);assert.equal(c.G.shells,90);
+console.log('PASS: live Garden new crop planting, harvest inventory and seed-cost basis.');

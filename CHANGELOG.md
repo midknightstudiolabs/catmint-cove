@@ -233,3 +233,12 @@ This release packages the current Catmint Cove Neo web build. Original character
 - No new painted cat replacement, live-purchase certification, or cloud save system is claimed by this release.
 - Postcard fronts currently share the Cove illustration; destination-specific art remains future work.
 
+## Neo café playtest — September 19, 2026
+
+- Added Catmint Café in Activities: a sage-and-timber seaside kiosk with Outside and Inside views, actual game cats, night lighting and automatic stock-backed service.
+- Open for 120 Shells with starter ingredients. First guest arrives after 30 seconds; normal service starts at one guest every four minutes. No per-order serving or collection taps.
+- Three drinks, menu availability, manual imports, coffee/catmint/honey Garden crops, operating-profit report, pause control and bounded brew/seating upgrades.
+- Added versioned café state, reserved orders, automatic Shell payments and stock-limited offline settlement capped at 12 hours. No spoiled ingredients or penalties.
+- Preserved legacy Garden/café state. Legacy earnings and prepared treats receive a once-only value carry-over; existing extra equipment grants corresponding kiosk upgrades.
+- Tests now exercise the actual inline Garden implementation, plus the shared café engine for accounting, offline/reload, clock rollback, stockouts and duplicate-payment protection.
+- This is a Neo-only Phase 1 playtest. Creative recipes, personality preferences, Festival demand and Friends visits are not enabled. Primary and native releases remain 3.1.3.
