@@ -242,3 +242,8 @@ This release packages the current Catmint Cove Neo web build. Original character
 - Preserved legacy Garden/café state. Legacy earnings and prepared treats receive a once-only value carry-over; existing extra equipment grants corresponding kiosk upgrades.
 - Tests now exercise the actual inline Garden implementation, plus the shared café engine for accounting, offline/reload, clock rollback, stockouts and duplicate-payment protection.
 - This is a Neo-only Phase 1 playtest. Creative recipes, personality preferences, Festival demand and Friends visits are not enabled. Primary and native releases remain 3.1.3.
+## Café viewpoint update — September 19, 2026
+
+- Outside shows a small human customer queue with cats running the kiosk. Inside is the view from behind the counter, looking through the serving window at the customers.
+- Coffee-machine upgrades change the visible brewer. Added an optional 180-Shell copper kettle/pot upgrade, with no income multiplier; purchases open the Inside view to show the change.
+- Reused the same service state in both views; retained existing inventory, upgrades and earnings.
