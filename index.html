@@ -1590,8 +1590,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 /* Below the usual 44px tap-target minimum on purpose (Carlos's call) — this is
    a low-frequency "back" button, not something tapped rapidly mid-game. */
 #festBack{min-height:32px}
-#neo-go-cafe{grid-column:1/-1;display:grid;grid-template-columns:32px 1fr;gap:4px 10px;min-height:0;padding:12px}
-#neo-go-cafe>span{grid-row:1/3}#neo-go-cafe b,#neo-go-cafe small{margin:0}
 .shop-item .name .neo-ui-icon,.credits .kicker .neo-ui-icon{width:22px;height:22px;vertical-align:middle}
 .ci-dot .neo-ui-icon{width:18px;height:18px}.adv-emoji .neo-ui-icon{width:28px;height:28px}
 .homestead-patch .crop-choice{display:flex;flex-direction:column;gap:4px;width:100%;border-radius:14px;padding:10px 8px;line-height:1.3;min-height:72px}
@@ -2067,7 +2065,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 </div>
 
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=17"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=4"><script src="ui/cafe-engine.js?v=6"></script><script src="ui/cafe-scene.js?v=6"></script><script src="ui/cafe-kiosk.js?v=4"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=7"><script src="ui/cafe-engine.js?v=6"></script><script src="ui/cafe-scene.js?v=7"></script><script src="ui/cafe-kiosk.js?v=7"></script>
 <script>
 (() => {
 "use strict";
@@ -20368,7 +20366,7 @@ const littleMatches=createLittleMatches({
 const editDockObserver=new ResizeObserver(()=>{if(!_arranging)return;const h=document.getElementById('placeBar').getBoundingClientRect().height;const app=document.getElementById('app');const next=Math.ceil(h)+'px';if(app.style.getPropertyValue('--edit-dock-height')!==next){app.style.setProperty('--edit-dock-height',next);resize();}});
 editDockObserver.observe(document.getElementById('placeBar'));
 const editEntry=document.createElement('button');editEntry.id='editCoveEntry';editEntry.className='btn';editEntry.textContent='Edit Cove';editEntry.setAttribute('aria-label','Edit Cove layout');editEntry.onclick=()=>{if(restMode||festMode)return;startArrange();};document.getElementById('app').append(editEntry);
-const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 levels, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();const activityGrid=document.querySelector('#neo-explore .neo-explore-grid');activityGrid.prepend(matchesButton);activityGrid.appendChild(document.getElementById('neo-go-cafe'));
+const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 levels, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();const activityGrid=document.querySelector('#neo-explore .neo-explore-grid');activityGrid.prepend(matchesButton);activityGrid.insertBefore(document.getElementById('neo-go-cafe'),document.getElementById('neo-go-garden'));
 (function () {
   // Loading folded into the one title card — no second page/handoff. Real
   // cats walk in (actual walking pose via drawCat, not a placeholder fade)
