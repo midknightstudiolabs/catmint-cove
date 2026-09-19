@@ -20048,7 +20048,11 @@ function neoOutdoor(g,w,h,horizon,over,sand=false) {
   g.save();
   g.fillStyle='#c2dfe7';g.fillRect(-over,-over,w+over*2,h+over*2);
   g.drawImage(im,0,0,iw,ih*.38,-over,0,w+over*2,horizon);
-  g.drawImage(im,iw*.20,ih*.40,iw*.60,ih*.38,-over,horizon,w+over*2,h-horizon+over);
+  // Meet the sea crop at the same source row and horizontal scale. Cropping
+  // into the lawn enlarged/clipped tufts into a hard band at the waterline.
+  g.save();g.beginPath();g.rect(-over,horizon,w+over*2,h-horizon+over);g.clip();
+  g.drawImage(im,0,ih*.38,iw,ih*.40,-over,horizon,w+over*2,h-horizon+over);
+  g.restore();
   if(sand){g.fillStyle='#ebddba';g.fillRect(-over,horizon,w+over*2,h-horizon+over);}
   const sky=timeOfDay();
   neoClearSky(g,w,horizon*(300/1024)/.38,over);
