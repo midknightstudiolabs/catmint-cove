@@ -9,6 +9,7 @@
   const money=n=>Math.round(n*10)/10;
   function commit(fn){E.settle(g,Date.now());fn();a.save();a.hud();render();}
   function render(){
+   panel.classList.toggle('cc-managing',!!tab);
    cancelAnimationFrame(frame);clearInterval(timer);displayState=previewEquipment?{...s,[previewEquipment]:previewEquipment==='speed'?Math.min(2,s.speed+1):1}:s;
    panel.innerHTML=`<header class="cc-head"><div><small>YOUR SEASIDE COFFEE STOP</small><h2>Catmint Café</h2></div><button class="btn" data-close>Return to Cove</button></header><div class="cc-wallet">${Math.floor(g.shells)} Shells <span>• ${s.served} drinks enjoyed</span></div><div class="cc-switch" aria-label="Café view"><button aria-pressed="${view==='outside'}" data-view="outside">Outside</button><button aria-pressed="${view==='inside'}" data-view="inside">Inside</button></div><canvas aria-label="${view==='inside'?'Behind the counter, customers ordering at the window':'Seaside café kiosk'}" width="720" height="380"></canvas><p class="cc-status" role="status"></p>`;
    panel.querySelector('[data-close]').onclick=()=>{a.close();cancelAnimationFrame(frame);clearInterval(timer);};
