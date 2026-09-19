@@ -20044,6 +20044,24 @@ function neoActivityLawn(g,x,y,w,h){
   shade.addColorStop(.45,'rgba(255,248,210,0)');
   shade.addColorStop(1,'rgba(49,77,35,.10)');
   g.fillStyle=shade;g.fillRect(x,y,w,h);
+  // Sparse edge details in screen-sized units, safely inside the lawn.
+  const tr=g.getTransform(),scale=Math.abs(tr.a)||1;
+  const left=Math.max(x,-tr.e/scale),right=Math.min(x+w,(g.canvas.width-tr.e)/scale);
+  const bottom=Math.min(y+h,(g.canvas.height-tr.f)/(Math.abs(tr.d)||1));
+  const top=Math.max(y+40,(0-tr.f)/(Math.abs(tr.d)||1)+24);
+  if(right>left && bottom-top>80){
+    const size=Math.min(9,8*(_festDPR||DPR||1)/scale);
+    g.save();g.beginPath();g.rect(left,top,right-left,bottom-top);g.clip();
+    g.strokeStyle=DECOR_THEMES[neoThemeKey()]?.grass||'#718e49';
+    g.globalAlpha*=.32;g.lineWidth=Math.max(.8,size*.15);g.lineCap='round';
+    for(const [edge,depth] of [[.035,.24],[.055,.54],[.025,.8],[.965,.32],[.945,.62],[.975,.86]]){
+      const px=left+(right-left)*edge,py=top+(bottom-top)*depth;
+      g.beginPath();g.moveTo(px,py);g.quadraticCurveTo(px-size*.55,py-size*.5,px-size*.7,py-size*.8);
+      g.moveTo(px,py);g.quadraticCurveTo(px-size*.1,py-size*.65,px+size*.1,py-size);
+      g.moveTo(px,py);g.quadraticCurveTo(px+size*.45,py-size*.5,px+size*.65,py-size*.65);g.stroke();
+    }
+    g.restore();
+  }
 }
 // Shared outdoor plate: keep the coastline, simplify the activity ground.
 function neoOutdoor(g,w,h,horizon,over,sand=false) {
