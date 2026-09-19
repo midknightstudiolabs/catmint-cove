@@ -1332,7 +1332,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?edit-cove=2&v=20">
+</style><link rel="stylesheet" href="ui/device-fixes.css?edit-cove=3&v=21">
 <style id="neo-theme">
 #atmosphere-preview{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;touch-action:none}
 #atmosphere-preview section{width:min(440px,100%);box-sizing:border-box;padding:18px;background:#faf7ea;color:#395447;border:1px solid #d8ddc7;border-radius:24px;box-shadow:0 8px 32px #243c3426;text-align:center}
@@ -5015,11 +5015,12 @@ function editInventory(){
  const items=[];
  for(const item of SHOP)for(let i=0;i<item.get();i++){const spec=inventoryItemKey(item,i);if(!spec)break;if(itemStored(spec.kind,spec.key))items.push({...spec,label:item.name});}
  for(const p of DECOR_PROPS)if(p.movable&&G.cosmetics.props[p.id]&&propBoxed(p.id))items.push({kind:'prop',key:p.id,label:p.name});
- openModal('<div class="reveal"><h2>Stored items</h2><p>Choose a piece to add to your layout.</p><div id="editStored"></div><button class="btn" id="editStoredClose">Back to editing</button></div>');
+ openModal('<div class="reveal edit-stored-sheet"><h2>Stored items</h2><p>Tap an item to place it.</p><div id="editStored"></div><button class="btn" id="editStoredClose">Close</button></div>');
  document.getElementById('editStoredClose').onclick=closeModal;
  const list=document.getElementById('editStored');
  if(!items.length)list.textContent='Everything is already in your Cove.';
- for(const item of items){
+ const grouped=new Map();for(const item of items){const key=item.kind+':'+item.label;if(grouped.has(key))grouped.get(key).quantity++;else grouped.set(key,{...item,quantity:1});}
+ for(const item of grouped.values()){
   const b=document.createElement('button');b.className='btn';
   const cv=document.createElement('canvas');cv.width=140;cv.height=100;cv.setAttribute('aria-hidden','true');
   const g=cv.getContext('2d');g.translate(70,80);g.scale(.6,.6);
@@ -5027,6 +5028,7 @@ function editInventory(){
   else if(item.kind==='comfort')drawAttractor(g,{type:item.dtype,x:0,y:0});
   else drawDecor(g,{type:item.dtype,station:item.dtype==='station'?item.key.split(':')[1]:undefined,x:0,y:0,seed:7001});
   const label=document.createElement('span');label.textContent=item.label;b.append(cv,label);
+  if(item.quantity>1){const count=document.createElement('small');count.textContent=item.quantity+' stored';b.append(count);}
   b.onclick=()=>{closeModal();if(item.kind==='prop')startPlacing(item.key);else{const pos=(item.kind==='comfort'?G.cosmetics.comfortPos:G.cosmetics.decorPos)?.[item.key]||{x:W*.5,y:H*.7};_beginPlace({...item,r:30,from:null,_start:pos});}};list.append(b);
  }
 }
@@ -6699,6 +6701,7 @@ function confirmStoreAllDecor() {
   };
 }
 function renderInventory(list) {
+  const edit=document.createElement('button');edit.id='inventoryEditCove';edit.className='btn primary';edit.textContent='Edit Cove';edit.onclick=startArrange;list.appendChild(edit);
   const entries = [];
   for (const item of SHOP) for (let i=0; i<item.get(); i++) {
     const spec = inventoryItemKey(item,i); if (!spec) break;
@@ -7154,7 +7157,7 @@ function closeAllPanels() { for (const k in panels) panels[k].hidden = true; sto
 function neoSheetFooter(sheet){
  if(!sheet||sheet.querySelector(':scope > .cove-sheet-footer'))return;
  const exit=sheet.querySelector('.x');if(!exit)return;
- exit.className='btn';exit.innerHTML='<img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22">Back to Cove';exit.setAttribute('aria-label','Back to Cove');
+ exit.className='btn';exit.textContent='Close';exit.setAttribute('aria-label','Close menu');
  exit.remove();const body=document.createElement('div');body.className='cove-sheet-body';while(sheet.firstChild)body.append(sheet.firstChild);
  const footer=document.createElement('div');footer.className='cove-sheet-footer';footer.append(exit);sheet.classList.add('cove-bottom-sheet');sheet.append(body,footer);
 }
@@ -7696,7 +7699,7 @@ function openGuide(){
  ensureAudio();document.getElementById('neo-tour')?.remove();
  const card=tutEl.querySelector('.card');card.classList.add('help-home');tutEl.classList.add('on');
  const close=()=>{tutEl.classList.remove('on');card.classList.remove('help-home');};
- const helpFooter=()=>{const footer=document.createElement('div');footer.className='cove-dialog-footer';const show=card.querySelector('#helpShow');if(show)footer.append(show);const exit=document.createElement('button');exit.id='helpClose';exit.className='btn';exit.innerHTML='<img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22">Back to Cove';exit.onclick=close;footer.append(exit);const body=document.createElement('div');body.className='cove-dialog-body';while(card.firstChild)body.append(card.firstChild);card.classList.add('cove-bottom-help');card.append(body,footer);};
+ const helpFooter=()=>{const footer=document.createElement('div');footer.className='cove-dialog-footer';const show=card.querySelector('#helpShow');if(show)footer.append(show);const exit=document.createElement('button');exit.id='helpClose';exit.className='btn';exit.textContent='Close';exit.onclick=close;footer.append(exit);const body=document.createElement('div');body.className='cove-dialog-body';while(card.firstChild)body.append(card.firstChild);card.classList.add('cove-bottom-help');card.append(body,footer);};
  const home=()=>{
  card.innerHTML='<div class="help-head"><h2>How can we help?</h2></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="btn" id="guideTour" style="width:100%;justify-content:center;margin:.9rem 0 .2rem">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideAbout">About Catmint Cove</button><button class="linkbtn" id="guideCares">Catmint Cove Cares</button><button class="linkbtn" id="guideCredits">Credits</button></footer>';
  helpFooter();
@@ -8555,7 +8558,7 @@ function openModal(html) {
   const actions=[...card.children].filter(e=>e.matches('.row,.cove-action-pair,.btn-row'));
   let footer=actions.at(-1);
   const story=card.querySelector(':scope > .neo-story-x');
-  if(story){footer=document.createElement('div');footer.className='row';story.className='btn';story.textContent='Back to Cove';footer.append(story)}
+  if(story){footer=document.createElement('div');footer.className='row';story.className='btn';story.textContent='Close';footer.append(story)}
   if(footer){footer.remove();const body=document.createElement('div');body.className='cove-dialog-body';while(card.firstChild)body.append(card.firstChild);footer.classList.add('cove-dialog-footer');card.classList.add('cove-bottom-dialog');card.append(body,footer)}
  }
  scrim.classList.add("on");
@@ -18696,7 +18699,7 @@ function pickAdventureCat(dest, tier) {
     <p class="sub" style="margin:.1rem 0 .1rem">Pick up to ${room} — more cats, a little more brought home.</p>
     <div class="pick-list cats">${listHtml}</div>
     <div class="row"><button class="btn primary" id="pc-send" disabled>Send adventure</button>
-    <button class="btn" id="pc-back">Back</button><button class="btn" id="pc-exit">Back to Cove</button></div></div>`);
+    <button class="btn" id="pc-back">Back</button><button class="btn" id="pc-exit">Close</button></div></div>`);
   document.querySelectorAll('#modal .pick-cat').forEach(b=>{const c=goers.find(c=>c.name===b.dataset.c);if(c)neoPortrait(b.querySelector('canvas'),c,1.3);});
   document.getElementById("pc-exit").onclick = closeModal;
   const sel = new Set();
