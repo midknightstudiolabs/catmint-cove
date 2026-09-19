@@ -1,12 +1,12 @@
 # Cove Friends — Neo pilot
 
-Status: game-side pilot implemented; remote migration has NOT been applied. Configuration is disabled. The dashboard's default branch is labeled PRODUCTION and automatic approval review requires the user's explicit approval before applying this setup to the existing project.
+Status September 19: user explicitly approved the Friends tables and API in the existing Catmint Cove project. Migration `20260919_cove_friends.sql` was applied successfully through the Supabase SQL editor. Verified all five tables have RLS enabled and neither anon nor authenticated has direct SELECT permission. Verified anon cannot execute neo_social and authenticated can. Configuration remains disabled pending email delivery and multi-account access tests.
 
 Project: `gbkkiejmqocbijhnzoxg`, Catmint Cove, Midknight Studio. Dashboard inspection found zero public tables on September 19, 2026. The client uses only the existing publishable key. No secret/service-role key has been read or copied.
 
 ## Execution order
 
-1. Resolve the pending project approval. Apply `migrations/20260919_cove_friends.sql` only to the approved project. Keep existing production game/store releases unchanged.
+1. Migration is applied; do NOT rerun the create-table migration. Keep existing production game/store releases unchanged.
 2. Configure the Magic Link and confirmation email templates to display `{{ .Token }}` for passwordless sign-in. The client requests `/auth/v1/otp` and verifies `/auth/v1/verify` with type `email`. No native redirect is needed for entering a code.
 3. Configure a verified transactional SMTP sender. Supabase's default sender is restricted to project-team email addresses, so it cannot support the general player pilot. Do not disable email verification as a workaround.
 4. Test with two real, consenting test accounts: join, invite, accept, publish, visit, greet, remove, block and stop sharing. Also test a third unrelated account cannot visit either snapshot, unauthenticated calls fail, and direct table reads/writes fail. Run negative tests for forged IDs and oversized pictures.
