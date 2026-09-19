@@ -5,7 +5,7 @@
   const interval=s=>[240000,210000,180000][s.speed];
   const finishes={sage:{name:'Catmint Sage',cost:0,body:'#9eaf85',shade:'#6f865f',dark:'#395a45',light:'#e6ecd2'},butter:{name:'Buttercup',cost:2500,body:'#dfcb76',shade:'#b5a35b',dark:'#69653b',light:'#fff0b9'},blue:{name:'Coastal Blue',cost:2500,body:'#91b2bd',shade:'#608793',dark:'#365864',light:'#dae9e6'},rose:{name:'Rosewater',cost:5000,body:'#c6a094',shade:'#a07870',dark:'#70554e',light:'#f0ddd0'},cream:{name:'Oatmilk',cost:5000,body:'#d6c8a8',shade:'#ae9f7e',dark:'#655d49',light:'#f7eedb'}};
   function buyFinish(g,key){const s=init(g,Date.now()),f=finishes[key];if(!s.unlocked||!f)return false;s.finishesOwned ||= ['sage'];if(!s.finishesOwned.includes(key)){if(g.shells<f.cost)return false;g.shells-=f.cost;s.finishesOwned.push(key);}s.finish=key;return true;}
-  const shops=[{name:'Little Kiosk',cost:0,description:'Your original seaside serving window.'},{name:'Garden Café',cost:50000,description:'A wider storefront, timber porch and planted windows.'},{name:'Seaside Café',cost:100000,description:'A full coastal café with cream columns, canopy lights and warm lanterns.'}];
+  const shops=[{name:'Little Kiosk',cost:0,description:'A compact timber serving window with two warm lamps.'},{name:'Garden Café',cost:50000,description:'A wider shop with a striped awning, hanging plants and flower boxes.'},{name:'Seaside Café',cost:100000,description:'A full façade with arched glowing windows, a raised sign and canopy lights.'}];
   function upgradeShop(g,now){const s=init(g,now),tier=s.shopTier||0,next=shops[tier+1];if(!s.unlocked||!next||g.shells<next.cost)return false;settle(g,now);g.shells-=next.cost;s.shopTier=tier+1;return true;}
   function init(g,now){
     const h=g.homestead;

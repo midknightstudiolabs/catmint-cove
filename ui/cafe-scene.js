@@ -32,7 +32,7 @@
   }
   function kettle(x,y){oval(x,y,28,22,s.cookware?'#b48657':'#9aab9c');rect(x-9,y-28,18,7,'#596e59');c.strokeStyle='#596e59';c.lineWidth=6;c.beginPath();c.arc(x+26,y-2,15,-1.4,1.4);c.stroke();c.fillStyle=s.cookware?'#b48657':'#9aab9c';c.beginPath();c.moveTo(x-24,y-5);c.lineTo(x-44,y-20);c.lineTo(x-31,y+9);c.fill();}
   function bubble(x,y){const r=active?E.recipes.find(r=>r.id===s.pending.id):null;round(x-132,y-25,264,35,12,'#faf3df');label(r?r.name+', please.':'Something warm, please.',x,y-3,16);}
-  rect(0,0,720,380,night?'#405a65':'#dce8db');rect(0,100,720,160,night?'#64878c':'#a8cdcc');rect(0,220,720,160,'#dacbad');
+  rect(0,0,720,380,night?'#405a65':'#dce8db');rect(0,100,720,160,night?'#64878c':'#a8cdcc');rect(0,220,720,160,night?'#777663':'#dacbad');
   for(let i=0;i<6;i++)rect(i*133,145+(i%2)*19,70,2,'#c1d7cf');if(night)oval(647,49,16,16,'#f3e5be');
   if(inside){
    // Behind the counter: only the serving opening, the customer and the working bench.
@@ -49,34 +49,54 @@
    if(s.cookware){round(435,286,80,40,7,'#b98d60');rect(427,286,95,7,'#806849');oval(475,280,10,5,'#806849');label('Copper cookware',488,354,13);}
    oval(344,311,46,11,'#b99c70');round(329,273,30,34,4,'#faf2df');oval(344,274,15,4,'#856547');label('Pickup',344,352,15);
    label('THE VIEW FROM YOUR COUNTER',360,24,13,'#f8eed9');
+   if(night){const light=c.createRadialGradient(360,285,15,360,285,330);light.addColorStop(0,'#ffd88a20');light.addColorStop(1,'#ffd88a00');rect(0,35,720,345,light);}
   }else{
-   const left=tier?79:107,right=tier?623:593;
-   oval(351,326,tier?308:276,17,'#a99b7f');
-   // Timber base and a shaded side panel give the kiosk depth without changing the game's flat style.
-   rect(left-10,307,right-left+35,14,'#b8956a');rect(left+4,320,13,12,'#70583d');rect(right-15,320,13,12,'#70583d');
-   rect(left,81,right-left,230,palette.body);
-   c.fillStyle=palette.shade;c.beginPath();c.moveTo(right,81);c.lineTo(right+31,99);c.lineTo(right+31,306);c.lineTo(right,311);c.closePath();c.fill();
-   for(let x=left+9;x<right;x+=14)rect(x,227,2,77,palette.shade+'60');
-   rect(left,83,right-left,6,palette.light);rect(left+5,91,right-left-10,5,palette.shade);
-   // Deep serving opening, wooden frame, menu panel and branded cups.
-   rect(142,111,416,108,'#263f35');rect(154,120,391,89,'#4d6250');rect(155,137,388,6,'#ab8a60');
-   for(let i=0;i<5;i++){rect(168+i*17,119,10,17,palette.light);rect(169+i*17,126,8,3,palette.shade);}
-   rect(164,163,80,46,['#b6c0ac','#8eaa92','#5e7c65'][s.speed||0]);rect(175,173,57,21,'#354b3e');rect(194,195,17,13,'#f6ead1');
-   a.cat(c,actors[0],350,219,1.65,t,false);
-   round(458,149,74,52,4,palette.dark);label('MENU',495,163,12,'#f6e9cf');for(let i=0;i<3;i++)rect(470,171+i*8,48-i*6,2,'#becbad');
-   rect(133,104,9,117,'#ac8051');rect(558,104,9,117,'#ac8051');rect(133,104,434,8,'#c6a171');rect(131,217,438,12,'#c6a171');rect(136,229,428,7,'#7d603e');
-   // Lift-up canopy and a strong, own-brand roof wordmark.
-   c.fillStyle=palette.light;c.beginPath();c.moveTo(132,88);c.lineTo(568,88);c.lineTo(593,106);c.lineTo(108,106);c.closePath();c.fill();rect(108,105,485,7,palette.shade);
-   c.strokeStyle='#9b825e';c.lineWidth=3;for(const x of [143,558]){c.beginPath();c.moveTo(x,111);c.lineTo(x+(x<300?-18:18),143);c.stroke();}
-   round(180,35,348,44,6,palette.dark);label('CATMINT CAFÉ',354,65,29,'#fff3d9');
-   label('COFFEE · CATMINT · COMPANY',351,260,15,palette.dark);
-   label(tier===0?'A LITTLE CUP OF COVE':tier===1?'GROWN HERE. BREWED WITH LOVE.':'YOUR LITTLE HOME BY THE SEA',351,285,11,palette.dark);
-   // A small cat crest ties the blade sign and cups to the café identity.
-   rect(left-24,101,26,4,'#795e41');round(left-56,97,37,46,8,palette.dark);oval(left-37,122,10,8,'#f9ecd0');
-   c.fillStyle='#f9ecd0';c.beginPath();c.moveTo(left-46,119);c.lineTo(left-46,110);c.lineTo(left-39,115);c.lineTo(left-30,110);c.lineTo(left-28,121);c.fill();
-   for(const x of [left+15,right-15]){rect(x-2,132,4,13,'#6d6248');round(x-7,144,14,22,4,night?'#f1d49a':palette.light);}
-   if(tier>0){for(const x of [left+12,right-46]){rect(x,268,34,28,'#b48a62');for(let i=0;i<3;i++){oval(x+6+i*11,258,10,18,'#718961');oval(x+6+i*11,245,4,4,'#d6bd82');}}}
-   if(tier===2){rect(left-7,75,right-left+15,7,palette.dark);rect(left-2,82,7,225,'#f0e3c4');rect(right-5,82,7,225,'#f0e3c4');for(let i=0;i<8;i++)oval(160+i*54,93,3,3,night?'#f6d792':'#e8d7b0');}
+   // Orthographic elevation: every stage has its own silhouette, never an angled side wall.
+   const left=[180,113,40][tier],right=720-left,roof=[99,76,47][tier];
+   const glow=(x,y,r,alpha=.18)=>{if(!night)return;const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba(255,211,135,'+alpha+')');g.addColorStop(1,'rgba(255,211,135,0)');oval(x,y,r,r,g);};
+   const lamp=(x,y)=>{rect(x-2,y-14,4,14,'#705c41');round(x-7,y,14,22,4,night?'#ffe2a6':'#d6cbae');glow(x,y+12,42);};
+   const plant=(x,y)=>{rect(x-19,y,38,24,'#aa805a');for(let i=-1;i<=1;i++){oval(x+i*12,y-10,11,18,'#69835e');oval(x+i*12,y-23,4,4,'#d4b477');}};
+   oval(360,322,(right-left)/2+16,10,night?'#5b6054':'#b7a78b');
+   rect(left-8,309,right-left+16,12,'#a48660');
+   round(left,roof,right-left,230+(99-roof)-18,5,palette.body);
+   for(let x=left+10;x<right;x+=18)rect(x,232,1,76,palette.shade);
+   rect(left,roof,right-left,9,palette.dark);
+   if(tier===2){
+    // Full café: broad façade with two lit display windows and a raised central sign.
+    for(const x of [left+20,right-106]){
+     round(x,119,86,132,24,palette.dark);round(x+7,128,72,112,18,night?'#9b835a':'#cbd5b7');
+     rect(x+41,128,4,111,'#ddc79f');rect(x+7,181,72,4,'#ddc79f');
+     glow(x+43,188,58,.13);plant(x+43,274);
+    }
+    rect(left+8,roof+12,8,242,palette.light);rect(right-16,roof+12,8,242,palette.light);
+    round(235,22,250,58,12,palette.dark);label('CATMINT CAFÉ',360,60,25,'#fff0d5');
+    for(let x=left+20;x<right-10;x+=22){if(x<228||x>485)rect(x,roof+13,9,5,palette.light);}
+   }else{
+    round(left+24,roof-43,right-left-48,39,5,palette.dark);
+    label('CATMINT CAFÉ',360,roof-16,tier?26:23,'#fff0d5');
+   }
+   const wx=tier===0?left+25:205,ww=tier===0?310:310,wy=tier===0?124:116;
+   rect(wx-7,wy-7,ww+14,113,'#b68b5d');rect(wx,wy,ww,99,night?'#5d6047':'#45624e');
+   rect(wx+9,wy+22,ww-18,5,'#bfa278');
+   for(let i=0;i<4;i++){rect(wx+15+i*15,wy+6,9,15,palette.light);rect(wx+16+i*15,wy+11,7,3,palette.shade);}
+   rect(wx+16,wy+53,57,39,'#99ad94');rect(wx+24,wy+62,41,18,'#334b3e');rect(wx+37,wy+82,13,10,'#f6ead1');
+   a.cat(c,actors[0],360,wy+103,1.35,reduced?0:t,false);
+   round(wx+ww-70,wy+37,58,50,3,palette.dark);label('MENU',wx+ww-41,wy+50,10,'#f7e9c9');
+   for(let i=0;i<3;i++)rect(wx+ww-61,wy+58+i*7,39-i*5,2,'#bfcbae');
+   rect(wx-13,wy+100,ww+26,10,'#d0ac79');rect(wx-8,wy+110,ww+16,5,'#816444');
+   if(tier>0){
+    // Garden's scalloped cloth canopy becomes a long café awning at the final stage.
+    const ax=tier===1?left-8:185,aw=tier===1?right-left+16:350;
+    rect(ax,87,aw,23,palette.light);
+    for(let x=ax;x<ax+aw;x+=28){rect(x,87,14,23,palette.shade);round(x,104,14,13,5,palette.shade);round(x+14,104,14,13,5,palette.light);}
+    if(tier===1){plant(left+35,278);plant(right-35,278);for(const x of [left+30,right-30]){rect(x-12,142,24,15,'#ad8b61');oval(x,132,18,22,'#71875c');}}
+   }else{rect(left-5,107,right-left+10,9,palette.light);}
+   label(tier===0?'A LITTLE CUP OF COVE':tier===1?'GROWN HERE · BREWED WITH LOVE':'COFFEE · CATMINT · COMPANY',360,266,tier===0?12:13,palette.dark);
+   if(tier===2){label('YOUR LITTLE HOME BY THE SEA',360,287,10,palette.dark);}
+   const lamps=tier===0?[left+12,right-12]:tier===1?[left+17,right-17]:[left+119,right-119];
+   lamps.forEach(x=>lamp(x,178));
+   if(night){glow(360,wy+63,115,.12);oval(360,316,ww*.46,14,'#eed09118');}
+   if(tier===2){for(const x of [248,360,472]){rect(x-1,111,2,10,'#756344');oval(x,124,4,5,night?'#ffe5a4':'#dbc791');glow(x,128,25,.12);}}
    if(stocked||active){queued(382,336,.58,lead);queued(285,343,.6,lead+1);queued(188,350,.62,lead+2);}
    if(depart>=0&&depart<1)customer(382+depart*390,336+depart*18,.58,s.sequence-1,true);
    if(s.seats){rect(659,299,8,42,'#927550');oval(663,294,32,12,'#c5aa7d');}
