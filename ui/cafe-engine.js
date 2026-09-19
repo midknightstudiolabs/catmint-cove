@@ -23,7 +23,7 @@
     const start=Math.max(s.cursor,now-43200000);let t=start,earned=0;
     if(s.cursor<start)s.cursor=start;
     for(let steps=0;steps<600;steps++){
-      if(s.pending){if(s.pending.at>now)break;const p=s.pending;s.pending=null;g.shells+=p.price;earned+=p.price;s.served++;s.revenue+=p.price;s.cost+=p.cost;s.sales[p.id]=(s.sales[p.id]||0)+1;s.lastCompleted={id:p.id,at:p.at};t=Math.max(t,p.at);}
+      if(s.pending){if(s.pending.at>now)break;const p=s.pending;s.pending=null;g.shells+=p.price;earned+=p.price;s.served++;s.revenue+=p.price;s.cost+=p.cost;s.sales[p.id]=(s.sales[p.id]||0)+1;const response=feedback(s,p);s.lastCompleted={id:p.id,at:p.at,price:p.price,response};s.customerReport||={total:0,happy:0,delighted:0};s.customerReport.total++;if(response.rating>=4)s.customerReport.happy++;if(response.rating===5)s.customerReport.delighted++;s.feedbackLog||=[];s.feedbackLog.unshift({id:p.id,at:p.at,price:p.price,...response});s.feedbackLog.length=Math.min(10,s.feedbackLog.length);t=Math.max(t,p.at);}
       if(!s.open){s.cursor=now;break;}
       const options=available(s,g.homestead.stock);if(!options.length){s.cursor=now;break;}
       const due=s.cursor+interval(s);if(due>now)break;
@@ -49,6 +49,10 @@
     const found=recipes.find(r=>Object.keys(ingredients).every(k=>(r.inputs[k]||0)===(mix[k]||0)));
     if(found){if(!s.discovered.includes(found.id))s.discovered.push(found.id);return {id:found.id,message:'Success! '+found.name+'. Add it to your menu when you are ready.'};}
     return {message:mix.honey>1?'Too sweet! Try less honey.':mix.coffee&&mix.catmint?'Those flavors compete. Try a simpler base.':mix.coffee>1&&!mix.honey?'Too strong. Try less coffee, or a little honey.':'Not quite a drink yet. Start with one coffee bean or one catmint.'};
+  }
+  function feedback(s,p){const level=s.recipeLevels?.[p.id]||0,rating=Math.min(5,3+(s.served%5?1:0)+level),food=p.id==='bites';
+    const lines=rating===5?(food?['Every crumb was worth it.','Saving my last bite. Maybe.','Five purrs for the chef!']:['That deserves a very long purr.','My new favorite cozy cup.','I would queue again for this.']):rating===4?(food?['A lovely little garden snack.','Crumbs on my whiskers. No regrets.','Just right after a seaside stroll.']:['Warm paws. Happy heart.','A lovely cup by the sea.','I came for coffee. I stayed for company.']):(food?['A nice start. A little more refinement?']:['Cozy, but the flavor could be a little smoother.']);
+    return {rating,text:lines[s.served%lines.length]};
   }
   function displayName(s,r){return s.recipeNames?.[r.id]||r.name;}
   function price(s,r){return r.price+(s.recipeLevels?.[r.id]||0)*2;}
