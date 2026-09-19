@@ -4,7 +4,8 @@ export async function handle(req, env = Deno.env, send = fetch) {
  const reply=(status,message)=>Response.json({message},{status});
  if(req.method!=='POST')return reply(405,'POST required');
  const secret=env.get('REVENUECAT_WEBHOOK_TOKEN');
- if(!secret || secret.length<32)return reply(503,'Not configured');
+ if(!secret)return reply(503,'Webhook secret missing');
+ if(secret.length<32)return reply(503,'Webhook secret must contain at least 32 characters');
  const supplied=req.headers.get('authorization')||'';
  const expected='Bearer '+secret;
  const digest=async s=>new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)));

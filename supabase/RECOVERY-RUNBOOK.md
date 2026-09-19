@@ -6,9 +6,9 @@ Anonymous onboarding remains disabled publicly. Recovery-case intake, private pu
 ## September 19 setup checkpoint
 - RevenueCat project `6b482bbe` / API project `proj6b482bbe`; iOS app `app12b6a84e70`, Android app `app515504ac46`.
 - Existing restore behavior is `Transfer to new App User ID`; unchanged. Native SDK still uses its original anonymous identity. Do not log in to arbitrary IDs to infer proof of ownership.
-- `revenuecat-events` deployed to the existing Supabase project. Legacy gateway JWT verification remains ON. Dedicated `REVENUECAT_WEBHOOK_TOKEN` still awaits user entry. The handler fails closed without it.
-- RevenueCat webhook form staged, NOT saved: name `Catmint Cove recovery evidence`, URL `https://gbkkiejmqocbijhnzoxg.supabase.co/functions/v1/revenuecat-events`, all apps/events, both environments. User must enter the same random secret as `Bearer <secret>` and save; do not place it in source or chat.
-- Once the secret exists: replace legacy gateway JWT verification with the handler's dedicated header verification, send RevenueCat's test delivery, then a sandbox purchase/restore. Verify ledger entries and duplicate delivery behavior. No production/store rollout authorized by this checkpoint.
+- `revenuecat-events` deployed to the existing Supabase project. Legacy gateway JWT verification is OFF; the handler requires the dedicated `REVENUECAT_WEBHOOK_TOKEN` header. User configured the secret in both services; never store its value in source or chat.
+- RevenueCat webhook `whintgr1492cbbd1d` saved: name `Catmint Cove recovery evidence`, URL `https://gbkkiejmqocbijhnzoxg.supabase.co/functions/v1/revenuecat-events`, all apps/events, both environments.
+- September 19 at 13:52 UTC: RevenueCat TEST event `5515B970-980C-4909-972E-E7E7C64D7E36` returned HTTP 200. Authentication and connectivity passed. TEST intentionally bypasses purchase persistence: this does not verify a real purchase, ledger write, entitlement restoration or lost-account recovery. No production/store rollout authorized by this checkpoint.
 - Ledger retains minimal event identifiers, timestamps, product/store and transfer/alias IDs; not customer email, subscriber attributes, receipt bodies or full payloads. It is evidence only, never a grant or account-access decision.
 - Cloud backups keep the latest five versions, max 1.4 MB each, one new version per five minutes. Upload is explicit. Restore requires review and preserves `catmintCove.neo.before-cloud-restore` locally before replacement. A backup is accessible only to its signed-in owner. It does NOT solve lost-session recovery.
 - All four new tables have RLS enabled and no direct SELECT for anon/authenticated roles, verified live.
@@ -16,7 +16,9 @@ Anonymous onboarding remains disabled publicly. Recovery-case intake, private pu
 - `scripts/test-revenuecat.mjs`: 8 local checks passed. Friends regression and `scripts/test-cloud-backup.cjs` passed Chromium/WebKit with mocked HTTP; this is not a native store or complete account recovery test.
 
 ## Remaining release gates
-1. Configure webhook secret and complete real delivery tests.
+The initial short-secret failure was corrected by the user; the latest connectivity test passed. Receiver diagnostics distinguish missing and short secrets without exposing their values.
+
+1. Complete real sandbox purchase/restore delivery tests, verify private ledger insertion and duplicate delivery handling.
 2. Implement recoverable identity (optional linked provider or a reviewed, revocable recovery credential) and test lost-device recovery; anonymous signup alone is insufficient.
 3. Build and test server-verified purchase association and authenticated staff recovery operations. Historical anonymous purchases cannot safely identify Friends by guesswork.
 4. Finish signup abuse controls and real two-account Friends tests, then enable the Neo pilot. Keep `ui/social-config.js` disabled until these are complete.
