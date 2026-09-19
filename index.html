@@ -1332,7 +1332,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?v=18">
+</style><link rel="stylesheet" href="ui/device-fixes.css?mobile-audit=1&v=18">
 <style id="neo-theme">
 #atmosphere-preview{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;touch-action:none}
 #atmosphere-preview section{width:min(440px,100%);box-sizing:border-box;padding:18px;background:#faf7ea;color:#395447;border:1px solid #d8ddc7;border-radius:24px;box-shadow:0 8px 32px #243c3426;text-align:center}
@@ -1751,7 +1751,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       </div>
     </div>
     <div class="rest-bar" id="restBar" hidden>
-      <button class="rb-back" id="restWake"><span>‹</span> Back to the cove</button>
+      <button class="rb-back" id="restWake"><img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22"> Back to the Cove</button>
       <span class="rb-time" id="restTime">resting</span>
       <button class="rb-back" id="restDimToggle" aria-pressed="false">Dim room</button>
       <button class="rb-back" id="restRetryRain" hidden>Retry rain</button>
@@ -1901,7 +1901,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     </div>
     <button class="fest-skip" id="festSkip" hidden>Skip to the finish ›</button>
     <div class="fest-bar" id="festBar" hidden>
-      <button class="rb-back" id="festBack"><span>‹</span> Back to the cove</button>
+      <button class="rb-back" id="festBack"><img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22"> Back to the Cove</button>
       <span class="rb-time" id="festTime">the cove festival</span>
     </div>
   </div>
@@ -2064,7 +2064,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <p><b>Catmint Cove</b> is played upright.<br>Turn your phone back and the cove's right there. 🐾</p>
 </div>
 
-<script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=16"></script>
+<script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=17"></script>
 <script>
 (() => {
 "use strict";
@@ -4024,6 +4024,9 @@ function zoomWeight(c) {
   return w;
 }
 
+const catBins=new Map();
+function rebuildCatBins(){catBins.clear();for(const c of cats){const k=Math.floor(c.x/64)+','+Math.floor(c.y*.55/64);let b=catBins.get(k);if(!b)catBins.set(k,b=[]);b.push(c)}}
+function nearbyCats(c){if(cats.length<16)return cats;const found=[],x=Math.floor(c.x/64),y=Math.floor(c.y*.55/64);for(let a=x-1;a<=x+1;a++)for(let b=y-1;b<=y+1;b++){const bin=catBins.get(a+','+b);if(bin)found.push(...bin)}return found}
 function updateCat(c, dt) {
   c.stateT += dt;
   const _m = catMotion(c);
@@ -4120,7 +4123,7 @@ function updateCat(c, dt) {
   if (c.state !== "being_pet" && c.state !== "zooming" && c.state !== "tag" && !c._perchKind) {
     let sx = 0, sy = 0, hits = 0;
     const R = held ? 34 : 52;
-    for (const o of cats) {
+    for (const o of nearbyCats(c)) {
       if (o === c || o === c.partner || o._perchKind) continue;   // sit close to a friend on purpose; a cat up the cat tree is out of everyone's way
       let ox = c.x - o.x, oy = (c.y - o.y) * 0.55;   // vertical proximity matters less — the y-sort layers them by depth
       if (ox > R || ox < -R || oy > R || oy < -R) continue;   // cheap bbox reject before the sqrt below — this is all-pairs, so it matters once the cove has a dozen+ cats
@@ -5877,6 +5880,10 @@ function renderCatPref(c) {
   cc.prefEl.innerHTML = like + "<br>" + quirk + friend;
 }
 function positionCard(c) {
+  const nav=document.getElementById('actions').getBoundingClientRect();
+  const bottom=window.innerWidth<=600?nav.top:window.innerHeight-12;
+  cc.el.style.maxHeight=Math.max(120,bottom-62)+'px';
+  cc.el.style.overflowY='auto';
   const r = canvas.getBoundingClientRect();
   const cardW = cc.el.offsetWidth || 260, cardH = cc.el.offsetHeight || 180;
   const gap = 56;   // clearance so the heart burst + "+mood" over the cat's head stays visible
@@ -5885,7 +5892,7 @@ function positionCard(c) {
   let left = clamp(sx - cardW / 2, 8, window.innerWidth - cardW - 8);
   let top = sy - gap - cardH;
   if (top < 50) top = sy + gap;                   // not enough sky above → drop below
-  top = clamp(top, 50, window.innerHeight - cardH - 76);
+  top = clamp(top, 50, Math.max(50,bottom - cardH - 12));
   cc.el.style.left = left + "px";
   cc.el.style.top = top + "px";
 }
@@ -7100,7 +7107,7 @@ function closeAllPanels() { for (const k in panels) panels[k].hidden = true; sto
 function neoSheetFooter(sheet){
  if(!sheet||sheet.querySelector(':scope > .cove-sheet-footer'))return;
  const exit=sheet.querySelector('.x');if(!exit)return;
- exit.className='btn';exit.textContent='Back to Cove';exit.setAttribute('aria-label','Back to Cove');
+ exit.className='btn';exit.innerHTML='<img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22">Back to Cove';exit.setAttribute('aria-label','Back to Cove');
  exit.remove();const body=document.createElement('div');body.className='cove-sheet-body';while(sheet.firstChild)body.append(sheet.firstChild);
  const footer=document.createElement('div');footer.className='cove-sheet-footer';footer.append(exit);sheet.classList.add('cove-bottom-sheet');sheet.append(body,footer);
 }
@@ -7625,7 +7632,7 @@ function openGuide(){
  ensureAudio();document.getElementById('neo-tour')?.remove();
  const card=tutEl.querySelector('.card');card.classList.add('help-home');tutEl.classList.add('on');
  const close=()=>{tutEl.classList.remove('on');card.classList.remove('help-home');};
- const helpFooter=()=>{const footer=document.createElement('div');footer.className='cove-dialog-footer';const show=card.querySelector('#helpShow');if(show)footer.append(show);const exit=document.createElement('button');exit.id='helpClose';exit.className='btn';exit.textContent='Back to Cove';exit.onclick=close;footer.append(exit);const body=document.createElement('div');body.className='cove-dialog-body';while(card.firstChild)body.append(card.firstChild);card.classList.add('cove-bottom-help');card.append(body,footer);};
+ const helpFooter=()=>{const footer=document.createElement('div');footer.className='cove-dialog-footer';const show=card.querySelector('#helpShow');if(show)footer.append(show);const exit=document.createElement('button');exit.id='helpClose';exit.className='btn';exit.innerHTML='<img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22">Back to Cove';exit.onclick=close;footer.append(exit);const body=document.createElement('div');body.className='cove-dialog-body';while(card.firstChild)body.append(card.firstChild);card.classList.add('cove-bottom-help');card.append(body,footer);};
  const home=()=>{
  card.innerHTML='<div class="help-head"><h2>How can we help?</h2></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="btn" id="guideTour" style="width:100%;justify-content:center;margin:.9rem 0 .2rem">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideAbout">About Catmint Cove</button><button class="linkbtn" id="guideCares">Catmint Cove Cares</button><button class="linkbtn" id="guideCredits">Credits</button></footer>';
  helpFooter();
@@ -7688,7 +7695,7 @@ function openCredits() {
       <a href="https://www.catmintcove.com/#contact">Support</a>
     </p>
     <p class="cr-build" id="crBuild"></p>
-    <div class="row"><button class="btn primary" id="crClose">Back to the cove</button></div>
+    <div class="row"><button class="btn primary" id="crClose">Back to Help</button></div>
   </div>`);
   { const u = [...new Set(Object.values(SFX_FILES).flat())];
     const src = (typeof SFX_DATA !== "undefined" && SFX_DATA[u[0]]) ? "embed" : "file";
@@ -7717,7 +7724,7 @@ function openCredits() {
     } }
   document.querySelectorAll(".credits .cr-links a").forEach(a =>
     a.addEventListener("click", e => { e.preventDefault(); openExternal(a.href); }));
-  document.getElementById("crClose").onclick = closeModal;
+  document.getElementById("crClose").onclick = () => { closeModal(); openGuide(); };
   { const cc = document.getElementById("crCares");
     if (cc) cc.onclick = e => { e.preventDefault(); closeModal(); setTimeout(openCares, 90); }; }
 }
@@ -7735,9 +7742,9 @@ function openAbout() {
     <p>Some of what you see in the Cove is made up. Most of it comes from the cats we've loved and raised.</p>
     <p class="cr-note">The adventures are imaginary.<br>The love behind them is real.</p>
     <p class="cr-lead">Welcome to our little Cove. 🐾</p>
-    <div class="row"><button class="btn primary" id="abtClose">Back to the cove</button></div>
+    <div class="row"><button class="btn primary" id="abtClose">Back to Help</button></div>
   </div>`);
-  document.getElementById("abtClose").onclick = closeModal;
+  document.getElementById("abtClose").onclick = () => { closeModal(); openGuide(); };
 }
 
 /* ---------- Catmint Cove Cares — "a little Cove can do a little good" ---------- */
@@ -7771,9 +7778,9 @@ function openCares() {
     <p class="cc-body">It's still early days, and what we're able to do will depend on how the Cove grows. But every hooman who joins makes it a little bigger — and maybe, together, we can make the real world a little better for cats too. 🐾</p>
     ${cta}
     <p class="cc-fine">Optional purchases support Catmint Cove. As the game grows, we hope to use some of what it earns to support animal-welfare efforts. There is no fixed amount or specific charity partner at this time, and purchases are not donations.</p>
-    <div class="row"><button class="btn${done ? " primary" : ""}" id="ccBack">Back to the cove</button></div>
+    <div class="row"><button class="btn${done ? " primary" : ""}" id="ccBack">Back to Help</button></div>
   </div>`);
-  document.getElementById("ccBack").onclick = closeModal;
+  document.getElementById("ccBack").onclick = () => { closeModal(); openGuide(); };
   { const sb = document.getElementById("cc-support");
     if (sb) sb.onclick = () => {
       closeModal();
@@ -9375,6 +9382,12 @@ function restSeatCats() {
 // anything transient before the cabin comes up — toasts, the cat card, a modal,
 // leftover particles/floaters
 function restClearUI() {
+  closeAllPanels();hidePropCard();tutEl.classList.remove('on');document.getElementById('neo-tour')?.remove();
+  document.querySelectorAll('dialog[open]').forEach(d=>{d.dispatchEvent(new Event('cancel',{cancelable:true}));if(d.open)d.close()});
+  const hint=document.getElementById('hint');if(hint)hint.hidden=true;
+  document.getElementById('app').classList.remove('has-hint');
+  endAtmospherePreview();
+  if (_placing || _arranging) exitPlacement();
   particles.length = 0; floaters.length = 0;
   toastEl.classList.remove("on"); toastTimer = 0;
   try { hideCatCard(); } catch (e) {}
@@ -16324,6 +16337,14 @@ function tabbyMarks(g, c, P, coat) {
   g.globalAlpha = 1;
 }
 
+const restingCatFrames=new WeakMap();
+function drawCoveCat(g,c){
+ if(cats.length<16||c===cardCat||c===_focus||!['sleeping','loafing'].includes(c.state)||(c.walkAmt||0)>.02||c._jumpT>0){drawCat(g,c,false);return}
+ let entry=restingCatFrames.get(c);if(!entry){const cv=document.createElement('canvas');cv.width=360;cv.height=400;entry={cv,time:-1000};restingCatFrames.set(c,entry)}
+ const now=performance.now(),key=c.state+':'+_perfLite+':'+c.coatKey;
+ if(now-entry.time>=80||entry.key!==key){const cg=entry.cv.getContext('2d');cg.setTransform(1,0,0,1,0,0);cg.clearRect(0,0,360,400);cg.setTransform(2,0,0,2,180-c.x*2,310-c.y*2);drawCat(cg,c,false);entry.time=now;entry.key=key}
+ g.drawImage(entry.cv,c.x-90,c.y-155,180,200);
+}
 function drawCat(g, c, isPhoto) {
   const t = performance.now() / 1000;
   const coat = c.coat;
@@ -17390,6 +17411,7 @@ function simulate(dt) {
       dropToken(rand(W * 0.08, W * 0.42), catFloor() - rand(8, 26), 0, "driftwood");
     }
   }
+  rebuildCatBins();
   for (const c of cats) updateCat(c, dt);
   if (cats.some(c => c._gone)) cats = cats.filter(c => !c._gone);   // a departed visitor lives on only in _departures
   updateDepartures(dt);
@@ -17475,7 +17497,7 @@ function renderScene(dt) {
         drawCottageFace(ctx, it.c, it.c._perchKind === "cubby"); continue;   // tucked in the cottage / cat-tree cubby — a face at the opening
       }
       if (it.c._ill && !_perfLite) drawIllAura(ctx, it.c);
-      drawCat(ctx, it.c, false);
+      drawCoveCat(ctx, it.c);
       if (it.c.state === "fishing" && it.c._station === "fishing" && it.c._fx) drawFishingRig(ctx, it.c);
       if (it.c.state === "baking" && it.c._station === "bakery" && it.c._fx) drawBakeryRig(ctx, it.c);
       if (it.c.star >= 3 && (!_perfLite || it.c === cardCat)) drawStarAura(ctx, it.c, dt);
@@ -18642,7 +18664,7 @@ function resize() {
   // the shrinking *visual* viewport, which used to letterbox the canvas).
   const de = document.documentElement;
   const vw = Math.max(stage.clientWidth || 0, de.clientWidth || 0, window.innerWidth || 0);
-  const vh = Math.max(stage.clientHeight || 0, de.clientHeight || 0, window.innerHeight || 0);
+  const vh = stage.clientHeight || de.clientHeight || window.innerHeight;
   if ((vw < 200 || vh < 200) && _resizeRetry < 20) {   // layout not settled yet — try again next frame
     _resizeRetry++;
     requestAnimationFrame(resize);
@@ -18688,7 +18710,7 @@ function resize() {
     // guessing its height, so catFloor() always clears it exactly, plus a margin.
     const abEl = document.getElementById("actions");
     const abH = abEl && abEl.getBoundingClientRect().height;
-    if (abH > 0) _actionsBarH = abH / displayScale + 6;
+    if (abH > 0) _actionsBarH = 18; // stage already ends above the navigation
   }
   canvas.style.width = Math.round(cssW) + "px";
   canvas.style.height = Math.round(cssH) + "px";
@@ -20197,9 +20219,9 @@ const littleMatches=createLittleMatches({
  rewards:window.LITTLE_MATCH_REWARDS,
  rewardImage:(c,key)=>{const cv=document.createElement('canvas');cv.width=280;cv.height=250;neoPortrait(cv,{coatKey:c.key||'midknight',markSeed:c.markSeed||4242,star:0,bornAt:0,mascot:c.mascot,worn:key?[key]:(c.worn||[])},3.2);return cv.toDataURL()},
  wear:(c,key)=>{const actual=cats.find(x=>x.journalId===c.id);if(!actual||actual.visitor||!accOwned(actual,key))return false;equipAccessory(actual,key,true);c.worn=[...actual.worn];return true;},
- draw:(cv,c,mood,jump,walk)=>{let entry=memoryPortraits.get(cv);if(!entry||entry.id!==c.id){entry={id:c.id,cat:new Cat({coatKey:c.key||'midknight',markSeed:c.markSeed||4242,mascot:c.mascot,star:0,bornAt:0,x:0,y:0})};memoryPortraits.set(cv,entry)}const pet=entry.cat;pet.worn=c.worn||[];pet.state=mood==='sleep'?'sleeping':mood==='groom'?'grooming':'loafing';pet.stateT=performance.now()/1000;pet._groomMove='face';pet._jumpT=jump>0?CAT_JUMP_DUR*(1-jump):0;pet._jumpH=14;pet.walkAmt=walk ? .7 : 0;pet.walk=performance.now()/110;pet.blink=3;const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);g.save();g.translate(cv.width/2,cv.height-8);g.scale(cv.width/95,cv.width/95);drawCat(g,pet,true);g.restore();},
+ draw:(cv,c,mood,jump,walk)=>{let entry=memoryPortraits.get(cv);if(!entry||entry.id!==c.id){entry={id:c.id,cat:new Cat({coatKey:c.key||'midknight',markSeed:c.markSeed||4242,mascot:c.mascot,star:0,bornAt:0,x:0,y:0})};memoryPortraits.set(cv,entry)}const pet=entry.cat;pet.worn=c.worn||[];pet.state=mood==='sleep'?'sleeping':mood==='drowsy'?'sleeping':mood==='groom'?'grooming':'loafing';pet.stateT=performance.now()/1000;pet._groomMove='face';pet._jumpT=0;pet._jumpH=14;pet.walkAmt=walk ? .7 : 0;pet.walk=performance.now()/110;pet.blink=3;const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);g.save();g.translate(cv.width/2,cv.height-8-Math.sin(Math.PI*jump)*cv.height*.18);g.scale(cv.width/95,cv.width/95);drawCat(g,pet,true);g.restore();},
  state:()=>G.littleMatches ||= {v:1,done:{},tone:'sage',round:null},save,
- hide:()=>{closeAllPanels();closeModal();hideCatCard();hidePropCard();},
+ hide:()=>{restClearUI();},
  cats:()=>cats.filter(c=>!c.visitor&&!c._gone&&!c._leaving).map(c=>{const cv=document.createElement('canvas');cv.width=240;cv.height=200;neoPortrait(cv,c,3);return{id:c.journalId,name:c.name,key:c.coatKey,markSeed:c.markSeed,mascot:c.mascot,worn:[...(c.worn||[])],image:cv.toDataURL()}}),
  catalog:()=>{const out={};for(const coat of COATS){const cv=document.createElement('canvas');cv.width=240;cv.height=200;neoPortrait(cv,{coatKey:coat.key,markSeed:4242,star:0,bornAt:0,worn:[]},3);out['cat:'+coat.key]={name:coat.name,image:cv.toDataURL()}}
  for(const type of ['food','bed','toy','flowers']){const name={food:'Food bowl',bed:'Cozy bed',toy:'Cat toy',flowers:'Flowers'}[type];out['obj:'+type]={name,image:memoryObjectImage(productPreview({type,name}))}}

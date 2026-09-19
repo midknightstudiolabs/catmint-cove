@@ -3,7 +3,7 @@ window.createLittleMatches=function(api){
 'use strict';
 const rewards=api.rewards;
 let previewCat=null;
-let raf=0,lastFrame=0,lastAction=Date.now(),mood='watching',jumpAt=-10000,walkUntil=0,misses=0,finishTimer=0,activePopup=null;
+let shuffleRAF=0;let raf=0,lastFrame=0,lastAction=Date.now(),mood='watching',jumpAt=-10000,walkUntil=0,misses=0,finishTimer=0,activePopup=null;
 const chapters=['Familiar Faces','Favourite Things','A Place Together'];
 // Pair counts stay in {3,4,6,8} on purpose — deck.length (size*2) then always
 // divides evenly into the board's 3-or-4-column grid (renderBoard's --cols).
@@ -26,11 +26,11 @@ function button(text,fn,primary=false){const b=el('button','lm-btn'+(primary?' l
 // Same as button(), but with one of the game's own hand-drawn icons in
 // front of the label instead of an emoji — keeps every control on the
 // same visual language as the rest of Catmint Cove's UI.
-function iconButton(iconKey,label,fn,primary=false){const b=button('',fn,primary);b.classList.add('lm-icon-btn');b.innerHTML=neoUIIcon(iconKey)+'<span>'+label+'</span>';return b}
+function iconButton(iconKey,label,fn,primary=false){const b=button('',fn,primary);b.classList.add('lm-icon-btn');b.setAttribute('aria-label',label);b.title=label;b.innerHTML=neoUIIcon(iconKey)+'<span>'+label+'</span>';return b}
 function img(key,cls){const i=el('img',cls);i.src=catalog[key].image;i.alt='';return i}
 function companion(){return roster.find(c=>c.id===(previewCat||round?.cat))||roster[0]||{name:'Your companion',key:'midknight'}}
 function say(text){const t=dlg.querySelector('.lm-speech');if(t)t.textContent=text}
-function clear(){cancelAnimationFrame(raf);raf=0;clearTimeout(finishTimer);finishTimer=0;activePopup?.close();activePopup?.remove();activePopup=null;if(round?.shufflePending)openingShuffle();epoch++;clearTimeout(timer);timer=null;clearInterval(countdownTimer);countdownTimer=null;busy=false;picking=false;picks=[];revealed=[];first=null}
+function clear(){cancelAnimationFrame(shuffleRAF);shuffleRAF=0;cancelAnimationFrame(raf);raf=0;clearTimeout(finishTimer);finishTimer=0;activePopup?.close();activePopup?.remove();activePopup=null;if(round?.shufflePending)openingShuffle();epoch++;clearTimeout(timer);timer=null;clearInterval(countdownTimer);countdownTimer=null;busy=false;picking=false;picks=[];revealed=[];first=null}
 function close(){clear();persist();dlg.close()}
 function pauseReveal(indices,message,wrong=false){busy=true;revealed=indices;renderBoard();if(wrong){api.feedback?.('miss');for(const i of indices){const card=dlg.querySelector('[data-card="'+i+'"]');card?.classList.add('lm-miss');if(card&&!reduced())card.animate([{transform:'scale(1)'},{transform:'scale(.985)'},{transform:'scale(1)'}],{duration:380,easing:'ease-in-out'})}}say(message);const e=epoch;timer=setTimeout(()=>{if(e!==epoch)return;revealed=[];busy=false;renderBoard();persist()},2200)}
 function start(n,favour,cat){clear();if(!allDone())n=nextLevel();lastAction=Date.now();mood='watching';misses=0;round={level:n,deck:build(n),matched:[],turns:0,used:false,favour,cat,last:[],finished:false};persist();play();openingLook();}
@@ -54,30 +54,15 @@ function openingLook(){
  function tickLabel(){const left=Math.max(0,Math.ceil((AUTO_MS-(performance.now()-countStart))/1000));skip.textContent=left>0?'Starting in '+left+'…':'Start now';}
  tickLabel();
  countdownTimer=setInterval(tickLabel,200);
- function finish(){if(e!==epoch)return;clearTimeout(timer);timer=null;clearInterval(countdownTimer);countdownTimer=null;board.getAnimations?.({subtree:true}).forEach(a=>a.cancel());revealed=[];busy=false;board.classList.remove('lm-deal');skip.remove();renderBoard();say('Find their friends. Their places stay fixed now.');persist();}
+ function finish(){if(e!==epoch)return;cancelAnimationFrame(shuffleRAF);shuffleRAF=0;clearTimeout(timer);timer=null;clearInterval(countdownTimer);countdownTimer=null;board.getAnimations?.({subtree:true}).forEach(a=>a.cancel());revealed=[];busy=false;board.classList.remove('lm-deal');skip.remove();renderBoard();say('Find their friends. Their places stay fixed now.');persist();}
  function mix(){if(e!==epoch||mixing)return;mixing=true;clearInterval(countdownTimer);countdownTimer=null;skip.disabled=true;skip.textContent='Shuffling…';revealed=[];board.classList.remove('lm-deal');renderBoard();const old=[...board.children].map(c=>c.getBoundingClientRect());const order=openingShuffle();renderBoard();say('A little shuffle…');
  const still=reduced(),area=board.getBoundingClientRect();
  const cards=[...board.children];
- cards.forEach((card,i)=>{
-  const to=card.getBoundingClientRect(),from=old[order[i]];
-  card.style.zIndex=i+1;
-  if(still){card.classList.add('lm-shuffle-gentle');return}
-  // Driven via the Web Animations API with plain computed px/deg values instead
-  // of CSS custom properties + a toggled class — Safari has a known class of bug
-  // where a CSS animation started in the same tick a custom property is set can
-  // read the PREVIOUS value (a stale snapshot), which read as "the shuffle just
-  // didn't happen" on iPhone. .animate() takes the values directly, no property
-  // resolution involved, and this same API already drives the match/flip
-  // animations below without issue.
-  const fromX=from.left-to.left, fromY=from.top-to.top;
-  const mixX=area.left+area.width/2-to.left-to.width/2, mixY=area.top+area.height/2-to.top-to.height/2;
-  const turn=i%2?8:-8;
-  card.animate([
-   {transform:`translate3d(${fromX}px,${fromY}px,0)`},
-   {offset:0.45,transform:`translate3d(${mixX}px,${mixY}px,0) rotate(${turn}deg) scale(.88)`},
-   {transform:'translate3d(0,0,0) rotate(0deg) scale(1)'}
-  ],{duration:1600,easing:'ease-in-out',fill:'both'});
- });
+ // Drive literal transforms each frame; no Safari CSS/WAAPI startup race.
+ const moves=cards.map((card,i)=>{const to=card.getBoundingClientRect(),from=old[order[i]];card.getAnimations?.().forEach(a=>a.cancel());card.style.zIndex=i+1;return {card,x:from.left-to.left,y:from.top-to.top,mx:area.left+area.width/2-to.left-to.width/2,my:area.top+area.height/2-to.top-to.height/2}});
+ const began=performance.now();
+ function move(now){if(e!==epoch||!dlg.open)return;const t=Math.min(1,(now-began)/1600);for(const [i,m] of moves.entries()){if(still){m.card.style.opacity=String(.65+.35*t);continue}const p=t<.45?t/.45:(t-.45)/.55,k=p*p*(3-2*p);const x=t<.45?m.x+(m.mx-m.x)*k:m.mx*(1-k),y=t<.45?m.y+(m.my-m.y)*k:m.my*(1-k);const pulse=Math.sin(Math.PI*t);m.card.style.transform='translate3d('+x+'px,'+y+'px,0) rotate('+((i%2?8:-8)*pulse)+'deg) scale('+(1-.12*pulse)+')'}if(t<1)shuffleRAF=requestAnimationFrame(move)}
+ shuffleRAF=requestAnimationFrame(move);
  if(still)say('A gentle shuffle. New places, same little friends.');
  timer=setTimeout(finish,still?1000:1700);
  }
@@ -166,7 +151,7 @@ function modeSelect(){clear();dlg.replaceChildren();
  dlg.append(grid);
 
  const acts=el('div','lm-actions lm-actions-secondary');
- acts.append(iconButton('box','View rewards',showRewards),iconButton('back','Back to Cove',close));
+ acts.append(iconButton('box','View rewards',showRewards),iconButton('homecoming','Back to Cove',close));
  dlg.append(acts);
 }
 function seasonSetup(){clear();dlg.replaceChildren();const top=el('div','lm-top');top.append(iconButton('back','Little Matches',modeSelect),el('div','lm-kicker','SEASON 1 · 30 LEVELS'));dlg.append(top,el('h2','','Little Matches'),el('p','lm-intro','Familiar faces. Favourite things. Your favourite company.'));
@@ -179,7 +164,7 @@ function seasonSetup(){clear();dlg.replaceChildren();const top=el('div','lm-top'
  else{acts.append(iconButton('play',allDone()?'Play Again':'Continue · Level '+nextLevel(),()=>start(levels?+levels.value:nextLevel(),f.querySelector('input:checked').value,select.value),true))}
  dlg.append(acts);
  const sec=el('div','lm-actions lm-actions-secondary');
- sec.append(iconButton('box','View rewards',showRewards),iconButton('back','Back to Cove',close));
+ sec.append(iconButton('box','View rewards',showRewards),iconButton('homecoming','Back to Cove',close));
  dlg.append(sec);
 }
 function endlessSetup(){clear();dlg.replaceChildren();dlg.classList.add('lm-setup-screen');
@@ -235,7 +220,7 @@ function endlessSetup(){clear();dlg.replaceChildren();dlg.classList.add('lm-setu
  }
  dlg.append(primary);
  const sec=el('div','lm-actions lm-actions-secondary');
- sec.append(iconButton('box','View rewards',showRewards),iconButton('back','Back to Cove',close));
+ sec.append(iconButton('box','View rewards',showRewards),iconButton('homecoming','Back to Cove',close));
  dlg.append(sec);
 }
 function nook(){const c=el('canvas','lm-companion');c.width=300;c.height=270;c.setAttribute('role','img');c.setAttribute('aria-label',companion().name+' keeping you company');return c}
@@ -244,7 +229,7 @@ function play(){clear();previewCat=null;lastAction=Date.now();mood='watching';dl
  const roundLabel=el('span','lm-round-label');
  if(round.endless){roundLabel.innerHTML=neoUIIcon('infinity')+'<span>ENDLESS · ROUND '+(state().endless.rounds+1)+'</span>';}
  else{roundLabel.textContent='LEVEL '+round.level+' / 30';}
- top.append(iconButton('back','Little Matches',()=>round.endless?endlessSetup():seasonSetup()),roundLabel,iconButton('back','Back to Cove',close));
+ top.append(iconButton('back','Little Matches',()=>round.endless?endlessSetup():seasonSetup()),roundLabel,iconButton('homecoming','Back to Cove',close));
  dlg.append(top);
  const layout=el('div','lm-layout'),side=el('aside','lm-side');
  side.append(nook(),el('p','lm-speech',companion().name+' is keeping you company.'));
@@ -257,11 +242,11 @@ function play(){clear();previewCat=null;lastAction=Date.now();mood='watching';dl
  if(round.finished)round.endless?finishEndlessView():finishView();}
 function touch(){lastAction=Date.now();mood='watching'}
 function refreshNook(){touch();jumpAt=performance.now()}
-function animateCat(now=performance.now()){if(!dlg.open)return;if(!document.hidden&&now-lastFrame>32){lastFrame=now;const idle=Date.now()-lastAction;if(!round.finished&&!busy){if(idle>16000)mood='sleep';else if(idle>8000)mood='groom'}const cv=dlg.querySelector('.lm-companion');const jump=(now-jumpAt)/700;if(cv)api.draw(cv,companion(),mood,reduced()?0:jump>0&&jump<1?jump:0,false);const marker=dlg.querySelector('.lm-walker');if(marker)api.draw(marker,companion(),'watching',0,!reduced()&&now<walkUntil)}raf=requestAnimationFrame(animateCat)}
+function animateCat(now=performance.now()){if(!dlg.open)return;if(!document.hidden&&now-lastFrame>32){lastFrame=now;const idle=Date.now()-lastAction;if(!round.finished&&!busy){if(idle>16000)mood='sleep';else if(idle>8000)mood='drowsy'}const cv=dlg.querySelector('.lm-companion');const jump=(now-jumpAt)/700;if(cv)api.draw(cv,companion(),mood,reduced()?0:jump>0&&jump<1?jump:0,false);const marker=dlg.querySelector('.lm-walker');if(marker)api.draw(marker,companion(),'watching',0,!reduced()&&now<walkUntil)}raf=requestAnimationFrame(animateCat)}
 function renderBoard(){const board=dlg.querySelector('.lm-board');if(!board)return;const previous=new Map([...board.children].map(c=>[+c.dataset.card,{open:c.classList.contains('lm-open'),matched:c.classList.contains('lm-matched')}]));const focusIndex=document.activeElement?.dataset?.card;board.replaceChildren();board.style.setProperty('--cols',round.deck.length===6?3:4);round.deck.forEach((key,i)=>{const matched=round.matched.includes(i),open=matched||i===first||revealed.includes(i)||picks.includes(i);const card=button('',()=>flip(i));card.className='lm-card'+(open?' lm-open':'')+(matched?' lm-matched':'');card.dataset.card=i;card.disabled=matched||busy||round.finished;card.setAttribute('aria-label',open?catalog[key].name+(matched?', matched':''):`Face-down card ${i+1}`);if(open){card.append(img(key,''),el('span','',catalog[key].name));if(matched)card.append(el('b','lm-check','✓'))}else{const back=el('span','lm-card-back');back.innerHTML='<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 23 11 10l11 7h6l9-7 0 14q2 15-13 15T12 23Z"/><path d="M17 27q3 4 5 0m6 0q3 4 5 0m-10 6 2 2 2-2"/></svg>';card.append(back)}board.append(card);const was=previous.get(i);if(was&&!reduced()){if(matched&&!was.matched)card.animate([{transform:'scale(.96)'},{transform:'scale(1.055)'},{transform:'scale(1)'}],{duration:360,easing:'ease-out'});else if(open!==was.open)card.animate([{transform:'scaleX(.15)',opacity:.65},{transform:'scaleX(1)',opacity:1}],{duration:190,easing:'ease-out'})}});dlg.querySelector('.lm-stats').textContent=`${round.matched.length/2} / ${round.deck.length/2} pairs · ${round.turns} turns · No rush`;const f=dlg.querySelector('#lm-use');f.disabled=round.used||busy||round.finished;f.textContent=round.used?'Favour used':picking?'Choose four cards':favours[round.favour][0];if(focusIndex!==undefined)board.querySelector(`[data-card="${focusIndex}"]`)?.focus({preventScroll:true});}
 function flip(i){if(busy||round.finished||round.matched.includes(i))return;
  touch();if(picking){if(picks.includes(i))return;if(!round.used){round.used=true;persist()}picks.push(i);api.feedback?.('flip');renderBoard();const remaining=round.deck.length-round.matched.length;if(picks.length===Math.min(4,remaining)){round.used=true;picking=false;const chosen=picks.slice();picks=[];persist();pauseReveal(chosen,'Four little clues. They will stay right where they are.')}else say(`Choose ${Math.min(4,remaining)-picks.length} more cards.`);return}
- if(i===first)return;if(first===null){first=i;api.feedback?.('flip');renderBoard();return}const a=first;round.turns++;round.last=[a,i];if(round.deck[a]===round.deck[i]){first=null;matched(a,i)}else{first=null;misses++;if(misses>=2)mood='groom';persist();pauseReveal([a,i],'Not quite. Two little faces to remember.',true)}}
+ if(i===first)return;if(first===null){first=i;api.feedback?.('flip');renderBoard();return}const a=first;round.turns++;round.last=[a,i];if(round.deck[a]===round.deck[i]){first=null;matched(a,i)}else{first=null;misses++;mood='drowsy';persist();pauseReveal([a,i],'Not quite. Two little faces to remember.',true)}}
 function matched(a,b){api.feedback?.(round.matched.length+2===round.deck.length?'win':'match');misses=0;round.matched.push(a,b);persist();renderBoard();refreshNook();const key=round.deck[a],name=companion().name;const lines=key==='obj:food'?[`${name} heard “bowl.” A brief misunderstanding.`, 'A picture of dinner. An ambitious promise.']:key==='obj:bed'?[`${name} is already considering the cushion.`, 'Apparently this one was for them.']:key.startsWith('cat:')?['A familiar face. A very flattering resemblance.',`${name} approves. Quietly, of course.`]:['Found them. A small hop felt appropriate.','A very good match. A very pleased cat.'];say(lines[speaker++%lines.length]);if(round.matched.length===round.deck.length)complete();}
 function useFavour(){if(round.used||busy||round.finished)return;if(round.favour==='peek'){if(first!==null){say('Finish this pair before choosing your four cards.');return}picking=true;renderBoard();say('Tap four face-down cards for a little look.');return}
  if(round.favour==='friend'){if(first===null){say('Turn over one card first. Then ask for a helping paw.');return}const a=first,b=round.deck.findIndex((key,i)=>key===round.deck[a]&&i!==a&&!round.matched.includes(i));round.used=true;first=null;round.turns++;matched(a,b);return}

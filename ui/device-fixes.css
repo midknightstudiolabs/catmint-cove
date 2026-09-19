@@ -140,3 +140,20 @@
 #neo-go-cafe:disabled,#neo-go-cafe:disabled:hover,#neo-go-cafe:disabled:active,#neo-go-cafe:disabled:focus{background:#e5e5de!important;border-color:#d1d3c9!important;color:#7a7e73!important;box-shadow:none!important;transform:none!important;filter:none!important;cursor:not-allowed;opacity:1}
 #neo-go-cafe:disabled .neo-ui-icon{filter:grayscale(1);opacity:.45}
 #neo-go-cafe:disabled b,#neo-go-cafe:disabled small{color:#7a7e73!important}
+
+/* September mobile audit: details remain readable and the world clears navigation. */
+#catcard{overscroll-behavior:contain;scrollbar-width:thin}#catcard .cat-trait-desc,#catcard .cc-pref{white-space:normal;overflow:visible;max-height:none;overflow-wrap:anywhere}
+@media(max-width:600px){
+ #stage{bottom:var(--navh,76px)!important}
+ #ovBtn{bottom:calc(var(--navh,76px) + 12px)!important;width:44px;height:44px}
+ #app #toast{bottom:calc(var(--navh,76px) + 66px)!important;max-width:calc(100vw - 32px);box-sizing:border-box}
+ #shopList .shop-item{display:flex!important;flex-wrap:wrap!important;align-items:center;gap:12px;min-width:0}
+ #shopList .shop-item>.txt{flex:1 1 150px;min-width:0;overflow-wrap:anywhere}
+ #shopList .shop-item>.product-preview{position:static!important;width:76px;height:64px;flex:0 0 76px;margin:0;object-fit:contain}
+ #shopList .shop-item>.shop-actions{position:static!important;flex:1 0 100%;display:flex;justify-content:flex-end;gap:8px}
+ #catcard{width:min(340px,calc(100vw - 16px))!important}
+}
+
+.platform-icon{display:inline-flex;width:1.15em;height:1.15em;vertical-align:-.15em;align-items:center;justify-content:center;color:#567858}.platform-icon img,.platform-icon svg{width:100%;height:100%;object-fit:contain}.btn .platform-icon{flex-shrink:0}
+
+.rb-back{display:inline-flex;align-items:center;gap:8px}.rb-back .neo-ui-icon{flex-shrink:0;width:22px;height:22px}

@@ -1,3 +1,15 @@
+## Neo testing — September 19, 2026 (based on 3.1.2)
+
+- Keep cat details scrollable and within the available screen; retain all details and Decor access.
+- Wrap mobile shop artwork, descriptions and actions; reserve actual bottom-navigation space in the Cove canvas and separate zoom from toast notifications.
+- Clear sheets, dialogs, Help, placement, theme previews and transient effects on activity entry. About, Credits and Cove Cares return to Help.
+- Use cottage artwork for Back to Cove and packaged artwork/SVG for common interface emoji across platforms.
+- Use the selected Cove theme for the Festival outdoor plate; synchronize scenery source with the existing embedded implementation to preserve prior fixes.
+- Drive Little Matches shuffle with explicit frame transforms; add a visible companion hop and drowsy/idle responses.
+- Reduce nearby-cat avoidance searches with spatial bins and reuse resting-cat drawings for larger populations.
+- Validation: Chromium and WebKit at 320x568, 390x844 and 844x390; shuffle motion and changed deck order; matching; dialog cleanup; Help returns; spatial-neighbor coverage; inventory, economy and rain-loader regression checks.
+- Performance remains under review: a 24-cat Chromium sample had ~16.7ms median frames, but Windows WebKit measured 29–31ms. Physical iOS/Android testing is still required. No production site or native-store rollout.
+
 ## Little Matches feedback
 
 - Added card press/flip motion, amber mismatch feedback and match bounce.

@@ -6,12 +6,74 @@ ART2D.cove.src = 'art/cove-2d.png';
 // The active shared standard uses matte vector shading, with no fur image load.
 const art2dReady = image => image.complete && image.naturalWidth > 0;
 const art2dStill = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Bake theme scenery once per selection, not once per animation frame.
+let neoThemePlateKey='',neoThemePlate=null;
+function neoThemeKey(){return atmospherePreview ? atmospherePreview.key : G.cosmetics.theme;}
+function neoCovePlate(){
+ const key=neoThemeKey(),im=ART2D.cove;
+ if(key==='default'||!art2dReady(im))return im;
+ if(neoThemePlateKey===key&&neoThemePlate)return neoThemePlate;
+ const cv=document.createElement('canvas');cv.width=im.naturalWidth;cv.height=im.naturalHeight;
+ const g=cv.getContext('2d');g.drawImage(im,0,0);
+ const data=g.getImageData(0,0,cv.width,cv.height),a=data.data;
+ const palettes={meadow:[133,178,96],seaside:[231,216,175],autumn:[197,160,103],frost:[216,228,230]};
+ const base=palettes[key];if(!base)return im;
+ for(let y=Math.floor(cv.height*.30);y<cv.height;y++)for(let x=0;x<cv.width;x++){
+  const i=(y*cv.width+x)*4,r=a[i],green=a[i+1],b=a[i+2];
+  const ground=y>=cv.height*.405||(y>=cv.height*.375&&green>b*1.08);
+  if(ground){
+   // Retain the illustration's shadows, rock shapes and texture.
+   const lum=(r*.3+green*.59+b*.11)/170;
+   const foliage=key==='autumn'&&green>r*1.04&&green>b*1.12&&(r*.3+green*.59+b*.11)<175;
+   const tint=foliage?((x+Math.floor(y/24)*13)%91<45?[185,104,58]:[210,158,66]):base;
+   const strength=key==='frost'?.88:key==='seaside'?.86:key==='autumn'?.85:.70;
+   for(let c=0;c<3;c++)a[i+c]=a[i+c]*(1-strength)+Math.min(255,tint[c]*lum)*strength;
+  }else if(key==='autumn'&&y>cv.height*.24&&green>r*1.08&&green>b*1.02){
+   // Warm the distant green tree silhouettes, preserving the blue mountains.
+   const lum=(r*.3+green*.59+b*.11)/170;
+   const tint=[192,146,85];for(let c=0;c<3;c++)a[i+c]=a[i+c]*.3+tint[c]*lum*.7;
+  }else if(y<cv.height*.40&&b>r*1.05){
+   const water=key==='seaside'?[91,181,188]:key==='frost'?[157,187,205]:null;
+   if(water)for(let c=0;c<3;c++)a[i+c]=a[i+c]*.52+water[c]*.48;
+  }
+ }
+ g.putImageData(data,0,0);
+ const w=cv.width,h=cv.height;
+ // Small, grounded details leave the central play space readable.
+ for(let i=0;i<95;i++){
+  const x=((i*137.507)%w),y=h*(.44+((i*71.39)%100)/100*.53);
+  const edge=x<w*.20||x>w*.80||y>h*.85;
+  if(!edge&&i%4!==0)continue;
+  const size=2.2+(y/h-.4)*4;
+  if(key==='meadow'){
+   g.strokeStyle='#678d47';g.lineWidth=1.5;g.beginPath();g.moveTo(x,y+size*2);g.lineTo(x,y);g.stroke();
+   g.fillStyle=['#faf1cc','#e4a8bb','#b9b2d6'][i%3];
+   for(let j=0;j<5;j++){const t=j*Math.PI*2/5;g.beginPath();g.ellipse(x+Math.cos(t)*size,y+Math.sin(t)*size,size*.8,size*.65,t,0,7);g.fill();}
+   g.fillStyle='#dab75e';g.beginPath();g.arc(x,y,size*.5,0,7);g.fill();
+  }else if(key==='seaside'&&i%3===0){
+   g.fillStyle=i%2?'#f8eed7':'#d4bfa0';g.beginPath();g.ellipse(x,y,size*1.6,size*.8,-.3,0,7);g.fill();
+   g.strokeStyle='#bca787';g.lineWidth=.8;g.beginPath();g.moveTo(x-size,y);g.lineTo(x+size,y);g.stroke();
+  }else if(key==='frost'){
+   g.fillStyle='rgba(249,253,250,.65)';g.beginPath();g.ellipse(x,y,size*4,size*1.3,-.12,0,7);g.fill();
+  }else if(key==='autumn'){
+   // Small maple-like leaves, gathered at the edges rather than covering the board.
+   const count=edge?3:1;
+   for(let n=0;n<count;n++){
+    g.save();g.translate(x+n*size*2.7,y+(n%2)*size*1.8);g.rotate(i+n*1.7);g.scale(size*.85,size*.85);
+    g.fillStyle=['#b66c42','#deb45d','#a87948'][(i+n)%3];
+    g.beginPath();g.moveTo(0,1.2);g.lineTo(-1.7,.5);g.lineTo(-1.1,-.15);g.lineTo(-1.8,-1.1);g.lineTo(-.65,-.9);g.lineTo(0,-2.2);g.lineTo(.65,-.9);g.lineTo(1.8,-1.1);g.lineTo(1.1,-.15);g.lineTo(1.7,.5);g.closePath();g.fill();
+    g.strokeStyle='#88643e';g.lineWidth=.18;g.beginPath();g.moveTo(0,1.7);g.lineTo(0,-1.1);g.stroke();g.restore();
+   }
+  }
+ }
+ neoThemePlateKey=key;neoThemePlate=cv;return cv;
+}
 const art2dNativeBackground = drawBackground;
 drawBackground = function(dt) {
   if (!art2dReady(ART2D.cove)) { art2dNativeBackground(dt); return; }
   const sky = timeOfDay(); window._sky = sky;
   ctx.save();
-  ctx.drawImage(ART2D.cove, -_overX, 0, W + _overX * 2, H);
+  ctx.drawImage(neoCovePlate(), -_overX, 0, W + _overX * 2, H);
   neoExtendCove(ctx);
   neoClearSky(ctx,W,H*300/1024,_overX);
   neoAtmosphere(ctx,sky,W,H,H*300/1024,_overX);
@@ -36,7 +98,7 @@ drawBackground = function(dt) {
 // Shared outdoor plate: one existing image, no per-frame texture generation.
 function neoOutdoor(g,w,h,horizon,over,sand=false) {
   if(!art2dReady(ART2D.cove)) return;
-  const im=ART2D.cove,iw=im.naturalWidth,ih=im.naturalHeight;
+  const im=neoCovePlate(),iw=im.width||im.naturalWidth,ih=im.height||im.naturalHeight;
   // Cover the visible world even when a portrait activity fits a wide screen.
   const tr=g.getTransform();
   if(tr.a>0 && tr.d>0){
@@ -152,7 +214,8 @@ function neoAtmosphere(g,sky,w,h,hz,over,festival=false){
 function neoClearSky(g,w,hz,over){
   g.save();neoSkyClip(g,w,hz,over);
   const fill=g.createLinearGradient(0,0,0,hz);
-  fill.addColorStop(0,'#91d0ed');fill.addColorStop(1,'#b2def0');
+  const theme=DECOR_THEMES[neoThemeKey()];
+  fill.addColorStop(0,theme?.sky?.[0]||'#91d0ed');fill.addColorStop(1,theme?.sky?.[1]||'#b2def0');
   g.fillStyle=fill;g.fillRect(-10000,-10000,20000,hz+10000);g.restore();
   g.save();
   const haze=g.createLinearGradient(0,hz-8,0,hz+18);
@@ -182,7 +245,7 @@ function neoMovingClouds(g,w,hz,over){
 
 // Continue the actual image edge beyond the play area; the camera never reveals a card.
 function neoExtendCove(g){
-  const im=ART2D.cove,left=-_overX,width=W+2*_overX;
+  const im=neoCovePlate(),left=-_overX,width=W+2*_overX;
   for(let row=0;row<=1;row++)for(let col=-1;col<=1;col++){
     if(row===0&&col===0)continue;
     g.save();
@@ -192,9 +255,10 @@ function neoExtendCove(g){
     if(row===0)g.drawImage(im,0,0,width+.25,H+.25);
     else {
       // Only continue the last grass strip: do not repeat upside-down rocks or shrubs.
-      g.drawImage(im,0,im.naturalHeight-2,im.naturalWidth,2,0,0,width+.25,H+.25);
+      g.drawImage(im,0,(im.height||im.naturalHeight)-2,im.width||im.naturalWidth,2,0,0,width+.25,H+.25);
       const fade=g.createLinearGradient(0,0,0,120);
-      fade.addColorStop(0,'rgba(166,192,111,0)');fade.addColorStop(1,'#a6c06f');
+      const ground=DECOR_THEMES[neoThemeKey()]?.ground||'#a6c06f';
+      fade.addColorStop(0,ground+'00');fade.addColorStop(1,ground);
       g.fillStyle=fade;g.fillRect(0,0,width+.25,H+.25);
     }
     g.restore();
@@ -205,10 +269,11 @@ function neoExtendCove(g){
 // Keep a generous bank of solid grass behind it, independent of crowd size.
 function neoRaceMeadow(g,w,h){
   if(!art2dReady(ART2D.cove))return;
-  const im=ART2D.cove,iw=im.naturalWidth,ih=im.naturalHeight,bank=170;
+  const im=neoCovePlate(),iw=im.width||im.naturalWidth,ih=im.height||im.naturalHeight,bank=170;
   g.save();
   const sky=g.createLinearGradient(0,0,0,bank);
-  sky.addColorStop(0,'#91d0ed');sky.addColorStop(1,'#d2e8d7');
+  const theme=DECOR_THEMES[neoThemeKey()];
+  sky.addColorStop(0,theme?.sky?.[0]||'#91d0ed');sky.addColorStop(1,theme?.sky?.[1]||'#d2e8d7');
   g.fillStyle=sky;g.fillRect(0,0,w,h);
   g.fillStyle='#91b798';g.beginPath();g.moveTo(0,bank);
   g.bezierCurveTo(w*.18,80,w*.27,155,w*.43,130);
@@ -235,7 +300,7 @@ const NEO_FOREGROUND_PATH=new Path2D(
 function neoCoveForeground(g,over=_overX){
   if(!art2dReady(ART2D.cove))return;
   g.save();g.translate(-over,0);g.scale((W+2*over)/1536,H/1024);
-  g.clip(NEO_FOREGROUND_PATH);g.drawImage(ART2D.cove,0,0,1536,1024);
+  g.clip(NEO_FOREGROUND_PATH);g.drawImage(neoCovePlate(),0,0,1536,1024);
   // Match the background's base night tint; the scene-wide wash comes later.
   const light=neoLight(nowHours()),sky=timeOfDay();
   g.fillStyle='rgba(9,19,43,'+Math.min(.84,(1-sky.df)*.36+light.night*.48)+')';
