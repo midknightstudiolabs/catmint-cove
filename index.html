@@ -20035,7 +20035,17 @@ drawBackground = function(dt) {
 
 
 
-// Shared outdoor plate: one existing image, no per-frame texture generation.
+// Quiet activity lawn: no enlarged source-art flowers competing with players.
+function neoActivityLawn(g,x,y,w,h){
+  const ground=DECOR_THEMES[neoThemeKey()]?.ground||'#b3cd78';
+  g.fillStyle=ground;g.fillRect(x,y,w,h);
+  const shade=g.createLinearGradient(0,y,0,y+h);
+  shade.addColorStop(0,'rgba(255,248,210,.08)');
+  shade.addColorStop(.45,'rgba(255,248,210,0)');
+  shade.addColorStop(1,'rgba(49,77,35,.10)');
+  g.fillStyle=shade;g.fillRect(x,y,w,h);
+}
+// Shared outdoor plate: keep the coastline, simplify the activity ground.
 function neoOutdoor(g,w,h,horizon,over,sand=false) {
   if(!art2dReady(ART2D.cove)) return;
   const im=neoCovePlate(),iw=im.width||im.naturalWidth,ih=im.height||im.naturalHeight;
@@ -20048,11 +20058,7 @@ function neoOutdoor(g,w,h,horizon,over,sand=false) {
   g.save();
   g.fillStyle='#c2dfe7';g.fillRect(-over,-over,w+over*2,h+over*2);
   g.drawImage(im,0,0,iw,ih*.38,-over,0,w+over*2,horizon);
-  // Meet the sea crop at the same source row and horizontal scale. Cropping
-  // into the lawn enlarged/clipped tufts into a hard band at the waterline.
-  g.save();g.beginPath();g.rect(-over,horizon,w+over*2,h-horizon+over);g.clip();
-  g.drawImage(im,0,ih*.38,iw,ih*.40,-over,horizon,w+over*2,h-horizon+over);
-  g.restore();
+  neoActivityLawn(g,-over,horizon,w+over*2,h-horizon+over);
   if(sand){g.fillStyle='#ebddba';g.fillRect(-over,horizon,w+over*2,h-horizon+over);}
   const sky=timeOfDay();
   neoClearSky(g,w,horizon*(300/1024)/.38,over);
@@ -20224,13 +20230,7 @@ function neoRaceMeadow(g,w,h){
   g.bezierCurveTo(w*.18,80,w*.27,155,w*.43,130);
   g.bezierCurveTo(w*.65,95,w*.8,145,w,105);
   g.lineTo(w,bank+30);g.lineTo(0,bank+30);g.fill();
-  g.drawImage(im,iw*.20,ih*.40,iw*.60,ih*.38,0,bank,w,h-bank);
-  // Let distant turf join the hills before introducing foreground detail.
-  // The source crop crosses tufts: conceal that cut instead of exposing a seam.
-  const turfJoin=g.createLinearGradient(0,bank,0,bank+100);
-  turfJoin.addColorStop(0,lawn);turfJoin.addColorStop(.35,lawn);
-  turfJoin.addColorStop(1,lawn+'00');
-  g.fillStyle=turfJoin;g.fillRect(0,bank,w,100);
+  neoActivityLawn(g,0,bank,w,h-bank);
   const light=neoLight(nowHours()),day=timeOfDay();
   g.fillStyle='rgba(9,19,43,'+Math.min(.38,(1-day.df)*.36+light.night*.48)+')';
   g.fillRect(0,0,w,h);
