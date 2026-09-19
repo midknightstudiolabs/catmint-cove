@@ -5378,7 +5378,7 @@ canvas.addEventListener("dblclick", e => e.preventDefault());
   const dist = () => { const a = [...pts.values()]; return Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); };
 
   canvas.addEventListener("pointerdown", (e) => {
-    if (_focus || restMode || festMode || _placing || _arranging) return;
+    if (_focus || restMode || festMode || _placing) return;
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 2) {
       clearTimeout(_lpTimer); _tpMoved = true;      // cancel the single-finger long-press
@@ -5389,6 +5389,7 @@ canvas.addEventListener("dblclick", e => e.preventDefault());
   }, true);
 
   canvas.addEventListener("pointermove", (e) => {
+    if(_placing||_focus)return; // Move the selected piece, not the camera beneath it.
     if (!pts.has(e.pointerId)) return;
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 2 && pinchStart > 0) {
