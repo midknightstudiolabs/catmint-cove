@@ -7189,8 +7189,21 @@ let friendsModule=null;
 document.getElementById('coveFriendsBtn').onclick=async()=>{
  restClearUI();
  try{
-  friendsModule ||= await import('./ui/cove-friends.js?v=1');
-  await friendsModule.open({name:coveName,picture:async()=>{
+  friendsModule ||= await import('./ui/cove-friends.js?v=2');
+  await friendsModule.open({name:coveName,backup:()=>{
+   if(_arranging)throw Error('Save or cancel your layout before backing up.');
+   if(!save())throw Error('Your device could not save. Please free some storage first.');
+   const code=saveCode();if(!code)throw Error('Backup could not be prepared.');return code;
+  },restore:code=>{
+   if(_arranging)throw Error('Save or cancel your layout before restoring.');
+   const raw=decodeURIComponent(escape(atob(String(code).replace(/^CMC1\./,''))));
+   const checked=JSON.parse(raw);
+   if(!checked||!SAVE_VERSIONS.includes(checked.v)||!Array.isArray(checked.cats))throw Error('This backup is not compatible with this game version.');
+   if(!save())throw Error('Could not preserve this device’s Cove. Restore cancelled.');
+   localStorage.setItem('catmintCove.neo.before-cloud-restore',localStorage.getItem(SAVE_KEY));
+   if(!applySaveCode(code))throw Error('The backup could not be restored.');
+   location.reload();
+  },picture:async()=>{
    if(restMode||festMode||_arranging)throw Error('Return to your saved Cove before sharing.');
    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
    const out=document.createElement('canvas');out.width=Math.min(1200,canvas.width);out.height=Math.round(out.width*canvas.height/canvas.width);

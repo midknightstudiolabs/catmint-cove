@@ -1,0 +1,15 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {handle} from '../supabase/functions/revenuecat-events/index.ts';
+const token='test-only-abcdefghijklmnopqrstuvwxyz0123456789';
+const env={get:k=>({REVENUECAT_WEBHOOK_TOKEN:token,SUPABASE_URL:'https://example.invalid',SUPABASE_SERVICE_ROLE_KEY:'server-only'})[k]};
+const event={id:'test-1',type:'NON_RENEWING_PURCHASE',app_id:'app12b6a84e70',environment:'SANDBOX',event_timestamp_ms:1000,app_user_id:'anonymous-test',product_id:'welcome_pack'};
+const request=(e=event,auth='Bearer '+token)=>new Request('https://example.invalid',{method:'POST',headers:{Authorization:auth},body:JSON.stringify({api_version:'1.0',event:e})});
+test('unauthenticated events cannot write',async()=>assert.equal((await handle(request(event,'bad'),env,()=>{throw Error('must not write')})).status,401));
+test('missing configuration fails closed',async()=>assert.equal((await handle(request(),{get:()=>undefined})).status,503));
+test('only known mobile apps and environments',async()=>{for(const e of [{...event,app_id:'other'},{...event,environment:'unknown'}])assert.equal((await handle(request(e),env)).status,400);});
+test('minimal evidence and duplicate-safe insert',async()=>{const send=async(url,opts)=>{assert.match(url,/on_conflict=event_id/);assert.match(opts.headers.Prefer,/ignore-duplicates/);const row=JSON.parse(opts.body);assert.equal(row.environment,'SANDBOX');assert.equal(row.subscriber_attributes,undefined);return new Response(null,{status:201});};for(let i=0;i<2;i++)assert.equal((await handle(request({...event,subscriber_attributes:{email:'not retained'}}),env,send)).status,200);});
+test('database failure requests retry',async()=>assert.equal((await handle(request(),env,async()=>new Response(null,{status:500}))).status,503));
+test('oversized body rejected',async()=>assert.equal((await handle(new Request('https://example.invalid',{method:'POST',headers:{Authorization:'Bearer '+token},body:'x'.repeat(70000)}),env)).status,413));
+test('test delivery makes no fake purchase',async()=>assert.equal((await handle(request({...event,type:'TEST'}),env,()=>{throw Error('must not write')})).status,200));
+test('malformed identities rejected',async()=>assert.equal((await handle(request({...event,aliases:[{}]}),env)).status,400));

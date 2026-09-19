@@ -1,0 +1,2 @@
+[functions.revenuecat-events]
+verify_jwt = false
