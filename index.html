@@ -5189,7 +5189,7 @@ function startArrange() {
  closeAllPanels();closeModal();hideCatCard();hidePropCard();exitFocus();
  editBaseline=editLayout();editHistory=[];_arranging=true;_placing=null;_placeGhost=null;
  document.getElementById('placeBarPutAway').hidden=true;
- editBar();toast('Move or store your pieces. Save changes when it feels like home.',4);
+ editBar();toast('Cats are hidden while you decorate. Save changes when it feels like home.',4);
 }
 function endArrange() {
   if(_placing){finishPlacing();if(_placing)return;}
@@ -17522,6 +17522,7 @@ function renderScene(dt) {
   const vx = visibleWorldX(), cullL = vx.l - 90, cullR = vx.r + 90;
   const layer = _sceneLayer; layer.length = 0;
   for (const c of cats) {
+    if (_arranging) continue; // Hide the cast without removing cats or changing their saves.
     if (!(c.state === "indoors" || (c.x >= cullL && c.x <= cullR))) continue;
     // a cat up the cat tree draws at the TREE's depth (just after its post), not
     // its own lifted screen-y — so cats passing in front cover it and cats behind
@@ -17578,8 +17579,10 @@ function renderScene(dt) {
   }
   neoCoveForeground(ctx);
   const _pt2 = performance.now();
-  drawCatBadges(ctx);   // v3: status glyphs over cats that need something
-  drawDepartures(ctx);
+  if (!_arranging) {
+    drawCatBadges(ctx);   // Hide badges and departing visitors with the cast.
+    drawDepartures(ctx);
+  }
   drawButterfly(ctx);
   drawBird(ctx);
   for (const tk of fieldTokens) drawToken(ctx, tk);
@@ -17587,13 +17590,13 @@ function renderScene(dt) {
   drawWeather(ctx);
 
   // cold open: keep the cat being pointed at on screen (gentle follow)
-  if (_cold && _coldTarget && cats.includes(_coldTarget) && stage.scrollWidth > stage.clientWidth + 4) {
+  if (!_arranging && _cold && _coldTarget && cats.includes(_coldTarget) && stage.scrollWidth > stage.clientWidth + 4) {
     const want = clamp(_coldTarget.x * displayScale - window.innerWidth / 2,
       0, stage.scrollWidth - stage.clientWidth);
     if (Math.abs(want - stage.scrollLeft) > 1) stage.scrollLeft += (want - stage.scrollLeft) * 0.09;
   }
   // cold open: a soft ring under the cat the cue is pointing at
-  if (_coldTarget && cats.includes(_coldTarget)) {
+  if (!_arranging && _coldTarget && cats.includes(_coldTarget)) {
     const c = _coldTarget, r = 24 + Math.sin(performance.now() / 300) * 4;
     ctx.save();
     ctx.strokeStyle = "rgba(224,178,75,.75)";
