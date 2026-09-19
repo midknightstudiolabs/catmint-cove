@@ -252,3 +252,8 @@ This release packages the current Catmint Cove Neo web build. Original character
 - Removed human customer art. Both views use the existing game cat renderer, coats, markings, ages and accessories; walking uses the game's cat animation fields.
 - Added three sequential shop stages: Little Kiosk, Garden Café (50,000 Shells), Seaside Café (100,000 additional Shells). Existing saves start at their original kiosk without losing equipment or ingredients.
 - Added free building previews, savings information and a confirmation step for expansions. Higher stages change the exterior and interior finish; machine speed remains separate.
+## Neo café kiosk refresh
+
+- Reworked exterior with Catmint Café roof signage, timber serving window, vertical paneling, blade sign and warm lighting; retained the actual game cats and animation.
+- Added five coordinated finishes across inside/outside: Sage (included), Buttercup and Coastal Blue (2,500 Shells each), Rosewater and Oatmilk (5,000 each). Free previews; unlock once and reuse freely.
+- Preserved three building stages, equipment, stock, saved progress and 50,000 / 100,000 Shell expansion costs.

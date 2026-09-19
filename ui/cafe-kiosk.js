@@ -5,7 +5,7 @@
   stopActive();
   const E=root.CoveCafeEngine,g=a.game(),s=E.init(g,Date.now());a.close();
   let panel=document.getElementById('cafe-kiosk');if(!panel){panel=document.createElement('section');panel.id='cafe-kiosk';panel.className='sheet';document.getElementById('app').append(panel);a.register(panel);}
-  panel.hidden=false;let previewTier=null,confirmShop=false;let view='outside',tab='menu',frame=0,last=0,timer;const actors=a.actors();stopActive=()=>{cancelAnimationFrame(frame);clearInterval(timer);};
+  panel.hidden=false;let previewFinish=null,confirmFinish=null,previewTier=null,confirmShop=false;let view='outside',tab='menu',frame=0,last=0,timer;const actors=a.actors();stopActive=()=>{cancelAnimationFrame(frame);clearInterval(timer);};
   const money=n=>Math.round(n*10)/10;
   function commit(fn){E.settle(g,Date.now());fn();a.save();a.hud();render();}
   function render(){
@@ -34,10 +34,18 @@
     box.innerHTML=`<h3>Your café, growing with you</h3><p>Three shop stages. Keep every machine, ingredient and sale when you expand. Buildings change the shop; brewing speed stays with your machine.</p>${E.shops.map((shop,i)=>`<article class="cc-card"><div><h3>${i+1}. ${shop.name}</h3><small>${shop.description}</small><small>${i<=tier?(i===tier?'Current shop':'Completed'):shop.cost.toLocaleString()+' Shells'+(i>tier+1?' · previous stage required':'')}</small></div><button class="btn" data-preview="${i}">Preview</button></article>`).join('')}<button class="btn" data-current>Show my shop</button>${next?`<p>${Math.max(0,next.cost-Math.floor(g.shells)).toLocaleString()} Shells to save for ${next.name}. Each stage has its own price.</p><button class="btn primary" data-expand ${g.shells<next.cost?'disabled':''}>${confirmShop?'Confirm · spend '+next.cost.toLocaleString()+' Shells':'Expand · '+next.cost.toLocaleString()+' Shells'}</button>${confirmShop?'<button class="btn" data-cancel-expand>Cancel</button>':''}`:'<p>Your Seaside Café is fully expanded.</p>'}`;
     panel.querySelector('.cc-content').prepend(box);
     box.querySelectorAll('[data-preview]').forEach(b=>b.onclick=()=>{previewTier=Number(b.dataset.preview);confirmShop=false;render();panel.scrollTop=0;});
-    box.querySelector('[data-current]').onclick=()=>{previewTier=null;confirmShop=false;render();panel.scrollTop=0;};
+    box.querySelector('[data-current]').onclick=()=>{previewTier=null;previewFinish=null;confirmFinish=null;confirmShop=false;render();panel.scrollTop=0;};
     if(next)box.querySelector('[data-expand]').onclick=()=>{if(!confirmShop){confirmShop=true;render();return;}commit(()=>{E.upgradeShop(g,Date.now());previewTier=null;confirmShop=false;});};
     box.querySelector('[data-cancel-expand]')?.addEventListener('click',()=>{confirmShop=false;render();});
    }
+   if(tab==='upgrades'&&s.unlocked){
+    const finishes=document.createElement('section');finishes.className='cc-finishes';
+    finishes.innerHTML='<h3>Make it your color</h3><p>Preview any finish free. Unlock once, then switch whenever you like. Colors are purely decorative.</p><div class="cc-finish-grid">'+Object.entries(E.finishes).map(([key,f])=>{const owned=key==='sage'||(s.finishesOwned||[]).includes(key),current=(s.finish||'sage')===key;return `<article><span class="cc-swatch" style="background:${f.body};border-bottom-color:${f.dark}"></span><h3>${f.name}</h3><small>${owned?'Owned':f.cost.toLocaleString()+' Shells'}</small><button class="btn" data-finish-preview="${key}">Preview</button><button class="btn primary" data-finish-buy="${key}" ${current||(!owned&&g.shells<f.cost)?'disabled':''}>${current?'In use':owned?'Use finish':confirmFinish===key?'Confirm purchase':'Unlock'}</button></article>`;}).join('')+'</div>';
+    panel.querySelector('.cc-shop-stages').after(finishes);
+    finishes.querySelectorAll('[data-finish-preview]').forEach(b=>b.onclick=()=>{previewFinish=b.dataset.finishPreview;confirmFinish=null;view='outside';render();panel.scrollTop=0;});
+    finishes.querySelectorAll('[data-finish-buy]').forEach(b=>b.onclick=()=>{const key=b.dataset.finishBuy,owned=key==='sage'||(s.finishesOwned||[]).includes(key);if(!owned&&confirmFinish!==key){confirmFinish=key;render();return;}commit(()=>{E.buyFinish(g,key);previewFinish=null;confirmFinish=null;});});
+   }
+   if(previewFinish){const note=document.createElement('p');note.className='cc-note';note.textContent='Color preview: '+E.finishes[previewFinish].name+' · no Shells spent.';panel.querySelector('canvas').before(note);}
    if(previewTier!==null){const note=document.createElement('p');note.className='cc-note';note.textContent='Preview: '+E.shops[previewTier].name+' · your shop and Shells have not changed.';panel.querySelector('canvas').before(note);}
    const renderedServed=s.served;status();frame=requestAnimationFrame(paint);timer=setInterval(()=>{if(panel.hidden||!panel.isConnected){clearInterval(timer);cancelAnimationFrame(frame);return;}const before=s.served;E.settle(g,Date.now());if(s.served!==renderedServed){a.save();a.hud();render();}else status();},1000);
   }
@@ -45,7 +53,7 @@
   function cup(id){return `<svg viewBox="0 0 60 64" aria-hidden="true"><path d="M42 24h8q12 15-8 19" fill="none" stroke="#ae8761" stroke-width="5"/><path d="M10 20h34v26q-17 15-34 0Z" fill="${id==='tea'?'#8fa783':id==='midknight'?'#d0ad6b':'#e5cfa8'}"/><ellipse cx="27" cy="21" rx="17" ry="5" fill="#74523d"/><path d="M22 13q-7-6 0-11m12 11q-7-6 0-11" fill="none" stroke="#adbaa0" stroke-width="2"/></svg>`;}
   function paint(t){
    if(panel.hidden||!panel.isConnected)return;frame=requestAnimationFrame(paint);if(document.hidden||t-last<33)return;last=t;
-   CoveCafeScene(panel.querySelector('canvas').getContext('2d'),{inside:view==='inside',s,stock:g.homestead.stock,E,a,actors,t,previewTier});
+   CoveCafeScene(panel.querySelector('canvas').getContext('2d'),{inside:view==='inside',s,stock:g.homestead.stock,E,a,actors,t,previewTier,previewFinish});
   }
   render();
  }};

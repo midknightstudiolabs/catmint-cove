@@ -3,7 +3,9 @@
   const ingredients={coffee:{name:'Coffee beans',import:5,cost:10,seconds:900,yield:10},catmint:{name:'Catmint',import:3,cost:6,seconds:300,yield:8},honey:{name:'Honey',import:8,cost:12,seconds:1500,yield:8}};
   const recipes=[{id:'coffee',name:'Coastal Coffee',note:'A warm welcome in a little cup.',price:12,inputs:{coffee:1}},{id:'tea',name:'Catmint Cloud',note:'Soft, fragrant and wonderfully unhurried.',price:8,inputs:{catmint:1}},{id:'midknight',name:'Midknight Morning',note:'Coffee, honey, and a very serious purr.',price:30,inputs:{coffee:2,honey:1}}];
   const interval=s=>[240000,210000,180000][s.speed];
-  const shops=[{name:'Little Kiosk',cost:0,description:'Your original seaside serving window.'},{name:'Garden Café',cost:50000,description:'A wider storefront, timber porch and planted windows.'},{name:'Seaside Café',cost:100000,description:'A full coastal café with a tiled roof, side wings and warm lanterns.'}];
+  const finishes={sage:{name:'Catmint Sage',cost:0,body:'#9eaf85',shade:'#6f865f',dark:'#395a45',light:'#e6ecd2'},butter:{name:'Buttercup',cost:2500,body:'#dfcb76',shade:'#b5a35b',dark:'#69653b',light:'#fff0b9'},blue:{name:'Coastal Blue',cost:2500,body:'#91b2bd',shade:'#608793',dark:'#365864',light:'#dae9e6'},rose:{name:'Rosewater',cost:5000,body:'#c6a094',shade:'#a07870',dark:'#70554e',light:'#f0ddd0'},cream:{name:'Oatmilk',cost:5000,body:'#d6c8a8',shade:'#ae9f7e',dark:'#655d49',light:'#f7eedb'}};
+  function buyFinish(g,key){const s=init(g,Date.now()),f=finishes[key];if(!s.unlocked||!f)return false;s.finishesOwned ||= ['sage'];if(!s.finishesOwned.includes(key)){if(g.shells<f.cost)return false;g.shells-=f.cost;s.finishesOwned.push(key);}s.finish=key;return true;}
+  const shops=[{name:'Little Kiosk',cost:0,description:'Your original seaside serving window.'},{name:'Garden Café',cost:50000,description:'A wider storefront, timber porch and planted windows.'},{name:'Seaside Café',cost:100000,description:'A full coastal café with cream columns, canopy lights and warm lanterns.'}];
   function upgradeShop(g,now){const s=init(g,now),tier=s.shopTier||0,next=shops[tier+1];if(!s.unlocked||!next||g.shells<next.cost)return false;settle(g,now);g.shells-=next.cost;s.shopTier=tier+1;return true;}
   function init(g,now){
     const h=g.homestead;
@@ -37,5 +39,5 @@
     g.shells+=s.legacyCarryover.earned+(s.legacyCarryover.servings+s.legacyCarryover.prepared)*2;
     s.speed=Math.min(2,Math.max(0,(h.stoves?.length||2)-2));s.seats=h.tables>3?1:0;
     acquire(g,'coffee',6,0);acquire(g,'catmint',6,0);acquire(g,'honey',2,0);return true;}
-  root.CoveCafeEngine={ingredients,recipes,shops,upgradeShop,interval,init,available,acquire,settle,unlock};
+  root.CoveCafeEngine={ingredients,recipes,shops,finishes,buyFinish,upgradeShop,interval,init,available,acquire,settle,unlock};
 })(globalThis);
