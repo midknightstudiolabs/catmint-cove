@@ -3,7 +3,7 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const fn=n=>html.match(new RegExp('function '+n+'\\([^]*?^}', 'm'))[0];
-const ctx={G:{cosmetics:{},shells:123,decor:{cattree:2}},cats:[],rebuildAttractors:()=>{},save:()=>{},syncHud:()=>{},toast:()=>{}};
+const ctx={G:{cosmetics:{},shells:123,decor:{cattree:2}},cats:[],_arranging:true,editRemember:()=>{},editBar:()=>{},rebuildAttractors:()=>{},save:()=>{},syncHud:()=>{},toast:()=>{}};
 vm.createContext(ctx);
 vm.runInContext(['itemStored','setItemStored','putAwayItem'].map(fn).join('\n'),ctx);
 vm.runInContext('putAwayItem("decor","cattree:1","Cat tree")',ctx);

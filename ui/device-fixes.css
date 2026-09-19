@@ -157,3 +157,38 @@
 .platform-icon{display:inline-flex;width:1.15em;height:1.15em;vertical-align:-.15em;align-items:center;justify-content:center;color:#567858}.platform-icon img,.platform-icon svg{width:100%;height:100%;object-fit:contain}.btn .platform-icon{flex-shrink:0}
 
 .rb-back{display:inline-flex;align-items:center;gap:8px}.rb-back .neo-ui-icon{flex-shrink:0;width:22px;height:22px}
+/* Editing is a deliberate mode; the stable toolbar never follows a dragged piece. */
+.editing-cove #actions,.editing-cove #ovBtn{visibility:hidden!important;pointer-events:none!important}
+.editing-cove #helpBtn,.editing-cove #restBtn,.editing-cove #titlePill{pointer-events:none;opacity:.4}
+.editing-cove #placeBarUndo{grid-column:2}
+.editing-cove #placeBarInventory{grid-column:1}
+.editing-cove #placeBarCancel{grid-column:1}
+.editing-cove #placeBarDone{grid-column:2}
+.editing-cove #placeBar{display:grid!important;grid-template-columns:1fr 1fr;gap:8px;width:min(480px,calc(100vw - 24px));box-sizing:border-box;bottom:max(16px,env(safe-area-inset-bottom))!important;padding:14px;border-radius:22px}
+.editing-cove #placeBarTxt{grid-column:1/-1;text-align:center;font-size:14px;line-height:1.4}
+.editing-cove #placeBar button{min-height:44px;min-width:0;text-align:center;justify-content:center;margin:0!important}
+.editing-cove #placeBarInventory{display:block!important}
+.editing-cove #placeBarPutAway:not([hidden]){grid-column:1/-1}
+#editStored{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:16px 0;max-height:45vh;overflow:auto}
+#editStored .btn{text-align:left;justify-content:flex-start;min-height:48px}
+#editStored .btn{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+#editStored canvas{width:100%;max-width:140px;height:auto}
+.friends-sheet{box-sizing:border-box;width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #d9ddc7;border-radius:24px;background:#fbf7e9;color:#394738;padding:24px;font:inherit}
+.friends-sheet::backdrop{background:rgba(26,39,29,.42)}
+.friends-sheet h2{font-family:Georgia,serif;margin:0 0 8px}
+.friends-sheet p{line-height:1.5}
+.friends-body{display:grid;gap:16px}
+.friends-sheet label{display:grid;gap:8px;font-size:14px}
+.friends-sheet input:not([type=checkbox]){box-sizing:border-box;width:100%;min-height:46px;border-radius:12px;border:1px solid #cbd2bf;background:#fffdf5;padding:10px 12px;color:#394738;font-size:16px}
+.friends-sheet .btn{min-height:44px;justify-content:center;text-align:center;color:#425842;border:1px solid #cfd6bf;border-radius:24px;background:#fffcf1;padding:10px 16px;cursor:pointer;font:inherit}
+.friends-sheet .primary{background:#487657;color:#fff;border-color:#487657}
+.friends-sheet .btn:active{transform:scale(.98)}
+.friends-sheet .btn:focus-visible{outline:3px solid #a4bc95;outline-offset:3px}
+.friends-sheet .btn:disabled{opacity:.5;cursor:default}
+.friends-card{display:grid;gap:8px;padding:16px;border-radius:18px;background:#eef0df}
+.friends-invite{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+.friends-actions{display:flex;gap:8px;flex-wrap:wrap}
+.friends-body img{display:block;width:100%;height:auto;border-radius:18px}
+.friends-consent{display:flex!important;align-items:flex-start;line-height:1.5}
+.friends-consent input{margin-top:4px;flex:none}
+.friends-status{color:#80532f;font-size:14px;min-height:1.3em}

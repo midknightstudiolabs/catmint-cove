@@ -1,5 +1,10 @@
 ## Neo testing — September 19, 2026 (based on 3.1.2)
 
+- Edit Cove now stages movable-item layout/storage changes until Save changes. Cancel restores the previous layout; autosave continues preserving current game progress without saving draft placements. Added Undo, a stored-item picker with product artwork, stable mobile controls and direct dragging in edit mode.
+- Holding a cat in normal play focuses the camera again; long-press no longer picks up decor. Updated decorating Help instructions.
+- Added a disabled Cove Friends pilot in Journal: email-code UI, invitations, explicit picture sharing, saved-picture visits, daily greetings and remove/block controls. Supabase migration is prepared but not applied; hosted authorization and email delivery are not yet verified. This is not live animated visiting.
+- Edit transaction checks pass in Chromium and Windows WebKit. Friends interaction checks pass with simulated responses only. No primary-site or store rollout.
+
 - Keep cat details scrollable and within the available screen; retain all details and Decor access.
 - Wrap mobile shop artwork, descriptions and actions; reserve actual bottom-navigation space in the Cove canvas and separate zoom from toast notifications.
 - Clear sheets, dialogs, Help, placement, theme previews and transient effects on activity entry. About, Credits and Cove Cares return to Help.

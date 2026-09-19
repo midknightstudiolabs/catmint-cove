@@ -1332,7 +1332,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?mobile-audit=1&v=18">
+</style><link rel="stylesheet" href="ui/device-fixes.css?edit-cove=1&v=19">
 <style id="neo-theme">
 #atmosphere-preview{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;touch-action:none}
 #atmosphere-preview section{width:min(440px,100%);box-sizing:border-box;padding:18px;background:#faf7ea;color:#395447;border:1px solid #d8ddc7;border-radius:24px;box-shadow:0 8px 32px #243c3426;text-align:center}
@@ -1966,6 +1966,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <div class="sheet" id="today" hidden>
     <button class="x" data-close="today">✕</button>
     <h2>Your journal</h2>
+    <button class="btn" id="coveFriendsBtn"><img class="neo-ui-icon" src="art/icon-keepsake-homecoming.svg" alt="" width="24" height="24">Cove Friends</button>
     <div id="neoJournal"></div>
     <div id="checkinCard"></div>
     <div id="projectCard"></div>
@@ -2050,9 +2051,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   </div>
 
   <div id="focusBar">‹&nbsp; step back</div>
-  <div id="placeBar" hidden>
-    <span id="placeBarTxt">Tap where it should go</span>
+  <div id="placeBar" role="group" aria-label="Edit Cove" hidden>
+    <span id="placeBarTxt" role="status">Tap where it should go</span>
     <button id="placeBarInventory">Inventory</button>
+    <button id="placeBarUndo" disabled>Undo</button>
     <button id="placeBarPutAway" hidden>Store item</button>
     <button id="placeBarCancel">Cancel</button>
     <button id="placeBarDone" class="ok">Set here</button>
@@ -2598,8 +2600,9 @@ function save() {
       localStorage.setItem("catmintCove.neo.previous-save", previous);
       sessionStorage.setItem("neo.backedUp", "1");
     }
-    localStorage.setItem(SAVE_KEY, JSON.stringify(G));
-  } catch (e) {}
+    localStorage.setItem(SAVE_KEY, JSON.stringify(editSafeSave(G)));
+    return true;
+  } catch (e) {return false;}
 }
 let lastSaveClock = performance.now();
 
@@ -4990,6 +4993,43 @@ let _lpTimer = 0, _lpFired = false;
 let _placing = null;
 let _placeGhost = null;     // { x, y } world pos the ghost follows
 let _arranging = false;
+var editBaseline = null;
+let editHistory=[];
+const EDIT_FIELDS=['propPos','decorPos','comfortPos','propBoxed','itemStorage'];
+function editLayout(){return Object.fromEntries(EDIT_FIELDS.map(k=>[k,JSON.parse(JSON.stringify(G.cosmetics[k]||{}))]));}
+function editSafeSave(state){return editBaseline ? {...state,cosmetics:{...state.cosmetics,...editBaseline}} : state;}
+function editReset(){if(editBaseline){Object.assign(G.cosmetics,editBaseline);editBaseline=null;rebuildAttractors();}}
+function editBar(){
+ document.getElementById('placeBarTxt').textContent=_placing ? _placing.label+' · Drag to position' : 'Edit Cove · Changes are not saved yet';
+ document.getElementById('placeBarCancel').textContent='Cancel';
+ document.getElementById('placeBarDone').textContent='Save changes';
+ document.getElementById('placeBar').hidden=false;
+ document.getElementById('app').classList.add('editing-cove');
+ for(const id of ['helpBtn','restBtn','titlePill'])document.getElementById(id).disabled=true;
+ document.getElementById('placeBarUndo').disabled=!editHistory.length;
+}
+function editRemember(){if(_arranging){editHistory.push(editLayout());if(editHistory.length>30)editHistory.shift();}}
+function editUndo(){if(_placing)cancelPlacing();const previous=editHistory.pop();if(previous){Object.assign(G.cosmetics,previous);rebuildAttractors();editBar();}}
+function editInventory(){
+ if(_placing)cancelPlacing();
+ const items=[];
+ for(const item of SHOP)for(let i=0;i<item.get();i++){const spec=inventoryItemKey(item,i);if(!spec)break;if(itemStored(spec.kind,spec.key))items.push({...spec,label:item.name});}
+ for(const p of DECOR_PROPS)if(p.movable&&G.cosmetics.props[p.id]&&propBoxed(p.id))items.push({kind:'prop',key:p.id,label:p.name});
+ openModal('<div class="reveal"><h2>Stored items</h2><p>Choose a piece to add to your layout.</p><div id="editStored"></div><button class="btn" id="editStoredClose">Back to editing</button></div>');
+ document.getElementById('editStoredClose').onclick=closeModal;
+ const list=document.getElementById('editStored');
+ if(!items.length)list.textContent='Everything is already in your Cove.';
+ for(const item of items){
+  const b=document.createElement('button');b.className='btn';
+  const cv=document.createElement('canvas');cv.width=140;cv.height=100;cv.setAttribute('aria-hidden','true');
+  const g=cv.getContext('2d');g.translate(70,80);g.scale(.6,.6);
+  if(item.kind==='prop')PROP_BY_ID[item.key]?.render?.(g,0,0,0,.8);
+  else if(item.kind==='comfort')drawAttractor(g,{type:item.dtype,x:0,y:0});
+  else drawDecor(g,{type:item.dtype,station:item.dtype==='station'?item.key.split(':')[1]:undefined,x:0,y:0,seed:7001});
+  const label=document.createElement('span');label.textContent=item.label;b.append(cv,label);
+  b.onclick=()=>{closeModal();if(item.kind==='prop')startPlacing(item.key);else{const pos=(item.kind==='comfort'?G.cosmetics.comfortPos:G.cosmetics.decorPos)?.[item.key]||{x:W*.5,y:H*.7};_beginPlace({...item,r:30,from:null,_start:pos});}};list.append(b);
+ }
+}
 const PLACE_CELL=40;
 // Keep the complete placement footprint on grass, below the shoreline.
 function placementTop(){return H*.42;}
@@ -5039,6 +5079,7 @@ function positionPlaceActions(){
   if(el.style.position){el.style.position='';el.style.left='';el.style.top='';el.style.bottom='';el.style.transform='';}
 }
 function _beginPlace(spec) {
+ if(!_arranging)startArrange();
  tutEl.classList.remove("on");closeModal();hidePropCard();
   document.getElementById("placeBarPutAway").hidden = false;
   if (!_arranging) closeAllPanels();
@@ -5052,7 +5093,7 @@ function _beginPlace(spec) {
   document.getElementById("placeBarTxt").innerHTML = `<b>${spec.label}</b> · Drag to move`;
   document.getElementById("placeBar").hidden = false;
   positionPlaceActions();
-  document.getElementById("placeBarCancel").textContent = _arranging ? "Back" : "Cancel";
+  editBar();
 }
 function startPlacing(id) {   // a prop, from the shop row / straight after buying
   const p = PROP_BY_ID[id]; if (!p || !p.movable) return;
@@ -5097,6 +5138,7 @@ function finishPlacing() {
   const { kind, key } = _placing;
   const near = _nearestValidSpot(_placeGhost.x, _placeGhost.y);
   if (!near) { toast("That spot is blocked. Choose another cell; your item stays where it was.", 3); return; }
+  editRemember();
   setItemStored(kind, key, false);
   const spot = { x: Math.round(near.x), y: Math.round(near.y) };
   _placeGhost.x = spot.x; _placeGhost.y = spot.y;
@@ -5123,7 +5165,7 @@ function finishPlacing() {
   _placing = null; _placeGhost = null; document.getElementById("placeBarPutAway").hidden = true;
   sfx("buy"); spawnParticles(spot.x, spot.y, "dust", 6);
   syncHud(); save();
-  if (_arranging) { document.getElementById("placeBarTxt").innerHTML = `Arranging your cove — drag anything, then <b>Done</b>`; }
+  if (_arranging) { editBar(); }
   else { document.getElementById("placeBar").hidden = true; toast(`Set. Move it again any time — press and hold it, or use the Shop's Decor tab.`, 4); }
 }
 // put a piece back where the drag started (cancel / hard-stop)
@@ -5134,42 +5176,38 @@ function _revertPlacing(kind, key, from) {
   else { G.cosmetics.decorPos = G.cosmetics.decorPos || {}; G.cosmetics.decorPos[key] = { x: from.x, y: from.y }; rebuildAttractors(); }
 }
 function cancelPlacing() {
-  if (!_placing) { if (_arranging) endArrange(); return; }
+  if (!_placing) return;
   const { kind, key, from } = _placing;
   _revertPlacing(kind, key, from);
   _placing = null; _placeGhost = null; document.getElementById("placeBarPutAway").hidden = true;
-  if (_arranging) { document.getElementById("placeBarTxt").innerHTML = `Arranging your cove — drag anything, then <b>Done</b>`; }
+  if (_arranging) { editBar(); }
   else document.getElementById("placeBar").hidden = true;
   save();
 }
 function startArrange() {
-  closeAllPanels();
-  _arranging = true; _placing = null; _placeGhost = null; document.getElementById("placeBarPutAway").hidden = true;
-  document.getElementById("placeBarTxt").innerHTML = `Arranging your cove — drag anything, then <b>Done</b>`;
-  document.getElementById("placeBarCancel").textContent = "Back";
-  document.getElementById("placeBarDone").textContent = "Done";
-  document.getElementById("placeBar").hidden = false;
-  toast("Drag anything — bowls, beds, toys, trees, the cottage, even your stations. Tap Done when it's just so.", 5);
+ if(_arranging)return;
+ closeAllPanels();closeModal();hideCatCard();hidePropCard();exitFocus();
+ editBaseline=editLayout();editHistory=[];_arranging=true;_placing=null;_placeGhost=null;
+ document.getElementById('placeBarPutAway').hidden=true;
+ editBar();toast('Move or store your pieces. Save changes when it feels like home.',4);
 }
 function endArrange() {
-  _arranging = false; _placing = null; _placeGhost = null; document.getElementById("placeBarPutAway").hidden = true;
-  document.getElementById("placeBarCancel").textContent = "Cancel";
-  document.getElementById("placeBarDone").textContent = "Set here";
-  document.getElementById("placeBar").hidden = true;
-  save();
+  if(_placing){finishPlacing();if(_placing)return;}
+ const previous=editBaseline;editBaseline=null;
+ if(!save()){editBaseline=previous;toast('Could not save on this device. Your draft is still here; please try again.',5);return;}
+ _arranging=false;_placing=null;_placeGhost=null;
+ document.getElementById('placeBar').hidden=true;
+ document.getElementById('app').classList.remove('editing-cove');
+ for(const id of ['helpBtn','restBtn','titlePill'])document.getElementById(id).disabled=false;
+ window.dispatchEvent(new Event('neo-edit-saved'));toast('Your Cove is saved.',3);
 }
-// hard stop — a panel opened / focus started / rest mode. revert any in-progress
-// drag, drop out of arrange mode entirely.
 function exitPlacement() {
-  if (_placing) {
-    const { kind, key, from } = _placing;
-    _revertPlacing(kind, key, from);
-  }
-  _placing = null; _placeGhost = null; document.getElementById("placeBarPutAway").hidden = true; _arranging = false;
-  const pb = document.getElementById("placeBar"); if (pb) pb.hidden = true;
-  document.getElementById("placeBarCancel").textContent = "Cancel";
-  document.getElementById("placeBarDone").textContent = "Set here";
+ editReset();_placing=null;_placeGhost=null;_arranging=false;
+ document.getElementById('placeBar').hidden=true;
+ document.getElementById('app').classList.remove('editing-cove');
+ for(const id of ['helpBtn','restBtn','titlePill'])document.getElementById(id).disabled=false;
 }
+function cancelEdit(){exitPlacement();toast('Changes cancelled. Your previous layout is back.',3);}
 // after selling a cottage/tree/flower patch, forget any player position for the
 // now-removed instances (indices at or past the new count)
 function dropDecorPos(type, newCount) {
@@ -5223,14 +5261,19 @@ function grabMovable(hit) {
 }
 function boxProp(id) {
   const p = PROP_BY_ID[id]; if (!p) return;
+  if(!_arranging)startArrange();
+  editRemember();
   G.cosmetics.propBoxed = G.cosmetics.propBoxed || {};
   G.cosmetics.propBoxed[id] = true;
   tone(392, 0.1, "sine", 0.05); tone(294, 0.14, "sine", 0.04, 0.06);
   spawnParticles(propPos(id).x, propPos(id).y, "dust", 6);
   rebuildAttractors(); save(); renderShop();
+  editBar();
   toast(`Packed the ${p.name.toLowerCase()} away — place it again any time.`, 3);
 }
 function putAwayItem(kind, key, label) {
+  if(!_arranging)startArrange();
+  editRemember();
   if (kind === "prop") { G.cosmetics.propBoxed ||= {}; G.cosmetics.propBoxed[key] = true; }
   else setItemStored(kind, key, true);
   rebuildAttractors();
@@ -5239,7 +5282,7 @@ function putAwayItem(kind, key, label) {
     c._arriveState = null; c._station = null; c._pendStation = null; c._fx = null; c.stateDur = 0;
   }
   save(); syncHud();
-  toast(`${label} is in your inventory. Place it again for free.`, 4);
+  editBar();toast(`${label} stored in this layout. Save changes to keep it.`, 4);
 }
 document.getElementById("placeBarPutAway").onclick = () => {
   if (!_placing) return;
@@ -5247,10 +5290,11 @@ document.getElementById("placeBarPutAway").onclick = () => {
   cancelPlacing(); putAwayItem(kind,key,label);
 };
 document.getElementById("placeBarInventory").onclick = () => {
-  exitPlacement(); shopTab = "inventory"; togglePanel("shop");
+  editInventory();
 };
-document.getElementById("placeBarDone").onclick = () => { if (_placing) finishPlacing(); else if (_arranging) endArrange(); };
-document.getElementById("placeBarCancel").onclick = cancelPlacing;
+document.getElementById("placeBarDone").onclick = endArrange;
+document.getElementById('placeBarUndo').onclick=editUndo;
+document.getElementById("placeBarCancel").onclick = cancelEdit;
 
 // Cove Volleyball taps land on the #fest overlay (z-65, pointer-events:auto),
 // NOT the canvas beneath it — so the tap handler has to live on #fest.
@@ -5263,6 +5307,10 @@ document.getElementById("fest").addEventListener("pointerdown", (e) => {
 canvas.addEventListener("pointerdown", (e) => {
   ensureAudio();
   if (festMode) { if (festKind === "volley") volleyPointer(e); return; }   // festival modes own their taps; race/box use HTML buttons
+  if(_arranging&&!_placing){
+   const w=screenToWorld(e.clientX,e.clientY),hit=movableAt(w.x,w.y);
+   if(hit){_tpX=e.clientX;_tpY=e.clientY;_tpMoved=false;_lpFired=false;grabMovable(hit);canvas.setPointerCapture(e.pointerId);return;}
+  }
   if (_placing) {
     const w=screenToWorld(e.clientX,e.clientY),near=_placing.kind==="prop"?propGrabHit(_placing.key,w.x,w.y,{..._placeGhost,s:PROP_BY_ID[_placing.key]?.place.s||1}):Math.hypot(w.x-_placeGhost.x,w.y-_placeGhost.y)<50;
     _placeDragOrigin=near?{x:_placeGhost.x-w.x,y:_placeGhost.y-w.y}:null;
@@ -5277,13 +5325,8 @@ canvas.addEventListener("pointerdown", (e) => {
     // a shell / driftwood under the finger always wins — let pointerup collect it,
     // never grab the bowl or bed it happens to be sitting on
     if (tokenAt(w.x, w.y, 40)) return;
-    // press dead-centre on a decoration → pick it straight up, even with cats milling around it
-    const canGrab = G && G.tutorialDone && !anyPanelOpen();
-    if (canGrab) {
-      const m = movableAt(w.x, w.y, true);
-      if (m) { grabMovable(m); _lpFired = true; buzz(); return; }
-    }
-    // Cat taps and holds never move the camera. Overview uses its button only.
+    const c=catAt(w.x,w.y,48);
+    if(c&&focusEligible(c)){enterFocus(c);_lpFired=true;buzz();}
   }, 360);
 });
 canvas.addEventListener("pointermove", (e) => {
@@ -6435,9 +6478,9 @@ function renderShopDecor(list) {
   if (decorCount + propCount + comfortCount + stationCount2 > 0) {
     const row = document.createElement("div");
     row.className = "shop-item";
-    row.innerHTML = `<div class="txt"><div class="name">Arrange the cove</div>
-      <div class="desc">Move anything — bowls, beds, trees, the cottage, your stations — wherever you like. Or just press and hold one in the cove.</div></div>
-      <div class="shop-actions"><button class="btn primary" id="arrange-go">Arrange</button></div>`;
+    row.innerHTML = `<div class="txt"><div class="name">Edit your Cove</div>
+      <div class="desc">Try a new layout, move or store your pieces, then Save changes. Cancel brings your previous layout back.</div></div>
+      <div class="shop-actions"><button class="btn primary" id="arrange-go">Edit Cove</button></div>`;
     list.appendChild(row);
     row.querySelector("#arrange-go").onclick = () => startArrange();
   }
@@ -6645,10 +6688,11 @@ function confirmStoreAllDecor() {
   document.getElementById('cancelStoreDecor').onclick=closeModal;
   document.getElementById('confirmStoreDecor').onclick=()=>{
     const placed=placedInventoryDecor();
+    if(!_arranging)startArrange();editRemember();
     G.cosmetics.propBoxed ||= {};
     for(const p of placed) G.cosmetics.propBoxed[p.id]=true;
     rebuildAttractors();save();syncHud();closeModal();renderShop();
-    toast(`${placed.length} decorations stored. Place them again for free.`,4);
+    editBar();toast(`${placed.length} decorations stored in this layout. Save changes to keep it.`,4);
   };
 }
 function renderInventory(list) {
@@ -7135,6 +7179,23 @@ function togglePanel(name) {
 document.getElementById("shopBtn").addEventListener("click", () => togglePanel("shop"));
 document.getElementById("dexBtn").addEventListener("click", () => togglePanel("dex"));
 document.getElementById("todayBtn").addEventListener("click", () => togglePanel("today"));
+let friendsModule=null;
+document.getElementById('coveFriendsBtn').onclick=async()=>{
+ restClearUI();
+ try{
+  friendsModule ||= await import('./ui/cove-friends.js?v=1');
+  await friendsModule.open({name:coveName,picture:async()=>{
+   if(restMode||festMode||_arranging)throw Error('Return to your saved Cove before sharing.');
+   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+   const out=document.createElement('canvas');out.width=Math.min(1200,canvas.width);out.height=Math.round(out.width*canvas.height/canvas.width);
+   out.getContext('2d').drawImage(canvas,0,0,out.width,out.height);
+   const picture=out.toDataURL('image/webp',.72);
+   if(picture.length>300000)throw Error('This picture is too large. Try zooming out first.');
+   return picture;
+  }});
+ }catch(e){toast('Friends could not open. Please try again.',4);}
+};
+window.addEventListener('neo-edit-saved',()=>friendsModule?.track('edit_saved'));
 document.querySelectorAll("[data-close]").forEach(b =>
   b.addEventListener("click", () => { const k = b.getAttribute("data-close"); if (panels[k]) panels[k].hidden = true; }));
 // tap anywhere outside an open panel (the cove, the HUD) to dismiss it
@@ -7605,7 +7666,7 @@ function endColdOpen(skipped) {
 /* ---------- reference card (the "?" button) ---------- */
 const GUIDE = [
   ["A Little Hello · a curious visitor", "Tap empty ground near the bottom 3–5 times in quick succession. A cat may peek over the screen edge for a few seconds. Pause less than 2.5 seconds between taps, then wait 30 seconds before trying again. Use the normal Cove view with menus closed. Sleeping and sick cats sit this one out. No cost or rewards—just company."],
-  ["Redecorate · keep what you own", "Press and hold an item to move it on the grid. Set here keeps its new spot; Cancel leaves it unchanged; Store item stores it. Shop → My inventory separates In storage from In the cove. Place is free. Sell refunds shells and removes ownership. Red cells mean a blocked spot. Capacity upgrades stay yours in storage."],
+  ["Redecorate · keep what you own", "Choose Edit Cove in Shop → Decor. Drag items on the grid, or use Inventory to place stored pieces for free. Undo reverses your last change. Save changes keeps the whole layout; Cancel restores the previous one. Red cells mean a blocked spot. Hold a cat in normal play to look closer."],
   ["Catmint Café and Cove Garden", "Find Cove Garden in Activities: plant crops, harvest them, and use or sell your harvest. Catmint Café is under development. Festival contains Race, Volleyball and Tug of Paws."],
   ["Adventures · postcards from your cats", "Choose a destination, cats and trip length in Activities. When they return, open their results for rewards and a keepsake postcard. Different destinations bring different finds. Longer trips suit time away; short trips suit an active visit."],
   ["Your view · zoom buttons", "Use the zoom icon to change your view. Double-tapping does not zoom, leaving quick foreground taps available for A Little Hello."],
