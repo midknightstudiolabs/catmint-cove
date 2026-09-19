@@ -7189,7 +7189,7 @@ let friendsModule=null;
 document.getElementById('coveFriendsBtn').onclick=async()=>{
  restClearUI();
  try{
-  friendsModule ||= await import('./ui/cove-friends.js?v=2');
+  friendsModule ||= await import('./ui/cove-friends.js?v=3');
   await friendsModule.open({name:coveName,backup:()=>{
    if(_arranging)throw Error('Save or cancel your layout before backing up.');
    if(!save())throw Error('Your device could not save. Please free some storage first.');
