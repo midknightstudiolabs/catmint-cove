@@ -254,6 +254,8 @@ This release packages the current Catmint Cove Neo web build. Original character
 - Added free building previews, savings information and a confirmation step for expansions. Higher stages change the exterior and interior finish; machine speed remains separate.
 ## Neo café kiosk refresh
 
+- Simplified Garden around What should I plant? and priced Plant recommended actions; individual crop choices and surplus sales expand only when needed. Café recipe cards hide secondary editing/improvement controls and desktop management has a wider dedicated panel.
+
 - Garden offers a priced recommended planting batch for empty patches, with balanced crop choices and no occupied-patch replacement. Garden footer actions align in a two-column row. Desktop café management reserves a side panel rather than covering scenery.
 - Make & taste is disabled and grayed out for an empty selection or insufficient selected stock; shortage messages identify each ingredient, required quantity and available amount.
 
