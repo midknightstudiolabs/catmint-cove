@@ -9,7 +9,9 @@
   function upgradeShop(g,now){const s=init(g,now),tier=s.shopTier||0,next=shops[tier+1];if(!s.unlocked||!next||g.shells<next.cost)return false;settle(g,now);g.shells-=next.cost;s.shopTier=tier+1;return true;}
   function init(g,now){
     const h=g.homestead;
-    if(!g.cafe){g.cafe={version:1,unlocked:false,open:true,cursor:now,sequence:0,speed:0,seats:0,menu:recipes.map(r=>r.id),served:0,revenue:0,cost:0,sales:{},basis:{},pending:null};}
+    if(!g.cafe){g.cafe={version:2,unlocked:false,open:false,cursor:now,sequence:0,speed:0,seats:0,menu:[],discovered:[],served:0,revenue:0,cost:0,sales:{},basis:{},pending:null};}
+    if(!g.cafe.discovered)g.cafe.discovered=[...g.cafe.menu];
+    if(!g.cafe.menu.length)g.cafe.open=false;
     return g.cafe;
   }
   function available(s,stock){return recipes.filter(r=>s.menu.includes(r.id)&&Object.entries(r.inputs).every(([k,n])=>(stock[k]||0)>=n));}
@@ -39,5 +41,13 @@
     g.shells+=s.legacyCarryover.earned+(s.legacyCarryover.servings+s.legacyCarryover.prepared)*2;
     s.speed=Math.min(2,Math.max(0,(h.stoves?.length||2)-2));s.seats=h.tables>3?1:0;
     acquire(g,'coffee',6,0);acquire(g,'catmint',6,0);acquire(g,'honey',2,0);return true;}
-  root.CoveCafeEngine={ingredients,recipes,shops,finishes,buyFinish,upgradeShop,interval,init,available,acquire,settle,unlock};
+  function experiment(g,mix){const s=init(g,Date.now()),stock=g.homestead.stock;
+    if(!s.unlocked||Object.keys(mix).some(k=>!Object.hasOwn(ingredients,k))||Object.values(mix).some(n=>!Number.isInteger(n)||n<0||n>3)||!Object.values(mix).some(n=>n>0))return {error:'Choose ingredients for your tasting cup.'};
+    if(Object.entries(mix).some(([k,n])=>(stock[k]||0)<n))return {error:'Not enough ingredients. Visit the Garden or Pantry.'};
+    for(const [k,n]of Object.entries(mix)){stock[k]=(stock[k]||0)-n;s.experimentCost=(s.experimentCost||0)+(s.basis[k]||0)*n;}
+    const found=recipes.find(r=>Object.keys(ingredients).every(k=>(r.inputs[k]||0)===(mix[k]||0)));
+    if(found){if(!s.discovered.includes(found.id))s.discovered.push(found.id);return {id:found.id,message:'Success! '+found.name+'. Add it to your menu when you are ready.'};}
+    return {message:mix.honey>1?'Too sweet! Try less honey.':mix.coffee&&mix.catmint?'Those flavors compete. Try a simpler base.':mix.coffee>1&&!mix.honey?'Too strong. Try less coffee, or a little honey.':'Not quite a drink yet. Start with one coffee bean or one catmint.'};
+  }
+  root.CoveCafeEngine={ingredients,recipes,shops,finishes,buyFinish,upgradeShop,interval,init,available,acquire,settle,unlock,experiment};
 })(globalThis);

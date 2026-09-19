@@ -2,7 +2,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 await import('../ui/cafe-engine.js');
-const E=globalThis.CoveCafeEngine;
+const actual=globalThis.CoveCafeEngine;
+// Service regression fixtures represent established cafes with a menu.
+const E={...actual,unlock(g,now){const ok=actual.unlock(g,now);if(ok){g.cafe.menu=actual.recipes.map(r=>r.id);g.cafe.discovered=[...g.cafe.menu];g.cafe.open=true;}return ok;}};
+const beginner={shells:1000,homestead:{stock:{}}};actual.unlock(beginner,0);assert.equal(beginner.cafe.open,false);assert.equal(beginner.cafe.menu.length,0);actual.settle(beginner,999999);assert.equal(beginner.cafe.served,0);
+const firstStock=beginner.homestead.stock.coffee;assert(actual.experiment(beginner,{coffee:1}).id);assert.equal(beginner.homestead.stock.coffee,firstStock-1);assert(beginner.cafe.discovered.includes('coffee'));assert.equal(beginner.cafe.menu.length,0);
+const honeyBefore=beginner.homestead.stock.honey;assert(!actual.experiment(beginner,{honey:2}).id);assert.equal(beginner.homestead.stock.honey,honeyBefore-2);
+const unchanged=JSON.stringify(beginner.homestead.stock);assert(actual.experiment(beginner,{honey:1}).error);assert.equal(JSON.stringify(beginner.homestead.stock),unchanged);assert(actual.experiment(beginner,{coffee:-1}).error);
+console.log('PASS: closed empty-menu start, recipe discovery, tasting consumption, failure and insufficient-stock protection.');
 const finishGame={shells:10000,homestead:{stock:{}}};E.init(finishGame,0);E.unlock(finishGame,0);finishGame.shells=10000;
 assert(E.buyFinish(finishGame,'butter'));assert.equal(finishGame.shells,7500);
 assert(E.buyFinish(finishGame,'sage'));assert(E.buyFinish(finishGame,'butter'));assert.equal(finishGame.shells,7500);
