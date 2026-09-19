@@ -8234,21 +8234,53 @@ function completePurchase(productId) {
 }
 // Apple REQUIRES a restore path reachable without a purchase attempt. Also run
 // this silently on every launch. FAIL-OPEN: never revoke on a failed query.
+let purchaseRestorePending = false;
 async function restorePurchases() {
-  let queried = false;
+  if (purchaseRestorePending) return false;
+  const host = document.querySelector('#modal .cove-dialog-body') || document.querySelector('#modal .reveal');
+  let status = host && host.querySelector('[data-restore-status]');
+  if (host && !status) {
+    status = document.createElement('p');
+    status.dataset.restoreStatus = '';
+    status.className = 'sub';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    host.append(status);
+  }
+  const report = message => {
+    if (status && status.isConnected) { status.textContent = message; status.scrollIntoView({block:'nearest'}); }
+    toast(message, 6);
+  };
+  if (!nativeIap()) {
+    report('Store connection unavailable. Open the installed app and try again. Your saved purchases have not changed.');
+    return false;
+  }
+  purchaseRestorePending = true;
+  const buttons = [...document.querySelectorAll('#bk-iap, #sp-restore, #wp-restore')];
+  buttons.forEach(button => { button.disabled = true; button.setAttribute('aria-busy', 'true'); });
+  report('Checking your store purchases…');
+  let timer;
   try {
-    if (nativeIap()) {
-      const ids = await window.CoveNative.iap.restore();   // RevenueCat customerInfo.allPurchasedProductIdentifiers
-      reconcileEntitlements(ids || [], true);
-      queried = true;
-    }
-  } catch (e) { queried = false; }
-  applyEntitlements(); saveIap(); save(); syncHud();   // cache stands regardless
-  const any = Object.values((G.iap && G.iap.owned) || {}).some(Boolean);
-  toast(any ? "Purchases restored to this device."
-           : queried ? "No purchases found on your store account."
-           : "Nothing to restore.", 4);
-  return any;
+    const ids = await Promise.race([
+      window.CoveNative.iap.restore(),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('restore-timeout')), 45000); })
+    ]);
+    if (!Array.isArray(ids)) throw new Error('Invalid store response');
+    reconcileEntitlements(ids, true);
+    applyEntitlements(); saveIap(); save(); syncHud();
+    const any = ids.some(id => IAP_PRODUCTS[id]);
+    report(any ? 'Purchases restored to this device.' : 'No purchases found. Check that you are using the same App Store or Google Play account used to buy them.');
+    return any;
+  } catch (e) {
+    report(e.message === 'restore-timeout'
+      ? 'The store is taking too long to respond. Please try again shortly. Your saved purchases have not changed.'
+      : 'Could not restore purchases. Check your connection and try again. Your saved purchases have not changed.');
+    return false;
+  } finally {
+    clearTimeout(timer);
+    purchaseRestorePending = false;
+    buttons.forEach(button => { button.disabled = false; button.removeAttribute('aria-busy'); });
+  }
 }
 // true when the native billing bridge (RevenueCat) is present and configured
 function nativeIap() { return !!(window.CoveNative && window.CoveNative.iap && window.CoveNative.iap.available); }
@@ -8363,7 +8395,7 @@ function showSparkleOffer() {
     if (panels.shop && !panels.shop.hidden) renderShop();
   };
   document.getElementById("sp-no").onclick = closeModal;
-  document.getElementById("sp-restore").onclick = async () => { const ok = await restorePurchases(); if (ok) { closeModal(); if (panels.shop && !panels.shop.hidden) renderShop(); } };
+  document.getElementById("sp-restore").onclick = async () => { const ok = await restorePurchases(); if (ok && panels.shop && !panels.shop.hidden) renderShop(); };
 }
 // route a premium accessory's `iap` id to the right offer modal
 function showIapOffer(id) {
@@ -8412,7 +8444,7 @@ function showWelcomeOffer(soft) {
     if (panels.shop && !panels.shop.hidden) renderShop();
   };
   document.getElementById("wp-no").onclick = () => { G._wpPutOffDay = G.opens || 1; save(); closeModal(); };
-  document.getElementById("wp-restore").onclick = async () => { const ok = await restorePurchases(); if (ok) { closeModal(); if (panels.shop && !panels.shop.hidden) renderShop(); } };
+  document.getElementById("wp-restore").onclick = async () => { const ok = await restorePurchases(); if (ok && panels.shop && !panels.shop.hidden) renderShop(); };
 }
 // Midknight passes you the Welcome Pack once you're a little settled — tutorial
 // done, a photo framed, a couple of residents. Auto-offered at most twice: the

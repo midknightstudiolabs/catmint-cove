@@ -18,7 +18,7 @@ Anonymous onboarding remains disabled publicly. Recovery-case intake, private pu
 ## Remaining release gates
 The initial short-secret failure was corrected by the user; the latest connectivity test passed. Receiver diagnostics distinguish missing and short secrets without exposing their values.
 
-1. Complete real sandbox purchase/restore delivery tests, verify private ledger insertion and duplicate delivery handling.
+1. iOS Welcome Pack sandbox purchase verified September 19 at 13:58 UTC: RevenueCat NON_RENEWING_PURCHASE delivery returned HTTP 200 and the private ledger query returned exactly one welcome_pack / SANDBOX / APP_STORE row. User reported successful test purchase. Restore on the device and a deliberate duplicate redelivery are still unverified; Android delivery remains untested. No lost-account recovery claim follows from this purchase test.
 2. Implement recoverable identity (optional linked provider or a reviewed, revocable recovery credential) and test lost-device recovery; anonymous signup alone is insufficient.
 3. Build and test server-verified purchase association and authenticated staff recovery operations. Historical anonymous purchases cannot safely identify Friends by guesswork.
 4. Finish signup abuse controls and real two-account Friends tests, then enable the Neo pilot. Keep `ui/social-config.js` disabled until these are complete.
