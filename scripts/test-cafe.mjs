@@ -15,3 +15,7 @@ let cap=make();E.unlock(cap,0);cap.homestead.stock={coffee:10000,catmint:10000,h
 const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');for(const m of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){if(m[1].trim())new vm.Script(m[1]);}
 assert(html.indexOf('ui/cafe-engine.js')<html.indexOf('function save()'));
 console.log('PASS: unlock, legacy preservation, pending orders, no duplicate credits, save/reload, clock rollback, online/offline equivalence, stock limits, pause, weighted costs, offline cap and inline syntax.');
+let shop=make();E.unlock(shop,0);shop.shells=49999;assert.equal(E.upgradeShop(shop,0),false);assert.equal(shop.shells,49999);
+shop.shells=150000;const pantry=JSON.stringify(shop.homestead.stock);assert(E.upgradeShop(shop,0));assert.equal(shop.cafe.shopTier,1);assert.equal(shop.shells,100000);
+shop=JSON.parse(JSON.stringify(shop));assert(E.upgradeShop(shop,0));assert.equal(shop.cafe.shopTier,2);assert.equal(shop.shells,0);assert.equal(JSON.stringify(shop.homestead.stock),pantry);assert.equal(E.upgradeShop(shop,0),false);
+console.log('PASS: three sequential shop stages, exact 50k/100k costs, insufficient funds, final cap and save preservation.');

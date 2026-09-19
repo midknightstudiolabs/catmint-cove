@@ -247,3 +247,8 @@ This release packages the current Catmint Cove Neo web build. Original character
 - Outside shows a small human customer queue with cats running the kiosk. Inside is the view from behind the counter, looking through the serving window at the customers.
 - Coffee-machine upgrades change the visible brewer. Added an optional 180-Shell copper kettle/pot upgrade, with no income multiplier; purchases open the Inside view to show the change.
 - Reused the same service state in both views; retained existing inventory, upgrades and earnings.
+## Café cats and shop progression — September 19, 2026
+
+- Removed human customer art. Both views use the existing game cat renderer, coats, markings, ages and accessories; walking uses the game's cat animation fields.
+- Added three sequential shop stages: Little Kiosk, Garden Café (50,000 Shells), Seaside Café (100,000 additional Shells). Existing saves start at their original kiosk without losing equipment or ingredients.
+- Added free building previews, savings information and a confirmation step for expansions. Higher stages change the exterior and interior finish; machine speed remains separate.

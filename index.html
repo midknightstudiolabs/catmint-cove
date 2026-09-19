@@ -2067,7 +2067,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 </div>
 
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=17"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=1"><script src="ui/cafe-engine.js?v=1"></script><script src="ui/cafe-scene.js?v=2"></script><script src="ui/cafe-kiosk.js?v=2"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=1"><script src="ui/cafe-engine.js?v=3"></script><script src="ui/cafe-scene.js?v=3"></script><script src="ui/cafe-kiosk.js?v=3"></script>
 <script>
 (() => {
 "use strict";
@@ -19797,8 +19797,8 @@ Object.assign(COVE_CROPS,CoveCafeEngine.ingredients);
 function neoOpenCoffeeKiosk(){
   neoHomestead();CoveCafeEngine.init(G,Date.now());
   CoveCafeView.open({game:()=>G,close:closeAllPanels,save, hud:syncHud,register:p=>panels.coffee=p,garden:()=>neoOpenHomestead('garden'),
-    actors:()=>cats.filter(c=>!c.visitor).slice(0,3).map(c=>{const copy=new Cat({coatKey:c.coatKey,mascot:c.mascot,markSeed:c.markSeed,x:0,y:0});copy.worn=[...(c.worn||[])];return copy;}),
-    cat:(ctx,c,x,y,scale,t,walking)=>{if(!c)return;ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);c.state=walking?'walking':'loafing';c.walk=t/130;c.walkAmt=walking?1:0;c.face=1;c.bob=0;drawCat(ctx,c,true);ctx.restore();}
+    actors:()=>cats.slice(0,8).map(c=>{const copy=new Cat({coatKey:c.coatKey,mascot:c.mascot,markSeed:c.markSeed,bornAt:c.bornAt,star:c.star,name:c.name,traits:c.traits,x:0,y:0});copy.worn=[...(c.worn||[])];return copy;}),
+    cat:(ctx,c,x,y,scale,t,walking)=>{if(!c)return;ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);c.state=walking?'exploring':'loafing';c.trotting=walking;c.walk=t/130;c.walkAmt=walking?1:0;c.face=1;c.stateT=t/1000;c.bob=walking?t/140:0;drawCat(ctx,c,true);ctx.restore();}
   });
 }
 syncNavH();
