@@ -6,6 +6,10 @@ Project: `gbkkiejmqocbijhnzoxg`, Catmint Cove, Midknight Studio. Dashboard inspe
 
 ## Execution order
 
+Updated direction: anonymous Friends onboarding is now prepared in the client. Initial joining no longer requires SMTP or email. The public switch remains disabled until anonymous auth is configured and live authorization/abuse tests pass. Existing email helper code is retained but not offered in the guest flow. Do not expose sign-out for guests; a transient refresh failure preserves the session. Optional email linking can follow separately.
+
+Recovery: `20260919_recovery_cases.sql` is a NEW, unapplied intake migration. It provides private case intake and an audit record only. See `RECOVERY-RUNBOOK.md` for verification, transfer and backup requirements. No store-proof verification, full account transfer or cloud-save restoration is delivered yet. A purchase must not be advertised as a guarantee of full recovery.
+
 1. Migration is applied; do NOT rerun the create-table migration. Keep existing production game/store releases unchanged.
 2. Configure the Magic Link and confirmation email templates to display `{{ .Token }}` for passwordless sign-in. The client requests `/auth/v1/otp` and verifies `/auth/v1/verify` with type `email`. No native redirect is needed for entering a code.
 3. Configure a verified transactional SMTP sender. Supabase's default sender is restricted to project-team email addresses, so it cannot support the general player pilot. Do not disable email verification as a workaround.
