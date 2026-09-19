@@ -1,7 +1,8 @@
 (function(root){
   'use strict';
-  const ingredients={coffee:{name:'Coffee beans',import:5,cost:10,seconds:900,yield:10},catmint:{name:'Catmint',import:3,cost:6,seconds:300,yield:8},honey:{name:'Honey',import:8,cost:12,seconds:1500,yield:8}};
+  const ingredients={carrot:{name:'Carrots',import:2,cost:2,seconds:60,yield:3},coffee:{name:'Coffee beans',import:5,cost:10,seconds:900,yield:10},catmint:{name:'Catmint',import:3,cost:6,seconds:300,yield:8},honey:{name:'Honey',import:8,cost:12,seconds:1500,yield:8}};
   const recipes=[{id:'coffee',name:'Coastal Coffee',note:'A warm welcome in a little cup.',price:12,inputs:{coffee:1}},{id:'tea',name:'Catmint Cloud',note:'Soft, fragrant and wonderfully unhurried.',price:8,inputs:{catmint:1}},{id:'midknight',name:'Midknight Morning',note:'Coffee, honey, and a very serious purr.',price:30,inputs:{coffee:2,honey:1}}];
+  recipes.push({id:'bites',name:'Honey Garden Bites',note:'Little carrot treats with a touch of honey.',price:18,inputs:{carrot:2,honey:1}});
   const interval=s=>[240000,210000,180000][s.speed];
   const finishes={sage:{name:'Catmint Sage',cost:0,body:'#9eaf85',shade:'#6f865f',dark:'#395a45',light:'#e6ecd2'},butter:{name:'Buttercup',cost:2500,body:'#dfcb76',shade:'#b5a35b',dark:'#69653b',light:'#fff0b9'},blue:{name:'Coastal Blue',cost:2500,body:'#91b2bd',shade:'#608793',dark:'#365864',light:'#dae9e6'},rose:{name:'Rosewater',cost:5000,body:'#c6a094',shade:'#a07870',dark:'#70554e',light:'#f0ddd0'},cream:{name:'Oatmilk',cost:5000,body:'#d6c8a8',shade:'#ae9f7e',dark:'#655d49',light:'#f7eedb'}};
   function buyFinish(g,key){const s=init(g,Date.now()),f=finishes[key];if(!s.unlocked||!f)return false;s.finishesOwned ||= ['sage'];if(!s.finishesOwned.includes(key)){if(g.shells<f.cost)return false;g.shells-=f.cost;s.finishesOwned.push(key);}s.finish=key;return true;}
@@ -28,7 +29,7 @@
       const due=s.cursor+interval(s);if(due>now)break;
       const r=options[s.sequence++%options.length];let cost=0;
       for(const[k,n]of Object.entries(r.inputs)){g.homestead.stock[k]-=n;cost+=(s.basis[k]||0)*n;}
-      s.cursor=due;s.pending={id:r.id,price:r.price,cost,at:due+30000};
+      s.cursor=due;s.pending={id:r.id,price:price(s,r),cost,at:due+30000};
     }
     return earned;
   }
@@ -49,5 +50,10 @@
     if(found){if(!s.discovered.includes(found.id))s.discovered.push(found.id);return {id:found.id,message:'Success! '+found.name+'. Add it to your menu when you are ready.'};}
     return {message:mix.honey>1?'Too sweet! Try less honey.':mix.coffee&&mix.catmint?'Those flavors compete. Try a simpler base.':mix.coffee>1&&!mix.honey?'Too strong. Try less coffee, or a little honey.':'Not quite a drink yet. Start with one coffee bean or one catmint.'};
   }
-  root.CoveCafeEngine={ingredients,recipes,shops,finishes,buyFinish,upgradeShop,interval,init,available,acquire,settle,unlock,experiment};
+  function displayName(s,r){return s.recipeNames?.[r.id]||r.name;}
+  function price(s,r){return r.price+(s.recipeLevels?.[r.id]||0)*2;}
+  function nameRecipe(g,id,name){const s=init(g,Date.now());if(!s.discovered.includes(id))return false;const clean=String(name||'').trim().replace(/\s+/g,' ').slice(0,24);if(!clean)return false;(s.recipeNames||={})[id]=clean;return true;}
+  function lesson(g){const s=init(g,Date.now());if(!s.unlocked||s.lessonComplete)return {error:'Your free lesson is already complete.'};s.lessonComplete=true;if(!s.discovered.includes('coffee'))s.discovered.push('coffee');return {id:'coffee',message:'A balanced first cup! Give it your own name.'};}
+  function improve(g,id){const s=init(g,Date.now()),level=s.recipeLevels?.[id]||0;if(!s.discovered.includes(id)||level>=2||(s.sales[id]||0)<(level+1)*10||g.shells<(level+1)*50)return false;g.shells-=(level+1)*50;(s.recipeLevels||={})[id]=level+1;return true;}
+  root.CoveCafeEngine={ingredients,recipes,shops,finishes,buyFinish,upgradeShop,interval,init,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve};
 })(globalThis);

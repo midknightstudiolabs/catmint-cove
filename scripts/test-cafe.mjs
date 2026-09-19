@@ -10,6 +10,11 @@ const firstStock=beginner.homestead.stock.coffee;assert(actual.experiment(beginn
 const honeyBefore=beginner.homestead.stock.honey;assert(!actual.experiment(beginner,{honey:2}).id);assert.equal(beginner.homestead.stock.honey,honeyBefore-2);
 const unchanged=JSON.stringify(beginner.homestead.stock);assert(actual.experiment(beginner,{honey:1}).error);assert.equal(JSON.stringify(beginner.homestead.stock),unchanged);assert(actual.experiment(beginner,{coffee:-1}).error);
 console.log('PASS: closed empty-menu start, recipe discovery, tasting consumption, failure and insufficient-stock protection.');
+const lessonStock=JSON.stringify(beginner.homestead.stock);assert.equal(actual.lesson(beginner).id,'coffee');assert.equal(JSON.stringify(beginner.homestead.stock),lessonStock);assert(actual.lesson(beginner).error);
+assert(actual.nameRecipe(beginner,'coffee','  My   Cozy Cup  '));assert.equal(actual.displayName(beginner.cafe,actual.recipes[0]),'My Cozy Cup');assert(!actual.nameRecipe(beginner,'coffee','   '));
+assert(!actual.improve(beginner,'coffee'));beginner.cafe.sales.coffee=10;const beforeUpgrade=beginner.shells;assert(actual.improve(beginner,'coffee'));assert.equal(beginner.shells,beforeUpgrade-50);assert.equal(actual.price(beginner.cafe,actual.recipes[0]),14);assert(!actual.improve(beginner,'coffee'));
+actual.acquire(beginner,'carrot',3,2);actual.acquire(beginner,'honey',1,8);assert.equal(actual.experiment(beginner,{carrot:2,honey:1}).id,'bites');assert.equal(beginner.homestead.stock.carrot,1);assert(actual.nameRecipe(beginner,'bites','Garden Nibbles'));const restored=JSON.parse(JSON.stringify(beginner));assert.equal(restored.cafe.recipeNames.bites,'Garden Nibbles');assert.equal(restored.cafe.recipeLevels.coffee,1);
+console.log('PASS: one free lesson, naming, food shared stock, recipe improvement gates/prices and save persistence.');
 const finishGame={shells:10000,homestead:{stock:{}}};E.init(finishGame,0);E.unlock(finishGame,0);finishGame.shells=10000;
 assert(E.buyFinish(finishGame,'butter'));assert.equal(finishGame.shells,7500);
 assert(E.buyFinish(finishGame,'sage'));assert(E.buyFinish(finishGame,'butter'));assert.equal(finishGame.shells,7500);

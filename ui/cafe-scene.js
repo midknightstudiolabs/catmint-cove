@@ -31,7 +31,7 @@
    label(['Little brewer','Twin brewer','Cove brewer'][s.speed||0],x+66,y+121,13);
   }
   function kettle(x,y){oval(x,y,28,22,s.cookware?'#b48657':'#9aab9c');rect(x-9,y-28,18,7,'#596e59');c.strokeStyle='#596e59';c.lineWidth=6;c.beginPath();c.arc(x+26,y-2,15,-1.4,1.4);c.stroke();c.fillStyle=s.cookware?'#b48657':'#9aab9c';c.beginPath();c.moveTo(x-24,y-5);c.lineTo(x-44,y-20);c.lineTo(x-31,y+9);c.fill();}
-  function bubble(x,y){const r=active?E.recipes.find(r=>r.id===s.pending.id):null;const greetings=['Something warm, please.','One cup. Two paws.','Is the sunny seat taken?','I came for the company.','Make mine extra cozy.','My whiskers smelled coffee.'];round(x-132,y-25,264,35,12,'#faf3df');label(r?r.name+', please.':greetings[s.sequence%greetings.length],x,y-3,16);}
+  function bubble(x,y){const r=active?E.recipes.find(r=>r.id===s.pending.id):null;const greetings=['Something warm, please.','One cup. Two paws.','Is the sunny seat taken?','I came for the company.','Make mine extra cozy.','My whiskers smelled coffee.'];round(x-132,y-25,264,35,12,'#faf3df');label(r?E.displayName(s,r)+', please.':greetings[s.sequence%greetings.length],x,y-3,16);}
   const extra=Math.max(0,c.canvas.height-380),offset=extra*.45;c.save();
   rect(0,0,720,c.canvas.height,night?'#405a65':'#dce8db');rect(0,offset+220,720,c.canvas.height,inside?'#dbc5a1':night?'#777663':'#dacbad');c.translate(0,offset);
   rect(0,0,720,380,night?'#405a65':'#dce8db');rect(0,100,720,160,night?'#64878c':'#a8cdcc');rect(0,220,720,160,night?'#777663':'#dacbad');

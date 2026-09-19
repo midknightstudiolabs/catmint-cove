@@ -254,6 +254,9 @@ This release packages the current Catmint Cove Neo web build. Original character
 - Added free building previews, savings information and a confirmation step for expansions. Higher stages change the exterior and interior finish; machine speed remains separate.
 ## Neo café kiosk refresh
 
+- Guided free first coffee: add, brew, taste, name and add to My Menu. Mixing moved into a separate creation flow with optional recipe guides and clear ingredient costs.
+- Player-named drinks and Honey Garden Bites persist in saves and appear in orders. Food uses Garden carrots and honey from the shared pantry. Added two recipe improvement levels after 10/20 sales (50/100 Shells), each adding 2 Shells per sale. Trial ingredient costs are included in reports.
+
 - Added ingredient experimentation: new cafés start closed with an empty menu; successful tasting batches discover recipes for players to add before opening. Failed batches consume ingredients and provide hints. Existing menus remain available.
 - Separated upgrades by outside/inside view and added free equipment previews. Expanded the scenery edge to edge to remove the framed presentation.
 
