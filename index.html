@@ -2065,7 +2065,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 </div>
 
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=17"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=13"><script src="ui/cafe-engine.js?v=12"></script><script src="ui/cafe-scene.js?v=11"></script><script src="ui/cafe-kiosk.js?v=13"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=14"><script src="ui/cafe-engine.js?v=14"></script><script src="ui/cafe-scene.js?v=11"></script><script src="ui/cafe-kiosk.js?v=14"></script>
 <script>
 (() => {
 "use strict";
@@ -19696,6 +19696,12 @@ function neoOpenHomestead(kind){
   sheet.innerHTML=`<button class="x" aria-label="Back to the Cove">×</button><div class="kicker">YOUR LITTLE CORNER OF THE COVE</div><h2>${garden?'Cove Garden':'Catmint Café'}</h2><p>${garden?'A little harvest for today, and something to save for tomorrow. Crops never wither.':'Choose what to cook and stock the counter. Guests arrive, take a seat, enjoy a treat and pay 2 shells. A visit takes one minute; stocked food also sells while you are away. Close the café to pause service while you cook or redecorate.'}</p><div class="homestead-stock">${Object.entries(COVE_CROPS).map(([k,c])=>`<span>${c.name}: <b>${h.stock[k]||0}</b></span>`).join('')}</div>`;
   if(garden){
     const supplyPlan=CoveCafeEngine.pantryPlan(G);
+    const planting=CoveCafeEngine.plantingPlan(G),quick=document.createElement('section');quick.className='garden-quick';
+    const planTitle=document.createElement('h3');planTitle.textContent='Plant for your café';
+    const preview=document.createElement('p'),counts={};for(const job of planting.jobs)counts[job.key]=(counts[job.key]||0)+1;
+    preview.textContent=planting.jobs.length?Object.entries(counts).map(([key,count])=>count+' × '+COVE_CROPS[key].name).join(' · '):h.plots.every(Boolean)?'Harvest a ready patch to make room.':'No additional planting needed for your current menu.';
+    const plant=document.createElement('button');plant.className='btn primary';plant.textContent=planting.jobs.length?'Plant recommended · '+planting.cost+' Shells':'Nothing to plant right now';plant.disabled=!planting.jobs.length||G.shells<planting.cost;
+    plant.onclick=()=>{if(CoveCafeEngine.plantSuggested(G,planting)){save();syncHud();}neoOpenHomestead('garden');};quick.append(planTitle,preview,plant);sheet.insertBefore(quick,sheet.querySelector('.homestead-stock'));
     const purpose=document.createElement('aside');purpose.className='garden-purpose';const title=document.createElement('strong');title.textContent='Grow for your café menu';purpose.append(title);
     const note=document.createElement('p');note.textContent=supplyPlan.selected.length?'Recommendations cover five orders of each recipe on sale, counting pantry stock and planted crops. Harvests go straight to your shared café pantry.':'Start serving a recipe in Catmint Café for tailored planting advice. Harvests go straight to the shared pantry.';purpose.append(note);
     for(const row of supplyPlan.rows.filter(r=>r.target)){const tip=document.createElement('p');tip.textContent=row.name+': '+row.have+' stocked / '+row.target+' goal · '+(row.ready&&row.short?'Harvest '+row.ready+' ready now. ':row.short&& !row.plant?'Enough already growing. ':'')+(row.plant?'Plant '+row.patches+' patch'+(row.patches===1?'':'es')+' ('+row.growing+' already growing).':!row.short?'Stocked for this goal.':'');purpose.append(tip);}
@@ -19726,6 +19732,7 @@ function neoOpenHomestead(kind){
   const n=garden?h.plots.length:h.tables,max=garden?8:5,cost=garden?100+(n-4)*75:150+(n-3)*100;
   if(n<max){const expand=document.createElement('button');expand.className='btn';expand.textContent=`Add ${garden?'a garden patch':'a table'} · ${cost} shells`;expand.disabled=G.shells<cost;expand.onclick=()=>{if(neoExpandHomestead(kind))neoOpenHomestead(kind);};sheet.append(expand);}
   const other=document.createElement('button');other.className='btn';other.textContent=garden?'Visit Catmint Café':'Visit Cove Garden';other.onclick=()=>neoOpenHomestead(garden?'cafe':'garden');sheet.append(other);
+  if(garden){const actions=document.createElement('div');actions.className='garden-actions';for(const button of [...sheet.children].filter(el=>el.tagName==='BUTTON'&&!el.classList.contains('x')))actions.append(button);sheet.append(actions);}
   sheet.querySelector('.x').onclick=()=>{sheet.hidden=true;clearInterval(neoHomesteadTimer);cancelAnimationFrame(neoCafeFrame);};neoSheetFooter(sheet);
   neoHomesteadTimer=setInterval(()=>{if(sheet.hidden){clearInterval(neoHomesteadTimer);return;}if(document.hidden)return;const before=h.served;neoCafeSettle();if(before!==h.served){save();const trays=sheet.querySelector('#neo-cafe-trays');if(trays)trays.innerHTML=h.trays.map((t,i)=>`<span>Counter ${i+1}: <b>${t.servings?COVE_RECIPES[t.key].name+' · '+t.servings:'Empty'}</b></span>`).join('');const count=sheet.querySelector('.homestead-cafe-room > p');if(count)count.textContent=h.counter+' treats on the counter · '+h.served+' served';const collect=sheet.querySelector('[data-cafe-collect]');if(collect){collect.textContent='Collect '+h.earned+' shells';collect.disabled=!h.earned;}}for(const b of sheet.querySelectorAll('[data-ready]')){const seconds=time(+b.dataset.ready);b.disabled=seconds>0;b.textContent=seconds?`${garden?'Growing':'Cooking'} · ${seconds}s`:garden?'Harvest':'Stock the counter';}},1000);
 }
