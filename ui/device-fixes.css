@@ -192,3 +192,14 @@
 .friends-consent{display:flex!important;align-items:flex-start;line-height:1.5}
 .friends-consent input{margin-top:4px;flex:none}
 .friends-status{color:#80532f;font-size:14px;min-height:1.3em}
+/* A full-width dock owns its space; the world ends above it. */
+#app.editing-cove #stage{bottom:var(--edit-dock-height,130px)!important}
+#app.editing-cove #placeBar{left:0!important;right:0!important;bottom:0!important;transform:none!important;width:100%!important;max-width:none!important;border-radius:0!important;border-width:1px 0 0;padding:10px max(12px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));grid-template-columns:minmax(130px,1fr) repeat(5,minmax(80px,130px));align-items:center;gap:8px;box-shadow:0 -3px 16px #243c2414}
+#app.editing-cove #placeBarTxt{grid-column:auto;text-align:left;font-size:13px}
+#app.editing-cove #placeBar button{grid-column:auto!important;font-size:13px;padding:8px 12px;min-height:44px}
+#app.editing-cove #placeBarPutAway[hidden]{display:none!important}
+#editCoveEntry{position:absolute;left:14px;bottom:calc(var(--navh,76px) + 12px);z-index:20;padding:10px 16px;min-height:44px;background:#fbf7e9;color:#39694e;border:1px solid #cbd2bf;font-weight:700}
+.editing-cove #editCoveEntry,.resting #editCoveEntry,.festing #editCoveEntry,.cold-open #editCoveEntry{display:none!important}
+#app.editing-cove #toast{bottom:calc(var(--edit-dock-height,130px) + 12px)!important}
+@media(max-width:700px){#app.editing-cove #placeBar{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}#app.editing-cove #placeBarTxt{grid-column:1/-1;text-align:center}#app.editing-cove #placeBarDone{grid-column:2/4!important}#app.editing-cove #placeBar button{padding:8px 6px;font-size:12px}}
+@media(max-width:700px){#app.editing-cove #placeBar #placeBarDone{grid-column:2/4!important}#app.editing-cove #placeBar:has(#placeBarPutAway[hidden]) #placeBarDone{grid-column:1/-1!important}}

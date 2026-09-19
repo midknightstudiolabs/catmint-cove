@@ -1332,7 +1332,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?edit-cove=1&v=19">
+</style><link rel="stylesheet" href="ui/device-fixes.css?edit-cove=2&v=20">
 <style id="neo-theme">
 #atmosphere-preview{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;touch-action:none}
 #atmosphere-preview section{width:min(440px,100%);box-sizing:border-box;padding:18px;background:#faf7ea;color:#395447;border:1px solid #d8ddc7;border-radius:24px;box-shadow:0 8px 32px #243c3426;text-align:center}
@@ -5000,7 +5000,7 @@ function editLayout(){return Object.fromEntries(EDIT_FIELDS.map(k=>[k,JSON.parse
 function editSafeSave(state){return editBaseline ? {...state,cosmetics:{...state.cosmetics,...editBaseline}} : state;}
 function editReset(){if(editBaseline){Object.assign(G.cosmetics,editBaseline);editBaseline=null;rebuildAttractors();}}
 function editBar(){
- document.getElementById('placeBarTxt').textContent=_placing ? _placing.label+' · Drag to position' : 'Edit Cove · Changes are not saved yet';
+ document.getElementById('placeBarTxt').textContent=_placing ? _placing.label+' · Drag to position' : 'Edit Cove · Drag an item to move it';
  document.getElementById('placeBarCancel').textContent='Cancel';
  document.getElementById('placeBarDone').textContent='Save changes';
  document.getElementById('placeBar').hidden=false;
@@ -5198,6 +5198,7 @@ function endArrange() {
  _arranging=false;_placing=null;_placeGhost=null;
  document.getElementById('placeBar').hidden=true;
  document.getElementById('app').classList.remove('editing-cove');
+ resize();
  for(const id of ['helpBtn','restBtn','titlePill'])document.getElementById(id).disabled=false;
  window.dispatchEvent(new Event('neo-edit-saved'));toast('Your Cove is saved.',3);
 }
@@ -5205,6 +5206,7 @@ function exitPlacement() {
  editReset();_placing=null;_placeGhost=null;_arranging=false;
  document.getElementById('placeBar').hidden=true;
  document.getElementById('app').classList.remove('editing-cove');
+ resize();
  for(const id of ['helpBtn','restBtn','titlePill'])document.getElementById(id).disabled=false;
 }
 function cancelEdit(){exitPlacement();toast('Changes cancelled. Your previous layout is back.',3);}
@@ -18760,7 +18762,7 @@ function resize() {
     // so the vertical crop only ever eats sky and foreground grass, never a cat.
     // The zoom is capped at 1.5× the height-fit so an ultrawide gets a little
     // sky/ground margin instead of the cove blown up to a sliver.
-    displayScale = Math.min(Math.max(fvw / W, fvh / H), (fvh / H) * 1.5);
+    displayScale = _arranging ? Math.min(fvw / W, fvh / H) : Math.min(Math.max(fvw / W, fvh / H), (fvh / H) * 1.5);
     _worldOffX = (fvw / displayScale - W) / 2;   // < 0 crops the sides, > 0 = margin
     _worldOffY = (fvh / displayScale - H) / 2;   // <= 0 (cover)
     cssW = fvw;
@@ -20295,6 +20297,10 @@ const littleMatches=createLittleMatches({
   j.entries.unshift({activity:'memory',members:[{id:c.id,name:c.name,coatKey:c.key,star:0,markSeed:c.markSeed||4242}],won:true,milestone:level,award:names[level],title:MEMORY_TITLES[level]||'Another little memory, kept.',line:lines[level],day:new Date().toLocaleDateString(),time:Date.now(),count:1,results:[{level}]});save();},
  pearls:(n)=>{G.pearls=(G.pearls||0)+n;syncHud();save();}
 });
+// Reserve actual dock height so the editable canvas never sits behind controls.
+const editDockObserver=new ResizeObserver(()=>{if(!_arranging)return;const h=document.getElementById('placeBar').getBoundingClientRect().height;const app=document.getElementById('app');const next=Math.ceil(h)+'px';if(app.style.getPropertyValue('--edit-dock-height')!==next){app.style.setProperty('--edit-dock-height',next);resize();}});
+editDockObserver.observe(document.getElementById('placeBar'));
+const editEntry=document.createElement('button');editEntry.id='editCoveEntry';editEntry.className='btn';editEntry.textContent='Edit Cove';editEntry.setAttribute('aria-label','Edit Cove layout');editEntry.onclick=()=>{if(restMode||festMode)return;startArrange();};document.getElementById('app').append(editEntry);
 const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 levels, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();const activityGrid=document.querySelector('#neo-explore .neo-explore-grid');activityGrid.prepend(matchesButton);activityGrid.appendChild(document.getElementById('neo-go-cafe'));
 (function () {
   // Loading folded into the one title card — no second page/handoff. Real
