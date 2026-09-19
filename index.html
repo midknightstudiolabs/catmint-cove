@@ -20219,11 +20219,18 @@ function neoRaceMeadow(g,w,h){
   const theme=DECOR_THEMES[neoThemeKey()];
   sky.addColorStop(0,theme?.sky?.[0]||'#91d0ed');sky.addColorStop(1,theme?.sky?.[1]||'#d2e8d7');
   g.fillStyle=sky;g.fillRect(0,0,w,h);
-  g.fillStyle='#91b798';g.beginPath();g.moveTo(0,bank);
+  const lawn=theme?.ground||'#b3cd78';
+  g.fillStyle=lawn;g.beginPath();g.moveTo(0,bank);
   g.bezierCurveTo(w*.18,80,w*.27,155,w*.43,130);
   g.bezierCurveTo(w*.65,95,w*.8,145,w,105);
   g.lineTo(w,bank+30);g.lineTo(0,bank+30);g.fill();
   g.drawImage(im,iw*.20,ih*.40,iw*.60,ih*.38,0,bank,w,h-bank);
+  // Let distant turf join the hills before introducing foreground detail.
+  // The source crop crosses tufts: conceal that cut instead of exposing a seam.
+  const turfJoin=g.createLinearGradient(0,bank,0,bank+100);
+  turfJoin.addColorStop(0,lawn);turfJoin.addColorStop(.35,lawn);
+  turfJoin.addColorStop(1,lawn+'00');
+  g.fillStyle=turfJoin;g.fillRect(0,bank,w,100);
   const light=neoLight(nowHours()),day=timeOfDay();
   g.fillStyle='rgba(9,19,43,'+Math.min(.38,(1-day.df)*.36+light.night*.48)+')';
   g.fillRect(0,0,w,h);
