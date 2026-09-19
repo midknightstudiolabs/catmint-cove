@@ -59,5 +59,10 @@
   function nameRecipe(g,id,name){const s=init(g,Date.now());if(!s.discovered.includes(id))return false;const clean=String(name||'').trim().replace(/\s+/g,' ').slice(0,24);if(!clean)return false;(s.recipeNames||={})[id]=clean;return true;}
   function lesson(g){const s=init(g,Date.now());if(!s.unlocked||s.lessonComplete)return {error:'Your free lesson is already complete.'};s.lessonComplete=true;if(!s.discovered.includes('coffee'))s.discovered.push('coffee');return {id:'coffee',message:'A balanced first cup! Give it your own name.'};}
   function improve(g,id){const s=init(g,Date.now()),level=s.recipeLevels?.[id]||0;if(!s.discovered.includes(id)||level>=2||(s.sales[id]||0)<(level+1)*10||g.shells<(level+1)*50)return false;g.shells-=(level+1)*50;(s.recipeLevels||={})[id]=level+1;return true;}
-  root.CoveCafeEngine={ingredients,recipes,shops,finishes,buyFinish,upgradeShop,interval,init,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve};
+  function pantryPlan(g){const s=init(g,Date.now()),stock=g.homestead?.stock||{},selected=recipes.filter(r=>s.menu.includes(r.id)),needs={};
+    for(const r of selected)for(const [key,n]of Object.entries(r.inputs))needs[key]=(needs[key]||0)+n*5;
+    const rows=Object.entries(ingredients).map(([key,item])=>{const plots=(g.homestead?.plots||[]).filter(p=>p?.key===key),growing=plots.length*item.yield,ready=plots.filter(p=>p.ready<=Date.now()).length*item.yield,target=needs[key]||0,have=stock[key]||0,short=Math.max(0,target-have),plant=Math.max(0,short-growing);return {key,...item,have,target,short,growing,ready,plant,patches:Math.ceil(plant/item.yield),usedBy:selected.filter(r=>r.inputs[key]).map(r=>displayName(s,r))};});
+    return {rows:rows.sort((a,b)=>Number(b.target>0)-Number(a.target>0)||b.plant-a.plant),selected:selected.map(r=>({id:r.id,name:displayName(s,r),orders:Math.min(...Object.entries(r.inputs).map(([k,n])=>Math.floor((stock[k]||0)/n)))}))};
+  }
+  root.CoveCafeEngine={ingredients,recipes,shops,finishes,buyFinish,upgradeShop,interval,init,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan};
 })(globalThis);

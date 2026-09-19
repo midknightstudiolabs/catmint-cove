@@ -254,6 +254,8 @@ This release packages the current Catmint Cove Neo web build. Original character
 - Added free building previews, savings information and a confirmation step for expansions. Higher stages change the exterior and interior finish; machine speed remains separate.
 ## Neo café kiosk refresh
 
+- Shared café/Garden supply planning targets five orders of each on-sale recipe, totals shared ingredient needs, and credits planted/ready crops. Pantry shows stock, recipe coverage and planting costs; Garden highlights and prioritizes needed crops and warns that selling harvests uses café stock.
+
 - Recipes now show explicit serving status with Start serving / Stop serving actions. Naming a recipe no longer puts a saved recipe on sale automatically; existing on-sale recipes stay selected.
 - Completed orders generate playful food/drink reactions, happiness totals and a saved ten-visit feedback history. Improved recipes earn better reactions. Duplicate settlement does not duplicate feedback; old sales are not retroactively rated.
 
