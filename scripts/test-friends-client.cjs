@@ -19,6 +19,7 @@ async function click(text){await find(text).onclick();}
 (async()=>{
  await vm.runInContext("open({name:()=> 'My Cove'})",context);
  assert(find('Refresh friends'));
+ await click('Add a friend');
  const input=all(body).find(e=>e.tag==='input'&&e.type==='text');
  input.value='bad';await click('Find friend');assert(!calls.some(c=>c.action==='request'));
  assert(all(body).some(e=>e.textContent==='Enter the 12-character friend code.'));

@@ -218,3 +218,14 @@
 @media(max-width:400px){#editStored{gap:8px}#editStored .btn{padding:8px!important}#editStored span{font-size:13px}}
 .sheet .neo-journal-tools{display:grid;grid-template-columns:1fr;gap:10px}
 .sheet .neo-journal-tools>.btn{width:100%;min-height:52px;display:flex;align-items:center;justify-content:flex-start;text-align:left;border-radius:16px;padding:14px 18px;gap:10px;margin:0}
+dialog.friends-sheet .btn{border-radius:12px;box-shadow:none}
+dialog.friends-sheet .friends-close{position:absolute;top:16px;right:16px;width:auto;margin:0;padding:8px 12px}
+dialog.friends-sheet h2{padding-right:76px}
+dialog.friends-sheet .friends-body>button{margin-top:10px}
+.friends-sheet .friends-invite{grid-template-columns:1fr;gap:16px}
+.friends-sheet .friends-code{background:#edf1e3;border-radius:16px;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.friends-sheet .friends-code>span,.friends-sheet .friends-code>strong{grid-column:1/-1}
+.friends-sheet .friends-code>strong{font-size:22px;letter-spacing:2px;font-variant-numeric:tabular-nums}
+.friends-sheet .friends-body>.primary{width:100%;margin:12px 0}
+.friends-sheet .friends-status:empty{display:none}
+.friends-sheet .friends-settings{border-top:1px solid #d9ddc7;margin-top:16px}

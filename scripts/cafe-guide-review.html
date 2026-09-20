@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Café guide isolated review</title><link rel="stylesheet" href="../ui/cafe-kiosk.css"><style>body{margin:0;font:16px system-ui;color:#3e5040}.btn{background:#faf6e8;border:1px solid #cdd4bf;border-radius:12px;padding:12px}.primary{background:#487657;color:white}input{display:block;box-sizing:border-box;width:100%;font:inherit;padding:12px}#fixture{position:fixed;z-index:100;bottom:0;background:white;font-size:10px;pointer-events:none}</style><div id="app"></div><div id="fixture">Isolated tutorial test · no real saves or purchases</div><script src="../ui/cafe-engine.js"></script><script src="../ui/cafe-kiosk.js"></script><script>
+const game={shells:500,homestead:{stock:{},plots:[]}};
+// Render a neutral test background; this harness verifies controls, not scene art.
+window.CoveCafeScene=(c,{height})=>{c.fillStyle='#b5cfbf';c.fillRect(0,0,720,height);};
+const adapter={game:()=>game,close:()=>{document.querySelector('#cafe-kiosk')?.setAttribute('hidden','');},register:()=>{},actors:()=>[],save:()=>{},hud:()=>{},garden:()=>{adapter.close();document.querySelector('#fixture').textContent='PASS: Garden opened · guide saved as '+game.cafe.guideDone;}};
+CoveCafeView.open(adapter);
+</script></html>

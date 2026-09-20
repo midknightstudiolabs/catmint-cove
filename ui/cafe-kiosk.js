@@ -7,6 +7,30 @@
   let panel=document.getElementById('cafe-kiosk');if(!panel){panel=document.createElement('section');panel.id='cafe-kiosk';panel.className='sheet';document.getElementById('app').append(panel);a.register(panel);}
   panel.hidden=false;let previewFinish=null,confirmFinish=null,previewTier=null,confirmShop=false;let workshop=false,recipeResult=null,lessonStep=0;let tasting='',previewEquipment=null,displayState=s;let view='outside',tab=null,frame=0,last=0,timer;const actors=a.actors();stopActive=()=>{cancelAnimationFrame(frame);clearInterval(timer);};
   const money=n=>Math.round(n*10)/10;
+  let guideOn=!s.guideDone&&(!s.lessonComplete||s.guideStarted),guideNamed=!!s.recipeNames?.coffee;
+  if(guideOn){s.guideStarted=true;a.save();}
+  if(guideOn&&s.unlocked){tab='menu';view='inside';}
+  function finishGuide(){s.guideDone=true;guideOn=false;a.save();render();}
+  function drawGuide(){
+   panel.classList.toggle('cc-guiding',guideOn);
+   const replay=document.createElement('button');replay.className='btn cc-guide-replay';replay.textContent='Help';replay.setAttribute('aria-label','Help me play: Café guide');replay.onclick=()=>{guideOn=true;s.guideStarted=true;s.guideDone=false;a.save();guideNamed=!!s.lessonComplete;tab='menu';view='inside';workshop=false;recipeResult=null;render();};panel.querySelector('.cc-head').append(replay);
+   if(!guideOn)return;
+   let title,text,target,step;
+   if(!s.unlocked){step=1;title='Let’s make a café!';text='You need 120 Shells. Tap Set up your café when you have enough.';target='[data-start]';}
+   else if(!s.lessonComplete){step=1;title='Make a cup';text=workshop?['Tap Add one coffee bean. This cup is free!','Tap Brew my first cup.','Tap Taste my coffee.'][lessonStep]:'Tap Make your first coffee. We will help you.';target=workshop?'[data-lesson]':'[data-create]';}
+   else if(recipeResult||!guideNamed){step=2;title='Give it a name';text='Type a fun name. Then tap Save recipe. You can keep the name we picked, too.';target='[data-save-name]';}
+   else if(!s.menu.length){step=3;title='Put it on the menu';text='Tap Start serving beside your drink. This lets cats choose it.';target='[data-recipe]';}
+   else if(!s.open){step=4;title='Welcome the cats!';text='Tap Open for guests. Your cats will make and serve the food for you.';target='[data-pause]';}
+   else{step=5;title='You’re open!';text='Cats order on their own. Each order uses ingredients. Tap Grow ingredients to visit the Garden and plant more.';target='[data-garden]';}
+   panel.dataset.guideStep=step;
+   const card=document.createElement('section');card.className='cc-guide';card.setAttribute('aria-label','Café guide');
+   const count=document.createElement('small');count.textContent='LET’S PLAY · '+step+' OF 5';const heading=document.createElement('h3');heading.textContent=title;const copy=document.createElement('p');copy.textContent=text;
+   const skip=document.createElement('button');skip.className='btn';skip.textContent=step===5?'Got it':'Skip guide';skip.onclick=finishGuide;card.append(count,heading,copy,skip);
+   const host=panel.querySelector('.cc-content:not([hidden])')||panel.querySelector('.cc-intro');if(host)host.prepend(card);
+   const action=panel.querySelector(target);if(action){action.classList.add('cc-guide-target');action.setAttribute('aria-describedby','cc-guide-copy');copy.id='cc-guide-copy';}
+   else if(s.unlocked){const go=document.createElement('button');go.className='btn primary';go.textContent='Show me';go.onclick=()=>{tab='menu';workshop=step===2;recipeResult=step===2?'coffee':null;render();};card.append(go);if(!host)panel.querySelector('.cc-tabs').after(card);}
+  }
+
   function commit(fn){E.settle(g,Date.now());fn();a.save();a.hud();render();}
   function render(){
    panel.classList.toggle('cc-managing',!!tab);
@@ -14,13 +38,13 @@
    panel.innerHTML=`<header class="cc-head"><div><small>YOUR SEASIDE COFFEE STOP</small><h2>Catmint Café</h2></div><button class="btn" data-close>Return to Cove</button></header><div class="cc-wallet">${Math.floor(g.shells)} Shells <span>• ${s.served} drinks enjoyed</span></div><div class="cc-switch" aria-label="Café view"><button aria-pressed="${view==='outside'}" data-view="outside">Outside</button><button aria-pressed="${view==='inside'}" data-view="inside">Inside</button></div><canvas aria-label="${view==='inside'?'Behind the counter, customers ordering at the window':'Seaside café kiosk'}" width="720" height="380"></canvas><p class="cc-status" role="status"></p>`;
    panel.querySelector('[data-close]').onclick=()=>{a.close();cancelAnimationFrame(frame);clearInterval(timer);};
    panel.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;render();});
-   if(!s.unlocked){panel.insertAdjacentHTML('beforeend',`<div class="cc-intro"><h3>A little coffee. A lot of company.</h3><p>Your cats handle every order. Grow ingredients, choose the menu, and watch your seaside café come to life.</p><p>Includes 6 coffee beans, 6 catmint and 2 honey. Stock never spoils.</p><button class="btn primary" data-start ${g.shells<120?'disabled':''}>Set up your café · 120 Shells</button><small>Experiment with a drink, add it to your menu, then open for guests.</small></div>`);panel.querySelector('[data-start]').onclick=()=>commit(()=>E.unlock(g,Date.now()));}
+   if(!s.unlocked){panel.insertAdjacentHTML('beforeend',`<div class="cc-intro"><h3>A little coffee. A lot of company.</h3><p>Your cats handle every order. Grow ingredients, choose the menu, and watch your seaside café come to life.</p><p>Includes 6 coffee beans, 6 catmint and 2 honey. Stock never spoils.</p><button class="btn primary" data-start ${g.shells<120?'disabled':''}>Set up your café · 120 Shells</button><small>Experiment with a drink, add it to your menu, then open for guests.</small></div>`);panel.querySelector('[data-start]').onclick=()=>commit(()=>{E.unlock(g,Date.now());if(guideOn){tab='menu';view='inside';}});}
    else{
     panel.insertAdjacentHTML('beforeend',`<nav class="cc-tabs" aria-label="Café management">${['menu','pantry','report','upgrades'].map(k=>`<button aria-pressed="${tab===k}" data-tab="${k}">${k[0].toUpperCase()+k.slice(1)}</button>`).join('')}</nav><div class="cc-content" ${tab?'':'hidden'}></div>`);
     panel.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=tab===b.dataset.tab?null:b.dataset.tab;render();});const content=panel.querySelector('.cc-content');
     if(tab==='menu'){
      const escape=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-     const garden=()=>{stopActive();a.garden();};
+     const garden=()=>{if(guideOn&&s.open){s.guideDone=true;a.save();}stopActive();a.garden();};
      if(!workshop){
       content.innerHTML=`<p>When the café is open, recipes on sale are served automatically while ingredients last.</p><button class="btn primary" data-create>${s.lessonComplete?'Create a drink or treat':'Make your first coffee · free lesson'}</button>${E.recipes.filter(r=>s.discovered.includes(r.id)).map(r=>{const level=s.recipeLevels?.[r.id]||0,sales=s.sales[r.id]||0;return `<article class="cc-card"><span class="cc-cup">${cup(r.id)}</span><div><h3>${escape(E.displayName(s,r))}</h3><small>${r.name} · ${E.price(s,r)} Shells</small><small>${Object.entries(r.inputs).map(([k,n])=>n+' '+E.ingredients[k].name.toLowerCase()).join(' + ')}</small><strong class="cc-recipe-state">${s.menu.includes(r.id)?(!s.open?'On sale · café paused':Object.entries(r.inputs).some(([k,n])=>(g.homestead.stock[k]||0)<n)?'On sale · awaiting ingredients':'On sale · serving automatically'):'Not serving · saved recipe'}</strong><small>${sales} enjoyed · Recipe level ${level+1}/3</small><details class="cc-recipe-details"><summary>Recipe details & improvements</summary><button class="btn" data-name="${r.id}">Rename</button><button class="btn" data-improve="${r.id}" ${level>=2||sales<(level+1)*10||g.shells<(level+1)*50?'disabled':''}>${level>=2?'Mastered':sales<(level+1)*10?'Serve '+((level+1)*10-sales)+' more to improve':'Improve · '+((level+1)*50)+' Shells · +2 per sale'}</button></details></div><button class="btn" data-recipe="${r.id}" aria-pressed="${s.menu.includes(r.id)}">${s.menu.includes(r.id)?'Stop serving':'Start serving'}</button></article>`;}).join('')}<button class="btn primary" data-pause ${!s.menu.length?'disabled':''}>${s.open?'Pause service':'Open for guests'}</button><button class="btn" data-garden>Grow ingredients in Cove Garden</button><small>No ingredients? Guests wait patiently. Harvests fill your shared pantry automatically.</small>`;
       content.querySelector('[data-create]').onclick=()=>{workshop=true;recipeResult=null;lessonStep=0;view='inside';render();};
@@ -37,7 +61,7 @@
        const recipe=E.recipes.find(r=>r.id===recipeResult);
        lab.innerHTML=`<span class="cc-cup">${cup(recipe.id)}</span><h3>Make it yours</h3><p>${escape(recipe.name)} · ${E.price(s,recipe)} Shells per sale</p><label>Your drink or treat name<input maxlength="24" data-recipe-name aria-label="Recipe name"></label><small>Up to 24 characters. You can rename it later.</small><button class="btn primary" data-save-name>${s.menu.includes(recipe.id)?'Save name · keep serving':'Save recipe · not serving yet'}</button><p role="status"></p>`;
        lab.querySelector('input').value=E.displayName(s,recipe);
-       lab.querySelector('[data-save-name]').onclick=()=>{const name=lab.querySelector('input').value;if(!name.trim()){lab.querySelector('[role="status"]').textContent='Give your creation a name first.';return;}commit(()=>{E.nameRecipe(g,recipe.id,name);workshop=false;recipeResult=null;});};
+       lab.querySelector('[data-save-name]').onclick=()=>{const name=lab.querySelector('input').value;if(!name.trim()){lab.querySelector('[role="status"]').textContent='Give your creation a name first.';return;}commit(()=>{E.nameRecipe(g,recipe.id,name);guideNamed=true;workshop=false;recipeResult=null;});};
       }else if(!s.lessonComplete){
        lab.innerHTML=`<h3>Your first coffee</h3><span class="cc-cup">${cup('coffee')}</span><p>${['Start with one coffee bean. This practice cup is on us.','The bean is ready. Brew it slowly.','A lovely first cup. Taste it and make it yours.'][lessonStep]}</p><button class="btn primary" data-lesson>${['Add one coffee bean','Brew my first cup','Taste my coffee'][lessonStep]}</button><small>Free guided lesson · no pantry ingredients used.</small>`;
        lab.querySelector('[data-lesson]').onclick=()=>{if(lessonStep<2){lessonStep++;render();}else commit(()=>{const result=E.lesson(g);recipeResult=result.id||null;tasting=result.message||result.error;});};
@@ -75,7 +99,7 @@
     if(next)box.querySelector('[data-expand]').onclick=()=>{if(!confirmShop){confirmShop=true;render();return;}commit(()=>{E.upgradeShop(g,Date.now());previewTier=null;confirmShop=false;});};
     box.querySelector('[data-cancel-expand]')?.addEventListener('click',()=>{confirmShop=false;render();});
    }
-   if(tab==='upgrades'&&s.unlocked){
+   if(tab==='upgrades'&&s.unlocked&&view==='outside'){
     const finishes=document.createElement('section');finishes.className='cc-finishes';
     finishes.innerHTML='<h3>Make it your color</h3><p>Preview any finish free. Unlock once, then switch whenever you like. Colors are purely decorative.</p><div class="cc-finish-grid">'+Object.entries(E.finishes).map(([key,f])=>{const owned=key==='sage'||(s.finishesOwned||[]).includes(key),current=(s.finish||'sage')===key;return `<article><span class="cc-swatch" style="background:${f.body};border-bottom-color:${f.dark}"></span><h3>${f.name}</h3><small>${owned?'Owned':f.cost.toLocaleString()+' Shells'}</small><button class="btn" data-finish-preview="${key}">Preview</button><button class="btn primary" data-finish-buy="${key}" ${current||(!owned&&g.shells<f.cost)?'disabled':''}>${current?'In use':owned?'Use finish':confirmFinish===key?'Confirm purchase':'Unlock'}</button></article>`;}).join('')+'</div>';
     panel.querySelector('.cc-shop-stages').after(finishes);
@@ -96,6 +120,7 @@
    const cv=panel.querySelector('canvas');cv.onclick=e=>{if(view!=='outside'||tab)return;const b=cv.getBoundingClientRect(),fit=b.width/720,x=(e.clientX-b.left)/fit,y=(e.clientY-b.top)/fit-Math.max(0,720*b.height/Math.max(1,b.width)-380)*.45;if(x>190&&x<530&&y>100&&y<235){view='inside';render();}else if(x>25&&x<120&&y>270&&y<350){panel.querySelector('.cc-sale')?.remove();const hello=document.createElement('div');hello.className='cc-sale';hello.setAttribute('role','status');hello.textContent=['This seat has excellent purr acoustics.','Stay a little. The sea isn’t going anywhere.','A quiet bench. Very important cat business.'][Math.floor(Date.now()/1000)%3];panel.append(hello);setTimeout(()=>hello.remove(),4500);}};
    panel.onkeydown=e=>{if(e.key==='Escape'){if(tab){tab=null;render();}else panel.querySelector('[data-close]').click();}};
    panel.querySelector('.cc-switch').insertAdjacentHTML('afterend','<p class="cc-visit-hint">'+(view==='outside'?'Tap the serving window to step inside.':'A warm cup and a little company.')+'</p>');
+   drawGuide();
    const renderedServed=s.served;status();frame=requestAnimationFrame(paint);timer=setInterval(()=>{if(panel.hidden||!panel.isConnected){clearInterval(timer);cancelAnimationFrame(frame);return;}const before=s.served;E.settle(g,Date.now());if(s.served!==renderedServed){a.save();a.hud();render();const notice=document.createElement('div');notice.className='cc-sale';notice.setAttribute('role','status');const sold=E.recipes.find(r=>r.id===s.lastCompleted?.id);notice.textContent=sold?E.displayName(s,sold)+' · +'+(s.lastCompleted.price||E.price(s,sold))+' Shells — '+(s.lastCompleted.response?.text||'A happy little moment.'):'An order enjoyed · Shells added';panel.append(notice);setTimeout(()=>notice.remove(),4000);}else status();},1000);
   }
   function status(){const el=panel.querySelector('.cc-status');if(!el)return;const n=Math.max(0,Math.ceil((s.cursor+E.interval(s)-Date.now())/1000));el.textContent=!s.unlocked?'A tiny place for your next big idea.':s.pending?'Brewing '+E.displayName(s,E.recipes.find(r=>r.id===s.pending.id))+' · a guest is waiting':!s.menu.length?'Create a drink and add it to your menu before opening.':!s.open?'Your menu is ready · open service from Menu.':!E.available(s,g.homestead.stock).length?'Taking a nap · stock an ingredient or add a drink to the menu.':`Open · next guest in ${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`;}
