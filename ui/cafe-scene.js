@@ -10,6 +10,15 @@
   const fitLabel=(str,x,y,maxW,size,col)=>{let z=size;c.font=`${z}px Georgia`;while(z>11&&c.measureText(str).width>maxW){z--;c.font=`${z}px Georgia`;}c.fillStyle=col;c.textAlign='center';c.fillText(str,x,y);};
   const cafeTitle=E.cafeName?E.cafeName(s).toUpperCase():'CATMINT CAFÉ';
   const has=id=>!!(s.decor&&s.decor[id]);
+  const heart=(x,y,z,col)=>{c.fillStyle=col;c.beginPath();c.moveTo(x,y+z*.9);c.bezierCurveTo(x-z*1.6,y-z*.2,x-z*.7,y-z*1.3,x,y-z*.4);c.bezierCurveTo(x+z*.7,y-z*1.3,x+z*1.6,y-z*.2,x,y+z*.9);c.fill();};
+  const sparkle=(x,y,z,col)=>{c.fillStyle=col;c.beginPath();for(let i=0;i<8;i++){const a=i*Math.PI/4,r=i%2?z*.38:z;c.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);}c.closePath();c.fill();};
+  // The guest's first sip: hearts for a favourite, sparkles for a good cup, a quiet "…" for fine, a green squint for too bitter.
+  const emote=(x,y,mood,u)=>{c.save();c.globalAlpha=Math.max(0,u<.1?u/.1:1-Math.max(0,(u-.55)/.45));const rise=u*34;
+   if(mood==='love'){for(let i=0;i<3;i++)heart(x+(i-1)*13+Math.sin(u*7+i)*3,y-rise-i*8,i===1?8:6,'#e8798f');}
+   else if(mood==='happy'){for(let i=0;i<3;i++)sparkle(x+(i-1)*12,y-rise-Math.abs(i-1)*7,5,'#f2c65c');}
+   else if(mood==='meh'){round(x-14,y-rise-14,28,18,9,'#faf3df');label('…',x,y-rise-1,15,'#7a7563');}
+   else{const fy=y-rise-10;oval(x,fy,11,11,'#bcd68b');c.strokeStyle='#4f6b35';c.lineWidth=1.6;c.beginPath();c.moveTo(x-6,fy-3);c.lineTo(x-2,fy-1);c.moveTo(x+6,fy-3);c.lineTo(x+2,fy-1);c.stroke();c.beginPath();c.moveTo(x-4,fy+5);c.quadraticCurveTo(x-2,fy+2,x,fy+5);c.quadraticCurveTo(x+2,fy+8,x+4,fy+5);c.stroke();oval(x+14,fy-4+u*8,2.2,3,'#9fd0e6');}
+   c.restore();};
   const now=Date.now(),night=new Date().getHours()<6||new Date().getHours()>=18,reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const stocked=s.unlocked&&s.open&&E.available(s,stock).length,active=!!s.pending,depart=s.lastCompleted?(now-s.lastCompleted.at)/12000:99;
   const lead=active?s.sequence-1:s.sequence;
@@ -138,10 +147,15 @@
    if(depart>=0&&depart<1)customer(382+depart*390,336+depart*18,.58,s.sequence-1,true);
    if(s.seats){rect(659,299,8,42,'#927550');oval(663,294,32,12,'#c5aa7d');round(651,276,12,16,3,'#f6edd7');oval(657,276,6,2,'#7b5a42');if(actors.length>2)a.cat(c,actors[2],615,350,.9,reduced?0:t,false);}
   }
-  const sign=s.open?'OPEN':s.pending?'FINISHING ORDER':'CLOSED';
-  round(inside?554:442,inside?194:221,110,27,5,s.open?'#416a4c':'#faf1da');
-  label(sign,inside?609:497,inside?212:239,12,s.open?'#fff8e7':'#655b48');
+  // a small enamel-and-cord sign, like the one in a real shop door: it sways a hair and says nothing loudly
+  {const word=s.open?'OPEN':s.pending?'FINISHING':'CLOSED',sx=inside?586:498,sy=inside?190:214,sw=58,sh=20,ang=reduced?0:Math.sin(now/1100)*.035;
+   c.save();c.translate(sx,sy);c.strokeStyle='rgba(74,58,40,.7)';c.lineWidth=1;c.beginPath();c.moveTo(-14,-9);c.lineTo(0,-16);c.lineTo(14,-9);c.stroke();oval(0,-16,1.6,1.6,'#6a5238');
+   c.rotate(ang);c.fillStyle='rgba(36,31,23,.16)';c.beginPath();c.roundRect(-sw/2+1.5,-9+2.5,sw,sh,5);c.fill();
+   c.fillStyle='#f7efd9';c.strokeStyle=s.open?'#6f9a78':'#b9a884';c.lineWidth=1.4;c.beginPath();c.roundRect(-sw/2,-9,sw,sh,5);c.fill();c.stroke();
+   c.fillStyle=s.open?'#3d6b4b':'#8b7660';c.font=(word.length>6?'bold 8px':'bold 10px')+' Georgia';c.textAlign='center';c.fillText(word.split('').join(word.length>6?'':'\u200a'),0,5);
+   c.restore();}
   if(active&&!reduced){c.strokeStyle='#f8f0d7';c.lineWidth=2;for(let i=0;i<3;i++){const x=inside?89:198,y=(inside?230:145)-(t/80+i*8)%24;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+7,y-7,x,y-14);c.stroke();}}
+  if(depart>=0&&depart<.5&&s.lastCompleted&&s.lastCompleted.reaction)emote(inside?350:382+depart*390,inside?208:262+depart*18,s.lastCompleted.reaction.mood,depart/.5);
   if(depart>=0&&depart<1&&s.lastCompleted.response){const response=s.lastCompleted.response;round(125,354,470,24,10,'#fff1d8');label(response.text,360,371,12,'#496247');}
   c.restore();
  };

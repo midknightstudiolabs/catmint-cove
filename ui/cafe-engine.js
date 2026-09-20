@@ -29,6 +29,21 @@
     for(const [id,d] of Object.entries(decor))if(!(s.decor&&s.decor[id]))out.push({id:'decor:'+id,label:d.name,cost:d.cost});
     const next=shops[(s.shopTier||0)+1];if(next)out.push({id:'shop',label:next.name,cost:next.cost});
     out.sort((a,b)=>a.cost-b.cost);return out[0]||null;}
+  // Taste: every guest reacts to the drink in front of them. A drink's character (strong / sweet / mild / food) meets the cat's own personality;
+  // a better recipe wins more hearts. Deterministic per cat and visit, so it never feels random-cruel.
+  const PROFILE={coffee:{strong:2},tea:{mild:2},midknight:{strong:1,sweet:2},bites:{sweet:1,food:2}};
+  const LIKES={glutton:{food:2,sweet:1},cuddly:{mild:2,sweet:1},bold:{strong:2},shy:{mild:2,strong:-.8},playful:{sweet:2},lazy:{mild:1,sweet:1},curious:{},grumpy:{strong:1,sweet:-.6},chatty:{sweet:1},climber:{strong:1}};
+  function hash01(str){let h=2166136261;for(const ch of String(str)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0)/4294967296;}
+  function taste(s,r,cat){
+    const prof=PROFILE[r.id]||{},traits=(cat&&cat.traits)||[],level=(s.recipeLevels&&s.recipeLevels[r.id])||0;let score=1.8;
+    for(const t of traits){const l=LIKES[t]||{};for(const k in prof)score+=prof[k]*(l[k]||0);if(t==='curious'&&level>0)score+=1;}
+    score+=level*.9+(hash01(((cat&&cat.name)||'')+':'+(s.served||0))-.5)*2;
+    const name=(cat&&cat.name)||'A guest';
+    if(score>=3.4)return {mood:'love',text:name+' loved it. Straight to the purr.'};
+    if(score>=1)return {mood:'happy',text:name+' enjoyed it.'};
+    if(score>=.5)return {mood:'meh',text:name+' thought it was fine.'};
+    return {mood:'bitter',text:(r.id==='coffee'||r.id==='midknight')?name+' found it a little bitter. A better recipe, or honey, helps.':name+' wasn’t sure about that one.'};
+  }
   function upgradeShop(g,now){const s=init(g,now),tier=s.shopTier||0,next=shops[tier+1];if(!s.unlocked||!next||g.shells<next.cost)return false;settle(g,now);g.shells-=next.cost;s.shopTier=tier+1;return true;}
   function init(g,now){
     const h=g.homestead;
@@ -97,5 +112,5 @@
   }
   function plantingPlan(g){const free=(g.homestead?.plots||[]).flatMap((p,i)=>p?[]:[i]),rows=pantryPlan(g).rows.filter(r=>r.patches>0).map(r=>({...r})),jobs=[];let cost=0;while(free.length&&rows.some(r=>r.patches>0)){for(const r of rows){if(!free.length)break;if(r.patches>0){jobs.push({slot:free.shift(),key:r.key});cost+=r.cost;r.patches--;}}}return {jobs,cost};}
   function plantSuggested(g,quote,now=Date.now()){const current=plantingPlan(g);if(!current.jobs.length||JSON.stringify(current)!==JSON.stringify(quote)||g.shells<current.cost)return false;for(const job of current.jobs){const crop=ingredients[job.key];g.homestead.plots[job.slot]={key:job.key,ready:now+crop.seconds*1000};}g.shells-=current.cost;return true;}
-  root.CoveCafeEngine={ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
+  root.CoveCafeEngine={taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
 })(globalThis);

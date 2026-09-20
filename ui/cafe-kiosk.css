@@ -138,3 +138,4 @@
 #app #cafe-kiosk.cc-v2 .cc-decor{margin:20px 0;padding:14px 0;border-bottom:1px solid #dedfc9}#app #cafe-kiosk.cc-v2 .cc-decor>p{font-size:13px}
 @media(prefers-reduced-motion:reduce){#app #cafe-kiosk.cc-v2 .cc-goal i::after{transition:none}}
 #app #cafe-kiosk.cc-v2 .cc-head h2.cc-title{font-size:15px;line-height:1.12;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:clip;word-break:break-word}
+#app #cafe-kiosk.cc-v2 button[data-need],#app #cafe-kiosk.cc-v2 button[data-why]{opacity:.55;cursor:not-allowed;filter:none}

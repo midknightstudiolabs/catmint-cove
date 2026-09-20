@@ -1400,7 +1400,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-explore-grid,.neo-cat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
 .neo-destination,.neo-cat-tile{border:1px solid #d7ddc9;border-radius:20px;background:#fffdf4;color:#384c3e;padding:20px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;font:inherit;cursor:pointer}
 .neo-destination>span{font-size:30px}.neo-destination b{font-size:18px}.neo-destination small,.neo-cat-tile span,.neo-cat-tile small{font-size:14px;line-height:1.5;color:#5c6c5f}
-.garden-ripe{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px;padding:12px 14px;border-radius:14px;background:#e6efdc;border:1px solid #b9cfaa;color:#31593d;font-size:14px}.garden-ripe strong{flex:1 1 200px;font-weight:600}.garden-auto{display:flex;gap:8px;align-items:flex-start;margin:8px 0 2px;font-size:13px;color:#4c6350;line-height:1.4}.garden-auto input{min-width:22px;min-height:22px;margin-top:1px}.neo-tend{width:100%;margin:2px 0 12px;flex-direction:column;gap:2px}.neo-tend small{font-weight:400;opacity:.9;font-size:12px}.neo-tend[hidden]{display:none}.garden-ripe .btn{flex:1 1 auto;white-space:normal;text-align:center}#neo-activities-nav{position:relative}.neo-nav-dot{position:absolute;top:4px;right:calc(50% - 22px);width:10px;height:10px;border-radius:50%;background:#d98b3f;border:2px solid #faf6e8}.neo-nav-dot[hidden]{display:none}.neo-destination{position:relative}.neo-tile-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:8px;padding:0 5px;border-radius:9px;background:#d98b3f;color:#fff;font:700 11px/1 system-ui,sans-serif;font-style:normal;vertical-align:2px}.neo-tile-badge[hidden]{display:none}
+.garden-ripe{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px;padding:12px 14px;border-radius:14px;background:#e6efdc;border:1px solid #b9cfaa;color:#31593d;font-size:14px}.garden-ripe strong{flex:1 1 200px;font-weight:600}.garden-needs{margin:10px 0;padding:12px 14px;border-radius:14px;background:#f1efd6;border:1px solid #ddd8b0}.garden-needs h3{margin:0 0 8px;font-size:16px}.garden-needs p{margin:0 0 8px;font-size:13px}.garden-need{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-top:1px solid #e0dcb8}.garden-need:first-of-type{border-top:0}.garden-need>div{flex:1 1 180px}.garden-need strong{display:block}.garden-need small{display:block;color:#66705a;font-size:12px;line-height:1.4}.garden-need .btn{flex:0 0 auto}.garden-ok{color:#3d6846}.garden-auto{display:flex;gap:8px;align-items:flex-start;margin:8px 0 2px;font-size:13px;color:#4c6350;line-height:1.4}.garden-auto input{min-width:22px;min-height:22px;margin-top:1px}.neo-tend{width:100%;margin:2px 0 12px;flex-direction:column;gap:2px}.neo-tend small{font-weight:400;opacity:.9;font-size:12px}.neo-tend[hidden]{display:none}.garden-ripe .btn{flex:1 1 auto;white-space:normal;text-align:center}#neo-activities-nav{position:relative}.neo-nav-dot{position:absolute;top:4px;right:calc(50% - 22px);width:10px;height:10px;border-radius:50%;background:#d98b3f;border:2px solid #faf6e8}.neo-nav-dot[hidden]{display:none}.neo-destination{position:relative}.neo-tile-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:8px;padding:0 5px;border-radius:9px;background:#d98b3f;color:#fff;font:700 11px/1 system-ui,sans-serif;font-style:normal;vertical-align:2px}.neo-tile-badge[hidden]{display:none}
 .neo-destination:hover,.neo-cat-tile:hover{background:#edf2e1;border-color:#8fac8a}
 .neo-cat-tile{align-items:center;text-align:center;padding:8px 12px 16px}.neo-cat-tile canvas{width:110px;height:100px}
 .neo-roster-actions,.neo-journal-tools,.neo-journal-pins{display:flex;gap:10px;flex-wrap:wrap}
@@ -2074,7 +2074,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=17"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=31"><script src="ui/cafe-engine.js?v=16"></script><script src="ui/cafe-scene.js?v=19"></script><script src="ui/cafe-kiosk.js?v=29"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=32"><script src="ui/cafe-engine.js?v=17"></script><script src="ui/cafe-scene.js?v=20"></script><script src="ui/cafe-kiosk.js?v=33"></script>
 <script>
 (() => {
 "use strict";
@@ -2772,7 +2772,7 @@ function rebuildAttractors() {
   // Midknight's cairn — a small solid by the sign
   { const cp = cairnPos(W, H); if (G.cairn && !G.cairn.tidied && (G.cairn.size | 0) > 0) obstacles.push({ x: cp.sx, y: cp.gy, rx: 16, ry: 9 }); }
   // physical movable props (stepping stones stay walkable; hanging props aren't in the way)
-  const PROP_SOLID = { lantern: [8, 11], birdbath: [15, 13], rowboat: [34, 14], windmill: [10, 13], moonshrine: [16, 13] };
+  const PROP_SOLID = { lantern: [8, 11], birdbath: [15, 13], rowboat: [34, 14], windmill: [10, 13], moonshrine: [16, 13], moonbench: [30, 10] };
   if (G.cosmetics && G.cosmetics.props) for (const id of Object.keys(G.cosmetics.props)) {
     if(!PROP_SOLID[id.split("#")[0]])continue;
     if (!G.cosmetics.props[id] || propBoxed(id)) continue;
@@ -4735,13 +4735,14 @@ function collectToken(t, auto) {
     if (!auto) sfx("collect");
     return;
   }
-  G.shells += t.value;
+  const gain = blessingShells(t.value);
+  G.shells += gain;
   G.metrics.tokens += 1;
-  bumpGoal("shells", t.value);
+  bumpGoal("shells", gain);
   bumpGoal("collect", 1);
   syncHud();
   spawnParticles(t.x, t.y, "spark", auto ? 4 : 6);
-  floatText(t.x, t.y - 10, "+" + t.value, "#e8b45a");
+  floatText(t.x, t.y - 10, "+" + gain, gain > t.value ? "#f0c060" : "#e8b45a");
   if (!auto) { flyShell(t.x, t.y); fireTip("first_collect"); }   // the shell arcs to the counter and chimes on arrival
 }
 
@@ -5063,6 +5064,7 @@ function placeFootprint(spec){
   const id=(spec.key||spec.id||" ").split("#")[0];
   if(id==="rowboat"||id==="bunting"||id==="lanterns")return [3,1];
   if(id==="stones"||id==="birdbath"||id==="windmill"||id==="moonshrine")return [2,1];
+  if(id==="moonbench")return [3,1];
   const type=spec.dtype||spec.type;
   if(type==='station'||type==='cottage')return [3,2];
   if(type==='tree'||type==='cattree')return [2,2];
@@ -5258,7 +5260,7 @@ function dropComfortPos(type, newCount) {
 // still grabs the cottage; the arrange-mode tap uses the full generous radius.
 function propGrabHit(id,x,y,pos){
  const base=id.split('#')[0],scale=pos.s||1;
- const shape={bunting:[70,108],lantern:[24,54],birdbath:[27,32],windmill:[38,106],stones:[42,14],moonshrine:[24,46]}[base]||[28,30];
+ const shape={bunting:[70,108],lantern:[24,54],birdbath:[27,32],windmill:[38,106],stones:[42,14],moonshrine:[24,46],moonbench:[40,50]}[base]||[28,30];
  return Math.abs(x-pos.x)<=shape[0]*scale && y>=pos.y-shape[1]*scale-8 && y<=pos.y+18;
 }
 function movableAt(x, y, tight) {
@@ -8264,6 +8266,9 @@ function iapOwns(id) { return !!(G && G.iap && G.iap.owned && G.iap.owned[id]); 
 // Midknight's Blessing is active while any Blessing subscription's expiry is in the future.
 function blessingUntil() { let t = 0; const subs = G && G.iap && G.iap.subs; if (subs) for (const id in subs) if (subs[id] && subs[id].expiresAt > t) t = subs[id].expiresAt; return t; }
 function blessingActive() { return blessingUntil() > Date.now(); }
+// Midknight's Blessing gives +10% on every shell token collected (a modest thank-you, never more). Change this one number to tune or remove it.
+const BLESSING_SHELL_BONUS = 0.10;
+function blessingShells(n) { return blessingActive() ? Math.max(n + 1, Math.round(n * (1 + BLESSING_SHELL_BONUS))) : n; }
 // run `fn` only the first time ever for `key`; ledgered in iapStore so a restore
 // can't repeat it. NATIVE: key off the store transaction id
 // (`grantOnce("<product>.<reward>." + txId, …)`), and mirror the ledger into
@@ -8513,7 +8518,11 @@ function showBlessingOffer() {
     <ul class="packperks">
       <li><b>Harvest all</b> — gather every ripe patch in the Cove Garden, or from Catmint Café, with one tap</li>
       <li><b>Feed all</b> — treat every hungry cat at once (you can always feed them one by one, too)</li>
-      <li>They only save you taps. Nothing changes what crops give, what food costs or what cats earn — everything stays fully playable without it.</li>
+      <li><b>Auto-gather</b> and <b>auto-replant</b> — shells collect themselves, harvested crops are sown again</li>
+      <li><b>Tend everything</b> — gather, harvest and feed the whole cove in one tap</li>
+      <li><b>+10% Shells</b> on every shell you collect while it's active</li>
+      <li><b>Moonlit decor</b> — a new piece each month, like the Moonstone Shrine. It sleeps if the Blessing ends and wakes when you renew.</li>
+      <li>Everything is still fully playable without it; the Blessing just makes tending easier.</li>
     </ul>
     <div class="row">
       <button class="btn primary" id="mb-month">Monthly · ${mo.price} · best value</button>
@@ -14523,6 +14532,8 @@ const DECOR_PROPS = [
     movable:true, place:{ x:W*0.075, y:H*0.90, s:1.1 }, render(g,t,x,y,s){ propRowboat(g, x, y, s); } },
   { id:"windmill", name:"Pole windmill",   price: 8000, blurb:"A warm timber windmill with terracotta and parchment sails turning gently in the sea breeze.",
     movable:true, place:{ x:W*0.91, y:H*0.60, s:1.25 }, render(g,t,x,y,s){ propWindmill(g, x, y, s, t); } },
+  { id:"moonbench", name:"Midknight’s Moonlit Bench", price: 0, blessing: true, month: "2026-09", blurb:"September’s Blessing decor: a weathered bench with a crescent back and a hanging moon lantern. Included with Midknight’s Blessing; asleep when it ends.",
+    movable:true, place:{ x:W*0.66, y:H*0.93, s:1.5 }, render(g,t,x,y,s){ propMoonBench(g, x, y, s, t); } },
   { id:"moonshrine", name:"Midknight’s Moonstone Shrine", price: 0, blessing: true, blurb:"A mossy standing stone with a crescent moon. Included with Midknight’s Blessing: it glows while the Blessing is active and sleeps when it isn’t.",
     movable:true, place:{ x:W*0.34, y:H*0.88, s:1.6 }, render(g,t,x,y,s){ propMoonShrine(g, x, y, s, t); } },
 ];
@@ -14547,6 +14558,7 @@ function claimBlessingDecor() {
   let any = false;
   for (const p of DECOR_PROPS) {
     if (!p.blessing || G.cosmetics.props[p.id]) continue;
+    if (p.month && p.month > new Date().toISOString().slice(0, 7)) continue;   // this month's piece arrives with the month
     G.cosmetics.props[p.id] = true; if (G.cosmetics.propBoxed) delete G.cosmetics.propBoxed[p.id];
     any = true; toast(p.name + " has settled into the cove. It sleeps whenever the Blessing ends.", 5);
   }
@@ -15431,6 +15443,26 @@ function propMoonShrine(g, x, y, s, t) {
     const ang = t * 0.5 + i * 1.6, px = Math.cos(ang) * (21 + i * 3), py = -26 + Math.sin(ang * 1.3) * 13, tw = 0.45 + 0.55 * Math.sin(t * 3 + i * 2);
     g.fillStyle = "rgba(255,232,150," + (0.25 + 0.6 * tw * (0.5 + night * 0.5)) + ")"; g.beginPath(); g.arc(px, py, 1.5, 0, 7); g.fill();
   }
+  g.restore();
+}
+// Midknight's Moonlit Bench — September's Blessing decor. Awake: lit crescent lantern + warm glow; asleep: dim and still.
+function propMoonBench(g, x, y, s, t) {
+  s = s || 1;
+  const awake = blessingActive(), night = clamp(((g._nightGlow || 0) - 0.2) / 0.5, 0, 1);
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.fillStyle = "rgba(36,31,23,0.14)"; g.beginPath(); g.ellipse(0, 4, 34, 6, 0, 0, 7); g.fill();
+  if (awake) { const a = 0.14 + night * 0.32 + Math.sin(t * 1.5) * 0.02, gl = g.createRadialGradient(26, -34, 2, 26, -34, 44); gl.addColorStop(0, "rgba(255,214,140," + a + ")"); gl.addColorStop(1, "rgba(255,214,140,0)"); g.fillStyle = gl; g.beginPath(); g.arc(26, -34, 44, 0, 7); g.fill(); }
+  const wood = awake ? "#a98358" : "#9b8f80", wood2 = awake ? "#c29c6e" : "#b0a597", dark = awake ? "#7b5d3f" : "#7d746a";
+  g.fillStyle = dark; g.fillRect(-28, -14, 5, 18); g.fillRect(23, -14, 5, 18);                       // legs
+  g.fillStyle = wood; roundRect(g, -34, -22, 68, 8, 3); g.fill(); g.fillStyle = wood2; roundRect(g, -34, -22, 68, 3, 2); g.fill();  // seat
+  g.fillStyle = dark; g.fillRect(-30, -44, 4, 24); g.fillRect(24, -44, 4, 24);                       // back posts
+  g.fillStyle = wood; roundRect(g, -32, -42, 64, 6, 3); g.fill(); roundRect(g, -32, -33, 64, 6, 3); g.fill();                    // back slats
+  g.save(); g.beginPath(); g.arc(0, -36, 7, 0, 7); g.clip(); g.fillStyle = awake ? "rgba(255,226,150," + (0.65 + night * 0.3) + ")" : "#77736a"; g.fillRect(-8, -44, 16, 16); g.fillStyle = wood; g.beginPath(); g.arc(3, -38, 6.2, 0, 7); g.fill(); g.restore();   // crescent cut-out
+  // hanging lantern on a little post
+  g.fillStyle = dark; g.fillRect(24, -70, 3, 26); g.fillRect(24, -70, 12, 3);
+  g.strokeStyle = dark; g.lineWidth = 1; g.beginPath(); g.moveTo(34, -67); g.lineTo(34, -60); g.stroke();
+  g.fillStyle = awake ? "#ffe6a8" : "#cbbfa4"; roundRect(g, 29, -60, 10, 13, 3); g.fill(); g.strokeStyle = dark; g.lineWidth = 1; g.strokeRect(29, -60, 10, 13);
+  if (awake) for (let i = 0; i < 3; i++) { const ang = t * 0.6 + i * 2.1, px = 26 + Math.cos(ang) * (16 + i * 3), py = -36 + Math.sin(ang * 1.2) * 14, tw = 0.45 + 0.55 * Math.sin(t * 3 + i * 2); g.fillStyle = "rgba(255,232,150," + (0.25 + 0.6 * tw * (0.5 + night * 0.5)) + ")"; g.beginPath(); g.arc(px, py, 1.4, 0, 7); g.fill(); }
   g.restore();
 }
 function propLanterns(g, t, x, y) {
@@ -19885,6 +19917,13 @@ function neoCafeSettle(now=Date.now()){
   if(n){let left=n;for(const t of h.trays){const sold=Math.min(left,t.servings);t.servings-=sold;left-=sold;if(!t.servings)t.key=null;}h.counter-=n;h.earned+=n*2;h.served+=n;h.cafeXP+=n;h.lastSale+=n*60000;}
   if(!h.counter)h.lastSale=now;
 }
+function neoPlantMany(key,n){
+  if(G.cafe?.unlocked)CoveCafeEngine.settle(G,Date.now());
+  const h=neoHomestead(),c=COVE_CROPS[key];if(!c)return 0;
+  let done=0;for(let i=0;i<h.plots.length&&done<n;i++){if(h.plots[i]||G.shells<c.cost)continue;G.shells-=c.cost;h.plots[i]={key,ready:Date.now()+c.seconds*1000};done++;}
+  if(done){save();syncHud();sfx('buy');}
+  return done;
+}
 function neoPlant(i,key){
   if(G.cafe?.unlocked)CoveCafeEngine.settle(G,Date.now());
   const h=neoHomestead(),c=COVE_CROPS[key];
@@ -19899,7 +19938,7 @@ function neoReadySummary(){const h=neoHomestead(),got={};for(const i of neoReady
 function neoTendEverything(){
   if(!blessingActive()){showBlessingOffer();return;}
   ensureAudio();
-  let shells=0;for(const t of fieldTokens.slice()){if(t.pop===0&&t.flair!=='driftwood'){shells+=t.value;}if(t.pop===0)collectToken(t,true);}
+  let shells=0;for(const t of fieldTokens.slice()){if(t.pop===0&&t.flair!=='driftwood'){shells+=blessingShells(t.value);}if(t.pop===0)collectToken(t,true);}
   let harvested=0,replanted=0;
   if(G.homestead&&neoReadyPlots().length){harvested=neoHarvestAll(true)||0;replanted=(neoHarvestAll.last&&neoHarvestAll.last.replanted)||0;}
   const fed=feedAllHungry(true)||0,wanted=(feedAllHungry.last&&feedAllHungry.last.wanted)||0;
@@ -19976,6 +20015,7 @@ function neoOpenHomestead(kind){
   const h=neoHomestead(),garden=kind==='garden';
   let sheet=document.getElementById('neo-homestead');
   if(!sheet){sheet=document.createElement('div');sheet.id='neo-homestead';sheet.className='sheet';document.getElementById('app').append(sheet);panels.homestead=sheet;}
+  const keepBox=sheet.querySelector('.cove-sheet-body')||sheet,keepTop=(!sheet.hidden&&sheet.dataset.kind===kind)?keepBox.scrollTop:0;
   sheet.hidden=false;sheet.classList.toggle('cafe-full-room',!garden);
   const time=t=>Math.max(0,Math.ceil((t-Date.now())/1000));
   sheet.innerHTML=`<button class="x" aria-label="Back to the Cove">×</button><div class="kicker">YOUR LITTLE CORNER OF THE COVE</div><h2>${garden?'Cove Garden':'Catmint Café'}</h2><p>${garden?'A little harvest for today, and something to save for tomorrow. Crops never wither.':'Choose what to cook and stock the counter. Guests arrive, take a seat, enjoy a treat and pay 2 shells. A visit takes one minute; stocked food also sells while you are away. Close the café to pause service while you cook or redecorate.'}</p><div class="homestead-stock">${Object.entries(COVE_CROPS).map(([k,c])=>`<span>${c.name}: <b>${h.stock[k]||0}</b></span>`).join('')}</div>`;
@@ -19994,6 +20034,21 @@ function neoOpenHomestead(kind){
       (sheet.querySelector('.garden-ripe')||sheet.querySelector('h2')).after(row);
     }
     const supplyPlan=CoveCafeEngine.pantryPlan(G);
+    const needsList=supplyPlan.rows.filter(r=>r.plant>0);
+    {const sec=document.createElement('section');sec.className='garden-needs';sec.setAttribute('aria-label','What your menu needs');
+     const head=document.createElement('h3');head.textContent='What your menu needs';sec.append(head);
+     const free=h.plots.filter(p=>!p).length;
+     if(!supplyPlan.selected.length){const p=document.createElement('p');p.textContent='Put a drink on your Catmint Café menu and this list will tell you exactly what to plant.';const go=document.createElement('button');go.className='btn';go.type='button';go.textContent='Open Catmint Café';go.onclick=()=>neoOpenHomestead('cafe');sec.append(p,go);}
+     else if(!needsList.length){const p=document.createElement('p');p.className='garden-ok';p.textContent='Your menu is fully supplied. Nothing to plant right now.';sec.append(p);}
+     else for(const row of needsList){const crop=COVE_CROPS[row.key],n=Math.min(row.patches,free),cost=(crop?crop.cost:row.cost)*n;
+      const card=document.createElement('article');card.className='garden-need';
+      const info=document.createElement('div');const t=document.createElement('strong');t.textContent=row.name;const d=document.createElement('small');d.textContent='Have '+row.have+' · need '+row.target+(row.growing?' · '+row.growing+' growing':'')+' · for '+row.usedBy.join(', ');info.append(t,d);
+      const b=document.createElement('button');b.type='button';b.className='btn primary';
+      if(!free){b.className='btn';b.textContent='No free patch · harvest or add one';b.setAttribute('data-why','All your patches are busy. Harvest a ripe one, or add another patch below.');}
+      else{b.textContent='Plant '+n+' patch'+(n===1?'':'es')+' · '+cost+' Shells';if(G.shells<cost)b.setAttribute('data-why','You need '+Math.ceil(cost-G.shells)+' more Shells for seeds.');}
+      b.onclick=()=>{if(b.dataset.why){toast(b.dataset.why,3.5);return;}const done=neoPlantMany(row.key,n);if(done){toast('Planted '+done+' patch'+(done===1?'':'es')+' of '+row.name.toLowerCase()+'. Ripe in about '+Math.ceil(crop.seconds/60)+' min.',4);neoOpenHomestead('garden');}};
+      card.append(info,b);sec.append(card);}
+     (sheet.querySelector('.garden-auto')||sheet.querySelector('.garden-ripe')||sheet.querySelector('h2')).after(sec);}
     const planting=CoveCafeEngine.plantingPlan(G),quick=document.createElement('section');quick.className='garden-quick';
     const planTitle=document.createElement('h3');planTitle.textContent='Plant for your café';
     const preview=document.createElement('p'),counts={};for(const job of planting.jobs)counts[job.key]=(counts[job.key]||0)+1;
@@ -20008,6 +20063,7 @@ function neoOpenHomestead(kind){
     h.plots.forEach((p,i)=>{const card=document.createElement('article');card.className='homestead-patch';card.innerHTML=`<h3>Patch ${i+1}</h3>${neoCropArt(p?.key||'carrot',!!p&&!time(p.ready))}`;
       if(p){card.innerHTML+=`<p>${COVE_CROPS[p.key].name}</p><button class="btn" data-ready="${p.ready}" ${time(p.ready)?'disabled':''}>${time(p.ready)?'Growing · '+time(p.ready)+'s':'Harvest'}</button>`;card.querySelector('button').onclick=()=>neoHarvest(i);}
       else for(const [k,c]of Object.entries(COVE_CROPS).sort(([a],[b])=>(supplyPlan.rows.find(r=>r.key===b)?.plant||0)-(supplyPlan.rows.find(r=>r.key===a)?.plant||0))){const b=document.createElement('button');b.className='btn';b.classList.add('crop-choice');b.innerHTML='<strong>Plant '+esc(c.name)+'</strong><span>'+c.cost+' shells &middot; '+(c.seconds<60?c.seconds+'s':c.seconds/60+'m')+'</span><small>Harvest '+c.yield+' &middot; Sell for '+c.yield+' shells</small>';const need=supplyPlan.rows.find(r=>r.key===k);if(need?.plant){const badge=document.createElement('small');badge.textContent='Recommended for your café · '+need.patches+' patches needed';b.prepend(badge);}b.disabled=G.shells<c.cost;b.onclick=()=>neoPlant(i,k);card.append(b);}
+      if(!p&&needsList[0]){const top=needsList[0],rb=document.createElement('button');rb.type='button';rb.className='btn primary';rb.textContent='Plant '+top.name.toLowerCase()+' · '+COVE_CROPS[top.key].cost+' Shells';rb.title='Recommended for your menu';rb.onclick=()=>neoPlant(i,top.key);if(G.shells<COVE_CROPS[top.key].cost){rb.className='btn';rb.setAttribute('aria-disabled','true');}card.append(rb);}
       if(!p){const choices=document.createElement('details');choices.className='garden-crop-picker';const label=document.createElement('summary');label.textContent='Choose a crop';choices.append(label);for(const button of [...card.querySelectorAll('.crop-choice')])choices.append(button);card.append(choices);}grid.append(card);});sheet.append(grid);const market=document.createElement('div');market.className='homestead-stock';for(const [key,crop] of Object.entries(COVE_CROPS)){const sell=document.createElement('button');sell.className='btn';sell.textContent='Sell 1 '+crop.name.toLowerCase()+' · 1 shell';sell.disabled=!(h.stock[key]>0);sell.onclick=()=>neoSellHarvest(key);market.append(sell);}market.setAttribute('aria-label','Sell from your pantry');const sellDetails=document.createElement('details');sellDetails.className='garden-market';const sellTitle=document.createElement('summary');sellTitle.textContent='Sell spare harvests';sellDetails.append(sellTitle,market);sheet.append(sellDetails);
   }else{
     const door=document.createElement('button');door.className='btn';door.textContent=h.open?'Open for guests · Close café':'Café closed · Open café';door.onclick=()=>{neoCafeSettle();h.open=!h.open;h.lastSale=Date.now();save();neoOpenHomestead('cafe');};sheet.append(door);
@@ -20032,6 +20088,7 @@ function neoOpenHomestead(kind){
   const other=document.createElement('button');other.className='btn';other.textContent=garden?'Visit Catmint Café':'Visit Cove Garden';other.onclick=()=>neoOpenHomestead(garden?'cafe':'garden');sheet.append(other);
   if(garden){const actions=document.createElement('div');actions.className='garden-actions';for(const button of [...sheet.children].filter(el=>el.tagName==='BUTTON'&&!el.classList.contains('x')))actions.append(button);sheet.append(actions);}
   sheet.querySelector('.x').onclick=()=>{sheet.hidden=true;clearInterval(neoHomesteadTimer);cancelAnimationFrame(neoCafeFrame);};neoSheetFooter(sheet);
+  {const box2=sheet.querySelector('.cove-sheet-body')||sheet;box2.scrollTop=keepTop;sheet.dataset.kind=kind;}
   neoHomesteadTimer=setInterval(()=>{if(sheet.hidden){clearInterval(neoHomesteadTimer);return;}if(document.hidden)return;const before=h.served;neoCafeSettle();if(before!==h.served){save();const trays=sheet.querySelector('#neo-cafe-trays');if(trays)trays.innerHTML=h.trays.map((t,i)=>`<span>Counter ${i+1}: <b>${t.servings?COVE_RECIPES[t.key].name+' · '+t.servings:'Empty'}</b></span>`).join('');const count=sheet.querySelector('.homestead-cafe-room > p');if(count)count.textContent=h.counter+' treats on the counter · '+h.served+' served';const collect=sheet.querySelector('[data-cafe-collect]');if(collect){collect.textContent='Collect '+h.earned+' shells';collect.disabled=!h.earned;}}for(const b of sheet.querySelectorAll('[data-ready]')){const seconds=time(+b.dataset.ready);b.disabled=seconds>0;b.textContent=seconds?`${garden?'Growing':'Cooking'} · ${seconds}s`:garden?'Harvest':'Stock the counter';}},1000);
 }
 
