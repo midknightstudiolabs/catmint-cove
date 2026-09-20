@@ -60,7 +60,9 @@ jobs:
           NAME="${GITHUB_REF_NAME#ios-v}"
           if [ "$NAME" = "$GITHUB_REF_NAME" ]; then NAME=$(node -p "require('./package.json').version"); fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
-          echo "build=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
+          # Neo is a fresh repo (run numbers restart at 1); the last TestFlight build from the old
+          # repo was 45. Offset keeps CFBundleVersion strictly increasing (Neo run 1 -> 101).
+          echo "build=$((GITHUB_RUN_NUMBER + 100))" >> "$GITHUB_OUTPUT"
 
       - name: Have we got the App Store Connect key?
         id: keys
