@@ -88,6 +88,24 @@ jobs:
           npx @capacitor/assets generate --ios
           npx cap sync ios
 
+      - name: No native splash overlay on iOS — go straight to the loading screen
+        run: |
+          # ROOT CAUSE of the "game icon before the loading screen" flash: with
+          # UILaunchStoryboardName removed (see the Info.plist step), the
+          # @capacitor/splash-screen plugin falls back to a storyboard called
+          # "LaunchScreen" and overlays it for launchShowDuration (900ms) and
+          # until the page's load event + 300ms. That storyboard's Splash image is
+          # assets/splash.png — the moon-and-cat mark — so players see the icon
+          # sitting on top of the game's own loading screen. Per the plugin
+          # source (SplashScreen.showOnLaunch), launchShowDuration == 0 skips the
+          # overlay entirely, so the cream launch frame hands off directly to the
+          # web loading screen (already in index.html's markup, first paint).
+          # Done on the iOS copy of the config only — Android keeps its own splash.
+          C=ios/App/App/capacitor.config.json
+          [ -f "$C" ] || { echo "::error::$C missing — cap sync did not run"; exit 1; }
+          node -e 'const f=process.argv[1],fs=require("fs"),c=JSON.parse(fs.readFileSync(f,"utf8"));c.plugins=c.plugins||{};c.plugins.SplashScreen=Object.assign({},c.plugins.SplashScreen,{launchShowDuration:0,launchAutoHide:true});fs.writeFileSync(f,JSON.stringify(c,null,2));' "$C"
+          node -e 'const c=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));if(c.plugins.SplashScreen.launchShowDuration!==0){console.error("::error::iOS splash overlay still enabled");process.exit(1)}console.log("iOS SplashScreen:",JSON.stringify(c.plugins.SplashScreen))' "$C"
+
       - name: App icon sanity check — must be regenerated from assets/icon.png
         run: |
           ICON=ios/App/App/Assets.xcassets/AppIcon.appiconset
