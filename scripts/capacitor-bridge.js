@@ -111,6 +111,8 @@
   var REVENUECAT_ANDROID_KEY = "goog_ZJtWmfOuiBnhjfOuCuBsVLHVqsP";
   var REVENUECAT_IOS_KEY = "appl_NOnpzwbRdsrmoSDdowFOZQntdxp";
   var COVE_PRODUCTS = ["welcome_pack", "founding_covekeeper", "sparkle_pack"];
+  // Midknight's Blessing — auto-renewing subscriptions (create these in App Store Connect + Play Console and attach them in RevenueCat)
+  var COVE_SUBS = ["midknight_blessing_weekly", "midknight_blessing_monthly"];
 
   (function initIAP() {
     var RC = P.Purchases;
@@ -129,9 +131,20 @@
       for (var i = 0; i < ids.length; i++) if (COVE_PRODUCTS.indexOf(ids[i]) !== -1) out.push(ids[i]);
       return out;
     }
+    // { productId: expiry-in-ms } for each active Blessing subscription. Google reports "sub:basePlan", so match on the part before the colon.
+    function subsFrom(info) {
+      var out = {}, active = (info && info.activeSubscriptions) || [], dates = (info && info.allExpirationDates) || {};
+      for (var i = 0; i < active.length; i++) {
+        var id = String(active[i]).split(":")[0];
+        if (COVE_SUBS.indexOf(id) === -1) continue;
+        var t = Date.parse(dates[active[i]] || dates[id] || "");
+        if (t > 0) out[id] = Math.max(out[id] || 0, t);
+      }
+      return out;
+    }
     function push(info) {
       try {
-        if (info && typeof window.__coveReconcile === "function") window.__coveReconcile(ownedFrom(info));
+        if (info && typeof window.__coveReconcile === "function") window.__coveReconcile(ownedFrom(info), subsFrom(info));
       } catch (e) {}
       try {
         if (products && typeof window.__covePrices === "function") {
@@ -145,8 +158,15 @@
     // catalogue — needed to purchase, and gives us localized price strings
     RC.getProducts({ productIdentifiers: COVE_PRODUCTS, type: "NON_SUBSCRIPTION" })
       .then(function (res) {
-        products = {};
+        products = products || {};
         (res && res.products || []).forEach(function (p) { products[p.identifier] = p; });
+        push(null);
+      })
+      .catch(function () {});
+    RC.getProducts({ productIdentifiers: COVE_SUBS, type: "SUBSCRIPTION" })
+      .then(function (res) {
+        products = products || {};
+        (res && res.products || []).forEach(function (p) { products[String(p.identifier).split(":")[0]] = p; });
         push(null);
       })
       .catch(function () {});
@@ -181,7 +201,7 @@
         var prod = products && products[productId];
         if (prod) return purchase(prod, productId);
         // catalogue not ready / missing that id — fetch just this one, then buy
-        return RC.getProducts({ productIdentifiers: [productId], type: "NON_SUBSCRIPTION" })
+        return RC.getProducts({ productIdentifiers: [productId], type: COVE_SUBS.indexOf(productId) !== -1 ? "SUBSCRIPTION" : "NON_SUBSCRIPTION" })
           .then(function (res) {
             var p = (res && res.products || [])[0];
             if (!p) return { ok: false, reason: "unavailable" };
@@ -194,7 +214,7 @@
         return RC.restorePurchases().then(function (r) {
           var info = r && r.customerInfo;
           push(info);
-          return ownedFrom(info);
+          return ownedFrom(info).concat(Object.keys(subsFrom(info)));
         });
       },
       sync: sync,

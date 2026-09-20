@@ -1396,7 +1396,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-explore-grid,.neo-cat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
 .neo-destination,.neo-cat-tile{border:1px solid #d7ddc9;border-radius:20px;background:#fffdf4;color:#384c3e;padding:20px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;font:inherit;cursor:pointer}
 .neo-destination>span{font-size:30px}.neo-destination b{font-size:18px}.neo-destination small,.neo-cat-tile span,.neo-cat-tile small{font-size:14px;line-height:1.5;color:#5c6c5f}
-.neo-destination{position:relative}.neo-tile-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:8px;padding:0 5px;border-radius:9px;background:#d98b3f;color:#fff;font:700 11px/1 system-ui,sans-serif;font-style:normal;vertical-align:2px}.neo-tile-badge[hidden]{display:none}
+.garden-ripe{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px;padding:12px 14px;border-radius:14px;background:#e6efdc;border:1px solid #b9cfaa;color:#31593d;font-size:14px}.garden-ripe strong{flex:1 1 200px;font-weight:600}.garden-ripe .btn{flex:1 1 auto;white-space:normal;text-align:center}#neo-activities-nav{position:relative}.neo-nav-dot{position:absolute;top:4px;right:calc(50% - 22px);width:10px;height:10px;border-radius:50%;background:#d98b3f;border:2px solid #faf6e8}.neo-nav-dot[hidden]{display:none}.neo-destination{position:relative}.neo-tile-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:8px;padding:0 5px;border-radius:9px;background:#d98b3f;color:#fff;font:700 11px/1 system-ui,sans-serif;font-style:normal;vertical-align:2px}.neo-tile-badge[hidden]{display:none}
 .neo-destination:hover,.neo-cat-tile:hover{background:#edf2e1;border-color:#8fac8a}
 .neo-cat-tile{align-items:center;text-align:center;padding:8px 12px 16px}.neo-cat-tile canvas{width:110px;height:100px}
 .neo-roster-actions,.neo-journal-tools,.neo-journal-pins{display:flex;gap:10px;flex-wrap:wrap}
@@ -1998,6 +1998,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     </div>
     <div class="cc-cause" id="cc-cause" hidden></div>
     <button class="cc-treat" id="cc-treat" hidden></button>
+    <button class="cc-treat" id="cc-feed" hidden></button>
+    <button class="cc-treat" id="cc-feedall" hidden></button>
     <div class="bondwrap" id="cc-bondwrap">
       <div class="moodbar bond"><i id="cc-bond" style="width:0%"></i></div>
       <div class="moodlabel"><span id="cc-bondname">New here</span><span id="cc-bondpct">0%</span></div>
@@ -2067,7 +2069,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=17"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=27"><script src="ui/cafe-engine.js?v=15"></script><script src="ui/cafe-scene.js?v=16"></script><script src="ui/cafe-kiosk.js?v=27"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=28"><script src="ui/cafe-engine.js?v=15"></script><script src="ui/cafe-scene.js?v=16"></script><script src="ui/cafe-kiosk.js?v=28"></script>
 <script>
 (() => {
 "use strict";
@@ -2350,19 +2352,22 @@ const IAP_PRODUCTS = {
   welcome_pack:        { price: "$0.99", label: "Welcome Pack",        type: "non-consumable" },   // small first-purchase: an amber ribbon + a welcome paw by the sign
   founding_covekeeper: { price: "$4.99", label: "Founding Covekeeper", type: "non-consumable" },   // cosmetic + support; NO gameplay advantage
   sparkle_pack:        { price: "$2.99", label: "Sparkle Pack",        type: "non-consumable" },   // unlocks the effect cosmetics for the whole cove
+  // Midknight's Blessing — an auto-renewing subscription. A CONVENIENCE only (Harvest All, Feed All): it never changes what anything yields or costs.
+  midknight_blessing_weekly:  { price: "$1.99", label: "Midknight’s Blessing · Weekly",  type: "subscription", days: 7 },
+  midknight_blessing_monthly: { price: "$4.99", label: "Midknight’s Blessing · Monthly", type: "subscription", days: 30 },
 };
-function newIapState() { return { owned: {}, grants: {} }; }
+function newIapState() { return { owned: {}, grants: {}, subs: {} }; }
 const IAP_STORE_KEY = "catmintCove.neo.iap.v1";
 const iapStore = {
   load() {
     try {
       const raw = localStorage.getItem(IAP_STORE_KEY);
-      if (raw) { const s = JSON.parse(raw); if (s && typeof s === "object") return { owned: s.owned || {}, grants: s.grants || {} }; }
+      if (raw) { const s = JSON.parse(raw); if (s && typeof s === "object") return { owned: s.owned || {}, grants: s.grants || {}, subs: s.subs || {} }; }
     } catch (e) {}
     return newIapState();
   },
   save(state) {
-    try { localStorage.setItem(IAP_STORE_KEY, JSON.stringify({ owned: (state && state.owned) || {}, grants: (state && state.grants) || {} })); } catch (e) {}
+    try { localStorage.setItem(IAP_STORE_KEY, JSON.stringify({ owned: (state && state.owned) || {}, grants: (state && state.grants) || {}, subs: (state && state.subs) || {} })); } catch (e) {}
   },
 };
 function saveIap() { if (typeof G !== "undefined" && G && G.iap) iapStore.save(G.iap); }
@@ -2384,8 +2389,17 @@ function loadEntitlements() {
 // reports as owned (from getPurchases / customerInfo). `authoritative` is true
 // only when that query definitely succeeded. We NEVER remove — union only —
 // so a bad network never costs a paying player their perk.
-function reconcileEntitlements(ownedIds, authoritative) {
+function reconcileEntitlements(ownedIds, authoritative, subs) {
   if (!G.iap) G.iap = newIapState();
+  if (!G.iap.subs) G.iap.subs = {};
+  let subChanged = false;
+  // a subscription lasts until the expiry the store reports; only ever extended here, and it simply lapses on its own date
+  if (subs && typeof subs === "object") for (const id in subs) {
+    const t = +subs[id];
+    if (IAP_PRODUCTS[id] && IAP_PRODUCTS[id].type === "subscription" && t > 0 && !(G.iap.subs[id] && G.iap.subs[id].expiresAt >= t)) { G.iap.subs[id] = { expiresAt: t, source: "store" }; subChanged = true; }
+  }
+  if (subChanged) { saveIap(); save(); syncHud(); }
+  ownedIds = (ownedIds || []).filter(id => !(IAP_PRODUCTS[id] && IAP_PRODUCTS[id].type === "subscription"));
   let changed = false;
   for (const id of (ownedIds || [])) if (!G.iap.owned[id]) { G.iap.owned[id] = true; changed = true; }
   applyEntitlements();
@@ -3381,6 +3395,7 @@ function openFoodRefill() {
     <p class="sub">${Math.round(G.food || 0)} servings in the larder — <b>${foodLeftText()}</b>
       for ${foodEaters()} cat${foodEaters() === 1 ? "" : "s"} (about ${foodPerDay()} a day).${stocked ? "<br>The larder's about as full as it gets." : ""}</p>
     <div class="food-tiers">${tiers.map(row).join("")}</div>
+    ${hungryCats().length ? `<div class="row"><button class="btn" id="food-feedall">${blessingActive() ? `Feed all ${hungryCats().length} hungry cat${hungryCats().length === 1 ? "" : "s"}` : "Feed all at once · Midknight’s Blessing"}</button></div>` : ""}
     <div class="row"><button class="btn" id="food-close">Close</button></div>
   </div>`);
   document.querySelectorAll("#modal .food-tier").forEach(b => b.onclick = () => {
@@ -3391,6 +3406,7 @@ function openFoodRefill() {
   });
   const help=document.createElement('button');help.className='btn';help.textContent='Community Pantry';
   help.onclick=()=>{neoCommunityCare();closeModal();};document.getElementById('food-close').before(help);
+  const fa = document.getElementById("food-feedall"); if (fa) fa.onclick = () => { closeModal(); feedAllHungry(); };
   document.getElementById("food-close").onclick = closeModal;
 }
 function sickCats() { return cats.filter(c => c.sick && !c.visitor); }
@@ -5650,6 +5666,8 @@ const cc = {
   wellpct: document.getElementById("cc-wellpct"),
   cause: document.getElementById("cc-cause"),
   treat: document.getElementById("cc-treat"),
+  feed: document.getElementById("cc-feed"),
+  feedAll: document.getElementById("cc-feedall"),
 };
 // what a cat needs, as a glyph + words — shared by the card, the badge and the roster
 const NEED_META = {
@@ -5665,7 +5683,53 @@ function catNeed(c) {
     : (c.hunger > HUNGER_HI && G.food <= 0) || c.hunger > 82 ? "hungry"
     : (c.thirst > THIRST_HI && !anyWaterSource()) || c.thirst > 84 ? "thirsty" : null;
 }
-function renderCatCare(c) {
+const FEED_MIN_HUNGER = 25;   // a cat below this isn't hungry enough to bother
+function hungryCats() { return cats.filter(c => !c.visitor && !c._gone && !c._leaving && !c.sick && (c.hunger || 0) >= FEED_MIN_HUNGER).sort((a, b) => (b.hunger || 0) - (a.hunger || 0)); }
+function feedCat(c) {
+  if (!c || c.visitor) return { ok: false, reason: "visitor" };
+  if ((G.food || 0) < 1) return { ok: false, reason: "empty" };
+  if ((c.hunger || 0) < FEED_MIN_HUNGER) return { ok: false, reason: "full" };
+  G.food -= 1; c.hunger = Math.max(0, Math.min(c.hunger - 45, 15));   // a proper meal: comfortably below the hungry line c.mood = Math.min(100, (c.mood ?? 60) + 3);
+  return { ok: true };
+}
+function feedOne(c) {
+  ensureAudio();
+  const r = feedCat(c);
+  if (r.ok) { catMeow("eat"); spawnParticles(c.x, c.y - 24, "twinkle", 5); toast(c.name + " ate happily · 1 serving used.", 2.6); save(); syncHud(); }
+  else if (r.reason === "empty") { hideCatCard(true); openFoodRefill(); }
+  else toast(c.name + " isn’t hungry right now.", 2.4);
+  return r.ok;
+}
+// Feed every hungry cat in one go — a Midknight's Blessing convenience. Uses one serving each, hungriest first, stopping when the larder runs out.
+function feedAllHungry() {
+  if (!blessingActive()) { showBlessingOffer(); return 0; }
+  ensureAudio();
+  const list = hungryCats();
+  if (!list.length) { toast("Everyone is comfortably fed.", 3); return 0; }
+  let n = 0;
+  for (const c of list) { if (!feedCat(c).ok) break; n++; }
+  if (n) { catMeow("eat"); spawnParticles(W / 2, H * 0.5, "twinkle", 8); save(); syncHud(); }
+  toast(n ? "Fed " + n + " cat" + (n === 1 ? "" : "s") + " · " + n + " serving" + (n === 1 ? "" : "s") + " used." + (n < list.length ? " The larder ran out — stock the food store for the rest." : "") : "The larder is empty. Stock the food store first.", 4.5);
+  if (n < list.length && !n) openFoodRefill();
+  return n;
+}
+function renderFeedButtons(c) {
+  cc.feed.hidden = true; cc.feedAll.hidden = true;
+  if (!c || c.visitor || c.sick) return;
+  const hungry = hungryCats();
+  if ((c.hunger || 0) >= FEED_MIN_HUNGER) {
+    cc.feed.textContent = (G.food || 0) >= 1 ? "Feed " + c.name + " · 1 serving" : "Stock the food store";
+    cc.feed.hidden = false;
+    cc.feed.onclick = () => { if (feedOne(c)) showCatCard(c); };
+  }
+  if (hungry.length >= 2) {
+    cc.feedAll.textContent = blessingActive() ? "Feed all " + hungry.length + " hungry cats" : "Feed all at once · Midknight’s Blessing";
+    cc.feedAll.hidden = false;
+    cc.feedAll.onclick = () => { hideCatCard(true); feedAllHungry(); };
+  }
+}
+function renderCatCare(c) { renderCatCareCore(c); renderFeedButtons(c); }
+function renderCatCareCore(c) {
   const show = !c.visitor && !c.mascot;
   cc.wellwrap.hidden = !show;
   cc.cause.hidden = true; cc.treat.hidden = true;
@@ -8175,6 +8239,9 @@ function askAgeGate(then) {
 
 /* ---------- IAP entitlements — see the note by newIapState() ---------- */
 function iapOwns(id) { return !!(G && G.iap && G.iap.owned && G.iap.owned[id]); }
+// Midknight's Blessing is active while any Blessing subscription's expiry is in the future.
+function blessingUntil() { let t = 0; const subs = G && G.iap && G.iap.subs; if (subs) for (const id in subs) if (subs[id] && subs[id].expiresAt > t) t = subs[id].expiresAt; return t; }
+function blessingActive() { return blessingUntil() > Date.now(); }
 // run `fn` only the first time ever for `key`; ledgered in iapStore so a restore
 // can't repeat it. NATIVE: key off the store transaction id
 // (`grantOnce("<product>.<reward>." + txId, …)`), and mirror the ledger into
@@ -8281,7 +8348,7 @@ async function restorePurchases() {
     if (!Array.isArray(ids)) throw new Error('Invalid store response');
     reconcileEntitlements(ids, true);
     applyEntitlements(); saveIap(); save(); syncHud();
-    const any = ids.some(id => IAP_PRODUCTS[id]);
+    const any = ids.some(id => IAP_PRODUCTS[id]) || blessingActive();
     report(any ? 'Purchases restored to this device.' : 'No purchases found. Check that you are using the same App Store or Google Play account used to buy them.');
     return any;
   } catch (e) {
@@ -8409,6 +8476,46 @@ function showSparkleOffer() {
   };
   document.getElementById("sp-no").onclick = closeModal;
   document.getElementById("sp-restore").onclick = async () => { const ok = await restorePurchases(); if (ok && panels.shop && !panels.shop.hidden) renderShop(); };
+}
+// Midknight's Blessing — the weekly / monthly convenience subscription.
+function showBlessingOffer() {
+  ensureAudio();
+  const wk = IAP_PRODUCTS.midknight_blessing_weekly, mo = IAP_PRODUCTS.midknight_blessing_monthly;
+  const until = blessingUntil();
+  const native = nativeIap();
+  const days = Math.max(0, Math.ceil((until - Date.now()) / 864e5));
+  openModal(`<div class="reveal">
+    <div class="kicker">✦ MIDKNIGHT’S BLESSING</div>
+    <h2>${blessingActive() ? "Midknight is watching over you" : "Midknight’s Blessing"}</h2>
+    <p class="sub">${blessingActive() ? `Active for ${days} more day${days === 1 ? "" : "s"}.` : "A little help from the cove’s oldest resident, so tending goes a bit easier."}</p>
+    <ul class="packperks">
+      <li><b>Harvest all</b> — gather every ripe patch in the Cove Garden, or from Catmint Café, with one tap</li>
+      <li><b>Feed all</b> — treat every hungry cat at once (you can always feed them one by one, too)</li>
+      <li>They only save you taps. Nothing changes what crops give, what food costs or what cats earn — everything stays fully playable without it.</li>
+    </ul>
+    <div class="row">
+      <button class="btn primary" id="mb-month">Monthly · ${mo.price} · best value</button>
+      <button class="btn" id="mb-week">Weekly · ${wk.price}</button>
+    </div>
+    ${native ? "" : `<button class="btn" id="mb-test" style="margin-top:.5rem">Try it free — Neo test, 3 days</button>`}
+    <button class="linkbtn" id="mb-restore" style="margin-top:.6rem">Already subscribed? Restore purchase</button>
+    <button class="linkbtn" id="mb-no" style="margin-top:.2rem">Maybe later</button>
+    <p class="sub" style="margin:.6rem 0 0;font-size:.72rem;line-height:1.45">Payment is charged to your Apple ID or Google Play account when you confirm. The subscription renews automatically at the same price unless you cancel at least 24 hours before the period ends. Manage or cancel any time in your store account settings. ${native ? "" : "On the web this is a preview; no payment is taken. "}<a href="https://www.catmintcove.com/p/terms-and-conditions.html">Terms of Use</a> · <a href="https://www.catmintcove.com/p/privacy.html">Privacy Policy</a></p>
+  </div>`);
+  const buy = id => async () => {
+    closeModal();
+    if (!(await runPurchase(id, IAP_PRODUCTS[id].label, IAP_PRODUCTS[id].price))) return;
+    if (!blessingActive()) { G.iap.subs[id] = { expiresAt: Date.now() + IAP_PRODUCTS[id].days * 864e5, source: "purchase" }; saveIap(); save(); }   // provisional until the store confirms the real expiry
+    sfx("buy"); spawnParticles(W / 2, H * 0.5, "twinkle", 16);
+    toast("Midknight’s Blessing is active. Harvest all and Feed all are ready.", 5);
+    neoGardenBadges(); neoRefreshGardenIfOpen();
+  };
+  document.getElementById("mb-month").onclick = buy("midknight_blessing_monthly");
+  document.getElementById("mb-week").onclick = buy("midknight_blessing_weekly");
+  const t = document.getElementById("mb-test");
+  if (t) t.onclick = () => { closeModal(); G.iap.subs.neo_test = { expiresAt: Date.now() + 3 * 864e5, source: "test" }; saveIap(); save(); sfx("buy"); toast("Midknight’s Blessing test is on for 3 days (Neo only).", 5); neoGardenBadges(); neoRefreshGardenIfOpen(); };
+  document.getElementById("mb-restore").onclick = async () => { const ok = await restorePurchases(); if (ok) { neoGardenBadges(); neoRefreshGardenIfOpen(); } };
+  document.getElementById("mb-no").onclick = closeModal;
 }
 // route a premium accessory's `iap` id to the right offer modal
 function showIapOffer(id) {
@@ -19696,6 +19803,44 @@ function neoPlant(i,key){
   G.shells-=c.cost;h.plots[i]={key,ready:Date.now()+c.seconds*1000};save();syncHud();neoOpenHomestead('garden');
 }
 function neoSellHarvest(key){const h=neoHomestead();if(!COVE_CROPS[key]||(h.stock[key]||0)<1)return;h.stock[key]--;G.shells++;save();syncHud();neoOpenHomestead('garden');}
+function neoReadyPlots(){const h=neoHomestead(),now=Date.now();return h.plots.map((p,i)=>p&&now>=p.ready?i:-1).filter(i=>i>=0);}
+function neoReadySummary(){const h=neoHomestead(),got={};for(const i of neoReadyPlots()){const p=h.plots[i];got[p.key]=(got[p.key]||0)+COVE_CROPS[p.key].yield;}return got;}
+// One tap for every ripe patch — a Midknight's Blessing convenience. Same yields and stock rules as harvesting each patch by hand.
+function neoRefreshGardenIfOpen(){const hs=document.getElementById('neo-homestead');if(hs&&!hs.hidden&&!hs.classList.contains('cafe-full-room'))neoOpenHomestead('garden');}
+function neoHarvestAll(){
+  if(!blessingActive()){showBlessingOffer();return 0;}
+  if(G.cafe?.unlocked)CoveCafeEngine.settle(G,Date.now());
+  const h=neoHomestead(),idx=neoReadyPlots();
+  if(!idx.length){toast('Nothing is ripe yet. Crops never wither, so they will wait for you.',3.5);return 0;}
+  const got={};
+  for(const i of idx){const p=h.plots[i],c=COVE_CROPS[p.key];if(CoveCafeEngine.ingredients[p.key])CoveCafeEngine.acquire(G,p.key,c.yield,c.cost);else h.stock[p.key]=(h.stock[p.key]||0)+c.yield;got[p.key]=(got[p.key]||0)+c.yield;h.plots[i]=null;}
+  save();syncHud();sfx('collect');
+  toast('Harvested '+idx.length+' patch'+(idx.length===1?'':'es')+': '+Object.entries(got).map(([k,n])=>'+'+n+' '+COVE_CROPS[k].name.toLowerCase()).join(', '),5);
+  neoGardenBadges();
+  const hs=document.getElementById('neo-homestead');if(hs&&!hs.hidden&&!hs.classList.contains('cafe-full-room'))neoOpenHomestead('garden');
+  return idx.length;
+}
+// Badges: Garden tile + Activities button show how many patches are ripe.
+function neoGardenBadges(){
+  const n=G.homestead?neoReadyPlots().length:0;
+  const tile=document.querySelector('#neo-go-garden b');
+  if(tile){let el=tile.querySelector('.neo-tile-badge');if(!el){el=document.createElement('i');el.className='neo-tile-badge';el.id='neo-garden-badge';tile.append(el);}el.hidden=!n;el.textContent=String(n);}
+  const nav=document.getElementById('neo-activities-nav');
+  if(nav){let dot=nav.querySelector('.neo-nav-dot');if(!dot){dot=document.createElement('i');dot.className='neo-nav-dot';dot.setAttribute('aria-hidden','true');nav.append(dot);}let fr=0;try{const st=JSON.parse(localStorage.getItem('neo.friends.preview.v1')||'null');fr=st?(st.inbox||[]).length+(st.requests||[]).length:0;}catch{}dot.hidden=!(n||fr);}
+  return n;
+}
+// A gentle heads-up when crops ripen (and once when you come back to ripe ones).
+let _gardenNoticeCount=-1;
+function neoGardenWatch(){
+  if(!G||!G.homestead)return;
+  const ready=neoReadyPlots(),n=ready.length;neoGardenBadges();
+  if(_gardenNoticeCount<0){_gardenNoticeCount=n;if(n)setTimeout(()=>{if(!festMode&&!restMode)toast(n+(n===1?' patch is':' patches are')+' ripe in the Cove Garden.',4.5);},1200);return;}
+  if(n>_gardenNoticeCount&&!festMode&&!restMode){
+    const h=neoHomestead(),names=[...new Set(ready.map(i=>COVE_CROPS[h.plots[i].key].name.toLowerCase()))];
+    toast('Ripe in the Garden: '+names.join(', ')+(blessingActive()?'. Harvest all is one tap away.':'.'),4.5);
+  }
+  _gardenNoticeCount=n;
+}
 function neoHarvest(i){
   if(G.cafe?.unlocked)CoveCafeEngine.settle(G,Date.now());
   const h=neoHomestead(),p=h.plots[i];if(!p||Date.now()<p.ready)return;
@@ -19725,6 +19870,14 @@ function neoOpenHomestead(kind){
   const time=t=>Math.max(0,Math.ceil((t-Date.now())/1000));
   sheet.innerHTML=`<button class="x" aria-label="Back to the Cove">×</button><div class="kicker">YOUR LITTLE CORNER OF THE COVE</div><h2>${garden?'Cove Garden':'Catmint Café'}</h2><p>${garden?'A little harvest for today, and something to save for tomorrow. Crops never wither.':'Choose what to cook and stock the counter. Guests arrive, take a seat, enjoy a treat and pay 2 shells. A visit takes one minute; stocked food also sells while you are away. Close the café to pause service while you cook or redecorate.'}</p><div class="homestead-stock">${Object.entries(COVE_CROPS).map(([k,c])=>`<span>${c.name}: <b>${h.stock[k]||0}</b></span>`).join('')}</div>`;
   if(garden){
+    const ripe=neoReadyPlots().length;
+    if(ripe){
+      const banner=document.createElement('section');banner.className='garden-ripe';banner.setAttribute('role','status');
+      const msg=document.createElement('strong');msg.textContent=ripe+(ripe===1?' patch is':' patches are')+' ripe · '+Object.entries(neoReadySummary()).map(([k,n])=>'+'+n+' '+COVE_CROPS[k].name.toLowerCase()).join(', ');banner.append(msg);
+      if(blessingActive()){const all=document.createElement('button');all.className='btn primary';all.textContent='Harvest all';all.onclick=neoHarvestAll;banner.append(all);}
+      else if(ripe>1){const hint=document.createElement('button');hint.className='btn';hint.type='button';hint.textContent='Harvest all · with Blessing';hint.onclick=showBlessingOffer;banner.append(hint);}
+      sheet.querySelector('h2').after(banner);
+    }
     const supplyPlan=CoveCafeEngine.pantryPlan(G);
     const planting=CoveCafeEngine.plantingPlan(G),quick=document.createElement('section');quick.className='garden-quick';
     const planTitle=document.createElement('h3');planTitle.textContent='Plant for your café';
@@ -19893,11 +20046,13 @@ function neoFriendResult(kind,won,text){
 function neoOpenCoffeeKiosk(){
   neoHomestead();CoveCafeEngine.init(G,Date.now());
   CoveCafeView.open({game:()=>G,close:closeAllPanels,save, hud:syncHud,register:p=>panels.coffee=p,garden:()=>neoOpenHomestead('garden'),
+    ready:()=>({count:neoReadyPlots().length,yields:neoReadySummary()}),blessing:()=>blessingActive(),harvestAll:()=>neoHarvestAll(),offer:()=>showBlessingOffer(),
     actors:()=>cats.slice(0,8).map(c=>{const copy=new Cat({coatKey:c.coatKey,mascot:c.mascot,markSeed:c.markSeed,bornAt:c.bornAt,star:c.star,name:c.name,traits:c.traits,x:0,y:0});copy.worn=[...(c.worn||[])];return copy;}),
     cat:(ctx,c,x,y,scale,t,walking)=>{if(!c)return;ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);c.state=walking?'exploring':'loafing';c.trotting=walking;c.walk=t/130;c.walkAmt=Number(walking)||0;c.face=1;c.stateT=t/1000;c.bob=t/900;c.tail=t/650;c.blink=(t/1000+x*.017)%4.7<.14?0:3;drawCat(ctx,c,true);ctx.restore();}
   });
 }
 syncNavH();
+setInterval(neoGardenWatch,5000);setTimeout(neoGardenWatch,2500);   // ripe-crop heads-up
 resize();
 _lastViewBottom = _viewBottomY;
 load();
@@ -19909,7 +20064,7 @@ applyEntitlements();                   // re-derive perks from the cached entitl
 // __coveReconcile: union-only, fail-open — a store query result never revokes a
 // cached perk. __covePrices: fold the device's localized store prices into the
 // offer modals + shop. Both no-op safely on plain web.
-window.__coveReconcile = (ids) => { try { reconcileEntitlements(ids || [], true); } catch (e) {} };
+window.__coveReconcile = (ids, subs) => { try { reconcileEntitlements(ids || [], true, subs); } catch (e) {} };
 window.__covePrices = (m) => {
   let any = false;
   for (const k in (m || {})) if (IAP_PRODUCTS[k] && m[k]) { IAP_PRODUCTS[k].price = m[k]; any = true; }
