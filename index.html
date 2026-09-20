@@ -19077,6 +19077,7 @@ function onViewportChange() {
   }, 180);
 }
 window.__cove = {
+  clips(id){ neoOpenAdventureClips(id); return "opened"; },
   get G(){return G}, get cats(){return cats}, get tokens(){return fieldTokens},
   get attractors(){return attractors}, get obstacles(){return obstacles}, get decor(){return decor},
   get world(){return {W, H, catFloor: catFloor()}},
@@ -20147,6 +20148,25 @@ function neoDrawFriendCafe(ctx,cafe,t,H,key,guests){
   const night=new Date().getHours()<6||new Date().getHours()>=18;ctx.setTransform(ctx.canvas.width/720,0,0,ctx.canvas.width/720,0,0);
   CoveCafeScene(ctx,{height:H,offset:0,inside:false,s:st,stock:{coffee:9,catmint:9,honey:9,carrot:9},E:CoveCafeEngine,a:ad,actors:actors.length?actors:[neoFriendCatObj({name:'Guest',coatKey:'tuxedo',markSeed:1})],t});
 }
+// Adventure mini-clips: your real cats on the road. Preview gallery for now (?clips=1 or __cove.clips()).
+let _clipsMod=null;
+function neoClipPool(){
+  const res=cats.filter(c=>!c.visitor&&!c._gone).slice(0,4).map(c=>({name:c.name,coatKey:c.coatKey,markSeed:c.markSeed,star:c.star,worn:[...(c.worn||[])]}));
+  const fill=[{name:'Biscuit',coatKey:'ginger',markSeed:11,star:2},{name:'Juno',coatKey:'tuxedo',markSeed:22,star:2}];
+  while(res.length<2)res.push(fill[res.length]);
+  return res;
+}
+async function neoOpenAdventureClips(id){
+  try{
+    _clipsMod||=await import('./ui/adventure-clips.js?v=1');
+    if(!document.getElementById('fh-css')){const l=document.createElement('link');l.id='fh-css';l.rel='stylesheet';l.href='ui/friends-hub.css?v=4';document.head.append(l);}
+    closeAllPanels();
+    _clipsMod.openGallery({clipCat:(g,i,x,y,scale,t,walking,face)=>{
+      const pool=neoClipPool(),c=neoFriendCatObj(pool[i%pool.length]),tt=t*1000;
+      g.save();g.translate(x,y);g.scale(scale,scale);c.state=walking?'exploring':'loafing';c.trotting=!!walking;c.walk=tt/130;c.walkAmt=walking?1:0;c.face=face||1;c.stateT=t;c.bob=tt/900;c.tail=tt/650;c.blink=(t+x*.017)%4.7<.14?0:3;drawCat(g,c,true);g.restore();
+    }},id);
+  }catch(e){console.error(e);toast('The clips could not open. Please try again.',4);}
+}
 function neoStartFriendMatch(kind,friend){
   if(festMode||restMode)return;
   if(kind==="volley"&&!volleyReady()){toast("You need 3 cats at the Cove to play.");return;}
@@ -20171,6 +20191,7 @@ function neoOpenCoffeeKiosk(){
 syncNavH();
 setInterval(neoGardenWatch,5000);setTimeout(neoGardenWatch,2500);   // ripe-crop heads-up
 setInterval(analyticsAskTick,6000);
+if(new URLSearchParams(location.search).get('clips'))setTimeout(()=>neoOpenAdventureClips(),4500);
 resize();
 _lastViewBottom = _viewBottomY;
 load();
