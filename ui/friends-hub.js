@@ -94,6 +94,7 @@ function makeBackend(api) {
       return { shells, cards };
     },
     sentLeft: () => Math.max(0, DAILY_CAP - s.sent),
+    heartsLeft: () => Math.max(0, LOVE_DAILY - s.loveSent),
     receiveLeft,
   };
 }
@@ -115,7 +116,7 @@ const btn = (text, fn, cls = '') => h('button', { class: 'fh-btn ' + cls, type: 
 let dialog = null, be = null, api = null, route = { name: 'home' }, sceneStop = () => { };
 function ensureCss() {
   if (document.getElementById('fh-css')) return;
-  const l = document.createElement('link'); l.id = 'fh-css'; l.rel = 'stylesheet'; l.href = 'ui/friends-hub.css?v=2'; document.head.append(l);
+  const l = document.createElement('link'); l.id = 'fh-css'; l.rel = 'stylesheet'; l.href = 'ui/friends-hub.css?v=3'; document.head.append(l);
 }
 function shell(title, sub, opts = {}) {
   sceneStop();
@@ -132,6 +133,13 @@ function shell(title, sub, opts = {}) {
 }
 function go(name, data) { route = { name, data }; ({ home, inbox, visit, gift, card, match, added })[name](data); dialog.scrollTop = 0; dialog.querySelector('.fh-body')?.scrollTo?.(0, 0); }
 export function refresh() { if (dialog?.open && route.name === 'home') home(); }
+function celebrate(text, kind = 'heart') {
+  api.sound?.(kind);
+  dialog.querySelector('.fh-thanks')?.remove();
+  const t = h('div', { class: 'fh-thanks', role: 'status' }, h('span', { class: 'fh-pop', 'aria-hidden': 'true', text: kind === 'heart' ? '♥' : '★' }), h('span', { text }));
+  dialog.append(t); setTimeout(() => t.remove(), 4200);
+  const s = dialog.querySelector('.fh-status'); if (s) s.textContent = '';
+}
 const attempt = (body, fn) => { try { fn(); return true; } catch (e) { body.status(e.message || 'That did not work. Please try again.'); return false; } };
 
 function avatar(friend, size = 56) {
@@ -182,7 +190,7 @@ function home() {
     body.append(h('article', { class: 'fh-card fh-friend' }, avatar(f, 64),
       h('div', { class: 'fh-grow' }, h('strong', { text: f.name }), h('small', { text: f.cats.length + ' cats · ' + (f.cats.length >= 3 ? 'ready for a match' : 'growing their team') })),
       h('div', { class: 'fh-actions' }, btn('Visit', () => go('visit', f.id), 'primary'),
-        btn('♥', () => { attempt(body, () => { be.love(f); body.status('Sent a heart to ' + f.name + ' · they receive ' + LOVE_GIVE + ' Shells.'); }); }, 'fh-heart'),
+        h('button', { class: 'fh-btn fh-heart', type: 'button', 'aria-label': 'Send a heart. ' + f.name + ' gets ' + LOVE_GIVE + ' Shells.', title: 'Send a heart · they get ' + LOVE_GIVE + ' Shells', onclick: () => { attempt(body, () => { be.love(f); celebrate('Thanks for the love! ' + f.name + ' gets ' + LOVE_GIVE + ' Shells.'); }); } }, '♥'),
         btn('Gift', () => go('gift', f.id)))));
   }
   if (!localStorage.getItem(SEEN)) localStorage.setItem(SEEN, '1');
@@ -204,6 +212,7 @@ function cardView(c) {
   return h('div', { class: 'fh-postcard', style: 'background:' + st.bg + ';color:' + st.ink }, h('small', { text: 'FROM ' + String(c.fromName || '').toUpperCase() }), h('strong', { text: '“' + c.text + '”' }));
 }
 
+const heartsLine = () => be.heartsLeft() + (be.heartsLeft() === 1 ? ' heart' : ' hearts') + ' left today · each one gives your friend ' + LOVE_GIVE + ' Shells';
 function visit(id) {
   const f = be.state.friends.find(x => x.id === id); if (!f) return go('home');
   const body = shell(f.name, 'Visiting · a saved look at their cove', { back: 'home' });
@@ -222,8 +231,9 @@ function visit(id) {
   raf = requestAnimationFrame(paint); sceneStop = () => { stop = true; cancelAnimationFrame(raf); };
   body.append(h('p', { class: 'fh-team', text: 'Their usual team: ' + (teamNames(f).join(', ') || '—') }));
   body.append(h('div', { class: 'fh-grid' },
-    btn('Send a heart', () => attempt(body, () => { be.love(f); body.status('Sent a heart · they receive ' + LOVE_GIVE + ' Shells.'); }), 'primary'),
+    h('button', { class: 'fh-btn primary fh-loveBtn', type: 'button', onclick: () => attempt(body, () => { be.love(f); celebrate('Thanks for the love! ' + f.name + ' gets ' + LOVE_GIVE + ' Shells.'); dialog.querySelector('.fh-hearts').textContent = heartsLine(); }) }, h('span', { text: '♥ Send love' }), h('small', { text: '+' + LOVE_GIVE + ' for them' })),
     btn('Send a gift', () => go('gift', f.id)), btn('Leave a card', () => go('card', f.id))));
+  body.append(h('p', { class: 'fh-hint fh-hearts', text: heartsLine() }));
   body.append(h('h3', { text: 'Friendly match' }), h('p', { class: 'fh-sub', text: 'Play their team, just for fun.' }),
     h('div', { class: 'fh-grid fh-two' }, btn('Volleyball', () => go('match', { id: f.id, kind: 'volley' })), btn('Tug of Paws', () => go('match', { id: f.id, kind: 'tug' }))));
   body.append(btn('Remove from circle', () => { if (confirm('Remove ' + f.name + ' from your circle?')) { be.remove(f); go('home'); } }, 'fh-quiet'));
@@ -237,7 +247,7 @@ function gift(id) {
   go2.disabled = true;
   const draw = () => { grid.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(Number(b.dataset.a) === pick))); go2.textContent = pick ? 'Send ' + pick.toLocaleString() + ' Shells' : 'Choose an amount'; go2.disabled = !pick; };
   for (const a of GIFT_STEPS) { const b = h('button', { class: 'fh-chip', type: 'button', role: 'radio', 'data-a': a, 'aria-checked': 'false', onclick: () => { pick = a; draw(); } }, h('b', { text: a.toLocaleString() }), h('small', { text: 'Shells' })); if (api.shells() < a) b.classList.add('short'); grid.append(b); }
-  go2.onclick = () => attempt(body, () => { be.gift(f, pick); go('visit', f.id); dialog.querySelector('.fh-status').textContent = 'Sent ' + pick.toLocaleString() + ' Shells to ' + f.name + '.'; });
+  go2.onclick = () => attempt(body, () => { be.gift(f, pick); go('visit', f.id); celebrate('Thanks for the gift! ' + f.name + ' gets ' + pick.toLocaleString() + ' Shells.', 'gift'); });
   body.append(grid, go2, h('p', { class: 'fh-foot', text: 'Up to ' + DAILY_CAP.toLocaleString() + ' Shells a day each way. Gifts land in their Waiting box.' }));
 }
 

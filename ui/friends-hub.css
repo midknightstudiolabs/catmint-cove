@@ -76,3 +76,9 @@
 @media(prefers-reduced-motion:reduce){.fh-sheet *{transition:none!important}}
 
 .fh-req{flex-wrap:wrap}.fh-hint{margin:6px 2px 0;font-size:12px;color:#7a8672}
+.fh-loveBtn{flex-direction:column;gap:0;line-height:1.2}.fh-loveBtn small{font-size:11px;opacity:.85}
+.fh-thanks{position:absolute;left:14px;right:14px;bottom:14px;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;background:#487657;color:#fff;box-shadow:0 8px 24px #21372d55;font-size:14px;line-height:1.35;animation:fh-rise .28s ease-out}
+.fh-pop{font-size:22px;animation:fh-heart .7s ease-out}
+@keyframes fh-rise{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+@keyframes fh-heart{0%{transform:scale(.4)}45%{transform:scale(1.5)}100%{transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){.fh-thanks,.fh-pop{animation:none}}
