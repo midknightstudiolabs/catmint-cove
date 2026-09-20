@@ -20199,8 +20199,8 @@ function analyticsUndecided() { try { const v = localStorage.getItem("neo.produc
 function analyticsAskDue() {
   if (!window.CoveAnalytics || !analyticsUndecided()) return false;
   const st = analyticsAskState();
-  if ((st.asks || 0) >= 3) return false;
-  return !st.at || Date.now() - st.at > 20 * 3600 * 1000;   // a later day, not the very next minute
+  if ((st.asks || 0) >= 2) return false;   // ask twice, then stop
+  return !st.at || Date.now() - st.at > ((st.asks || 0) >= 1 ? 72 : 20) * 3600 * 1000;   // the second ask comes a few days later
 }
 function showAnalyticsAsk() {
   const st = analyticsAskState(); st.asks = (st.asks || 0) + 1; st.at = Date.now();
