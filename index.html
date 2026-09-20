@@ -827,6 +827,24 @@
     box-shadow:0 6px 20px rgba(0,0,0,.34);color:rgba(255,255,255,.92);font-size:.8rem;
     padding:.08rem .1rem;}
   .fest-bar[hidden]{display:none;}
+  .race-strip{position:absolute;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 58px);display:flex;gap:6px;justify-content:center;align-items:center;pointer-events:none;z-index:6;}
+  .race-strip[hidden],.race-cheer[hidden],.race-photo[hidden]{display:none;}
+  .rs-chip{display:flex;align-items:center;gap:4px;padding:2px 8px 2px 5px;border-radius:999px;background:rgba(255,250,235,.93);color:#405842;font:700 12px/1 system-ui,sans-serif;box-shadow:0 2px 8px rgba(36,31,23,.2);transition:transform .25s ease;}
+  .rs-chip b{font-size:11px;opacity:.65;min-width:.7em;}
+  .rs-chip canvas{width:24px;height:21px;}
+  .rs-chip.mine{outline:2px solid #e7a63a;background:#fff3cf;}
+  .rs-chip.mine span{max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .race-cheer{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(max(.9rem, env(safe-area-inset-bottom)) + 66px);width:82px;height:82px;border-radius:50%;border:0;padding:0;cursor:pointer;pointer-events:auto;z-index:6;
+    background:conic-gradient(#e8a43c var(--p,100%), rgba(255,255,255,.4) 0);box-shadow:0 6px 18px rgba(36,31,23,.28);color:#fff;display:grid;place-items:center;-webkit-tap-highlight-color:transparent;}
+  .race-cheer::before{content:"";position:absolute;inset:6px;border-radius:50%;background:#4a7b56;}
+  .race-cheer.cooling::before{background:#7f9b83;}
+  .race-cheer .rc-paw,.race-cheer b{position:relative;z-index:1;display:block;line-height:1;}
+  .race-cheer .rc-paw{font-size:22px;margin-top:-6px;color:#ffd7de;}
+  .race-cheer b{font:700 13px/1 system-ui,sans-serif;margin-top:3px;}
+  .race-cheer:active:not(.cooling)::before{background:#3d6a48;}
+  .race-photo{position:absolute;left:50%;top:22%;transform:translateX(-50%);z-index:7;padding:10px 20px;border-radius:14px;background:#fff8e4;color:#4a3a1e;font:800 20px/1 Georgia,serif;letter-spacing:.06em;box-shadow:0 6px 24px rgba(36,31,23,.3);animation:racePhotoPop 1.9s ease both;pointer-events:none;}
+  @keyframes racePhotoPop{0%{opacity:0;transform:translateX(-50%) scale(.6) rotate(-4deg)}12%{opacity:1;transform:translateX(-50%) scale(1.08) rotate(-2deg)}22%{transform:translateX(-50%) scale(1) rotate(-2deg)}85%{opacity:1}100%{opacity:0;transform:translateX(-50%) scale(1) rotate(-2deg)}}
+  @media (prefers-reduced-motion:reduce){.race-photo{animation:none}.rs-chip{transition:none}}
   .fest-bar .rb-back{display:flex;align-items:center;gap:.35rem;background:none;border:none;
     color:#fff;font:inherit;font-weight:600;font-size:.82rem;padding:.15rem .55rem;
     border-radius:999px;cursor:pointer;white-space:nowrap;}
@@ -847,6 +865,9 @@
     background:#eef1e3;border:2px solid transparent;border-radius:14px;padding:.4rem .2rem .35rem;
     cursor:pointer;font:inherit;}
   .fp-cell canvas{width:56px;height:48px;}
+  .fp-quick-row{display:flex;gap:.5rem;justify-content:center;margin:.1rem 0 .3rem;}
+  .fp-quick-row .btn{padding:.38rem .85rem;font-size:.82rem;min-height:38px;}
+  .fp-tip{font-size:.76rem;line-height:1.35;color:var(--ink-soft);max-width:22rem;margin:.1rem auto .5rem;text-align:center;}
   .fp-cell .nm{font-size:.64rem;font-weight:600;color:var(--ink-soft);max-width:68px;overflow:hidden;
     text-overflow:ellipsis;white-space:nowrap;}
   .fp-cell.picked{border-color:var(--accent);background:#fff;}
@@ -1796,6 +1817,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-volley.svg?v=2" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>Choose your team</h2>
       <p>Pick three cats currently available at the Cove. <span id="volleyPickCount">(0 / 3)</span></p>
+      <div class="fp-quick-row"><button class="btn" id="volleyQuick" type="button">Pick the best team</button><button class="btn" id="volleyHow" type="button">How to play</button></div>
+      <p class="fp-tip">Happier cats play better. Playful, Bold and Curious cats reach farther; Lazy cats tire sooner.</p>
       <div class="fp-grid" id="volleyPickGrid"></div>
       <div class="btn-row">
         <button class="btn primary" id="volleyStart" disabled>Down to the court</button>
@@ -1823,6 +1846,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-tug.svg?v=2" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>Tug of Paws</h2>
       <p>Pick your five for the rope. <span id="midkPickCount">(0 / 5)</span></p>
+      <div class="fp-quick-row"><button class="btn" id="midkQuick" type="button">Pick the best team</button><button class="btn" id="midkHow" type="button">How to play</button></div>
+      <p class="fp-tip">Bold and Playful cats pull harder; Lazy and Grumpy cats pull a little less.</p>
       <div class="fp-grid" id="midkPickGrid"></div>
       <div class="btn-row">
         <button class="btn primary" id="midkStart" disabled>Take the rope</button>
@@ -1903,6 +1928,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
       </div>
     </div>
     <button class="fest-skip" id="festSkip" hidden>Skip to the finish ›</button>
+    <div class="race-strip" id="raceStrip" hidden role="status" aria-label="Race positions"></div>
+    <button class="race-cheer" id="raceCheer" type="button" hidden aria-label="Cheer for your cat"><span class="rc-paw" aria-hidden="true">♥</span><b>Cheer</b></button>
+    <div class="race-photo" id="racePhoto" hidden role="status">PHOTO FINISH!</div>
     <div class="fest-bar" id="festBar" hidden>
       <button class="rb-back" id="festBack"><img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22"> Back to the Cove</button>
       <span class="rb-time" id="festTime">the cove festival</span>
@@ -2074,7 +2102,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=17"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=34"><script src="ui/cafe-engine.js?v=18"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=38"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=34"><script src="ui/cafe-engine.js?v=18"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=39"></script>
 <script>
 (() => {
 "use strict";
@@ -10060,12 +10088,13 @@ function fitFestCanvas() {
   const bw = Math.round(vw * s), bh = Math.round(vh * s);
   if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
 }
+const RACE_VIEW_Y = 250, RACE_VIEW_H = 470;   // portrait: show the crowd and the lanes only (the empty sky above is cropped away)
 function raceViewport() {
   const { vw, vh } = restViewportPx();
   const rd = _festDPR || DPR;
   if (festIsPan()) {
-    const sc = (vh * rd) / RACE_H;   // lock to height, camera follows the race horizontally
-    return { sc, pan: true };
+    const sc = (vh * rd) / RACE_VIEW_H;   // lock to the lane band, camera follows the race horizontally
+    return { sc, oy: -RACE_VIEW_Y * sc, pan: true };
   }
   const sc = Math.min((vw * rd) / RACE_W, (vh * rd) / RACE_H);   // contain — the whole track always fits, no panning
   return { sc, ox: (vw * rd - RACE_W * sc) / 2, oy: (vh * rd - RACE_H * sc) / 2, pan: false };
@@ -10256,7 +10285,7 @@ function startFestRace() {
   // front row (closest to the rail, largest y) properly overlaps them,
   // instead of the reverse
   festSpectators.sort((a, b) => a.y - b.y);
-  raceT = 0; racePhase = "countdown"; raceWinner = null; festCheerUntil = 0;
+  raceT = 0; racePhase = "countdown"; raceWinner = null; festCheerUntil = 0; raceCheerReadyAt = 0; _raceStripSig = "";
   _festCamX = raceX(0);   // "Race again" reuses the grounds with no wipe — snap back to the line
   particles.length = 0; floaters.length = 0;   // last heat's zoomies text / confetti shouldn't bleed into this one
   document.getElementById("festResult").hidden = true;
@@ -10305,6 +10334,7 @@ function runFestCountdown() {
 // is one clean motion rather than a cut
 function closeFest() {
   _friendMatch = null;
+  raceHudHide();
   stopFestWinSting();                       // cut the fanfare the moment you leave
   document.getElementById("festChoose").hidden = true;
   document.getElementById("festPanel").hidden = true;
@@ -10819,9 +10849,57 @@ function tickRacer(r, dt) {
   }
   const bursting = r.burstUntil > 0;
   if (bursting) r.burstUntil -= dt;
-  r.pace = r.base * r.wobble * (bursting ? 2.15 : 1);
+  r.pace = r.base * r.wobble * (bursting ? 2.15 : 1) * (r.cheerUntil > raceT ? 1.16 : 1);   // a cheer is a small, short lift
   r.progress += r.pace * 0.1 * dt;
   if (r.progress >= 1) { r.progress = 1; r.done = true; r.doneAt = raceT; }
+}
+/* ---- race HUD: live positions, a Cheer button with a visible cooldown, and the photo finish ---- */
+let _raceStripSig = "", _raceStripAt = 0, raceCheerReadyAt = 0;
+const RACE_CHEER_COOLDOWN = 4;
+function raceHudHide() { for (const id of ["raceStrip", "raceCheer", "racePhoto"]) { const e = document.getElementById(id); if (e) e.hidden = true; } _raceStripSig = ""; }
+function raceHudSync() {
+  const strip = document.getElementById("raceStrip"), btn = document.getElementById("raceCheer");
+  if (!strip || !btn) return;
+  const on = festKind === "race" && (racePhase === "countdown" || racePhase === "run") && raceCats.length > 0;
+  if (strip.hidden === on) strip.hidden = !on;
+  if (btn.hidden === on) btn.hidden = !on;
+  if (!on) { _raceStripSig = ""; return; }
+  const now = performance.now();
+  if (now - _raceStripAt > 140) {
+    _raceStripAt = now;
+    const order = [...raceCats].sort((a, b) => (b.done - a.done) || (a.done && b.done ? a.doneAt - b.doneAt : b.progress - a.progress));
+    const sig = order.map(r => r.cat.name + (r.cat === racePick ? "*" : "")).join("|");
+    if (sig !== _raceStripSig) {
+      _raceStripSig = sig; strip.replaceChildren();
+      order.forEach((r, i) => {
+        const chip = document.createElement("div"); chip.className = "rs-chip" + (r.cat === racePick ? " mine" : "");
+        const n = document.createElement("b"); n.textContent = String(i + 1);
+        const cv = document.createElement("canvas"); cv.width = 48; cv.height = 42;
+        chip.append(n, cv);
+        if (r.cat === racePick) { const nm = document.createElement("span"); nm.textContent = r.cat.name; chip.append(nm); }
+        strip.append(chip);
+        try { miniCat(cv, r.cat.coatKey, r.cat.star, "loafing", false, 0.5); } catch (e) {}
+      });
+    }
+  }
+  const cd = Math.max(0, raceCheerReadyAt - raceT), cooling = cd > 0 || racePhase !== "run";
+  btn.classList.toggle("cooling", cooling);
+  btn.setAttribute("aria-disabled", String(cooling));
+  btn.style.setProperty("--p", (racePhase === "run" ? (1 - cd / RACE_CHEER_COOLDOWN) * 100 : 0) + "%");
+}
+function raceCheer() {
+  if (festKind !== "race" || racePhase !== "run" || raceT < raceCheerReadyAt) return;
+  const r = raceCats.find(x => x.cat === racePick); if (!r || r.done) return;
+  raceCheerReadyAt = raceT + RACE_CHEER_COOLDOWN; r.cheerUntil = raceT + 1.4;
+  floatText(raceX(r.progress), laneY(r.lane) - 40, "go " + r.cat.name + "!", "#e0678a");
+  spawnParticles(raceX(r.progress), laneY(r.lane) - 12, "heart", 4);
+  try { sfx("collect"); } catch (e) {}
+  try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
+}
+document.getElementById("raceCheer").addEventListener("click", raceCheer);
+function racePhotoFinish() {
+  const e = document.getElementById("racePhoto"); if (!e) return;
+  e.hidden = true; void e.offsetWidth; e.hidden = false; setTimeout(() => { e.hidden = true; }, 1950);
 }
 function festRanking() { return [...raceCats].sort((a, b) => a.doneAt - b.doneAt || b.progress - a.progress); }
 // the winning moment — confetti at the line, a couple of seconds of crowd hop
@@ -11081,6 +11159,7 @@ function drawFestGroundsScene(g) {
   g.fillStyle = "rgba(255,255,255,0.14)"; g.beginPath(); g.ellipse(144, 896, 10, 5, 0, 0, 7); g.fill();
 }
 function renderFest(dt) {
+  raceHudSync();
   if (festKind === "hub") { renderFestGrounds(dt); return; }
   if (festKind === "box") { renderBox(dt); return; }
   if (festKind === "volley") { renderVolley(dt); return; }
@@ -11101,7 +11180,7 @@ function renderFest(dt) {
     const visW = (vw * rd) / V.sc, half = Math.min(visW / 2, RACE_W / 2);
     _festCamX += (festCamTargetX() - _festCamX) * Math.min(1, dt * 3);
     const camX = clamp(_festCamX, half, RACE_W - half);
-    g.setTransform(V.sc, 0, 0, V.sc, (vw * rd) / 2 - camX * V.sc, 0);
+    g.setTransform(V.sc, 0, 0, V.sc, (vw * rd) / 2 - camX * V.sc, V.oy);
   } else {
     g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
   }
@@ -11111,8 +11190,10 @@ function renderFest(dt) {
   g.fillStyle = _festG.sky; g.fillRect(0, 0, RACE_W, 380);
   g.fillStyle = _festG.track; g.fillRect(0, 380, RACE_W, RACE_H - 380);
   }
+  if (V.pan) { g.fillStyle = '#7ba64c'; g.fillRect(0, RACE_H - 2, RACE_W, 160); }   // the taller portrait camera sees a little below the track
   neoRaceMeadow(g,RACE_W,RACE_H);
   drawBunting(g, 0, 26, RACE_W, 34, raceT);
+  if (V.pan) drawBunting(g, 0, RACE_VIEW_Y + 4, RACE_W, 30, raceT);   // the zoomed camera crops the top bunting, so hang another inside the view
 
   g.strokeStyle = "rgba(255,255,255,0.4)"; g.lineWidth = 2; g.setLineDash([10, 10]);
   for (let i = 1; i < 5; i++) { const y = laneY(i) - LANE_H / 2; g.beginPath(); g.moveTo(60, y); g.lineTo(RACE_W - 60, y); g.stroke(); }
@@ -11154,6 +11235,7 @@ function renderFest(dt) {
       racePhase = "finish"; _festFinishAt = raceT;
       document.getElementById("festSkip").hidden = true;
       festAllInChime(finishesThisFrame * 0.1);
+      { const rk = festRanking(); if (rk.length > 1 && rk[1].doneAt - rk[0].doneAt < 0.3) racePhotoFinish(); }
     }
   } else {
     for (const r of raceCats) syncRacerCat(r, dt, true);
@@ -11268,7 +11350,7 @@ function renderFestChooser() {
 // back to the activity list without leaving the grounds — for an activity's own
 // "pick something else" exit (café's board has one)
 function festBackToChooser() {
-  stopFestWinSting();
+  stopFestWinSting(); raceHudHide();
   const roster = cats.filter(c => !c.visitor);
   document.getElementById("festResult").hidden = true;
   document.getElementById("festBar").hidden = false;
@@ -11300,13 +11382,23 @@ document.getElementById("volleyStart").addEventListener("click", () => {
   document.getElementById("festVolleyTut").hidden = false;
 });
 document.getElementById("volleyTutGo").addEventListener("click", () => {
-  _vbTutSeen = true;
+  _vbTutSeen = true; try { localStorage.setItem("neo.vb.tut", "1"); } catch (e) {}
   document.getElementById("festVolleyTut").hidden = true;
-  startCoveVolley();
+  if (_howOnly) { _howOnly = false; document.getElementById("festVolleyPanel").hidden = false; }   // opened from "How to play": back to picking
+  else startCoveVolley();
 });
+let _howOnly = false;
+document.getElementById("volleyHow").addEventListener("click", () => { _howOnly = true; document.getElementById("festVolleyPanel").hidden = true; document.getElementById("festVolleyTut").hidden = false; });
+document.getElementById("volleyQuick").addEventListener("click", () => festQuickPick("volley"));
+document.getElementById("midkHow").addEventListener("click", () => { _howOnly = true; document.getElementById("festMidkPanel").hidden = true; document.getElementById("festMidkTut").hidden = false; });
+document.getElementById("midkQuick").addEventListener("click", () => festQuickPick("midk"));
 // Tug of Paws
 document.getElementById("midkCancel").addEventListener("click", closeFest);
-document.getElementById("midkTutGo").addEventListener("click", () => { _midkTutSeen = true; midkShowPicker(); });
+document.getElementById("midkTutGo").addEventListener("click", () => {
+  _midkTutSeen = true; try { localStorage.setItem("neo.midk.tut", "1"); } catch (e) {}
+  if (_howOnly) { _howOnly = false; document.getElementById("festMidkTut").hidden = true; document.getElementById("festMidkPanel").hidden = false; }   // opened from "How to play": keep the picks
+  else midkShowPicker();
+});
 document.getElementById("midkStart").addEventListener("click", () => { if (midkPickSel.length === 5) startCoveMidk(); });
 document.getElementById("midkRally").addEventListener("click", midkSpin);
 // Catmint Café
@@ -11832,7 +11924,7 @@ let volleyParts = [], volleyBall = null, volleyPhase = "idle", matchT = 0, _voll
 let volleyScore = { cove: 0, visit: 0 }, volleyVisitName = "Sunbeam Cove";
 let volleyPickSel = [], _vbServeAt = 0, _vbPointAt = 0, _vbResultAt = 0, _vbServer = "visit";
 let _vbResultShown = false, _vbReceiver = null, _vbFast = false, _vbNoDrowse = false, _vbBannerUntil = 0;
-let _vbWakeCd = 0, _vbAllAsleepUntil = 0, _vbSaidAllAsleep = false, _vbMaxDeficit = 0, _vbLastWinner = null, _vbLastTapAt = -9, _vbTutSeen = false, _vbMeowAt = -9;
+let _vbWakeCd = 0, _vbAllAsleepUntil = 0, _vbSaidAllAsleep = false, _vbMaxDeficit = 0, _vbLastWinner = null, _vbLastTapAt = -9, _vbTutSeen = (() => { try { return localStorage.getItem("neo.vb.tut") === "1"; } catch (e) { return false; } })(), _vbMeowAt = -9;
 let _vbTaps = [];   // recent taps, for the ripple-where-you-pressed feedback (arena coords)
 // a little meow whenever you tap one of your cats — eager if it's alert, grouchy
 // if you just prodded a sleeper. Throttled so mashing taps doesn't machine-gun.
@@ -11904,8 +11996,40 @@ function makeVisitingCove(playerAvgMood) {
   }
   return { name, cats: out };
 }
+/* ---- team picking helpers (Volleyball and Tug of Paws) ---- */
+const _FEST_PICK = { volley: { n: 3, cta: "Down to the court", key: "neo.fest.team.volley" }, midk: { n: 5, cta: "Take the rope", key: "neo.fest.team.midk" } };
+let _festPickRoster = { volley: [], midk: [] };
+function saveFestTeam(kind, sel) { try { localStorage.setItem(_FEST_PICK[kind].key, JSON.stringify(sel.map(c => c.journalId ?? c.name))); } catch (e) {} }
+function loadFestTeam(kind) { try { return JSON.parse(localStorage.getItem(_FEST_PICK[kind].key) || "null"); } catch (e) { return null; } }
+// the same numbers the games themselves use: Volleyball reach (playful +22, bold +13, curious +12, lazy -15, plus mood) and Tug base pull (bold/playful up, lazy/grumpy down)
+function festTeamScore(kind, c) {
+  const T = c.traits || [], mood = clamp(((c.mood ?? 60) - 60) / 8, -6, 8);
+  if (kind === "volley") return (T.includes("playful") ? 22 : 0) + (T.includes("bold") ? 13 : 0) + (T.includes("curious") ? 12 : 0) + (T.includes("cuddly") ? 4 : 0) - (T.includes("lazy") ? 15 : 0) + mood;
+  return ((T.includes("bold") || T.includes("playful")) ? 16 : 0) - ((T.includes("lazy") || T.includes("grumpy")) ? 12 : 0) + mood * 0.5;
+}
+function festPickSync(kind) {
+  const P = _FEST_PICK[kind], sel = kind === "volley" ? volleyPickSel : midkPickSel, left = P.n - sel.length;
+  document.getElementById(kind + "PickCount").textContent = "(" + sel.length + " / " + P.n + ")";
+  const b = document.getElementById(kind + "Start"); b.disabled = left > 0; b.textContent = left > 0 ? "Pick " + left + " more" : P.cta;
+}
+function festQuickPick(kind) {
+  const P = _FEST_PICK[kind], roster = _festPickRoster[kind], grid = document.getElementById(kind + "PickGrid");
+  if (!roster.length) return;
+  [...grid.children].forEach(cell => { if (cell.classList.contains("picked")) cell.click(); });
+  const best = [...roster].sort((a, b) => festTeamScore(kind, b) - festTeamScore(kind, a)).slice(0, P.n);
+  best.forEach(c => grid.children[roster.indexOf(c)]?.click());
+  try { sfx("collect"); } catch (e) {}
+}
+function festRestoreLastTeam(kind, roster) {
+  const P = _FEST_PICK[kind], last = loadFestTeam(kind), grid = document.getElementById(kind + "PickGrid");
+  if (!last || last.length !== P.n) return false;
+  const idx = last.map(id => roster.findIndex(c => (c.journalId ?? c.name) === id));
+  if (idx.some(i => i < 0)) return false;
+  idx.forEach(i => grid.children[i].click());
+  return true;
+}
 function renderVolleyPickGrid(roster) {
-  volleyPickSel = [];
+  volleyPickSel = []; _festPickRoster.volley = roster;
   const grid = document.getElementById("volleyPickGrid");
   grid.innerHTML = "";
   for (const c of roster) {
@@ -11919,19 +12043,18 @@ function renderVolleyPickGrid(roster) {
       const at = volleyPickSel.indexOf(c);
       if (at >= 0) { volleyPickSel.splice(at, 1); cell.classList.remove("picked"); }
       else { if (volleyPickSel.length >= 3) return; volleyPickSel.push(c); cell.classList.add("picked"); }
-      document.getElementById("volleyPickCount").textContent = `(${volleyPickSel.length} / 3)`;
-      document.getElementById("volleyStart").disabled = volleyPickSel.length !== 3;
+      festPickSync("volley");
     });
     grid.appendChild(cell);
     miniCat(cell.querySelector("canvas"), c.coatKey, c.star, "loafing", false, 1);
   }
-  document.getElementById("volleyPickCount").textContent = "(0 / 3)";
-  document.getElementById("volleyStart").disabled = true;
+  festPickSync("volley");
+  festRestoreLastTeam("volley", roster);   // the team you played last time is ready and waiting
 }
 function startCoveVolley() {
   if (volleyPickSel.length !== 3) return;
   if (!volleyPickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats just wandered off."); return; }
-  festKind = "volley"; window.CoveAnalytics?.start("Cove volley");
+  festKind = "volley"; window.CoveAnalytics?.start("Cove volley"); saveFestTeam("volley", volleyPickSel);
   stopFestBed();                       // quiet through the countdown — the volley bed starts on "Go!"
   fitFestCanvas();
   matchT = 0; volleyScore = { cove: 0, visit: 0 }; volleyBall = null;
@@ -12806,7 +12929,7 @@ const MIDK_THIRD = 108;                       // ball this far past centre towar
 const MIDK_AURA_PUSH = 128;                   // a plain 777 shoves the ball this far toward your flag
 
 let midkPhase = "idle", midkT = 0, midkParts = [], midk = null, midkVisitName = "Sunbeam Cove";
-let midkPickSel = [], _midkTutSeen = false;
+let midkPickSel = [], _midkTutSeen = (() => { try { return localStorage.getItem("neo.midk.tut") === "1"; } catch (e) { return false; } })();
 let _midkResultShown = false, _midkResultAt = 0, _midkWinner = null, _midkFlopAt = 0;
 let midkCharge = 0, _midkAuraUntil = 0, _midkAiAuraUntil = 0;
 let _midkAiChargeT = 0, _midkAiSlotCd = 0, _midkAiSpins = 0;
@@ -12909,7 +13032,7 @@ function makeMidkYarn() {
 }
 
 function renderMidkPickGrid(roster) {
-  midkPickSel = [];
+  midkPickSel = []; _festPickRoster.midk = roster;
   const grid = document.getElementById("midkPickGrid");
   grid.innerHTML = "";
   for (const c of roster) {
@@ -12922,15 +13045,15 @@ function renderMidkPickGrid(roster) {
       const at = midkPickSel.indexOf(c);
       if (at >= 0) { midkPickSel.splice(at, 1); cell.classList.remove("picked"); }
       else { if (midkPickSel.length >= 5) return; midkPickSel.push(c); cell.classList.add("picked"); }
-      document.getElementById("midkPickCount").textContent = `(${midkPickSel.length} / 5)`;
-      document.getElementById("midkStart").disabled = midkPickSel.length !== 5;
+      festPickSync("midk");
     });
     grid.appendChild(cell);
     miniCat(cell.querySelector("canvas"), c.coatKey, c.star, "loafing", false, 1);
   }
-  // exactly five available → pre-select them all
+  // exactly five available → pre-select them all; otherwise bring back last time's team
+  festPickSync("midk");
   if (roster.length === 5) roster.forEach((c, i) => grid.children[i].click());
-  else { document.getElementById("midkPickCount").textContent = "(0 / 5)"; document.getElementById("midkStart").disabled = true; }
+  else festRestoreLastTeam("midk", roster);
 }
 function enterFestMidk() {
   document.getElementById("festChoose").hidden = true;
@@ -12951,7 +13074,7 @@ function startCoveMidk() {
   if (!midkPickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats wandered off."); return; }
   stopVolleyBed();
   stopFestBed();                       // quiet through the countdown — the tug bed starts on "Go!"
-  festKind = "midk"; window.CoveAnalytics?.start("Tug of Paw");
+  festKind = "midk"; window.CoveAnalytics?.start("Tug of Paw"); saveFestTeam("midk", midkPickSel);
   fitFestCanvas();
   midkT = 0; midkPhase = "idle"; _midkResultShown = false; _midkWinner = null; _midkFlopAt = 0;
   _midkPanicAt = -99; _midkPanicSide = null;

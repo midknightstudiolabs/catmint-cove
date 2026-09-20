@@ -16,17 +16,19 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    panel.classList.toggle('cc-guiding',guideOn);
    const replay=document.createElement('button');replay.className='btn cc-guide-replay';replay.textContent='?';replay.setAttribute('aria-label','Help me play: Café guide');replay.onclick=()=>{guideOn=true;s.guideStarted=true;s.guideDone=false;a.save();guideNamed=!!s.lessonComplete;tab='menu';view='inside';workshop=false;recipeResult=null;render();};panel.querySelector('.cc-head-end').append(replay);
    if(!guideOn)return;
-   let title,text,target,step;
+   let title,text,target,step,stockGuide=false;
    if(!s.unlocked){step=1;title='Let’s make a café!';text='You need 120 Shells. Tap Set up your café when you have enough.';target='[data-start]';}
    else if(!s.lessonComplete){step=1;title='Make a cup';text=workshop?['Tap Add one coffee bean. This cup is free!','Tap Brew my first cup.','Tap Taste my coffee.'][lessonStep]:'Tap Make your first coffee. We will help you.';target=workshop?'[data-lesson]':'[data-create]';}
    else if(recipeResult||!guideNamed){step=2;title='Give it a name';text='Type a fun name. Then tap Save recipe. You can keep the name we picked, too.';target='[data-save-name]';}
    else if(!s.menu.length){step=3;title='Put it on the menu';text='Tap the switch beside your drink to put it on the menu. Cats will only serve what is on the menu.';target='[data-recipe]';}
+   else if(!s.open&&whyClosed()){const wc=whyClosed();step=4;stockGuide=true;title='Stock up first';text=wc.text.replace(' Restock to open your café.','')+' Cats need ingredients before they can serve. Buy a few in Pantry, or grow them in the Garden.';target='[data-tab="pantry"]';}
    else if(!s.open){step=4;title='Welcome the cats!';text='Tap Closed at the top to open your café. Cats will make and serve the food for you.';target='[data-pause]';}
    else{step=5;title='You’re open!';text='Cats order on their own. Each order uses ingredients. Tap Grow ingredients to visit the Garden and plant more.';target='[data-garden]';}
    panel.dataset.guideStep=step;
    const card=document.createElement('section');card.className='cc-guide';card.setAttribute('aria-label','Café guide');
    const count=document.createElement('small');count.textContent='LET’S PLAY · '+step+' OF 5';const heading=document.createElement('h3');heading.textContent=title;const copy=document.createElement('p');copy.textContent=text;
    const skip=document.createElement('button');skip.className='btn';skip.textContent=step===5?'Got it':'Skip guide';skip.onclick=finishGuide;card.append(count,heading,copy,skip);
+   if(stockGuide){const garden=document.createElement('button');garden.type='button';garden.className='btn primary';garden.textContent='Visit Cove Garden';garden.onclick=()=>{stopActive();a.garden();};card.append(garden);if(tab!=='pantry'){const pan=document.createElement('button');pan.type='button';pan.className='btn';pan.textContent='Open Pantry';pan.onclick=()=>{tab='pantry';render();};card.append(pan);}}
    const host=panel.querySelector('.cc-content:not([hidden])')||panel.querySelector('.cc-intro');if(host)host.prepend(card);
    const action=panel.querySelector(target);if(action){action.classList.add('cc-guide-target');action.setAttribute('aria-describedby','cc-guide-copy');copy.id='cc-guide-copy';requestAnimationFrame(()=>{const box=action.closest('.cc-content');if(!box)return;const r=action.getBoundingClientRect(),b=box.getBoundingClientRect();if(r.bottom>b.bottom)box.scrollTop+=r.bottom-b.bottom+12;});}
    else if(s.unlocked){const go=document.createElement('button');go.className='btn primary';go.textContent='Show me';go.onclick=()=>{tab='menu';workshop=step===2;recipeResult=step===2?'coffee':null;render();};card.append(go);if(!host)panel.querySelector('.cc-tabs').after(card);}
