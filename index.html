@@ -8265,9 +8265,8 @@ function iapOwns(id) { return !!(G && G.iap && G.iap.owned && G.iap.owned[id]); 
 // Midknight's Blessing is active while any Blessing subscription's expiry is in the future.
 function blessingUntil() { let t = 0; const subs = G && G.iap && G.iap.subs; if (subs) for (const id in subs) if (subs[id] && subs[id].expiresAt > t) t = subs[id].expiresAt; return t; }
 function blessingActive() { return blessingUntil() > Date.now(); }
-// Midknight's Blessing gives +10% on every shell token collected (a modest thank-you, never more). Change this one number to tune or remove it.
-const BLESSING_SHELL_BONUS = 0.10;
-function blessingShells(n) { return blessingActive() ? Math.max(n + 1, Math.round(n * (1 + BLESSING_SHELL_BONUS))) : n; }
+// Midknight's Blessing is convenience and cozy perks only: no Shell bonus (no pay-to-win, per MONETIZATION.md). Kept as a pass-through so callers stay simple.
+function blessingShells(n) { return n; }
 // run `fn` only the first time ever for `key`; ledgered in iapStore so a restore
 // can't repeat it. NATIVE: key off the store transaction id
 // (`grantOnce("<product>.<reward>." + txId, …)`), and mirror the ledger into
@@ -8519,7 +8518,6 @@ function showBlessingOffer() {
       <li><b>Feed all</b> — treat every hungry cat at once (you can always feed them one by one, too)</li>
       <li><b>Auto-gather</b> and <b>auto-replant</b> — shells collect themselves, harvested crops are sown again</li>
       <li><b>Tend everything</b> — gather, harvest and feed the whole cove in one tap</li>
-      <li><b>+10% Shells</b> on every shell you collect while it's active</li>
       <li><b>Moonlit decor</b> — a new piece each month, like the Moonstone Shrine. It sleeps if the Blessing ends and wakes when you renew.</li>
       <li>Everything is still fully playable without it; the Blessing just makes tending easier.</li>
     </ul>
@@ -20246,7 +20244,7 @@ function neoFriendsJournal(){
   if(!has)return;
   import('./ui/friends-hub.js?v=11').then(m=>{const sec=m.journalSection();if(!sec)return;if(!document.getElementById('fh-css')){const l=document.createElement('link');l.id='fh-css';l.rel='stylesheet';l.href='ui/friends-hub.css?v=5';document.head.append(l);}host.querySelector('.fh-journal')?.remove();(host.querySelector('.cove-sheet-body')||host).append(sec);}).catch(()=>{});
 }
-const NEO_FRIENDS_HUB='./ui/friends-hub.js?v=12';
+const NEO_FRIENDS_HUB='./ui/friends-hub.js?v=13';
 async function openFriendsHub(){
   restClearUI();
   try{

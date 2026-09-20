@@ -32,6 +32,7 @@
 .fh-invite .fh-btn{flex:1 1 140px}
 .fh-add label{display:block;font:600 16px Georgia,serif;margin-bottom:8px}
 .fh-find{flex-wrap:nowrap}
+.fh-safety{justify-content:center;gap:8px}
 .fh-lab{display:block;margin:12px 0 6px;font-weight:700;color:#405c45}
 #fh-name{width:100%;box-sizing:border-box;min-height:48px;border:1px solid #bcc8ac;border-radius:12px;padding:0 12px;background:#fffaf0;color:#405c45;font:inherit;font-size:16px;margin-bottom:8px}
 .fh-find input{flex:1;min-width:0;box-sizing:border-box;min-height:46px;border:1px solid #bcc8ac;border-radius:12px;padding:0 12px;background:#fffaf0;color:#405c45;font:inherit;font-size:16px}

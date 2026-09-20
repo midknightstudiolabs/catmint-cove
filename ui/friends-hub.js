@@ -1,7 +1,7 @@
 // Cove Friends hub — the friendly front door: invite, cards, love, gifts, visits and friendly matches.
 // Preview mode runs on a local sample circle (nothing is sent anywhere). The hosted backend plugs in behind the same `backend` shape.
 import { socialConfig } from './social-config.js';
-import * as net from './friends-net.js?v=1';
+import * as net from './friends-net.js?v=2';
 // ?friends=preview keeps the local sample circle available for design and QA, even when the hosted circle is on.
 const LIVE = socialConfig.enabled && new URLSearchParams(location.search).get('friends') !== 'preview';
 const KEY = 'neo.friends.preview.v1', CARDS = 'neo.friends.cards.v1', SEEN = 'neo.friends.seen';
@@ -127,7 +127,7 @@ const btn = (text, fn, cls = '') => h('button', { class: 'fh-btn ' + cls, type: 
 let dialog = null, be = null, api = null, route = { name: 'home' }, sceneStop = () => { };
 function ensureCss() {
   if (document.getElementById('fh-css')) return;
-  const l = document.createElement('link'); l.id = 'fh-css'; l.rel = 'stylesheet'; l.href = 'ui/friends-hub.css?v=6'; document.head.append(l);
+  const l = document.createElement('link'); l.id = 'fh-css'; l.rel = 'stylesheet'; l.href = 'ui/friends-hub.css?v=7'; document.head.append(l);
 }
 function shell(title, sub, opts = {}) {
   sceneStop();
@@ -264,6 +264,10 @@ function visit(id) {
     h('div', { class: 'fh-grid fh-two' }, btn('Volleyball', () => go('match', { id: f.id, kind: 'volley' })), btn('Tug of Paws', () => go('match', { id: f.id, kind: 'tug' }))));
   else body.append(h('p', { class: 'fh-sub', text: f.name + ' has not shared their cove yet. Their cats and café appear here after they open Friends once.' }));
   body.append(btn('Remove from circle', () => { if (confirm('Remove ' + f.name + ' from your circle?')) attempt(body, async () => { await be.remove(f); go('home'); }); }, 'fh-quiet'));
+  // Safety: anyone can be blocked, and anything can be reported to the studio (required for user-named content).
+  if (be.hosted) body.append(h('div', { class: 'fh-row fh-safety' },
+    btn('Report', () => { location.href = 'mailto:carlosgotiong@gmail.com?subject=' + encodeURIComponent('Catmint Cove report: ' + f.name) + '&body=' + encodeURIComponent('Cove: ' + f.name + ' #' + f.tag + '\n\nWhat happened:\n'); }, 'fh-quiet'),
+    btn('Block', () => { if (confirm('Block ' + f.name + '? You will no longer see each other or exchange gifts. You can unblock them in Account & recovery.')) attempt(body, async () => { await be.block(f); go('home'); }); }, 'fh-quiet')));
 }
 
 function gift(id) {

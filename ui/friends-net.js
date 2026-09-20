@@ -69,6 +69,7 @@ export function create(api) {
     async accept(r) { await social('accept', { id: r.id }); await load(); },
     async decline(r) { await social('remove', { id: r.id }); await load(); },
     async remove(f) { await social('remove', { id: f.id }); await load(); },
+    async block(f) { await social('block', { id: f.id }); await load(); },
     async love(f) { await f2('love', { id: f.id }); await load(); },
     async gift(f, amount) {
       if (!GIFT_STEPS.includes(amount)) throw Error('Choose one of the gift sizes.');
