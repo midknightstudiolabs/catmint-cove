@@ -4,4 +4,5 @@ if(!source)throw Error('Pass the original game folder to verify-source.mjs');
 const hash=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 if(hash(path.join(source,'index.html'))!==manifest.sourceIndexSha256)throw Error('Claude source changed: merge the new changes before publishing Neo.');
 for(const [name,expected]of Object.entries(manifest.assets)){if(hash(path.join(source,name))!==expected||hash(new URL(name,root))!==expected)throw Error('Audio source out of sync: '+name);}
+for(const [name,expected]of Object.entries(manifest.neoAssets||{})){if(hash(new URL(name,root))!==expected)throw Error("Neo audio changed: "+name);}
 console.log('PASS: Claude source and latest audio match the recorded synchronization baseline.');
