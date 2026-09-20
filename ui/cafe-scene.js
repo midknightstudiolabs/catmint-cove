@@ -129,7 +129,7 @@
    if(has('chalkboard')){const cx=468,cy=336;c.fillStyle='rgba(36,31,23,.13)';oval(cx,cy+2,19,4,'rgba(36,31,23,.13)');
     c.strokeStyle='#7a5c3d';c.lineWidth=3;c.beginPath();c.moveTo(cx-13,cy);c.lineTo(cx-8,cy-40);c.moveTo(cx+13,cy);c.lineTo(cx+8,cy-40);c.stroke();
     round(cx-15,cy-44,30,34,3,'#8a6a49');round(cx-12,cy-41,24,28,2,'#2f4a3d');
-    const sp=E.recipes.find(r=>s.menu&&s.menu.includes(r.id));label('TODAY',cx,cy-31,7,'#f4efe1');const nm=sp?E.displayName(s,sp).toUpperCase().slice(0,11):'COFFEE';fitLabel(nm,cx,cy-19,21,8,'#f6e7b4');c.strokeStyle='#f4efe1';c.lineWidth=.7;c.beginPath();c.moveTo(cx-8,cy-27);c.lineTo(cx+8,cy-27);c.stroke();}
+    const sp=E.recipes.find(r=>r.id===(E.special&&E.special(s)))||E.recipes.find(r=>s.menu&&s.menu.includes(r.id));label('TODAY',cx,cy-31,7,'#f4efe1');const nm=sp?E.displayName(s,sp).toUpperCase().slice(0,11):'COFFEE';fitLabel(nm,cx,cy-19,21,8,'#f6e7b4');c.strokeStyle='#f4efe1';c.lineWidth=.7;c.beginPath();c.moveTo(cx-8,cy-27);c.lineTo(cx+8,cy-27);c.stroke();}
    if(has('parasol')){const px=548,py=344;oval(px,py+2,26,6,'rgba(36,31,23,.13)');rect(px-1.5,py-52,3,52,'#8a6a49');
     for(let i=0;i<6;i++){c.fillStyle=i%2?'#f4efe1':'#d9887f';c.beginPath();c.moveTo(px,py-66);c.lineTo(px-34+i*11.3,py-46);c.lineTo(px-34+(i+1)*11.3,py-46);c.closePath();c.fill();}
     oval(px,py-66,2.5,2.5,'#8a6a49');round(px-15,py-12,30,4,2,'#a58459');rect(px-1.5,py-12,3,12,'#7a5c3d');round(px-9,py-19,18,7,3,'#f4efe1');oval(px-12,py-2,4,2,'#7a5c3d');if(actors.length>3&&!(s.seats))a.cat(c,actors[3],px+30,py+8,.75,reduced?0:t,false);}

@@ -133,6 +133,13 @@
 #app #cafe-kiosk.cc-v2 .cc-goal span{font-weight:600}#app #cafe-kiosk.cc-v2 .cc-goal b{font-weight:600;font-variant-numeric:tabular-nums;color:#5f7060}
 #app #cafe-kiosk.cc-v2 .cc-goal i{position:absolute;left:10px;right:10px;bottom:6px;height:4px;border-radius:2px;background:#dfe4d0;overflow:hidden}
 #app #cafe-kiosk.cc-v2 .cc-goal i::after{content:"";display:block;height:100%;width:var(--p,0%);background:#5f9a6c;border-radius:2px;transition:width .4s ease}
+#app #cafe-kiosk.cc-v2 .cc-more{flex:0 0 auto;width:40px;height:40px;margin:-10px -8px -10px 4px;border:0;background:transparent;color:#5f7060;display:grid;place-items:center;cursor:pointer}
+#app #cafe-kiosk.cc-v2 .cc-more svg{transition:transform .2s ease}#app #cafe-kiosk.cc-v2 .cc-more[aria-expanded=true] svg{transform:rotate(180deg)}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-pips:not(.cc-attn),#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-goal:not(.ready),#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-special{display:none}
+#app #cafe-kiosk.cc-v2 .cc-special{margin:0;font-size:12px;color:#7a5f14}
+#app #cafe-kiosk.cc-v2 .cc-regulars{margin:16px 0}#app #cafe-kiosk.cc-v2 .cc-regulars p{font-size:13px}
+#app #cafe-kiosk.cc-v2 .cc-regular{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #e0dcb8}#app #cafe-kiosk.cc-v2 .cc-regular>div{flex:1;min-width:0}#app #cafe-kiosk.cc-v2 .cc-regular small{display:block;color:#66705a;font-size:12px}
+#app #cafe-kiosk.cc-v2 .cc-mood{font-size:12px;padding:4px 9px;border-radius:999px;background:#eeeedf;color:#5f7060;white-space:nowrap}#app #cafe-kiosk.cc-v2 .cc-mood.love{background:#f8dfe4;color:#9a4258}#app #cafe-kiosk.cc-v2 .cc-mood.happy{background:#f6ecc4;color:#7a5f14}#app #cafe-kiosk.cc-v2 .cc-mood.bitter{background:#e3ecd0;color:#4f6b35}
 #app #cafe-kiosk.cc-v2 .cc-dot.good{background:#5f9a6c}
 #app #cafe-kiosk.cc-v2 .cc-decor .cc-card{grid-template-columns:1fr 1fr!important;gap:8px!important}#app #cafe-kiosk.cc-v2 .cc-decor .cc-card>div:first-child{grid-column:1/-1!important}#app #cafe-kiosk.cc-v2 .cc-decor .cc-card>.btn{grid-column:auto!important;width:100%}
 #app #cafe-kiosk.cc-v2 .cc-decor{margin:20px 0;padding:14px 0;border-bottom:1px solid #dedfc9}#app #cafe-kiosk.cc-v2 .cc-decor>p{font-size:13px}

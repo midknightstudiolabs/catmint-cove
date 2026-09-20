@@ -66,7 +66,7 @@
       const due=s.cursor+interval(s);if(due>now)break;
       const r=options[s.sequence++%options.length];let cost=0;
       for(const[k,n]of Object.entries(r.inputs)){g.homestead.stock[k]-=n;cost+=(s.basis[k]||0)*n;}
-      s.cursor=due;s.pending={id:r.id,price:price(s,r),cost,at:due+30000};
+      s.cursor=due;s.pending={id:r.id,price:price(s,r,due),cost,at:due+30000};
     }
     return earned;
   }
@@ -101,7 +101,9 @@
     return {rating,text:lines[s.served%lines.length]};
   }
   function displayName(s,r){return s.recipeNames?.[r.id]||r.name;}
-  function price(s,r){return r.price+(s.recipeLevels?.[r.id]||0)*2;}
+  // One drink on the menu is "today's special" (only when there are two or more): it pays a quarter more. It nudges you toward a varied menu.
+  function special(s,now=Date.now()){if(!s||!s.menu||s.menu.length<2)return null;const day=new Date(now).toISOString().slice(0,10);return s.menu[Math.floor(hash01('special:'+day)*s.menu.length)];}
+  function price(s,r,at){const base=r.price+(s.recipeLevels?.[r.id]||0)*2;return special(s,at||Date.now())===r.id?base+Math.ceil(base*.25):base;}
   function nameRecipe(g,id,name){const s=init(g,Date.now());if(!s.discovered.includes(id))return false;const clean=String(name||'').trim().replace(/\s+/g,' ').slice(0,24);if(!clean)return false;(s.recipeNames||={})[id]=clean;return true;}
   function lesson(g){const s=init(g,Date.now());if(!s.unlocked||s.lessonComplete)return {error:'Your free lesson is already complete.'};s.lessonComplete=true;if(!s.discovered.includes('coffee'))s.discovered.push('coffee');return {id:'coffee',message:'A balanced first cup! Give it your own name.'};}
   function improve(g,id){const s=init(g,Date.now()),level=s.recipeLevels?.[id]||0;if(!s.discovered.includes(id)||level>=2||(s.sales[id]||0)<(level+1)*10||g.shells<(level+1)*50)return false;g.shells-=(level+1)*50;(s.recipeLevels||={})[id]=level+1;return true;}
@@ -112,5 +114,5 @@
   }
   function plantingPlan(g){const free=(g.homestead?.plots||[]).flatMap((p,i)=>p?[]:[i]),rows=pantryPlan(g).rows.filter(r=>r.patches>0).map(r=>({...r})),jobs=[];let cost=0;while(free.length&&rows.some(r=>r.patches>0)){for(const r of rows){if(!free.length)break;if(r.patches>0){jobs.push({slot:free.shift(),key:r.key});cost+=r.cost;r.patches--;}}}return {jobs,cost};}
   function plantSuggested(g,quote,now=Date.now()){const current=plantingPlan(g);if(!current.jobs.length||JSON.stringify(current)!==JSON.stringify(quote)||g.shells<current.cost)return false;for(const job of current.jobs){const crop=ingredients[job.key];g.homestead.plots[job.slot]={key:job.key,ready:now+crop.seconds*1000};}g.shells-=current.cost;return true;}
-  root.CoveCafeEngine={taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
+  root.CoveCafeEngine={special,taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
 })(globalThis);

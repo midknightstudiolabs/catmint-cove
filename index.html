@@ -2074,7 +2074,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=17"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=32"><script src="ui/cafe-engine.js?v=17"></script><script src="ui/cafe-scene.js?v=20"></script><script src="ui/cafe-kiosk.js?v=33"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=33"><script src="ui/cafe-engine.js?v=18"></script><script src="ui/cafe-scene.js?v=21"></script><script src="ui/cafe-kiosk.js?v=34"></script>
 <script>
 (() => {
 "use strict";
@@ -10678,6 +10678,28 @@ async function startCafeBed() {
     .then(ab => actx.decodeAudioData(ab))
     .then(buf => { if (bed.stopped) return; _cafeBedBuf = buf; spin(); })
     .catch(() => {});
+}
+/* ---- Catmint Café ambience: the café's own coffee-shop loop, kept low and steady while the café screen is open (music bus, so Mute silences it) ---- */
+let _cafeAmb = null;
+function neoCafeAmbienceStart() {
+  if (!actx || _cafeAmb || _cafeBed) return;
+  const g = actx.createGain(); g.gain.value = 0.0001; g.connect(musicGain || actx.destination);
+  rampParam(g.gain, muted ? 0.0001 : FEST_BED_LVL * 0.5, 2.4);
+  const amb = { g, src: null, stopped: false }; _cafeAmb = amb;
+  const spin = () => { if (amb.stopped || !actx || !_cafeBedBuf) return; const s = actx.createBufferSource(); s.buffer = _cafeBedBuf; s.loop = true; s.connect(g); s.start(); amb.src = s; };
+  if (_cafeBedBuf) { spin(); return; }
+  _festAudioBuf("fest-bed-cafe.mp3").then(ab => actx.decodeAudioData(ab)).then(buf => { _cafeBedBuf = buf; spin(); }).catch(() => {});
+}
+function neoCafeAmbienceStop() {
+  if (!_cafeAmb || !actx) { _cafeAmb = null; return; }
+  const a = _cafeAmb; _cafeAmb = null; a.stopped = true;
+  try { rampParam(a.g.gain, 0.0001, 0.9); } catch (e) {}
+  try { a.src && a.src.stop(actx.currentTime + 1.0); } catch (e) {}
+  setTimeout(() => { try { a.g.disconnect(); } catch (e) {} }, 1300);
+}
+function neoCafeAmbienceTick() {
+  const open = !!(panels.coffee && !panels.coffee.hidden) && !festMode && !restMode && !document.hidden;
+  if (open) { try { ensureAudio(); neoCafeAmbienceStart(); } catch (e) {} } else neoCafeAmbienceStop();
 }
 function stopCafeBed() {
   if (!_cafeBed || !actx) { _cafeBed = null; return; }
@@ -20325,6 +20347,7 @@ function neoOpenCoffeeKiosk(){
 syncNavH();
 setInterval(neoGardenWatch,5000);setTimeout(neoGardenWatch,2500);   // ripe-crop heads-up
 setInterval(analyticsAskTick,6000);
+setInterval(neoCafeAmbienceTick,800);
 if(new URLSearchParams(location.search).get('clips'))setTimeout(()=>neoOpenAdventureClips(),4500);
 resize();
 _lastViewBottom = _viewBottomY;
