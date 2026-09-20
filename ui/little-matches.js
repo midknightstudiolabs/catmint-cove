@@ -308,7 +308,7 @@ function popupLayout(p,footer){const body=el('div','lm-popup-body');while(p.firs
 function introduction(){
  const p=popup('Welcome to Little Matches');p.classList.add('lm-welcome');
  p.append(el('div','lm-kicker','LITTLE MATCHES · SEASON 1'),el('h2','','Little matches. Big cat energy.'),rewardArt(rewards[5]),el('p','',"You do the remembering. Your cat takes the credit."));
- const list=el('ol','lm-intro-steps');for(const line of ['Meet the cards, watch them shuffle, then find their pairs.','Take your time. Bring one free helping paw to each level.','Play 30 levels and earn an accessory every five. The Little Lion mane awaits.'])list.append(el('li','',line));p.append(list,el('p','lm-season','New drops every season.'),el('p','lm-note','Your earned accessories stay yours.'));
+ const list=el('ol','lm-intro-steps');for(const line of ['Find every pair. No timer, no rush.','One free helping paw on each level.','A new accessory every five levels.'])list.append(el('li','',line));p.append(list,el('p','lm-note','New drops every season. Accessories you earn stay yours.'));
  const footer=el('div','lm-actions');footer.append(button("Let's play",()=>{state().introSeen=true;api.save();dismiss()},true),button('Back to Cove',close));popupLayout(p,footer);footer.querySelector('button').focus();
 }
 function popup(title){activePopup?.close();activePopup?.remove();const p=el('dialog','lm-popup');p.setAttribute('aria-label',title);p.addEventListener('keydown',e=>e.stopPropagation());p.addEventListener('cancel',e=>{e.preventDefault();dismiss()});dlg.append(p);activePopup=p;p.showModal();return p}

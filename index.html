@@ -1421,6 +1421,44 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-explore-grid,.neo-cat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
 .neo-destination,.neo-cat-tile{border:1px solid #d7ddc9;border-radius:20px;background:#fffdf4;color:#384c3e;padding:20px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;font:inherit;cursor:pointer}
 .neo-destination>span{font-size:30px}.neo-destination b{font-size:18px}.neo-destination small,.neo-cat-tile span,.neo-cat-tile small{font-size:14px;line-height:1.5;color:#5c6c5f}
+.garden-field{margin:12px 0 4px}
+.garden-remind{margin:10px 0 2px;padding:12px 14px;border-radius:14px;background:#f0f3e2;border:1px solid #d3dcbc;color:#42593f;font-size:14px;line-height:1.4}
+.garden-remind strong{display:block;margin-bottom:2px}
+.garden-remind .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.garden-remind small{color:#65795f}
+.garden-remind .fpk-x{background:none;border:0;color:#5f7060;font:inherit;text-decoration:underline;cursor:pointer;padding:4px}
+.field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(116px,1fr));gap:10px}
+.field-plot{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 8px 12px;border:1.5px solid #c9d8b9;border-radius:18px;background:linear-gradient(#eef3e2,#e3ebd5);color:#33543b;font:inherit;text-align:center;cursor:pointer;min-height:132px;-webkit-tap-highlight-color:transparent;overflow:hidden}
+.field-plot .fp-soil{display:block;width:100%;max-width:120px;transition:transform .2s ease}
+.field-plot .fp-soil svg{width:100%;height:auto;display:block}
+.field-plot b{font-size:14px}.field-plot small{font-size:12px;color:#5d7460}
+.field-plot .fp-bar{display:block;width:78%;height:5px;border-radius:99px;background:rgba(80,110,80,.16);margin-top:5px;overflow:hidden}
+.field-plot .fp-bar i{display:block;height:100%;width:var(--p,0%);border-radius:99px;background:#7fa66d;transition:width .9s linear}
+.field-plot.empty{border-style:dashed;background:#f4f1e2}
+.field-plot.empty .fp-bar{display:none}
+.field-plot.empty .fp-plus{display:grid;place-items:center;width:58px;height:58px;margin:6px 0 2px;border-radius:50%;background:#e2e8d2;color:#5b7d5f;font-size:30px;line-height:1}
+.field-plot.ripe{border-color:#e0b04a;background:linear-gradient(#fff6d9,#f7ebc0);box-shadow:0 0 0 3px rgba(231,176,74,.22);animation:fieldRipe 1.8s ease-in-out infinite}
+.field-plot.ripe small{color:#8a6414;font-weight:700}
+.field-plot.ripe .fp-bar{display:none}
+.field-plot:active{transform:scale(.98)}
+.field-plot.popping .fp-soil{animation:fieldPop .42s ease both}
+.field-plot .fp-float{position:absolute;left:0;right:0;top:34%;font:800 18px/1 Georgia,serif;color:#3f7a52;text-shadow:0 1px 0 #fff,0 0 8px #fff;animation:fieldFloat .9s ease-out both;pointer-events:none}
+.field-plot.nudge{animation:fieldNudge .3s ease}
+.field-picker{margin:10px 0 2px;padding:12px;border-radius:16px;background:#f7f3e2;border:1px solid #ddd6b4}
+.field-picker h4{margin:0 0 8px;font-size:14px;color:#42593f}
+.field-picker .fpk-row{display:grid;gap:8px}
+.field-picker button.fpk{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 14px;border-radius:14px;border:1px solid #cfd8bf;background:#fffdf3;color:#33543b;font:inherit;text-align:left;cursor:pointer;min-height:48px}
+.field-picker button.fpk.rec{border-color:#7fa66d;background:#eaf3df}
+.field-picker button.fpk small{display:block;color:#65795f;font-size:12px}
+.field-picker button.fpk em{font-style:normal;font-size:11px;font-weight:800;letter-spacing:.06em;color:#3f7a52;background:#dcebcf;padding:3px 8px;border-radius:99px;white-space:nowrap}
+.field-picker button.fpk.short{opacity:.6}
+.field-picker .fpk-x{margin-top:8px;background:none;border:0;color:#5f7060;font:inherit;text-decoration:underline;cursor:pointer;padding:6px}
+details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;font-weight:700;color:#4a6549;padding:8px 0}
+@keyframes fieldRipe{0%,100%{box-shadow:0 0 0 3px rgba(231,176,74,.22)}50%{box-shadow:0 0 0 6px rgba(231,176,74,.34)}}
+@keyframes fieldPop{0%{transform:scale(1)}40%{transform:scale(1.22) translateY(-6px)}100%{transform:scale(.6);opacity:.2}}
+@keyframes fieldFloat{0%{opacity:0;transform:translateY(8px)}20%{opacity:1}100%{opacity:0;transform:translateY(-34px)}}
+@keyframes fieldNudge{0%,100%{transform:translateX(0)}30%{transform:translateX(-3px)}60%{transform:translateX(3px)}}
+@media (prefers-reduced-motion:reduce){.field-plot.ripe,.field-plot.popping .fp-soil,.field-plot .fp-float,.field-plot.nudge{animation:none}.field-plot .fp-bar i{transition:none}}
 .garden-ripe{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px;padding:12px 14px;border-radius:14px;background:#e6efdc;border:1px solid #b9cfaa;color:#31593d;font-size:14px}.garden-ripe strong{flex:1 1 200px;font-weight:600}.garden-needs{margin:10px 0;padding:12px 14px;border-radius:14px;background:#f1efd6;border:1px solid #ddd8b0}.garden-needs h3{margin:0 0 8px;font-size:16px}.garden-needs p{margin:0 0 8px;font-size:13px}.garden-need{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-top:1px solid #e0dcb8}.garden-need:first-of-type{border-top:0}.garden-need>div{flex:1 1 180px}.garden-need strong{display:block}.garden-need small{display:block;color:#66705a;font-size:12px;line-height:1.4}.garden-need .btn{flex:0 0 auto}.garden-ok{color:#3d6846}.garden-auto{display:flex;gap:8px;align-items:flex-start;margin:8px 0 2px;font-size:13px;color:#4c6350;line-height:1.4}.garden-auto input{min-width:22px;min-height:22px;margin-top:1px}.neo-tend{width:100%;margin:2px 0 12px;flex-direction:column;gap:2px}.neo-tend small{font-weight:400;opacity:.9;font-size:12px}.neo-tend[hidden]{display:none}.garden-ripe .btn{flex:1 1 auto;white-space:normal;text-align:center}#neo-activities-nav{position:relative}.neo-nav-dot{position:absolute;top:4px;right:calc(50% - 22px);width:10px;height:10px;border-radius:50%;background:#d98b3f;border:2px solid #faf6e8}.neo-nav-dot[hidden]{display:none}.neo-destination{position:relative}.neo-tile-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:8px;padding:0 5px;border-radius:9px;background:#d98b3f;color:#fff;font:700 11px/1 system-ui,sans-serif;font-style:normal;vertical-align:2px}.neo-tile-badge[hidden]{display:none}
 .neo-destination:hover,.neo-cat-tile:hover{background:#edf2e1;border-color:#8fac8a}
 .neo-cat-tile{align-items:center;text-align:center;padding:8px 12px 16px}.neo-cat-tile canvas{width:110px;height:100px}
@@ -2101,7 +2139,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 </div>
 
 <script src="ui/product-analytics.js?v=1"></script>
-<script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=17"></script>
+<script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=18"></script>
 <link rel="stylesheet" href="ui/cafe-kiosk.css?v=34"><script src="ui/cafe-engine.js?v=18"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=39"></script>
 <script>
 (() => {
@@ -20145,6 +20183,101 @@ function neoGardenWatch(){
   }
   _gardenNoticeCount=n;
 }
+let neoFieldTimer=0;
+function neoRemindPlugin(){try{return window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.LocalNotifications||null;}catch(e){return null;}}
+async function neoScheduleGardenReminder(){
+  try{
+    const LN=neoRemindPlugin();if(!LN)return;
+    try{await LN.cancel({notifications:[{id:4101}]});}catch(e){}
+    if(G.gardenRemind!=='yes')return;
+    const h=G.homestead;if(!h)return;const now=Date.now();
+    const later=h.plots.filter(p=>p&&p.ready>now+3000).map(p=>p.ready);if(!later.length)return;
+    const at=Math.min(...later),same=h.plots.filter(p=>p&&Math.abs(p.ready-at)<60000).length;
+    await LN.schedule({notifications:[{id:4101,title:'Your Cove Garden',body:same>1?same+' patches just ripened. Come and harvest.':'A patch just ripened. Come and harvest.',schedule:{at:new Date(at),allowWhileIdle:true}}]});
+  }catch(e){}
+}
+
+function neoCropWord(sec){return sec>=3600?Math.round(sec/360)/10+' h':sec>=60?Math.ceil(sec/60)+' min':sec+' s';}
+function neoRenderField(sheet,h){
+  const sec=document.createElement('section');sec.className='garden-field';sec.setAttribute('aria-label','Your garden patches');
+  const plan=CoveCafeEngine.pantryPlan(G),needs=plan.rows.filter(r=>r.plant>0);
+  const grid=document.createElement('div');grid.className='field-grid';
+  const picker=document.createElement('div');picker.className='field-picker';picker.hidden=true;
+  let openIdx=-1;const tiles=[];
+  const soil='<svg viewBox="0 0 120 70" aria-hidden="true"><path fill="#bea17b" d="M8 49 60 39l52 10-52 17Z"/><path fill="#745b42" d="m17 48 43-7 43 7-43 10Z"/></svg>';
+  h.plots.forEach((_,i)=>{
+    const t=document.createElement('button');t.type='button';t.className='field-plot';t.dataset.i=i;
+    t.innerHTML='<span class="fp-soil"></span><b></b><small></small><span class="fp-bar"><i></i></span>';
+    tiles.push(t);grid.append(t);
+    t.onclick=()=>{
+      const p=h.plots[i],now=Date.now();
+      if(!p){openPicker(i);return;}
+      const c=COVE_CROPS[p.key],left=Math.ceil((p.ready-now)/1000);
+      if(left>0){t.classList.remove('nudge');void t.offsetWidth;t.classList.add('nudge');toast(c.name+' will be ripe in about '+(left>=60?Math.ceil(left/60)+' min':left+' s')+'.',2.6);return;}
+      if(t.classList.contains('popping'))return;
+      t.classList.add('popping');
+      const f=document.createElement('span');f.className='fp-float';f.textContent='+'+c.yield+' '+c.name.toLowerCase();t.append(f);
+      try{sfx('collect');}catch(e){}try{navigator.vibrate&&navigator.vibrate(12);}catch(e){}
+      setTimeout(()=>neoHarvest(i),reducedMotionNow()?60:430);
+    };
+  });
+  function reducedMotionNow(){try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}}
+  function openPicker(i){
+    if(openIdx===i){closePicker();return;}
+    openIdx=i;picker.hidden=false;picker.replaceChildren();
+    const head=document.createElement('h4');head.textContent='Plant in patch '+(i+1);picker.append(head);
+    const row=document.createElement('div');row.className='fpk-row';
+    const order=Object.entries(COVE_CROPS).sort(([a],[b])=>((plan.rows.find(r=>r.key===b)?.plant||0)-(plan.rows.find(r=>r.key===a)?.plant||0)));
+    for(const [key,c] of order){
+      const b=document.createElement('button');b.type='button';b.className='fpk';const rec=needs[0]&&needs[0].key===key;if(rec)b.classList.add('rec');
+      const short=G.shells<c.cost;if(short)b.classList.add('short');
+      const info=document.createElement('span');const n=document.createElement('strong');n.textContent=c.name;const d=document.createElement('small');d.textContent=c.cost+' Shells · ripe in about '+neoCropWord(c.seconds)+' · +'+c.yield;info.append(n,d);b.append(info);
+      if(rec){const tag=document.createElement('em');tag.textContent='FOR YOUR MENU';b.append(tag);}
+      b.onclick=()=>{if(short){toast('You need '+Math.ceil(c.cost-G.shells)+' more Shells for seeds.',3);return;}neoPlant(i,key);};
+      row.append(b);
+    }
+    picker.append(row);
+    const x=document.createElement('button');x.type='button';x.className='fpk-x';x.textContent='Cancel';x.onclick=closePicker;picker.append(x);
+    tiles.forEach((t,k)=>t.setAttribute('aria-expanded',String(k===i)));
+    picker.scrollIntoView?.({block:'nearest',behavior:'smooth'});
+  }
+  function closePicker(){openIdx=-1;picker.hidden=true;tiles.forEach(t=>t.removeAttribute('aria-expanded'));}
+  function paint(){
+    const now=Date.now();
+    tiles.forEach((t,i)=>{
+      const p=h.plots[i],left=p?Math.max(0,Math.ceil((p.ready-now)/1000)):0,ripe=!!p&&left===0,sig=p?p.key+(ripe?'r':'g'):'e';
+      if(t.dataset.sig!==sig){
+        t.dataset.sig=sig;t.classList.toggle('empty',!p);t.classList.toggle('ripe',ripe);
+        const soilEl=t.querySelector('.fp-soil');
+        soilEl.innerHTML=p?neoCropArt(p.key,ripe):'<span class="fp-plus" aria-hidden="true">+</span>';
+        t.querySelector('b').textContent=p?COVE_CROPS[p.key].name:'Empty patch';
+      }
+      const c=p?COVE_CROPS[p.key]:null;
+      t.querySelector('small').textContent=!p?'Tap to plant':ripe?'Tap to harvest':neoCropWord(left)+' left';
+      t.querySelector('.fp-bar i').style.setProperty('--p',(p&&!ripe?Math.max(4,Math.min(100,(1-left/c.seconds)*100)):0)+'%');
+      t.setAttribute('aria-label','Patch '+(i+1)+': '+(!p?'empty, tap to plant':ripe?c.name+' ripe, tap to harvest':c.name+', '+neoCropWord(left)+' left'));
+    });
+  }
+  paint();sec.append(grid,picker);
+  {const LN=neoRemindPlugin();
+   if(LN&&h.plots.some(Boolean)){
+    const box=document.createElement('div');box.className='garden-remind';
+    const yes=async()=>{try{const r=await LN.requestPermissions();if(r&&r.display&&r.display!=='granted'){G.gardenRemind='no';save();toast('Notifications are off for the app. You can turn them on in your device settings.',4);draw();return;}}catch(e){}G.gardenRemind='yes';save();neoScheduleGardenReminder();toast('Got it. We will nudge you when a patch is ripe.',3);draw();};
+    const draw=()=>{box.replaceChildren();
+      if(G.gardenRemind==='yes'){const s=document.createElement('small');s.textContent='Ripe reminders are on. ';const off=document.createElement('button');off.type='button';off.className='fpk-x';off.textContent='Turn off';off.onclick=()=>{G.gardenRemind='no';save();neoScheduleGardenReminder();draw();};box.append(s,off);}
+      else if(G.gardenRemind==='no'){const s=document.createElement('small');s.textContent='Ripe reminders are off. ';const on=document.createElement('button');on.type='button';on.className='fpk-x';on.textContent='Turn on';on.onclick=yes;box.append(s,on);}
+      else{const t=document.createElement('strong');t.textContent='Get a nudge when crops are ripe?';const p=document.createElement('span');p.textContent='One quiet notification when your next patch is ready. Never more than one at a time.';const row=document.createElement('div');row.className='row';
+        const y=document.createElement('button');y.type='button';y.className='btn primary';y.textContent='Yes, remind me';y.onclick=yes;const n=document.createElement('button');n.type='button';n.className='btn';n.textContent='Not now';n.onclick=()=>{G.gardenRemind='no';save();draw();};row.append(y,n);box.append(t,p,row);}};
+    draw();sec.append(box);
+   }
+   neoScheduleGardenReminder();}
+  clearInterval(neoFieldTimer);
+  neoFieldTimer=setInterval(()=>{if(sheet.hidden||!sec.isConnected){clearInterval(neoFieldTimer);return;}if(document.hidden)return;paint();},1000);
+  sheet.querySelector('h2').after(sec);
+  // the old patch cards stay available as a list, tucked away
+  const old=sheet.querySelector('.homestead-grid');
+  if(old){const det=document.createElement('details');det.className='garden-list';const sum=document.createElement('summary');sum.textContent='Patch list (crop details)';old.replaceWith(det);det.append(sum,old);}
+}
 function neoHarvest(i){
   if(G.cafe?.unlocked)CoveCafeEngine.settle(G,Date.now());
   const h=neoHomestead(),p=h.plots[i];if(!p||Date.now()<p.ready)return;
@@ -20243,7 +20376,8 @@ function neoOpenHomestead(kind){
   if(n<max){const expand=document.createElement('button');expand.className='btn';expand.textContent=`Add ${garden?'a garden patch':'a table'} · ${cost} shells`;expand.disabled=G.shells<cost;expand.onclick=()=>{if(neoExpandHomestead(kind))neoOpenHomestead(kind);};sheet.append(expand);}
   const other=document.createElement('button');other.className='btn';other.textContent=garden?'Visit Catmint Café':'Visit Cove Garden';other.onclick=()=>neoOpenHomestead(garden?'cafe':'garden');sheet.append(other);
   if(garden){const actions=document.createElement('div');actions.className='garden-actions';for(const button of [...sheet.children].filter(el=>el.tagName==='BUTTON'&&!el.classList.contains('x')))actions.append(button);sheet.append(actions);}
-  sheet.querySelector('.x').onclick=()=>{sheet.hidden=true;clearInterval(neoHomesteadTimer);cancelAnimationFrame(neoCafeFrame);};neoSheetFooter(sheet);
+  if(garden)neoRenderField(sheet,h);
+  sheet.querySelector('.x').onclick=()=>{sheet.hidden=true;clearInterval(neoHomesteadTimer);clearInterval(neoFieldTimer);cancelAnimationFrame(neoCafeFrame);};neoSheetFooter(sheet);
   {const box2=sheet.querySelector('.cove-sheet-body')||sheet;box2.scrollTop=keepTop;sheet.dataset.kind=kind;}
   neoHomesteadTimer=setInterval(()=>{if(sheet.hidden){clearInterval(neoHomesteadTimer);return;}if(document.hidden)return;const before=h.served;neoCafeSettle();if(before!==h.served){save();const trays=sheet.querySelector('#neo-cafe-trays');if(trays)trays.innerHTML=h.trays.map((t,i)=>`<span>Counter ${i+1}: <b>${t.servings?COVE_RECIPES[t.key].name+' · '+t.servings:'Empty'}</b></span>`).join('');const count=sheet.querySelector('.homestead-cafe-room > p');if(count)count.textContent=h.counter+' treats on the counter · '+h.served+' served';const collect=sheet.querySelector('[data-cafe-collect]');if(collect){collect.textContent='Collect '+h.earned+' shells';collect.disabled=!h.earned;}}for(const b of sheet.querySelectorAll('[data-ready]')){const seconds=time(+b.dataset.ready);b.disabled=seconds>0;b.textContent=seconds?`${garden?'Growing':'Cooking'} · ${seconds}s`:garden?'Harvest':'Stock the counter';}},1000);
 }
@@ -20500,6 +20634,9 @@ window.addEventListener('neo-friends-closed',()=>{try{neoFriendsBadge();}catch(e
 import('./ui/social-config.js').then(m=>{window.__neoSocialOn=!!m.socialConfig.enabled&&new URLSearchParams(location.search).get('friends')!=='preview';try{neoFriendsBadge();}catch(e){}}).catch(()=>{});
 function neoFriendsPoll(){try{if(!window.__neoSocialOn||document.hidden||!localStorage.getItem('neo.friends.session'))return;import(NEO_FRIENDS_HUB).then(m=>m.pollBadge()).then(()=>neoFriendsBadge()).catch(()=>{});}catch(e){}}
 setInterval(neoFriendsPoll,180000);setTimeout(neoFriendsPoll,6000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(neoFriendsPoll,800);});
+/* Garden: re-set the ripe reminder whenever the app goes to the background */
+document.addEventListener('visibilitychange',()=>{if(document.hidden)neoScheduleGardenReminder();});
+window.addEventListener('pagehide',()=>{neoScheduleGardenReminder();});
 if(new URLSearchParams(location.search).get('clips'))setTimeout(()=>neoOpenAdventureClips(),4500);
 resize();
 _lastViewBottom = _viewBottomY;
@@ -21070,6 +21207,7 @@ function memoryObjectImage(source){
 const memoryPortraits=new WeakMap();
 // Short synthesized feedback: no downloads, and routed through the Cove volume bus.
 function memoryFeedback(kind){
+ try{if(navigator.vibrate&&G.haptics!==false){const v={match:[14],miss:[8,50,8],win:[18,40,30]}[kind];if(v)navigator.vibrate(v);}}catch(e){}
  const sound=G.sound;if(sound?.on===false||sound?.cove===0)return;
  ensureAudio();if(!actx||muted||!coveGain)return;
  const notes={tap:[[392,.06,0,.008]],flip:[[440,.09,0,.012]],miss:[[330,.14,0,.012],[294,.16,.09,.009]],match:[[523,.17,0,.018],[659,.2,.11,.014]],win:[[440,.2,0,.02],[523,.22,.14,.018],[659,.28,.28,.016],[784,.32,.44,.012]]}[kind];
@@ -21102,7 +21240,17 @@ editEntry.onclick=()=>{if(restMode||festMode)return;localStorage.setItem('neo.ed
 coveTools.append(editEntry);
 // a small "Edit Cove" label for the first few visits, so the icon is never a mystery
 try{const seen=+(localStorage.getItem('neo.editHint')||0);if(seen<4){localStorage.setItem('neo.editHint',String(seen+1));const tip=document.createElement('span');tip.id='coveToolsTip';tip.textContent='Edit Cove';tip.setAttribute('aria-hidden','true');coveTools.append(tip);setTimeout(()=>tip.remove(),9000);}}catch(e){}
-const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 levels, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();const activityGrid=document.querySelector('#neo-explore .neo-explore-grid');activityGrid.prepend(matchesButton);activityGrid.insertBefore(document.getElementById('neo-go-cafe'),document.getElementById('neo-go-garden'));
+const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 levels, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();
+function neoMatchesTile(){
+  const small=matchesButton.querySelector('small');if(!small)return;
+  const st=G.littleMatches,done=st&&st.done?Object.keys(st.done).filter(k=>st.done[k]).length:0;
+  let next=1;while(next<=30&&st&&st.done&&st.done[next])next++;
+  small.textContent=!st||(!done&&!st.round)?'A cozy memory game · 30 levels, a helping paw.'
+    :st.round&&!st.round.finished&&!st.round.endless?'Continue level '+st.round.level+' · '+done+' of 30 done'
+    :done>=30?'All 30 levels done · Endless mode awaits'
+    :'Next: level '+next+' · '+done+' of 30 done';
+}
+neoMatchesTile();document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#neo-activities-nav'))setTimeout(neoMatchesTile,0);},true);const activityGrid=document.querySelector('#neo-explore .neo-explore-grid');activityGrid.prepend(matchesButton);activityGrid.insertBefore(document.getElementById('neo-go-cafe'),document.getElementById('neo-go-garden'));
 (function () {
   // Loading folded into the one title card — no second page/handoff. Real
   // cats walk in (actual walking pose via drawCat, not a placeholder fade)
