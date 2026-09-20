@@ -1,5 +1,9 @@
 // Cove Friends hub — the friendly front door: invite, cards, love, gifts, visits and friendly matches.
 // Preview mode runs on a local sample circle (nothing is sent anywhere). The hosted backend plugs in behind the same `backend` shape.
+import { socialConfig } from './social-config.js';
+import * as net from './friends-net.js?v=1';
+// ?friends=preview keeps the local sample circle available for design and QA, even when the hosted circle is on.
+const LIVE = socialConfig.enabled && new URLSearchParams(location.search).get('friends') !== 'preview';
 const KEY = 'neo.friends.preview.v1', CARDS = 'neo.friends.cards.v1', SEEN = 'neo.friends.seen';
 export const GIFT_STEPS = [50, 100, 250, 500, 1000], DAILY_CAP = 1000, LOVE_GIVE = 10, LOVE_DAILY = 3;
 const PRESETS = ['Thinking of you', 'Lovely cove!', 'Your cats are the best', 'See you at the festival', 'Save me a sunny spot', 'Purrs from my cove'];
@@ -42,11 +46,14 @@ const saveState = s => { try { localStorage.setItem(KEY, JSON.stringify(s)); } c
 function readCards() { try { return JSON.parse(localStorage.getItem(CARDS) || '[]'); } catch { return []; } }
 function writeCards(list) { try { localStorage.setItem(CARDS, JSON.stringify(list.slice(0, 40))); } catch { } }
 
+export const pollBadge = net.pollBadge;
 export function badgeCount() {
+  if (LIVE) return net.badgeCount();
   try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (!s) return localStorage.getItem(SEEN) ? 0 : 1; return (s.inbox || []).length + (s.requests || []).length; } catch { return 0; }
 }
 
 function makeBackend(api) {
+  if (LIVE) return net.create(api);
   const s = loadState();
   const friend = id => s.friends.find(f => f.id === id);
   const receiveLeft = id => DAILY_CAP - (s.received[id] || 0);
@@ -120,7 +127,7 @@ const btn = (text, fn, cls = '') => h('button', { class: 'fh-btn ' + cls, type: 
 let dialog = null, be = null, api = null, route = { name: 'home' }, sceneStop = () => { };
 function ensureCss() {
   if (document.getElementById('fh-css')) return;
-  const l = document.createElement('link'); l.id = 'fh-css'; l.rel = 'stylesheet'; l.href = 'ui/friends-hub.css?v=5'; document.head.append(l);
+  const l = document.createElement('link'); l.id = 'fh-css'; l.rel = 'stylesheet'; l.href = 'ui/friends-hub.css?v=6'; document.head.append(l);
 }
 function shell(title, sub, opts = {}) {
   sceneStop();
@@ -135,7 +142,7 @@ function shell(title, sub, opts = {}) {
   body.status = msg => { status.textContent = msg || ''; };
   return body;
 }
-function go(name, data) { route = { name, data }; ({ home, inbox, visit, gift, card, match, added, cafe, guardian })[name](data); dialog.scrollTop = 0; dialog.querySelector('.fh-body')?.scrollTo?.(0, 0); }
+function go(name, data) { route = { name, data }; ({ home, inbox, visit, gift, card, match, added, cafe, guardian, welcome })[name](data); dialog.scrollTop = 0; dialog.querySelector('.fh-body')?.scrollTo?.(0, 0); }
 export function refresh() { if (dialog?.open && route.name === 'home') home(); }
 function celebrate(text, kind = 'heart') {
   api.sound?.(kind);
@@ -144,7 +151,9 @@ function celebrate(text, kind = 'heart') {
   dialog.append(t); setTimeout(() => t.remove(), 4200);
   const s = dialog.querySelector('.fh-status'); if (s) s.textContent = '';
 }
-const attempt = (body, fn) => { try { fn(); return true; } catch (e) { body.status(e.message || 'That did not work. Please try again.'); return false; } };
+let working = false;
+const attempt = async (body, fn) => { if (working) return false; working = true; try { await fn(); return true; } catch (e) { body.status(e.message || 'That did not work. Please try again.'); return false; } finally { working = false; } };
+const catLine = f => (f.cats?.length ? f.cats.length + (f.cats.length === 1 ? ' cat' : ' cats') + ' · ' : '') + (f.tag ? '#' + f.tag : '');
 
 function avatar(friend, size = 56) {
   const c = h('canvas', { width: size, height: Math.round(size * .86), class: 'fh-av', 'aria-hidden': 'true' });
@@ -155,7 +164,7 @@ const teamNames = f => (f.team || [0, 1, 2]).map(i => f.cats[i]?.name).filter(Bo
 
 function home() {
   const body = shell('Cove Friends', 'A small circle. A place to drop by.');
-  body.append(h('p', { class: 'fh-preview', text: 'Preview · sample friends. Nothing is sent to anyone yet.' }));
+  if (!be.hosted) body.append(h('p', { class: 'fh-preview', text: 'Preview · sample friends. Nothing is sent to anyone yet.' }));
   const invite = new URLSearchParams(location.search).get('friend');
   const link = 'https://midknightstudiolabs.github.io/catmint-cove-neo/?friend=' + be.state.me.code;
   const mine = h('section', { class: 'fh-card fh-invite' },
@@ -176,35 +185,36 @@ function home() {
   if (invite && invite !== be.state.me.code) field.value = invite;
   const doFind = () => {
     found.replaceChildren();
-    attempt(body, () => {
-      const f = be.find(field.value); body.status('');
-      found.append(h('div', { class: 'fh-card fh-match' }, avatar(f), h('div', { class: 'fh-grow' }, h('strong', { text: f.name }), h('small', { text: f.cats.length + ' cats · #' + f.tag })),
-        btn('Send invite', () => { attempt(body, () => { be.invite(f); found.replaceChildren(h('p', { class: 'fh-ok', text: 'Invite sent to ' + f.name + '. They just need to accept.' })); field.value = ''; }); }, 'primary')));
+    attempt(body, async () => {
+      const f = await be.find(field.value); body.status('');
+      found.append(h('div', { class: 'fh-card fh-match' }, avatar(f), h('div', { class: 'fh-grow' }, h('strong', { text: f.name }), h('small', { text: catLine(f) })),
+        btn('Send invite', () => { attempt(body, async () => { await be.invite(f); found.replaceChildren(h('p', { class: 'fh-ok', text: 'Invite sent to ' + f.name + '. They just need to accept.' })); field.value = ''; }); }, 'primary')));
     });
   };
   field.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doFind(); } });
-  body.append(h('section', { class: 'fh-add' }, h('label', { for: 'fh-find', text: 'Add a friend' }), h('div', { class: 'fh-row fh-find' }, field, btn('Find', doFind, 'primary')), h('p', { class: 'fh-hint', text: 'Preview tip: try Lark#4821' }), found));
+  body.append(h('section', { class: 'fh-add' }, h('label', { for: 'fh-find', text: 'Add a friend' }), h('div', { class: 'fh-row fh-find' }, field, btn('Find', doFind, 'primary')), be.hosted ? null : h('p', { class: 'fh-hint', text: 'Preview tip: try Lark#4821' }), found));
 
   const gifts = be.state.inbox.filter(i => i.type === 'gift').length, cards = be.state.inbox.filter(i => i.type === 'card').length;
   if (gifts || cards) body.append(h('button', { class: 'fh-banner', type: 'button', onclick: () => go('inbox') }, h('span', { class: 'fh-dot' }), h('b', { text: [gifts && gifts + (gifts === 1 ? ' gift' : ' gifts'), cards && cards + (cards === 1 ? ' card' : ' cards')].filter(Boolean).join(' and ') + ' waiting' }), h('span', { text: 'Open ›' })));
 
   if (be.state.requests.length) {
     body.append(h('h3', { text: 'Wants to be friends' }));
-    for (const r of be.state.requests) body.append(h('div', { class: 'fh-card fh-req' }, avatar(r), h('div', { class: 'fh-grow' }, h('strong', { text: r.name }), h('small', { text: r.cats.length + ' cats · #' + r.tag })),
-      h('div', { class: 'fh-row' }, btn('Accept', () => { be.accept(r); home(); }, 'primary'), btn('Not now', () => { be.decline(r); home(); }))));
+    for (const r of be.state.requests) body.append(h('div', { class: 'fh-card fh-req' }, avatar(r), h('div', { class: 'fh-grow' }, h('strong', { text: r.name }), h('small', { text: catLine(r) })),
+      h('div', { class: 'fh-row' }, btn('Accept', async () => { if (await attempt(body, async () => { await be.accept(r); })) home(); }, 'primary'), btn('Not now', async () => { if (await attempt(body, async () => { await be.decline(r); })) home(); }))));
   }
 
   body.append(h('h3', { text: be.state.friends.length ? 'Your circle' : 'Your circle is quiet' }));
   if (!be.state.friends.length) body.append(h('p', { class: 'fh-sub', text: 'Share your invite above, or add a friend with their code.' }));
   for (const f of be.state.friends) {
     body.append(h('article', { class: 'fh-card fh-friend' }, avatar(f, 64),
-      h('div', { class: 'fh-grow' }, h('strong', { text: f.name }), h('small', { text: f.cats.length + ' cats · ' + (f.cats.length >= 3 ? 'ready for a match' : 'growing their team') })),
+      h('div', { class: 'fh-grow' }, h('strong', { text: f.name }), h('small', { text: f.cats.length ? f.cats.length + ' cats · ' + (f.cats.length >= 3 ? 'ready for a match' : 'growing their team') : 'Waiting for them to open Friends' })),
       h('div', { class: 'fh-actions' }, btn('Visit', () => go('visit', f.id), 'primary'),
-        h('button', { class: 'fh-btn fh-heart', type: 'button', 'aria-label': 'Send a heart. ' + f.name + ' gets ' + LOVE_GIVE + ' Shells.', title: 'Send a heart · they get ' + LOVE_GIVE + ' Shells', onclick: () => { attempt(body, () => { be.love(f); celebrate('Thanks for the love! ' + f.name + ' gets ' + LOVE_GIVE + ' Shells.'); }); } }, '♥'),
+        h('button', { class: 'fh-btn fh-heart', type: 'button', 'aria-label': 'Send a heart. ' + f.name + ' gets ' + LOVE_GIVE + ' Shells.', title: 'Send a heart · they get ' + LOVE_GIVE + ' Shells', onclick: () => { attempt(body, async () => { await be.love(f); celebrate('Thanks for the love! ' + f.name + ' gets ' + LOVE_GIVE + ' Shells.'); }); } }, '♥'),
         btn('Gift', () => go('gift', f.id)))));
   }
   if (!localStorage.getItem(SEEN)) localStorage.setItem(SEEN, '1');
   body.append(h('p', { class: 'fh-foot', text: 'Only friends you accept can visit. Your balances, purchases and save file stay private.' }));
+  if (be.hosted && api.account) body.append(btn('Account, recovery & blocked players', () => { dialog.close(); api.account(); }, 'fh-quiet'));
 }
 
 function inbox() {
@@ -215,7 +225,7 @@ function inbox() {
     if (i.type === 'gift') { total += i.amount; body.append(h('div', { class: 'fh-card' }, h('strong', { text: i.fromName + ' sent you ' + i.amount + ' Shells' }), h('small', { text: 'A gift, no strings attached.' }))); }
     else body.append(cardView(i));
   }
-  body.append(btn('Collect everything' + (total ? ' · +' + total + ' Shells' : ''), () => { const r = be.claimAll(); go('home'); dialog.querySelector('.fh-status').textContent = (r.shells ? '+' + r.shells + ' Shells. ' : '') + (r.cards ? r.cards + ' card' + (r.cards === 1 ? '' : 's') + ' added to your Journal.' : ''); }, 'primary'));
+  body.append(btn('Collect everything' + (total ? ' · +' + total + ' Shells' : ''), () => { attempt(body, async () => { const r = await be.claimAll(); go('home'); api.sound?.('gift'); dialog.querySelector('.fh-status').textContent = (r.shells ? '+' + r.shells + ' Shells. ' : '') + (r.cards ? r.cards + ' card' + (r.cards === 1 ? '' : 's') + ' added to your Journal.' : ''); }); }, 'primary'));
 }
 function cardView(c) {
   const st = STYLES.find(s => s.k === c.style) || STYLES[0];
@@ -246,13 +256,14 @@ function visit(id) {
   raf = requestAnimationFrame(paint); sceneStop = () => { stop = true; cancelAnimationFrame(raf); };
   body.append(h('p', { class: 'fh-team', text: (f.cats[gi] ? 'Cove Guardian: ' + f.cats[gi].name + ' · ' : '') + 'Their usual team: ' + (teamNames(f).join(', ') || '—') }));
   body.append(h('div', { class: 'fh-grid' },
-    h('button', { class: 'fh-btn primary fh-loveBtn', type: 'button', onclick: () => attempt(body, () => { be.love(f); celebrate('Thanks for the love! ' + f.name + ' gets ' + LOVE_GIVE + ' Shells.'); dialog.querySelector('.fh-hearts').textContent = heartsLine(); }) }, h('span', { text: '♥ Send love' }), h('small', { text: '+' + LOVE_GIVE + ' for them' })),
+    h('button', { class: 'fh-btn primary fh-loveBtn', type: 'button', onclick: () => attempt(body, async () => { await be.love(f); celebrate('Thanks for the love! ' + f.name + ' gets ' + LOVE_GIVE + ' Shells.'); dialog.querySelector('.fh-hearts').textContent = heartsLine(); }) }, h('span', { text: '♥ Send love' }), h('small', { text: '+' + LOVE_GIVE + ' for them' })),
     btn('Send a gift', () => go('gift', f.id)), btn('Leave a card', () => go('card', f.id))));
   if (f.cafe) body.append(btn('☕ Visit ' + (f.cafe.name || 'their café'), () => go('cafe', f.id), 'fh-cafeBtn'));
   body.append(h('p', { class: 'fh-hint fh-hearts', text: heartsLine() }));
-  body.append(h('h3', { text: 'Friendly match' }), h('p', { class: 'fh-sub', text: 'Play their team, just for fun.' }),
+  if (f.cats.length) body.append(h('h3', { text: 'Friendly match' }), h('p', { class: 'fh-sub', text: 'Play their team, just for fun.' }),
     h('div', { class: 'fh-grid fh-two' }, btn('Volleyball', () => go('match', { id: f.id, kind: 'volley' })), btn('Tug of Paws', () => go('match', { id: f.id, kind: 'tug' }))));
-  body.append(btn('Remove from circle', () => { if (confirm('Remove ' + f.name + ' from your circle?')) { be.remove(f); go('home'); } }, 'fh-quiet'));
+  else body.append(h('p', { class: 'fh-sub', text: f.name + ' has not shared their cove yet. Their cats and café appear here after they open Friends once.' }));
+  body.append(btn('Remove from circle', () => { if (confirm('Remove ' + f.name + ' from your circle?')) attempt(body, async () => { await be.remove(f); go('home'); }); }, 'fh-quiet'));
 }
 
 function gift(id) {
@@ -263,7 +274,7 @@ function gift(id) {
   go2.disabled = true;
   const draw = () => { grid.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(Number(b.dataset.a) === pick))); go2.textContent = pick ? 'Send ' + pick.toLocaleString() + ' Shells' : 'Choose an amount'; go2.disabled = !pick; };
   for (const a of GIFT_STEPS) { const b = h('button', { class: 'fh-chip', type: 'button', role: 'radio', 'data-a': a, 'aria-checked': 'false', onclick: () => { pick = a; draw(); } }, h('b', { text: a.toLocaleString() }), h('small', { text: 'Shells' })); if (api.shells() < a) b.classList.add('short'); grid.append(b); }
-  go2.onclick = () => attempt(body, () => { be.gift(f, pick); go('visit', f.id); celebrate('Thanks for the gift! ' + f.name + ' gets ' + pick.toLocaleString() + ' Shells.', 'gift'); });
+  go2.onclick = () => attempt(body, async () => { await be.gift(f, pick); go('visit', f.id); celebrate('Thanks for the gift! ' + f.name + ' gets ' + pick.toLocaleString() + ' Shells.', 'gift'); });
   body.append(grid, go2, h('p', { class: 'fh-foot', text: 'Up to ' + DAILY_CAP.toLocaleString() + ' Shells a day each way. Gifts land in their Waiting box.' }));
 }
 
@@ -276,7 +287,7 @@ function card(id) {
   const mark = () => { msgs.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.textContent === text))); sw.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.k === style))); };
   for (const p of PRESETS) msgs.append(h('button', { type: 'button', role: 'radio', class: 'fh-opt', 'aria-checked': 'false', onclick: () => { text = p; draw(); mark(); } }, p));
   for (const s of STYLES) sw.append(h('button', { type: 'button', role: 'radio', class: 'fh-sw', 'data-k': s.k, 'aria-label': s.name, 'aria-checked': 'false', style: 'background:' + s.bg + ';border-color:' + s.ink, onclick: () => { style = s.k; draw(); mark(); } }));
-  draw(); mark(); body.append(prev, msgs, sw, btn('Leave card', () => attempt(body, () => { be.card(f, text, style); go('visit', f.id); dialog.querySelector('.fh-status').textContent = 'Card left for ' + f.name + '.'; }), 'primary'));
+  draw(); mark(); body.append(prev, msgs, sw, btn('Leave card', () => attempt(body, async () => { await be.card(f, text, style); go('visit', f.id); dialog.querySelector('.fh-status').textContent = 'Card left for ' + f.name + '.'; }), 'primary'));
 }
 
 function match(d) {
@@ -294,7 +305,7 @@ function guardian() {
   const grid = h('div', { class: 'fh-guard-grid', role: 'radiogroup', 'aria-label': 'Choose your Cove Guardian' });
   for (const d of list) {
     const cv = h('canvas', { width: 100, height: 88, class: 'fh-av', 'aria-hidden': 'true' });
-    const b = h('button', { type: 'button', role: 'radio', class: 'fh-guard', 'aria-checked': String(cur?.id === d.id), onclick: () => { if (api.setGuardian(d.id)) { body.status(d.name + ' is your Cove Guardian now.'); go('guardian'); dialog.querySelector('.fh-status').textContent = d.name + ' is your Cove Guardian now.'; } } }, cv, h('b', { text: d.name }), cur?.id === d.id ? h('small', { text: '♛ Guardian' }) : null);
+    const b = h('button', { type: 'button', role: 'radio', class: 'fh-guard', 'aria-checked': String(cur?.id === d.id), onclick: () => { if (api.setGuardian(d.id)) { be.publish?.(true)?.catch?.(() => { }); body.status(d.name + ' is your Cove Guardian now.'); go('guardian'); dialog.querySelector('.fh-status').textContent = d.name + ' is your Cove Guardian now.'; } } }, cv, h('b', { text: d.name }), cur?.id === d.id ? h('small', { text: '♛ Guardian' }) : null);
     grid.append(b); requestAnimationFrame(() => api.miniCat(cv, d.coatKey, d.star));
   }
   body.append(grid, h('p', { class: 'fh-foot', text: 'You can change your guardian any time, or from any cat’s card in the cove.' }));
@@ -322,11 +333,34 @@ function cafe(id) {
   else body.append(btn('Back', () => go('home')));
 }
 
-export function open(gameApi) {
+function welcome() {
+  const body = shell('Join Cove Friends', 'A small circle. A place to drop by.');
+  body.append(h('p', { class: 'fh-sub', text: 'Choose the name friends will see. You get a friend code to share, with no email or password.' }));
+  const name = h('input', { type: 'text', id: 'fh-name', maxlength: '24', autocomplete: 'off', value: String(api.coveName?.() || '').slice(0, 24), 'aria-label': 'Your cove name' });
+  body.append(h('label', { for: 'fh-name', class: 'fh-lab', text: 'Your cove name' }), name);
+  body.append(h('p', { class: 'fh-hint', text: 'Friends you accept can see your cats, your Cove Guardian and your café. They never see your Shells, purchases or save file.' }));
+  body.append(btn('Join Cove Friends', () => { attempt(body, async () => { body.status('Joining…'); await be.join(name.value); go('home'); publishSoon(); }); }, 'primary'));
+  body.append(h('p', { class: 'fh-hint', text: 'This Friends identity lives on this device. Reinstalling can lose it, so save a recovery key from Account & recovery once you have friends.' }));
+  if (api.account) body.append(btn('I already have a recovery key', () => { dialog.close(); api.account(); }, 'fh-quiet'));
+}
+const publishSoon = () => { try { be.publish?.()?.catch?.(() => { }); } catch { } };
+function loading(text, retry) {
+  const body = shell('Cove Friends', 'A small circle. A place to drop by.');
+  body.append(h('p', { class: 'fh-sub', role: 'status', text }));
+  if (retry) body.append(btn('Try again', retry, 'primary'));
+}
+export async function open(gameApi) {
   api = gameApi; ensureCss();
   be = makeBackend({ ...api, refresh });
-  if (!dialog) { dialog = h('dialog', { class: 'fh-sheet', 'aria-label': 'Cove Friends' }); document.body.append(dialog); dialog.addEventListener('close', () => sceneStop()); }
-  go('home'); if (!dialog.open) dialog.showModal();
+  if (!dialog) { dialog = h('dialog', { class: 'fh-sheet', 'aria-label': 'Cove Friends' }); document.body.append(dialog); dialog.addEventListener('close', () => { sceneStop(); window.dispatchEvent(new Event('neo-friends-closed')); }); }
+  if (!dialog.open) dialog.showModal();
+  if (!be.hosted) { go('home'); return; }
+  const boot = async () => {
+    loading('Opening your circle…');
+    try { const st = await be.start(); if (st === 'join') go('welcome'); else { go('home'); publishSoon(); } }
+    catch (e) { loading(e.message || 'Could not open Friends.', boot); }
+  };
+  await boot();
 }
 
 // Cards and match results, for the Journal.

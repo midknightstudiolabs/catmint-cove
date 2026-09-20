@@ -7279,11 +7279,10 @@ document.getElementById("shopBtn").addEventListener("click", () => togglePanel("
 document.getElementById("dexBtn").addEventListener("click", () => togglePanel("dex"));
 document.getElementById("todayBtn").addEventListener("click", () => togglePanel("today"));
 let friendsModule=null;
-document.getElementById('coveFriendsBtn').onclick=async()=>{
+document.getElementById('coveFriendsBtn').onclick=()=>{closeAllPanels();openFriendsHub();};
+async function openFriendsAccount(){
  restClearUI();
  try{
-  const {socialConfig}=await import('./ui/social-config.js');
-  if(!socialConfig.enabled){closeAllPanels();openFriendsHub();return;}
   friendsModule ||= await import('./ui/cove-friends.js?v=6');
   await friendsModule.open({name:coveName,backup:()=>{
    if(_arranging)throw Error('Save or cancel your layout before backing up.');
@@ -7308,7 +7307,7 @@ document.getElementById('coveFriendsBtn').onclick=async()=>{
    return picture;
   }});
  }catch(e){toast('Friends could not open. Please try again.',4);}
-};
+}
 window.addEventListener('neo-edit-saved',()=>friendsModule?.track('edit_saved'));
 document.querySelectorAll("[data-close]").forEach(b =>
   b.addEventListener("click", () => { const k = b.getAttribute("data-close"); if (panels[k]) panels[k].hidden = true; }));
@@ -20235,7 +20234,10 @@ window._sessionStart = Date.now();
 let _friendsHub=null;const _friendCats=new Map();
 function neoFriendsBadge(){
   const el=document.getElementById('neo-friends-badge');if(!el)return;
-  let n=0;try{const st=JSON.parse(localStorage.getItem('neo.friends.preview.v1')||'null');n=st?(st.inbox||[]).length+(st.requests||[]).length:(localStorage.getItem('neo.friends.seen')?0:1);}catch{}
+  let n=0;try{
+    if(window.__neoSocialOn){n=localStorage.getItem('neo.friends.session')?Number(localStorage.getItem('neo.friends.badge')||0):(localStorage.getItem('neo.friends.seen')?0:1);}
+    else{const st=JSON.parse(localStorage.getItem('neo.friends.preview.v1')||'null');n=st?(st.inbox||[]).length+(st.requests||[]).length:(localStorage.getItem('neo.friends.seen')?0:1);}
+  }catch{}
   el.hidden=!n;el.textContent=n>9?'9+':String(n);
 }
 function neoFriendsJournal(){
@@ -20244,11 +20246,12 @@ function neoFriendsJournal(){
   if(!has)return;
   import('./ui/friends-hub.js?v=11').then(m=>{const sec=m.journalSection();if(!sec)return;if(!document.getElementById('fh-css')){const l=document.createElement('link');l.id='fh-css';l.rel='stylesheet';l.href='ui/friends-hub.css?v=5';document.head.append(l);}host.querySelector('.fh-journal')?.remove();(host.querySelector('.cove-sheet-body')||host).append(sec);}).catch(()=>{});
 }
+const NEO_FRIENDS_HUB='./ui/friends-hub.js?v=12';
 async function openFriendsHub(){
   restClearUI();
   try{
-    _friendsHub||=await import('./ui/friends-hub.js?v=11');
-    _friendsHub.open({
+    _friendsHub||=await import(NEO_FRIENDS_HUB);
+    await _friendsHub.open({
       coveName,shells:()=>G.shells,
       spend:n=>{if(!(n>0)||G.shells<n)return false;G.shells-=n;syncHud();save();return true;},
       add:n=>{G.shells+=n;syncHud();save();},
@@ -20265,6 +20268,15 @@ async function openFriendsHub(){
       setGuardian:id=>{const c=cats.find(x=>x.journalId===id&&!x.visitor);if(!c)return false;G.guardian=id;save();return true;},
       myCafe:()=>{const c=G.cafe;if(!c||!c.unlocked)return null;return {name:CoveCafeEngine.cafeName(c),shopTier:c.shopTier||0,finish:c.finish||'sage',speed:c.speed||0,seats:c.seats||0,cookware:!!c.cookware,decor:{...(c.decor||{})},served:c.served||0,rating:CoveCafeEngine.rating(c),menu:[...(c.menu||[])]};},
       drawCafe:(ctx,cafe,t,H,key,guests)=>neoDrawFriendCafe(ctx,cafe,t,H,key,guests),
+      account:()=>openFriendsAccount(),
+      myCard:()=>{
+        const list=cats.filter(c=>!c.visitor&&!c._gone),gd=guardianCat();
+        const ordered=[...(gd?[gd]:[]),...list.filter(c=>c!==gd).sort((a,b)=>(b.star||0)-(a.star||0))].slice(0,6);
+        if(!ordered.length)return null;
+        const first=gd?1:0,team=ordered.map((_,i)=>i).slice(first,first+3);while(team.length<Math.min(3,ordered.length))team.push(team.length);
+        const cf=G.cafe,cafe=cf&&cf.unlocked?{name:CoveCafeEngine.cafeName(cf),shopTier:cf.shopTier||0,finish:cf.finish||'sage',speed:cf.speed||0,seats:cf.seats||0,cookware:!!cf.cookware,decor:{...(cf.decor||{})},served:cf.served||0,rating:CoveCafeEngine.rating(cf),menu:[...(cf.menu||[])]}:null;
+        return {cats:ordered.map(c=>({name:c.name,coatKey:c.coatKey,markSeed:c.markSeed,star:c.star,worn:[...(c.worn||[])]})),team,guardian:0,theme:'default',...(cafe?{cafe}:{})};
+      },
       sound:kind=>{try{ensureAudio();if(kind==='gift'){[784,1046,1318].forEach((f,i)=>tone(f,0.22,'triangle',0.05,i*0.07));}if(!playSample('kitten',{vol:0.85}))meow(true,0.8);}catch{}},
     });
     localStorage.setItem('neo.friends.seen','1');neoFriendsBadge();
@@ -20361,6 +20373,11 @@ syncNavH();
 setInterval(neoGardenWatch,5000);setTimeout(neoGardenWatch,2500);   // ripe-crop heads-up
 setInterval(analyticsAskTick,6000);
 setInterval(neoCafeAmbienceTick,800);
+/* Friends: know whether the hosted circle is on, and quietly check for gifts and invitations (only for players who already joined) */
+window.addEventListener('neo-friends-closed',()=>{try{neoFriendsBadge();}catch(e){}});
+import('./ui/social-config.js').then(m=>{window.__neoSocialOn=!!m.socialConfig.enabled&&new URLSearchParams(location.search).get('friends')!=='preview';try{neoFriendsBadge();}catch(e){}}).catch(()=>{});
+function neoFriendsPoll(){try{if(!window.__neoSocialOn||document.hidden||!localStorage.getItem('neo.friends.session'))return;import(NEO_FRIENDS_HUB).then(m=>m.pollBadge()).then(()=>neoFriendsBadge()).catch(()=>{});}catch(e){}}
+setInterval(neoFriendsPoll,180000);setTimeout(neoFriendsPoll,6000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(neoFriendsPoll,800);});
 if(new URLSearchParams(location.search).get('clips'))setTimeout(()=>neoOpenAdventureClips(),4500);
 resize();
 _lastViewBottom = _viewBottomY;

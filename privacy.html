@@ -8,7 +8,7 @@
 <div style="max-width:680px;margin:0 auto;font:16px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;color:#241f17;">
 
   <h1 style="font-size:1.7em;margin:0 0 .1em;">Privacy Policy — Catmint Cove</h1>
-  <p style="color:#6b6353;margin:0 0 1.4em;">Last updated: 6 September 2026</p>
+  <p style="color:#6b6353;margin:0 0 1.4em;">Last updated: 21 September 2026</p>
 
   <p>Catmint Cove (&ldquo;the app&rdquo;, &ldquo;the game&rdquo;) is made by
   <strong>Midknight Studio Labs</strong> (&ldquo;we&rdquo;, &ldquo;us&rdquo;).
@@ -17,11 +17,11 @@
 
   <h2 style="font-size:1.25em;margin:1.6em 0 .4em;">The short version</h2>
   <ul>
-    <li><strong>No account. No sign-up. No login.</strong> The whole game is playable straight away.</li>
-    <li><strong>Your game progress stays on your device.</strong> It is saved in the app&rsquo;s local storage. We never see it, and it is never uploaded to us.</li>
-    <li><strong>We do not run ads</strong> and we do not use any analytics or tracking SDKs.</li>
-    <li><strong>We do not collect, sell, or share your personal information.</strong></li>
-    <li>The <strong>only</strong> data that leaves your device is what&rsquo;s needed to process an in-app purchase, handled by Google Play and our billing provider (see below).</li>
+    <li><strong>No account, sign-up or login is needed to play.</strong> The whole game is playable straight away. Cove Friends is optional and uses a guest identity: no email, no password.</li>
+    <li><strong>Your game progress stays on your device.</strong> It is saved in the app&rsquo;s local storage. We never see it. Only if you choose to join Cove Friends is a small, friends-only card of your cats and caf&eacute; shared (see below).</li>
+    <li><strong>We do not run ads</strong> and we do not use any tracking SDKs. Optional, anonymous feature counts are sent only if you turn on &ldquo;Help improve the Cove&rdquo;.</li>
+    <li><strong>We do not sell your personal information</strong>, and we never share it for advertising.</li>
+    <li>Data leaves your device only for (1) in-app purchases, handled by the app store and our billing provider, (2) Cove Friends, if you join, and (3) optional feature counts, if you opt in.</li>
   </ul>
 
   <h2 style="font-size:1.25em;margin:1.6em 0 .4em;">Game data</h2>
@@ -31,11 +31,32 @@
   its data in Android settings, permanently removes it. We provide no cloud
   backup at this time, so an uninstall loses your progress.</p>
 
+  <h2 style="font-size:1.25em;margin:1.6em 0 .4em;">Cove Friends (optional)</h2>
+  <p>Cove Friends lets you visit friends, send hearts, gifts and cards, and play
+  friendly matches. It is off until you tap <em>Join Cove Friends</em>. Joining
+  creates a <strong>guest identity</strong> (no email, no password) and a
+  12-character friend code, and stores the following on our hosted database
+  (Supabase):</p>
+  <ul>
+    <li>the cove name you choose and your friend code;</li>
+    <li>a small &ldquo;cove card&rdquo;: the names, looks and stars of up to six cats, your Cove Guardian, and your caf&eacute;&rsquo;s name, stage, d&eacute;cor and served count;</li>
+    <li>your friend list, and the hearts, gifts and cards you send or receive (cards use fixed messages, never free text).</li>
+  </ul>
+  <p>Only friends you have accepted can see your cove card. <strong>Your Shells
+  balance, purchases and save file are never uploaded.</strong> Gifts move
+  Shells between devices, with daily limits enforced by the server. You can
+  remove or block anyone at any time. To have your Friends data deleted, contact
+  us using the address below with your friend code.</p>
+
   <h2 style="font-size:1.25em;margin:1.6em 0 .4em;">In-app purchases</h2>
-  <p>The app offers a few optional, <strong>cosmetic-only</strong> in-app
-  purchases (decorative items &mdash; they have no effect on gameplay or
-  progress). Purchases are processed by <strong>Google Play Billing</strong>.
-  Your payment details are handled entirely by Google and are never seen by us.</p>
+  <p>The app offers a few optional in-app purchases: cosmetic items, and an
+  optional auto-renewing subscription, <em>Midknight&rsquo;s Blessing</em>, that
+  adds convenience features (such as Harvest all and Feed all) and a small
+  Shell bonus. Nothing is required to play or finish the game. Purchases are
+  processed by <strong>Google Play Billing</strong> or the <strong>Apple App
+  Store</strong>. Your payment details are handled entirely by them and are
+  never seen by us. Subscriptions renew until you cancel them in your store
+  account settings.</p>
   <p>To deliver purchased items reliably across reinstalls and devices, we use
   <strong>RevenueCat, Inc.</strong> as our billing provider. When you make (or
   restore) a purchase, RevenueCat receives and stores:</p>
