@@ -241,16 +241,17 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    if(panel.hidden||!panel.isConnected)return;frame=requestAnimationFrame(paint);if(document.hidden||t-last<33)return;last=t;
    const canvas=panel.querySelector('canvas'),bounds=canvas.getBoundingClientRect();if(!bounds.width||!bounds.height)return;
    // Portrait phones crop a little off each side so the cats and counter read larger; everything else shows the full 720-unit width.
-   const tier=previewTier??s.shopTier??0,zoom=bounds.width<600&&bounds.height/bounds.width>1.3?(view==='inside'?1.06:[1.5,1.35,1.12][tier]||1.2):1,view720=720/zoom,cx0=(720-view720)/2,css=bounds.width/view720,vh=bounds.height/css;
+   const tier=previewTier??s.shopTier??0,zoom=bounds.width<600&&bounds.height/bounds.width>1.3?(view==='inside'?1.06:[1.5,1.35,1.12][tier]||1.2):1;let view720=720/zoom,cx0=(720-view720)/2,css=bounds.width/view720,vh=bounds.height/css;
    const density=Math.min(window.devicePixelRatio||1,2),pw=Math.round(bounds.width*density),ph=Math.round(bounds.height*density);if(canvas.width!==pw||canvas.height!==ph){canvas.width=pw;canvas.height=ph;}
    // Centre the 380-unit scene band in the space between the top stack and whatever sits at the bottom (open sheet, or the view switch and dock).
    const top=panel.querySelector('.cc-top')?.getBoundingClientRect().bottom-bounds.top||0,sheet=panel.querySelector('.cc-content:not([hidden])'),lower=panel.querySelector('.cc-switch'),intro=panel.querySelector('.cc-intro');
    const bottomEdge=sheet?sheet.getBoundingClientRect().top-bounds.top:intro?intro.getBoundingClientRect().top-bounds.top:lower&&lower.offsetParent?lower.getBoundingClientRect().top-bounds.top:bounds.height;
-   const bandPx=380*css,offset=Math.max(0,Math.min(vh-380,((top+Math.max(top+bandPx,bottomEdge))/2-bandPx/2)/css));
+   if(view==='inside'){const fit=Math.max(120,bottomEdge-top)/380;if(fit<css){css=fit;view720=bounds.width/css;cx0=(720-view720)/2;vh=bounds.height/css;}}   // short wide screens: shrink the room to fit instead of cropping the counter
+   const bandPx=380*css,isIn=view==='inside',offset=isIn?Math.max(0,top/css):Math.max(0,Math.min(vh-380,((top+Math.max(top+bandPx,bottomEdge))/2-bandPx/2)/css)),band=isIn?Math.max(380,(Math.max(bottomEdge,top+120)-top)/css):undefined;
    layout={k:css,cx0,offset};
    const ctx=canvas.getContext('2d'),k=pw/view720;ctx.setTransform(k,0,0,k,-cx0*k,0);
-   CoveCafeScene(ctx,{height:vh,offset,inside:view==='inside',s:displayState,stock:g.homestead.stock,E,a,actors,t,previewTier,previewFinish});
-   if(floats.length){const now=performance.now();ctx.save();ctx.translate(0,offset);ctx.textAlign='center';for(let i=floats.length-1;i>=0;i--){const f=floats[i],age=(now-f.t0)/1700;if(age>=1){floats.splice(i,1);continue;}const y=(view==='inside'?280:238)-age*54,al=age<.15?age/.15:1-Math.max(0,(age-.55)/.45);ctx.globalAlpha=Math.max(0,al);ctx.font='bold 26px Georgia';ctx.lineWidth=5;ctx.strokeStyle='rgba(255,250,235,.95)';ctx.strokeText(f.text,view==='inside'?344:360,y);ctx.fillStyle='#3f7a52';ctx.fillText(f.text,view==='inside'?344:360,y);}ctx.restore();}
+   CoveCafeScene(ctx,{height:vh,offset,band,inside:view==='inside',s:displayState,stock:g.homestead.stock,E,a,actors,t,previewTier,previewFinish});
+   if(floats.length){const now=performance.now();ctx.save();ctx.translate(0,offset);ctx.textAlign='center';for(let i=floats.length-1;i>=0;i--){const f=floats[i],age=(now-f.t0)/1700;if(age>=1){floats.splice(i,1);continue;}const y=(view==='inside'?(CoveCafeScene.cupY||280)+6:238)-age*54,al=age<.15?age/.15:1-Math.max(0,(age-.55)/.45);ctx.globalAlpha=Math.max(0,al);ctx.font='bold 26px Georgia';ctx.lineWidth=5;ctx.strokeStyle='rgba(255,250,235,.95)';ctx.strokeText(f.text,view==='inside'?344:360,y);ctx.fillStyle='#3f7a52';ctx.fillText(f.text,view==='inside'?344:360,y);}ctx.restore();}
   }
   render();
  }};
