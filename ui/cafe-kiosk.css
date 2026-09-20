@@ -140,6 +140,9 @@
 #app #cafe-kiosk.cc-v2 .cc-regulars{margin:16px 0}#app #cafe-kiosk.cc-v2 .cc-regulars p{font-size:13px}
 #app #cafe-kiosk.cc-v2 .cc-regular{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #e0dcb8}#app #cafe-kiosk.cc-v2 .cc-regular>div{flex:1;min-width:0}#app #cafe-kiosk.cc-v2 .cc-regular small{display:block;color:#66705a;font-size:12px}
 #app #cafe-kiosk.cc-v2 .cc-mood{font-size:12px;padding:4px 9px;border-radius:999px;background:#eeeedf;color:#5f7060;white-space:nowrap}#app #cafe-kiosk.cc-v2 .cc-mood.love{background:#f8dfe4;color:#9a4258}#app #cafe-kiosk.cc-v2 .cc-mood.happy{background:#f6ecc4;color:#7a5f14}#app #cafe-kiosk.cc-v2 .cc-mood.bitter{background:#e3ecd0;color:#4f6b35}
+#app #cafe-kiosk.cc-v2 .cc-snd{position:relative;flex:0 0 auto;width:40px;height:40px;margin:-10px 0 -10px 2px;border:0;background:transparent;color:#5f7060;display:grid;place-items:center;cursor:pointer}
+#app #cafe-kiosk.cc-v2 .cc-snd[data-mode=off]{color:#9aa08c}
+#app #cafe-kiosk.cc-v2 .cc-snd-pill{position:absolute;right:0;top:34px;z-index:3;padding:4px 10px;border-radius:999px;background:#3f5f4a;color:#f7f1dd;font-size:12px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(36,31,23,.2)}
 #app #cafe-kiosk.cc-v2 .cc-dot.good{background:#5f9a6c}
 #app #cafe-kiosk.cc-v2 .cc-decor .cc-card{grid-template-columns:1fr 1fr!important;gap:8px!important}#app #cafe-kiosk.cc-v2 .cc-decor .cc-card>div:first-child{grid-column:1/-1!important}#app #cafe-kiosk.cc-v2 .cc-decor .cc-card>.btn{grid-column:auto!important;width:100%}
 #app #cafe-kiosk.cc-v2 .cc-decor{margin:20px 0;padding:14px 0;border-bottom:1px solid #dedfc9}#app #cafe-kiosk.cc-v2 .cc-decor>p{font-size:13px}

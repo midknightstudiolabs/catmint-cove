@@ -2074,7 +2074,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=17"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=33"><script src="ui/cafe-engine.js?v=18"></script><script src="ui/cafe-scene.js?v=21"></script><script src="ui/cafe-kiosk.js?v=34"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=34"><script src="ui/cafe-engine.js?v=18"></script><script src="ui/cafe-scene.js?v=22"></script><script src="ui/cafe-kiosk.js?v=35"></script>
 <script>
 (() => {
 "use strict";
@@ -10681,14 +10681,25 @@ async function startCafeBed() {
 }
 /* ---- Catmint Café ambience: the café's own coffee-shop loop, kept low and steady while the café screen is open (music bus, so Mute silences it) ---- */
 let _cafeAmb = null;
-function neoCafeAmbienceStart() {
-  if (!actx || _cafeAmb || _cafeBed) return;
+const CAFE_SOUNDS = ["music", "rain", "off"];
+function neoCafeSoundMode() { try { const v = localStorage.getItem("neo.cafe.sound"); return CAFE_SOUNDS.includes(v) ? v : "music"; } catch (e) { return "music"; } }
+function neoCafeSoundSet(v) { if (!CAFE_SOUNDS.includes(v)) return; try { localStorage.setItem("neo.cafe.sound", v); } catch (e) {} try { neoCafeAmbienceTick(); } catch (e) {} }
+function neoCafeAmbienceStart(mode) {
+  if (!actx || _cafeAmb || _cafeBed || mode === "off") return;
+  const rain = mode === "rain";
   const g = actx.createGain(); g.gain.value = 0.0001; g.connect(musicGain || actx.destination);
-  rampParam(g.gain, muted ? 0.0001 : FEST_BED_LVL * 0.5, 2.4);
-  const amb = { g, src: null, stopped: false }; _cafeAmb = amb;
-  const spin = () => { if (amb.stopped || !actx || !_cafeBedBuf) return; const s = actx.createBufferSource(); s.buffer = _cafeBedBuf; s.loop = true; s.connect(g); s.start(); amb.src = s; };
-  if (_cafeBedBuf) { spin(); return; }
-  _festAudioBuf("fest-bed-cafe.mp3").then(ab => actx.decodeAudioData(ab)).then(buf => { _cafeBedBuf = buf; spin(); }).catch(() => {});
+  rampParam(g.gain, muted ? 0.0001 : rain ? 0.45 : FEST_BED_LVL * 0.5, 2.4);
+  const amb = { g, src: null, stopped: false, mode }; _cafeAmb = amb;
+  const spin = buf => {
+    if (amb.stopped || !actx) return;
+    const s = actx.createBufferSource(); s.loop = true;
+    if (buf) { s.buffer = buf; s.connect(g); }
+    else { s.buffer = makeNoiseBuffer(4, "pink"); const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2600; const rg = actx.createGain(); rg.gain.value = 0.55; s.connect(lp); lp.connect(rg); rg.connect(g); }
+    s.start(); amb.src = s;
+  };
+  if (rain) { loadRainLoop().then(buf => spin(buf || null)).catch(() => spin(null)); return; }
+  if (_cafeBedBuf) { spin(_cafeBedBuf); return; }
+  _festAudioBuf("fest-bed-cafe.mp3").then(ab => actx.decodeAudioData(ab)).then(buf => { _cafeBedBuf = buf; spin(buf); }).catch(() => {});
 }
 function neoCafeAmbienceStop() {
   if (!_cafeAmb || !actx) { _cafeAmb = null; return; }
@@ -10699,7 +10710,9 @@ function neoCafeAmbienceStop() {
 }
 function neoCafeAmbienceTick() {
   const open = !!(panels.coffee && !panels.coffee.hidden) && !festMode && !restMode && !document.hidden;
-  if (open) { try { ensureAudio(); neoCafeAmbienceStart(); } catch (e) {} } else neoCafeAmbienceStop();
+  const mode = neoCafeSoundMode();
+  if (_cafeAmb && (!open || _cafeAmb.mode !== mode)) neoCafeAmbienceStop();
+  if (open && mode !== "off" && !_cafeAmb) { try { ensureAudio(); neoCafeAmbienceStart(mode); } catch (e) {} }
 }
 function stopCafeBed() {
   if (!_cafeBed || !actx) { _cafeBed = null; return; }
@@ -20339,7 +20352,7 @@ function neoFriendResult(kind,won,text){
 function neoOpenCoffeeKiosk(){
   neoHomestead();CoveCafeEngine.init(G,Date.now());
   CoveCafeView.open({game:()=>G,close:closeAllPanels,save, hud:syncHud,register:p=>panels.coffee=p,garden:()=>neoOpenHomestead('garden'),
-    ready:()=>({count:neoReadyPlots().length,yields:neoReadySummary()}),blessing:()=>blessingActive(),harvestAll:()=>neoHarvestAll(),offer:()=>showBlessingOffer(),sfx:k=>{try{sfx(k)}catch(e){}},
+    ready:()=>({count:neoReadyPlots().length,yields:neoReadySummary()}),blessing:()=>blessingActive(),harvestAll:()=>neoHarvestAll(),offer:()=>showBlessingOffer(),sfx:k=>{try{sfx(k)}catch(e){}},soundMode:()=>neoCafeSoundMode(),setSound:v=>neoCafeSoundSet(v),
     actors:()=>cats.slice(0,8).map(c=>{const copy=new Cat({coatKey:c.coatKey,mascot:c.mascot,markSeed:c.markSeed,bornAt:c.bornAt,star:c.star,name:c.name,traits:c.traits,x:0,y:0});copy.worn=[...(c.worn||[])];return copy;}),
     cat:(ctx,c,x,y,scale,t,walking)=>{if(!c)return;ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);c.state=walking?'exploring':'loafing';c.trotting=walking;c.walk=t/130;c.walkAmt=Number(walking)||0;c.face=1;c.stateT=t/1000;c.bob=t/900;c.tail=t/650;c.blink=(t/1000+x*.017)%4.7<.14?0:3;drawCat(ctx,c,true);ctx.restore();}
   });
