@@ -865,6 +865,10 @@
     background:#eef1e3;border:2px solid transparent;border-radius:14px;padding:.4rem .2rem .35rem;
     cursor:pointer;font:inherit;}
   .fp-cell canvas{width:56px;height:48px;}
+  .vb-coach{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(max(.9rem, env(safe-area-inset-bottom)) + 74px);z-index:6;max-width:min(88vw,22rem);padding:10px 16px;border-radius:16px;background:#fff8e4;color:#4a3a1e;font:700 15px/1.3 system-ui,sans-serif;text-align:center;box-shadow:0 6px 22px rgba(36,31,23,.3);pointer-events:none;animation:vbCoachIn .35s ease both}
+  .vb-coach[hidden]{display:none}
+  @keyframes vbCoachIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+  @media (prefers-reduced-motion:reduce){.vb-coach{animation:none}}
   .fp-quick-row{display:flex;gap:.5rem;justify-content:center;margin:.1rem 0 .3rem;}
   .fp-quick-row .btn{padding:.38rem .85rem;font-size:.82rem;min-height:38px;}
   .fp-tip{font-size:.76rem;line-height:1.35;color:var(--ink-soft);max-width:22rem;margin:.1rem auto .5rem;text-align:center;}
@@ -1880,6 +1884,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
       <div class="volley-com" id="volleyCom" hidden><span class="vc-mic">🎙️</span><span id="vbComText"></span></div>
     </div>
     <div class="volley-banner" id="volleyBanner" hidden>MATCH POINT</div>
+    <div class="vb-coach" id="vbCoach" hidden role="status"></div>
     <div class="fest-panel" id="festMidkPanel" hidden>
       <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-tug.svg?v=2" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>Tug of Paws</h2>
@@ -2140,7 +2145,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=18"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=34"><script src="ui/cafe-engine.js?v=18"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=39"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=35"><script src="ui/cafe-engine.js?v=19"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=40"></script>
 <script>
 (() => {
 "use strict";
@@ -10372,7 +10377,7 @@ function runFestCountdown() {
 // is one clean motion rather than a cut
 function closeFest() {
   _friendMatch = null;
-  raceHudHide();
+  raceHudHide(); { const c = document.getElementById("vbCoach"); if (c) c.hidden = true; }
   stopFestWinSting();                       // cut the fanfare the moment you leave
   document.getElementById("festChoose").hidden = true;
   document.getElementById("festPanel").hidden = true;
@@ -12093,6 +12098,7 @@ function startCoveVolley() {
   if (volleyPickSel.length !== 3) return;
   if (!volleyPickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats just wandered off."); return; }
   festKind = "volley"; window.CoveAnalytics?.start("Cove volley"); saveFestTeam("volley", volleyPickSel);
+  _vbCoachA = 0; _vbCoachB = 0; { const c = document.getElementById("vbCoach"); if (c) c.hidden = true; }
   stopFestBed();                       // quiet through the countdown — the volley bed starts on "Go!"
   fitFestCanvas();
   matchT = 0; volleyScore = { cove: 0, visit: 0 }; volleyBall = null;
@@ -12559,8 +12565,19 @@ function vbMovePart(p, dt) {
   } else { p.act = null; c._vbLift = 0; c.squash = Math.max(0, (c.squash || 0) - dt); }
   c.blink -= dt; if (c.blink < -0.12) c.blink = rand(2, 6) * m.blinkEvery;
 }
+let _vbCoachOn = (() => { try { return localStorage.getItem("neo.vb.coach") !== "1"; } catch (e) { return false; } })(), _vbCoachA = 0, _vbCoachB = 0, _vbCoachHideAt = 0;
+function vbCoachShow(text, secs) { const e = document.getElementById("vbCoach"); if (!e) return; e.textContent = text; e.hidden = false; _vbCoachHideAt = matchT + secs; }
+function vbCoachTick() {
+  const e = document.getElementById("vbCoach"); if (!e) return;
+  if (!e.hidden && matchT > _vbCoachHideAt) e.hidden = true;
+  if (!_vbCoachOn || volleyPhase !== "play") return;
+  if (_vbCoachA === 0 && volleyBall && volleyBall.live && volleyBall.side === "cove" && matchT > 1.2) { _vbCoachA = 1; vbCoachShow("Tap the cat you want to go for the ball", 6); }
+  if (_vbCoachA === 1 && _vbLastTapAt >= 0) { _vbCoachA = 2; e.hidden = true; }
+  if (_vbCoachB === 0 && volleyParts.some(p => p.side === "cove" && (p.tier === "drowsy" || p.tier === "tired"))) { _vbCoachB = 1; vbCoachShow("Yawning? Tap that cat to keep them awake", 6); }
+  if (_vbCoachA === 2 && _vbCoachB === 1 && matchT > _vbCoachHideAt) { _vbCoachOn = false; try { localStorage.setItem("neo.vb.coach", "1"); } catch (err) {} }
+}
 function renderVolley(dt) {
-  matchT += dt;
+  matchT += dt; vbCoachTick();
   updateFX(Math.min(dt, 0.05));   // fest render skips simulate() — step ripples/floaters here
   const g = ctx;
   { const px = restViewportPx();

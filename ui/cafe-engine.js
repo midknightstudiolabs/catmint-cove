@@ -44,6 +44,17 @@
     if(score>=.5)return {mood:'meh',text:name+' thought it was fine.'};
     return {mood:'bitter',text:(r.id==='coffee'||r.id==='midknight')?name+' found it a little bitter. A better recipe, or honey, helps.':name+' wasn’t sure about that one.'};
   }
+  function localDay(now){const d=new Date(now);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+  const DAILY_KINDS=['serve','special','earn'];
+  function daily(g,now=Date.now()){
+    const s=init(g,now);if(!s.unlocked)return null;
+    const day=localDay(now);
+    if(!s.daily||s.daily.day!==day){const sp=special(s,now);let kind=DAILY_KINDS[Math.floor(hash01('daily:'+day)*DAILY_KINDS.length)];if(kind==='special'&&!sp)kind='serve';s.daily={day,kind,served0:s.served||0,revenue0:s.revenue||0,special:sp||null,sold0:sp?((s.sales&&s.sales[sp])||0):0,claimed:false};}
+    const d=s.daily;
+    const cfg={serve:{title:'Serve 12 guests',target:12,reward:120,got:(s.served||0)-d.served0},special:{title:'Serve 5 of today’s special',target:5,reward:150,got:d.special?(((s.sales&&s.sales[d.special])||0)-d.sold0):0},earn:{title:'Earn 250 Shells from guests',target:250,reward:100,got:Math.floor((s.revenue||0)-d.revenue0)}}[d.kind];
+    return {kind:d.kind,title:cfg.title,target:cfg.target,reward:cfg.reward,progress:Math.min(cfg.target,Math.max(0,cfg.got)),done:cfg.got>=cfg.target,claimed:!!d.claimed,special:d.special};
+  }
+  function claimDaily(g,now=Date.now()){const dl=daily(g,now);if(!dl||!dl.done||dl.claimed)return 0;g.cafe.daily.claimed=true;g.shells+=dl.reward;return dl.reward;}
   function upgradeShop(g,now){const s=init(g,now),tier=s.shopTier||0,next=shops[tier+1];if(!s.unlocked||!next||g.shells<next.cost)return false;settle(g,now);g.shells-=next.cost;s.shopTier=tier+1;return true;}
   function init(g,now){
     const h=g.homestead;
@@ -114,5 +125,5 @@
   }
   function plantingPlan(g){const free=(g.homestead?.plots||[]).flatMap((p,i)=>p?[]:[i]),rows=pantryPlan(g).rows.filter(r=>r.patches>0).map(r=>({...r})),jobs=[];let cost=0;while(free.length&&rows.some(r=>r.patches>0)){for(const r of rows){if(!free.length)break;if(r.patches>0){jobs.push({slot:free.shift(),key:r.key});cost+=r.cost;r.patches--;}}}return {jobs,cost};}
   function plantSuggested(g,quote,now=Date.now()){const current=plantingPlan(g);if(!current.jobs.length||JSON.stringify(current)!==JSON.stringify(quote)||g.shells<current.cost)return false;for(const job of current.jobs){const crop=ingredients[job.key];g.homestead.plots[job.slot]={key:job.key,ready:now+crop.seconds*1000};}g.shells-=current.cost;return true;}
-  root.CoveCafeEngine={special,taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
+  root.CoveCafeEngine={daily,claimDaily,special,taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
 })(globalThis);
