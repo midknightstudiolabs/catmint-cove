@@ -498,6 +498,9 @@
   .adv-card.ready{border-color:var(--accent-bright);background:linear-gradient(180deg,#eef6ec,var(--panel));}
   .adv-card.done{opacity:.72;}
   .adv-top{display:flex;gap:.6rem;align-items:center;margin-bottom:.6rem;}
+  canvas.adv-clip{display:block;width:100%;height:auto;aspect-ratio:2/1;border-radius:12px;margin:0 0 .6rem;background:#dfeee0;}
+  canvas.adv-clip[hidden]{display:none;}
+  #modal canvas.adv-preview{margin:.2rem 0 .7rem;width:100%!important;height:auto!important;aspect-ratio:2/1;}
   .adv-emoji{font-size:1.5rem;flex:0 0 auto;}
   .adv-title{font-weight:700;font-size:.92rem;}
   .adv-sub{font-size:.78rem;color:var(--ink-soft);margin-top:.05rem;}
@@ -18871,6 +18874,7 @@ function renderAdventureCard() {
     const who = (a.cats && a.cats.length) ? (a.cats.length > 2 ? `${a.cats[0]} + ${a.cats.length - 1}` : joinNice(a.cats)) : a.cat;
     const prg = back ? 100 : Math.max(3, Math.min(99, Math.round((Date.now() - a.startedAt) / Math.max(1, a.endsAt - a.startedAt) * 100)));
     html += `<div class="adv-trip${back ? " back" : ""}">
+      ${back ? "" : `<canvas class="adv-clip" data-trip="${esc(String(a.id))}" data-dest="${esc(a.dest)}" width="360" height="180" role="img" aria-label="${esc(who)} on their ${esc(d.name.toLowerCase())}"></canvas>`}
       <div class="adv-top"><span class="adv-emoji">${neoUIIcon("adventure")}</span>
       <div><div class="adv-title">${esc(who)} &middot; ${esc(d.name)}</div>
       <div class="adv-sub">${back ? "back at the cove — see how it went" : `${T.label.toLowerCase()} · back ${whenText(a.endsAt)}`}</div></div></div>
@@ -18894,6 +18898,7 @@ function renderAdventureCard() {
   }
   html += mapLine();
   el.innerHTML = html;
+  neoClipStart();
   el.querySelectorAll("[data-postcard]").forEach(b=>b.onclick=()=>{const a=activeAdvs().find(a=>String(a.id)===b.dataset.postcard);const pc=a&&latestPostcardFor(a.cat);if(!a)return;if(pc&&pc.t>=a.startedAt)showPostcard(pc.text,pc.cat,pc.dest,undefined,pc);else showPostcard(Date.now()>=a.endsAt ? "This adventure is complete. Your cats are ready to share how it went." : "The adventure has begun. A first note will arrive partway through the trip.",a.cat,a.dest);});
   el.querySelectorAll("[data-claim]").forEach(b => b.onclick = () => resolveAdventure(b.dataset.claim));
   el.querySelectorAll("[data-recall]").forEach(b => b.onclick = () => recallAdventure(b.dataset.recall));
@@ -18908,12 +18913,13 @@ function openAdventurePicker() {
   if (!advSlotOpen()) { toast("Both expeditions are already out.", 3.5); return; }
   const dests=Object.entries(ADV_DESTS).map(([k,d])=>`<button class="pick-dest" data-d="${k}" aria-pressed="false"><span>${neoUIIcon("dest-"+k)}</span><b>${esc(d.name)}</b><i>${esc(d.blurb)}</i></button>`).join("");
   const tiers=Object.values(ADV_TIERS).map(t=>`<button class="pick-tier${t.key==='day'?' on':''}" data-t="${t.key}" aria-pressed="${t.key==='day'}"><b>${esc(t.label)}</b><i>${esc(t.note)}</i></button>`).join("");
-  openModal(`<div class="reveal adv-flow"><div class="kicker">Adventure · 1 of 2</div><h2>Plan a little adventure</h2><p class="sub">Choose a place and how long your cats will be away.</p><div class="pick-list">${dests}</div><div class="pick-label">How long?</div><div class="pick-tiers">${tiers}</div><p class="adv-selection" id="adv-selection" role="status">Choose a destination to continue.</p><div class="row"><button class="btn primary" id="adv-continue" disabled>Choose cats</button><button class="btn" id="pick-cancel">Cancel</button></div></div>`);
+  openModal(`<div class="reveal adv-flow"><div class="kicker">Adventure · 1 of 2</div><h2>Plan a little adventure</h2><p class="sub">Choose a place and how long your cats will be away.</p><canvas id="adv-preview" class="adv-clip adv-preview" width="360" height="180" hidden role="img" aria-label="A preview of the trip"></canvas><div class="pick-list">${dests}</div><div class="pick-label">How long?</div><div class="pick-tiers">${tiers}</div><p class="adv-selection" id="adv-selection" role="status">Choose a destination to continue.</p><div class="row"><button class="btn primary" id="adv-continue" disabled>Choose cats</button><button class="btn" id="pick-cancel">Cancel</button></div></div>`);
   let tier='day',dest=null;
   const sync=()=>{document.getElementById('adv-continue').disabled=!dest;document.getElementById('adv-selection').textContent=dest?ADV_DESTS[dest].name+' · '+advTier(tier).label:'Choose a destination to continue.';};
   document.querySelectorAll('#modal .pick-tier').forEach(b=>b.onclick=()=>{document.querySelectorAll('#modal .pick-tier').forEach(x=>{x.classList.remove('on');x.setAttribute('aria-pressed','false')});b.classList.add('on');b.setAttribute('aria-pressed','true');tier=b.dataset.t;sync();});
   document.querySelectorAll('#modal .pick-dest').forEach(b=>b.onclick=()=>{document.querySelectorAll('#modal .pick-dest').forEach(x=>{x.classList.remove('on');x.setAttribute('aria-pressed','false')});b.classList.add('on');b.setAttribute('aria-pressed','true');dest=b.dataset.d;sync();});
   document.getElementById('pick-cancel').onclick=closeModal;
+  document.querySelectorAll('#modal .pick-dest').forEach(b=>b.addEventListener('click',()=>neoSetAdvPreview(b.dataset.d)));
   document.getElementById('adv-continue').onclick=()=>{if(dest)pickAdventureCat(dest,tier);};
 }
 const PARTY_MAX = 3;
@@ -20148,8 +20154,33 @@ function neoDrawFriendCafe(ctx,cafe,t,H,key,guests){
   const night=new Date().getHours()<6||new Date().getHours()>=18;ctx.setTransform(ctx.canvas.width/720,0,0,ctx.canvas.width/720,0,0);
   CoveCafeScene(ctx,{height:H,offset:0,inside:false,s:st,stock:{coffee:9,catmint:9,honey:9,carrot:9},E:CoveCafeEngine,a:ad,actors:actors.length?actors:[neoFriendCatObj({name:'Guest',coatKey:'tuxedo',markSeed:1})],t});
 }
-// Adventure mini-clips: your real cats on the road. Preview gallery for now (?clips=1 or __cove.clips()).
-let _clipsMod=null;
+// Adventure mini-clips: your real cats on the road — live on each running trip, and as a preview when you pick a place.
+let _clipsMod=null,_clipRaf=0,_clipLast=0;const _clipT0=performance.now();
+function neoClipParty(cv){
+  if(cv.dataset.trip){const a=activeAdvs().find(x=>String(x.id)===cv.dataset.trip);if(a){const p=advPartyOf(a).filter(Boolean).map(d=>({name:d.name,coatKey:d.coatKey,markSeed:d.markSeed,star:d.star,worn:[...(d.worn||[])]}));if(p.length)return p;}}
+  return neoClipPool();
+}
+function neoClipTick(now){
+  const els=[...document.querySelectorAll('canvas.adv-clip')].filter(c=>c.isConnected&&!c.hidden&&c.offsetParent);
+  if(!els.length||document.hidden||!_clipsMod){_clipRaf=0;return;}
+  _clipRaf=requestAnimationFrame(neoClipTick);
+  if(now-_clipLast<33)return;_clipLast=now;
+  const t=(now-_clipT0)/1000;
+  for(const cv of els){
+    const party=neoClipParty(cv),g=cv.getContext('2d');g.setTransform(cv.width/720,0,0,cv.width/720,0,0);g.clearRect(0,0,720,360);
+    _clipsMod.drawClip(cv.dataset.dest,g,t,(gg,i,x,y,sc,tt,walking,face)=>{if(i>=party.length)return;const c=neoFriendCatObj(party[i]),ms=tt*1000;gg.save();gg.translate(x,y);gg.scale(sc,sc);c.state=walking?'exploring':'loafing';c.trotting=!!walking;c.walk=ms/130;c.walkAmt=walking?1:0;c.face=face||1;c.stateT=tt;c.bob=ms/900;c.tail=ms/650;c.blink=(tt+x*.017)%4.7<.14?0:3;drawCat(gg,c,true);gg.restore();});
+  }
+}
+function neoClipStart(){
+  if(_clipRaf)return;
+  if(!_clipsMod){import('./ui/adventure-clips.js?v=2').then(m=>{_clipsMod=m;neoClipStart();}).catch(()=>{});return;}
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){neoClipTick(2200+_clipT0);_clipRaf=0;return;}   // one calm still frame instead of motion
+  _clipRaf=requestAnimationFrame(neoClipTick);
+}
+function neoSetAdvPreview(dest){
+  const cv=document.getElementById('adv-preview');if(!cv)return;
+  cv.dataset.dest=dest;cv.hidden=false;neoClipStart();
+}
 function neoClipPool(){
   const res=cats.filter(c=>!c.visitor&&!c._gone).slice(0,4).map(c=>({name:c.name,coatKey:c.coatKey,markSeed:c.markSeed,star:c.star,worn:[...(c.worn||[])]}));
   const fill=[{name:'Biscuit',coatKey:'ginger',markSeed:11,star:2},{name:'Juno',coatKey:'tuxedo',markSeed:22,star:2}];
@@ -20158,7 +20189,7 @@ function neoClipPool(){
 }
 async function neoOpenAdventureClips(id){
   try{
-    _clipsMod||=await import('./ui/adventure-clips.js?v=1');
+    _clipsMod||=await import('./ui/adventure-clips.js?v=2');
     if(!document.getElementById('fh-css')){const l=document.createElement('link');l.id='fh-css';l.rel='stylesheet';l.href='ui/friends-hub.css?v=4';document.head.append(l);}
     closeAllPanels();
     _clipsMod.openGallery({clipCat:(g,i,x,y,scale,t,walking,face)=>{

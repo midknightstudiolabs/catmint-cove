@@ -98,11 +98,55 @@ function market(g, t, cat) {
   cat(g, 1, wrap(t * -26, 900) - 80 + 40, 340, 1.5, t, true, -1);
 }
 
+
+// ---------------- 5. tiny island ----------------
+function island(g, t, cat) {
+  g.fillStyle = grad(g, 0, 200, "#bfe6f0", "#f3f0dc"); g.fillRect(0, 0, 720, 360);
+  blob(g, 130, 66, 26, 26, "#fdf1c6"); blob(g, 130, 66, 42, 42, "rgba(253,241,198,.35)");
+  cloud(g, wrap(300 + t * 8, 900) - 90, 70, 1.0);
+  g.fillStyle = grad(g, 170, 360, "#63c1d6", "#2f86ad"); g.fillRect(0, 170, 720, 190);
+  g.strokeStyle = "rgba(255,255,255,.4)"; g.lineWidth = 2;
+  for (let i = 0; i < 10; i++) { const y = 188 + i * 17, x0 = wrap(i * 151 + t * (14 + i), 820) - 100; g.beginPath(); g.moveTo(x0, y); g.quadraticCurveTo(x0 + 26, y - 5, x0 + 52, y); g.stroke(); }
+  // the island, with a palm and a little hut
+  blob(g, 520, 214, 118, 30, "#e9dcaa"); blob(g, 520, 208, 96, 24, "#8fc16e");
+  g.strokeStyle = "#7b5d3f"; g.lineWidth = 6; g.beginPath(); g.moveTo(556, 208); g.quadraticCurveTo(568, 160, 552, 116); g.stroke();
+  for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + (i - 2.5) * .55 + Math.sin(t * 1.2 + i) * .06; g.strokeStyle = "#5f9a6d"; g.lineWidth = 5; g.beginPath(); g.moveTo(552, 116); g.quadraticCurveTo(552 + Math.cos(a) * 30, 116 + Math.sin(a) * 30 - 10, 552 + Math.cos(a) * 58, 116 + Math.sin(a) * 40 + 16); g.stroke(); }
+  g.fillStyle = "#c9a86e"; g.fillRect(470, 190, 34, 22); g.fillStyle = "#b5654f"; g.beginPath(); g.moveTo(464, 190); g.lineTo(487, 172); g.lineTo(510, 190); g.fill();
+  // a rowboat drifting toward it, cat aboard
+  const bx = 250 + Math.sin(t * .4) * 26, by = 282 + Math.sin(t * 1.6) * 3;
+  g.save(); g.translate(bx, by); g.rotate(Math.sin(t * 1.6) * .04);
+  cat(g, 0, 0, -6, 1.8, t, false, 1); if (cat) cat(g, 1, 42, -4, 1.5, t, false, 1);
+  g.fillStyle = "#9b6b43"; g.beginPath(); g.moveTo(-70, -4); g.lineTo(80, -4); g.quadraticCurveTo(64, 30, 0, 32); g.quadraticCurveTo(-56, 30, -70, -4); g.fill(); g.fillStyle = "#b98553"; g.fillRect(-70, -8, 150, 6);
+  g.strokeStyle = "#6a4d33"; g.lineWidth = 3; const r = Math.sin(t * 2) * .35; g.beginPath(); g.moveTo(-10, -20); g.lineTo(-58 + r * 30, 18); g.stroke();
+  g.restore();
+  g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = 2; for (let k = 0; k < 3; k++) { const ph = (t * .6 + k * .33) % 1; g.beginPath(); g.ellipse(bx, 312, 60 + ph * 34, 6 + ph * 4, 0, 0, TAU); g.globalAlpha = 1 - ph; g.stroke(); g.globalAlpha = 1; }
+}
+
+// ---------------- 6. the peak ----------------
+function peak(g, t, cat) {
+  g.fillStyle = grad(g, 0, 300, "#a9d0ee", "#f1f4ef"); g.fillRect(0, 0, 720, 360);
+  blob(g, 590, 70, 28, 28, "#fff3cc"); g.fillStyle = "rgba(255,243,204,.12)"; for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(590, 70); g.lineTo(590 - 200 + i * 130, 360); g.lineTo(590 - 130 + i * 130, 360); g.fill(); }
+  cloud(g, wrap(60 + t * 9, 900) - 90, 92, 1.3); cloud(g, wrap(440 + t * 6, 900) - 90, 60, 1.0);
+  const range = (col, pts) => { g.fillStyle = col; g.beginPath(); g.moveTo(0, 360); for (const [x, y] of pts) g.lineTo(x, y); g.lineTo(720, 360); g.fill(); };
+  range("#9db6c9", [[0, 240], [110, 170], [200, 220], [310, 130], [430, 230], [540, 160], [720, 240]]);
+  range("#7f9cb3", [[0, 280], [130, 220], [260, 270], [380, 190], [520, 275], [660, 210], [720, 250]]);
+  g.fillStyle = "#f6f8fa"; g.beginPath(); g.moveTo(310, 130); g.lineTo(282, 168); g.lineTo(304, 160); g.lineTo(322, 176); g.lineTo(338, 160); g.lineTo(350, 172); g.lineTo(338, 148); g.fill();
+  // switchback trail the cats climb, camera scrolling down as they go
+  const climb = (t * 24) % 90;
+  g.fillStyle = "#6f8f6a"; g.beginPath(); g.moveTo(0, 360); g.lineTo(0, 300); g.quadraticCurveTo(260, 262, 720, 300); g.lineTo(720, 360); g.fill();
+  g.strokeStyle = "#d8c49a"; g.lineWidth = 16; g.lineCap = "round"; g.beginPath(); g.moveTo(80, 350); g.lineTo(360, 322); g.lineTo(170, 296); g.lineTo(430, 270); g.stroke(); g.lineCap = "butt";
+  for (let i = 0; i < 9; i++) { const x = wrap(i * 93 - t * 34, 800) - 40; blob(g, x, 330 + (i % 2) * 10, 22, 12, "#7d8a86"); }
+  cat(g, 0, 300 + Math.sin(t * .5) * 8, 326, 1.9, t, true, 1); cat(g, 1, 214 + Math.sin(t * .5) * 8, 326, 1.7, t + .5, true, 1);
+  for (let i = 0; i < 16; i++) { const x = wrap(i * 47 - t * 26, 760) - 20, y = wrap(i * 61 + t * 30, 340); blob(g, x, y, 1.8, 1.8, "rgba(255,255,255,.85)"); }
+}
+
 export const CLIPS = [
   { id: 'fishing', name: 'Fishing at the pier', line: 'Quiet water, patient paws.', draw: fishing },
   { id: 'forest', name: 'A walk through the forest', line: 'Dappled light, soft leaves.', draw: forest },
   { id: 'meadow', name: 'Across the meadow', line: 'Flowers, butterflies, no hurry.', draw: meadow },
   { id: 'market', name: 'Market town', line: 'Something smells like fish.', draw: market },
+  { id: 'island', name: 'Tiny island', line: 'A boat, a palm and a very small hut.', draw: island },
+  { id: 'peak', name: 'The peak', line: 'Up, up, and a view of everything.', draw: peak },
 ];
 export function drawClip(id, g, t, cat) { const c = CLIPS.find(x => x.id === id); if (c) c.draw(g, t, cat); }
 
