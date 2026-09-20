@@ -123,8 +123,11 @@ function neoRenderCats(){
 }
 function neoRenderJournal(){
   const root=document.getElementById('neoJournal');if(!root)return;
+  const friendsButton=document.getElementById('coveFriendsBtn');
+  friendsButton?.remove();
   const home=neoHome(),residents=cats.filter(c=>!c.visitor);
   root.innerHTML=`<div class="neo-journal-cover"><span class="kicker">THE LITTLE THINGS STAY</span><h3>${esc(coveName())}</h3><p>${residents.length} familiar faces. A place to come back to.</p><p class="neo-promise">Your cats are cared for while you are away. Lovely days never reset.</p></div><div class="neo-journal-pins"></div><div class="neo-journal-tools"><button class="btn" id="neo-journal-photo">Capture a moment</button><button class="btn" id="neo-journal-cats">Their stories</button></div>`;
+  if(friendsButton)root.querySelector('.neo-journal-tools').append(friendsButton);
   const pins=root.querySelector('.neo-journal-pins');
   for(const c of residents.filter(c=>neoRecord(c).favorite).slice(0,6)){const b=document.createElement('button');b.className='btn';b.textContent='♥ '+c.name;b.onclick=()=>neoOpenStory(c);pins.append(b);}
   const activeKeys=new Set(residents.map(neoCatKey));

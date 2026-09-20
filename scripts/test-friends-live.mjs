@@ -35,6 +35,16 @@ try{
  assert((await rpc(refreshed,'list')).friends.some(f=>f.id===b.user.id&&f.status==='accepted'));
  await rpc(b,'unpublish');await assert.rejects(rpc(refreshed,'visit',{id:b.user.id}));
  await rpc(refreshed,'block',{id:b.user.id});await assert.rejects(rpc(b,'hello',{id:a.user.id}));
+ const issued=await call('/rest/v1/rpc/neo_protection',{action:'issue'},refreshed);
+ const recovered=await call('/auth/v1/signup',{data:{test_purpose:'Cove Friends recovery verification'}});
+ accounts.push({label:'recovered',session:recovered});
+ await call('/rest/v1/rpc/neo_protection',{action:'recover',secret:issued.key},recovered);
+ assert.equal((await rpc(recovered,'list')).profile.code,profileA.code);
+ await assert.rejects(rpc(refreshed,'list'));
+ await call('/rest/v1/rpc/neo_protection',{action:'recover',secret:issued.key},recovered);
+ await call('/rest/v1/rpc/neo_privacy',{action:'unblock',peer:b.user.id},recovered);
+ assert.equal((await call('/rest/v1/rpc/neo_privacy',{action:'blocked'},recovered)).length,0);
+ console.log('PASS: recovery preserves friend code, revokes old access, safely retries and unblocks.');
  console.log('PASS: real anonymous signup, name preview, invitation/acceptance, private snapshot access, outsider denial, greeting deduplication, refreshed-session identity/friendship preservation, stop sharing and block.');
 }finally{
  console.log('Retained controlled-test account IDs (no credentials):',accounts.map(a=>({label:a.label,id:a.session.user.id})));

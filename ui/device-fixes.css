@@ -178,6 +178,10 @@
 .friends-sheet h2{font-family:Georgia,serif;margin:0 0 8px}
 .friends-sheet p{line-height:1.5}
 .friends-body{display:grid;gap:16px}
+.friends-settings button{display:block;width:100%;margin-top:10px}
+.friends-settings summary{cursor:pointer;padding:12px 0;min-height:44px;box-sizing:border-box}
+.friends-sheet .friends-close{display:block;width:100%}
+.friends-invite>*{min-width:0}
 .friends-sheet label{display:grid;gap:8px;font-size:14px}
 .friends-sheet input:not([type=checkbox]){box-sizing:border-box;width:100%;min-height:46px;border-radius:12px;border:1px solid #cbd2bf;background:#fffdf5;padding:10px 12px;color:#394738;font-size:16px}
 .friends-sheet .btn{min-height:44px;justify-content:center;text-align:center;color:#425842;border:1px solid #cfd6bf;border-radius:24px;background:#fffcf1;padding:10px 16px;cursor:pointer;font:inherit}
@@ -212,3 +216,5 @@
 #inventoryEditCove{border-radius:12px;min-height:44px;margin:0 0 12px;box-shadow:none;width:100%}
 .cove-sheet-footer .btn,.cove-dialog-footer .btn{border-radius:12px;box-shadow:none;min-height:44px}
 @media(max-width:400px){#editStored{gap:8px}#editStored .btn{padding:8px!important}#editStored span{font-size:13px}}
+.sheet .neo-journal-tools{display:grid;grid-template-columns:1fr;gap:10px}
+.sheet .neo-journal-tools>.btn{width:100%;min-height:52px;display:flex;align-items:center;justify-content:flex-start;text-align:left;border-radius:16px;padding:14px 18px;gap:10px;margin:0}

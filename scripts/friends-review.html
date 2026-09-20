@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cove Friends — isolated UI review</title><link rel="stylesheet" href="../ui/device-fixes.css"><style>body{font:16px system-ui;background:#dce6cd;color:#394738}.friends-sheet{font:16px system-ui}.friends-settings{display:grid;gap:12px}.friends-settings button{margin-top:8px;width:100%}button{min-height:44px}#fixture{padding:16px}</style><div id="fixture">Isolated preview · simulated accounts only. <button id="open">Open Friends</button></div><script type="module">
+const originalFetch=window.fetch.bind(window);
+const source=await(await originalFetch('../ui/cove-friends.js')).text();
+const values=new Map([['neo.friends.session',JSON.stringify({access_token:'mock',refresh_token:'mock',expires_at:Date.now()+3600000})]]);
+// Keep the game's actual local save/session untouched during layout review.
+const fixtureStorage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
+window.__friendsReviewStorage=fixtureStorage;
+window.fetch=async(url,options)=>{const d=JSON.parse(options.body);let result={ok:true};if(d.action==='list')result={profile:{code:'DEMO1234COVE'},friends:[{id:'test',name:'A very cozy seaside Cove',status:'accepted',shared_at:null}],hellos:2};if(d.action==='status')result={protected:false};if(d.action==='issue')result={key:'CR1.'+'a'.repeat(64)};if(d.action==='blocked')result=[{id:'blocked',name:'Example Cove'}];return {ok:true,json:async()=>result};};
+const module=await import(URL.createObjectURL(new Blob(["const localStorage=window.__friendsReviewStorage;\n"+source.replace("import { socialConfig } from './social-config.js';","const socialConfig={enabled:true,url:'https://fixture.invalid',key:'fixture'};")],{type:'text/javascript'})));
+document.querySelector('#open').onclick=()=>module.open({name:()=> 'Preview Cove'});
+document.querySelector('#open').click();
+</script></html>

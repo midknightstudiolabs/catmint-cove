@@ -42,6 +42,10 @@ for (const asset of ["fest-bed-hub.mp3", "fest-bed-race.mp3", "fest-bed-volley.m
 }
 
 // 3. the native bridge
+// Friends is enabled for the approved native test release; the public web gate stays separate.
+const nativeSocialPath = join(www, "ui", "social-config.js");
+const nativeSocial = await readFile(nativeSocialPath, "utf8");
+await writeFile(nativeSocialPath, nativeSocial.replace("enabled:false", "enabled:true"));
 await cp(join(root, "scripts", "capacitor-bridge.js"), join(www, "capacitor-bridge.js"));
 
 console.log("built www/ from index.html + assets");

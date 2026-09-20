@@ -11,7 +11,7 @@ class Element{
 function all(e){return [e,...e.children.flatMap(all)];}
 const body=new Element('body'),store=new Map([['neo.friends.session',JSON.stringify({access_token:'fixture',expires_at:Date.now()+3600000})]]),calls=[];
 const fixture={profile:{code:'ABCD1234EFGH'},friends:[{id:'peer',name:'Test Cove',status:'accepted',shared_at:'2026-09-20T00:00:00Z'}],hellos:0};
-const context=vm.createContext({console,Date,JSON,Error,TypeError,AbortController,setTimeout,clearTimeout,socialConfig:{enabled:true,url:'https://fixture.invalid',key:'fixture'},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)},navigator:{clipboard:{writeText:async()=>{}}},document:{body,createElement:t=>new Element(t),createTextNode:t=>Object.assign(new Element('text'),{textContent:t})},fetch:async(url,opts)=>{const data=JSON.parse(opts.body);calls.push(data);return {ok:true,json:async()=>data.action==='list'?fixture:{ok:true}};}});
+const context=vm.createContext({console,Date,JSON,Error,TypeError,AbortController,setTimeout,clearTimeout,socialConfig:{enabled:true,url:'https://fixture.invalid',key:'fixture'},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},navigator:{clipboard:{writeText:async()=>{}}},document:{body,createElement:t=>new Element(t),createTextNode:t=>Object.assign(new Element('text'),{textContent:t})},fetch:async(url,opts)=>{const data=JSON.parse(opts.body);calls.push(data);return {ok:true,json:async()=>data.action==='list'?fixture:{ok:true}};}});
 let source=fs.readFileSync(require('node:path').join(__dirname,'../ui/cove-friends.js'),'utf8').replace("import { socialConfig } from './social-config.js';",'').replace(/export /g,'');
 vm.runInContext(source,context);
 function find(text){const e=all(body).find(e=>e.tag==='button'&&e.textContent===text);assert(e,'Missing '+text);return e;}
@@ -33,5 +33,14 @@ async function click(text){await find(text).onclick();}
  await vm.runInContext("run(async()=>{page('New page','');throw Error('Visible on current page');})",context);
  assert(all(body).some(e=>e.textContent==='Visible on current page'));
  assert(!calls.some(c=>c.action==='event'),'Analytics must remain opt-in');
+ let signups=0,claims=0;
+ context.fetch=async(url,opts)=>{const d=JSON.parse(opts.body);calls.push(d);if(url.endsWith('/signup')){signups++;return {ok:true,json:async()=>({access_token:'new-fixture',refresh_token:'refresh-fixture',expires_at:Date.now()/1000+3600,expires_in:3600})};}if(d.action==='recover'&&++claims===1)throw new TypeError('Lost connection');return {ok:true,json:async()=>d.action==='list'?fixture:d.action==='issue'?{key:'CR1.'+'a'.repeat(64)}:{ok:true}};};
+ vm.runInContext('recoverAccount()',context);
+ all(body).find(e=>e.type==='password').value='CR1.'+'b'.repeat(64);
+ await click('Recover Friends');assert(store.has('neo.friends.recovery-session'));
+ await click('Recover Friends');assert.equal(signups,1,'Retry must reuse pending identity');
+ assert(!store.has('neo.friends.recovery-session'));assert.equal(JSON.parse(store.get('neo.friends.session')).access_token,'new-fixture');
+ assert(![...store.values()].some(v=>v.includes('CR1.')),'Never persist recovery keys');
+ await click('Save a new recovery key');assert.equal(find('Done').disabled,true);
  console.log('PASS: code validation, normalized invitation, refresh control, remove/block confirmation, current-page errors and analytics opt-in (mock backend).');
 })().catch(e=>{console.error(e);process.exitCode=1;});
