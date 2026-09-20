@@ -76,6 +76,12 @@
 @media(prefers-reduced-motion:reduce){.fh-sheet *{transition:none!important}}
 
 .fh-cafe-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;text-align:center}.fh-cafe-stats>div{padding:10px 6px;border-radius:14px;background:#eef0df}.fh-cafe-stats b{display:block;font-size:16px;color:#33503b}.fh-cafe-stats small{font-size:11px;color:#6f7d68}
+.fh-guardian{width:100%;box-sizing:border-box;text-align:left;border:1px solid #e6d9a3;font:inherit;color:#405c45;cursor:pointer;background:#f8f1d4}
+.fh-guard-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.fh-guard{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border:1px solid #cfd6bf;border-radius:16px;background:#fffaf0}
+.fh-guard .fh-av{width:64px;height:auto}
+.fh-guard b{font-size:13px}.fh-guard small{color:#a07a12;font-size:11px}
+.fh-guard[aria-checked=true]{background:#f6ecc4;border-color:#dcc985;box-shadow:inset 0 0 0 2px #e7b45a}
 .fh-cafeBtn{background:#f6ecc4;border-color:#dcc985}
 .fh-mycafe{width:100%;box-sizing:border-box;text-align:left;border:1px solid #d9dcc6;font:inherit;color:#405c45;cursor:pointer;background:#f6f0d6}.fh-cup{font-size:26px}
 .fh-req{flex-wrap:wrap}.fh-hint{margin:6px 2px 0;font-size:12px;color:#7a8672}

@@ -16,14 +16,14 @@ function sampleState() {
     v: 2, day: today(), sent: 0, loveSent: 0, cardsSent: {}, received: {}, pending: [],
     me: { code: 'K7QM2XPD9RTC' },
     friends: [
-      { id: 'marlow', name: 'Marlow’s Cove', tag: '2041', theme: 'seaside', since: at - 9 * 864e5, cats: [cat('Biscuit', 'orangewhite', 3, 11), cat('Juno', 'tuxedo', 2, 22), cat('Pebble', 'greytab', 2, 33), cat('Mochi', 'siamese', 3, 44)], team: [0, 1, 2],
+      { id: 'marlow', name: 'Marlow’s Cove', tag: '2041', theme: 'seaside', since: at - 9 * 864e5, cats: [cat('Biscuit', 'orangewhite', 3, 11), cat('Juno', 'tuxedo', 2, 22), cat('Pebble', 'greytab', 2, 33), cat('Mochi', 'siamese', 3, 44)], team: [0, 1, 2], guardian: 3,
         cafe: { name: 'Marlow’s Beans', shopTier: 1, finish: 'blue', speed: 1, seats: 1, cookware: true, decor: { flowerbox: true, chalkboard: true, lights: true }, served: 312, rating: 4.7, menu: ['coffee', 'tea'] } },
-      { id: 'juniper', name: 'Juniper’s Cove', tag: '7710', theme: 'meadow', since: at - 3 * 864e5, cats: [cat('Clover', 'calico', 3, 55), cat('Nib', 'black', 2, 66), cat('Suki', 'cream', 2, 77)], team: [0, 1, 2],
+      { id: 'juniper', name: 'Juniper’s Cove', tag: '7710', theme: 'meadow', since: at - 3 * 864e5, cats: [cat('Clover', 'calico', 3, 55), cat('Nib', 'black', 2, 66), cat('Suki', 'cream', 2, 77)], team: [0, 1, 2], guardian: 0,
         cafe: { name: 'The Purring Cup', shopTier: 0, finish: 'rose', speed: 0, seats: 1, cookware: false, decor: { flowerbox: true, parasol: true }, served: 96, rating: 4.4, menu: ['coffee'] } },
     ],
-    requests: [{ id: 'pip', name: 'Pip’s Cove', tag: '3391', cats: [cat('Toast', 'ginger', 2, 88), cat('Ziggy', 'browntab', 2, 99), cat('Moss', 'smoke', 3, 12)], team: [0, 1, 2], theme: 'default',
+    requests: [{ id: 'pip', name: 'Pip’s Cove', tag: '3391', cats: [cat('Toast', 'ginger', 2, 88), cat('Ziggy', 'browntab', 2, 99), cat('Moss', 'smoke', 3, 12)], team: [0, 1, 2], guardian: 2, theme: 'default',
       cafe: { name: 'Pip’s Corner', shopTier: 0, finish: 'butter', speed: 0, seats: 0, cookware: false, decor: {}, served: 18, rating: null, menu: ['coffee'] } }],
-    directory: [{ id: 'lark', name: 'Lark’s Cove', tag: '4821', code: 'LARK48210007', theme: 'autumn', cats: [cat('Maple', 'golden', 3, 5), cat('Fig', 'russian', 2, 6), cat('Wren', 'lynxpoint', 3, 7)], team: [0, 1, 2],
+    directory: [{ id: 'lark', name: 'Lark’s Cove', tag: '4821', code: 'LARK48210007', theme: 'autumn', cats: [cat('Maple', 'golden', 3, 5), cat('Fig', 'russian', 2, 6), cat('Wren', 'lynxpoint', 3, 7)], team: [0, 1, 2], guardian: 2,
       cafe: { name: 'Maple & Moon', shopTier: 2, finish: 'cream', speed: 2, seats: 1, cookware: true, decor: { flowerbox: true, chalkboard: true, parasol: true, lights: true, statue: true, fountain: true }, served: 1204, rating: 4.9, menu: ['coffee', 'tea', 'midknight'] } }],
     inbox: [
       { id: 'g1', type: 'gift', from: 'marlow', fromName: 'Marlow’s Cove', amount: 50, at: at - 36e5 },
@@ -120,7 +120,7 @@ const btn = (text, fn, cls = '') => h('button', { class: 'fh-btn ' + cls, type: 
 let dialog = null, be = null, api = null, route = { name: 'home' }, sceneStop = () => { };
 function ensureCss() {
   if (document.getElementById('fh-css')) return;
-  const l = document.createElement('link'); l.id = 'fh-css'; l.rel = 'stylesheet'; l.href = 'ui/friends-hub.css?v=4'; document.head.append(l);
+  const l = document.createElement('link'); l.id = 'fh-css'; l.rel = 'stylesheet'; l.href = 'ui/friends-hub.css?v=5'; document.head.append(l);
 }
 function shell(title, sub, opts = {}) {
   sceneStop();
@@ -135,7 +135,7 @@ function shell(title, sub, opts = {}) {
   body.status = msg => { status.textContent = msg || ''; };
   return body;
 }
-function go(name, data) { route = { name, data }; ({ home, inbox, visit, gift, card, match, added, cafe })[name](data); dialog.scrollTop = 0; dialog.querySelector('.fh-body')?.scrollTo?.(0, 0); }
+function go(name, data) { route = { name, data }; ({ home, inbox, visit, gift, card, match, added, cafe, guardian })[name](data); dialog.scrollTop = 0; dialog.querySelector('.fh-body')?.scrollTo?.(0, 0); }
 export function refresh() { if (dialog?.open && route.name === 'home') home(); }
 function celebrate(text, kind = 'heart') {
   api.sound?.(kind);
@@ -148,7 +148,7 @@ const attempt = (body, fn) => { try { fn(); return true; } catch (e) { body.stat
 
 function avatar(friend, size = 56) {
   const c = h('canvas', { width: size, height: Math.round(size * .86), class: 'fh-av', 'aria-hidden': 'true' });
-  const k = friend.cats?.[0]; if (k) requestAnimationFrame(() => api.miniCat(c, k.coatKey, k.star));
+  const k = friend.cats?.[friend.guardian ?? 0] || friend.cats?.[0]; if (k) requestAnimationFrame(() => api.miniCat(c, k.coatKey, k.star));
   return c;
 }
 const teamNames = f => (f.team || [0, 1, 2]).map(i => f.cats[i]?.name).filter(Boolean);
@@ -164,6 +164,10 @@ function home() {
       btn('Share invite', async () => { const text = 'Come visit my cove in Catmint Cove! My code is ' + pretty(be.state.me.code) + ' — ' + link; try { if (navigator.share) await navigator.share({ title: 'Catmint Cove', text }); else { await navigator.clipboard.writeText(text); body.status('Invite copied. Paste it to a friend.'); } } catch { } }, 'primary'),
       btn('Copy code', async () => { try { await navigator.clipboard.writeText(pretty(be.state.me.code)); body.status('Code copied.'); } catch { body.status('Could not copy. Your code is ' + pretty(be.state.me.code) + '.'); } })));
   body.append(mine);
+  const gd = api.myGuardian?.();
+  body.append(h('button', { class: 'fh-card fh-guardian', type: 'button', onclick: () => go('guardian') },
+    gd ? avatar({ cats: [gd], guardian: 0 }, 56) : h('span', { class: 'fh-cup', 'aria-hidden': 'true', text: '♛' }),
+    h('div', { class: 'fh-grow' }, h('strong', { text: gd ? gd.name + ' · your Cove Guardian' : 'Choose your Cove Guardian' }), h('small', { text: gd ? 'They stand for you when friends visit. Tap to change ›' : 'Pick the cat who represents you to friends ›' }))));
   const myCafe = api.myCafe?.();
   if (myCafe) body.append(h('button', { class: 'fh-card fh-mycafe', type: 'button', onclick: () => go('cafe', 'me') }, h('span', { class: 'fh-cup', 'aria-hidden': 'true', text: '☕' }), h('div', { class: 'fh-grow' }, h('strong', { text: myCafe.name || 'Your café' }), h('small', { text: 'See how friends see your café ›' }))));
 
@@ -228,16 +232,19 @@ function visit(id) {
   body.append(cv);
   const themes = { default: ['#dce8db', '#8ea577'], meadow: ['#e2edd4', '#93b06d'], seaside: ['#cfe3e2', '#c9bb92'], autumn: ['#efdcc0', '#b98a55'], frost: ['#dfe9ee', '#dfe6ea'] };
   const [sky, ground] = themes[f.theme] || themes.default;
-  const spots = f.cats.slice(0, 6).map((k, i, a) => ({ k, x: 110 + i * (500 / Math.max(1, a.length - 1 || 1)) * (a.length > 1 ? 1 : 0) + (a.length === 1 ? 250 : 0), y: 262 + (i % 2) * 40, ph: i * 0.9 }));
+  const gi = f.guardian ?? 0, rest = f.cats.map((k, i) => ({ k, i })).filter(x => x.i !== gi).slice(0, 5);
+  const L = Math.ceil(rest.length / 2), xs = rest.map((_, n) => n < L ? 360 - 118 * (L - n) : 360 + 118 * (n - L + 1));   // the guardian stands centre; the others fan out either side
+  const spots = rest.map((o, n) => ({ k: o.k, x: xs[n], y: 258 + (n % 2) * 34, ph: n * 0.9, sc: 1.8 }));
+  if (f.cats[gi]) spots.push({ k: f.cats[gi], x: 360, y: 300, ph: 0.4, sc: 2.6, guardian: true });
   let raf = 0, stop = false;
   const paint = t => {
     if (stop || !cv.isConnected) return; raf = requestAnimationFrame(paint);
     const g = cv.getContext('2d'); g.fillStyle = sky; g.fillRect(0, 0, 720, 360); g.fillStyle = ground; g.fillRect(0, 210, 720, 150);
     g.fillStyle = '#ffffff55'; g.beginPath(); g.ellipse(120, 70, 60, 16, 0, 0, 7); g.ellipse(580, 96, 70, 18, 0, 0, 7); g.fill();
-    for (const s of spots) api.drawCat(g, s.k, s.x, s.y, 2.1, t + s.ph * 700);
+    for (const s of spots) { api.drawCat(g, s.k, s.x, s.y, s.sc, t + s.ph * 700); if (s.guardian) { g.fillStyle = '#e7b45a'; g.beginPath(); g.moveTo(s.x - 11, s.y - 118); g.lineTo(s.x - 7, s.y - 130); g.lineTo(s.x - 2, s.y - 121); g.lineTo(s.x + 3, s.y - 132); g.lineTo(s.x + 8, s.y - 121); g.lineTo(s.x + 12, s.y - 130); g.lineTo(s.x + 15, s.y - 118); g.closePath(); g.fill(); g.strokeStyle = '#b98a2c'; g.lineWidth = 1.2; g.stroke(); } }
   };
   raf = requestAnimationFrame(paint); sceneStop = () => { stop = true; cancelAnimationFrame(raf); };
-  body.append(h('p', { class: 'fh-team', text: 'Their usual team: ' + (teamNames(f).join(', ') || '—') }));
+  body.append(h('p', { class: 'fh-team', text: (f.cats[gi] ? 'Cove Guardian: ' + f.cats[gi].name + ' · ' : '') + 'Their usual team: ' + (teamNames(f).join(', ') || '—') }));
   body.append(h('div', { class: 'fh-grid' },
     h('button', { class: 'fh-btn primary fh-loveBtn', type: 'button', onclick: () => attempt(body, () => { be.love(f); celebrate('Thanks for the love! ' + f.name + ' gets ' + LOVE_GIVE + ' Shells.'); dialog.querySelector('.fh-hearts').textContent = heartsLine(); }) }, h('span', { text: '♥ Send love' }), h('small', { text: '+' + LOVE_GIVE + ' for them' })),
     btn('Send a gift', () => go('gift', f.id)), btn('Leave a card', () => go('card', f.id))));
@@ -280,6 +287,18 @@ function match(d) {
   body.append(btn('Choose my team', () => { dialog.close(); api.startMatch(d.kind, { id: f.id, name: f.name, cats: f.cats, team: f.team }); }, 'primary'), h('p', { class: 'fh-foot', text: 'A friendly match is just for fun. The result is saved to your Journal.' }));
 }
 function added() { home(); }
+function guardian() {
+  const body = shell('Your Cove Guardian', 'The cat who stands for you when friends visit. One day, the cove’s protector.', { back: ['home'] });
+  const list = api.myCatsFull?.() || [], cur = api.myGuardian?.();
+  if (!list.length) { body.append(h('p', { class: 'fh-sub', text: 'Welcome a cat to the cove first.' })); return; }
+  const grid = h('div', { class: 'fh-guard-grid', role: 'radiogroup', 'aria-label': 'Choose your Cove Guardian' });
+  for (const d of list) {
+    const cv = h('canvas', { width: 100, height: 88, class: 'fh-av', 'aria-hidden': 'true' });
+    const b = h('button', { type: 'button', role: 'radio', class: 'fh-guard', 'aria-checked': String(cur?.id === d.id), onclick: () => { if (api.setGuardian(d.id)) { body.status(d.name + ' is your Cove Guardian now.'); go('guardian'); dialog.querySelector('.fh-status').textContent = d.name + ' is your Cove Guardian now.'; } } }, cv, h('b', { text: d.name }), cur?.id === d.id ? h('small', { text: '♛ Guardian' }) : null);
+    grid.append(b); requestAnimationFrame(() => api.miniCat(cv, d.coatKey, d.star));
+  }
+  body.append(grid, h('p', { class: 'fh-foot', text: 'You can change your guardian any time, or from any cat’s card in the cove.' }));
+}
 // A café, as visitors see it: the real outside scene with the owner's name, finish, shop stage and décor.
 function cafe(id) {
   const mine = id === 'me', f = mine ? null : be.state.friends.find(x => x.id === id);

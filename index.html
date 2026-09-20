@@ -498,6 +498,7 @@
   .adv-card.ready{border-color:var(--accent-bright);background:linear-gradient(180deg,#eef6ec,var(--panel));}
   .adv-card.done{opacity:.72;}
   .adv-top{display:flex;gap:.6rem;align-items:center;margin-bottom:.6rem;}
+  .cc-guardian.is-guardian{background:#f6ecc4;border-color:#dcc985;color:#7a5f14;opacity:1;cursor:default}
   canvas.adv-clip{display:block;width:100%;height:auto;aspect-ratio:2/1;border-radius:12px;margin:0 0 .6rem;background:#dfeee0;}
   canvas.adv-clip[hidden]{display:none;}
   #modal canvas.adv-preview{margin:.2rem 0 .7rem;width:100%!important;height:auto!important;aspect-ratio:2/1;}
@@ -2003,6 +2004,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
     <button class="cc-treat" id="cc-treat" hidden></button>
     <button class="cc-treat" id="cc-feed" hidden></button>
     <button class="cc-treat" id="cc-feedall" hidden></button>
+    <button class="cc-treat cc-guardian" id="cc-guardian" hidden></button>
     <div class="bondwrap" id="cc-bondwrap">
       <div class="moodbar bond"><i id="cc-bond" style="width:0%"></i></div>
       <div class="moodlabel"><span id="cc-bondname">New here</span><span id="cc-bondpct">0%</span></div>
@@ -5672,6 +5674,7 @@ const cc = {
   treat: document.getElementById("cc-treat"),
   feed: document.getElementById("cc-feed"),
   feedAll: document.getElementById("cc-feedall"),
+  guardian: document.getElementById("cc-guardian"),
 };
 // what a cat needs, as a glyph + words — shared by the card, the badge and the roster
 const NEED_META = {
@@ -5732,7 +5735,19 @@ function renderFeedButtons(c) {
     cc.feedAll.onclick = () => { hideCatCard(true); feedAllHungry(); };
   }
 }
-function renderCatCare(c) { renderCatCareCore(c); renderFeedButtons(c); }
+// Cove Guardian: the one cat who represents you to friends (and, in time, guards the cove).
+function guardianCat() { const id = G && G.guardian; return id ? cats.find(c => c.journalId === id && !c.visitor) || null : null; }
+function renderGuardianButton(c) {
+  cc.guardian.hidden = true;
+  if (!c || c.visitor) return;
+  const mine = G.guardian === c.journalId;
+  cc.guardian.textContent = mine ? "★ Cove Guardian" : "Make " + c.name + " the Cove Guardian";
+  cc.guardian.classList.toggle("is-guardian", mine);
+  cc.guardian.disabled = mine;
+  cc.guardian.hidden = false;
+  cc.guardian.onclick = () => { if (mine) return; G.guardian = c.journalId; save(); sfx("buy"); spawnParticles(c.x, c.y - 24, "twinkle", 10); toast(c.name + " is now your Cove Guardian. Friends will see them as you.", 4); showCatCard(c); };
+}
+function renderCatCare(c) { renderCatCareCore(c); renderFeedButtons(c); renderGuardianButton(c); }
 function renderCatCareCore(c) {
   const show = !c.visitor && !c.mascot;
   cc.wellwrap.hidden = !show;
@@ -19084,6 +19099,7 @@ function onViewportChange() {
 }
 window.__cove = {
   clips(id){ neoOpenAdventureClips(id); return "opened"; },
+  card(name){ const c = cats.find(x => x.name === name && !x.visitor); if (c) showCatCard(c); return !!c; },
   get G(){return G}, get cats(){return cats}, get tokens(){return fieldTokens},
   get attractors(){return attractors}, get obstacles(){return obstacles}, get decor(){return decor},
   get world(){return {W, H, catFloor: catFloor()}},
@@ -20107,12 +20123,12 @@ function neoFriendsJournal(){
   const host=panels.today;if(!host)return;host.querySelector('.fh-journal')?.remove();
   let has=false;try{has=JSON.parse(localStorage.getItem('neo.friends.cards.v1')||'[]').length>0;}catch{}
   if(!has)return;
-  import('./ui/friends-hub.js?v=8').then(m=>{const sec=m.journalSection();if(!sec)return;if(!document.getElementById('fh-css')){const l=document.createElement('link');l.id='fh-css';l.rel='stylesheet';l.href='ui/friends-hub.css?v=4';document.head.append(l);}host.querySelector('.fh-journal')?.remove();(host.querySelector('.cove-sheet-body')||host).append(sec);}).catch(()=>{});
+  import('./ui/friends-hub.js?v=11').then(m=>{const sec=m.journalSection();if(!sec)return;if(!document.getElementById('fh-css')){const l=document.createElement('link');l.id='fh-css';l.rel='stylesheet';l.href='ui/friends-hub.css?v=5';document.head.append(l);}host.querySelector('.fh-journal')?.remove();(host.querySelector('.cove-sheet-body')||host).append(sec);}).catch(()=>{});
 }
 async function openFriendsHub(){
   restClearUI();
   try{
-    _friendsHub||=await import('./ui/friends-hub.js?v=8');
+    _friendsHub||=await import('./ui/friends-hub.js?v=11');
     _friendsHub.open({
       coveName,shells:()=>G.shells,
       spend:n=>{if(!(n>0)||G.shells<n)return false;G.shells-=n;syncHud();save();return true;},
@@ -20125,6 +20141,9 @@ async function openFriendsHub(){
       },
       startMatch:(kind,friend)=>neoStartFriendMatch(kind==='tug'?'midk':kind,friend),
       myCats:()=>cats.filter(c=>!c.visitor&&!c._gone).slice(0,6).map(c=>({name:c.name,coatKey:c.coatKey,markSeed:c.markSeed,star:c.star,worn:[...(c.worn||[])]})),
+      myCatsFull:()=>cats.filter(c=>!c.visitor&&!c._gone).map(c=>({id:c.journalId,name:c.name,coatKey:c.coatKey,markSeed:c.markSeed,star:c.star,worn:[...(c.worn||[])]})),
+      myGuardian:()=>{const c=guardianCat();return c?{id:c.journalId,name:c.name,coatKey:c.coatKey,markSeed:c.markSeed,star:c.star,worn:[...(c.worn||[])]}:null;},
+      setGuardian:id=>{const c=cats.find(x=>x.journalId===id&&!x.visitor);if(!c)return false;G.guardian=id;save();return true;},
       myCafe:()=>{const c=G.cafe;if(!c||!c.unlocked)return null;return {name:CoveCafeEngine.cafeName(c),shopTier:c.shopTier||0,finish:c.finish||'sage',speed:c.speed||0,seats:c.seats||0,cookware:!!c.cookware,decor:{...(c.decor||{})},served:c.served||0,rating:CoveCafeEngine.rating(c),menu:[...(c.menu||[])]};},
       drawCafe:(ctx,cafe,t,H,key,guests)=>neoDrawFriendCafe(ctx,cafe,t,H,key,guests),
       sound:kind=>{try{ensureAudio();if(kind==='gift'){[784,1046,1318].forEach((f,i)=>tone(f,0.22,'triangle',0.05,i*0.07));}if(!playSample('kitten',{vol:0.85}))meow(true,0.8);}catch{}},
@@ -20190,7 +20209,7 @@ function neoClipPool(){
 async function neoOpenAdventureClips(id){
   try{
     _clipsMod||=await import('./ui/adventure-clips.js?v=2');
-    if(!document.getElementById('fh-css')){const l=document.createElement('link');l.id='fh-css';l.rel='stylesheet';l.href='ui/friends-hub.css?v=4';document.head.append(l);}
+    if(!document.getElementById('fh-css')){const l=document.createElement('link');l.id='fh-css';l.rel='stylesheet';l.href='ui/friends-hub.css?v=5';document.head.append(l);}
     closeAllPanels();
     _clipsMod.openGallery({clipCat:(g,i,x,y,scale,t,walking,face)=>{
       const pool=neoClipPool(),c=neoFriendCatObj(pool[i%pool.length]),tt=t*1000;
@@ -20209,7 +20228,7 @@ function neoStartFriendMatch(kind,friend){
 function neoFriendResult(kind,won,text){
   if(!_friendMatch||_friendMatch.kind!==kind)return;
   const f=_friendMatch.friend;_friendMatch=null;
-  import('./ui/friends-hub.js?v=8').then(m=>m.recordResult({game:kind==="volley"?"Volleyball":"Tug of Paws",text,won,friend:f.name})).catch(()=>{});
+  import('./ui/friends-hub.js?v=11').then(m=>m.recordResult({game:kind==="volley"?"Volleyball":"Tug of Paws",text,won,friend:f.name})).catch(()=>{});
 }
 function neoOpenCoffeeKiosk(){
   neoHomestead();CoveCafeEngine.init(G,Date.now());
