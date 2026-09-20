@@ -1400,7 +1400,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-explore-grid,.neo-cat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
 .neo-destination,.neo-cat-tile{border:1px solid #d7ddc9;border-radius:20px;background:#fffdf4;color:#384c3e;padding:20px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;font:inherit;cursor:pointer}
 .neo-destination>span{font-size:30px}.neo-destination b{font-size:18px}.neo-destination small,.neo-cat-tile span,.neo-cat-tile small{font-size:14px;line-height:1.5;color:#5c6c5f}
-.garden-ripe{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px;padding:12px 14px;border-radius:14px;background:#e6efdc;border:1px solid #b9cfaa;color:#31593d;font-size:14px}.garden-ripe strong{flex:1 1 200px;font-weight:600}.garden-ripe .btn{flex:1 1 auto;white-space:normal;text-align:center}#neo-activities-nav{position:relative}.neo-nav-dot{position:absolute;top:4px;right:calc(50% - 22px);width:10px;height:10px;border-radius:50%;background:#d98b3f;border:2px solid #faf6e8}.neo-nav-dot[hidden]{display:none}.neo-destination{position:relative}.neo-tile-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:8px;padding:0 5px;border-radius:9px;background:#d98b3f;color:#fff;font:700 11px/1 system-ui,sans-serif;font-style:normal;vertical-align:2px}.neo-tile-badge[hidden]{display:none}
+.garden-ripe{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 4px;padding:12px 14px;border-radius:14px;background:#e6efdc;border:1px solid #b9cfaa;color:#31593d;font-size:14px}.garden-ripe strong{flex:1 1 200px;font-weight:600}.garden-auto{display:flex;gap:8px;align-items:flex-start;margin:8px 0 2px;font-size:13px;color:#4c6350;line-height:1.4}.garden-auto input{min-width:22px;min-height:22px;margin-top:1px}.neo-tend{width:100%;margin:2px 0 12px;flex-direction:column;gap:2px}.neo-tend small{font-weight:400;opacity:.9;font-size:12px}.neo-tend[hidden]{display:none}.garden-ripe .btn{flex:1 1 auto;white-space:normal;text-align:center}#neo-activities-nav{position:relative}.neo-nav-dot{position:absolute;top:4px;right:calc(50% - 22px);width:10px;height:10px;border-radius:50%;background:#d98b3f;border:2px solid #faf6e8}.neo-nav-dot[hidden]{display:none}.neo-destination{position:relative}.neo-tile-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:8px;padding:0 5px;border-radius:9px;background:#d98b3f;color:#fff;font:700 11px/1 system-ui,sans-serif;font-style:normal;vertical-align:2px}.neo-tile-badge[hidden]{display:none}
 .neo-destination:hover,.neo-cat-tile:hover{background:#edf2e1;border-color:#8fac8a}
 .neo-cat-tile{align-items:center;text-align:center;padding:8px 12px 16px}.neo-cat-tile canvas{width:110px;height:100px}
 .neo-roster-actions,.neo-journal-tools,.neo-journal-pins{display:flex;gap:10px;flex-wrap:wrap}
@@ -4722,7 +4722,7 @@ function updateTokens(dt) {
       if (t.y >= t.baseY) { t.y = t.baseY; t.vy = 0; }
     }
     if (t.pop > 0) { t.pop += dt * 5; if (t.pop > 1) { fieldTokens.splice(i,1); continue; } }
-    else if (t.life > t.ttl) { collectToken(t, true); }   // never lost — auto-banks if you don't tap it
+    else if (t.life > t.ttl || (t.life > 1.4 && t.vy === 0 && blessingActive())) { collectToken(t, true); }   // never lost — auto-banks if you don't tap it; Midknight's Blessing gathers them the moment they land
   }
 }
 function collectToken(t, auto) {
@@ -5708,7 +5708,7 @@ function feedOne(c) {
   return r.ok;
 }
 // Feed every hungry cat in one go — a Midknight's Blessing convenience. Uses one serving each, hungriest first, stopping when the larder runs out.
-function feedAllHungry() {
+function feedAllHungry(quiet) {
   if (!blessingActive()) { showBlessingOffer(); return 0; }
   ensureAudio();
   const list = hungryCats();
@@ -5716,8 +5716,9 @@ function feedAllHungry() {
   let n = 0;
   for (const c of list) { if (!feedCat(c).ok) break; n++; }
   if (n) { catMeow("eat"); spawnParticles(W / 2, H * 0.5, "twinkle", 8); save(); syncHud(); }
-  toast(n ? "Fed " + n + " cat" + (n === 1 ? "" : "s") + " · " + n + " serving" + (n === 1 ? "" : "s") + " used." + (n < list.length ? " The larder ran out — stock the food store for the rest." : "") : "The larder is empty. Stock the food store first.", 4.5);
-  if (n < list.length && !n) openFoodRefill();
+  feedAllHungry.last = { fed: n, wanted: list.length };
+  if (!quiet) toast(n ? "Fed " + n + " cat" + (n === 1 ? "" : "s") + " · " + n + " serving" + (n === 1 ? "" : "s") + " used." + (n < list.length ? " The larder ran out — stock the food store for the rest." : "") : "The larder is empty. Stock the food store first.", 4.5);
+  if (!quiet && n < list.length && !n) openFoodRefill();
   return n;
 }
 function renderFeedButtons(c) {
@@ -19099,6 +19100,7 @@ function onViewportChange() {
 }
 window.__cove = {
   clips(id){ neoOpenAdventureClips(id); return "opened"; },
+  dropToken(x, y, v, f){ dropToken(x, y, v, f); return fieldTokens.length; },
   card(name){ const c = cats.find(x => x.name === name && !x.visitor); if (c) showCatCard(c); return !!c; },
   get G(){return G}, get cats(){return cats}, get tokens(){return fieldTokens},
   get attractors(){return attractors}, get obstacles(){return obstacles}, get decor(){return decor},
@@ -19722,7 +19724,7 @@ function neoOpenExplore(){
  window.CoveAnalytics?.emit("menu_opened",{entity:"Activities"});
   const b=document.getElementById('neo-go-festival'),ready=festUnlocked()||volleyReady();
   b.disabled=!ready;b.querySelector('small').textContent=ready?'Race, Volleyball and Tug of Paws.':'Welcome two cats and finish meeting Midknight.';
-  neoFriendsBadge();togglePanel('explore');neoEvent('explore_open');
+  neoFriendsBadge();const tend=document.getElementById('neo-tend');if(tend)tend.hidden=!blessingActive();togglePanel('explore');neoEvent('explore_open');
 }
 function neoBuildNavigation(){
   const actions=document.getElementById('actions');
@@ -19737,7 +19739,7 @@ function neoBuildNavigation(){
   for(const [id,svg] of Object.entries(menuIcons)){const icon=document.getElementById(id).querySelector(".ico");if(icon){icon.innerHTML=svg;icon.setAttribute("aria-hidden","true");}}
   actions.setAttribute('role','navigation');actions.setAttribute('aria-label','Main menu');
   const sheet=document.createElement('div');sheet.className='sheet';sheet.hidden=true;sheet.id='neo-explore';
-  sheet.innerHTML=`<button class="x" id="neo-explore-close" aria-label="Close Activities">✕</button><div class="kicker">A LITTLE ADVENTURE, AT YOUR PACE</div><h2>Activities</h2><p class="muted">Stay for a game, send a postcard, or settle in somewhere quiet.</p><div class="neo-explore-grid">
+  sheet.innerHTML=`<button class="x" id="neo-explore-close" aria-label="Close Activities">✕</button><div class="kicker">A LITTLE ADVENTURE, AT YOUR PACE</div><h2>Activities</h2><p class="muted">Stay for a game, send a postcard, or settle in somewhere quiet.</p><button class="btn primary neo-tend" id="neo-tend" type="button" hidden>Tend everything <small>gather · harvest · feed, in one tap</small></button><div class="neo-explore-grid">
   <button class="neo-destination" id="neo-go-festival"><span>${neoUIIcon("festival")}</span><b>Cove Festival</b><small>Your familiar cats. A little friendly chaos.</small></button>
   <button class="neo-destination" id="neo-go-adventure"><span>${neoUIIcon("adventure")}</span><b>Adventures</b><small>A little trip. Something to bring home.</small></button>
   <button class="neo-destination" id="neo-go-cafe"><span>${neoUIIcon("cafe")}</span><b>Catmint Café</b><small>Your seaside coffee stop · grow, brew, watch.</small></button>
@@ -19754,6 +19756,7 @@ function neoBuildNavigation(){
   document.getElementById('neo-go-garden').onclick=()=>neoOpenHomestead('garden');
   document.getElementById('neo-go-rest').onclick=()=>{closeAllPanels();document.getElementById('restBtn').click();};
   document.getElementById('neo-go-friends').onclick=()=>{closeAllPanels();openFriendsHub();};
+  document.getElementById('neo-tend').onclick=()=>{closeAllPanels();neoTendEverything();};
   document.getElementById('neo-feedback-contact').onclick=()=>openExternal('https://www.catmintcove.com/#contact');
   panels.dex.querySelector('h2').textContent='Catdex';panels.shop.querySelector('h2').textContent='Cove Shop';
 }
@@ -19892,16 +19895,35 @@ function neoSellHarvest(key){const h=neoHomestead();if(!COVE_CROPS[key]||(h.stoc
 function neoReadyPlots(){const h=neoHomestead(),now=Date.now();return h.plots.map((p,i)=>p&&now>=p.ready?i:-1).filter(i=>i>=0);}
 function neoReadySummary(){const h=neoHomestead(),got={};for(const i of neoReadyPlots()){const p=h.plots[i];got[p.key]=(got[p.key]||0)+COVE_CROPS[p.key].yield;}return got;}
 // One tap for every ripe patch — a Midknight's Blessing convenience. Same yields and stock rules as harvesting each patch by hand.
+// One tap for the whole cove: gather every shell on the ground, harvest and replant the Garden, feed every hungry cat. Blessing only; each part is the same as doing it by hand.
+function neoTendEverything(){
+  if(!blessingActive()){showBlessingOffer();return;}
+  ensureAudio();
+  let shells=0;for(const t of fieldTokens.slice()){if(t.pop===0&&t.flair!=='driftwood'){shells+=t.value;}if(t.pop===0)collectToken(t,true);}
+  let harvested=0,replanted=0;
+  if(G.homestead&&neoReadyPlots().length){harvested=neoHarvestAll(true)||0;replanted=(neoHarvestAll.last&&neoHarvestAll.last.replanted)||0;}
+  const fed=feedAllHungry(true)||0,wanted=(feedAllHungry.last&&feedAllHungry.last.wanted)||0;
+  save();syncHud();sfx('collect');
+  const parts=[shells?'+'+shells+' Shells gathered':'',harvested?'harvested '+harvested+' patch'+(harvested===1?'':'es')+(replanted?' and replanted '+replanted:''):'',fed?'fed '+fed+' cat'+(fed===1?'':'s'):''].filter(Boolean);
+  toast(parts.length?'Tended the cove: '+parts.join(' · ')+'.':'Everything is already tended. Midknight approves.',5);
+  if(wanted>fed&&fed===0&&wanted>0)setTimeout(()=>toast('The larder is empty, so the cats are still hungry. Stock the food store.',4),2800);
+  neoGardenBadges();neoRefreshGardenIfOpen();
+}
 function neoRefreshGardenIfOpen(){const hs=document.getElementById('neo-homestead');if(hs&&!hs.hidden&&!hs.classList.contains('cafe-full-room'))neoOpenHomestead('garden');}
-function neoHarvestAll(){
+// Auto-replant (a Blessing convenience, on by default while it's active): a harvested patch is sown again with the same crop at the normal seed price.
+function neoAutoReplantOn(){ return typeof blessingActive==='function' && blessingActive() && neoHomestead().autoReplant !== false; }
+function neoReplantPatch(i,key){const h=neoHomestead(),c=COVE_CROPS[key];if(!c||h.plots[i]||G.shells<c.cost)return false;G.shells-=c.cost;h.plots[i]={key,ready:Date.now()+c.seconds*1000};return true;}
+function neoHarvestAll(quiet){
   if(!blessingActive()){showBlessingOffer();return 0;}
   if(G.cafe?.unlocked)CoveCafeEngine.settle(G,Date.now());
   const h=neoHomestead(),idx=neoReadyPlots();
   if(!idx.length){toast('Nothing is ripe yet. Crops never wither, so they will wait for you.',3.5);return 0;}
   const got={};
-  for(const i of idx){const p=h.plots[i],c=COVE_CROPS[p.key];if(CoveCafeEngine.ingredients[p.key])CoveCafeEngine.acquire(G,p.key,c.yield,c.cost);else h.stock[p.key]=(h.stock[p.key]||0)+c.yield;got[p.key]=(got[p.key]||0)+c.yield;h.plots[i]=null;}
-  save();syncHud();sfx('collect');
-  toast('Harvested '+idx.length+' patch'+(idx.length===1?'':'es')+': '+Object.entries(got).map(([k,n])=>'+'+n+' '+COVE_CROPS[k].name.toLowerCase()).join(', '),5);
+  let replanted=0;const auto=neoAutoReplantOn();
+  for(const i of idx){const p=h.plots[i],c=COVE_CROPS[p.key],key=p.key;if(CoveCafeEngine.ingredients[key])CoveCafeEngine.acquire(G,key,c.yield,c.cost);else h.stock[key]=(h.stock[key]||0)+c.yield;got[key]=(got[key]||0)+c.yield;h.plots[i]=null;if(auto&&neoReplantPatch(i,key))replanted++;}
+  save();syncHud();if(!quiet)sfx('collect');
+  neoHarvestAll.last={count:idx.length,got,replanted};
+  if(!quiet)toast('Harvested '+idx.length+' patch'+(idx.length===1?'':'es')+': '+Object.entries(got).map(([k,n])=>'+'+n+' '+COVE_CROPS[k].name.toLowerCase()).join(', ')+(replanted?' · replanted '+replanted:''),5);
   neoGardenBadges();
   const hs=document.getElementById('neo-homestead');if(hs&&!hs.hidden&&!hs.classList.contains('cafe-full-room'))neoOpenHomestead('garden');
   return idx.length;
@@ -19934,7 +19956,7 @@ function neoHarvest(i){
   const h=neoHomestead(),p=h.plots[i];if(!p||Date.now()<p.ready)return;
   if(CoveCafeEngine.ingredients[p.key])CoveCafeEngine.acquire(G,p.key,COVE_CROPS[p.key].yield,COVE_CROPS[p.key].cost);
   else h.stock[p.key]=(h.stock[p.key]||0)+COVE_CROPS[p.key].yield;
-  h.plots[i]=null;save();neoOpenHomestead('garden');
+  const keyH=p.key;h.plots[i]=null;if(neoAutoReplantOn()&&neoReplantPatch(i,keyH))syncHud();save();neoOpenHomestead('garden');
 }
 function neoCook(key){
   const h=neoHomestead(),r=COVE_RECIPES[key],slot=h.stoves.indexOf(null);if(!r||slot<0||(h.stock[r.ingredient]||0)<r.amount)return;
@@ -19965,6 +19987,11 @@ function neoOpenHomestead(kind){
       if(blessingActive()){const all=document.createElement('button');all.className='btn primary';all.textContent='Harvest all';all.onclick=neoHarvestAll;banner.append(all);}
       else if(ripe>1){const hint=document.createElement('button');hint.className='btn';hint.type='button';hint.textContent='Harvest all · with Blessing';hint.onclick=showBlessingOffer;banner.append(hint);}
       sheet.querySelector('h2').after(banner);
+    }
+    if(blessingActive()){
+      const row=document.createElement('label');row.className='garden-auto';const box=document.createElement('input');box.type='checkbox';box.checked=h.autoReplant!==false;
+      box.onchange=()=>{h.autoReplant=box.checked;save();};row.append(box,document.createTextNode(' Auto-replant after harvesting (seeds cost the usual price)'));
+      (sheet.querySelector('.garden-ripe')||sheet.querySelector('h2')).after(row);
     }
     const supplyPlan=CoveCafeEngine.pantryPlan(G);
     const planting=CoveCafeEngine.plantingPlan(G),quick=document.createElement('section');quick.className='garden-quick';
