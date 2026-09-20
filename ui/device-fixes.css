@@ -202,8 +202,18 @@
 #app.editing-cove #placeBarTxt{grid-column:auto;text-align:left;font-size:13px}
 #app.editing-cove #placeBar button{grid-column:auto!important;font-size:13px;padding:8px 12px;min-height:44px}
 #app.editing-cove #placeBarPutAway[hidden]{display:none!important}
-#editCoveEntry{position:absolute;left:14px;bottom:calc(var(--navh,76px) + 12px);z-index:20;padding:10px 16px;min-height:44px;background:#fbf7e9;color:#39694e;border:1px solid #cbd2bf;font-weight:700}
-.editing-cove #editCoveEntry,.resting #editCoveEntry,.festing #editCoveEntry,.cold-open #editCoveEntry{display:none!important}
+/* cove tools: Edit Cove + the whole-cove overview share one round capsule, bottom-right above the menu */
+#coveTools{position:fixed;right:calc(12px + env(safe-area-inset-right));bottom:calc(var(--navh,76px) + 12px);z-index:24;display:flex;flex-direction:column;align-items:center;padding:2px;border-radius:22px;background:rgba(247,245,236,.95);box-shadow:0 3px 12px rgba(36,31,23,.22);transition:opacity .3s ease,bottom .22s ease}
+#app.has-hint #coveTools{bottom:calc(env(safe-area-inset-bottom) + 10.6rem)}   /* clear of the next-action hint band */
+#coveTools button{position:static!important;width:40px;height:40px;min-height:40px;padding:0;border:0;border-radius:50%;background:transparent!important;box-shadow:none!important;color:#356b4c;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#coveTools button:active{background:rgba(53,107,76,.12)!important}
+#coveTools button:focus-visible{outline:3px solid #a4bc95;outline-offset:1px}
+#coveTools #editCoveEntry{position:relative!important}
+#coveTools #editCoveEntry::after{content:"";position:absolute;left:9px;right:9px;bottom:-1px;height:1px;background:#d3d8c8}
+#coveToolsTip{position:absolute;right:54px;top:8px;padding:5px 10px;border-radius:9px;background:#3a4a3f;color:#fff;font:600 12px system-ui,sans-serif;white-space:nowrap;pointer-events:none;animation:coveTipOut .4s ease 8s forwards}
+@keyframes coveTipOut{to{opacity:0}}
+#app.resting #coveTools,#app.festing #coveTools,#app.cold-open #coveTools,#app.focusing #coveTools{opacity:0!important;pointer-events:none}
+.editing-cove #editCoveEntry,.editing-cove #coveToolsTip,.resting #editCoveEntry,.festing #editCoveEntry,.cold-open #editCoveEntry{display:none!important}
 #app.editing-cove #toast{bottom:calc(var(--edit-dock-height,130px) + 12px)!important}
 @media(max-width:700px){#app.editing-cove #placeBar{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}#app.editing-cove #placeBarTxt{grid-column:1/-1;text-align:center}#app.editing-cove #placeBarDone{grid-column:2/4!important}#app.editing-cove #placeBar button{padding:8px 6px;font-size:12px}}
 @media(max-width:700px){#app.editing-cove #placeBar #placeBarDone{grid-column:2/4!important}#app.editing-cove #placeBar:has(#placeBarPutAway[hidden]) #placeBarDone{grid-column:1/-1!important}}

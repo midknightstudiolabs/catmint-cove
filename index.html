@@ -1332,7 +1332,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?edit-cove=3&v=24">
+</style><link rel="stylesheet" href="ui/device-fixes.css?edit-cove=3&v=26">
 <style id="neo-theme">
 #atmosphere-preview{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;touch-action:none}
 #atmosphere-preview section{width:min(440px,100%);box-sizing:border-box;padding:18px;background:#faf7ea;color:#395447;border:1px solid #d8ddc7;border-radius:24px;box-shadow:0 8px 32px #243c3426;text-align:center}
@@ -5448,7 +5448,7 @@ canvas.addEventListener("dblclick", e => e.preventDefault());
     btn.id = "ovBtn";
     btn.title = "See the whole cove";   // positioned + styled in CSS (#ovBtn)
     btn.onclick = () => { if (_focus || restMode || festMode) return; ovSetTarget(_ovTarget > 0.5 ? 0 : 1, true); };
-    document.getElementById("app").appendChild(btn);
+    (document.getElementById("coveTools") || document.getElementById("app")).appendChild(btn);
     _ovSyncBtn();
   });
 })();
@@ -20712,7 +20712,13 @@ const littleMatches=createLittleMatches({
 // Reserve actual dock height so the editable canvas never sits behind controls.
 const editDockObserver=new ResizeObserver(()=>{if(!_arranging)return;const h=document.getElementById('placeBar').getBoundingClientRect().height;const app=document.getElementById('app');const next=Math.ceil(h)+'px';if(app.style.getPropertyValue('--edit-dock-height')!==next){app.style.setProperty('--edit-dock-height',next);resize();}});
 editDockObserver.observe(document.getElementById('placeBar'));
-const editEntry=document.createElement('button');editEntry.id='editCoveEntry';editEntry.className='btn';editEntry.textContent='Edit Cove';editEntry.setAttribute('aria-label','Edit Cove layout');editEntry.onclick=()=>{if(restMode||festMode)return;startArrange();};document.getElementById('app').append(editEntry);
+const coveTools=document.createElement('div');coveTools.id='coveTools';coveTools.setAttribute('role','group');coveTools.setAttribute('aria-label','Cove tools');document.getElementById('app').append(coveTools);
+const editEntry=document.createElement('button');editEntry.id='editCoveEntry';editEntry.type='button';editEntry.title='Edit Cove';editEntry.setAttribute('aria-label','Edit Cove layout');
+editEntry.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/></svg>';
+editEntry.onclick=()=>{if(restMode||festMode)return;localStorage.setItem('neo.editHint','9');document.getElementById('coveToolsTip')?.remove();startArrange();};
+coveTools.append(editEntry);
+// a small "Edit Cove" label for the first few visits, so the icon is never a mystery
+try{const seen=+(localStorage.getItem('neo.editHint')||0);if(seen<4){localStorage.setItem('neo.editHint',String(seen+1));const tip=document.createElement('span');tip.id='coveToolsTip';tip.textContent='Edit Cove';tip.setAttribute('aria-hidden','true');coveTools.append(tip);setTimeout(()=>tip.remove(),9000);}}catch(e){}
 const matchesButton=document.createElement('button');matchesButton.className='neo-destination';matchesButton.id='neo-go-matches';matchesButton.innerHTML='<span>'+neoUIIcon('catdex')+'</span><b>Little Matches</b><small>A cozy memory game · 30 levels, a helping paw.</small>';matchesButton.onclick=()=>littleMatches.open();const activityGrid=document.querySelector('#neo-explore .neo-explore-grid');activityGrid.prepend(matchesButton);activityGrid.insertBefore(document.getElementById('neo-go-cafe'),document.getElementById('neo-go-garden'));
 (function () {
   // Loading folded into the one title card — no second page/handoff. Real
