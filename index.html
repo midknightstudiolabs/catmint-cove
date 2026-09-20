@@ -1396,6 +1396,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .neo-explore-grid,.neo-cat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
 .neo-destination,.neo-cat-tile{border:1px solid #d7ddc9;border-radius:20px;background:#fffdf4;color:#384c3e;padding:20px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;font:inherit;cursor:pointer}
 .neo-destination>span{font-size:30px}.neo-destination b{font-size:18px}.neo-destination small,.neo-cat-tile span,.neo-cat-tile small{font-size:14px;line-height:1.5;color:#5c6c5f}
+.neo-destination{position:relative}.neo-tile-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:8px;padding:0 5px;border-radius:9px;background:#d98b3f;color:#fff;font:700 11px/1 system-ui,sans-serif;font-style:normal;vertical-align:2px}.neo-tile-badge[hidden]{display:none}
 .neo-destination:hover,.neo-cat-tile:hover{background:#edf2e1;border-color:#8fac8a}
 .neo-cat-tile{align-items:center;text-align:center;padding:8px 12px 16px}.neo-cat-tile canvas{width:110px;height:100px}
 .neo-roster-actions,.neo-journal-tools,.neo-journal-pins{display:flex;gap:10px;flex-wrap:wrap}
@@ -7178,7 +7179,7 @@ function togglePanel(name) {
     if (name === "shop") renderShop();
     if (name === "dex") { renderDex(); neoRenderCats(); }
     if (name === "today") {
-      neoRenderJournal(); renderCheckinCard(); renderProjectCard(); renderAdventureCard(); renderFindsCard(); renderGoals(); renderMoments();
+      neoRenderJournal(); neoFriendsJournal(); renderCheckinCard(); renderProjectCard(); renderAdventureCard(); renderFindsCard(); renderGoals(); renderMoments();
       if (G.tips && !G.tips.includes("today_seen")) {
         G.tips.push("today_seen");
         toast("A little welcome each day, three optional rituals, your memories. Miss a day and nothing's lost.", 5);
@@ -7193,6 +7194,8 @@ let friendsModule=null;
 document.getElementById('coveFriendsBtn').onclick=async()=>{
  restClearUI();
  try{
+  const {socialConfig}=await import('./ui/social-config.js');
+  if(!socialConfig.enabled){closeAllPanels();openFriendsHub();return;}
   friendsModule ||= await import('./ui/cove-friends.js?v=6');
   await friendsModule.open({name:coveName,backup:()=>{
    if(_arranging)throw Error('Save or cancel your layout before backing up.');
@@ -9976,6 +9979,7 @@ function openFestPicker(kind) {
   if (_placing || _arranging) exitPlacement();
   ensureAudio();   // a real tap — safe to unlock/start audio here, same as opening rest
   restClearUI(); closeAllPanels(); exitFocus();
+  _friendMatch = _friendMatchNext; _friendMatchNext = null;   // a friendly match, or (null) an ordinary festival visit
   const roster = cats.filter(c => !c.visitor);
   if (!roster.length) { toast("No one's around to send to the festival right now."); return; }
   if (!roster.includes(festPickedCat)) festPickedCat = roster.find(c => c.mascot) || roster[0];
@@ -10165,6 +10169,7 @@ function runFestCountdown() {
 // the only exit — wipes back to the cove the same way we arrived, so leaving
 // is one clean motion rather than a cut
 function closeFest() {
+  _friendMatch = null;
   stopFestWinSting();                       // cut the fanfare the moment you leave
   document.getElementById("festChoose").hidden = true;
   document.getElementById("festPanel").hidden = true;
@@ -11767,7 +11772,7 @@ function startCoveVolley() {
   document.getElementById("volleyCom").hidden = true;
   particles.length = 0; floaters.length = 0;
   const avgMood = volleyPickSel.reduce((s, c) => s + (c.mood ?? 60), 0) / volleyPickSel.length;
-  const visit = makeVisitingCove(avgMood);
+  const visit = _friendMatch?.kind === "volley" ? makeFriendVisitors(_friendMatch.friend, 3, avgMood) : makeVisitingCove(avgMood);
   volleyVisitName = visit.name;
   volleyParts = [];
   volleyPickSel.forEach((c, i) => {
@@ -12541,6 +12546,7 @@ function showVolleyResult() {
   document.getElementById("festAgain").textContent = "Play again";
   const cove = volleyParts.filter(p => p.side === "cove");
   neoRecordVictory(volleyParts,"volley",cove.map(p=>p.cat),won,{home:volleyScore.cove,away:volleyScore.visit,opponent:volleyVisitName});
+  neoFriendResult("volley", won, `${won ? "You beat" : "You lost to"} ${volleyVisitName} at Volleyball, ${volleyScore.cove}–${volleyScore.visit}.`);
   document.getElementById("festPodium").innerHTML =
     `<div class="vb-final">
        <div class="vb-final-row${won ? " win" : ""}"><span>${esc(coveName())}</span><b>${volleyScore.cove}</b></div>
@@ -12787,7 +12793,7 @@ function startCoveMidk() {
   midkCom = { text: "", at: -99, pri: 0, last: "" };
   particles.length = 0; floaters.length = 0;
   midk = makeMidkYarn();
-  const vc = makeMidkVisitors(midkPickSel.reduce((s, c) => s + (c.mood ?? 60), 0) / 5);
+  const vc = _friendMatch?.kind === "midk" ? makeFriendVisitors(_friendMatch.friend, 5, midkPickSel.reduce((s, c) => s + (c.mood ?? 60), 0) / 5) : makeMidkVisitors(midkPickSel.reduce((s, c) => s + (c.mood ?? 60), 0) / 5);
   midkVisitName = vc.name;
   midkParts = [];
   const lay = (list, side) => list.forEach((c, i) => {
@@ -13252,6 +13258,7 @@ function showMidkResult() {
   document.getElementById("festAgain").textContent = "Rematch";
   const cove = midkParts.filter(p => p.side === "cove");
   neoRecordVictory(midkParts,"tug",cove.map(p=>p.cat),won,{opponent:midkVisitName});
+  neoFriendResult("midk", won, `${won ? "You beat" : "You lost to"} ${midkVisitName} at Tug of Paws.`);
   const base = goalShells(0.42);
   const margin = won ? _midkLead.cove : _midkLead.visit;   // px past centre the winner got
   const marginK = clamp(margin / (MIDK_WIN_Y.cove - MIDK_START_Y), 0, 1);
@@ -19522,7 +19529,7 @@ function neoOpenExplore(){
  window.CoveAnalytics?.emit("menu_opened",{entity:"Activities"});
   const b=document.getElementById('neo-go-festival'),ready=festUnlocked()||volleyReady();
   b.disabled=!ready;b.querySelector('small').textContent=ready?'Race, Volleyball and Tug of Paws.':'Welcome two cats and finish meeting Midknight.';
-  togglePanel('explore');neoEvent('explore_open');
+  neoFriendsBadge();togglePanel('explore');neoEvent('explore_open');
 }
 function neoBuildNavigation(){
   const actions=document.getElementById('actions');
@@ -19542,6 +19549,7 @@ function neoBuildNavigation(){
   <button class="neo-destination" id="neo-go-adventure"><span>${neoUIIcon("adventure")}</span><b>Adventures</b><small>A little trip. Something to bring home.</small></button>
   <button class="neo-destination" id="neo-go-cafe"><span>${neoUIIcon("cafe")}</span><b>Catmint Café</b><small>Your seaside coffee stop · grow, brew, watch.</small></button>
   <button class="neo-destination" id="neo-go-garden"><span><img class="neo-ui-icon" src="art/icon-keepsake-garden.svg" alt="" width="36" height="36"></span><b>Cove Garden</b><small>Plant, grow and gather something good.</small></button>
+  <button class="neo-destination" id="neo-go-friends"><span><img class="neo-ui-icon" src="art/icon-keepsake-homecoming.svg?v=4" alt="" width="36" height="36"></span><b>Cove Friends<i class="neo-tile-badge" id="neo-friends-badge" hidden></i></b><small>Visit, send love, play a friendly match.</small></button>
   <button class="neo-destination" id="neo-go-rest"><span>${neoUIIcon("rest")}</span><b>Rainy retreat</b><small>No chores. Just rain and company.</small></button>
   </div>
   <div class="neo-feedback"><p>Your feedback can help us make this little home better.</p><button class="btn primary" id="neo-feedback-contact" type="button">Give feedback</button></div>`;
@@ -19552,6 +19560,7 @@ function neoBuildNavigation(){
   document.getElementById('neo-go-cafe').onclick=()=>neoOpenHomestead('cafe');
   document.getElementById('neo-go-garden').onclick=()=>neoOpenHomestead('garden');
   document.getElementById('neo-go-rest').onclick=()=>{closeAllPanels();document.getElementById('restBtn').click();};
+  document.getElementById('neo-go-friends').onclick=()=>{closeAllPanels();openFriendsHub();};
   document.getElementById('neo-feedback-contact').onclick=()=>openExternal('https://www.catmintcove.com/#contact');
   panels.dex.querySelector('h2').textContent='Catdex';panels.shop.querySelector('h2').textContent='Cove Shop';
 }
@@ -19824,6 +19833,62 @@ function neoPaintCafe(cv,h){
 
 /* NEO_HOME_END */
 Object.assign(COVE_CROPS,CoveCafeEngine.ingredients);
+/* ---- Cove Friends hub: entry, badge, Journal cards, adapter ---- */
+let _friendsHub=null;const _friendCats=new Map();
+function neoFriendsBadge(){
+  const el=document.getElementById('neo-friends-badge');if(!el)return;
+  let n=0;try{const st=JSON.parse(localStorage.getItem('neo.friends.preview.v1')||'null');n=st?(st.inbox||[]).length+(st.requests||[]).length:(localStorage.getItem('neo.friends.seen')?0:1);}catch{}
+  el.hidden=!n;el.textContent=n>9?'9+':String(n);
+}
+function neoFriendsJournal(){
+  const host=panels.today;if(!host)return;host.querySelector('.fh-journal')?.remove();
+  let has=false;try{has=JSON.parse(localStorage.getItem('neo.friends.cards.v1')||'[]').length>0;}catch{}
+  if(!has)return;
+  import('./ui/friends-hub.js?v=3').then(m=>{const sec=m.journalSection();if(!sec)return;if(!document.getElementById('fh-css')){const l=document.createElement('link');l.id='fh-css';l.rel='stylesheet';l.href='ui/friends-hub.css?v=2';document.head.append(l);}host.querySelector('.fh-journal')?.remove();(host.querySelector('.cove-sheet-body')||host).append(sec);}).catch(()=>{});
+}
+async function openFriendsHub(){
+  restClearUI();
+  try{
+    _friendsHub||=await import('./ui/friends-hub.js?v=3');
+    _friendsHub.open({
+      coveName,shells:()=>G.shells,
+      spend:n=>{if(!(n>0)||G.shells<n)return false;G.shells-=n;syncHud();save();return true;},
+      add:n=>{G.shells+=n;syncHud();save();},
+      miniCat:(c,k,s)=>miniCat(c,k,s,'loafing',false,1),
+      drawCat:(ctx,d,x,y,scale,t)=>{
+        const key=d.coatKey+'|'+d.markSeed+'|'+d.name;let c=_friendCats.get(key);
+        if(!c){c=new Cat({coatKey:d.coatKey,markSeed:d.markSeed,star:d.star||2,name:d.name,traits:[],bornAt:0,x:0,y:0});c.worn=[...(d.worn||[])];_friendCats.set(key,c);}
+        ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);c.state='loafing';c.trotting=false;c.walk=0;c.walkAmt=0;c.face=1;c.stateT=t/1000;c.bob=t/900;c.tail=t/650;c.blink=(t/1000+x*.017)%4.7<.14?0:3;drawCat(ctx,c,true);ctx.restore();
+      },
+      startMatch:(kind,friend)=>neoStartFriendMatch(kind==='tug'?'midk':kind,friend),
+    });
+    localStorage.setItem('neo.friends.seen','1');neoFriendsBadge();
+  }catch(e){console.error(e);toast('Friends could not open. Please try again.',4);}
+}
+let _friendMatch=null,_friendMatchNext=null;
+function makeFriendVisitors(friend,count,playerAvgMood){
+  const base=clamp(playerAvgMood||66,50,88),out=[];
+  const order=[...(friend.team||[]),...friend.cats.map((_,i)=>i)].filter((v,i,a)=>a.indexOf(v)===i).map(i=>friend.cats[i]).filter(Boolean);
+  for(const d of order.slice(0,count)){
+    const c=new Cat({visitor:true,name:d.name,coatKey:d.coatKey,markSeed:d.markSeed,star:d.star||2,traits:[],mood:clamp(base+rand(-12,12),40,96),x:-999,y:-999});
+    c.worn=[...(d.worn||[])];c._motion=null;out.push(c);
+  }
+  let extra=0;while(out.length<count){const c=new Cat({visitor:true,name:"Guest "+roman(++extra+1),mood:clamp(base+rand(-12,12),40,96),x:-999,y:-999});c._motion=null;out.push(c);}   // a friend with fewer cats than the game needs borrows a guest
+  return {name:friend.name,cats:out};
+}
+function neoStartFriendMatch(kind,friend){
+  if(festMode||restMode)return;
+  if(kind==="volley"&&!volleyReady()){toast("You need 3 cats at the Cove to play.");return;}
+  if(kind==="midk"&&!midkReady()){toast("You need 5 cats at the Cove for Tug of Paws.");return;}
+  _friendMatchNext={kind,friend};
+  openFestPicker(kind);   // claims _friendMatchNext once it actually opens
+  _friendMatchNext=null;
+}
+function neoFriendResult(kind,won,text){
+  if(!_friendMatch||_friendMatch.kind!==kind)return;
+  const f=_friendMatch.friend;_friendMatch=null;
+  import('./ui/friends-hub.js?v=3').then(m=>m.recordResult({game:kind==="volley"?"Volleyball":"Tug of Paws",text,won,friend:f.name})).catch(()=>{});
+}
 function neoOpenCoffeeKiosk(){
   neoHomestead();CoveCafeEngine.init(G,Date.now());
   CoveCafeView.open({game:()=>G,close:closeAllPanels,save, hud:syncHud,register:p=>panels.coffee=p,garden:()=>neoOpenHomestead('garden'),
