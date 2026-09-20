@@ -2064,6 +2064,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
   <p><b>Catmint Cove</b> is played upright.<br>Turn your phone back and the cove's right there. 🐾</p>
 </div>
 
+<script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=17"></script>
 <link rel="stylesheet" href="ui/cafe-kiosk.css?v=17"><script src="ui/cafe-engine.js?v=15"></script><script src="ui/cafe-scene.js?v=13"></script><script src="ui/cafe-kiosk.js?v=19"></script>
 <script>
@@ -5805,6 +5806,7 @@ function buyAccessory(c, key) {                   // buy + wear; returns true on
     G.shells -= a.price;
   }
   (c.owned || (c.owned = [])).push(key);
+  window.CoveAnalytics?.emit("item_purchased",{entity:key,category:"accessories",shells:a.pearls?0:a.price,pearls:a.pearls||0});
   equipAccessory(c, key, true);
   sfx("buy");
   spawnParticles(c.x, c.y - 20, a.premium ? "twinkle" : "twinkle", a.premium ? 14 : 9);
@@ -6420,6 +6422,7 @@ function shopItemRow(item) {
     if (pearlCost) G.pearls -= pearlCost;
     if(item.remove){G.shopPaid=G.shopPaid||{};G.shopPaid[item.key]=G.shopPaid[item.key]||{};G.shopPaid[item.key][item.get()]=p;}
     item.buy();
+    window.CoveAnalytics?.emit("item_purchased",{entity:item.key,category:item.cat,shells:p,pearls:pearlCost});
     sfx("buy");
     spawnParticles(W / 2, H * 0.5, "spark", 10);
     syncHud(); renderShop();
@@ -6532,7 +6535,7 @@ function renderShopDecor(list) {
   list.querySelectorAll("[data-buy-theme]").forEach(b => b.onclick = () => {
     const key = b.dataset.buyTheme, th = DECOR_THEMES[key];
     if (G.shells < th.price) return;
-    G.shells -= th.price; cm.themes[key] = true; cm.theme = key; _weatherP.length=0;
+    G.shells -= th.price; cm.themes[key] = true; window.CoveAnalytics?.emit("item_purchased",{entity:"theme:"+key,category:"decor",shells:th.price}); cm.theme = key; _weatherP.length=0;
     _todCache = null; _skyGrad = null;
     sfx("buy"); spawnParticles(W / 2, H * 0.4, "twinkle", 18); syncHud(); save(); renderShop();
     toast(`${th.name} — the whole cove changes with the light now.`, 5);
@@ -6541,7 +6544,7 @@ function renderShopDecor(list) {
     const p = PROP_BY_ID[b.dataset.buyProp];
     const slot=propCopies(p.id).find(q=>!cm.props[q.id]);
     if (!slot || G.shells < p.price) return;
-    const id=slot.id;G.shells -= p.price; cm.props[id] = true;
+    const id=slot.id;G.shells -= p.price; cm.props[id] = true; window.CoveAnalytics?.emit("item_purchased",{entity:p.id,category:"decor",shells:p.price});
     cm.propBoxed ||= {};cm.propBoxed[id]=true;
     sfx("buy"); syncHud(); save();
     if (p.movable) { startPlacing(id); }                 // straight into placement mode
@@ -6667,7 +6670,7 @@ function renderShopDress(list) {
     if (cS > Math.floor(G.shells)) { toast(`Need ◈ ${cS} for the new pieces.`, 3); return; }
     if (cP > (G.pearls || 0)) { toast(`Need ✦ ${cP} for the sparkle pieces.`, 3); return; }
     G.shells -= cS; G.pearls -= cP;
-    for (const a of news) (c.owned || (c.owned = [])).push(a.key);
+    for (const a of news) { (c.owned || (c.owned = [])).push(a.key); window.CoveAnalytics?.emit("item_purchased",{entity:a.key,category:"accessories",shells:a.price||0,pearls:a.pearls||0}); }
     c.worn = normalizeWorn(_dressWorn);
     if (news.length) { sfx("buy"); spawnParticles(c.x, c.y - 20, "twinkle", news.some(a => a.premium) ? 14 : 9);
       logMoment(news.some(a => a.premium) ? "✨" : "🎀", `${c.name} got a new look.`); fireTip("first_buy"); }
@@ -6759,7 +6762,7 @@ function renderShop() {
   const tabsEl = document.getElementById("shopTabs");
   if (!SHOP_TABS.some(t => t.id === shopTab)) shopTab = "featured";
   tabsEl.innerHTML = SHOP_TABS.map(t => `<button data-tab="${t.id}" class="${t.id === shopTab ? "on" : ""}">${t.label}</button>`).join("");
-  tabsEl.querySelectorAll("button").forEach(b => b.onclick = () => { shopTab = b.dataset.tab; renderShop(); list.scrollTop = 0; });
+  tabsEl.querySelectorAll("button").forEach(b => b.onclick = () => { if(shopTab!==b.dataset.tab)window.CoveAnalytics?.emit("menu_opened",{entity:"Shop: "+b.dataset.tab}); shopTab = b.dataset.tab; renderShop(); list.scrollTop = 0; });
 
   if (shopTab !== "dress") { list.classList.remove("dressmode"); stopDressLoop(); _dressWorn = null; }
   list.innerHTML = "";
@@ -7170,6 +7173,7 @@ function togglePanel(name) {
   if (!wasOpen) {
     hideCatCard(); hideToast(); hidePropCard();   // clear anything floating over the cove before the panel comes up
     panels[name].hidden = false;
+    window.CoveAnalytics?.emit("menu_opened",{entity:({shop:"Shop",dex:"Catdex",today:"Journal"})[name]||name});
     neoSheetFooter(panels[name]);
     if (name === "shop") renderShop();
     if (name === "dex") { renderDex(); neoRenderCats(); }
@@ -7489,6 +7493,7 @@ function rampParam(p, target, secs = 0.4) {
   });
 }
 function openSound() {
+ window.CoveAnalytics?.emit("menu_opened",{entity:"Sound"});
   const mb = document.getElementById("muteBtn");
   ensureAudio();
   const S = G.sound;
@@ -7708,6 +7713,7 @@ const HELP_TOPICS=[
  ['Settings & saves','sound',['Use Sound for the master switch and individual volumes.','Use the view controls or pinch to adjust the Cove view.','Journal has Back up / restore. Purchased support packs can be restored through the purchase controls.'],'today']
 ];
 function openGuide(){
+ window.CoveAnalytics?.emit("menu_opened",{entity:"Help"});
  closeAllPanels();closeModal();hidePropCard();hideCatCard();rosterEl.hidden=true;
  ensureAudio();document.getElementById('neo-tour')?.remove();
  const card=tutEl.querySelector('.card');card.classList.add('help-home');tutEl.classList.add('on');
@@ -7754,6 +7760,7 @@ function openExternal(url) {
   catch (e) { try { window.open(url, "_blank", "noopener"); } catch (e2) {} }
 }
 function openCredits() {
+ window.CoveAnalytics?.emit("menu_opened",{entity:"Credits"});
  tutEl.classList.remove("on");closeAllPanels();hidePropCard();
   ensureAudio();
   openModal(`<div class="reveal credits">
@@ -7810,6 +7817,7 @@ function openCredits() {
 }
 
 function openAbout() {
+ window.CoveAnalytics?.emit("menu_opened",{entity:"About"});
  tutEl.classList.remove("on");closeAllPanels();hidePropCard();
   ensureAudio();
   openModal(`<div class="reveal about">
@@ -7824,6 +7832,7 @@ function openAbout() {
     <p class="cr-lead">Welcome to our little Cove. 🐾</p>
     <div class="row"><button class="btn primary" id="abtClose">Back to Help</button></div>
   </div>`);
+  window.CoveAnalytics?.mount(document.querySelector(".reveal.about"));
   document.getElementById("abtClose").onclick = () => { closeModal(); openGuide(); };
 }
 
@@ -7833,6 +7842,7 @@ function openAbout() {
 // can extend it without touching the card.
 function caresSupported() { return iapOwns("welcome_pack") && iapOwns("founding_covekeeper"); }
 function openCares() {
+ window.CoveAnalytics?.emit("menu_opened",{entity:"Cove Cares"});
  tutEl.classList.remove("on");closeAllPanels();hidePropCard();
   ensureAudio();
   if (G.ccc) G.ccc.seen = true;
@@ -9506,6 +9516,7 @@ function restClearUI() {
   try { closeModal(); } catch (e) {}
 }
 function openRestPanel() {
+ if(!restMode)window.CoveAnalytics?.emit("menu_opened",{entity:"Rainy Retreat"});
   syncRestDark();
   ensureAudio(); loadRainLoop(); initGlassDrops();
   if (_placing || _arranging) exitPlacement();
@@ -10060,7 +10071,7 @@ function renderFestPickGrid(roster) {
 // building the field + the countdown.
 function startFestRace() {
   document.getElementById("festPanel").hidden = true;
-  festKind = "race"; _festG = null;
+  festKind = "race"; window.CoveAnalytics?.start("Festival race"); _festG = null;
   stopFestBed();                       // quiet through the countdown — the race slice starts on "Go!" (matches volley/tug/cafe)
   const mk = cats.find(c => c.mascot);
   const others = cats.filter(c => c !== mk && c !== festPickedCat && !c.visitor);
@@ -10683,6 +10694,7 @@ function festReward(place) {
   return { shells: base };
 }
 function showFestPodium() {
+ window.CoveAnalytics?.complete("Festival race");
   festWinFanfare();
   const order = festRanking();
   { // the result card is shared with the Box Challenge — put its race face back
@@ -11254,7 +11266,7 @@ function startBoxChallenge() {
   const need = Math.min(5, cats.filter(c => !c.visitor).length);
   if (boxPickedCats.length < need) return;
   document.getElementById("festBoxPanel").hidden = true;
-  festKind = "box";
+  festKind = "box"; window.CoveAnalytics?.start("Box challenge");
   fitFestCanvas();
   boxT = 0; boxPhase = "settle"; boxWinner = null;
   particles.length = 0; floaters.length = 0;
@@ -11505,6 +11517,7 @@ function boxRanking() {
     .sort((a, b) => b.total - a.total);
 }
 function showBoxResult() {
+ window.CoveAnalytics?.complete("Box challenge");
   const rank = boxRanking();
   boxWinner = rank[0].p;
   const res = document.getElementById("festResult");
@@ -11743,7 +11756,7 @@ function renderVolleyPickGrid(roster) {
 function startCoveVolley() {
   if (volleyPickSel.length !== 3) return;
   if (!volleyPickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats just wandered off."); return; }
-  festKind = "volley";
+  festKind = "volley"; window.CoveAnalytics?.start("Cove volley");
   stopFestBed();                       // quiet through the countdown — the volley bed starts on "Go!"
   fitFestCanvas();
   matchT = 0; volleyScore = { cove: 0, visit: 0 }; volleyBall = null;
@@ -12518,6 +12531,7 @@ function vbStatLine(p) {
   return out.join(" · ");
 }
 function showVolleyResult() {
+ window.CoveAnalytics?.complete("Cove volley");
   _vbResultShown = true;
   festWinFanfare();
   const won = volleyScore.cove >= 3;
@@ -12761,7 +12775,7 @@ function startCoveMidk() {
   if (!midkPickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats wandered off."); return; }
   stopVolleyBed();
   stopFestBed();                       // quiet through the countdown — the tug bed starts on "Go!"
-  festKind = "midk";
+  festKind = "midk"; window.CoveAnalytics?.start("Tug of Paw");
   fitFestCanvas();
   midkT = 0; midkPhase = "idle"; _midkResultShown = false; _midkWinner = null; _midkFlopAt = 0;
   _midkPanicAt = -99; _midkPanicSide = null;
@@ -13229,6 +13243,7 @@ function drawMidkHudCanvas(g) {
 }
 
 function showMidkResult() {
+ window.CoveAnalytics?.complete("Tug of Paw");
   festWinFanfare();
   const won = _midkWinner === "cove";
   const res = document.getElementById("festResult");
@@ -13451,7 +13466,7 @@ function startCoveCafe() {
   if (cafePickSel.length !== 3) return;
   if (!cafePickSel.every(c => eligibleForVolley().includes(c))) { toast("One of those cats just wandered off."); return; }
   stopVolleyBed();   // any prior game's bed (beach / café) stops before this shift's music starts
-  festKind = "cafe";
+  festKind = "cafe"; window.CoveAnalytics?.start("Festival cafe");
   fitFestCanvas();
   cafeShiftT = 0; cafePhaseIx = 0; cafePhaseT = 0; cafeMood = 0.6; cafeShellTips = 0;
   cafeGuestPick=null; cafeGuestPointer=null;
@@ -14264,6 +14279,7 @@ function cafeEmployeeOfShift() {
   return { name: best.cat.name, reason: bestReason };
 }
 function showCafeResult() {
+ window.CoveAnalytics?.complete("Festival cafe");
   festWinFanfare();
   const res = document.getElementById("festResult");
   res.querySelector("h2").textContent = "Catmint Café";
@@ -19503,6 +19519,7 @@ function neoRenderJournal(){
   document.getElementById('neo-journal-cats').onclick=()=>togglePanel('dex');
 }
 function neoOpenExplore(){
+ window.CoveAnalytics?.emit("menu_opened",{entity:"Activities"});
   const b=document.getElementById('neo-go-festival'),ready=festUnlocked()||volleyReady();
   b.disabled=!ready;b.querySelector('small').textContent=ready?'Race, Volleyball and Tug of Paws.':'Welcome two cats and finish meeting Midknight.';
   togglePanel('explore');neoEvent('explore_open');
@@ -19689,6 +19706,7 @@ function neoStockCounter(slot){
 let neoHomesteadTimer;
 let neoCafeFrame=0;
 function neoOpenHomestead(kind){
+ if(kind==="cafe"||!document.getElementById("neo-homestead")||document.getElementById("neo-homestead").hidden)window.CoveAnalytics?.emit("menu_opened",{entity:kind==="cafe"?"Catmint Cafe":"Garden"});
   if(kind==='cafe')return neoOpenCoffeeKiosk();
   closeAllPanels();neoCafeSettle();save();clearInterval(neoHomesteadTimer);cancelAnimationFrame(neoCafeFrame);
   const h=neoHomestead(),garden=kind==='garden';
