@@ -20051,6 +20051,44 @@ function neoPaintCafe(cv,h){
 
 /* NEO_HOME_END */
 Object.assign(COVE_CROPS,CoveCafeEngine.ingredients);
+/* ---- "Help improve the Cove" consent: asked plainly, on screen, when nobody has chosen yet ---- */
+// Undecided players are asked once their cove is calm. "Maybe later" (or closing it) asks again on a later day, at most 3 times in all;
+// an explicit "No thanks" or "Yes" ends the asking for good. Everything stays switchable in Help → About.
+const ANALYTICS_ASK_KEY = "neo.product.prompt";
+function analyticsAskState() { try { return JSON.parse(localStorage.getItem(ANALYTICS_ASK_KEY) || "{}") || {}; } catch (e) { return {}; } }
+function analyticsUndecided() { try { const v = localStorage.getItem("neo.product.analytics.v1"); return v !== "yes" && v !== "no"; } catch (e) { return false; } }
+function analyticsAskDue() {
+  if (!window.CoveAnalytics || !analyticsUndecided()) return false;
+  const st = analyticsAskState();
+  if ((st.asks || 0) >= 3) return false;
+  return !st.at || Date.now() - st.at > 20 * 3600 * 1000;   // a later day, not the very next minute
+}
+function showAnalyticsAsk() {
+  const st = analyticsAskState(); st.asks = (st.asks || 0) + 1; st.at = Date.now();
+  try { localStorage.setItem(ANALYTICS_ASK_KEY, JSON.stringify(st)); } catch (e) {}
+  openModal(`<div class="reveal">
+    <div class="kicker">HELP US TEND THE COVE</div>
+    <h2>Help improve Catmint Cove?</h2>
+    <p class="sub">Share <b>anonymous counts</b> of which games are played, which menus get opened and what gets bought in-game. That's how we decide what to make better.</p>
+    <ul class="packperks">
+      <li>Never your name, messages, photos or save</li>
+      <li>Nothing is sent until you say yes</li>
+      <li>Change your mind any time in Help → About</li>
+    </ul>
+    <div class="row"><button class="btn primary" id="an-yes">Yes, help improve it</button></div>
+    <div class="row"><button class="btn" id="an-later">Maybe later</button><button class="btn" id="an-no">No thanks</button></div>
+  </div>`);
+  document.getElementById("an-yes").onclick = () => { window.CoveAnalytics.setConsent(true); closeModal(); toast("Thank you. That genuinely helps.", 3.5); };
+  document.getElementById("an-no").onclick = () => { window.CoveAnalytics.setConsent(false); closeModal(); };
+  document.getElementById("an-later").onclick = () => { closeModal(); };   // asks again another day (up to 3 times in all)
+}
+function analyticsAskTick() {
+  if (!analyticsAskDue()) return;
+  if (_cold || festMode || restMode || _placing || _arranging || anyPanelOpen() || scrim.classList.contains("on") || document.hidden) return;
+  if (!G.tutorialDone || (Date.now() - (window._sessionStart || 0)) < 40000) return;   // never over the first minutes, the tutorial or a game
+  showAnalyticsAsk();
+}
+window._sessionStart = Date.now();
 /* ---- Cove Friends hub: entry, badge, Journal cards, adapter ---- */
 let _friendsHub=null;const _friendCats=new Map();
 function neoFriendsBadge(){
@@ -20118,6 +20156,7 @@ function neoOpenCoffeeKiosk(){
 }
 syncNavH();
 setInterval(neoGardenWatch,5000);setTimeout(neoGardenWatch,2500);   // ripe-crop heads-up
+setInterval(analyticsAskTick,6000);
 resize();
 _lastViewBottom = _viewBottomY;
 load();
