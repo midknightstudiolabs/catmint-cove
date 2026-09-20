@@ -32,16 +32,39 @@
   }
 
   // Why the café can't open right now (null when it can): no menu yet, or an ingredient for something on the menu has run out.
+  function missingKeys(){return [...new Set(E.recipes.filter(r=>s.menu.includes(r.id)).flatMap(r=>Object.entries(r.inputs).filter(([k,n])=>(g.homestead.stock[k]||0)<n).map(([k])=>k)))];}
   function whyClosed(){
    if(!s.menu.length)return {text:'Put a drink on your menu first. Cats only serve what is on it.',go:'menu',label:'Open Menu'};
    if(E.available(s,g.homestead.stock).length)return null;
-   const gone=[...new Set(E.recipes.filter(r=>s.menu.includes(r.id)).flatMap(r=>Object.entries(r.inputs).filter(([k,n])=>(g.homestead.stock[k]||0)<n).map(([k])=>E.ingredients[k].name.toLowerCase())))];
-   return {text:'Out of '+(gone.length>1?gone.slice(0,-1).join(', ')+' and '+gone.slice(-1):gone[0]||'ingredients')+'. Restock to open your café.',go:'pantry',label:'Open Pantry'};
+   const keys=missingKeys(),names=keys.map(k=>E.ingredients[k].name.toLowerCase());
+   return {text:'Out of '+(names.length>1?names.slice(0,-1).join(', ')+' and '+names.slice(-1):names[0]||'ingredients')+'. Restock to open your café.',keys};
+  }
+  // One-tap restock: buy 5 of a missing ingredient (opens the café again if that fixes it), or plant a suggested batch in the Garden.
+  function buyMissing(k){
+   const item=E.ingredients[k],cost=item.import*5;
+   if(g.shells<cost){explain({text:'You need '+Math.ceil(cost-g.shells).toLocaleString()+' more Shells to buy 5 '+item.name.toLowerCase()+'. Growing them in the Garden costs less.',keys:[k]});return;}
+   commit(()=>{g.shells-=cost;E.acquire(g,k,5,cost);E.setOpen(g,true,Date.now());});
+   explain({tone:'ok',text:s.open?'Bought 5 '+item.name.toLowerCase()+' for '+cost+' Shells. Your café is open.':'Bought 5 '+item.name.toLowerCase()+' for '+cost+' Shells. Tap Closed to open when you are ready.'});
+  }
+  function plantMissing(){
+   const plan=E.plantingPlan(g);
+   if(!plan.jobs.length){explain({text:'Nothing to plant right now: your plots are full or already growing what you need. Harvest in the Garden when ready.',go:'garden',label:'Open Garden'});return;}
+   if(g.shells<plan.cost){explain({text:'Planting needs '+plan.cost.toLocaleString()+' Shells for seeds. You have '+Math.floor(g.shells).toLocaleString()+'.'});return;}
+   let ok=false;commit(()=>{ok=E.plantSuggested(g,plan);});
+   const mins=Math.ceil(Math.max(...plan.jobs.map(j=>E.ingredients[j.key].seconds))/60);
+   explain(ok?{tone:'ok',text:'Planted '+plan.jobs.length+' patch'+(plan.jobs.length===1?'':'es')+' for '+plan.cost+' Shells. Harvest in the Garden in about '+mins+' min.',go:'garden',label:'Open Garden'}:{text:'Could not plant right now. Open the Garden to choose crops.',go:'garden',label:'Open Garden'});
   }
   function explain(why){
    panel.querySelector('.cc-why')?.remove();
-   const note=document.createElement('div');note.className='cc-why'+(why.tone==='ok'?' ok':'');note.id='cc-why';note.setAttribute('role','status');
-   const text=document.createElement('span');text.textContent=why.text;note.append(text);if(why.go){const go=document.createElement('button');go.className='btn';go.textContent=why.label;go.onclick=()=>{tab=why.go;render();};note.append(go);}panel.querySelector('.cc-top').append(note);setTimeout(()=>note.remove(),why.tone==='ok'?3500:7000);
+   const note=document.createElement('div');note.className='cc-why'+(why.tone==='ok'?' ok':'')+(why.keys?' restock':'');note.id='cc-why';note.setAttribute('role','status');
+   const text=document.createElement('span');text.textContent=why.text;note.append(text);
+   const acts=document.createElement('div');acts.className='cc-why-acts';
+   const add=(label,fn,primary)=>{const b=document.createElement('button');b.className='btn'+(primary?' primary':'');b.textContent=label;b.onclick=fn;acts.append(b);};
+   for(const k of why.keys||[]){const item=E.ingredients[k],cost=item.import*5;add('Buy 5 '+item.name.toLowerCase()+' · '+cost+' Shells',()=>buyMissing(k),true);}
+   if(why.keys)add('Plant in Garden',plantMissing,false);
+   if(why.go)add(why.label,()=>{if(why.go==='garden'){stopActive();a.garden();}else{tab=why.go;render();}},false);
+   if(acts.children.length)note.append(acts);
+   panel.querySelector('.cc-top').append(note);setTimeout(()=>note.remove(),why.tone==='ok'?4500:(why.keys?12000:7000));
   }
   function commit(fn){E.settle(g,Date.now());fn();a.save();a.hud();render();}
   function render(){

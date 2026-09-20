@@ -116,3 +116,4 @@
 #app #cafe-kiosk.cc-v2 .cc-why .btn{flex:0 0 auto;min-height:36px;padding:4px 12px;font-size:13px;border-radius:10px;background:#faf6e8;border:1px solid #dfb98c;color:#6f3f1d;box-shadow:none}
 #app #cafe-kiosk.cc-v2[hidden]{display:none}
 #app #cafe-kiosk.cc-v2 .cc-why.ok{background:#e6efdc;border-color:#b9cfaa;color:#31593d}
+#app #cafe-kiosk.cc-v2 .cc-why{flex-wrap:wrap}#app #cafe-kiosk.cc-v2 .cc-why span{flex:1 1 100%}#app #cafe-kiosk.cc-v2 .cc-why-acts{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 100%}#app #cafe-kiosk.cc-v2 .cc-why-acts .btn{flex:1 1 auto}#app #cafe-kiosk.cc-v2 .cc-why-acts .btn.primary{background:#487657;border-color:#487657;color:#fff}
