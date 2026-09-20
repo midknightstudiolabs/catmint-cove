@@ -2074,7 +2074,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=17"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=34"><script src="ui/cafe-engine.js?v=18"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=37"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=34"><script src="ui/cafe-engine.js?v=18"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=38"></script>
 <script>
 (() => {
 "use strict";
@@ -20043,11 +20043,12 @@ let neoCafeFrame=0;
 function neoOpenHomestead(kind){
  if(kind==="cafe"||!document.getElementById("neo-homestead")||document.getElementById("neo-homestead").hidden)window.CoveAnalytics?.emit("menu_opened",{entity:kind==="cafe"?"Catmint Cafe":"Garden"});
   if(kind==='cafe')return neoOpenCoffeeKiosk();
+  // remember the scroll position BEFORE closeAllPanels() hides the sheet, so tapping Harvest keeps your place
+  const prevSheet=document.getElementById('neo-homestead'),prevBox=prevSheet&&(prevSheet.querySelector('.cove-sheet-body')||prevSheet),keepTop=(prevSheet&&!prevSheet.hidden&&prevSheet.dataset.kind===kind&&prevBox)?prevBox.scrollTop:0;
   closeAllPanels();neoCafeSettle();save();clearInterval(neoHomesteadTimer);cancelAnimationFrame(neoCafeFrame);
   const h=neoHomestead(),garden=kind==='garden';
   let sheet=document.getElementById('neo-homestead');
   if(!sheet){sheet=document.createElement('div');sheet.id='neo-homestead';sheet.className='sheet';document.getElementById('app').append(sheet);panels.homestead=sheet;}
-  const keepBox=sheet.querySelector('.cove-sheet-body')||sheet,keepTop=(!sheet.hidden&&sheet.dataset.kind===kind)?keepBox.scrollTop:0;
   sheet.hidden=false;sheet.classList.toggle('cafe-full-room',!garden);
   const time=t=>Math.max(0,Math.ceil((t-Date.now())/1000));
   sheet.innerHTML=`<button class="x" aria-label="Back to the Cove">×</button><div class="kicker">YOUR LITTLE CORNER OF THE COVE</div><h2>${garden?'Cove Garden':'Catmint Café'}</h2><p>${garden?'A little harvest for today, and something to save for tomorrow. Crops never wither.':'Choose what to cook and stock the counter. Guests arrive, take a seat, enjoy a treat and pay 2 shells. A visit takes one minute; stocked food also sells while you are away. Close the café to pause service while you cook or redecorate.'}</p><div class="homestead-stock">${Object.entries(COVE_CROPS).map(([k,c])=>`<span>${c.name}: <b>${h.stock[k]||0}</b></span>`).join('')}</div>`;

@@ -245,7 +245,8 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    const density=Math.min(window.devicePixelRatio||1,2),pw=Math.round(bounds.width*density),ph=Math.round(bounds.height*density);if(canvas.width!==pw||canvas.height!==ph){canvas.width=pw;canvas.height=ph;}
    // Centre the 380-unit scene band in the space between the top stack and whatever sits at the bottom (open sheet, or the view switch and dock).
    const top=panel.querySelector('.cc-top')?.getBoundingClientRect().bottom-bounds.top||0,sheet=panel.querySelector('.cc-content:not([hidden])'),lower=panel.querySelector('.cc-switch'),intro=panel.querySelector('.cc-intro');
-   const bottomEdge=sheet?sheet.getBoundingClientRect().top-bounds.top:intro?intro.getBoundingClientRect().top-bounds.top:lower&&lower.offsetParent?lower.getBoundingClientRect().top-bounds.top:bounds.height;
+   const sheetBelow=sheet&&sheet.getBoundingClientRect().left-bounds.left<bounds.width*.5;   // on wide screens the sheet docks beside the scene and covers none of it
+   const bottomEdge=sheetBelow?sheet.getBoundingClientRect().top-bounds.top:intro?intro.getBoundingClientRect().top-bounds.top:lower&&lower.offsetParent?lower.getBoundingClientRect().top-bounds.top:bounds.height;
    if(view==='inside'){const fit=Math.max(120,bottomEdge-top)/380;if(fit<css){css=fit;view720=bounds.width/css;cx0=(720-view720)/2;vh=bounds.height/css;}}   // short wide screens: shrink the room to fit instead of cropping the counter
    const bandPx=380*css,isIn=view==='inside',offset=isIn?Math.max(0,top/css):Math.max(0,Math.min(vh-380,((top+Math.max(top+bandPx,bottomEdge))/2-bandPx/2)/css)),band=isIn?Math.max(380,(Math.max(bottomEdge,top+120)-top)/css):undefined;
    layout={k:css,cx0,offset};
