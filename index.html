@@ -2767,7 +2767,7 @@ function rebuildAttractors() {
   // Midknight's cairn — a small solid by the sign
   { const cp = cairnPos(W, H); if (G.cairn && !G.cairn.tidied && (G.cairn.size | 0) > 0) obstacles.push({ x: cp.sx, y: cp.gy, rx: 16, ry: 9 }); }
   // physical movable props (stepping stones stay walkable; hanging props aren't in the way)
-  const PROP_SOLID = { lantern: [8, 11], birdbath: [15, 13], rowboat: [34, 14], windmill: [10, 13] };
+  const PROP_SOLID = { lantern: [8, 11], birdbath: [15, 13], rowboat: [34, 14], windmill: [10, 13], moonshrine: [16, 13] };
   if (G.cosmetics && G.cosmetics.props) for (const id of Object.keys(G.cosmetics.props)) {
     if(!PROP_SOLID[id.split("#")[0]])continue;
     if (!G.cosmetics.props[id] || propBoxed(id)) continue;
@@ -5057,7 +5057,7 @@ let _placeDragOrigin=null;
 function placeFootprint(spec){
   const id=(spec.key||spec.id||" ").split("#")[0];
   if(id==="rowboat"||id==="bunting"||id==="lanterns")return [3,1];
-  if(id==="stones"||id==="birdbath"||id==="windmill")return [2,1];
+  if(id==="stones"||id==="birdbath"||id==="windmill"||id==="moonshrine")return [2,1];
   const type=spec.dtype||spec.type;
   if(type==='station'||type==='cottage')return [3,2];
   if(type==='tree'||type==='cattree')return [2,2];
@@ -5117,6 +5117,7 @@ function _beginPlace(spec) {
 }
 function startPlacing(id) {   // a prop, from the shop row / straight after buying
   const p = PROP_BY_ID[id]; if (!p || !p.movable) return;
+  if (propLocked(id)) { toast(p.name + " is asleep. Renew Midknight’s Blessing to wake it.", 4); return; }
   const cur = propPos(id);
   _beginPlace({ kind: "prop", key: id, label: p.name.toLowerCase(), r: 30,
     from: propBoxed(id) ? null : { ...(G.cosmetics.propPos && G.cosmetics.propPos[id] || {}) },
@@ -5252,7 +5253,7 @@ function dropComfortPos(type, newCount) {
 // still grabs the cottage; the arrange-mode tap uses the full generous radius.
 function propGrabHit(id,x,y,pos){
  const base=id.split('#')[0],scale=pos.s||1;
- const shape={bunting:[70,108],lantern:[24,54],birdbath:[27,32],windmill:[38,106],stones:[42,14]}[base]||[28,30];
+ const shape={bunting:[70,108],lantern:[24,54],birdbath:[27,32],windmill:[38,106],stones:[42,14],moonshrine:[24,46]}[base]||[28,30];
  return Math.abs(x-pos.x)<=shape[0]*scale && y>=pos.y-shape[1]*scale-8 && y<=pos.y+18;
 }
 function movableAt(x, y, tight) {
@@ -5262,7 +5263,7 @@ function movableAt(x, y, tight) {
     if (Math.hypot(x - d.x, y - (d.y - 8)) < ((DECOR_CLEAR[d.type] || 26) + 6) * f) return { kind: "decor", d };
   }
   if (G.cosmetics && G.cosmetics.props) for (const p of DECOR_PROPS) {
-    if (!p.movable || !G.cosmetics.props[p.id] || propBoxed(p.id)) continue;
+    if (!p.movable || !G.cosmetics.props[p.id] || propBoxed(p.id) || propLocked(p.id)) continue;
     const pos = propPos(p.id);
     if(propGrabHit(p.id,x,y,pos))return {kind:"prop",id:p.id};
     if (Math.hypot(x - pos.x, y - (pos.y - 6)) < 26 * f) return { kind: "prop", id: p.id };
@@ -6585,13 +6586,15 @@ function renderShopDecor(list) {
     else if (!p.movable) action = `<span class="owned">In the cove</span>`;
     else if (boxed) action = `<button class="btn primary" data-place-prop="${p.id}">Place it</button>`;
     else action = `<button class="btn tiny" data-box-prop="${p.id}" title="Keep in inventory">Store item</button><button class="btn tiny" data-move-prop="${p.id}">Move</button>`;
+    if(p.blessing) action = !owned ? `<button class="btn primary" data-blessing-offer>Included with Blessing</button>` : propLocked(p.id) ? `<button class="btn primary" data-blessing-offer>Wake with Blessing</button>` : action;
     if(p.maxOwned) action=(count<p.maxOwned?`<button class="btn primary" data-buy-prop="${p.id}" ${afford?'':'disabled'}>${count?'Buy another':'Buy'} · ${p.price.toLocaleString()}</button>`:'<span class="owned">Collection complete</span>');
-    row.innerHTML = `<div class="txt"><div class="name">${p.name}${p.maxOwned?' · Owned '+count+'/8':''}</div><div class="desc">${boxed ? "Packed away — tap Place it to set it down." : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
+    row.innerHTML = `<div class="txt"><div class="name">${p.name}${p.maxOwned?' · Owned '+count+'/8':''}</div><div class="desc">${p.blessing && owned && propLocked(p.id) ? "Asleep. Renew Midknight’s Blessing and it wakes right where it stands." : boxed ? "Packed away — tap Place it to set it down." : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
     const photo=document.createElement('canvas');photo.width=160;photo.height=120;photo.className='inventory-preview';photo.setAttribute('role','img');photo.setAttribute('aria-label',p.name+' preview');
     const pg=photo.getContext('2d');pg.translate(80,106);pg.scale(p.id==='windmill'?.72:.82,p.id==='windmill'?.72:.82);if(p.render)p.render(pg,0,0,0,p.place.s);row.prepend(photo);
     list.appendChild(row);
   }
   list.querySelectorAll("[data-move-prop],[data-place-prop]").forEach(b => b.onclick = () => startPlacing(b.dataset.moveProp || b.dataset.placeProp));
+  list.querySelectorAll("[data-blessing-offer]").forEach(b => b.onclick = showBlessingOffer);
   list.querySelectorAll("[data-box-prop]").forEach(b => b.onclick = () => boxProp(b.dataset.boxProp));
   list.querySelectorAll("[data-set]").forEach(b => b.onclick = () => {
     cm.theme = b.dataset.set; _weatherP.length=0; sfx("buy"); _todCache = null; _skyGrad = null; save(); renderShop();
@@ -14501,6 +14504,8 @@ const DECOR_PROPS = [
     movable:true, place:{ x:W*0.075, y:H*0.90, s:1.1 }, render(g,t,x,y,s){ propRowboat(g, x, y, s); } },
   { id:"windmill", name:"Pole windmill",   price: 8000, blurb:"A warm timber windmill with terracotta and parchment sails turning gently in the sea breeze.",
     movable:true, place:{ x:W*0.91, y:H*0.60, s:1.25 }, render(g,t,x,y,s){ propWindmill(g, x, y, s, t); } },
+  { id:"moonshrine", name:"Midknight’s Moonstone Shrine", price: 0, blessing: true, blurb:"A mossy standing stone with a crescent moon. Included with Midknight’s Blessing: it glows while the Blessing is active and sleeps when it isn’t.",
+    movable:true, place:{ x:W*0.34, y:H*0.88, s:1.6 }, render(g,t,x,y,s){ propMoonShrine(g, x, y, s, t); } },
 ];
 // Stable slots keep the original id and saved position for the first copy.
 for(const base of DECOR_PROPS.slice()) if(['bunting','lantern','lanterns'].includes(base.id)){
@@ -14515,6 +14520,20 @@ function propPos(id) {
   return o ? { x: o.x, y: o.y, s: p.place.s } : { x: p.place.x, y: p.place.y, s: p.place.s };
 }
 function propBoxed(id) { return !!(G.cosmetics && G.cosmetics.propBoxed && G.cosmetics.propBoxed[id]); }
+// A Blessing decor is "asleep" whenever the Blessing isn't active: it stays exactly where it is, but can't be moved, stored or placed.
+function propLocked(id) { const p = PROP_BY_ID[id]; return !!(p && p.blessing && !blessingActive()); }
+// The first time the Blessing is active, its decor settles into the cove (auto-placed at its default spot). It is never removed afterwards.
+function claimBlessingDecor() {
+  if (!G || !G.cosmetics || !G.cosmetics.props || !blessingActive()) return false;
+  let any = false;
+  for (const p of DECOR_PROPS) {
+    if (!p.blessing || G.cosmetics.props[p.id]) continue;
+    G.cosmetics.props[p.id] = true; if (G.cosmetics.propBoxed) delete G.cosmetics.propBoxed[p.id];
+    any = true; toast(p.name + " has settled into the cove. It sleeps whenever the Blessing ends.", 5);
+  }
+  if (any) { try { rebuildAttractors(); } catch (e) {} save(); }
+  return any;
+}
 // a prop can sit here: on the grass band, clear of the pond, the sign, and stations/projects
 // the dock, the bakery and the other project / station structures are big and
 // rise upward (ovens, domes) or reach forward (docks) well past their decor
@@ -15349,6 +15368,50 @@ function propBirdbath(g, x, y, s, t) {
   }
   g.fillStyle='#80765f';roundRect(g,-3,-9,6,5,1.5);g.fill();
   g.fillStyle=night>0?'#edcd8b':'#b2a88c';roundRect(g,-2,-8,4,3,1);g.fill();
+  g.restore();
+}
+// Midknight's Moonstone Shrine — a Blessing decor. Awake: warm glow (brighter at night), fireflies, a lit crescent. Asleep (Blessing ended): dim, still, no glow.
+function propMoonShrine(g, x, y, s, t) {
+  s = s || 1;
+  const awake = blessingActive();
+  const night = clamp(((g._nightGlow || 0) - 0.2) / 0.5, 0, 1);
+  g.save(); g.translate(x, y); g.scale(s, s);
+  g.fillStyle = "rgba(36,31,23,0.14)"; g.beginPath(); g.ellipse(0, 4, 18, 5.5, 0, 0, 7); g.fill();
+  if (awake) {
+    const a = 0.16 + night * 0.34 + Math.sin(t * 1.6) * 0.025;
+    const gl = g.createRadialGradient(0, -22, 2, 0, -22, 40);
+    gl.addColorStop(0, "rgba(255,214,140," + a + ")"); gl.addColorStop(1, "rgba(255,214,140,0)");
+    g.fillStyle = gl; g.beginPath(); g.arc(0, -22, 40, 0, 7); g.fill();
+  }
+  // plinth
+  g.fillStyle = awake ? "#a7a28d" : "#9c9b94"; roundRect(g, -17, -6, 34, 9, 3); g.fill();
+  g.fillStyle = awake ? "#b7b29c" : "#a9a9a3"; roundRect(g, -17, -6, 34, 3, 2); g.fill();
+  // standing stone
+  g.fillStyle = awake ? "#c2bda7" : "#adada7";
+  g.beginPath(); g.moveTo(-11, -5); g.quadraticCurveTo(-14, -30, 0, -40); g.quadraticCurveTo(14, -30, 11, -5); g.closePath(); g.fill();
+  g.fillStyle = awake ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.10)";
+  g.beginPath(); g.moveTo(-9, -8); g.quadraticCurveTo(-11, -28, -2, -37); g.quadraticCurveTo(-8, -26, -6, -8); g.closePath(); g.fill();
+  // moss
+  g.fillStyle = awake ? "#82a066" : "#8d9a86";
+  g.beginPath(); g.ellipse(-4, -37, 7, 3, -0.3, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(8, -12, 3.6, 5, 0.2, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(-9, -9, 3, 2.6, 0, 0, 7); g.fill();
+  // crescent carving
+  g.save(); g.beginPath(); g.arc(0, -22, 7, 0, 7); g.clip();
+  g.fillStyle = awake ? "rgba(255,226,150," + (0.7 + night * 0.3) + ")" : "#77766c"; g.fillRect(-8, -30, 16, 16);
+  g.fillStyle = awake ? "#c2bda7" : "#adada7"; g.beginPath(); g.arc(3.2, -24, 6.4, 0, 7); g.fill();
+  g.restore();
+  // catmint at the base
+  const leaf = awake ? "#7fa374" : "#98a494", bloom = awake ? "#b9a9dc" : "#aaa9b5";
+  for (const [lx, r] of [[-15, -0.5], [-11, 0.3], [13, 0.4], [17, -0.3]]) {
+    g.fillStyle = leaf; g.beginPath(); g.ellipse(lx, -2, 2.6, 6.5, r, 0, 7); g.fill();
+    g.fillStyle = bloom; g.beginPath(); g.arc(lx + r * 6, -8, 1.4, 0, 7); g.fill();
+  }
+  // fireflies
+  if (awake) for (let i = 0; i < 4; i++) {
+    const ang = t * 0.5 + i * 1.6, px = Math.cos(ang) * (21 + i * 3), py = -26 + Math.sin(ang * 1.3) * 13, tw = 0.45 + 0.55 * Math.sin(t * 3 + i * 2);
+    g.fillStyle = "rgba(255,232,150," + (0.25 + 0.6 * tw * (0.5 + night * 0.5)) + ")"; g.beginPath(); g.arc(px, py, 1.5, 0, 7); g.fill();
+  }
   g.restore();
 }
 function propLanterns(g, t, x, y) {
@@ -19822,6 +19885,7 @@ function neoHarvestAll(){
 }
 // Badges: Garden tile + Activities button show how many patches are ripe.
 function neoGardenBadges(){
+  claimBlessingDecor();
   const n=G.homestead?neoReadyPlots().length:0;
   const tile=document.querySelector('#neo-go-garden b');
   if(tile){let el=tile.querySelector('.neo-tile-badge');if(!el){el=document.createElement('i');el.className='neo-tile-badge';el.id='neo-garden-badge';tile.append(el);}el.hidden=!n;el.textContent=String(n);}
@@ -19832,6 +19896,7 @@ function neoGardenBadges(){
 // A gentle heads-up when crops ripen (and once when you come back to ripe ones).
 let _gardenNoticeCount=-1;
 function neoGardenWatch(){
+  claimBlessingDecor();
   if(!G||!G.homestead)return;
   const ready=neoReadyPlots(),n=ready.length;neoGardenBadges();
   if(_gardenNoticeCount<0){_gardenNoticeCount=n;if(n)setTimeout(()=>{if(!festMode&&!restMode)toast(n+(n===1?' patch is':' patches are')+' ripe in the Cove Garden.',4.5);},1200);return;}
