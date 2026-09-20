@@ -43,3 +43,12 @@ const supply={shells:1000,homestead:{stock:{coffee:4,honey:0},plots:[{key:'coffe
 console.log('PASS: shared recipe demand, growing/ready harvest credit, missing ingredient capacity and empty menu planning.');
 const batch={shells:100,homestead:{stock:{},plots:[null,null]}};actual.init(batch,0);batch.cafe.menu=['coffee','midknight'];const quote=actual.plantingPlan(batch);assert.equal(quote.jobs.length,2);assert.equal(new Set(quote.jobs.map(j=>j.key)).size,2);const cash=batch.shells;assert(actual.plantSuggested(batch,quote,100));assert.equal(batch.shells,cash-quote.cost);assert(batch.homestead.plots.every(Boolean));assert(!actual.plantSuggested(batch,quote,100));batch.homestead.plots=[null,null];batch.shells=0;assert(!actual.plantSuggested(batch,actual.plantingPlan(batch),100));assert(batch.homestead.plots.every(p=>p===null));
 console.log('PASS: recommended batch planting, cost, occupied plot protection and insufficient funds.');
+
+const service={shells:1000,homestead:{stock:{}}};actual.unlock(service,1000000);service.cafe.menu=['coffee'];service.homestead.stock={coffee:1};
+assert(actual.setOpen(service,true,1000000));assert(service.cafe.pending);assert.equal(service.cafe.pending.at,1030000);assert.equal(service.homestead.stock.coffee,0);
+actual.settle(service,1029999);assert.equal(service.cafe.served,0);assert(service.cafe.open);
+actual.settle(service,1030000);assert.equal(service.cafe.served,1);assert.equal(service.cafe.open,false);assert.equal(service.cafe.closedReason,'ingredients');
+const credited=service.shells;actual.settle(service,1030000);assert.equal(service.shells,credited);assert.equal(actual.setOpen(service,true,1040000),false);
+actual.acquire(service,'coffee',2,0);assert.equal(service.cafe.open,false);assert(actual.setOpen(service,true,1040000));assert.equal(service.cafe.pending,null);actual.setOpen(service,false,1040001);actual.setOpen(service,true,1040002);assert.equal(service.cafe.pending,null);
+service.cafe.menu.push('tea');service.homestead.stock={coffee:0,catmint:2};actual.settle(service,1320000);assert(service.cafe.open);assert.equal(service.cafe.lastCompleted.id,'tea');
+console.log('PASS: prompt first order, automatic completion, stock closure, no double payment, restock/manual reopen, no toggle acceleration, alternate available recipe.');

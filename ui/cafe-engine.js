@@ -25,13 +25,22 @@
     for(let steps=0;steps<600;steps++){
       if(s.pending){if(s.pending.at>now)break;const p=s.pending;s.pending=null;g.shells+=p.price;earned+=p.price;s.served++;s.revenue+=p.price;s.cost+=p.cost;s.sales[p.id]=(s.sales[p.id]||0)+1;const response=feedback(s,p);s.lastCompleted={id:p.id,at:p.at,price:p.price,response};s.customerReport||={total:0,happy:0,delighted:0};s.customerReport.total++;if(response.rating>=4)s.customerReport.happy++;if(response.rating===5)s.customerReport.delighted++;s.feedbackLog||=[];s.feedbackLog.unshift({id:p.id,at:p.at,price:p.price,...response});s.feedbackLog.length=Math.min(10,s.feedbackLog.length);t=Math.max(t,p.at);}
       if(!s.open){s.cursor=now;break;}
-      const options=available(s,g.homestead.stock);if(!options.length){s.cursor=now;break;}
+      const options=available(s,g.homestead.stock);if(!options.length){s.open=false;s.closedReason='ingredients';s.cursor=now;break;}
       const due=s.cursor+interval(s);if(due>now)break;
       const r=options[s.sequence++%options.length];let cost=0;
       for(const[k,n]of Object.entries(r.inputs)){g.homestead.stock[k]-=n;cost+=(s.basis[k]||0)*n;}
       s.cursor=due;s.pending={id:r.id,price:price(s,r),cost,at:due+30000};
     }
     return earned;
+  }
+  function setOpen(g,open,now=Date.now()){
+    settle(g,now);const s=init(g,now);
+    if(!open){s.open=false;s.closedReason=null;return true;}
+    if(!s.unlocked||!available(s,g.homestead.stock).length){s.open=false;s.closedReason=s.menu.length?'ingredients':null;return false;}
+    s.open=true;s.closedReason=null;
+    // First welcome starts promptly. Reopening never resets the earning cadence.
+    if(!s.sequence&&!s.pending)s.cursor=now-interval(s);
+    settle(g,now);return true;
   }
   function unlock(g,now){const s=init(g,now);if(s.unlocked||g.shells<120)return false;g.shells-=120;s.unlocked=true;s.cursor=now-210000;
     // Retain all legacy prepared stock, jobs, furniture and earnings without rewriting them.
@@ -66,5 +75,5 @@
   }
   function plantingPlan(g){const free=(g.homestead?.plots||[]).flatMap((p,i)=>p?[]:[i]),rows=pantryPlan(g).rows.filter(r=>r.patches>0).map(r=>({...r})),jobs=[];let cost=0;while(free.length&&rows.some(r=>r.patches>0)){for(const r of rows){if(!free.length)break;if(r.patches>0){jobs.push({slot:free.shift(),key:r.key});cost+=r.cost;r.patches--;}}}return {jobs,cost};}
   function plantSuggested(g,quote,now=Date.now()){const current=plantingPlan(g);if(!current.jobs.length||JSON.stringify(current)!==JSON.stringify(quote)||g.shells<current.cost)return false;for(const job of current.jobs){const crop=ingredients[job.key];g.homestead.plots[job.slot]={key:job.key,ready:now+crop.seconds*1000};}g.shells-=current.cost;return true;}
-  root.CoveCafeEngine={ingredients,recipes,shops,finishes,buyFinish,upgradeShop,interval,init,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
+  root.CoveCafeEngine={ingredients,recipes,shops,finishes,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
 })(globalThis);
