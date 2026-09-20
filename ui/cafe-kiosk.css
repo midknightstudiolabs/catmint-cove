@@ -118,3 +118,23 @@
 #app #cafe-kiosk.cc-v2 .cc-why.ok{background:#e6efdc;border-color:#b9cfaa;color:#31593d}
 #app #cafe-kiosk.cc-v2 .cc-why{flex-wrap:wrap}#app #cafe-kiosk.cc-v2 .cc-why span{flex:1 1 100%}#app #cafe-kiosk.cc-v2 .cc-why-acts{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 100%}#app #cafe-kiosk.cc-v2 .cc-why-acts .btn{flex:1 1 auto}#app #cafe-kiosk.cc-v2 .cc-why-acts .btn.primary{background:#487657;border-color:#487657;color:#fff}
 #app #cafe-kiosk.cc-v2 .cc-pip.cc-ripe{background:#e6efdc;border-color:#b9cfaa;color:#31593d;font-weight:600}#app #cafe-kiosk.cc-v2 .cc-pantry-plan small{display:block;margin:4px 0 10px}
+
+#app #cafe-kiosk.cc-v2 .cc-head h2.cc-title{flex:0 1 auto;text-align:left;min-width:0;margin-left:2px;font-size:17px}#app #cafe-kiosk.cc-v2 .cc-head-end{margin-left:auto}
+#app #cafe-kiosk.cc-v2 .cc-pen{flex:0 0 auto;width:34px;min-width:34px;height:34px;min-height:34px;padding:0;border:0;border-radius:50%;background:transparent;color:#5f7a62;display:grid;place-items:center}
+#app #cafe-kiosk.cc-v2 .cc-pen:active{background:#e6ecd8}
+#app #cafe-kiosk.cc-v2 .cc-rename{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:14px;background:#faf6e8;box-shadow:0 6px 20px #21372d33}
+#app #cafe-kiosk.cc-v2 .cc-rename label{display:grid;gap:6px;font:600 14px Georgia,serif;color:#33503b}
+#app #cafe-kiosk.cc-v2 .cc-rename input{box-sizing:border-box;width:100%;min-height:44px;border:1px solid #bcc8ac;border-radius:10px;padding:0 12px;background:#fffaf0;color:#405c45;font:inherit;font-size:16px}
+#app #cafe-kiosk.cc-v2 .cc-rename small{color:#68715d;font-size:12px}
+#app #cafe-kiosk.cc-v2 .cc-rename-row{display:flex;gap:8px}#app #cafe-kiosk.cc-v2 .cc-rename-row .btn{flex:1}
+#app #cafe-kiosk.cc-v2 .cc-cta-row:empty{display:none}
+#app #cafe-kiosk.cc-v2 .cc-cta{width:100%;min-height:44px;font-weight:600}
+#app #cafe-kiosk.cc-v2 .cc-goal{position:relative;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;width:100%;box-sizing:border-box;padding:8px 10px 12px;border:1px solid #d9dcc6;border-radius:12px;background:#f1f0df;text-align:left;font-size:12px;color:#405c45;min-height:44px}
+#app #cafe-kiosk.cc-v2 .cc-goal span{font-weight:600}#app #cafe-kiosk.cc-v2 .cc-goal b{font-weight:600;font-variant-numeric:tabular-nums;color:#5f7060}
+#app #cafe-kiosk.cc-v2 .cc-goal i{position:absolute;left:10px;right:10px;bottom:6px;height:4px;border-radius:2px;background:#dfe4d0;overflow:hidden}
+#app #cafe-kiosk.cc-v2 .cc-goal i::after{content:"";display:block;height:100%;width:var(--p,0%);background:#5f9a6c;border-radius:2px;transition:width .4s ease}
+#app #cafe-kiosk.cc-v2 .cc-dot.good{background:#5f9a6c}
+#app #cafe-kiosk.cc-v2 .cc-decor .cc-card{grid-template-columns:1fr 1fr!important;gap:8px!important}#app #cafe-kiosk.cc-v2 .cc-decor .cc-card>div:first-child{grid-column:1/-1!important}#app #cafe-kiosk.cc-v2 .cc-decor .cc-card>.btn{grid-column:auto!important;width:100%}
+#app #cafe-kiosk.cc-v2 .cc-decor{margin:20px 0;padding:14px 0;border-bottom:1px solid #dedfc9}#app #cafe-kiosk.cc-v2 .cc-decor>p{font-size:13px}
+@media(prefers-reduced-motion:reduce){#app #cafe-kiosk.cc-v2 .cc-goal i::after{transition:none}}
+#app #cafe-kiosk.cc-v2 .cc-head h2.cc-title{font-size:15px;line-height:1.12;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:clip;word-break:break-word}

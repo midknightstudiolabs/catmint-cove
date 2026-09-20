@@ -7,6 +7,28 @@
   const finishes={sage:{name:'Catmint Sage',cost:0,body:'#9eaf85',shade:'#6f865f',dark:'#395a45',light:'#e6ecd2'},butter:{name:'Buttercup',cost:2500,body:'#dfcb76',shade:'#b5a35b',dark:'#69653b',light:'#fff0b9'},blue:{name:'Coastal Blue',cost:2500,body:'#91b2bd',shade:'#608793',dark:'#365864',light:'#dae9e6'},rose:{name:'Rosewater',cost:5000,body:'#c6a094',shade:'#a07870',dark:'#70554e',light:'#f0ddd0'},cream:{name:'Oatmilk',cost:5000,body:'#d6c8a8',shade:'#ae9f7e',dark:'#655d49',light:'#f7eedb'}};
   function buyFinish(g,key){const s=init(g,Date.now()),f=finishes[key];if(!s.unlocked||!f)return false;s.finishesOwned ||= ['sage'];if(!s.finishesOwned.includes(key)){if(g.shells<f.cost)return false;g.shells-=f.cost;s.finishesOwned.push(key);}s.finish=key;return true;}
   const shops=[{name:'Little Kiosk',cost:0,description:'A compact timber serving window with two warm lamps.'},{name:'Garden Café',cost:50000,description:'A wider shop with a striped awning, hanging plants and flower boxes.'},{name:'Seaside Café',cost:100000,description:'A full façade with arched glowing windows, a raised sign and canopy lights.'}];
+  // Outdoor décor: bought once, drawn in the outside view. Deliberately not cheap (a shop finish is 2,500+, a full new shop 50,000+).
+  const decor={
+    flowerbox:{name:'Window flower boxes',cost:1200,note:'Spilling blooms beneath the serving window.'},
+    chalkboard:{name:'Chalkboard sign',cost:1800,note:'An A-frame board that chalks up today’s special.'},
+    parasol:{name:'Parasol & bistro table',cost:3500,note:'A striped parasol over a little table for two.'},
+    lights:{name:'String lights',cost:5500,note:'Warm bulbs along the roofline that glow after dark.'},
+    statue:{name:'Midknight statue',cost:8000,note:'A stone cat keeping watch by the path.'},
+    fountain:{name:'Garden fountain',cost:12000,note:'A little stone basin with water that never stops.'}
+  };
+  function buyDecor(g,id){const s=init(g,Date.now()),d=decor[id];if(!s.unlocked||!d)return false;s.decor||={};if(s.decor[id]||g.shells<d.cost)return false;g.shells-=d.cost;s.decor[id]=true;return true;}
+  function cafeName(s){const n=String((s&&s.name)||'').trim();return n||'Catmint Café';}
+  function renameCafe(g,name){const s=init(g,Date.now());if(!s.unlocked)return false;const clean=String(name||'').replace(/[\u0000-\u001f<>]/g,'').replace(/\s+/g,' ').trim().slice(0,22);if(!clean)return false;s.name=clean===('Catmint Café')?'':clean;return true;}
+  // Average guest rating (3–5 stars) from the counts we already keep.
+  function rating(s){const r=s&&s.customerReport;if(!r||!r.total)return null;const four=Math.max(0,r.happy-r.delighted),three=Math.max(0,r.total-r.happy);return Math.round((3*three+4*four+5*r.delighted)/r.total*10)/10;}
+  // The next thing worth saving for — a visible goal beats a hidden shop.
+  function nextGoal(g){const s=init(g,Date.now()),out=[];if(!s.unlocked)return null;
+    if(s.speed<2)out.push({id:'speed',label:['Twin brewer','Cove brewer'][s.speed],cost:(s.speed+1)*300});
+    if(!s.seats)out.push({id:'seat',label:'A table by the sea',cost:150});
+    if(!s.cookware)out.push({id:'cookware',label:'Copper cookware',cost:180});
+    for(const [id,d] of Object.entries(decor))if(!(s.decor&&s.decor[id]))out.push({id:'decor:'+id,label:d.name,cost:d.cost});
+    const next=shops[(s.shopTier||0)+1];if(next)out.push({id:'shop',label:next.name,cost:next.cost});
+    out.sort((a,b)=>a.cost-b.cost);return out[0]||null;}
   function upgradeShop(g,now){const s=init(g,now),tier=s.shopTier||0,next=shops[tier+1];if(!s.unlocked||!next||g.shells<next.cost)return false;settle(g,now);g.shells-=next.cost;s.shopTier=tier+1;return true;}
   function init(g,now){
     const h=g.homestead;
@@ -75,5 +97,5 @@
   }
   function plantingPlan(g){const free=(g.homestead?.plots||[]).flatMap((p,i)=>p?[]:[i]),rows=pantryPlan(g).rows.filter(r=>r.patches>0).map(r=>({...r})),jobs=[];let cost=0;while(free.length&&rows.some(r=>r.patches>0)){for(const r of rows){if(!free.length)break;if(r.patches>0){jobs.push({slot:free.shift(),key:r.key});cost+=r.cost;r.patches--;}}}return {jobs,cost};}
   function plantSuggested(g,quote,now=Date.now()){const current=plantingPlan(g);if(!current.jobs.length||JSON.stringify(current)!==JSON.stringify(quote)||g.shells<current.cost)return false;for(const job of current.jobs){const crop=ingredients[job.key];g.homestead.plots[job.slot]={key:job.key,ready:now+crop.seconds*1000};}g.shells-=current.cost;return true;}
-  root.CoveCafeEngine={ingredients,recipes,shops,finishes,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
+  root.CoveCafeEngine={ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
 })(globalThis);

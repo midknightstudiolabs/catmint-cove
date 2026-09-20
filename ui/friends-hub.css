@@ -75,6 +75,9 @@
 .fh-journal h3{margin:0}
 @media(prefers-reduced-motion:reduce){.fh-sheet *{transition:none!important}}
 
+.fh-cafe-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;text-align:center}.fh-cafe-stats>div{padding:10px 6px;border-radius:14px;background:#eef0df}.fh-cafe-stats b{display:block;font-size:16px;color:#33503b}.fh-cafe-stats small{font-size:11px;color:#6f7d68}
+.fh-cafeBtn{background:#f6ecc4;border-color:#dcc985}
+.fh-mycafe{width:100%;box-sizing:border-box;text-align:left;border:1px solid #d9dcc6;font:inherit;color:#405c45;cursor:pointer;background:#f6f0d6}.fh-cup{font-size:26px}
 .fh-req{flex-wrap:wrap}.fh-hint{margin:6px 2px 0;font-size:12px;color:#7a8672}
 .fh-loveBtn{flex-direction:column;gap:0;line-height:1.2}.fh-loveBtn small{font-size:11px;opacity:.85}
 .fh-thanks{position:absolute;left:14px;right:14px;bottom:14px;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;background:#487657;color:#fff;box-shadow:0 8px 24px #21372d55;font-size:14px;line-height:1.35;animation:fh-rise .28s ease-out}

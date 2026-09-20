@@ -13,14 +13,18 @@ const cat = (name, coatKey, star = 2, markSeed = 1000) => ({ name, coatKey, star
 function sampleState() {
   const at = Date.now();
   return {
-    v: 1, day: today(), sent: 0, loveSent: 0, cardsSent: {}, received: {}, pending: [],
+    v: 2, day: today(), sent: 0, loveSent: 0, cardsSent: {}, received: {}, pending: [],
     me: { code: 'K7QM2XPD9RTC' },
     friends: [
-      { id: 'marlow', name: 'Marlow’s Cove', tag: '2041', theme: 'seaside', since: at - 9 * 864e5, cats: [cat('Biscuit', 'orangewhite', 3, 11), cat('Juno', 'tuxedo', 2, 22), cat('Pebble', 'greytab', 2, 33), cat('Mochi', 'siamese', 3, 44)], team: [0, 1, 2] },
-      { id: 'juniper', name: 'Juniper’s Cove', tag: '7710', theme: 'meadow', since: at - 3 * 864e5, cats: [cat('Clover', 'calico', 3, 55), cat('Nib', 'black', 2, 66), cat('Suki', 'cream', 2, 77)], team: [0, 1, 2] },
+      { id: 'marlow', name: 'Marlow’s Cove', tag: '2041', theme: 'seaside', since: at - 9 * 864e5, cats: [cat('Biscuit', 'orangewhite', 3, 11), cat('Juno', 'tuxedo', 2, 22), cat('Pebble', 'greytab', 2, 33), cat('Mochi', 'siamese', 3, 44)], team: [0, 1, 2],
+        cafe: { name: 'Marlow’s Beans', shopTier: 1, finish: 'blue', speed: 1, seats: 1, cookware: true, decor: { flowerbox: true, chalkboard: true, lights: true }, served: 312, rating: 4.7, menu: ['coffee', 'tea'] } },
+      { id: 'juniper', name: 'Juniper’s Cove', tag: '7710', theme: 'meadow', since: at - 3 * 864e5, cats: [cat('Clover', 'calico', 3, 55), cat('Nib', 'black', 2, 66), cat('Suki', 'cream', 2, 77)], team: [0, 1, 2],
+        cafe: { name: 'The Purring Cup', shopTier: 0, finish: 'rose', speed: 0, seats: 1, cookware: false, decor: { flowerbox: true, parasol: true }, served: 96, rating: 4.4, menu: ['coffee'] } },
     ],
-    requests: [{ id: 'pip', name: 'Pip’s Cove', tag: '3391', cats: [cat('Toast', 'ginger', 2, 88), cat('Ziggy', 'browntab', 2, 99), cat('Moss', 'smoke', 3, 12)], team: [0, 1, 2], theme: 'default' }],
-    directory: [{ id: 'lark', name: 'Lark’s Cove', tag: '4821', code: 'LARK48210007', theme: 'autumn', cats: [cat('Maple', 'golden', 3, 5), cat('Fig', 'russian', 2, 6), cat('Wren', 'lynxpoint', 3, 7)], team: [0, 1, 2] }],
+    requests: [{ id: 'pip', name: 'Pip’s Cove', tag: '3391', cats: [cat('Toast', 'ginger', 2, 88), cat('Ziggy', 'browntab', 2, 99), cat('Moss', 'smoke', 3, 12)], team: [0, 1, 2], theme: 'default',
+      cafe: { name: 'Pip’s Corner', shopTier: 0, finish: 'butter', speed: 0, seats: 0, cookware: false, decor: {}, served: 18, rating: null, menu: ['coffee'] } }],
+    directory: [{ id: 'lark', name: 'Lark’s Cove', tag: '4821', code: 'LARK48210007', theme: 'autumn', cats: [cat('Maple', 'golden', 3, 5), cat('Fig', 'russian', 2, 6), cat('Wren', 'lynxpoint', 3, 7)], team: [0, 1, 2],
+      cafe: { name: 'Maple & Moon', shopTier: 2, finish: 'cream', speed: 2, seats: 1, cookware: true, decor: { flowerbox: true, chalkboard: true, parasol: true, lights: true, statue: true, fountain: true }, served: 1204, rating: 4.9, menu: ['coffee', 'tea', 'midknight'] } }],
     inbox: [
       { id: 'g1', type: 'gift', from: 'marlow', fromName: 'Marlow’s Cove', amount: 50, at: at - 36e5 },
       { id: 'c1', type: 'card', from: 'juniper', fromName: 'Juniper’s Cove', text: 'Your cats are the best', style: 'butter', at: at - 5 * 36e5 },
@@ -30,7 +34,7 @@ function sampleState() {
 function loadState() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { }
-  if (!s || s.v !== 1) s = sampleState();
+  if (!s || s.v !== 2) s = sampleState();
   if (s.day !== today()) { s.day = today(); s.sent = 0; s.loveSent = 0; s.cardsSent = {}; s.received = {}; }
   return s;
 }
@@ -116,7 +120,7 @@ const btn = (text, fn, cls = '') => h('button', { class: 'fh-btn ' + cls, type: 
 let dialog = null, be = null, api = null, route = { name: 'home' }, sceneStop = () => { };
 function ensureCss() {
   if (document.getElementById('fh-css')) return;
-  const l = document.createElement('link'); l.id = 'fh-css'; l.rel = 'stylesheet'; l.href = 'ui/friends-hub.css?v=3'; document.head.append(l);
+  const l = document.createElement('link'); l.id = 'fh-css'; l.rel = 'stylesheet'; l.href = 'ui/friends-hub.css?v=4'; document.head.append(l);
 }
 function shell(title, sub, opts = {}) {
   sceneStop();
@@ -131,7 +135,7 @@ function shell(title, sub, opts = {}) {
   body.status = msg => { status.textContent = msg || ''; };
   return body;
 }
-function go(name, data) { route = { name, data }; ({ home, inbox, visit, gift, card, match, added })[name](data); dialog.scrollTop = 0; dialog.querySelector('.fh-body')?.scrollTo?.(0, 0); }
+function go(name, data) { route = { name, data }; ({ home, inbox, visit, gift, card, match, added, cafe })[name](data); dialog.scrollTop = 0; dialog.querySelector('.fh-body')?.scrollTo?.(0, 0); }
 export function refresh() { if (dialog?.open && route.name === 'home') home(); }
 function celebrate(text, kind = 'heart') {
   api.sound?.(kind);
@@ -160,6 +164,8 @@ function home() {
       btn('Share invite', async () => { const text = 'Come visit my cove in Catmint Cove! My code is ' + pretty(be.state.me.code) + ' — ' + link; try { if (navigator.share) await navigator.share({ title: 'Catmint Cove', text }); else { await navigator.clipboard.writeText(text); body.status('Invite copied. Paste it to a friend.'); } } catch { } }, 'primary'),
       btn('Copy code', async () => { try { await navigator.clipboard.writeText(pretty(be.state.me.code)); body.status('Code copied.'); } catch { body.status('Could not copy. Your code is ' + pretty(be.state.me.code) + '.'); } })));
   body.append(mine);
+  const myCafe = api.myCafe?.();
+  if (myCafe) body.append(h('button', { class: 'fh-card fh-mycafe', type: 'button', onclick: () => go('cafe', 'me') }, h('span', { class: 'fh-cup', 'aria-hidden': 'true', text: '☕' }), h('div', { class: 'fh-grow' }, h('strong', { text: myCafe.name || 'Your café' }), h('small', { text: 'See how friends see your café ›' }))));
 
   const found = h('div', { class: 'fh-found' });
   const field = h('input', { type: 'text', id: 'fh-find', maxlength: '24', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', placeholder: 'Friend’s code or name#tag', 'aria-label': 'Friend’s code or name and tag' });
@@ -212,6 +218,8 @@ function cardView(c) {
   return h('div', { class: 'fh-postcard', style: 'background:' + st.bg + ';color:' + st.ink }, h('small', { text: 'FROM ' + String(c.fromName || '').toUpperCase() }), h('strong', { text: '“' + c.text + '”' }));
 }
 
+const CAFE_TIERS = ['Little Kiosk', 'Garden Café', 'Seaside Café'];
+const DECOR_NAMES = { flowerbox: 'Flower boxes', chalkboard: 'Chalkboard sign', parasol: 'Parasol table', lights: 'String lights', statue: 'Midknight statue', fountain: 'Fountain' };
 const heartsLine = () => be.heartsLeft() + (be.heartsLeft() === 1 ? ' heart' : ' hearts') + ' left today · each one gives your friend ' + LOVE_GIVE + ' Shells';
 function visit(id) {
   const f = be.state.friends.find(x => x.id === id); if (!f) return go('home');
@@ -233,6 +241,7 @@ function visit(id) {
   body.append(h('div', { class: 'fh-grid' },
     h('button', { class: 'fh-btn primary fh-loveBtn', type: 'button', onclick: () => attempt(body, () => { be.love(f); celebrate('Thanks for the love! ' + f.name + ' gets ' + LOVE_GIVE + ' Shells.'); dialog.querySelector('.fh-hearts').textContent = heartsLine(); }) }, h('span', { text: '♥ Send love' }), h('small', { text: '+' + LOVE_GIVE + ' for them' })),
     btn('Send a gift', () => go('gift', f.id)), btn('Leave a card', () => go('card', f.id))));
+  if (f.cafe) body.append(btn('☕ Visit ' + (f.cafe.name || 'their café'), () => go('cafe', f.id), 'fh-cafeBtn'));
   body.append(h('p', { class: 'fh-hint fh-hearts', text: heartsLine() }));
   body.append(h('h3', { text: 'Friendly match' }), h('p', { class: 'fh-sub', text: 'Play their team, just for fun.' }),
     h('div', { class: 'fh-grid fh-two' }, btn('Volleyball', () => go('match', { id: f.id, kind: 'volley' })), btn('Tug of Paws', () => go('match', { id: f.id, kind: 'tug' }))));
@@ -271,6 +280,28 @@ function match(d) {
   body.append(btn('Choose my team', () => { dialog.close(); api.startMatch(d.kind, { id: f.id, name: f.name, cats: f.cats, team: f.team }); }, 'primary'), h('p', { class: 'fh-foot', text: 'A friendly match is just for fun. The result is saved to your Journal.' }));
 }
 function added() { home(); }
+// A café, as visitors see it: the real outside scene with the owner's name, finish, shop stage and décor.
+function cafe(id) {
+  const mine = id === 'me', f = mine ? null : be.state.friends.find(x => x.id === id);
+  const data = mine ? api.myCafe?.() : f?.cafe;
+  if (!data) return go(mine ? 'home' : 'visit', mine ? undefined : id);
+  const owner = mine ? api.coveName() : f.name;
+  const body = shell(data.name || 'Catmint Café', mine ? 'This is how friends see your café' : 'Visiting ' + owner, { back: mine ? ['home'] : ['visit', id] });
+  const cv = h('canvas', { class: 'fh-scene', width: 720, height: 380, role: 'img', 'aria-label': (data.name || 'Café') + ', ' + CAFE_TIERS[data.shopTier || 0] });
+  body.append(cv);
+  const guests = mine ? (api.myCats?.() || []) : (f.cats || []);
+  let raf = 0, stop = false;
+  const paint = t => { if (stop || !cv.isConnected) return; raf = requestAnimationFrame(paint); api.drawCafe(cv.getContext('2d'), data, t, 380, (mine ? 'me' : id), guests); };
+  raf = requestAnimationFrame(paint); sceneStop = () => { stop = true; cancelAnimationFrame(raf); };
+  const decor = Object.keys(data.decor || {}).filter(k => data.decor[k]);
+  body.append(h('div', { class: 'fh-cafe-stats' },
+    h('div', {}, h('b', { text: data.rating ? '★ ' + Number(data.rating).toFixed(1) : '★ —' }), h('small', { text: 'guest rating' })),
+    h('div', {}, h('b', { text: Number(data.served || 0).toLocaleString() }), h('small', { text: 'drinks served' })),
+    h('div', {}, h('b', { text: CAFE_TIERS[data.shopTier || 0] }), h('small', { text: 'shop stage' }))));
+  body.append(h('p', { class: 'fh-team', text: decor.length ? 'Outdoor décor: ' + decor.map(k => DECOR_NAMES[k] || k).join(' · ') : 'No outdoor décor yet.' }));
+  if (!mine) body.append(h('div', { class: 'fh-grid fh-two' }, btn('Leave a card', () => go('card', id), 'primary'), btn('Back to their cove', () => go('visit', id))));
+  else body.append(btn('Back', () => go('home')));
+}
 
 export function open(gameApi) {
   api = gameApi; ensureCss();
