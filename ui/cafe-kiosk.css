@@ -22,3 +22,21 @@
 #app #cafe-kiosk.cc-guiding[data-guide-step="1"] [data-pause],#app #cafe-kiosk.cc-guiding[data-guide-step="1"] [data-garden]{display:none}
 #app #cafe-kiosk.cc-guiding[data-guide-step="5"] .cc-content>.cc-card{display:none}
 @media(max-width:600px){#app #cafe-kiosk .cc-head{gap:6px;flex-wrap:nowrap;padding:10px}#app #cafe-kiosk .cc-head h2{font-size:21px}#app #cafe-kiosk .cc-head small{display:none}#app #cafe-kiosk .cc-head>.btn{font-size:12px;padding:8px;min-width:44px}#app #cafe-kiosk .cc-head>div{flex:1;min-width:0}}
+
+/* One consistent shop control, visible from every cafe workspace. */
+#app #cafe-kiosk .cc-head{min-height:96px;gap:8px;flex-wrap:nowrap}
+#app #cafe-kiosk .cc-head>div{flex:1;min-width:0;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+#app #cafe-kiosk .cc-head h2{font-size:24px;line-height:1.15;margin:0}
+#app #cafe-kiosk .cc-service{display:inline-flex;align-items:center;gap:10px;border:1px solid #becab5;border-radius:8px;background:#eef0e4;padding:6px 10px;min-height:44px;font-size:14px;font-weight:600;box-shadow:none;white-space:nowrap}
+#app #cafe-kiosk .cc-service[aria-checked=true]{background:#e1eddd;color:#31593d;border-color:#8ba77f}
+#app #cafe-kiosk .cc-toggle{width:28px;height:16px;border-radius:10px;background:#a7ad9b;padding:2px;box-sizing:border-box}
+#app #cafe-kiosk .cc-toggle:after{content:"";display:block;width:12px;height:12px;border-radius:50%;background:#fffaf0;transition:transform .15s}
+#app #cafe-kiosk .cc-service[aria-checked=true] .cc-toggle{background:#477751}
+#app #cafe-kiosk .cc-service[aria-checked=true] .cc-toggle:after{transform:translateX(12px)}
+#app #cafe-kiosk.cc-guiding[data-guide-step="1"] .cc-head [data-pause]{display:inline-flex}
+#app #cafe-kiosk .cc-head>.btn{flex:0 0 auto;margin:0}
+#app #cafe-kiosk .cc-wallet{font-size:12px}
+#app #cafe-kiosk .cc-content{top:128px}
+#app #cafe-kiosk .cc-switch{top:124px}
+@media(max-width:600px){#app #cafe-kiosk .cc-head{padding:10px;min-height:96px}#app #cafe-kiosk .cc-head>div{gap:5px;display:block}#app #cafe-kiosk .cc-head h2{font-size:21px;margin-bottom:5px}#app #cafe-kiosk .cc-service{font-size:12px;padding:5px 8px}#app #cafe-kiosk .cc-content{top:calc(130px + env(safe-area-inset-top))}}
+@media(prefers-reduced-motion:reduce){#app #cafe-kiosk .cc-toggle:after{transition:none}}
