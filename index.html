@@ -1332,7 +1332,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?edit-cove=3&v=23">
+</style><link rel="stylesheet" href="ui/device-fixes.css?edit-cove=3&v=24">
 <style id="neo-theme">
 #atmosphere-preview{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;touch-action:none}
 #atmosphere-preview section{width:min(440px,100%);box-sizing:border-box;padding:18px;background:#faf7ea;color:#395447;border:1px solid #d8ddc7;border-radius:24px;box-shadow:0 8px 32px #243c3426;text-align:center}
@@ -7189,7 +7189,7 @@ let friendsModule=null;
 document.getElementById('coveFriendsBtn').onclick=async()=>{
  restClearUI();
  try{
-  friendsModule ||= await import('./ui/cove-friends.js?v=5');
+  friendsModule ||= await import('./ui/cove-friends.js?v=6');
   await friendsModule.open({name:coveName,backup:()=>{
    if(_arranging)throw Error('Save or cancel your layout before backing up.');
    if(!save())throw Error('Your device could not save. Please free some storage first.');
