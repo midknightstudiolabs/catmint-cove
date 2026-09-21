@@ -11497,7 +11497,7 @@ function renderFest(dt) {
 document.getElementById("festBack").addEventListener("click", closeFest);
 document.getElementById("festClaim").addEventListener("click", closeFest);
 document.getElementById("festToHub").addEventListener("click", festBackToChooser);
-document.getElementById("festCancel").addEventListener("click", closeFest);
+document.getElementById("festCancel").addEventListener("click", festBackToChooser);   // "Maybe later" while choosing: back to the festival hub, not out to the Cove
 document.getElementById("festStart").addEventListener("click", startFestRace);
 // stays on the grounds — reopens the picker in place, no wipe either direction
 document.getElementById("festAgain").addEventListener("click", () => {
@@ -11621,9 +11621,9 @@ function festBackToChooser() {
   renderFestChooser();
   document.getElementById("festChoose").hidden = false;
 }
-document.getElementById("boxCancel").addEventListener("click", closeFest);
+document.getElementById("boxCancel").addEventListener("click", festBackToChooser);   // "Maybe later" while choosing: back to the festival hub, not out to the Cove
 document.getElementById("boxStart").addEventListener("click", startBoxChallenge);
-document.getElementById("volleyCancel").addEventListener("click", closeFest);
+document.getElementById("volleyCancel").addEventListener("click", festBackToChooser);   // "Maybe later" while choosing: back to the festival hub, not out to the Cove
 // first match of the session gets a quick deadpan how-to; after that, straight in
 document.getElementById("volleyStart").addEventListener("click", () => {
   if (volleyPickSel.length !== 3) return;
@@ -11643,7 +11643,7 @@ document.getElementById("volleyQuick").addEventListener("click", () => festQuick
 document.getElementById("midkHow").addEventListener("click", () => { _howOnly = true; document.getElementById("festMidkPanel").hidden = true; document.getElementById("festMidkTut").hidden = false; });
 document.getElementById("midkQuick").addEventListener("click", () => festQuickPick("midk"));
 // Tug of Paws
-document.getElementById("midkCancel").addEventListener("click", closeFest);
+document.getElementById("midkCancel").addEventListener("click", festBackToChooser);   // "Maybe later" while choosing: back to the festival hub, not out to the Cove
 document.getElementById("midkTutGo").addEventListener("click", () => {
   _midkTutSeen = true; try { localStorage.setItem("neo.midk.tut", "1"); } catch (e) {}
   if (_howOnly) { _howOnly = false; document.getElementById("festMidkTut").hidden = true; document.getElementById("festMidkPanel").hidden = false; }   // opened from "How to play": keep the picks
@@ -11652,7 +11652,7 @@ document.getElementById("midkTutGo").addEventListener("click", () => {
 document.getElementById("midkStart").addEventListener("click", () => { if (midkPickSel.length === 5) startCoveMidk(); });
 document.getElementById("midkRally").addEventListener("click", midkSpin);
 // Catmint Café
-document.getElementById("cafeCancel").addEventListener("click", closeFest);
+document.getElementById("cafeCancel").addEventListener("click", festBackToChooser);   // "Maybe later" while choosing: back to the festival hub, not out to the Cove
 document.getElementById("cafeTutGo").addEventListener("click", () => { _cafeTutSeen = true; cafeShowPicker(); });
 document.getElementById("cafeStart").addEventListener("click", () => { if (cafePickSel.length === 3) startCoveCafe(); });
 document.getElementById("cafeToCove").addEventListener("click", (e) => { e.stopPropagation(); closeFest(); });
