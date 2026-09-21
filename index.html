@@ -1049,30 +1049,39 @@
   @media(max-width:370px){#fest #midkHud #midkRally.midk-spin{width:74px;height:74px}#fest .midk-console{--rh:30px}}
   /* --- Tug of Paws, director's pass: the field is the hero. No panel. One bottom strip (Cove Radio caption + the Spin ring) sits under the end line;
          the reels are a wooden plaque that pops high over the sea-side of the field only while a spin is live, lands with a golden burst, then fades. --- */
-  #fest #midkHud{bottom:calc(84px + env(safe-area-inset-bottom));flex-direction:row;align-items:center;justify-content:flex-end;gap:12px;padding:0 14px;}
+  #fest #midkHud{left:var(--mf-l,0px);right:auto;width:var(--mf-w,100%);box-sizing:border-box;bottom:calc(max(84px, var(--mf-b,0px) + 4px) + env(safe-area-inset-bottom));flex-direction:row;align-items:center;justify-content:flex-end;gap:12px;padding:0 14px;}
   #fest #midkHud #midkConsole{flex:0 0 auto;width:88px;height:88px;padding:0;gap:0;background:none;border:0;box-shadow:none;border-radius:50%;}
   #fest #midkHud #midkConsole .mc-bar,#fest #midkHud #midkConsole .mc-msg{display:none!important;}
-  #fest #midkHud #midkRally.midk-spin{width:88px;height:88px;box-shadow:0 5px 0 #67543f,0 10px 18px rgba(36,31,23,.22);}
-  #fest #midkHud #midkConsole.ready #midkRally.midk-spin{box-shadow:0 5px 0 #67543f,0 0 0 7px rgba(224,165,58,.34),0 10px 22px rgba(224,165,58,.35);}
+  #fest #midkHud #midkRally.midk-spin{width:88px;height:88px;box-shadow:none;translate:none;transition:transform .09s ease,background .2s;}
+  #fest #midkHud #midkRally.midk-spin:disabled{box-shadow:none;translate:none;}
+  #fest #midkHud #midkRally.midk-spin:active:not(:disabled){box-shadow:none;translate:none;transform:scale(.94);}
+  #fest #midkHud #midkConsole.ready #midkRally.midk-spin{box-shadow:0 0 0 6px rgba(224,165,58,.4);}
   #fest #midkHud #midkConsole.ready #midkRally .ms-label{opacity:1;}
   #fest #midkHud #midkRally .ms-label{font-size:11px;letter-spacing:.12em;}
   #fest #midkHud #midkRally .ms-icon{width:30px;height:30px;}
   #fest #midkHud #midkCom{flex:1 1 auto;min-width:0;max-width:none;flex-direction:column;align-items:flex-start;gap:2px;padding:6px 11px 7px;border-radius:15px;
-    background:rgba(250,242,220,.95);border:2.5px solid #67543f;box-shadow:0 3px 0 #67543f;color:#5b4a35;text-shadow:none;
+    background:rgba(250,242,220,.96);border:2.5px solid #67543f;box-shadow:none;color:#5b4a35;text-shadow:none;
     font:700 12.5px/1.25 Georgia,serif;letter-spacing:.005em;}
+  #fest #midkHud.side{left:var(--mf-sl,0px);width:var(--mf-sw,280px);bottom:calc(var(--mf-b,0px) + 56px);flex-direction:column;align-items:stretch;justify-content:flex-end;gap:16px;padding:0;}
+  #fest #midkHud.side #midkConsole{align-self:center;width:104px;height:104px}
+  #fest #midkHud.side #midkRally.midk-spin{width:104px;height:104px}
+  #fest #midkHud.side #midkRally .ms-face{inset:13px}
+  #fest #midkHud.side #midkRally .ms-icon{width:34px;height:34px}
+  #fest #midkHud.side #midkRally .ms-label{font-size:12px}
+  #fest #midkHud.side #midkCom{flex:0 0 auto;padding:9px 14px 10px;font-size:14px}
   #fest #midkHud #midkCom .vc-mic{display:none;}
   #fest #midkHud #midkCom::before{content:"COVE RADIO";font:800 9px/1 system-ui,sans-serif;letter-spacing:.14em;color:#779b79;}
-  #fest #midkHud #midkReels{position:fixed;left:50%;top:clamp(150px,24vh,236px);z-index:70;--rh:50px;gap:8px;padding:8px;border-radius:20px;background:#d9b47e;border:3px solid #67543f;
-    box-shadow:0 5px 0 #67543f,0 16px 30px rgba(36,31,23,.28);opacity:0;pointer-events:none;transform:translate(-50%,-16px) scale(.9);
+  #fest #midkHud #midkReels{position:fixed;left:50%;top:var(--mf-top,clamp(150px,24vh,236px));z-index:70;--rh:50px;gap:8px;padding:8px;border-radius:20px;background:#d9b47e;border:3px solid #67543f;
+    box-shadow:none;opacity:0;pointer-events:none;transform:translate(-50%,-16px) scale(.9);
     transition:opacity .22s ease,transform .38s cubic-bezier(.22,1.4,.36,1),box-shadow .3s ease;}
   #fest #midkHud #midkConsole.rolling #midkReels,#fest #midkHud #midkConsole.result #midkReels{opacity:1;transform:translate(-50%,0) scale(1);}
-  #fest #midkHud #midkConsole.result #midkReels{box-shadow:0 5px 0 #67543f,0 0 0 5px rgba(232,180,90,.55),0 0 38px 12px rgba(255,214,120,.6),0 16px 30px rgba(36,31,23,.28);}
+  #fest #midkHud #midkConsole.result #midkReels{box-shadow:0 0 0 6px rgba(232,180,90,.65);}
   #fest #midkHud #midkReels .mc-reel{border-radius:11px;}
   #fest #midkHud #midkReels .mc-result{border-radius:13px;font:800 27px/1 Georgia,serif;letter-spacing:.03em;}
   #fest #midkHud #midkReels .mc-result.show{animation:mcResultPop .55s cubic-bezier(.22,1.5,.36,1) both;}
   @keyframes mcResultPop{0%{transform:scale(.62);opacity:0}60%{transform:scale(1.09);opacity:1}100%{transform:scale(1);opacity:1}}
-  @media (max-height:700px){#fest #midkHud #midkReels{top:132px;--rh:42px}#fest #midkHud #midkReels .mc-result{font-size:23px}}
-  @media (max-height:700px){#fest #midkHud{bottom:calc(70px + env(safe-area-inset-bottom));gap:8px}#fest #midkHud #midkConsole,#fest #midkHud #midkRally.midk-spin{width:72px;height:72px}#fest #midkHud #midkRally .ms-face{inset:9px}#fest #midkHud #midkRally .ms-icon{width:24px;height:24px}#fest #midkHud #midkRally .ms-label{font-size:9px}#fest #midkHud #midkCom{padding:5px 10px 6px;font-size:12px}#fest #midkHud #midkCom::before{display:none}}
+  @media (max-height:700px){#fest #midkHud #midkReels{--rh:42px}#fest #midkHud #midkReels .mc-result{font-size:23px}}
+  @media (max-height:700px){#fest #midkHud{bottom:calc(max(70px, var(--mf-b,0px) + 4px) + env(safe-area-inset-bottom));gap:8px}#fest #midkHud #midkConsole,#fest #midkHud #midkRally.midk-spin{width:72px;height:72px}#fest #midkHud #midkRally .ms-face{inset:9px}#fest #midkHud #midkRally .ms-icon{width:24px;height:24px}#fest #midkHud #midkRally .ms-label{font-size:9px}#fest #midkHud #midkCom{padding:5px 10px 6px;font-size:12px}#fest #midkHud #midkCom::before{display:none}}
   @media (max-width:370px){#fest #midkHud #midkConsole,#fest #midkHud #midkRally.midk-spin{width:80px;height:80px}}
   @media (prefers-reduced-motion:reduce){#fest #midkHud #midkReels,#fest #midkHud #midkReels .mc-result.show{transition:none;animation:none}}
   @media (prefers-reduced-motion:reduce){#fest .midk-console .mc-reel.spinning .mc-strip{animation:none}#fest .midk-console.ready #midkRally .ms-face{animation:none}#fest .midk-console .mc-reel.landing .mc-strip{transition:none}}
@@ -13269,6 +13278,20 @@ function midkFit() {
   return { sc, ox: (vw * rd - MIDK_W * sc) / 2, oy: (vh * rd - MIDK_H * sc) / 2 };
 }
 
+// The Tug HUD lives inside the field's own box (so on a wide window it sits with the game, not across the whole page)
+let _midkHudSig = "";
+function midkLayoutHud(V) {
+  const hud = document.getElementById("midkHud"); if (!hud) return;
+  const rd = _festDPR || DPR, k = V.sc / rd;
+  hud.style.setProperty("--mf-l", (V.ox / rd).toFixed(1) + "px");
+  hud.style.setProperty("--mf-w", (MIDK_W * k).toFixed(1) + "px");
+  hud.style.setProperty("--mf-b", (V.oy / rd).toFixed(1) + "px");
+  hud.style.setProperty("--mf-top", (V.oy / rd + (MIDK_WIN_Y.visit + 4) * k).toFixed(1) + "px");
+  // Wide window: dock the caption + Spin ring in the free space to the right of the field instead of over its end zone
+  const vw = restViewportPx().vw, gutter = vw - (V.ox / rd + MIDK_W * k), side = gutter >= 250;
+  hud.classList.toggle("side", side);
+  if (side) { hud.style.setProperty("--mf-sl", (V.ox / rd + MIDK_W * k + 28).toFixed(1) + "px"); hud.style.setProperty("--mf-sw", Math.min(300, gutter - 56).toFixed(1) + "px"); }
+}
 function makeMidkVisitors(playerAvgMood) {
   const name = pick(MIDK_COVE_NAMES);
   const used = new Set(cats.map(c => c.name));
@@ -13603,6 +13626,7 @@ function renderMidk(dt) {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, canvas.width, canvas.height);
     const V = midkFit();
+    { const sig = V.sc.toFixed(3) + "|" + Math.round(V.ox) + "|" + Math.round(V.oy); if (sig !== _midkHudSig) { _midkHudSig = sig; midkLayoutHud(V); } }
     g.setTransform(V.sc, 0, 0, V.sc, V.ox, V.oy);
     drawMidkField(g);
   }
