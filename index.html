@@ -1095,6 +1095,11 @@
   #fest #midkHud #midkReels .mc-reel{border-radius:9px;}
   #fest #midkHud #midkReels .mc-result{border-radius:11px;}
   @media (prefers-reduced-motion:reduce){#fest #midkHud #midkConsole.ready #midkRally.midk-spin{animation:none}}
+  /* commentary = the game's own toast: dark ink pill, plain white text, centred, nothing else */
+  #fest #midkHud #midkCom{background:var(--ink);color:#fff;border:0;border-radius:15px;box-shadow:none;padding:9px 14px;flex-direction:row;align-items:center;justify-content:center;gap:0;
+    font:600 13px/1.4 "Hanken Grotesk",system-ui,sans-serif;text-align:center;letter-spacing:0;text-shadow:none;}
+  #fest #midkHud #midkCom::before{display:none;}
+  #fest #midkHud #midkCom #midkComText{display:block;}
   @media (max-height:700px){#fest #midkHud #midkReels{--rh:42px}#fest #midkHud #midkReels .mc-result{font-size:23px}}
   @media (max-height:700px){#fest #midkHud{bottom:calc(max(70px, var(--mf-b,0px) + 4px) + env(safe-area-inset-bottom));gap:8px}#fest #midkHud #midkConsole,#fest #midkHud #midkRally.midk-spin{width:72px;height:72px}#fest #midkHud #midkRally .ms-face{inset:9px}#fest #midkHud #midkRally .ms-icon{width:24px;height:24px}#fest #midkHud #midkRally .ms-label{font-size:9px}#fest #midkHud #midkCom{padding:5px 10px 6px;font-size:12px}#fest #midkHud #midkCom::before{display:none}}
   @media (max-width:370px){#fest #midkHud #midkConsole,#fest #midkHud #midkRally.midk-spin{width:80px;height:80px}}
