@@ -1952,7 +1952,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
       <button class="pill title-pill" id="titlePill" data-tip="Your cove's name. Tap to rename it.">Catmint <b>Cove</b></button>
       <button class="btn" id="helpBtn" aria-label="Help" data-tip="Make yourself at home — a quick guide to everything."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-help.svg?v=2" alt="" aria-hidden="true" width="28" height="28"></span></button>
       <button class="btn" id="restBtn" aria-label="Rainy retreat" data-tip="Rainy-day rest — everyone naps inside with real rain. Tap any time, good to work or sleep to."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-rest.svg?v=3" alt="" aria-hidden="true" width="28" height="28"></span></button>
-      <button class="btn" id="festBtn" aria-label="Cove Festival" hidden data-tip="The Cove Festival — a friendly race down at the track. Tap any time."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg?v=3" alt="" aria-hidden="true" width="28" height="28"></span></button>
+      <button class="btn" id="festBtn" aria-label="Cove Festival" hidden aria-hidden="true" tabindex="-1" data-tip="The Cove Festival — a friendly race down at the track. Tap any time."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg?v=3" alt="" aria-hidden="true" width="28" height="28"></span></button>
       <button class="btn" id="muteBtn" aria-label="Sound settings" data-tip="Sounds — tap to mute or unmute."><span class="ico"><img class="neo-ui-icon" src="art/icon-keepsake-sound.svg?v=2" alt="" aria-hidden="true" width="28" height="28"></span></button>
     </div>
   </div>
@@ -7387,7 +7387,8 @@ function syncHud() {
     if (cbc) cbc.style.display = full ? "none" : "";
   }
   setHudText(document.getElementById("dexBadge"),dexCount());
-  document.getElementById("festBtn").hidden = !(festUnlocked() || volleyReady());
+  // The top-bar flag is retired (Activities opens the festival). #festBtn stays as a hidden programmatic entry point for the Activities tile.
+  document.getElementById("festBtn").hidden = true;
   const gReady = G.goals && G.goals.some(g => g.done && !g.claimed);
   const advBack = anyAdvBack();
   const projReady = PROJECTS.some(p => { if (projectStage(p.id) !== "open") return false; const n = projectNeed(p.id); return n.shells === 0 && n.driftwood === 0; });
