@@ -94,6 +94,8 @@
     color:#f7f3e6;font-variant-numeric:tabular-nums;
     text-shadow:-1px -1px 0 rgba(20,16,10,.5),1px -1px 0 rgba(20,16,10,.5),
       -1px 1px 0 rgba(20,16,10,.5),1px 1px 0 rgba(20,16,10,.5),0 2px 4px rgba(20,16,10,.35);}
+  .hud-stat .sfx{font-weight:600;opacity:.8;}
+  @media(max-width:379px){.hud-stat .sfx{display:none;}}
   .hud-stat .ico{font-size:.95rem;filter:drop-shadow(0 1px 2px rgba(20,16,10,.5));}
   .hud-stat.warn{color:#ffd98a;}
   .hud-stat.crit{color:#ff9d7c;animation:hudPulse 1.4s ease-in-out infinite;}
@@ -7358,7 +7360,9 @@ function syncHud() {
   const fl = document.getElementById("foodlevel");
   if (fl) {
     const dleft = foodDaysLeft();
-    fl.textContent = (G.food || 0) <= 0 ? "0" : dleft >= 1 ? `${Math.floor(dleft)}d` : `${Math.max(1, Math.round(dleft * 24))}h`;
+    { const base = (G.food || 0) <= 0 ? "" : dleft >= 1 ? `${Math.floor(dleft)}d` : `${Math.max(1, Math.round(dleft * 24))}h`;
+      const key = (G.food || 0) <= 0 ? "empty" : base;
+      if (fl.dataset.k !== key) { fl.dataset.k = key; fl.innerHTML = key === "empty" ? "empty" : esc(base) + '<span class="sfx"> left</span>'; } }
     const fs = document.getElementById("foodStat");
     fs.classList.toggle("warn", (G.food || 0) > 0 && dleft < 1);
     fs.classList.toggle("crit", (G.food || 0) <= 0);
@@ -7366,7 +7370,7 @@ function syncHud() {
       ? "The food store is empty — the cats can't eat. Tap to stock up."
       : `${Math.round(G.food)} servings · ${foodLeftText()}. Tap to stock up.`;
   }
-  setHudText(document.getElementById("opens"),G.opens);
+  setHudText(document.getElementById("opens"),"Day " + G.opens);
   setHudText(document.getElementById("coaxCost"),coaxPrice());
   const cb = document.getElementById("coaxBtn");
   // never hard-disabled — a tap on a full cove explains why and opens the fix
@@ -15245,6 +15249,47 @@ function drawBackground(dt) {
   ctx.fillStyle = _vignetteGrad; ctx.fillRect(0, 0, W, H);
 }
 let _vignetteGrad = null, _warmWash = null;
+// Living sky: a few gulls drift across the empty top third and a little sailboat crosses the water. Quiet, cosmetic, daytime only.
+const _skyLife = { init: false, gulls: [], boat: null };
+function _newGull(scatter, x0, x1) {
+  const dir = Math.random() < 0.5 ? 1 : -1;
+  return { x: scatter ? rand(x0, x1) : (dir > 0 ? x0 - 24 : x1 + 24), y: H * rand(0.135, 0.235), v: rand(15, 24) * dir, ph: rand(0, 6.28), s: rand(0.85, 1.25) };
+}
+function drawSkyLife(g, dt) {
+  const df = window._sky ? window._sky.df : 1;
+  if (df < 0.28) return;                                  // dusk to dawn: leave the sky to the stars
+  const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // a phone only shows about a third of the cove, so the life lives in a window around what is on screen
+  const vx = visibleWorldX(), x0 = Math.max(-_overX, vx.l - 160), x1 = Math.min(W + _overX, vx.r + 160), t = performance.now() / 1000, L = _skyLife;
+  if (!L.init) { L.init = true; for (let i = 0; i < 3; i++) L.gulls.push(_newGull(true, x0, x1)); L.boat = { x: (vx.l + vx.r) / 2 + rand(-90, 90) }; }
+  if (L.boat.x < x0 - 80 || L.boat.x > x1 + 80) L.boat.x = (vx.l + vx.r) / 2 + rand(-120, 120);   // the camera moved on: bring the boat back into the picture
+  g.save(); g.lineCap = "round"; g.lineJoin = "round";
+  // sailboat on the water band
+  const b = L.boat, seaY = H * 0.31, a = Math.min(1, (df - 0.28) / 0.3);
+  if (!reduced) { b.x += 4.2 * dt; if (b.x > x1 + 40) b.x = x0 - 40; }
+  const bx = b.x, by = seaY + Math.sin(t * 1.1) * 1.1;
+  g.globalAlpha = 0.9 * a;
+  g.fillStyle = "rgba(255,255,255,.4)"; g.beginPath(); g.ellipse(bx - 2, by + 3.5, 20, 1.6, 0, 0, 7); g.fill();     // soft wake
+  g.fillStyle = "#8a6b4f"; g.beginPath(); g.moveTo(bx - 14, by - 4); g.lineTo(bx + 14, by - 4); g.lineTo(bx + 9, by + 1.5); g.lineTo(bx - 9, by + 1.5); g.closePath(); g.fill();   // hull
+  g.strokeStyle = "#67543f"; g.lineWidth = 1.2; g.beginPath(); g.moveTo(bx, by - 4); g.lineTo(bx, by - 30); g.stroke();                                                  // mast
+  g.fillStyle = "#fffaf0"; g.beginPath(); g.moveTo(bx + 1.5, by - 29); g.lineTo(bx + 1.5, by - 7); g.lineTo(bx + 15, by - 7); g.closePath(); g.fill();                    // main sail
+  g.fillStyle = "#f1e3c2"; g.beginPath(); g.moveTo(bx - 1.5, by - 25); g.lineTo(bx - 1.5, by - 7); g.lineTo(bx - 11, by - 7); g.closePath(); g.fill();                   // jib
+  // gulls
+  if (!reduced) {
+    g.strokeStyle = "rgba(78,96,116," + (0.6 * a).toFixed(3) + ")"; g.lineWidth = 1.5; g.globalAlpha = 1;
+    for (let i = 0; i < L.gulls.length; i++) {
+      const u = L.gulls[i];
+      u.x += u.v * dt;
+      if ((u.v > 0 && u.x > x1 + 30) || (u.v < 0 && u.x < x0 - 30) || u.x > x1 + 300 || u.x < x0 - 300) L.gulls[i] = _newGull(u.x > x1 + 300 || u.x < x0 - 300, x0, x1);
+      const glide = 0.5 + 0.5 * Math.sin(t * 0.35 + u.ph * 3), flap = Math.sin(t * 6 + u.ph) * (0.35 + 0.65 * glide);
+      const gx = u.x, gy = u.y + Math.sin(t * 0.8 + u.ph) * 3, k = u.s;
+      g.beginPath();
+      g.moveTo(gx - 10 * k, gy - 2 * k + flap * 5 * k); g.quadraticCurveTo(gx - 5 * k, gy - 6 * k + flap * 3 * k, gx, gy);
+      g.quadraticCurveTo(gx + 5 * k, gy - 6 * k + flap * 3 * k, gx + 10 * k, gy - 2 * k + flap * 5 * k); g.stroke();
+    }
+  }
+  g.restore();
+}
 let _founderPlaque = null;
 let _coveSignTag = null;   // world-space bounds of the "N cats are out exploring" tag, for tap-to-open
 // a couple of reusable soft radial gradients for the cat contact shadow, keyed
@@ -18280,6 +18325,7 @@ function renderScene(dt) {
   applyCamera();
   if (shakeAmt > 0) ctx.translate(rand(-shakeAmt, shakeAmt), rand(-shakeAmt, shakeAmt));
   drawBackground(dt);
+  drawSkyLife(ctx, dt);
   drawCoveSign(ctx, W, H);
   drawCairn(ctx, W, H);
   // Raised scenery participates in the same ground-depth ordering as cats.
@@ -19681,6 +19727,7 @@ window.__cove = {
   get G(){return G}, get cats(){return cats}, get tokens(){return fieldTokens},
   get attractors(){return attractors}, get obstacles(){return obstacles}, get decor(){return decor},
   get world(){return {W, H, catFloor: catFloor()}},
+  get skyLife(){return {df: window._sky && window._sky.df, boat: _skyLife.boat, gulls: _skyLife.gulls, overX: _overX}},
   get rate(){return aggregateRate()},
   get dex(){return G.dex}, get goals(){return G.goals}, get revealQ(){return revealQueue},
   giveCat(coatKey, star, celeb){ if (celeb) delete G.dex[coatKey];
