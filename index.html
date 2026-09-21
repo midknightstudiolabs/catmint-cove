@@ -956,7 +956,11 @@
   .fest-panel h2{font-family:"Fraunces",serif;font-size:1.35rem;margin:0 0 .4rem;}
   .fest-panel p{color:var(--ink-soft);font-size:.88rem;margin:0 0 1rem;line-height:1.5;}
   .fp-grid{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin:0 0 1.1rem;}
-  .fp-lens{display:flex;gap:.4rem;justify-content:center;margin:-.3rem 0 1rem;}
+  .fp-lens{display:flex;gap:.4rem;justify-content:center;margin:0 0 .8rem;flex:0 0 auto;}
+  /* the picker keeps its length choice and Start button in view however many cats live at the cove: only the cat grid scrolls */
+  #festPanel:not([hidden]){display:flex;flex-direction:column;overflow:hidden;}
+  #festPanel .fp-grid{flex:1 1 auto;min-height:96px;overflow-y:auto;overscroll-behavior:contain;margin-bottom:.8rem;align-content:flex-start;}
+  #festPanel .btn-row{flex:0 0 auto;}
   .fp-len{flex:1 1 0;max-width:118px;display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.42rem .3rem;background:#eef1e3;border:2px solid transparent;border-radius:14px;cursor:pointer;font:inherit;color:var(--ink);}
   .fp-len b{font-size:.8rem;font-weight:700;}
   .fp-len span{font-size:.7rem;color:var(--ink-soft);}
@@ -2040,8 +2044,8 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
       <div class="fp-art"><img class="neo-ui-icon" src="art/icon-keepsake-festival.svg?v=3" alt="" aria-hidden="true" width="28" height="28"></div>
       <h2>The Cove Festival</h2>
       <p>A race is forming down at the track. Send someone to represent the cove.</p>
-      <div class="fp-grid" id="festPickGrid"></div>
       <div class="fp-lens" id="festLens" role="radiogroup" aria-label="Race length"></div>
+      <div class="fp-grid" id="festPickGrid"></div>
       <div class="btn-row">
         <button class="btn primary" id="festStart">Start the race</button>
         <button class="btn" id="festCancel">Maybe later</button>
@@ -2361,7 +2365,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=18"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=41"><script src="ui/cafe-engine.js?v=21"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=46"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=41"><script src="ui/cafe-engine.js?v=21"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=48"></script>
 <script>
 (() => {
 "use strict";

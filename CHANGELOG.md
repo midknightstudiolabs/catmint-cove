@@ -2,6 +2,8 @@
 
 - **Cove Race lengths:** choose Sprint (50 m), Cove Run (100 m) or Long Haul (200 m) before the race. Longer runs add late kicks, fades and catch-up so the lead changes, a distance readout under the positions, and the course on the result card. Rewards already follow play time, so a longer run pays for its time.
 - **Café top bar:** about half the height on phones (the café name and next-goal card now sit in the expanded strip, and the goal still shows as a dot on Upgrades); full width on iPad and larger, with the name inline.
+- **Race picker:** the length choice sits above the cats and the Start button stays pinned; with a big cove only the cat grid scrolls (before, both were pushed off-screen).
+- **Café on iPad and larger:** the outside view is pulled back up to 28% so the whole café and garden read, with the sky, sea and grass carried to the edges.
 - **Café view:** the outside view no longer crops 12-33% off each side on phones, and opening Menu, Pantry, Report or Upgrades no longer rescales the café. The camera pans and eases instead of jumping; on wide screens the docked panel no longer shrinks the scene.
 
 ## Catmint Cove 3.3.0 — September 22, 2026 (based on 3.2.0)
