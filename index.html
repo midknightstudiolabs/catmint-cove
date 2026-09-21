@@ -834,14 +834,30 @@
   .rs-chip canvas{width:24px;height:21px;}
   .rs-chip.mine{outline:2px solid #e7a63a;background:#fff3cf;}
   .rs-chip.mine span{max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .race-cheer{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(max(.9rem, env(safe-area-inset-bottom)) + 66px);width:82px;height:82px;border-radius:50%;border:0;padding:0;cursor:pointer;pointer-events:auto;z-index:6;
-    background:conic-gradient(#e8a43c var(--p,100%), rgba(255,255,255,.4) 0);box-shadow:0 6px 18px rgba(36,31,23,.28);color:#fff;display:grid;place-items:center;-webkit-tap-highlight-color:transparent;}
-  .race-cheer::before{content:"";position:absolute;inset:6px;border-radius:50%;background:#4a7b56;}
-  .race-cheer.cooling::before{background:#7f9b83;}
-  .race-cheer .rc-paw,.race-cheer b{position:relative;z-index:1;display:block;line-height:1;}
-  .race-cheer .rc-paw{font-size:22px;margin-top:-6px;color:#ffd7de;}
-  .race-cheer b{font:700 13px/1 system-ui,sans-serif;margin-top:3px;}
-  .race-cheer:active:not(.cooling)::before{background:#3d6a48;}
+  /* Cheer: a painted round button. Cream rim, moss-green face, a paw with a little heart; a gold ring fills while it rests. */
+  .race-cheer{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(max(.9rem, env(safe-area-inset-bottom)) + 66px);width:88px;height:88px;padding:0;border:0;border-radius:50%;background:none;cursor:pointer;pointer-events:auto;z-index:6;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  .race-cheer .rc-shadow{position:absolute;inset:8px 6px -4px;border-radius:50%;background:rgba(36,31,23,.32);filter:blur(7px);}
+  .race-cheer .rc-face{position:absolute;inset:7px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:#fff8e4;
+    background:radial-gradient(circle at 50% 22%,#79ad7f 0,#4f8a5b 46%,#3b7049 100%);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -5px 10px rgba(20,50,30,.35),0 0 0 3px #fff6dc;transition:transform .14s cubic-bezier(.3,1.6,.5,1),filter .3s ease;}
+  .race-cheer .rc-icon{width:34px;height:34px;margin-top:-3px;filter:drop-shadow(0 1px 0 rgba(20,50,30,.45));}
+  .race-cheer .rc-label{font:800 11px/1 system-ui,sans-serif;letter-spacing:.11em;text-transform:uppercase;text-shadow:0 1px 0 rgba(20,50,30,.5);}
+  .race-cheer .rc-count{position:absolute;inset:0;display:none;place-items:center;font:800 26px/1 Georgia,serif;color:#fff8e4;text-shadow:0 2px 0 rgba(20,50,30,.5);}
+  .race-cheer .rc-ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);pointer-events:none;overflow:visible;}
+  .race-cheer .rc-track{fill:none;stroke:rgba(255,246,220,.55);stroke-width:5;}
+  .race-cheer .rc-prog{fill:none;stroke:#f1b447;stroke-width:5;stroke-linecap:round;stroke-dasharray:calc(var(--pn,100) * 1px) 100;transition:stroke-dasharray .2s linear,stroke .3s;}
+  .race-cheer.ready .rc-face{animation:cheerReady 1.7s ease-in-out infinite;}
+  .race-cheer.ready .rc-prog{stroke:#ffc857;filter:drop-shadow(0 0 5px rgba(255,200,87,.85));}
+  .race-cheer.cooling .rc-face{filter:saturate(.45) brightness(.92);}
+  .race-cheer.cooling .rc-icon{opacity:.22;}
+  .race-cheer.cooling .rc-label{opacity:0;}
+  .race-cheer.cooling .rc-count{display:grid;}
+  .race-cheer:active:not(.cooling) .rc-face{transform:scale(.92);}
+  .race-cheer.pop .rc-face{animation:cheerPop .42s cubic-bezier(.3,1.6,.5,1);}
+  .race-cheer .rc-heart{position:absolute;left:50%;top:22%;width:16px;height:16px;margin-left:-8px;pointer-events:none;animation:cheerHeart .9s ease-out both;}
+  @keyframes cheerReady{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+  @keyframes cheerPop{0%{transform:scale(.86)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
+  @keyframes cheerHeart{0%{opacity:0;transform:translate(var(--hx,0),6px) scale(.5)}20%{opacity:1}100%{opacity:0;transform:translate(var(--hx,0),-70px) scale(1.15)}}
+  @media (prefers-reduced-motion:reduce){.race-cheer.ready .rc-face,.race-cheer.pop .rc-face,.race-cheer .rc-heart{animation:none}.race-cheer .rc-prog{transition:none}}
   .race-photo{position:absolute;left:50%;top:22%;transform:translateX(-50%);z-index:7;padding:10px 20px;border-radius:14px;background:#fff8e4;color:#4a3a1e;font:800 20px/1 Georgia,serif;letter-spacing:.06em;box-shadow:0 6px 24px rgba(36,31,23,.3);animation:racePhotoPop 1.9s ease both;pointer-events:none;}
   @keyframes racePhotoPop{0%{opacity:0;transform:translateX(-50%) scale(.6) rotate(-4deg)}12%{opacity:1;transform:translateX(-50%) scale(1.08) rotate(-2deg)}22%{transform:translateX(-50%) scale(1) rotate(-2deg)}85%{opacity:1}100%{opacity:0;transform:translateX(-50%) scale(1) rotate(-2deg)}}
   @media (prefers-reduced-motion:reduce){.race-photo{animation:none}.rs-chip{transition:none}}
@@ -966,6 +982,38 @@
   .midk-spin:active{transform:translateY(1px);}
   .midk-console:not(.ready) .midk-spin{background:#e7e0cd;color:var(--ink-faint);box-shadow:none;cursor:default;}
   .midk-console.rolling .midk-spin{background:#e7e0cd;color:var(--ink-faint);box-shadow:none;}
+  /* --- Tug reels + Spin: real reel strips (no more swapping symbols every frame) and a painted round button --- */
+  #fest .midk-console .mc-reels{--rh:36px;gap:6px;padding:5px;border-radius:14px;background:linear-gradient(#a98a5f,#8b6d47);box-shadow:inset 0 2px 0 rgba(255,255,255,.25),inset 0 -2px 4px rgba(0,0,0,.25);}
+  #fest .midk-console .mc-reel{position:relative;display:block;width:var(--rh);height:var(--rh);overflow:hidden;border-radius:9px;background:#fffdf6;border:0;box-shadow:inset 0 3px 6px rgba(36,31,23,.22);}
+  #fest .midk-console .mc-reel::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(rgba(36,31,23,.16),transparent 22%,transparent 78%,rgba(36,31,23,.16));}
+  #fest .midk-console .mc-strip{display:block;transform:translateY(calc(var(--rh) * var(--ty,0) * -1));will-change:transform;}
+  #fest .midk-console .mc-strip i{display:grid;place-items:center;width:var(--rh);height:var(--rh);}
+  #fest .midk-console .mc-strip svg{width:calc(var(--rh) * .74);height:calc(var(--rh) * .74);}
+  #fest .midk-console .mc-reel.spinning .mc-strip{animation:mcStrip .3s linear infinite;filter:blur(.7px);}
+  #fest .midk-console .mc-reel.landing .mc-strip{transition:transform .55s cubic-bezier(.22,1.4,.36,1);}
+  @keyframes mcStrip{from{transform:translateY(0)}to{transform:translateY(calc(var(--rh) * -4))}}
+  #fest .midk-console.rolling .mc-reels span,#fest .midk-console .mc-reels i{animation:none;}
+  #fest .midk-console .mc-bar{display:none;}
+  #fest .midk-console.result .mc-reels{opacity:1;}
+  #fest .midk-console .mc-msg{transition:opacity .2s;}
+  #fest .midk-console.result .mc-msg{transition:opacity .25s .62s;}
+  #fest .midk-console.result .mc-reel.landed{box-shadow:inset 0 3px 6px rgba(36,31,23,.22),0 0 0 2px #f1b447;}
+  #fest #midkHud #midkRally.midk-spin{position:relative;flex:0 0 auto;width:86px;height:86px;min-width:0;min-height:0;padding:0;line-height:1;gap:0;border:0;border-radius:50%;background:none;box-shadow:none;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;font-size:inherit;}
+  #fest #midkRally .ms-shadow{position:absolute;inset:8px 5px -3px;border-radius:50%;background:rgba(36,31,23,.3);filter:blur(6px);}
+  #fest #midkRally .ms-face{position:absolute;inset:7px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:#fff8e4;background:radial-gradient(circle at 50% 22%,#79ad7f 0,#4f8a5b 46%,#3b7049 100%);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),inset 0 -5px 10px rgba(20,50,30,.35),0 0 0 3px #fff6dc;transition:transform .14s cubic-bezier(.3,1.6,.5,1),filter .3s;}
+  #fest #midkRally .ms-icon{width:32px;height:32px;margin-top:-3px;filter:drop-shadow(0 1px 0 rgba(20,50,30,.45));}
+  #fest #midkRally .ms-label{font:800 12px/1 system-ui,sans-serif;letter-spacing:.11em;text-transform:uppercase;text-shadow:0 1px 0 rgba(20,50,30,.5);}
+  #fest #midkRally .ms-ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);pointer-events:none;overflow:visible;}
+  #fest #midkRally .ms-track{fill:none;stroke:rgba(255,246,220,.55);stroke-width:5;}
+  #fest #midkRally .ms-prog{fill:none;stroke:#f1b447;stroke-width:5;stroke-linecap:round;stroke-dasharray:calc(var(--pn,0) * 1px) 100;transition:stroke-dasharray .12s linear;}
+  #fest .midk-console.ready #midkRally .ms-face{animation:cheerReady 1.5s ease-in-out infinite;}
+  #fest .midk-console.ready #midkRally .ms-prog{stroke:#ffc857;filter:drop-shadow(0 0 5px rgba(255,200,87,.9));}
+  #fest .midk-console:not(.ready) #midkRally .ms-face{filter:saturate(.5) brightness(.95);}
+  #fest .midk-console:not(.ready) #midkRally .ms-icon,#fest .midk-console:not(.ready) #midkRally .ms-label{opacity:.5;}
+  #fest #midkRally:active:not(:disabled) .ms-face{transform:scale(.92);}
+  #fest .midk-console.ready{box-shadow:0 0 0 3px rgba(232,180,90,.32),var(--shadow);}
+  @media(max-width:370px){#fest #midkHud #midkRally.midk-spin{width:74px;height:74px}#fest .midk-console .mc-reels{--rh:30px}}
+  @media (prefers-reduced-motion:reduce){#fest .midk-console .mc-reel.spinning .mc-strip{animation:none}#fest .midk-console.ready #midkRally .ms-face{animation:none}#fest .midk-console .mc-reel.landing .mc-strip{transition:none}}
   /* --- Catmint Café — the shift-change board + the café emblem --- */
   img.cafe-emblem{display:inline-block;vertical-align:middle;filter:drop-shadow(0 2px 4px rgba(74,53,36,.22));}
   .fest-result .fr-emoji img.cafe-emblem{margin-bottom:.15rem;}
@@ -1913,10 +1961,14 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
     <div class="midk-hud" id="midkHud" hidden>
       <div class="volley-com" id="midkCom" hidden><span class="vc-mic">🎙️</span><span id="midkComText"></span></div>
       <div class="midk-console" id="midkConsole">
-        <div class="mc-reels" id="midkReels"><span>🐈</span><span>💪</span><span>⭐</span></div>
+        <div class="mc-reels" id="midkReels" aria-hidden="true"></div>
         <div class="mc-bar" id="midkBar"><i></i></div>
         <div class="mc-msg" id="midkMsg">charging the spin…</div>
-        <button class="midk-spin" id="midkRally" type="button"><span class="ms-paw">🐾</span>Spin!</button>
+        <button class="midk-spin" id="midkRally" type="button" aria-label="Spin the reels">
+          <span class="ms-shadow" aria-hidden="true"></span>
+          <svg class="ms-ring" viewBox="0 0 100 100" aria-hidden="true"><circle class="ms-track" cx="50" cy="50" r="46"/><circle class="ms-prog" cx="50" cy="50" r="46" pathLength="100"/></svg>
+          <span class="ms-face"><svg class="ms-icon" viewBox="0 0 48 48" aria-hidden="true"><g fill="#fff6dc" stroke="#4a3a27" stroke-width="2" stroke-linejoin="round"><ellipse cx="10" cy="22" rx="4.6" ry="6.4"/><ellipse cx="19" cy="12" rx="4.6" ry="6.4"/><ellipse cx="30" cy="12" rx="4.6" ry="6.4"/><ellipse cx="39" cy="22" rx="4.6" ry="6.4"/><path d="M13 35q11-19 22 0 7 12-9 9-4-1-4-1t-4 1q-16 3-9-9Z"/></g></svg><span class="ms-label">Spin!</span></span>
+        </button>
       </div>
     </div>
     <div class="fest-panel" id="festCafePanel" hidden>
@@ -1972,7 +2024,15 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
     </div>
     <button class="fest-skip" id="festSkip" hidden>Skip to the finish ›</button>
     <div class="race-strip" id="raceStrip" hidden role="status" aria-label="Race positions"></div>
-    <button class="race-cheer" id="raceCheer" type="button" hidden aria-label="Cheer for your cat"><span class="rc-paw" aria-hidden="true">♥</span><b>Cheer</b></button>
+    <button class="race-cheer" id="raceCheer" type="button" hidden aria-label="Cheer for your cat">
+      <span class="rc-shadow" aria-hidden="true"></span>
+      <svg class="rc-ring" viewBox="0 0 100 100" aria-hidden="true"><circle class="rc-track" cx="50" cy="50" r="46"/><circle class="rc-prog" cx="50" cy="50" r="46" pathLength="100"/></svg>
+      <span class="rc-face">
+        <svg class="rc-icon" viewBox="0 0 48 48" aria-hidden="true"><g fill="#fff6dc" stroke="#4a3a27" stroke-width="2" stroke-linejoin="round"><ellipse cx="10" cy="22" rx="4.6" ry="6.4"/><ellipse cx="19" cy="12" rx="4.6" ry="6.4"/><ellipse cx="30" cy="12" rx="4.6" ry="6.4"/><ellipse cx="39" cy="22" rx="4.6" ry="6.4"/><path d="M13 35q11-19 22 0 7 12-9 9-4-1-4-1t-4 1q-16 3-9-9Z"/></g><path d="M24 40.6c-3.4-2.3-5-4-5-5.6a2.7 2.7 0 0 1 5-1.3 2.7 2.7 0 0 1 5 1.3c0 1.6-1.6 3.3-5 5.6Z" fill="#e2708a"/></svg>
+        <span class="rc-label">Cheer</span>
+      </span>
+      <span class="rc-count" aria-hidden="true"></span>
+    </button>
     <div class="race-photo" id="racePhoto" hidden role="status">PHOTO FINISH!</div>
     <div class="fest-bar" id="festBar" hidden>
       <button class="rb-back" id="festBack"><img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22"> Back to the Cove</button>
@@ -10927,13 +10987,20 @@ function raceHudSync() {
   }
   const cd = Math.max(0, raceCheerReadyAt - raceT), cooling = cd > 0 || racePhase !== "run";
   btn.classList.toggle("cooling", cooling);
+  btn.classList.toggle("ready", !cooling);
   btn.setAttribute("aria-disabled", String(cooling));
-  btn.style.setProperty("--p", (racePhase === "run" ? (1 - cd / RACE_CHEER_COOLDOWN) * 100 : 0) + "%");
+  btn.style.setProperty("--pn", racePhase === "run" ? Math.max(0, Math.min(100, (1 - cd / RACE_CHEER_COOLDOWN) * 100)) : 0);
+  const cnt = btn.querySelector(".rc-count"); if (cnt) cnt.textContent = cooling && racePhase === "run" && cd > 0 ? String(Math.ceil(cd)) : "";
 }
 function raceCheer() {
   if (festKind !== "race" || racePhase !== "run" || raceT < raceCheerReadyAt) return;
   const r = raceCats.find(x => x.cat === racePick); if (!r || r.done) return;
   raceCheerReadyAt = raceT + RACE_CHEER_COOLDOWN; r.cheerUntil = raceT + 1.4;
+  { const b = document.getElementById("raceCheer"); if (b) {
+    b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); setTimeout(() => b.classList.remove("pop"), 460);
+    for (let k = 0; k < 3; k++) { const h = document.createElement("span"); h.className = "rc-heart"; h.style.setProperty("--hx", (k - 1) * 20 + "px"); h.style.animationDelay = k * 90 + "ms";
+      h.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 21C5 15.8 3 12.6 3 9.5A4.6 4.6 0 0 1 12 8a4.6 4.6 0 0 1 9 1.5c0 3.1-2 6.3-9 11.5Z" fill="#ff8fa8" stroke="#fff6dc" stroke-width="1.6"/></svg>';
+      b.append(h); setTimeout(() => h.remove(), 1100 + k * 90); } } }
   floatText(raceX(r.progress), laneY(r.lane) - 40, "go " + r.cat.name + "!", "#e0678a");
   spawnParticles(raceX(r.progress), laneY(r.lane) - 12, "heart", 4);
   try { sfx("collect"); } catch (e) {}
@@ -12978,6 +13045,45 @@ const MIDK_COVE_NAMES = VB_COVE_NAMES;
 const MIDK_CAT_NAMES = VB_CAT_NAMES;
 // each spin lands on ONE weighted outcome; the reels just animate to it
 const MIDK_SLOT_EMOJI = { grow: "🐈", push: "💪", aura: "⭐", nap: "😴" };
+/* Tug reels: three windows, each a vertical strip of painted symbols. Spinning scrolls the strip with CSS (no per-frame DOM writes), landing eases to the result. */
+const MIDK_SYMS = ["grow", "push", "aura", "nap"];
+const MIDK_SYM_SVG = {
+  grow: '<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#f4ecd5" stroke="#67543f" stroke-width="2" stroke-linejoin="round" d="M6 14 4.5 5.5 12 9h8l7.5-3.5L26 14q2 9-10 9T6 14Z"/><path fill="none" stroke="#67543f" stroke-width="2" stroke-linecap="round" d="M12 15v1.5m8-1.5v1.5m-6 3.5q2 1.5 4 0"/><path fill="#5f9d5b" stroke="#3f6f3f" stroke-width="1.2" stroke-linejoin="round" d="M16 30l-5-6h3.2v-3h3.6v3H21Z"/></svg>',
+  push: '<svg viewBox="0 0 32 32" aria-hidden="true"><g fill="#f4ecd5" stroke="#67543f" stroke-width="1.8" stroke-linejoin="round"><ellipse cx="8.5" cy="14" rx="3" ry="4"/><ellipse cx="14" cy="8.5" rx="3" ry="4"/><ellipse cx="20.5" cy="8.5" rx="3" ry="4"/><ellipse cx="26" cy="14" rx="3" ry="4"/><path d="M10 24q6-12 12 0 4 7-6 5.5-2-.3-2-.3t-2 .3q-10 1.5-2-5.5Z"/></g><path fill="none" stroke="#e0873c" stroke-width="2" stroke-linecap="round" d="M2 5l4 2M2 10l3 1M30 5l-4 2"/></svg>',
+  aura: '<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#ffd25a" stroke="#b9852a" stroke-width="2" stroke-linejoin="round" d="m16 3 3.7 8 8.8 1-6.5 5.9 1.8 8.7L16 22.2 8.2 26.6 10 17.9 3.5 12l8.8-1Z"/><path fill="#fff3b8" d="m16 8 1.8 4.1 4.4.5-3.3 3 .9 4.4-3.8-2.2z"/></svg>',
+  nap: '<svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#cdbdf0" stroke="#6f5fa0" stroke-width="2" stroke-linejoin="round" d="M20 4a11.5 11.5 0 1 0 8 17.5A9 9 0 0 1 20 4Z"/><path fill="none" stroke="#6f5fa0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20 7h4l-4 4.5h4M24.5 15h3l-3 3.5h3"/></svg>'
+};
+let _midkReelMode = "idle";
+function midkBuildReels() {
+  const reels = document.getElementById("midkReels"); if (!reels || reels.querySelector(".mc-strip")) return;
+  reels.replaceChildren();
+  for (let r = 0; r < 3; r++) {
+    const win = document.createElement("div"); win.className = "mc-reel";
+    const strip = document.createElement("div"); strip.className = "mc-strip";
+    for (let rep = 0; rep < 3; rep++) for (const k of MIDK_SYMS) { const i = document.createElement("i"); i.innerHTML = MIDK_SYM_SVG[k]; strip.append(i); }
+    strip.style.setProperty("--ty", r); win.append(strip); reels.append(win);
+  }
+}
+function midkReelsSync(rolling, resolved, syms) {
+  const reels = document.getElementById("midkReels"); if (!reels) return; midkBuildReels();
+  const wins = [...reels.children], reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (rolling && _midkReelMode !== "spin") {
+    _midkReelMode = "spin";
+    wins.forEach((w, i) => { w.classList.remove("landing", "landed"); w.classList.add("spinning"); w.firstElementChild.style.animationDuration = (0.3 + i * 0.045) + "s"; });
+  } else if (resolved && _midkReelMode !== "hold") {
+    _midkReelMode = "hold";
+    wins.forEach((w, i) => {
+      const k = Math.max(0, MIDK_SYMS.indexOf(syms[i])), strip = w.firstElementChild;
+      w.classList.remove("spinning", "landing"); strip.style.animationDuration = ""; strip.style.setProperty("--ty", k);
+      if (reduced) { w.classList.add("landed"); return; }
+      void strip.offsetWidth;
+      setTimeout(() => { if (_midkReelMode !== "hold") return; w.classList.add("landing"); strip.style.setProperty("--ty", k + 4); setTimeout(() => w.classList.add("landed"), 420); }, i * 110);
+    });
+  } else if (!rolling && !resolved && _midkReelMode !== "idle") {
+    _midkReelMode = "idle";
+    wins.forEach((w, i) => { w.classList.remove("spinning", "landing", "landed"); w.firstElementChild.style.animationDuration = ""; w.firstElementChild.style.setProperty("--ty", i); });
+  }
+}
 const MIDK_SLOT_LABEL = { grow: "BIGGER!", push: "HEAVE!", aura: "⭐ 7 7 7 ⭐", nap: "…zzz" };
 const MIDK_OUTCOMES = [["grow", 42], ["push", 38], ["aura", 10], ["nap", 10]];
 const MIDK_THIRD = 108;                       // ball this far past centre toward your flag → a 777 is an auto-win
@@ -13281,7 +13387,7 @@ function midkSlotTick(dt) {
   // land: the winning outcome fills all three reels
   s.reels = [s.outcome, s.outcome, s.outcome];
   s.resolved = true;
-  s.showUntil = midkT + 1.1;
+  s.showUntil = midkT + 1.7;
   midkResolveSlot("cove", s.outcome);
 }
 function midkResolveSlot(side, outcome) {
@@ -13377,13 +13483,11 @@ function _midkUpdateBtns() {
   con.classList.toggle("rolling", !!rolling);
   con.classList.toggle("result", !!resolved);
   sb.disabled = !ready;
-  const reels = document.getElementById("midkReels");
-  if (reels) {
-    const syms = midkSlot ? midkSlot.reels : ["grow", "push", "aura"];
-    for (let i = 0; i < 3; i++) if (reels.children[i]) reels.children[i].textContent = MIDK_SLOT_EMOJI[syms[i]] || "🐈";
-  }
+  midkReelsSync(!!rolling, !!resolved, midkSlot ? midkSlot.reels : ["grow", "push", "aura"]);
   const bar = document.getElementById("midkBar");
   if (bar && bar.firstElementChild && !rolling && !resolved) bar.firstElementChild.style.width = Math.min(100, midkCharge * 100) + "%";
+  sb.style.setProperty("--pn", rolling || resolved ? 0 : Math.min(100, midkCharge * 100));
+  sb.setAttribute("aria-label", ready ? "Spin the reels" : "Spin is charging");
   const msg = document.getElementById("midkMsg");
   if (msg) msg.textContent = resolved ? (midkSlot.result || "")
     : rolling ? "spinning…"
