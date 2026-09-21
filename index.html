@@ -887,6 +887,20 @@
   @keyframes cheerPop{0%{transform:scale(.88)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
   @keyframes cheerHeart{0%{opacity:0;transform:translate(var(--hx,0),6px) scale(.5)}20%{opacity:1}100%{opacity:0;transform:translate(var(--hx,0),-70px) scale(1.15)}}
   @media (prefers-reduced-motion:reduce){.race-cheer.ready .rc-face,.race-cheer.pop .rc-face,.race-cheer .rc-heart{animation:none}.race-cheer .rc-prog{transition:none}}
+  /* --- flat 2D, same as the Tug Spin: one solid disc, a charge arc, no bevels or pushed-button shadows --- */
+  @keyframes flatReady{0%,100%{scale:1}50%{scale:1.05}}
+  @keyframes flatPop{0%{scale:.9}60%{scale:1.1}100%{scale:1}}
+  .race-cheer{background:#6f9a70;border:2.5px solid #4a3a27;box-shadow:none;}
+  .race-cheer.cooling{background:#93ad91;box-shadow:none;translate:none;}
+  .race-cheer:active:not(.cooling){box-shadow:none;translate:none;scale:.94;}
+  .race-cheer .rc-face,.race-cheer.ready .rc-face,.race-cheer.pop .rc-face,.race-cheer.cooling .rc-face{inset:0;background:none;border:0;border-radius:0;animation:none;}
+  .race-cheer.ready{animation:flatReady 1.7s ease-in-out infinite;box-shadow:0 0 0 6px rgba(224,165,58,.4);}
+  .race-cheer.pop{animation:flatPop .36s cubic-bezier(.3,1.6,.5,1);}
+  .race-cheer .rc-track{stroke:rgba(255,246,220,.32);stroke-width:5;}
+  .race-cheer .rc-prog{stroke:#f6d36b;stroke-width:5;}
+  .race-cheer.cooling .rc-icon{opacity:0;}
+  .race-cheer.cooling .rc-count{color:#fff6dc;}
+  @media (prefers-reduced-motion:reduce){.race-cheer.ready,.race-cheer.pop{animation:none}}
   .race-photo{position:absolute;left:50%;top:22%;transform:translateX(-50%);z-index:7;padding:10px 20px;border-radius:14px;background:#fff8e4;color:#4a3a1e;font:800 20px/1 Georgia,serif;letter-spacing:.06em;box-shadow:0 6px 24px rgba(36,31,23,.3);animation:racePhotoPop 1.9s ease both;pointer-events:none;}
   @keyframes racePhotoPop{0%{opacity:0;transform:translateX(-50%) scale(.6) rotate(-4deg)}12%{opacity:1;transform:translateX(-50%) scale(1.08) rotate(-2deg)}22%{transform:translateX(-50%) scale(1) rotate(-2deg)}85%{opacity:1}100%{opacity:0;transform:translateX(-50%) scale(1) rotate(-2deg)}}
   @media (prefers-reduced-motion:reduce){.race-photo{animation:none}.rs-chip{transition:none}}
@@ -1085,7 +1099,7 @@
   #fest #midkHud #midkConsole:not(.ready) #midkRally.midk-spin{background:#93ad91;}
   #fest #midkHud #midkRally .ms-face{inset:0;background:none;border:0;border-radius:0;animation:none!important;}
   #fest #midkHud #midkConsole:not(.ready) #midkRally .ms-icon,#fest #midkHud #midkConsole:not(.ready) #midkRally .ms-label{opacity:.9;}
-  #fest #midkHud #midkConsole.ready #midkRally.midk-spin{animation:cheerReady 1.5s ease-in-out infinite;}
+  #fest #midkHud #midkConsole.ready #midkRally.midk-spin{animation:flatReady 1.5s ease-in-out infinite;}
   #fest #midkHud #midkRally .ms-track{stroke:rgba(255,246,220,.32);stroke-width:5;}
   #fest #midkHud #midkRally .ms-prog{stroke:#f6d36b;stroke-width:5;}
   #fest #midkHud #midkRally .ms-label{color:#fff6dc;}
