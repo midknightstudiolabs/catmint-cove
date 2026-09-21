@@ -544,7 +544,7 @@
   .adv-done{display:grid;justify-items:center;gap:6px;color:#67543f;font:700 15px Georgia,serif;}
   .adv-done .neo-ui-icon{width:34px;height:34px;}
   .adv-pill{position:absolute;top:8px;padding:5px 10px;border-radius:999px;background:rgba(250,246,232,.95);color:#405842;font:700 12px/1 system-ui,sans-serif;box-shadow:0 2px 0 rgba(103,84,63,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .adv-who{left:8px;max-width:58%;}.adv-eta{right:8px;max-width:38%;}
+  .adv-who{left:8px;max-width:50%;}.adv-eta{right:8px;max-width:46%;}
   .adv-stamp{position:absolute;right:8px;bottom:12px;display:flex;align-items:center;gap:5px;padding:5px 9px 5px 6px;border-radius:8px;background:#faf2dc;border:2px solid #67543f;color:#67543f;font:800 10px/1 system-ui,sans-serif;letter-spacing:.07em;text-transform:uppercase;box-shadow:0 2px 0 #67543f;cursor:pointer;transform:rotate(-3deg);width:auto;min-height:0;}
   .adv-stamp svg{width:16px;height:16px;}
   .adv-stamp.new{background:#fff3cf;animation:advStamp 1.8s ease-in-out infinite;}
@@ -19154,7 +19154,7 @@ function startAdventure(names, dest, tier) {
   adv.cards = scheduleCards(dest, adv.startedAt, adv.endsAt);
   activeAdvs().push(adv);
   if (G.tips && !G.tips.includes("explore_seen")) G.tips.push("explore_seen");
-  save(); syncHud(); rebuildAttractors();
+  save(); syncHud(); rebuildAttractors(); try { neoScheduleAdventureReminders(); } catch (e) {}
   // send-off — each traveller trots to an edge with a bindle
   const dir = dest === "forest" || dest === "peak" ? 1 : -1;
   going.forEach((c, k) => {
@@ -19200,7 +19200,7 @@ function resolveAdventure(advId, onDone) {
   });
   G.adventures = list.filter(x => x !== a);
   dedupeCats();
-  save(); syncHud(); rebuildAttractors();
+  save(); syncHud(); rebuildAttractors(); try { neoScheduleAdventureReminders(); } catch (e) {}
   renderAdventureCard();
   runVignette(advVignette(a.dest, results), { cat: results[0].cat, onDone });
 }
@@ -19234,7 +19234,7 @@ function recallAdventure(advId) {
     });
     G.adventures = activeAdvs().filter(x => x !== a);
     dedupeCats();
-    save(); syncHud(); rebuildAttractors();
+    save(); syncHud(); rebuildAttractors(); try { neoScheduleAdventureReminders(); } catch (e) {}
     renderAdventureCard();
     logMoment("🧭", `${who} came home early — you called the trip off.`, "tale");
     toast(party.length > 1 ? "The party's back — you called them home." : `${who} is back — you called them home.`, 4);
@@ -19481,8 +19481,9 @@ function renderAdvInto(el) {
 function openAdventureBoard() {
   if (!activeAdvs().length) { openAdventurePicker(); return; }
   closeAllPanels();
-  openModal(`<div class="reveal adv-board"><div class="kicker">ADVENTURES</div><h2>Out exploring</h2><div class="adv-card" id="advBoard"></div><button class="linkbtn" id="advBoardClose" style="margin-top:.4rem">Close</button></div>`);
+  openModal(`<div class="reveal adv-board"><div class="kicker">ADVENTURES</div><h2>Out exploring</h2><div class="adv-card" id="advBoard"></div><div id="advBoardRemind"></div><button class="linkbtn" id="advBoardClose" style="margin-top:.4rem">Close</button></div>`);
   _advBoardEl = document.getElementById("advBoard"); renderAdvInto(_advBoardEl);
+  { const slot = document.getElementById("advBoardRemind"), box = neoAdvRemindBox(); if (slot && box) slot.append(box); }
   document.getElementById("advBoardClose").onclick = () => { _advBoardEl = null; closeModal(); };
   const tick = setInterval(() => { if (!_advBoardEl || !_advBoardEl.isConnected) { clearInterval(tick); return; } if (!document.hidden) advTick(); }, 3000);
 }
@@ -19548,7 +19549,7 @@ function pickAdventureCat(dest, tier) {
     b.setAttribute("aria-pressed",String(sel.has(n)));
     sync();
   });
-  sendBtn.onclick = () => { if (sel.size) { startAdventure([...sel], dest, tier); closeModal(); } };
+  sendBtn.onclick = () => { if (sel.size) { startAdventure([...sel], dest, tier); closeModal(); try { neoOfferAdvRemind(); } catch (e) {} } };
 }
 
 /* ---- on every return: roll a While-You-Were-Away beat, flag a cat that's home ---- */
@@ -20548,6 +20549,39 @@ async function neoScheduleGardenReminder(){
   }catch(e){}
 }
 
+// Adventures: one quiet "they're home" notification per trip (native only, opt-in — same rules as the garden reminder)
+async function neoScheduleAdventureReminders(){
+  try{
+    const LN=neoRemindPlugin();if(!LN)return;
+    try{await LN.cancel({notifications:[{id:4201},{id:4202},{id:4203}]});}catch(e){}
+    if(G.advRemind!=='yes')return;
+    const now=Date.now(),list=activeAdvs().filter(a=>a.endsAt>now+3000).slice(0,3);if(!list.length)return;
+    await LN.schedule({notifications:list.map((a,i)=>{
+      const cs=(a.cats&&a.cats.length)?a.cats:[a.cat],who=cs.length>1?cs[0]+' and '+(cs.length-1)+' more':cs[0],d=(ADV_DESTS[a.dest]||ADV_DESTS.forest).name;
+      return {id:4201+i,title:'Back at the Cove',body:who+(cs.length>1?' are':' is')+' home from '+d+'. Come and read the postcard.',schedule:{at:new Date(a.endsAt),allowWhileIdle:true}};
+    })});
+  }catch(e){}
+}
+function neoAdvRemindBox(onChosen){
+  const LN=neoRemindPlugin();if(!LN)return null;
+  const box=document.createElement('div');box.className='garden-remind adv-remind';
+  const yes=async()=>{try{const r=await LN.requestPermissions();if(r&&r.display&&r.display!=='granted'){G.advRemind='no';save();toast('Notifications are off for the app. You can turn them on in your device settings.',4);draw();if(onChosen)onChosen();return;}}catch(e){}G.advRemind='yes';save();neoScheduleAdventureReminders();toast('Got it. We will nudge you when they are home.',3);draw();if(onChosen)onChosen();};
+  const draw=()=>{box.replaceChildren();
+    if(G.advRemind==='yes'){const t=document.createElement('small');t.textContent='Home-again reminders are on. ';const off=document.createElement('button');off.type='button';off.className='fpk-x';off.textContent='Turn off';off.onclick=()=>{G.advRemind='no';save();neoScheduleAdventureReminders();draw();};box.append(t,off);}
+    else if(G.advRemind==='no'){const t=document.createElement('small');t.textContent='Home-again reminders are off. ';const on=document.createElement('button');on.type='button';on.className='fpk-x';on.textContent='Turn on';on.onclick=yes;box.append(t,on);}
+    else{const t=document.createElement('strong');t.textContent='Get a nudge when they are home?';const p=document.createElement('span');p.textContent='One quiet notification when a trip ends. Never more than one per trip.';const row=document.createElement('div');row.className='row';
+      const y=document.createElement('button');y.type='button';y.className='btn primary';y.textContent='Yes, remind me';y.onclick=yes;const n=document.createElement('button');n.type='button';n.className='btn';n.textContent='Not now';n.onclick=()=>{G.advRemind='no';save();draw();if(onChosen)onChosen();};row.append(y,n);box.append(t,p,row);}};
+  draw();return box;
+}
+// right after you send a trip is the moment it makes sense to ask (once)
+function neoOfferAdvRemind(){
+  if(!neoRemindPlugin()||G.advRemind!==undefined||!activeAdvs().length)return;
+  setTimeout(()=>{
+    openModal('<div class="reveal"><div class="kicker">On their way</div><h2>They are off exploring</h2><div id="advRemindSlot"></div><button class="linkbtn" id="advRemindClose" style="margin-top:.4rem">Close</button></div>');
+    const slot=document.getElementById('advRemindSlot'),box=neoAdvRemindBox(()=>setTimeout(closeModal,1100));
+    if(slot&&box)slot.append(box);document.getElementById('advRemindClose').onclick=closeModal;
+  },500);
+}
 function neoCropWord(sec){return sec>=3600?Math.round(sec/360)/10+' h':sec>=60?Math.ceil(sec/60)+' min':sec+' s';}
 function neoRenderField(sheet,h){
   const sec=document.createElement('section');sec.className='garden-field';sec.setAttribute('aria-label','Your garden patches');
@@ -20986,8 +21020,8 @@ import('./ui/social-config.js').then(m=>{window.__neoSocialOn=!!m.socialConfig.e
 function neoFriendsPoll(){try{if(!window.__neoSocialOn||document.hidden||!localStorage.getItem('neo.friends.session'))return;import(NEO_FRIENDS_HUB).then(m=>m.pollBadge()).then(()=>neoFriendsBadge()).catch(()=>{});}catch(e){}}
 setInterval(neoFriendsPoll,180000);setTimeout(neoFriendsPoll,6000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(neoFriendsPoll,800);});
 /* Garden: re-set the ripe reminder whenever the app goes to the background */
-document.addEventListener('visibilitychange',()=>{if(document.hidden)neoScheduleGardenReminder();});
-window.addEventListener('pagehide',()=>{neoScheduleGardenReminder();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){neoScheduleGardenReminder();neoScheduleAdventureReminders();}});
+window.addEventListener('pagehide',()=>{neoScheduleGardenReminder();neoScheduleAdventureReminders();});
 /* Festival bar: in the hub it is one button (Back to the Cove); inside a picker or game it has two — Festival hub and Cove */
 {const bar=document.getElementById('festBar'),hub=document.getElementById('festChoose'),bh=document.getElementById('festBackHub'),sp=document.getElementById('festBarSep'),lb=document.getElementById('festBackLbl');
  const sync=()=>{if(!bar||bar.hidden||!hub)return;const two=hub.hidden;bar.classList.toggle('two',two);bh.hidden=!two;sp.hidden=!two;if(lb){const t=two?'Cove':'Back to the Cove';if(lb.textContent!==t)lb.textContent=t;}};
