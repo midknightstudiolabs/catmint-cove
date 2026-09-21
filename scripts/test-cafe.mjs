@@ -29,7 +29,7 @@ let online=make(),offline=make();E.unlock(online,0);E.unlock(offline,0);for(let 
 E.settle(offline,999999999);assert(Object.values(offline.homestead.stock).every(n=>n>=0));const paid=offline.shells;E.settle(offline,999999999);assert.equal(offline.shells,paid);
 offline.cafe.open=false;E.settle(offline,1000999999);const stock=JSON.stringify(offline.homestead.stock);E.settle(offline,1001999999);assert.equal(JSON.stringify(offline.homestead.stock),stock);
 let fresh=make();E.acquire(fresh,'coffee',10,50);assert.equal(fresh.cafe.basis.coffee,5);E.acquire(fresh,'coffee',10,10);assert.equal(fresh.cafe.basis.coffee,3);
-let cap=make();E.unlock(cap,0);cap.homestead.stock={coffee:10000,catmint:10000,honey:10000};E.settle(cap,100*86400000);assert(cap.cafe.served<=180);
+let cap=make();E.unlock(cap,0);cap.homestead.stock={coffee:10000,catmint:10000,honey:10000};E.settle(cap,100*86400000);assert(cap.cafe.served<=200);   // 12h window: 180 ordinary guests + up to ~15 from rush hours
 const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');for(const m of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){if(m[1].trim())new vm.Script(m[1]);}
 assert(html.indexOf('ui/cafe-engine.js')<html.indexOf('function save()'));
 console.log('PASS: unlock, legacy preservation, pending orders, no duplicate credits, save/reload, clock rollback, online/offline equivalence, stock limits, pause, weighted costs, offline cap and inline syntax.');

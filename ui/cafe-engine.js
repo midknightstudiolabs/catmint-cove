@@ -3,7 +3,15 @@
   const ingredients={carrot:{name:'Carrots',import:2,cost:2,seconds:60,yield:3},coffee:{name:'Coffee beans',import:5,cost:10,seconds:900,yield:10},catmint:{name:'Catmint',import:3,cost:6,seconds:300,yield:8},honey:{name:'Honey',import:8,cost:12,seconds:1500,yield:8}};
   const recipes=[{id:'coffee',name:'Coastal Coffee',note:'A warm welcome in a little cup.',price:12,inputs:{coffee:1}},{id:'tea',name:'Catmint Cloud',note:'Soft, fragrant and wonderfully unhurried.',price:8,inputs:{catmint:1}},{id:'midknight',name:'Midknight Morning',note:'Coffee, honey, and a very serious purr.',price:30,inputs:{coffee:2,honey:1}}];
   recipes.push({id:'bites',name:'Honey Garden Bites',note:'Little carrot treats with a touch of honey.',price:18,inputs:{carrot:2,honey:1}});
-  const interval=s=>[240000,210000,180000][s.speed];
+  // Rush hour: two 45-minute windows a day (one in the morning, one in the afternoon) at times that change daily. Guests arrive 40% faster; each still pays the usual price.
+  const RUSH_FACTOR=0.6,RUSH_LEN=45*60000;
+  function rushWindows(now){const d=new Date(now);d.setHours(0,0,0,0);const day0=d.getTime(),key=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+    const a=day0+Math.round((7.5+hash01('rushA:'+key)*2.5)*3600000/60000)*60000,b=day0+Math.round((14.5+hash01('rushB:'+key)*3)*3600000/60000)*60000;
+    return [[a,a+RUSH_LEN],[b,b+RUSH_LEN]];}
+  function rush(now=Date.now()){const day=[...rushWindows(now),...rushWindows(now+86400000)];
+    for(const [a,b] of day)if(now>=a&&now<b)return {active:true,start:a,end:b,left:b-now};
+    const nx=day.find(([a])=>a>now);return {active:false,next:nx?nx[0]:null,until:nx?nx[0]-now:null};}
+  const interval=(s,at)=>[240000,210000,180000][s.speed]*(at!=null&&rush(at).active?RUSH_FACTOR:1);
   const finishes={sage:{name:'Catmint Sage',cost:0,body:'#9eaf85',shade:'#6f865f',dark:'#395a45',light:'#e6ecd2'},butter:{name:'Buttercup',cost:2500,body:'#dfcb76',shade:'#b5a35b',dark:'#69653b',light:'#fff0b9'},blue:{name:'Coastal Blue',cost:2500,body:'#91b2bd',shade:'#608793',dark:'#365864',light:'#dae9e6'},rose:{name:'Rosewater',cost:5000,body:'#c6a094',shade:'#a07870',dark:'#70554e',light:'#f0ddd0'},cream:{name:'Oatmilk',cost:5000,body:'#d6c8a8',shade:'#ae9f7e',dark:'#655d49',light:'#f7eedb'}};
   function buyFinish(g,key){const s=init(g,Date.now()),f=finishes[key];if(!s.unlocked||!f)return false;s.finishesOwned ||= ['sage'];if(!s.finishesOwned.includes(key)){if(g.shells<f.cost)return false;g.shells-=f.cost;s.finishesOwned.push(key);}s.finish=key;return true;}
   const shops=[{name:'Little Kiosk',cost:0,description:'A compact timber serving window with two warm lamps.'},{name:'Garden Café',cost:20000,description:'A wider shop with a striped awning, hanging plants and flower boxes.'},{name:'Seaside Café',cost:45000,description:'A full façade with arched glowing windows, a raised sign and canopy lights.'}];
@@ -74,7 +82,7 @@
       if(s.pending){if(s.pending.at>now)break;const p=s.pending;s.pending=null;g.shells+=p.price;earned+=p.price;s.served++;s.revenue+=p.price;s.cost+=p.cost;s.sales[p.id]=(s.sales[p.id]||0)+1;const response=feedback(s,p);s.lastCompleted={id:p.id,at:p.at,price:p.price,response};s.customerReport||={total:0,happy:0,delighted:0};s.customerReport.total++;if(response.rating>=4)s.customerReport.happy++;if(response.rating===5)s.customerReport.delighted++;s.feedbackLog||=[];s.feedbackLog.unshift({id:p.id,at:p.at,price:p.price,...response});s.feedbackLog.length=Math.min(10,s.feedbackLog.length);t=Math.max(t,p.at);}
       if(!s.open){s.cursor=now;break;}
       const options=available(s,g.homestead.stock);if(!options.length){s.open=false;s.closedReason='ingredients';s.cursor=now;break;}
-      const due=s.cursor+interval(s);if(due>now)break;
+      const due=s.cursor+interval(s,s.cursor);if(due>now)break;
       const r=options[s.sequence++%options.length];let cost=0;
       for(const[k,n]of Object.entries(r.inputs)){g.homestead.stock[k]-=n;cost+=(s.basis[k]||0)*n;}
       s.cursor=due;s.pending={id:r.id,price:price(s,r,due),cost,at:due+30000};
@@ -125,5 +133,5 @@
   }
   function plantingPlan(g){const free=(g.homestead?.plots||[]).flatMap((p,i)=>p?[]:[i]),rows=pantryPlan(g).rows.filter(r=>r.patches>0).map(r=>({...r})),jobs=[];let cost=0;while(free.length&&rows.some(r=>r.patches>0)){for(const r of rows){if(!free.length)break;if(r.patches>0){jobs.push({slot:free.shift(),key:r.key});cost+=r.cost;r.patches--;}}}return {jobs,cost};}
   function plantSuggested(g,quote,now=Date.now()){const current=plantingPlan(g);if(!current.jobs.length||JSON.stringify(current)!==JSON.stringify(quote)||g.shells<current.cost)return false;for(const job of current.jobs){const crop=ingredients[job.key];g.homestead.plots[job.slot]={key:job.key,ready:now+crop.seconds*1000};}g.shells-=current.cost;return true;}
-  root.CoveCafeEngine={daily,claimDaily,special,taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
+  root.CoveCafeEngine={rush,daily,claimDaily,special,taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
 })(globalThis);

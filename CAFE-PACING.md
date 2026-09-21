@@ -71,3 +71,6 @@ Guests served: 8386. Seed and import spend: 25900 Shells.
 
 1. Keep the new prices and add a cheaper middle stage (a "Sunroom" look) between the Kiosk and Garden Café.
 2. Add income sources: the daily goal (in the Report tab) already pays 100 to 150 Shells a day; rush hours are not built.
+
+## Rush hours (added 2026-09-22)
+Two 45-minute windows a day (one 07:30 to 10:00 start, one 14:30 to 17:30 start; the exact minute changes daily). Guests arrive 40% faster inside them and pay the usual price, so a rush rewards having ingredients stocked rather than paying extra. It is computed from the clock, so offline settling and the live café agree. An always-open café earns about 4% more per day. The offline cap is 12 hours (about 180 ordinary guests, up to about 195 with a rush inside the window). The kiosk status line shows "Rush hour!" while one runs and "rush at H:MM" before the next.

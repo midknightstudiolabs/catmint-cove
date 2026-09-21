@@ -8,7 +8,7 @@ Product IDs (must match the game exactly):
 
 Prices shown in the game as placeholders: **$1.99 weekly, $4.99 monthly**. The stores' real prices win; set them to match.
 
-What the Blessing includes (keep copy consistent with this): Harvest all, Feed all, auto-gather, auto-replant, Tend everything, and a new moonlit decor piece each month. **No Shell bonus.** The whole game stays fully playable without it.
+What the Blessing includes (keep copy consistent with this): Harvest all, Feed all, auto-gather, auto-replant, Tend everything, a new moonlit decor piece each month (the Guardian statue and the Moonlight Swing so far, which real cats use), and Moonlight Wings for any cat. **No Shell bonus.** The whole game stays fully playable without it.
 
 ---
 
@@ -80,3 +80,9 @@ Play products can take a while to activate after creation.
 - [x] RevenueCat: Play + iOS products imported, entitlement `midknight_blessing`, `$rc_weekly` / `$rc_monthly` in the `default` offering (2026-09-21)
 - [ ] Store listings: auto-renewal terms present (Apple description or EULA)
 - [ ] App Store privacy labels updated for Friends data (separate from the subscriptions)
+
+## Optional wording update (2026-09-22): mention the wings
+The store text that is live today ("a new moonlit decor each month") is still true. To mention the wings, use:
+- Apple description (45 max): `One-tap tending, moonlit decor and wings.` [40]
+- Play benefit 4 (40 max): `Moonlit decor and wings each month` [34]  (Play allows 4 benefits, so this replaces "New moonlit decor each month")
+- RevenueCat needs no change.

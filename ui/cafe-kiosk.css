@@ -168,3 +168,6 @@
 #app #cafe-kiosk.cc-v2 button[data-need],#app #cafe-kiosk.cc-v2 button[data-why]{opacity:.55;cursor:not-allowed;filter:none}
 #app #cafe-kiosk.cc-v2 .cc-name{min-height:0;height:26px;margin:0 0 2px}
 #app #cafe-kiosk.cc-v2 .cc-name .cc-pen{width:28px;height:28px;min-height:0;min-width:0;padding:0;display:grid;place-items:center}
+
+#app #cafe-kiosk.cc-v2 .cc-status.cc-rush{color:#8a4b17;font-weight:700}
+#app #cafe-kiosk.cc-v2 .cc-status.cc-rush::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#e0a53a;margin-right:6px;vertical-align:1px}
