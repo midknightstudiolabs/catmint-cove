@@ -956,6 +956,13 @@
   .fest-panel h2{font-family:"Fraunces",serif;font-size:1.35rem;margin:0 0 .4rem;}
   .fest-panel p{color:var(--ink-soft);font-size:.88rem;margin:0 0 1rem;line-height:1.5;}
   .fp-grid{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin:0 0 1.1rem;}
+  .fp-lens{display:flex;gap:.4rem;justify-content:center;margin:-.3rem 0 1rem;}
+  .fp-len{flex:1 1 0;max-width:118px;display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.42rem .3rem;background:#eef1e3;border:2px solid transparent;border-radius:14px;cursor:pointer;font:inherit;color:var(--ink);}
+  .fp-len b{font-size:.8rem;font-weight:700;}
+  .fp-len span{font-size:.7rem;color:var(--ink-soft);}
+  .fp-len[aria-checked="true"]{background:#e5efd9;border-color:var(--accent);}
+  .race-dist{position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 92px);padding:3px 11px;border-radius:999px;background:rgba(255,250,235,.93);color:#405842;font:700 12px/1 system-ui,sans-serif;box-shadow:0 2px 8px rgba(36,31,23,.2);pointer-events:none;z-index:6;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .race-dist[hidden]{display:none;}
   .fp-cell{display:flex;flex-direction:column;align-items:center;gap:.15rem;width:74px;
     background:#eef1e3;border:2px solid transparent;border-radius:14px;padding:.4rem .2rem .35rem;
     cursor:pointer;font:inherit;}
@@ -2034,6 +2041,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
       <h2>The Cove Festival</h2>
       <p>A race is forming down at the track. Send someone to represent the cove.</p>
       <div class="fp-grid" id="festPickGrid"></div>
+      <div class="fp-lens" id="festLens" role="radiogroup" aria-label="Race length"></div>
       <div class="btn-row">
         <button class="btn primary" id="festStart">Start the race</button>
         <button class="btn" id="festCancel">Maybe later</button>
@@ -2170,6 +2178,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
     </div>
     <button class="fest-skip" id="festSkip" hidden>Skip to the finish ›</button>
     <div class="race-strip" id="raceStrip" hidden role="status" aria-label="Race positions"></div>
+    <div class="race-dist" id="raceDist" hidden aria-hidden="true"></div>
     <button class="race-cheer" id="raceCheer" type="button" hidden aria-label="Cheer for your cat">
             <svg class="rc-ring" viewBox="0 0 100 100" aria-hidden="true"><circle class="rc-track" cx="50" cy="50" r="41"/><circle class="rc-prog" cx="50" cy="50" r="41" pathLength="100"/></svg>
       <span class="rc-face">
@@ -8181,7 +8190,7 @@ const GUIDE = [
 const HELP_TOPICS=[
  ['Meet your cats','catdex',['Tap a portrait in Catdex to meet your cat and see care options.','The cat counter shows mood and wellbeing.','For Little Hello, close menus and tap empty foreground ground 3–5 times.'],'dex'],
  ['Decorate your Cove','shop',['Shop pictures show what you are buying.','My inventory separates Stored items from In the Cove.','Hold a decoration to drag it. Store item stores it; Place brings it back for free.','Some pieces are free and earned by playing: the Reading Nook from Little Matches, the Seaside Picnic from adventures and the Memory pieces from postcards. The Shop shows how close you are.'],'shop'],
- ['Explore & play','activities',['Activities holds the Cove Festival (Cove Race, Cove Volleyball and Tug of Paws), Adventures, Catmint Café, the Cove Garden, Little Matches, Cove Friends and the Rainy Retreat.','Each festival game shows how many cats it needs. Inside a game, the bottom bar takes you back to the Festival or to the Cove.','Rainy Retreat is a quiet place to rest together.'],'explore'],
+ ['Explore & play','activities',['Activities holds the Cove Festival (Cove Race, Cove Volleyball and Tug of Paws), Adventures, Catmint Café, the Cove Garden, Little Matches, Cove Friends and the Rainy Retreat.','Each festival game shows how many cats it needs. In the Cove Race you can choose a Sprint (50 m), a Cove Run (100 m) or a Long Haul (200 m); longer runs take longer and pay for the time you spend. Inside a game, the bottom bar takes you back to the Festival or to the Cove.','Rainy Retreat is a quiet place to rest together.'],'explore'],
  ['Garden & Café','garden',['In the Cove Garden, tap a patch to plant it. Ripe patches wait for you to harvest them, and harvests go to your pantry.','Catmint Café serves guests by itself once you have a drink on the menu and the ingredients for it. Watch it from Outside or Inside.','Twice a day the café has a rush hour, when guests arrive faster. Have ingredients stocked before one starts.'],'explore'],
  ['Adventures & postcards','adventure',['Choose a place, your cats and a trip length. You can watch a trip in Activities, or call the cats home early (they come back with nothing).','Postcards arrive along the way. Every one is kept in the Journal’s Postcard scrapbook, where you can also send one to a friend as a picture.','In the app you can allow one quiet reminder when a trip is over.'],'explore'],
  ['Cove Friends','homecoming',['Friends is optional. You share a friend code, accept invites, visit each other’s Cove and send a gift or a heart.','Only friends you accept can visit, and they see a saved picture of your Cove. Your balances, purchases and save file stay private.','You can block or report anyone from their Cove, and unblock later in Account. Save your private recovery key there before reinstalling, so your friend code comes back.'],'explore'],
@@ -10429,7 +10438,12 @@ let festKind = "race", _festPickKind = null, _festRoster = [];
 // tiny fire-and-forget analytics seam: no library, just a labelled console line
 // in dev builds. Swap the body for a real sink later without touching callers.
 function trackEvent(name, params) { neoEvent(name); if (DEV_BUILD) console.debug("[analytics]", name, params || {}); }
-const RACE_W = 1400, RACE_H = 640, MAX_RACE_T = 20;
+const RACE_W = 1400, RACE_H = 640;
+// Three course lengths. `len` stretches how long the same track takes to cross; `cap` is the longest a heat may run
+// before stragglers are placed by how far they got. Rewards already follow play time (balanceFestivalReward), so a longer run pays for its time.
+const RACE_LENS = { sprint: { name: "Sprint", m: 50, len: 1, cap: 20 }, run: { name: "Cove Run", m: 100, len: 2, cap: 34 }, haul: { name: "Long Haul", m: 200, len: 3.5, cap: 52 } };
+function raceLen() { return RACE_LENS[G.raceLen] || RACE_LENS.sprint; }
+let _raceLead = 0, _raceLenNow = RACE_LENS.sprint;
 let raceCats = [], festSpectators = [], racePick = null, raceWinner = null;
 let raceT = 0, racePhase = "run", _festFinishAt = 0, festPickedCat = null, festCheerUntil = 0;
 let _festCamX = 150;   // camera centre in RACE-space, used only in portrait pan mode
@@ -10580,7 +10594,24 @@ function openFestPicker(kind) {
   setTimeout(() => w.classList.add("out"), 1250);
   setTimeout(() => w.classList.remove("in", "out"), 1850);
 }
+function renderFestLens() {
+  const box = document.getElementById("festLens"); if (!box) return;
+  box.replaceChildren();
+  const cur = raceLen();
+  for (const k of Object.keys(RACE_LENS)) {
+    const L = RACE_LENS[k], b = document.createElement("button");
+    b.type = "button"; b.className = "fp-len"; b.dataset.len = k; b.setAttribute("role", "radio");
+    b.setAttribute("aria-checked", String(L === cur));
+    b.innerHTML = "<b></b><span></span>"; b.firstChild.textContent = L.name; b.lastChild.textContent = L.m + " m";
+    b.addEventListener("click", () => {
+      G.raceLen = k; try { save(); } catch (e) {}
+      box.querySelectorAll(".fp-len").forEach(x => x.setAttribute("aria-checked", String(x === b)));
+    });
+    box.append(b);
+  }
+}
 function renderFestPickGrid(roster) {
+  renderFestLens();
   const grid = document.getElementById("festPickGrid");
   grid.innerHTML = "";
   for (const c of roster) {
@@ -10621,7 +10652,7 @@ function startFestRace() {
     return {
       cat: c, lane: i, base: racePace(c), burstBias: bias,
       pace: 1, wobble: 1, wobbleAt: rand(0.3, 0.9), burstUntil: 0, nextBurstAt: rand(1, 2.2) / bias,
-      progress: 0, done: false, doneAt: 0,
+      progress: 0, done: false, doneAt: 0, endur: rand(-1, 1),
     };
   });
   // spectators: everyone at the cove who isn't racing turns up to watch —
@@ -10648,6 +10679,7 @@ function startFestRace() {
   // front row (closest to the rail, largest y) properly overlaps them,
   // instead of the reverse
   festSpectators.sort((a, b) => a.y - b.y);
+  _raceLenNow = raceLen(); _raceLead = 0;
   raceT = 0; racePhase = "countdown"; raceWinner = null; festCheerUntil = 0; raceCheerReadyAt = 0; _raceStripSig = "";
   _festCamX = raceX(0);   // "Race again" reuses the grounds with no wipe — snap back to the line
   particles.length = 0; floaters.length = 0;   // last heat's zoomies text / confetti shouldn't bleed into this one
@@ -11120,7 +11152,7 @@ function syncRacerCat(r, dt, freeze) {
   if (!freeze && !r.done) {
     c.state = "exploring";
     c.trotting = true;
-    c.walk += 40 * r.pace * dt * 0.34;
+    c.walk += 40 * r.pace * dt * 0.34 * Math.pow(_raceLenNow.len, -0.4);   // a steady jog on a long course, not a sprint's legs
     c.walkAmt = Math.min(1, (c.walkAmt || 0) + dt * 9);
     c.tail += dt * 7 * _m.tailRate; c.bob += dt * 10;
   } else {
@@ -11212,24 +11244,32 @@ function tickRacer(r, dt) {
   }
   const bursting = r.burstUntil > 0;
   if (bursting) r.burstUntil -= dt;
-  r.pace = r.base * r.wobble * (bursting ? 2.15 : 1) * (r.cheerUntil > raceT ? 1.16 : 1);   // a cheer is a small, short lift
-  r.progress += r.pace * 0.1 * dt;
+  // Longer runs need more than luck: some cats save a late kick while others fade, and a trailing cat gains a little on the leader,
+  // so the lead changes hands. Both vanish in a Sprint (longK = 0), which keeps its old feel.
+  const L = _raceLenNow.len, longK = (L - 1) / L;
+  const late = 1 + (r.endur || 0) * 0.14 * longK * (r.progress - 0.5) * 2;
+  const catchUp = 1 + clamp((_raceLead - r.progress) * 0.7, 0, 0.10) * longK;
+  r.pace = r.base * r.wobble * (bursting ? 2.15 : 1) * (r.cheerUntil > raceT ? 1.16 : 1) * late * catchUp;   // a cheer is a small, short lift
+  r.progress += r.pace * 0.1 * dt / L;
   if (r.progress >= 1) { r.progress = 1; r.done = true; r.doneAt = raceT; }
 }
 /* ---- race HUD: live positions, a Cheer button with a visible cooldown, and the photo finish ---- */
 let _raceStripSig = "", _raceStripAt = 0, raceCheerReadyAt = 0;
 const RACE_CHEER_COOLDOWN = 4;
-function raceHudHide() { for (const id of ["raceStrip", "raceCheer", "racePhoto"]) { const e = document.getElementById(id); if (e) e.hidden = true; } _raceStripSig = ""; }
+function raceHudHide() { for (const id of ["raceStrip", "raceCheer", "racePhoto", "raceDist"]) { const e = document.getElementById(id); if (e) e.hidden = true; } _raceStripSig = ""; }
 function raceHudSync() {
   const strip = document.getElementById("raceStrip"), btn = document.getElementById("raceCheer");
   if (!strip || !btn) return;
   const on = festKind === "race" && (racePhase === "countdown" || racePhase === "run") && raceCats.length > 0;
   if (strip.hidden === on) strip.hidden = !on;
   if (btn.hidden === on) btn.hidden = !on;
+  { const dd = document.getElementById("raceDist"); if (dd && dd.hidden === on) dd.hidden = !on; }
   if (!on) { _raceStripSig = ""; return; }
   const now = performance.now();
   if (now - _raceStripAt > 140) {
     _raceStripAt = now;
+    { const dd = document.getElementById("raceDist"), mine = raceCats.find(x => x.cat === racePick);
+      if (dd && mine) { const M = _raceLenNow.m; dd.textContent = _raceLenNow.name + " · " + Math.min(M, Math.round(mine.progress * M)) + " / " + M + " m"; } }
     const order = [...raceCats].sort((a, b) => (b.done - a.done) || (a.done && b.done ? a.doneAt - b.doneAt : b.progress - a.progress));
     const sig = order.map(r => r.cat.name + (r.cat === racePick ? "*" : "")).join("|");
     if (sig !== _raceStripSig) {
@@ -11364,7 +11404,7 @@ function showFestPodium() {
     : place === 2 ? `${racePick.name} placed 3rd — still made the podium. ${rwLine}`
     : `${racePick ? racePick.name : "Your pick"} didn't place this time. Everyone still gets a little something for showing up. ${rwLine}`;
   const rest = order.slice(3).map(r => r.cat.name);
-  document.getElementById("festRestLine").textContent = rest.length ? `${joinNice(rest)} ambled in eventually.` : "";
+  document.getElementById("festRestLine").textContent = _raceLenNow.name + " · " + _raceLenNow.m + " m." + (rest.length ? ` ${joinNice(rest)} ambled in eventually.` : "");
   if (racePick && rw) { grantReward(balanceFestivalReward(rw), racePick); syncHud(); }
   spawnParticles(raceX(1) - 10, laneY(order[0].lane) - 6, "spark", 12);
   spawnParticles(raceX(1) - 10, laneY(order[0].lane) - 16, "heart", 5);
@@ -11587,6 +11627,7 @@ function renderFest(dt) {
     for (const r of raceCats) syncRacerCat(r, dt, true);
   } else if (racePhase === "run") {
     let allDone = true, finishesThisFrame = 0;
+    _raceLead = 0; for (const r of raceCats) if (r.progress > _raceLead) _raceLead = r.progress;
     for (const r of raceCats) {
       const wasDone = r.done;
       tickRacer(r, dt);
@@ -11596,7 +11637,7 @@ function renderFest(dt) {
       raceFinishMeow(r, finishesThisFrame++ * 0.1);   // staggered — same-instant finishes used to glitch into one overlapping meow
       if (!raceWinner) festCelebrateWinner(r); else festKeepCheering(r);
     }
-    if (allDone || raceT > MAX_RACE_T) {
+    if (allDone || raceT > _raceLenNow.cap) {
       for (const r of raceCats) if (!r.done) {
         r.done = true; r.doneAt = raceT;
         raceFinishMeow(r, finishesThisFrame++ * 0.1);
@@ -20165,6 +20206,7 @@ window.__cove = {
   get G(){return G}, get cats(){return cats}, get tokens(){return fieldTokens},
   get attractors(){return attractors}, get obstacles(){return obstacles}, get decor(){return decor},
   get world(){return {W, H, catFloor: catFloor()}},
+  race(){ return { phase:racePhase, t:raceT, len:_raceLenNow.name, m:_raceLenNow.m, cap:_raceLenNow.cap, cats:raceCats.map(r=>({n:r.cat.name,p:r.progress,done:r.done,at:r.doneAt})) }; },
   journalProfile(){ const out={}, T=(n,fn)=>{const t=performance.now();try{fn();}catch(e){out[n+'_err']=String(e).slice(0,50);}out[n]=+(performance.now()-t).toFixed(1);};
     T('neoRenderJournal',()=>neoRenderJournal()); T('neoFriendsJournal',()=>neoFriendsJournal()); T('checkin',()=>renderCheckinCard()); T('project',()=>renderProjectCard());
     T('adventure',()=>renderAdventureCard()); T('finds',()=>renderFindsCard()); T('goals',()=>renderGoals()); T('moments',()=>renderMoments());
