@@ -4097,6 +4097,15 @@ function decide(c) {
     });
   }
 
+  // --- Midknight's Moonlight Swing (while the Blessing is awake): a cat hops on and sways. One at a time; Midknight loves it. ---
+  if (swingUsable() && !cats.some(o => o !== c && o._perchKind === "swing" && (o.state === "indoors" || o._arriveState === "indoors"))) {
+    add((c.mascot ? 4.5 : 1.3) + (c.traits.includes("playful") ? 1 : 0) + (c.traits.includes("climber") ? 0.6 : 0), () => {
+      const sp = propPos("moonswing");
+      c._arriveState = "indoors"; c._arriveDur = rand(18, 36); c._cotX = sp.x; c._cotY = sp.y; c._perchKind = "swing";
+      return go(c, "seeking", 16, { x: sp.x + rand(-6, 6), y: sp.y + 12 });
+    });
+  }
+
   // --- grooming: a cat washing itself. short, common, adorable ---
   add(kitten ? 5 : 4, () => go(c, "grooming", rand(5, 10), null));
 
@@ -4230,6 +4239,10 @@ function decide(c) {
 }
 // where a cat sits once it's reached its indoor spot — cottage door, or one of the
 // cat tree's three levels. dx/dy are offsets from the piece's base (_cotX/_cotY).
+function indoorHostOk(c) {
+  if (c._perchKind === "swing") return swingUsable();
+  return !!(G.decor && (c._perchKind ? (G.decor.cattree || 0) > 0 : G.decor.cottage > 0));
+}
 function indoorSpot(kind) {
   if (kind === "step")  return { dx: -32, dy: -26,  face: 1,  faceDy: null };
   if (kind === "cubby") return { dx: 0,   dy: -82,  face: -1, faceDy: -82 };   // drawn as a face peeking from the cubby
@@ -4750,7 +4763,7 @@ function updateCat(c, dt) {
   const atTarget = Math.hypot(c.tx - c.x, c.ty - c.y) < 7;
 
   // a comfort was sold out from under the cat — don't scratch / hide in thin air
-  const _indoorGone = c.state === "indoors" && !(G.decor && (c._perchKind ? (G.decor.cattree || 0) > 0 : G.decor.cottage > 0));
+  const _indoorGone = c.state === "indoors" && !indoorHostOk(c);
   if ((c.state === "scratching" && !nearestAttractor(c, "scratch")) || _indoorGone) {
     if (_indoorGone && c._cotY != null) c.y = c._cotY;   // was up the tree — back to the ground
     c._arriveState = null; c._cotX = null; c._perchKind = null; c._faceY = null;
@@ -4767,7 +4780,7 @@ function updateCat(c, dt) {
     if (atTarget) {
       let arr = c._arriveState || "loafing";
       if (arr === "scratching" && !nearestAttractor(c, "scratch")) arr = "loafing";
-      if (arr === "indoors" && !(G.decor && (c._perchKind ? (G.decor.cattree || 0) > 0 : G.decor.cottage > 0))) { arr = "loafing"; c._perchKind = null; c._faceY = null; }
+      if (arr === "indoors" && !indoorHostOk(c)) { arr = "loafing"; c._perchKind = null; c._faceY = null; }
       if (arr === "drinking" && !anyWaterSource()) arr = "loafing";
       if (arr === "eating" && G.food <= 0) arr = "loafing";   // ran dry mid-approach
       go(c, arr, c._arriveDur || 8, null);
@@ -4776,10 +4789,13 @@ function updateCat(c, dt) {
       c._pendStation = null;
       if (c.state === "scratching") c.face = 1;   // always stand left of the post, rake toward it
       if (c.state === "indoors") {
+        if (c._perchKind === "swing") { const sw = swingSeatPos(); c.x = sw.x; c.y = sw.y; c._cotX = sw.x; c._cotY = sw.baseY; c._faceY = null; c.vx = 0; c.vy = 0; c.face = 1; spawnParticles(c.x, c.y - 10, "twinkle", 4); }
+        else {
         const sp = indoorSpot(c._perchKind);
         c.x = c._cotX + sp.dx; c.y = c._cotY + sp.dy;
         c._faceY = sp.faceDy != null ? c._cotY + sp.faceDy : null;
         c.vx = 0; c.vy = 0; c.face = sp.face;
+        }
       }
       if (c._station === "garden") spawnParticles(c.x, c.y - 10, "leaf", 5);
     }
@@ -4788,13 +4804,16 @@ function updateCat(c, dt) {
   }
   if (c.state === "indoors") {
     if (c._cotX != null) {   // stay put — perched or tucked in, nothing shoves a hidden cat around
+      if (c._perchKind === "swing") { const sw = swingSeatPos(); c.x = sw.x; c.y = sw.y; c._cotX = sw.x; c._cotY = sw.baseY; c._faceY = null; c.vx = 0; c.vy = 0; }   // rides the swing's arc, and follows it if it is moved
+      else {
       const sp = indoorSpot(c._perchKind);
       c.x = c._cotX + sp.dx; c.y = c._cotY + sp.dy;
       c._faceY = sp.faceDy != null ? c._cotY + sp.faceDy : null;
       c.vx = 0; c.vy = 0;
+      }
     }
     if (c.stateT > c.stateDur) {
-      const cx = c._cotX, cy = c._cotY, wasUp = c._perchKind === "perch" || c._perchKind === "cubby" || c._perchKind === "step";
+      const cx = c._cotX, cy = c._cotY, wasUp = c._perchKind === "perch" || c._perchKind === "cubby" || c._perchKind === "step" || c._perchKind === "swing";
       c._cotX = null; c._perchKind = null; c._faceY = null;
       if (wasUp) { c.x = cx + rand(-8, 8); c.y = cy + rand(24, 40); }   // hop down off the tree first, not a mid-air loaf
       go(c, "loafing", rand(3, 6), { x: cx + rand(-26, 26), y: cy + 42 });
@@ -5529,7 +5548,7 @@ function dropComfortPos(type, newCount) {
 // still grabs the cottage; the arrange-mode tap uses the full generous radius.
 function propGrabHit(id,x,y,pos){
  const base=id.split('#')[0],scale=pos.s||1;
- const shape={bunting:[70,108],lantern:[24,54],birdbath:[27,32],windmill:[38,106],stones:[42,14],moonshrine:[28,54],moonswing:[46,56]}[base]||[28,30];
+ const shape={bunting:[70,108],lantern:[24,54],birdbath:[27,32],windmill:[38,106],stones:[42,14],moonshrine:[34,80],moonswing:[52,80]}[base]||[28,30];
  return Math.abs(x-pos.x)<=shape[0]*scale && y>=pos.y-shape[1]*scale-8 && y<=pos.y+18;
 }
 function movableAt(x, y, tight) {
@@ -6312,6 +6331,7 @@ function updateCatCard() {
   if (cardCat.state === "indoors") s = cardCat._perchKind === "perch" ? "up on the cat tree"
     : cardCat._perchKind === "cubby" ? "tucked in the cat tree"
     : cardCat._perchKind === "step" ? "loafing on the cat tree"
+    : cardCat._perchKind === "swing" ? "swinging on the moonlight swing"
     : "curled up in the cottage";
   if (cardCat._station === "fishing" && cardCat._fx) s = FISH_LABEL[cardCat._fx.p] || s;
   if (cardCat._purredThisRun && cardCat.state === "being_pet" && performance.now() - (cardCat._purring || 0) < 2000) s = "purring 🧡";
@@ -8831,7 +8851,7 @@ function showBlessingOffer() {
       <li><b>Feed all</b> — treat every hungry cat at once (you can always feed them one by one, too)</li>
       <li><b>Auto-gather</b> and <b>auto-replant</b> — shells collect themselves, harvested crops are sown again</li>
       <li><b>Tend everything</b> — gather, harvest and feed the whole cove in one tap</li>
-      <li><b>Moonlit decor</b> — a new piece each month, like the Moonstone and the Moonlight Swing. It sleeps if the Blessing ends and wakes when you renew.</li>
+      <li><b>Moonlit decor</b> — a new piece each month, like the Guardian statue and the Moonlight Swing. It sleeps if the Blessing ends and wakes when you renew.</li>
       <li><b>Moonlight wings</b> — glowing crescent wings for any cat, from the dress-up rack.</li>
       <li>Everything is still fully playable without it; the Blessing just makes tending easier.</li>
     </ul>
@@ -15049,10 +15069,10 @@ const DECOR_PROPS = [
     movable:true, place:{ x:W*0.075, y:H*0.90, s:1.1 }, render(g,t,x,y,s){ propRowboat(g, x, y, s); } },
   { id:"windmill", name:"Pole windmill",   price: 8000, blurb:"A warm timber windmill with terracotta and parchment sails turning gently in the sea breeze.",
     movable:true, place:{ x:W*0.91, y:H*0.60, s:1.25 }, render(g,t,x,y,s){ propWindmill(g, x, y, s, t); } },
-  { id:"moonswing", name:"Midknight’s Moonlight Swing", price: 0, blessing: true, month: "2026-09", blurb:"September’s Blessing decor: a little swing under a crescent arch, with Midknight already on it and a moon lantern beside it. It sways while the Blessing is active; asleep when it ends.",
-    movable:true, place:{ x:W*0.66, y:H*0.93, s:1.5 }, render(g,t,x,y,s){ propMoonSwing(g, x, y, s, t); } },
-  { id:"moonshrine", name:"Midknight’s Moonstone", price: 0, blessing: true, blurb:"A moon-blue standing stone with cat ears, a carved crescent and Midknight sitting in it, with catmint at its feet. Included with Midknight’s Blessing: it glows while the Blessing is active and sleeps when it isn’t.",
-    movable:true, place:{ x:W*0.34, y:H*0.88, s:1.6 }, render(g,t,x,y,s){ propMoonShrine(g, x, y, s, t); } },
+  { id:"moonswing", name:"Midknight’s Moonlight Swing", price: 0, blessing: true, month: "2026-09", blurb:"September’s Blessing decor: a driftwood swing under a crescent arch with a paper moon lantern. Cats hop on and sway while the Blessing is active (Midknight most of all); asleep when it ends.",
+    movable:true, place:{ x:W*0.66, y:H*0.93, s:1.3 }, render(g,t,x,y,s){ propMoonSwing(g, x, y, s, t); } },
+  { id:"moonshrine", name:"Midknight’s Guardian", price: 0, blessing: true, blurb:"A weathered stone cat with a crescent moon on its collar, watching over the cove. Included with Midknight’s Blessing: it glows at night while the Blessing is active and sleeps when it isn’t.",
+    movable:true, place:{ x:W*0.34, y:H*0.88, s:1.55 }, render(g,t,x,y,s){ propMoonShrine(g, x, y, s, t); } },
 ];
 // Stable slots keep the original id and saved position for the first copy.
 for(const base of DECOR_PROPS.slice()) if(['bunting','lantern','lanterns'].includes(base.id)){
@@ -15959,98 +15979,108 @@ function propBirdbath(g, x, y, s, t) {
   g.fillStyle=night>0?'#edcd8b':'#b2a88c';roundRect(g,-2,-8,4,3,1);g.fill();
   g.restore();
 }
-// Midknight's Moonstone — a Blessing decor. A moon-blue standing stone with cat ears, a carved crescent with Midknight sitting in it, catmint at its feet.
-// Flat 2D like the rest of the Cove (brown outline, flat fills). Awake: warm glow, a gold ring at night, fireflies. Asleep (Blessing ended): dim, still, no glow.
-const _MS_CAT = new Path2D("M8 44 C2 44 2 30 9 24 L9 10 L15 17 Q20 15 25 17 L31 10 L31 24 C38 30 38 44 32 44 Z");
+// Blessing decor is painted like the rest of the Cove: warm tone-on-tone gradients, soft grounding, no heavy outlines.
+// While the Blessing is asleep every colour is pulled toward grey and the glow, sway and fireflies stop.
+function _mc(hex, awake) {
+  if (awake) return hex;
+  const n = parseInt(hex.slice(1), 16), r = n >> 16 & 255, gg = n >> 8 & 255, b = n & 255, m = (r + gg + b) / 3;
+  const f = v => Math.round((v * 0.45 + m * 0.55) * 0.93);
+  return "rgb(" + f(r) + "," + f(gg) + "," + f(b) + ")";
+}
+function _mlg(g, x0, y0, x1, y1, stops, awake) { const k = g.createLinearGradient(x0, y0, x1, y1); for (const [o, c] of stops) k.addColorStop(o, c[0] === "#" ? _mc(c, awake) : c); return k; }
+function _mrg(g, x, y, r0, r1, stops) { const k = g.createRadialGradient(x, y, r0, x, y, r1); for (const [o, c] of stops) k.addColorStop(o, c); return k; }
+function _mMote(g, x, y, r, a) { if (a < 0.02) return; g.fillStyle = "rgba(255,236,170," + (a * 0.18) + ")"; g.beginPath(); g.arc(x, y, r * 3.2, 0, 7); g.fill(); g.fillStyle = "rgba(255,244,205," + a + ")"; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }
+function _mTuft(g, x, y, h, col) { g.strokeStyle = col; g.lineWidth = 1.6; g.lineCap = "round"; for (const [dx, lean] of [[-3, -.5], [0, .05], [3, .5]]) { g.beginPath(); g.moveTo(x + dx, y); g.quadraticCurveTo(x + dx + lean * 3, y - h * .6, x + dx + lean * 7, y - h); g.stroke(); } }
+function _mCatmint(g, x, y, lean, h, awake) {
+  g.strokeStyle = _mc("#5f8a52", awake); g.lineWidth = 1.8; g.lineCap = "round"; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + lean * h * .4, y - h * .6, x + lean * h, y - h); g.stroke();
+  g.fillStyle = _mc("#b7a6e0", awake); for (const [k, r] of [[.72, 1.7], [.86, 1.9], [1, 2.2]]) { g.beginPath(); g.arc(x + lean * h * k, y - h * k - 1, r, 0, 7); g.fill(); }
+}
+// Midknight's Guardian — a weathered stone cat, eyes closed, a crescent moon charm on its collar. Awake: warm glow, carved eyes and charm light up at night, fireflies.
 function propMoonShrine(g, x, y, s, t) {
   s = s || 1;
-  const awake = blessingActive();
-  const night = clamp(((g._nightGlow || 0) - 0.2) / 0.5, 0, 1);
-  const OUT = "#67543f";
-  g.save(); g.translate(x, y); g.scale(s, s);
-  g.lineJoin = "round"; g.lineCap = "round";
-  g.fillStyle = "rgba(36,31,23,0.14)"; g.beginPath(); g.ellipse(0, 4, 21, 5.5, 0, 0, 7); g.fill();
-  if (awake) {
-    const a = 0.16 + night * 0.34 + Math.sin(t * 1.6) * 0.025;
-    const gl = g.createRadialGradient(0, -28, 2, 0, -28, 46);
-    gl.addColorStop(0, "rgba(255,214,140," + a + ")"); gl.addColorStop(1, "rgba(255,214,140,0)");
-    g.fillStyle = gl; g.beginPath(); g.arc(0, -28, 46, 0, 7); g.fill();
+  const A = blessingActive(), night = clamp(((g._nightGlow || 0) - 0.2) / 0.5, 0, 1), C = h => _mc(h, A);
+  g.save(); g.translate(x, y); g.scale(s, s); g.lineJoin = "round"; g.lineCap = "round";
+  g.fillStyle = "rgba(40,52,30,0.20)"; g.beginPath(); g.ellipse(2, 3, 26, 6, 0, 0, 7); g.fill();
+  // A soft halo that fades in from early evening. Awake: warm gold. Asleep (Blessing ended): only a faint cool moonlight sheen.
+  const ng = clamp((g._nightGlow || 0) / 0.55, 0, 1);
+  if (A) { const a = 0.04 + ng * 0.12 + Math.sin(t * 1.3) * 0.012 * ng; g.fillStyle = _mrg(g, 0, -32, 4, 52, [[0, "rgba(255,226,160," + a + ")"], [1, "rgba(255,226,160,0)"]]); g.beginPath(); g.arc(0, -32, 52, 0, 7); g.fill(); }
+  else if (ng > 0.05) { g.fillStyle = _mrg(g, 0, -32, 4, 38, [[0, "rgba(214,226,255," + 0.04 * ng + ")"], [1, "rgba(214,226,255,0)"]]); g.beginPath(); g.arc(0, -32, 38, 0, 7); g.fill(); }
+  // base stone
+  g.fillStyle = _mlg(g, -24, -8, 24, 4, [[0, "#cfc6ae"], [1, "#a49b85"]], A);
+  g.beginPath(); g.moveTo(-25, 2); g.quadraticCurveTo(-27, -8, -16, -10); g.lineTo(17, -10); g.quadraticCurveTo(27, -8, 25, 2); g.quadraticCurveTo(0, 7, -25, 2); g.fill();
+  g.fillStyle = "rgba(255,255,255,.22)"; g.beginPath(); g.ellipse(-4, -9.5, 17, 2.2, 0, 0, 7); g.fill();
+  // tail
+  g.fillStyle = _mlg(g, 8, -14, 30, -2, [[0, "#c3baa3"], [1, "#9d947e"]], A);
+  g.beginPath(); g.moveTo(10, -11); g.quadraticCurveTo(28, -13, 24, -3); g.quadraticCurveTo(20, 1, 12, -2); g.quadraticCurveTo(21, -5, 17, -8); g.closePath(); g.fill();
+  // body
+  g.fillStyle = _mlg(g, -16, -52, 14, -8, [[0, "#dad1ba"], [.55, "#c4bba4"], [1, "#a39a84"]], A);
+  g.beginPath(); g.moveTo(-13, -9); g.quadraticCurveTo(-19, -30, -9, -46); g.quadraticCurveTo(0, -52, 9, -46); g.quadraticCurveTo(19, -30, 13, -9); g.quadraticCurveTo(0, -4, -13, -9); g.fill();
+  g.fillStyle = "rgba(255,255,255,.18)"; g.beginPath(); g.ellipse(0, -27, 6.5, 15, 0, 0, 7); g.fill();
+  g.strokeStyle = "rgba(90,80,60,.35)"; g.lineWidth = 1.3; g.beginPath(); g.moveTo(-3.6, -14); g.lineTo(-3.6, -8); g.moveTo(3.6, -14); g.lineTo(3.6, -8); g.stroke();
+  // head + ears
+  g.fillStyle = _mlg(g, -14, -72, 12, -42, [[0, "#e0d7c0"], [.6, "#c9c0a9"], [1, "#a8a08a"]], A);
+  g.beginPath(); g.ellipse(0, -52, 13.5, 11.5, 0, 0, 7); g.fill();
+  for (const sd of [-1, 1]) {
+    g.fillStyle = _mlg(g, 0, -72, 0, -52, [[0, "#d3cab3"], [1, "#b0a790"]], A);
+    g.beginPath(); g.moveTo(sd * 13, -54); g.quadraticCurveTo(sd * 15, -66, sd * 9, -72); g.quadraticCurveTo(sd * 5, -66, sd * 3, -61); g.closePath(); g.fill();
+    g.fillStyle = "rgba(196,150,140,.35)"; g.beginPath(); g.moveTo(sd * 10.6, -58); g.quadraticCurveTo(sd * 12, -64, sd * 8.8, -67.5); g.quadraticCurveTo(sd * 6.6, -64, sd * 5.6, -61); g.closePath(); g.fill();
   }
-  // plinth
-  g.fillStyle = awake ? "#d8cfb6" : "#bdb9ab"; roundRect(g, -19, -7, 38, 10, 4); g.fill(); g.strokeStyle = OUT; g.lineWidth = 1.3; g.stroke();
-  g.fillStyle = awake ? "#e8dfc6" : "#cbc8bb"; roundRect(g, -17, -6.4, 34, 3, 2); g.fill();
-  // the stone, with two cat ears
-  g.fillStyle = awake ? "#cfd8e6" : "#b9bec8"; g.strokeStyle = OUT; g.lineWidth = 1.5;
-  g.beginPath();
-  g.moveTo(-13.5, -6); g.lineTo(-13.5, -32); g.quadraticCurveTo(-13.5, -38, -9, -41); g.lineTo(-7, -54); g.lineTo(-1.5, -45.5);
-  g.quadraticCurveTo(0, -46, 1.5, -45.5); g.lineTo(7, -54); g.lineTo(9, -41); g.quadraticCurveTo(13.5, -38, 13.5, -32); g.lineTo(13.5, -6); g.closePath(); g.fill(); g.stroke();
-  g.strokeStyle = awake ? "#eef3fa" : "#cfd3da"; g.lineWidth = 1.8; g.beginPath(); g.moveTo(-10.5, -8); g.lineTo(-10.5, -30); g.quadraticCurveTo(-10.5, -34, -8.5, -36); g.stroke();
-  g.fillStyle = awake ? "rgba(229,191,195,.85)" : "rgba(190,178,182,.7)";                                   // inner ears
-  g.beginPath(); g.moveTo(-6.6, -48); g.lineTo(-3.2, -44.4); g.lineTo(-7.2, -42.6); g.closePath(); g.fill();
-  g.beginPath(); g.moveTo(6.6, -48); g.lineTo(3.2, -44.4); g.lineTo(7.2, -42.6); g.closePath(); g.fill();
-  // carved crescent
-  g.save(); g.beginPath(); g.arc(0, -27, 11, 0, 7); g.clip();
-  g.fillStyle = awake ? "rgba(255,230,168," + (0.85 + night * 0.15) + ")" : "#a5a293"; g.fillRect(-12, -39, 24, 24);
-  g.fillStyle = awake ? "#cfd8e6" : "#b9bec8"; g.strokeStyle = OUT; g.lineWidth = 1.2; g.beginPath(); g.arc(4, -30.5, 8.8, 0, 7); g.fill(); g.stroke();
-  g.restore();
-  g.strokeStyle = OUT; g.lineWidth = 1.3; g.beginPath(); g.arc(0, -27, 11, 0, 7); g.stroke();
-  // Midknight, sitting in the crescent
-  g.save(); g.translate(-4.4, -29); g.scale(0.27, 0.27); g.fillStyle = awake ? "#1d2024" : "#3a3d42"; g.fill(_MS_CAT);
-  g.strokeStyle = g.fillStyle; g.lineWidth = 4; g.beginPath(); g.moveTo(33, 42); g.bezierCurveTo(42, 42, 42, 30, 37, 26); g.stroke();
-  if (awake) { g.fillStyle = "#f2c94c"; g.beginPath(); g.arc(15, 23, 2.2, 0, 7); g.arc(25, 23, 2.2, 0, 7); g.fill(); }
-  g.restore();
-  if (awake && night > 0.05) { g.strokeStyle = "rgba(246,211,107," + (0.35 + night * 0.5 + Math.sin(t * 1.6) * 0.06) + ")"; g.lineWidth = 1.6; g.beginPath(); g.arc(0, -27, 14.5, 0, 7); g.stroke(); }
-  // moss on one shoulder
-  g.fillStyle = awake ? "#7fa374" : "#8d9a86"; g.strokeStyle = OUT; g.lineWidth = 1;
-  g.beginPath(); g.ellipse(-11, -9, 3.6, 3, 0.2, 0, 7); g.fill(); g.stroke();
-  // catmint at both feet
-  const leaf = awake ? "#5f8a5c" : "#8d9a86", bloom = awake ? "#b9a9dc" : "#aaa9b5";
-  for (const [lx, lean] of [[-19, -0.35], [-15, 0.15], [15, -0.15], [19, 0.35]]) {
-    g.strokeStyle = leaf; g.lineWidth = 1.5; g.beginPath(); g.moveTo(lx, 1); g.quadraticCurveTo(lx + lean * 8, -6, lx + lean * 13, -13); g.stroke();
-    g.fillStyle = bloom; g.strokeStyle = OUT; g.lineWidth = 0.8; g.beginPath(); g.arc(lx + lean * 13, -13.5, 2, 0, 7); g.fill(); g.stroke();
-  }
-  // fireflies
-  if (awake) for (let i = 0; i < 4; i++) {
-    const ang = t * 0.5 + i * 1.6, px = Math.cos(ang) * (23 + i * 3), py = -28 + Math.sin(ang * 1.3) * 14, tw = 0.45 + 0.55 * Math.sin(t * 3 + i * 2);
-    g.fillStyle = "rgba(255,232,150," + (0.25 + 0.6 * tw * (0.5 + night * 0.5)) + ")"; g.beginPath(); g.arc(px, py, 1.5, 0, 7); g.fill();
-  }
+  // closed eyes (glow at night while awake) and nose
+  g.strokeStyle = A && ng > 0.15 ? "rgba(255,220,140," + (0.28 + ng * 0.30 + Math.sin(t * 1.3) * 0.04) + ")" : "rgba(84,72,52,.55)"; g.lineWidth = 1.7;
+  for (const sd of [-1, 1]) { g.beginPath(); g.arc(sd * 5.2, -53.2, 3, .15 * Math.PI, .85 * Math.PI); g.stroke(); }
+  g.fillStyle = "rgba(150,110,100,.6)"; g.beginPath(); g.moveTo(-1.3, -49.4); g.lineTo(1.3, -49.4); g.lineTo(0, -47.8); g.fill();
+  // collar + crescent charm
+  g.strokeStyle = "rgba(120,100,60,.55)"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-8.5, -43); g.quadraticCurveTo(0, -39, 8.5, -43); g.stroke();
+  g.save(); g.translate(0, -38.5); g.fillStyle = C(A && ng > 0.15 ? "#ffe08a" : "#e8c86c"); g.beginPath(); g.arc(0, 0, 4.4, 0, 7); g.fill(); g.fillStyle = C("#c4bba4"); g.beginPath(); g.arc(1.9, -1, 3.9, 0, 7); g.fill(); g.restore();
+  if (A && ng > 0.1) { g.fillStyle = _mrg(g, 0, -38.5, 1, 9, [[0, "rgba(255,228,150," + 0.36 * ng + ")"], [1, "rgba(255,228,150,0)"]]); g.beginPath(); g.arc(0, -38.5, 9, 0, 7); g.fill(); }
+  else if (ng > 0.2) { g.fillStyle = _mrg(g, 0, -38.5, 1, 7, [[0, "rgba(214,226,255," + 0.14 * ng + ")"], [1, "rgba(214,226,255,0)"]]); g.beginPath(); g.arc(0, -38.5, 7, 0, 7); g.fill(); }
+  // moss
+  g.fillStyle = A ? "rgba(112,150,86,.85)" : "rgba(128,140,118,.8)";
+  for (const [mx, my, rx, ry] of [[-10, -44, 5, 2.6], [9, -45, 4, 2.2], [-18, -6, 6, 2.6], [15, -9, 4.4, 2.2]]) { g.beginPath(); g.ellipse(mx, my, rx, ry, 0, 0, 7); g.fill(); }
+  // grass + catmint in front
+  _mTuft(g, -22, 3, 9, C("#6f9a55")); _mTuft(g, -13, 4, 7, C("#7aa55e")); _mTuft(g, 15, 4, 8, C("#6f9a55")); _mTuft(g, 24, 3, 10, C("#7aa55e"));
+  _mCatmint(g, -25, 3, -.35, 14, A); _mCatmint(g, -18, 4, .2, 11, A); _mCatmint(g, 20, 4, -.15, 12, A); _mCatmint(g, 27, 3, .35, 15, A);
+  if (A && ng > 0.08) for (let i = 0; i < 5; i++) { const a = t * .22 + i * 1.26, px = Math.cos(a) * (26 + (i % 3) * 4), py = -34 + Math.sin(a * 1.1 + i) * 20, tw = Math.pow(.5 + .5 * Math.sin(t * 1.4 + i * 2.3), 2); _mMote(g, px, py, 1.0, 0.75 * tw * ng); }
   g.restore();
 }
-// Midknight's Moonlight Swing — September's Blessing decor. A garden swing under a crescent arch; Midknight is already on it, a moon lantern hangs beside it.
-// Awake: the swing sways, the lantern glows (brighter at night). Asleep (Blessing ended): dim and still.
+// The swing hangs from a pivot 64 units above its base; the seat sits 32 units below that. Cats that hop on ride the same arc.
+function swingOccupied() { for (const c of cats) if (c.state === "indoors" && c._perchKind === "swing") return true; return false; }
+function swingSway(t) { return blessingActive() ? Math.sin(t * 1.1) * (swingOccupied() ? 0.085 : 0.035) : 0; }
+function swingSeatPos() {
+  const p = propPos("moonswing"), th = swingSway(performance.now() / 1000);
+  return { x: p.x - 32 * p.s * Math.sin(th), y: p.y - 64 * p.s + 32 * p.s * Math.cos(th) - 2 * p.s, baseY: p.y, s: p.s };
+}
+function swingUsable() { return blessingActive() && !!(G.cosmetics && G.cosmetics.props && G.cosmetics.props.moonswing) && !propBoxed("moonswing"); }
+// Midknight's Moonlight Swing — a driftwood arch, a rope swing, a paper moon lantern. Awake: it sways (more when a cat is on it) and the lantern glows; asleep: still and dim.
 function propMoonSwing(g, x, y, s, t) {
   s = s || 1;
-  const awake = blessingActive(), night = clamp(((g._nightGlow || 0) - 0.2) / 0.5, 0, 1), OUT = "#67543f";
+  const A = blessingActive(), night = clamp(((g._nightGlow || 0) - 0.2) / 0.5, 0, 1), ng = clamp((g._nightGlow || 0) / 0.55, 0, 1), C = h => _mc(h, A);
   g.save(); g.translate(x, y); g.scale(s, s); g.lineJoin = "round"; g.lineCap = "round";
-  g.fillStyle = "rgba(36,31,23,0.14)"; g.beginPath(); g.ellipse(0, 3, 29, 4, 0, 0, 7); g.fill();
-  if (awake) { const a = 0.14 + night * 0.32 + Math.sin(t * 1.5) * 0.02, gl = g.createRadialGradient(-18, -50, 2, -18, -50, 44); gl.addColorStop(0, "rgba(255,214,140," + a + ")"); gl.addColorStop(1, "rgba(255,214,140,0)"); g.fillStyle = gl; g.beginPath(); g.arc(-18, -50, 44, 0, 7); g.fill(); }
-  const wood = awake ? "#c29c6e" : "#a89b8a", wood2 = awake ? "#b58a5a" : "#9a8d7b", seatC = awake ? "#d7b17f" : "#b8ab97";
-  // A-frame posts
-  g.fillStyle = wood; g.strokeStyle = OUT; g.lineWidth = 1.4;
-  g.beginPath(); g.moveTo(-24, 0); g.lineTo(-20, -60); g.lineTo(-15, -60); g.lineTo(-18, 0); g.closePath(); g.fill(); g.stroke();
-  g.beginPath(); g.moveTo(24, 0); g.lineTo(20, -60); g.lineTo(15, -60); g.lineTo(18, 0); g.closePath(); g.fill(); g.stroke();
-  // crescent beam
-  g.fillStyle = wood2; roundRect(g, -27, -66, 54, 8, 3.5); g.fill(); g.stroke();
-  g.save(); g.translate(7, -62); g.fillStyle = awake ? "#ffe6a8" : "#d9cfae"; g.beginPath(); g.arc(0, 0, 3.4, 0, 7); g.fill(); g.fillStyle = wood2; g.beginPath(); g.arc(1.4, -0.9, 2.9, 0, 7); g.fill(); g.restore();
-  // swinging seat + Midknight
-  const sway = awake ? Math.sin(t * 1.1) * 0.055 : 0;
-  g.save(); g.translate(0, -58); g.rotate(sway);
-  g.strokeStyle = "#8b6b4a"; g.lineWidth = 1.3; g.beginPath(); g.moveTo(-8, 0); g.lineTo(-9, 30); g.moveTo(8, 0); g.lineTo(9, 30); g.stroke();
-  g.fillStyle = seatC; g.strokeStyle = OUT; g.lineWidth = 1.3; roundRect(g, -12, 30, 24, 4.4, 2.2); g.fill(); g.stroke();
-  g.save(); g.translate(-6.5, 12); g.scale(0.44, 0.44); g.fillStyle = awake ? "#1d2024" : "#3a3d42"; g.fill(_MS_CAT);
-  g.strokeStyle = g.fillStyle; g.lineWidth = 4; g.beginPath(); g.moveTo(33, 42); g.bezierCurveTo(42, 42, 42, 30, 37, 26); g.stroke();
-  if (awake) { g.fillStyle = "#f2c94c"; g.beginPath(); g.arc(15, 23, 2.2, 0, 7); g.arc(25, 23, 2.2, 0, 7); g.fill(); }
-  g.restore(); g.restore();
-  // moon lantern on the left post
-  g.strokeStyle = OUT; g.lineWidth = 1; g.beginPath(); g.moveTo(-21, -58); g.lineTo(-21, -50); g.stroke();
-  g.fillStyle = awake ? "#ffe6a8" : "#cbbfa4"; roundRect(g, -25, -50, 8, 11, 3); g.fill(); g.stroke();
-  // catmint at the feet
-  const bloom = awake ? "#b9a9dc" : "#aaa9b5";
-  for (const [lx, lean] of [[-30, -0.3], [-26, 0.2], [27, -0.2], [31, 0.3]]) {
-    g.strokeStyle = awake ? "#5f8a5c" : "#8d9a86"; g.lineWidth = 1.4; g.beginPath(); g.moveTo(lx, 1); g.quadraticCurveTo(lx + lean * 8, -6, lx + lean * 12, -12); g.stroke();
-    g.fillStyle = bloom; g.strokeStyle = OUT; g.lineWidth = 0.8; g.beginPath(); g.arc(lx + lean * 12, -12.5, 2, 0, 7); g.fill(); g.stroke();
-  }
-  if (awake) for (let i = 0; i < 3; i++) { const ang = t * 0.6 + i * 2.1, px = -18 + Math.cos(ang) * (14 + i * 3), py = -46 + Math.sin(ang * 1.2) * 12, tw = 0.45 + 0.55 * Math.sin(t * 3 + i * 2); g.fillStyle = "rgba(255,232,150," + (0.25 + 0.6 * tw * (0.5 + night * 0.5)) + ")"; g.beginPath(); g.arc(px, py, 1.4, 0, 7); g.fill(); }
+  g.fillStyle = "rgba(40,52,30,0.20)"; g.beginPath(); g.ellipse(0, 3, 34, 6, 0, 0, 7); g.fill();
+  if (A) { const a = 0.025 + ng * 0.07 + Math.sin(t * 1.2) * 0.008 * ng; g.fillStyle = _mrg(g, -22, -50, 3, 40, [[0, "rgba(255,226,160," + a + ")"], [1, "rgba(255,226,160,0)"]]); g.beginPath(); g.arc(-22, -50, 40, 0, 7); g.fill(); }
+  const wood = (x0, x1) => _mlg(g, x0, 0, x1, 0, [[0, "#c8a06e"], [.5, "#b08558"], [1, "#8c6641"]], A);
+  g.fillStyle = wood(-30, -20); g.beginPath(); g.moveTo(-31, 2); g.quadraticCurveTo(-27, -30, -21, -64); g.lineTo(-14, -63); g.quadraticCurveTo(-19, -30, -21, 2); g.closePath(); g.fill();
+  g.fillStyle = wood(20, 30); g.beginPath(); g.moveTo(31, 2); g.quadraticCurveTo(27, -30, 21, -64); g.lineTo(14, -63); g.quadraticCurveTo(19, -30, 21, 2); g.closePath(); g.fill();
+  g.fillStyle = "rgba(255,255,255,.16)"; g.beginPath(); g.moveTo(-27, -4); g.quadraticCurveTo(-24, -32, -19, -60); g.lineTo(-17, -60); g.quadraticCurveTo(-21, -32, -24, -4); g.closePath(); g.fill();
+  g.fillStyle = _mlg(g, 0, -74, 0, -58, [[0, "#cfa877"], [1, "#94704a"]], A);
+  g.beginPath(); g.moveTo(-27, -63); g.quadraticCurveTo(0, -77, 27, -63); g.lineTo(26, -57); g.quadraticCurveTo(0, -70, -26, -57); g.closePath(); g.fill();
+  g.save(); g.translate(11, -67.5); g.fillStyle = C(A && night > 0.1 ? "#ffe08a" : "#f0d98f"); g.beginPath(); g.arc(0, 0, 3.6, 0, 7); g.fill(); g.fillStyle = C("#b98f5d"); g.beginPath(); g.arc(1.6, -.8, 3.2, 0, 7); g.fill(); g.restore();
+  // rope swing + seat + Midknight
+  const sway = swingSway(t);
+  g.save(); g.translate(0, -64); g.rotate(sway);
+  g.strokeStyle = C("#a98356"); g.lineWidth = 1.6; g.beginPath(); g.moveTo(-9, 0); g.lineTo(-10, 34); g.moveTo(9, 0); g.lineTo(10, 34); g.stroke();
+  g.strokeStyle = "rgba(255,240,200,.35)"; g.lineWidth = .6; g.beginPath(); g.moveTo(-9.4, 2); g.lineTo(-10.4, 33); g.moveTo(8.6, 2); g.lineTo(9.6, 33); g.stroke();
+  g.fillStyle = _mlg(g, 0, 32, 0, 39, [[0, "#d3ad7c"], [1, "#a37b50"]], A); roundRect(g, -14, 32, 28, 6, 3); g.fill();
+  g.fillStyle = C("#f3ead0"); g.beginPath(); g.ellipse(0, 32, 11, 3, 0, 0, 7); g.fill();
+  g.restore();
+  // paper moon lantern on the left post
+  g.strokeStyle = C("#8c6641"); g.lineWidth = 1.2; g.beginPath(); g.moveTo(-22, -62); g.lineTo(-25, -52); g.stroke();
+  g.fillStyle = _mlg(g, -31, -52, -19, -36, [[0, "#fff6d6"], [1, "#f8dea0"]], A); g.beginPath(); g.ellipse(-25, -44, 6.4, 8, 0, 0, 7); g.fill();
+  if (A) { g.fillStyle = _mrg(g, -25, -44, 1, 15, [[0, "rgba(255,226,160," + (0.06 + ng * 0.16) + ")"], [1, "rgba(255,226,160,0)"]]); g.beginPath(); g.arc(-25, -44, 15, 0, 7); g.fill(); }
+  g.fillStyle = C("#e2b25a"); g.beginPath(); g.arc(-25.6, -44, 3.2, 0, 7); g.fill(); g.fillStyle = C(night > 0.1 ? "#f8e1a2" : "#f6ecd0"); g.beginPath(); g.arc(-24.4, -44.8, 2.7, 0, 7); g.fill();
+  _mTuft(g, -33, 3, 10, C("#6f9a55")); _mTuft(g, -27, 4, 8, C("#7aa55e")); _mTuft(g, 27, 4, 8, C("#6f9a55")); _mTuft(g, 34, 3, 10, C("#7aa55e"));
+  _mCatmint(g, -36, 3, -.3, 15, A); _mCatmint(g, -29, 4, .25, 11, A); _mCatmint(g, 30, 4, -.2, 12, A); _mCatmint(g, 37, 3, .3, 16, A);
+  if (A && ng > 0.08) for (let i = 0; i < 4; i++) { const a = t * .25 + i * 1.57, px = -18 + Math.cos(a) * (18 + (i % 2) * 5), py = -46 + Math.sin(a * 1.1 + i) * 16, tw = Math.pow(.5 + .5 * Math.sin(t * 1.4 + i * 2.3), 2); _mMote(g, px, py, 1.0, 0.7 * tw * ng); }
   g.restore();
 }
 function propLanterns(g, t, x, y) {
@@ -17174,27 +17204,28 @@ function drawWings(g, P, rate, kit) {
     g.restore();
   }
 }
-// Moonlight wings — two crescent-shaped feathers a side, cream with a brown outline; a soft gold glow that grows at night.
+// Moonlight wings — six long cream-gold feathers sweeping up and back along one crescent, soft glow that grows at night.
+const _MW_FEATHERS = [[-1.75, 20, 5.2], [-1.42, 30, 6.4], [-1.10, 38, 7], [-.78, 42, 7.2], [-.46, 40, 6.8], [-.16, 32, 6]];
 function drawMoonWings(g, P, rate, kit) {
   const t = performance.now() / 1000, flap = Math.sin(t * (rate || 2.4)) * 0.5 + 0.5;
   const night = clamp(1 - (window._sky ? window._sky.df : 1), 0, 1);
-  const by = P.top + 8, root = P.bw * 0.46, sc = (kit ? 1.05 : 1.45);
+  const by = P.top + 8, root = P.bw * 0.46, k = (kit ? 1.05 : 1.45) * 0.68;
+  g.save(); g.lineCap = "round";
+  const gl = g.createRadialGradient(0, by - 8, 2, 0, by - 8, 40 * k * 2);
+  gl.addColorStop(0, "rgba(255,230,165," + (0.02 + night * 0.09) + ")"); gl.addColorStop(1, "rgba(255,230,165,0)");
+  g.fillStyle = gl; g.beginPath(); g.arc(0, by - 8, 40 * k * 2, 0, 7); g.fill();
   for (const sd of [-1, 1]) {
-    g.save();
-    g.translate(sd * root, by);
-    g.rotate(sd * (-0.34 - flap * 0.22));
-    g.scale(sd * sc, sc);
-    const gl = g.createRadialGradient(6, -12, 1, 6, -12, 24);
-    gl.addColorStop(0, "rgba(255,226,150," + (0.14 + night * 0.34) + ")"); gl.addColorStop(1, "rgba(255,226,150,0)");
-    g.fillStyle = gl; g.beginPath(); g.arc(6, -12, 24, 0, 7); g.fill();
-    g.lineJoin = "round"; g.strokeStyle = "#67543f"; g.lineWidth = 0.9;
-    g.fillStyle = "#f0e4b6";                                                            // lower feather
-    g.beginPath(); g.moveTo(1, 8); g.bezierCurveTo(6, 2, 12, -4, 15, -12); g.bezierCurveTo(16, -4, 14, 4, 9, 8); g.quadraticCurveTo(5, 10, 1, 8); g.closePath(); g.fill(); g.stroke();
-    g.fillStyle = "#fff7d8";                                                            // long upper feather
-    g.beginPath(); g.moveTo(0, 6); g.bezierCurveTo(2, -6, 3, -18, 6, -26); g.bezierCurveTo(10, -18, 12, -8, 10, 0); g.quadraticCurveTo(5, 4, 0, 6); g.closePath(); g.fill(); g.stroke();
-    g.strokeStyle = "rgba(200,170,90,.55)"; g.lineWidth = 0.7; g.beginPath(); g.moveTo(3.4, 2); g.quadraticCurveTo(5, -8, 6, -19); g.stroke();
+    g.save(); g.translate(sd * root, by); g.scale(sd * k, k); g.rotate(-flap * 0.10);
+    _MW_FEATHERS.forEach(([rot, len, wid], i) => {
+      g.save(); g.rotate(rot + 0.5);
+      const gr = g.createLinearGradient(0, 0, len, 0); gr.addColorStop(0, i % 2 ? "#f6efd0" : "#faf4da"); gr.addColorStop(1, night > .4 ? "#f3e0a4" : "#dfc98a");
+      g.fillStyle = gr; g.beginPath(); g.moveTo(0, 0); g.bezierCurveTo(len * .3, -wid, len * .8, -wid * .85, len, 0); g.bezierCurveTo(len * .8, wid * .7, len * .3, wid * .6, 0, 0); g.fill();
+      g.strokeStyle = "rgba(176,140,70,.42)"; g.lineWidth = .9; g.beginPath(); g.moveTo(len * .12, 0); g.lineTo(len * .86, 0); g.stroke();
+      g.restore();
+    });
     g.restore();
   }
+  g.restore();
 }
 function drawTail(g, P, coat, mode, wag) {
   const pts = coat.pattern === "points" || coat.pattern === "lynxpoint" || coat.pattern === "van";
@@ -17315,7 +17346,7 @@ function drawCat(g, c, isPhoto) {
   const t = performance.now() / 1000;
   const coat = c.coat;
   // a cat up on the cat tree's step or perch is settled in for a nap — draw it asleep
-  const onTreeNap = c.state === "indoors" && (c._perchKind === "perch" || c._perchKind === "step");
+  const onTreeNap = c.state === "indoors" && (c._perchKind === "perch" || c._perchKind === "step");   // (a cat on the swing is awake)
   const asleep = c.state === "sleeping" || onTreeNap;
   // adaptive detail: on a struggling device, non-focused cats lose the extras
   // (fine coat markings, whiskers, auras). Also always for a curled sleeping cat
@@ -18464,7 +18495,7 @@ function renderScene(dt) {
     if (it.d) { drawDecor(ctx, it.d); continue; }
     if (it.c) {
       if (it.c.state === "indoors") {
-        if (it.c._perchKind === "perch" || it.c._perchKind === "step") { drawCat(ctx, it.c, false); continue; }   // asleep out in the open on the cat tree
+        if (it.c._perchKind === "swing" || it.c._perchKind === "perch" || it.c._perchKind === "step") { drawCat(ctx, it.c, false); continue; }   // asleep out in the open on the cat tree
         drawCottageFace(ctx, it.c, it.c._perchKind === "cubby"); continue;   // tucked in the cottage / cat-tree cubby — a face at the opening
       }
       if (it.c._ill && !_perfLite) drawIllAura(ctx, it.c);
@@ -19838,6 +19869,8 @@ window.__cove = {
     T('adventure',()=>renderAdventureCard()); T('finds',()=>renderFindsCard()); T('goals',()=>renderGoals()); T('moments',()=>renderMoments());
     const t=document.getElementById('today'); out.nodes=t.querySelectorAll('*').length; out.canvases=t.querySelectorAll('canvas').length; out.htmlKB=Math.round(t.innerHTML.length/1024);
     out.sections={}; for(const id of ['neoJournal','checkinCard','projectCard','advCard','findsCard','goalList','momentsList']){const e=document.getElementById(id);out.sections[id]=e?e.querySelectorAll('*').length:-1;} return out; },
+  useSwing(name){ const c=cats.find(x=>x.name===name&&!x.visitor); if(!c||!swingUsable())return false; const sp=propPos("moonswing"); c._arriveState="indoors"; c._arriveDur=20; c._cotX=sp.x; c._cotY=sp.y; c._perchKind="swing"; go(c,"seeking",16,{x:sp.x,y:sp.y+12}); return true; },
+  swingOdds(name,n=400){ const c=cats.find(x=>x.name===name&&!x.visitor); if(!c)return null; let hit=0; for(let i=0;i<n;i++){ decide(c); if(c._perchKind==="swing")hit++; c._perchKind=null; c._arriveState=null; } return hit/n; },
   get skyLife(){return {df: window._sky && window._sky.df, boat: _skyLife.boat, gulls: _skyLife.gulls, overX: _overX}},
   get rate(){return aggregateRate()},
   get dex(){return G.dex}, get goals(){return G.goals}, get revealQ(){return revealQueue},
