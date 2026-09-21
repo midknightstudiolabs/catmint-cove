@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c2545"/><stop offset=".6" stop-color="#34466e"/><stop offset="1" stop-color="#5a6f8c"/></linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#f6e7b4" stop-opacity=".55"/><stop offset="1" stop-color="#f6e7b4" stop-opacity="0"/></radialGradient>
+    <radialGradient id="eyeglow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#f2c94c" stop-opacity=".6"/><stop offset="1" stop-color="#f2c94c" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#sky)"/>
+  <!-- stars -->
+  <g fill="#fff6d8">
+    <circle cx="120" cy="150" r="5"/><circle cx="240" cy="90" r="3.5"/><circle cx="330" cy="230" r="4"/><circle cx="90" cy="330" r="3"/>
+    <circle cx="880" cy="130" r="5"/><circle cx="790" cy="250" r="3.5"/><circle cx="940" cy="300" r="4"/><circle cx="700" cy="80" r="3"/>
+    <circle cx="180" cy="470" r="3"/><circle cx="860" cy="470" r="3.5"/><circle cx="450" cy="70" r="3"/>
+    <path d="M160 240l6 14 14 6-14 6-6 14-6-14-14-6 14-6z"/><path d="M850 380l5 12 12 5-12 5-5 12-5-12-12-5 12-5z"/>
+  </g>
+  <!-- moon -->
+  <circle cx="512" cy="410" r="380" fill="url(#glow)"/>
+  <circle cx="512" cy="410" r="235" fill="#f6e7b4" stroke="#e3cf93" stroke-width="6"/>
+  <g fill="#ead79c"><circle cx="440" cy="330" r="36"/><circle cx="590" cy="300" r="22"/><circle cx="620" cy="440" r="30"/><circle cx="410" cy="470" r="18"/></g>
+  <!-- distant cove -->
+  <path d="M0 800 Q170 740 330 790 T640 780 T1024 770 V1024 H0Z" fill="#3b5f6f"/>
+  <path d="M0 850 Q260 790 512 850 T1024 830 V1024 H0Z" fill="#3a6b52"/>
+  <!-- tail -->
+  <path d="M640 880 C775 890 800 770 735 690" fill="none" stroke="#1d2024" stroke-width="40" stroke-linecap="round"/>
+  <!-- cat -->
+  <g fill="#1d2024">
+    <path d="M512 610 C400 610 378 730 380 820 C382 900 430 930 512 930 C594 930 642 900 644 820 C646 730 624 610 512 610Z"/>
+    <circle cx="512" cy="590" r="106"/>
+    <path d="M418 560 L428 438 L510 508Z"/><path d="M606 560 L596 438 L514 508Z"/>
+  </g>
+  <g fill="#3a4148"><path d="M436 500 L441 462 L474 490Z"/><path d="M588 500 L583 462 L550 490Z"/></g>
+  <!-- eyes -->
+  <circle cx="470" cy="592" r="46" fill="url(#eyeglow)"/><circle cx="554" cy="592" r="46" fill="url(#eyeglow)"/>
+  <ellipse cx="472" cy="592" rx="17" ry="21" fill="#f2c94c"/><ellipse cx="552" cy="592" rx="17" ry="21" fill="#f2c94c"/>
+  <ellipse cx="472" cy="592" rx="5" ry="16" fill="#1d2024"/><ellipse cx="552" cy="592" rx="5" ry="16" fill="#1d2024"/>
+  <path d="M500 622 L512 634 L524 622Z" fill="#c98b8b"/>
+  <!-- whiskers -->
+  <g stroke="#9aa3b0" stroke-width="3" stroke-linecap="round" fill="none" opacity=".75"><path d="M430 630 L360 622"/><path d="M430 644 L364 656"/><path d="M594 630 L664 622"/><path d="M594 644 L660 656"/></g>
+  <!-- front grass + flowers -->
+  <path d="M0 925 Q250 880 512 925 T1024 910 V1024 H0Z" fill="#2c5a42"/>
+  <g fill="#2c5a42"><path d="M90 930 l10 -60 12 60z"/><path d="M130 934 l8 -44 10 44z"/><path d="M880 925 l10 -56 12 56z"/><path d="M925 930 l8 -40 10 40z"/></g>
+  <g fill="#f6e7b4"><circle cx="230" cy="960" r="12"/><circle cx="760" cy="965" r="12"/><circle cx="330" cy="985" r="9"/><circle cx="680" cy="990" r="9"/></g>
+  <g fill="#f2c94c"><circle cx="230" cy="960" r="5"/><circle cx="760" cy="965" r="5"/></g>
+  <!-- fireflies -->
+  <g fill="#f2c94c" opacity=".9"><circle cx="300" cy="820" r="6"/><circle cx="740" cy="790" r="6"/><circle cx="200" cy="700" r="5"/><circle cx="830" cy="640" r="5"/></g>
+</svg>

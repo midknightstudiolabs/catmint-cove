@@ -534,14 +534,7 @@
   .adv-window.arrived .adv-mail{animation:advMail 2.2s ease-out both;}
   .adv-window.arrived .adv-stamp{animation:advStamp .5s ease-in-out 4;}
   @keyframes advMail{0%{opacity:0;transform:translate(0,10px) scale(.5) rotate(-12deg)}18%{opacity:1;transform:translate(0,-16px) scale(1.15) rotate(6deg)}70%{opacity:1;transform:translate(150px,-26px) scale(1) rotate(-4deg)}100%{opacity:0;transform:translate(210px,-8px) scale(.7)}}
-  .adv-chip{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 132px);z-index:8;display:flex;align-items:center;gap:6px;max-width:calc(100vw - 96px);padding:6px 12px 6px 8px;border-radius:999px;border:2px solid #67543f;background:#faf2dc;color:#4b3f2b;font:700 13px/1 system-ui,sans-serif;box-shadow:0 3px 0 #67543f;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-  .adv-chip[hidden]{display:none;}
-  .adv-chip .ac-ico{width:20px;height:20px;flex:0 0 auto;}
-  .adv-chip .ac-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .adv-chip.home{background:#fff0c4;animation:advNext 1.8s ease-in-out infinite;}
-  .adv-chip.mail::after{content:"";width:9px;height:9px;border-radius:50%;background:#e0a53a;border:2px solid #67543f;flex:0 0 auto;}
-  .adv-chip:active{transform:translateY(2px);box-shadow:0 1px 0 #67543f;}
-  @media (prefers-reduced-motion:reduce){.adv-stop.next b,.adv-chip.home,.adv-window.arrived .adv-mail,.adv-window.arrived .adv-stamp{animation:none}.adv-rail-fill{transition:none}}
+  @media (prefers-reduced-motion:reduce){.adv-stop.next b,.adv-window.arrived .adv-mail,.adv-window.arrived .adv-stamp{animation:none}.adv-rail-fill{transition:none}}
   .adv-window{position:relative;border-radius:14px;overflow:hidden;background:#dfeee0;border:2px solid #67543f;}
   .adv-window canvas.adv-clip{margin:0;border-radius:0;}
   .adv-window.done{aspect-ratio:2/1;display:grid;place-items:center;background:#ece3c3;}
@@ -1054,6 +1047,34 @@
   #fest #midkRally:active:not(:disabled){box-shadow:0 1px 0 #67543f;translate:0 3px;}
   #fest .midk-console.ready{box-shadow:0 0 0 3px rgba(232,180,90,.32),var(--shadow);}
   @media(max-width:370px){#fest #midkHud #midkRally.midk-spin{width:74px;height:74px}#fest .midk-console{--rh:30px}}
+  /* --- Tug of Paws, director's pass: the field is the hero. No panel. One bottom strip (Cove Radio caption + the Spin ring) sits under the end line;
+         the reels are a wooden plaque that pops high over the sea-side of the field only while a spin is live, lands with a golden burst, then fades. --- */
+  #fest #midkHud{bottom:calc(84px + env(safe-area-inset-bottom));flex-direction:row;align-items:center;justify-content:flex-end;gap:12px;padding:0 14px;}
+  #fest #midkHud #midkConsole{flex:0 0 auto;width:88px;height:88px;padding:0;gap:0;background:none;border:0;box-shadow:none;border-radius:50%;}
+  #fest #midkHud #midkConsole .mc-bar,#fest #midkHud #midkConsole .mc-msg{display:none!important;}
+  #fest #midkHud #midkRally.midk-spin{width:88px;height:88px;box-shadow:0 5px 0 #67543f,0 10px 18px rgba(36,31,23,.22);}
+  #fest #midkHud #midkConsole.ready #midkRally.midk-spin{box-shadow:0 5px 0 #67543f,0 0 0 7px rgba(224,165,58,.34),0 10px 22px rgba(224,165,58,.35);}
+  #fest #midkHud #midkConsole.ready #midkRally .ms-label{opacity:1;}
+  #fest #midkHud #midkRally .ms-label{font-size:11px;letter-spacing:.12em;}
+  #fest #midkHud #midkRally .ms-icon{width:30px;height:30px;}
+  #fest #midkHud #midkCom{flex:1 1 auto;min-width:0;max-width:none;flex-direction:column;align-items:flex-start;gap:2px;padding:6px 11px 7px;border-radius:15px;
+    background:rgba(250,242,220,.95);border:2.5px solid #67543f;box-shadow:0 3px 0 #67543f;color:#5b4a35;text-shadow:none;
+    font:700 12.5px/1.25 Georgia,serif;letter-spacing:.005em;}
+  #fest #midkHud #midkCom .vc-mic{display:none;}
+  #fest #midkHud #midkCom::before{content:"COVE RADIO";font:800 9px/1 system-ui,sans-serif;letter-spacing:.14em;color:#779b79;}
+  #fest #midkHud #midkReels{position:fixed;left:50%;top:clamp(150px,24vh,236px);z-index:70;--rh:50px;gap:8px;padding:8px;border-radius:20px;background:#d9b47e;border:3px solid #67543f;
+    box-shadow:0 5px 0 #67543f,0 16px 30px rgba(36,31,23,.28);opacity:0;pointer-events:none;transform:translate(-50%,-16px) scale(.9);
+    transition:opacity .22s ease,transform .38s cubic-bezier(.22,1.4,.36,1),box-shadow .3s ease;}
+  #fest #midkHud #midkConsole.rolling #midkReels,#fest #midkHud #midkConsole.result #midkReels{opacity:1;transform:translate(-50%,0) scale(1);}
+  #fest #midkHud #midkConsole.result #midkReels{box-shadow:0 5px 0 #67543f,0 0 0 5px rgba(232,180,90,.55),0 0 38px 12px rgba(255,214,120,.6),0 16px 30px rgba(36,31,23,.28);}
+  #fest #midkHud #midkReels .mc-reel{border-radius:11px;}
+  #fest #midkHud #midkReels .mc-result{border-radius:13px;font:800 27px/1 Georgia,serif;letter-spacing:.03em;}
+  #fest #midkHud #midkReels .mc-result.show{animation:mcResultPop .55s cubic-bezier(.22,1.5,.36,1) both;}
+  @keyframes mcResultPop{0%{transform:scale(.62);opacity:0}60%{transform:scale(1.09);opacity:1}100%{transform:scale(1);opacity:1}}
+  @media (max-height:700px){#fest #midkHud #midkReels{top:132px;--rh:42px}#fest #midkHud #midkReels .mc-result{font-size:23px}}
+  @media (max-height:700px){#fest #midkHud{bottom:calc(70px + env(safe-area-inset-bottom));gap:8px}#fest #midkHud #midkConsole,#fest #midkHud #midkRally.midk-spin{width:72px;height:72px}#fest #midkHud #midkRally .ms-face{inset:9px}#fest #midkHud #midkRally .ms-icon{width:24px;height:24px}#fest #midkHud #midkRally .ms-label{font-size:9px}#fest #midkHud #midkCom{padding:5px 10px 6px;font-size:12px}#fest #midkHud #midkCom::before{display:none}}
+  @media (max-width:370px){#fest #midkHud #midkConsole,#fest #midkHud #midkRally.midk-spin{width:80px;height:80px}}
+  @media (prefers-reduced-motion:reduce){#fest #midkHud #midkReels,#fest #midkHud #midkReels .mc-result.show{transition:none;animation:none}}
   @media (prefers-reduced-motion:reduce){#fest .midk-console .mc-reel.spinning .mc-strip{animation:none}#fest .midk-console.ready #midkRally .ms-face{animation:none}#fest .midk-console .mc-reel.landing .mc-strip{transition:none}}
   /* --- Catmint Café — the shift-change board + the café emblem --- */
   img.cafe-emblem{display:inline-block;vertical-align:middle;filter:drop-shadow(0 2px 4px rgba(74,53,36,.22));}
@@ -19404,11 +19425,8 @@ function neoAdvSummary() {
   return { who, home, dest: d.name, text: home ? who + " is home!" : who + " · " + whenText(nextA.endsAt).replace(/^in /, ""), fresh, count: list.length };
 }
 function neoAdvChipSync() {
-  const chip = document.getElementById("advChip"); if (!chip) return;
+  // The Cove sign's "N cats are out exploring" tag is the on-screen status; this keeps the Activities tile in step.
   const sm = neoAdvSummary();
-  const show = !!sm && !festMode && !restMode;
-  chip.hidden = !show;
-  if (sm) { chip.querySelector(".ac-text").textContent = sm.text; chip.classList.toggle("home", sm.home); chip.classList.toggle("mail", sm.fresh && !sm.home); chip.setAttribute("aria-label", "Adventure: " + sm.text + ". Tap to check on them."); }
   const tile = document.getElementById("neo-go-adventure"), small = tile && tile.querySelector("small");
   if (small) small.textContent = sm ? (sm.home ? sm.who + " is home. See how it went." : sm.count + (sm.count === 1 ? " trip out · " : " trips out · ") + sm.text) : "A little trip. Something to bring home.";
 }
@@ -20900,8 +20918,8 @@ setInterval(neoFriendsPoll,180000);setTimeout(neoFriendsPoll,6000);document.addE
 /* Garden: re-set the ripe reminder whenever the app goes to the background */
 document.addEventListener('visibilitychange',()=>{if(document.hidden)neoScheduleGardenReminder();});
 window.addEventListener('pagehide',()=>{neoScheduleGardenReminder();});
-/* Adventures: a chip on the Cove whenever cats are away — tap it to check on them */
-{const chip=document.createElement('button');chip.id='advChip';chip.type='button';chip.className='adv-chip';chip.hidden=true;chip.innerHTML=neoUIIcon('adventure').replace('neo-ui-icon','neo-ui-icon ac-ico')+'<span class="ac-text"></span>';chip.onclick=()=>openAdventureBoard();document.getElementById('app').append(chip);setInterval(neoAdvChipSync,20000);setTimeout(neoAdvChipSync,1500);document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#neo-activities-nav'))setTimeout(neoAdvChipSync,0);},true);}
+/* Adventures: keep the Activities tile status fresh while cats are away (the Cove sign tag shows it in-world) */
+{setInterval(neoAdvChipSync,20000);setTimeout(neoAdvChipSync,1500);document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#neo-activities-nav'))setTimeout(neoAdvChipSync,0);},true);}
 if(new URLSearchParams(location.search).get('clips'))setTimeout(()=>neoOpenAdventureClips(),4500);
 resize();
 _lastViewBottom = _viewBottomY;

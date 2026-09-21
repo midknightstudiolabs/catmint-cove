@@ -75,8 +75,8 @@ Play products can take a while to activate after creation.
 
 ## Checklist
 
-- [ ] App Store Connect: group, both subscriptions, prices, localization, review screenshot and notes
-- [ ] Google Play: both subscriptions and base plans, benefits, activated
-- [ ] RevenueCat: both products added, in the current offering
+- [x] App Store Connect: group, both subscriptions, prices, localization, review notes (2026-09-21). Still needed: review screenshot on each subscription; first subscription must ship with a new app version.
+- [x] Google Play: both subscriptions and base plans, benefits, activated (2026-09-21)
+- [x] RevenueCat: Play + iOS products imported, entitlement `midknight_blessing`, `$rc_weekly` / `$rc_monthly` in the `default` offering (2026-09-21)
 - [ ] Store listings: auto-renewal terms present (Apple description or EULA)
 - [ ] App Store privacy labels updated for Friends data (separate from the subscriptions)
