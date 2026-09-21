@@ -546,6 +546,7 @@
   .adv-window.arrived .adv-stamp{animation:advStamp .5s ease-in-out 4;}
   @keyframes advMail{0%{opacity:0;transform:translate(0,10px) scale(.5) rotate(-12deg)}18%{opacity:1;transform:translate(0,-16px) scale(1.15) rotate(6deg)}70%{opacity:1;transform:translate(150px,-26px) scale(1) rotate(-4deg)}100%{opacity:0;transform:translate(210px,-8px) scale(.7)}}
   @media (prefers-reduced-motion:reduce){.adv-stop.next b,.adv-window.arrived .adv-mail,.adv-window.arrived .adv-stamp{animation:none}.adv-rail-fill{transition:none}}
+  .shop-item .owned.earn{font-size:.72rem;font-weight:700;color:#7a6a3c;background:#f4ecd0;border:1.5px solid #dccf9f;border-radius:999px;padding:.3rem .6rem;white-space:nowrap;}
   .neo-scrap-card{display:flex;align-items:center;gap:.7rem;width:100%;margin:.6rem 0;padding:.65rem .8rem;border-radius:16px;border:1.5px solid #d9cdb0;background:#fbf4e0;color:#4e5847;text-align:left;cursor:pointer;font:inherit;}
   .neo-scrap-card .ns-ico .neo-ui-icon{width:30px;height:30px;}
   .neo-scrap-card .ns-txt{flex:1;display:grid;gap:2px;}.neo-scrap-card b{font-size:.95rem;}.neo-scrap-card small{color:#7a8470;font-size:.78rem;}
@@ -3072,7 +3073,7 @@ function rebuildAttractors() {
   // Midknight's cairn — a small solid by the sign
   { const cp = cairnPos(W, H); if (G.cairn && !G.cairn.tidied && (G.cairn.size | 0) > 0) obstacles.push({ x: cp.sx, y: cp.gy, rx: 16, ry: 9 }); }
   // physical movable props (stepping stones stay walkable; hanging props aren't in the way)
-  const PROP_SOLID = { lantern: [8, 11], birdbath: [15, 13], rowboat: [34, 14], windmill: [10, 13], moonshrine: [16, 13], moonswing: [26, 9] };
+  const PROP_SOLID = { lantern: [8, 11], birdbath: [15, 13], rowboat: [34, 14], windmill: [10, 13], moonshrine: [16, 13], moonswing: [26, 9], readinglamp: [6, 6], paperlanterns: [6, 6], postcardboard: [17, 8], photoeasel: [15, 7] };
   if (G.cosmetics && G.cosmetics.props) for (const id of Object.keys(G.cosmetics.props)) {
     if(!PROP_SOLID[id.split("#")[0]])continue;
     if (!G.cosmetics.props[id] || propBoxed(id)) continue;
@@ -4137,6 +4138,9 @@ function decide(c) {
     });
   }
 
+  // --- the Cozy Rug / Picnic Blanket, if one is out: a cat curls up or loafs on it ---
+  if (matSpot()) add(1.3 + (lazyish ? 1.2 : 0), () => go(c, Math.random() < 0.5 ? "sleeping" : "loafing", rand(16, 34), matSpot()));
+
   // --- grooming: a cat washing itself. short, common, adorable ---
   add(kitten ? 5 : 4, () => go(c, "grooming", rand(5, 10), null));
 
@@ -4280,6 +4284,14 @@ function indoorSpot(kind) {
   if (kind === "perch") return { dx: 4,   dy: -152, face: 1,  faceDy: null };
   return { dx: 0, dy: -1, face: -1, faceDy: null };   // cottage
 }
+// A cat settles on the Cozy Rug or the Picnic Blanket when the player has put one out. Several cats can share a mat.
+function matSpot() {
+  const P = G && G.cosmetics && G.cosmetics.props; if (!P) return null;
+  const ids = ["cozyrug", "picnicblanket"].filter(id => P[id] && !propBoxed(id) && !(_placing && _placing.key === id));
+  if (!ids.length) return null;
+  const id = ids[(Math.random() * ids.length) | 0], p = propPos(id), w = id === "cozyrug" ? 26 : 22;
+  return { x: p.x + rand(-w, w) * p.s * 0.9, y: p.y + rand(1, 6) * p.s };
+}
 function napSpot(c) {
   // a friend who's already settled → curl up right next to them (a nap pile)
   if (c.friend) {
@@ -4287,6 +4299,7 @@ function napSpot(c) {
       && (o.state === "sleeping" || o.state === "loafing"));
     if (f) return { x: f.x + (f.x < W / 2 ? 1 : -1) * rand(16, 26), y: f.y + rand(-4, 6) };
   }
+  { const m = matSpot(); if (m && Math.random() < 0.4) return m; }
   const a = nearestAttractor(c, "cottage") || nearestAttractor(c, "bed") || nearestAttractor(c, "tree");
   return a ? { x: a.x + rand(-14, 14), y: a.y + rand(-4, 6) } : null;
 }
@@ -5383,7 +5396,9 @@ function placeFootprint(spec){
   const id=(spec.key||spec.id||" ").split("#")[0];
   if(id==="rowboat"||id==="bunting"||id==="lanterns")return [3,1];
   if(id==="stones"||id==="birdbath"||id==="windmill"||id==="moonshrine")return [2,1];
-  if(id==="moonswing")return [3,1];
+  if(id==="moonswing"||id==="cozyrug"||id==="picnicblanket")return [3,1];
+  if(id==="postcardboard"||id==="photoeasel")return [2,1];
+  if(id==="readinglamp"||id==="paperlanterns")return [1,1];
   const type=spec.dtype||spec.type;
   if(type==='station'||type==='cottage')return [3,2];
   if(type==='tree'||type==='cattree')return [2,2];
@@ -5579,7 +5594,7 @@ function dropComfortPos(type, newCount) {
 // still grabs the cottage; the arrange-mode tap uses the full generous radius.
 function propGrabHit(id,x,y,pos){
  const base=id.split('#')[0],scale=pos.s||1;
- const shape={bunting:[70,108],lantern:[24,54],birdbath:[27,32],windmill:[38,106],stones:[42,14],moonshrine:[34,80],moonswing:[52,80]}[base]||[28,30];
+ const shape={bunting:[70,108],lantern:[24,54],birdbath:[27,32],windmill:[38,106],stones:[42,14],moonshrine:[34,80],moonswing:[52,80],cozyrug:[52,20],readinglamp:[18,84],picnicblanket:[52,22],paperlanterns:[28,74],postcardboard:[38,82],photoeasel:[32,74]}[base]||[28,30];
  return Math.abs(x-pos.x)<=shape[0]*scale && y>=pos.y-shape[1]*scale-8 && y<=pos.y+18;
 }
 function movableAt(x, y, tight) {
@@ -6942,13 +6957,14 @@ function renderShopDecor(list) {
     const row = document.createElement("div");
     row.className = "shop-item";
     let action;
-    if (!owned) action = `<button class="btn primary" data-buy-prop="${p.id}" ${afford ? "" : "disabled"}>◈ ${p.price.toLocaleString()}</button>`;
+    if (!owned && p.earn) { const pe = propEarn(p); action = `<span class="owned earn">${esc(pe.short)}</span>`; }
+    else if (!owned) action = `<button class="btn primary" data-buy-prop="${p.id}" ${afford ? "" : "disabled"}>◈ ${p.price.toLocaleString()}</button>`;
     else if (!p.movable) action = `<span class="owned">In the cove</span>`;
     else if (boxed) action = `<button class="btn primary" data-place-prop="${p.id}">Place it</button>`;
     else action = `<button class="btn tiny" data-box-prop="${p.id}" title="Keep in inventory">Store item</button><button class="btn tiny" data-move-prop="${p.id}">Move</button>`;
     if(p.blessing) action = !owned ? `<button class="btn primary" data-blessing-offer>Included with Blessing</button>` : propLocked(p.id) ? `<button class="btn primary" data-blessing-offer>Wake with Blessing</button>` : action;
     if(p.maxOwned) action=(count<p.maxOwned?`<button class="btn primary" data-buy-prop="${p.id}" ${afford?'':'disabled'}>${count?'Buy another':'Buy'} · ${p.price.toLocaleString()}</button>`:'<span class="owned">Collection complete</span>');
-    row.innerHTML = `<div class="txt"><div class="name">${p.name}${p.maxOwned?' · Owned '+count+'/8':''}</div><div class="desc">${p.blessing && owned && propLocked(p.id) ? "Asleep. Renew Midknight’s Blessing and it wakes right where it stands." : boxed ? "Packed away — tap Place it to set it down." : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
+    row.innerHTML = `<div class="txt"><div class="name">${p.name}${p.maxOwned?' · Owned '+count+'/8':''}</div><div class="desc">${p.blessing && owned && propLocked(p.id) ? "Asleep. Renew Midknight’s Blessing and it wakes right where it stands." : boxed ? "Packed away — tap Place it to set it down." : (p.earn && !owned) ? p.blurb + " <b>" + esc(propEarn(p).how) + ".</b>" : p.blurb}</div></div><div class="shop-actions">${action}</div>`;
     const photo=document.createElement('canvas');photo.width=160;photo.height=120;photo.className='inventory-preview';photo.setAttribute('role','img');photo.setAttribute('aria-label',p.name+' preview');
     const pg=photo.getContext('2d');pg.translate(80,106);pg.scale(p.id==='windmill'?.72:.82,p.id==='windmill'?.72:.82);if(p.render)p.render(pg,0,0,0,p.place.s);row.prepend(photo);
     list.appendChild(row);
@@ -8164,7 +8180,7 @@ const GUIDE = [
 ];
 const HELP_TOPICS=[
  ['Meet your cats','catdex',['Tap a portrait in Catdex to meet your cat and see care options.','The cat counter shows mood and wellbeing.','For Little Hello, close menus and tap empty foreground ground 3–5 times.'],'dex'],
- ['Decorate your Cove','shop',['Shop pictures show what you are buying.','My inventory separates Stored items from In the Cove.','Hold a decoration to drag it. Store item stores it; Place brings it back for free.'],'shop'],
+ ['Decorate your Cove','shop',['Shop pictures show what you are buying.','My inventory separates Stored items from In the Cove.','Hold a decoration to drag it. Store item stores it; Place brings it back for free.','Some pieces are free and earned by playing: the Reading Nook from Little Matches, the Seaside Picnic from adventures and the Memory pieces from postcards. The Shop shows how close you are.'],'shop'],
  ['Explore & play','activities',['Activities holds the Cove Festival (Cove Race, Cove Volleyball and Tug of Paws), Adventures, Catmint Café, the Cove Garden, Little Matches, Cove Friends and the Rainy Retreat.','Each festival game shows how many cats it needs. Inside a game, the bottom bar takes you back to the Festival or to the Cove.','Rainy Retreat is a quiet place to rest together.'],'explore'],
  ['Garden & Café','garden',['In the Cove Garden, tap a patch to plant it. Ripe patches wait for you to harvest them, and harvests go to your pantry.','Catmint Café serves guests by itself once you have a drink on the menu and the ingredients for it. Watch it from Outside or Inside.','Twice a day the café has a rush hour, when guests arrive faster. Have ingredients stocked before one starts.'],'explore'],
  ['Adventures & postcards','adventure',['Choose a place, your cats and a trip length. You can watch a trip in Activities, or call the cats home early (they come back with nothing).','Postcards arrive along the way. Every one is kept in the Journal’s Postcard scrapbook, where you can also send one to a friend as a picture.','In the app you can allow one quiet reminder when a trip is over.'],'explore'],
@@ -15111,6 +15127,19 @@ const DECOR_PROPS = [
     movable:true, place:{ x:W*0.91, y:H*0.60, s:1.25 }, render(g,t,x,y,s){ propWindmill(g, x, y, s, t); } },
   { id:"moonswing", name:"Midknight’s Moonlight Swing", price: 0, blessing: true, month: "2026-09", blurb:"September’s Blessing decor: a driftwood swing under a crescent arch with a paper moon lantern. Cats hop on and sway while the Blessing is active (Midknight most of all); asleep when it ends.",
     movable:true, place:{ x:W*0.66, y:H*0.93, s:1.3 }, render(g,t,x,y,s){ propMoonSwing(g, x, y, s, t); } },
+  // ---- Free collections: earned in play, never bought. Painted like the rest of the Cove. ----
+  { id:"cozyrug", name:"Cozy Rug", price:0, collection:"nook", earn:{ k:"match", n:10 }, blurb:"Reading Nook: a round woven rug with a sage cushion and an open book. Cats love to curl up on it.",
+    movable:true, place:{ x:W*0.44, y:H*0.80, s:1.3 }, render(g,t,x,y,s){ propCozyRug(g, x, y, s, t); } },
+  { id:"readinglamp", name:"Reading Lamp", price:0, collection:"nook", earn:{ k:"match", n:20 }, blurb:"Reading Nook: a slim wooden lamp on a stack of books. A soft pool of light after dusk.",
+    movable:true, place:{ x:W*0.385, y:H*0.83, s:1.15 }, render(g,t,x,y,s){ propReadingLamp(g, x, y, s, t); } },
+  { id:"picnicblanket", name:"Picnic Blanket", price:0, collection:"picnic", earn:{ k:"adv", n:1 }, blurb:"Seaside Picnic: sage gingham, a wicker basket and two cups. Cats settle on it for a nap.",
+    movable:true, place:{ x:W*0.79, y:H*0.79, s:1.3 }, render(g,t,x,y,s){ propPicnicBlanket(g, x, y, s, t); } },
+  { id:"paperlanterns", name:"Paper Lanterns", price:0, collection:"picnic", earn:{ k:"adv", n:5 }, blurb:"Seaside Picnic: three paper lanterns on a bent driftwood stake. A whisper of light at night.",
+    movable:true, place:{ x:W*0.715, y:H*0.75, s:1.3 }, render(g,t,x,y,s){ propPaperLanterns(g, x, y, s, t); } },
+  { id:"postcardboard", name:"Postcard Board", price:0, collection:"memory", earn:{ k:"card", n:3 }, blurb:"Memory: a pin board that shows the scenes of your latest postcards.",
+    movable:true, place:{ x:W*0.22, y:H*0.78, s:1.25 }, render(g,t,x,y,s){ propPostcardBoard(g, x, y, s, t); } },
+  { id:"photoeasel", name:"Photo Easel", price:0, collection:"memory", earn:{ k:"card", n:10 }, blurb:"Memory: an easel with a little painting of the cove, and Midknight in it. It follows the time of day.",
+    movable:true, place:{ x:W*0.285, y:H*0.83, s:1.25 }, render(g,t,x,y,s){ propPhotoEasel(g, x, y, s, t); } },
   { id:"moonshrine", name:"Midknight’s Guardian", price: 0, blessing: true, blurb:"A weathered stone cat with a crescent moon on its collar, watching over the cove. Included with Midknight’s Blessing: it glows at night while the Blessing is active and sleeps when it isn’t.",
     movable:true, place:{ x:W*0.34, y:H*0.88, s:1.55 }, render(g,t,x,y,s){ propMoonShrine(g, x, y, s, t); } },
 ];
@@ -15121,6 +15150,40 @@ for(const base of DECOR_PROPS.slice()) if(['bunting','lantern','lanterns'].inclu
 }
 function propCopies(id){return DECOR_PROPS.filter(p=>(p.baseId||p.id)===id);}
 const PROP_BY_ID = Object.fromEntries(DECOR_PROPS.map(p => [p.id, p]));
+const COLLECTIONS = { nook: "Reading Nook", picnic: "Seaside Picnic", memory: "Memory" };
+// Earn rules: how far along the player is, in plain words.
+function propEarn(p) {
+  const e = p && p.earn; if (!e) return null;
+  const cards = (G && Array.isArray(G.postcards) ? G.postcards.length : 0);
+  if (e.k === "match") {
+    const done = (G && G.littleMatches && G.littleMatches.done) || {}, top = Math.max(0, ...Object.keys(done).filter(k => done[k]).map(Number));
+    return { done: !!done[e.n], have: Math.min(top, e.n), need: e.n, how: "Complete Little Matches level " + e.n, short: top ? "Level " + Math.min(top, e.n) + " of " + e.n : "Play Little Matches" };
+  }
+  if (e.k === "adv") {
+    const have = Math.max(G && G.advHome || 0, Math.floor(cards / 2));
+    return { done: have >= e.n, have: Math.min(have, e.n), need: e.n, how: e.n === 1 ? "Bring a party home from an adventure" : "Bring cats home from " + e.n + " adventures", short: Math.min(have, e.n) + " of " + e.n + " adventures" };
+  }
+  return { done: cards >= e.n, have: Math.min(cards, e.n), need: e.n, how: "Collect " + e.n + " postcards", short: Math.min(cards, e.n) + " of " + e.n + " postcards" };
+}
+// Earned pieces arrive on their own, settle into the cove at their default spot, and are never taken away.
+function claimEarnedDecor() {
+  if (!G || !G.cosmetics || !G.cosmetics.props || !G.tutorialDone || festMode || restMode) return false;
+  const got = [];
+  for (const p of DECOR_PROPS) {
+    if (!p.earn || G.cosmetics.props[p.id]) continue;
+    const e = propEarn(p); if (!e || !e.done) continue;
+    G.cosmetics.props[p.id] = true; if (G.cosmetics.propBoxed) delete G.cosmetics.propBoxed[p.id]; got.push(p);
+  }
+  if (!got.length) return false;
+  try { rebuildAttractors(); } catch (e) {}
+  const first = got[0];
+  toast(got.length === 1 ? first.name + " is yours. It has settled into the cove." : got.length + " new pieces for the cove, including " + first.name + ".", 5);
+  for (const p of got) {
+    const mates = DECOR_PROPS.filter(q => q.collection === p.collection);
+    if (mates.length && mates.every(q => G.cosmetics.props[q.id])) { try { logMoment("🐾", "The " + COLLECTIONS[p.collection] + " is complete. The cove feels a little more like home.", "tale"); } catch (e) {} setTimeout(() => { try { toast("The " + COLLECTIONS[p.collection] + " collection is complete.", 4.5); } catch (e) {} }, 5200); }
+  }
+  save(); return true;
+}
 function propPos(id) {
   const p = PROP_BY_ID[id]; if (!p) return { x: 0, y: 0, s: 1 };
   const o = G.cosmetics && G.cosmetics.propPos && G.cosmetics.propPos[id];
@@ -16121,6 +16184,136 @@ function propMoonSwing(g, x, y, s, t) {
   _mTuft(g, -33, 3, 10, C("#6f9a55")); _mTuft(g, -27, 4, 8, C("#7aa55e")); _mTuft(g, 27, 4, 8, C("#6f9a55")); _mTuft(g, 34, 3, 10, C("#7aa55e"));
   _mCatmint(g, -36, 3, -.3, 15, A); _mCatmint(g, -29, 4, .25, 11, A); _mCatmint(g, 30, 4, -.2, 12, A); _mCatmint(g, 37, 3, .3, 16, A);
   if (A && ng > 0.08) for (let i = 0; i < 4; i++) { const a = t * .25 + i * 1.57, px = -18 + Math.cos(a) * (18 + (i % 2) * 5), py = -46 + Math.sin(a * 1.1 + i) * 16, tw = Math.pow(.5 + .5 * Math.sin(t * 1.4 + i * 2.3), 2); _mMote(g, px, py, 1.0, 0.7 * tw * ng); }
+  g.restore();
+}
+// ---- Free collections: painted in the Cove's soft style (warm tone-on-tone, soft grounding, only a whisper of light after dusk) ----
+function _eg(g, x0, y0, x1, y1, stops) { const k = g.createLinearGradient(x0, y0, x1, y1); for (const [o, c] of stops) k.addColorStop(o, c); return k; }
+function _eNight(g) { return clamp((g._nightGlow || 0) / 0.55, 0, 1); }
+function _eFlower(g, x, y, c) { g.strokeStyle = "#5f8a52"; g.lineWidth = 1.5; g.lineCap = "round"; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - 9); g.stroke(); g.fillStyle = c; g.beginPath(); g.arc(x, y - 10, 2.4, 0, 7); g.fill(); g.fillStyle = "#fff3c4"; g.beginPath(); g.arc(x, y - 10, 1, 0, 7); g.fill(); }
+function _eShadow(g, x, y, rx, ry, a) { g.fillStyle = "rgba(40,52,30," + a + ")"; g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, 7); g.fill(); }
+function _eMix(a, b, k) { const p = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)], A = p(a), B = p(b); return "rgb(" + A.map((v, i) => Math.round(v + (B[i] - v) * k)).join(",") + ")"; }
+
+// Cozy Rug — a round woven rug, a sage cushion, an open book
+function propCozyRug(g, x, y, s, t) {
+  s = s || 1; g.save(); g.translate(x, y); g.scale(s, s); g.lineCap = "round";
+  _eShadow(g, 0, 3, 40, 9, 0.14);
+  g.fillStyle = _eg(g, -40, -8, 40, 10, [[0, "#d9a48a"], [1, "#b97d63"]]); g.beginPath(); g.ellipse(0, 0, 40, 12, 0, 0, 7); g.fill();
+  g.fillStyle = "#f0dcc0"; g.beginPath(); g.ellipse(0, 0, 32, 9, 0, 0, 7); g.fill();
+  g.fillStyle = _eg(g, -24, -6, 24, 8, [[0, "#d3b88f"], [1, "#c19d72"]]); g.beginPath(); g.ellipse(0, 0, 25, 7, 0, 0, 7); g.fill();
+  g.strokeStyle = "rgba(120,80,60,.32)"; g.lineWidth = 1; g.beginPath(); g.ellipse(0, 0, 29, 8, 0, 0, 7); g.stroke();
+  g.strokeStyle = "#e9d3b3"; g.lineWidth = 1.2; for (let a = 0; a < 6.28; a += 0.22) { const px = Math.cos(a) * 40, py = Math.sin(a) * 12; g.beginPath(); g.moveTo(px, py); g.lineTo(px * 1.06, py * 1.1 + 1); g.stroke(); }
+  g.fillStyle = _eg(g, -18, -12, -4, 2, [[0, "#a9c29a"], [1, "#7f9f76"]]); g.beginPath(); g.ellipse(-12, -3, 9, 5.5, -0.2, 0, 7); g.fill(); g.fillStyle = "rgba(255,255,255,.22)"; g.beginPath(); g.ellipse(-14, -5, 4, 1.8, -0.2, 0, 7); g.fill();
+  g.fillStyle = "#f7f0dc"; g.beginPath(); g.moveTo(6, -1); g.quadraticCurveTo(12, -6, 19, -2); g.lineTo(19, 3); g.quadraticCurveTo(12, -1, 6, 3); g.closePath(); g.fill();
+  g.fillStyle = "#7c5a41"; g.beginPath(); g.moveTo(5, 3); g.quadraticCurveTo(12, 0, 20, 3.5); g.lineTo(20, 5); g.quadraticCurveTo(12, 2.4, 5, 5); g.closePath(); g.fill();
+  g.strokeStyle = "rgba(120,100,80,.4)"; g.lineWidth = 0.8; for (const yy of [-3, -1.5, 0]) { g.beginPath(); g.moveTo(8, yy); g.lineTo(11.5, yy - 1); g.moveTo(13, yy - 1); g.lineTo(17, yy); g.stroke(); }
+  _mTuft(g, -44, 2, 7, "#6f9a55"); _mTuft(g, 44, 3, 8, "#7aa55e");
+  g.restore();
+}
+// Reading Lamp — a slim wooden floor lamp on a stack of books
+function propReadingLamp(g, x, y, s, t) {
+  s = s || 1; const ng = _eNight(g); g.save(); g.translate(x, y); g.scale(s, s); g.lineCap = "round";
+  _eShadow(g, 0, 3, 20, 5, 0.2);
+  if (ng > 0.02) { g.fillStyle = _mrg(g, 0, -52, 3, 46, [[0, "rgba(255,226,160," + (0.03 + ng * 0.10) + ")"], [1, "rgba(255,226,160,0)"]]); g.beginPath(); g.arc(0, -52, 46, 0, 7); g.fill(); }
+  let by = 1; for (const [c, w, h, o] of [["#9db08a", 18, 4.6, -12], ["#c98f77", 16, 4.2, -8], ["#e0c58d", 19, 4.4, -3.6]]) { by -= h; g.fillStyle = c; roundRect(g, o - w / 2, by, w, h, 1.6); g.fill(); g.fillStyle = "rgba(255,255,255,.3)"; g.fillRect(o - w / 2 + 1.5, by + 1, w - 3, 1); }
+  g.fillStyle = _eg(g, -2, 0, 2, 0, [[0, "#c8a06e"], [1, "#8c6641"]]); g.beginPath(); g.moveTo(-1.8, -1); g.lineTo(-1.2, -58); g.lineTo(1.2, -58); g.lineTo(1.8, -1); g.fill();
+  g.fillStyle = _eg(g, -9, 0, 9, 0, [[0, "#b58a5a"], [1, "#8c6641"]]); g.beginPath(); g.ellipse(0, 0, 8, 2.4, 0, 0, 7); g.fill();
+  g.fillStyle = _eg(g, -13, -72, 13, -54, [[0, _eMix("#fbf1d3", "#fff0c0", ng)], [1, _eMix("#e7d3a6", "#f2cf86", ng)]]); g.beginPath(); g.moveTo(-8, -72); g.lineTo(8, -72); g.lineTo(14, -54); g.lineTo(-14, -54); g.closePath(); g.fill();
+  g.strokeStyle = "rgba(176,140,80,.35)"; g.lineWidth = 0.9; g.beginPath(); g.moveTo(-3, -72); g.lineTo(-5, -54); g.moveTo(3, -72); g.lineTo(5, -54); g.stroke();
+  g.fillStyle = "rgba(255,255,255,.28)"; g.beginPath(); g.ellipse(0, -72, 8, 1.6, 0, 0, 7); g.fill();
+  if (ng > 0.08) { g.fillStyle = _mrg(g, 0, -56, 2, 18, [[0, "rgba(255,232,170," + 0.30 * ng + ")"], [1, "rgba(255,232,170,0)"]]); g.beginPath(); g.arc(0, -56, 18, 0, 7); g.fill(); for (let i = 0; i < 3; i++) { const a = t * 0.25 + i * 2.1, tw = Math.pow(0.5 + 0.5 * Math.sin(t * 1.4 + i * 2.3), 2); _mMote(g, Math.cos(a) * (18 + i * 2), -48 + Math.sin(a * 1.2 + i) * 14, 0.6 * tw * ng); } }
+  _mTuft(g, -18, 3, 8, "#6f9a55"); _mTuft(g, 19, 4, 9, "#7aa55e"); _eFlower(g, -24, 4, "#b7a6e0");
+  g.restore();
+}
+// Picnic Blanket — sage gingham, a wicker basket and two cups
+function propPicnicBlanket(g, x, y, s, t) {
+  s = s || 1; g.save(); g.translate(x, y); g.scale(s, s); g.lineCap = "round";
+  _eShadow(g, 0, 4, 44, 9, 0.14);
+  const quad = () => { g.beginPath(); g.moveTo(-38, 4); g.lineTo(-24, -12); g.lineTo(38, -9); g.lineTo(28, 8); g.closePath(); };
+  g.fillStyle = "#e9e2c7"; quad(); g.fill();
+  g.save(); quad(); g.clip();
+  g.fillStyle = "rgba(143,176,131,.55)"; for (let i = -6; i < 8; i++) { g.beginPath(); g.moveTo(-40 + i * 11, -14); g.lineTo(-33 + i * 11, -14); g.lineTo(-25 + i * 11, 10); g.lineTo(-32 + i * 11, 10); g.closePath(); g.fill(); }
+  g.fillStyle = "rgba(143,176,131,.5)"; for (let j = 0; j < 5; j++) { g.beginPath(); g.moveTo(-40, -12 + j * 5.5); g.lineTo(42, -9 + j * 5.5); g.lineTo(42, -5.5 + j * 5.5); g.lineTo(-40, -8.5 + j * 5.5); g.closePath(); g.fill(); }
+  g.restore();
+  g.strokeStyle = "rgba(120,110,80,.35)"; g.lineWidth = 1; quad(); g.stroke();
+  g.fillStyle = _eg(g, -16, -16, 4, -2, [[0, "#d6b07a"], [1, "#a67c4c"]]); g.beginPath(); g.moveTo(-14, -10); g.lineTo(2, -10); g.lineTo(0, -1); g.lineTo(-12, -1); g.closePath(); g.fill();
+  g.strokeStyle = "rgba(120,84,48,.4)"; g.lineWidth = 0.9; for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(-13.5 + i * 0.4, -8 + i * 3); g.lineTo(1.4 - i * 0.4, -8 + i * 3); g.stroke(); }
+  g.strokeStyle = "#8c6641"; g.lineWidth = 1.8; g.beginPath(); g.moveTo(-13, -10); g.quadraticCurveTo(-6, -24, 1, -10); g.stroke();
+  g.fillStyle = "#f6efd8"; g.beginPath(); g.moveTo(-13, -10); g.lineTo(-2, -10.5); g.lineTo(-5, -6); g.closePath(); g.fill();
+  g.fillStyle = "#e3a08a"; g.beginPath(); g.arc(-6, -12.5, 2, 0, 7); g.fill(); g.fillStyle = "#c9d99f"; g.beginPath(); g.ellipse(-2, -12, 2.3, 1.4, 0.4, 0, 7); g.fill();
+  for (const [cx, cy, c] of [[14, -2, "#f4eddc"], [22, 0, "#d7e2d0"]]) { g.fillStyle = c; g.beginPath(); g.moveTo(cx - 3, cy - 5); g.lineTo(cx + 3, cy - 5); g.lineTo(cx + 2.2, cy + 0.5); g.lineTo(cx - 2.2, cy + 0.5); g.closePath(); g.fill(); g.fillStyle = "rgba(120,90,60,.5)"; g.fillRect(cx - 2.6, cy - 5, 5.2, 1.3); }
+  _mTuft(g, -42, 3, 7, "#6f9a55"); _mTuft(g, 40, 5, 9, "#7aa55e"); _eFlower(g, 44, 5, "#f5f0d8"); _eFlower(g, -46, 4, "#e9b8a6");
+  g.restore();
+}
+// Paper Lanterns — three lanterns on a bent driftwood stake
+function propPaperLanterns(g, x, y, s, t) {
+  s = s || 1; const ng = _eNight(g); g.save(); g.translate(x, y); g.scale(s, s); g.lineCap = "round";
+  _eShadow(g, 0, 3, 16, 4, 0.2);
+  if (ng > 0.02) { g.fillStyle = _mrg(g, 4, -44, 3, 42, [[0, "rgba(255,226,160," + (0.02 + ng * 0.08) + ")"], [1, "rgba(255,226,160,0)"]]); g.beginPath(); g.arc(4, -44, 42, 0, 7); g.fill(); }
+  g.strokeStyle = _eg(g, 0, 0, 4, -64, [[0, "#8c6641"], [1, "#b58a5a"]]); g.lineWidth = 3.2; g.beginPath(); g.moveTo(0, 1); g.quadraticCurveTo(-3, -32, 2, -58); g.quadraticCurveTo(10, -66, 22, -62); g.stroke();
+  const L = (lx, ly, r, c1, c2, n1, n2) => {
+    g.strokeStyle = "#8c6641"; g.lineWidth = 1; g.beginPath(); g.moveTo(lx, ly - r - 4); g.lineTo(lx, ly - r); g.stroke();
+    g.fillStyle = _eg(g, lx - r, ly - r, lx + r, ly + r, [[0, _eMix(c1, n1, ng)], [1, _eMix(c2, n2, ng)]]); g.beginPath(); g.ellipse(lx, ly, r * 0.86, r, 0, 0, 7); g.fill();
+    g.strokeStyle = "rgba(176,120,80,.35)"; g.lineWidth = 0.8; g.beginPath(); g.ellipse(lx, ly, r * 0.86, r, 0, 0, 7); g.stroke(); g.beginPath(); g.ellipse(lx, ly, r * 0.4, r, 0, 0, 7); g.stroke();
+    g.fillStyle = "rgba(255,255,255,.3)"; g.beginPath(); g.ellipse(lx - r * 0.3, ly - r * 0.35, r * 0.22, r * 0.36, -0.4, 0, 7); g.fill();
+    if (ng > 0.05) { g.fillStyle = _mrg(g, lx, ly, 1, r * 1.7, [[0, "rgba(255,230,165," + 0.30 * ng + ")"], [1, "rgba(255,230,165,0)"]]); g.beginPath(); g.arc(lx, ly, r * 1.7, 0, 7); g.fill(); }
+  };
+  L(22, -50, 6.4, "#fbe7c4", "#e9b98f", "#fff0c4", "#f2c47c"); L(-4, -38, 5.4, "#f7e6cc", "#d9a58f", "#fdf0cf", "#eab27c"); L(9, -26, 5, "#f6edd0", "#dfc796", "#fff0c4", "#f0cd8a");
+  if (ng > 0.08) for (let i = 0; i < 4; i++) { const a = t * 0.25 + i * 1.6, tw = Math.pow(0.5 + 0.5 * Math.sin(t * 1.4 + i * 2.3), 2); _mMote(g, -6 + Math.cos(a) * (16 + i * 3), -42 + Math.sin(a * 1.1 + i) * 14, 0.6 * tw * ng); }
+  _mTuft(g, -8, 3, 8, "#6f9a55"); _mTuft(g, 10, 4, 9, "#7aa55e"); _eFlower(g, 16, 4, "#e9b8a6");
+  g.restore();
+}
+// Postcard Board — a pin board that shows the scenes of the player's latest postcards
+function _eMiniCard(g, pc, cx, cy, rot) {
+  g.save(); g.translate(cx, cy); g.rotate(rot);
+  g.fillStyle = "#fffaf0"; g.fillRect(-11, -8, 22, 16);
+  if (pc) {
+    const v = pcSeedVariant(pc.text || "", pc.cat, pc.dest, pc).variant, sky = ["#bddbd9", "#edd6b4", "#b7ccd9", "#d0debc"][v];
+    g.fillStyle = sky; g.fillRect(-9.6, -6.6, 19.2, 8);
+    const d = pc.dest;
+    if (d === "island" || d === "fishing") { g.fillStyle = d === "island" ? "#9dbdb6" : "#82b9c5"; g.fillRect(-9.6, -2.6, 19.2, 4); if (d === "island") { g.fillStyle = "#e7d5a9"; g.beginPath(); g.ellipse(0, -2, 5, 2, 0, Math.PI, 0); g.fill(); g.fillStyle = "#60876d"; g.fillRect(-.6, -5, 1.2, 3); } else { g.fillStyle = "#c7a77a"; g.fillRect(-9.6, -1.6, 9, 1.2); } }
+    else if (d === "peak") { g.fillStyle = "#849e98"; g.beginPath(); g.moveTo(-9.6, 1.4); g.lineTo(-3, -5); g.lineTo(2, 1.4); g.lineTo(5, -3); g.lineTo(9.6, 1.4); g.closePath(); g.fill(); g.fillStyle = "#f2eedc"; g.beginPath(); g.moveTo(-4.4, -3.6); g.lineTo(-3, -5); g.lineTo(-1.6, -3.4); g.fill(); }
+    else if (d === "market") { g.fillStyle = "#acbf89"; g.fillRect(-9.6, -0.4, 19.2, 1.8); for (let i = 0; i < 3; i++) { g.fillStyle = "#f1e4c6"; g.fillRect(-8 + i * 6, -3, 4.6, 3); g.fillStyle = i % 2 ? "#899f8b" : "#c88f77"; g.beginPath(); g.moveTo(-8.6 + i * 6, -3); g.lineTo(-5.7 + i * 6, -5.4); g.lineTo(-2.8 + i * 6, -3); g.fill(); } }
+    else if (d === "forest") { g.fillStyle = "#8fae86"; g.fillRect(-9.6, -0.4, 19.2, 1.8); g.fillStyle = "#60876d"; for (const tx of [-6, -1, 5]) { g.beginPath(); g.moveTo(tx - 2.4, -0.4); g.lineTo(tx, -5.4); g.lineTo(tx + 2.4, -0.4); g.fill(); } }
+    else { g.fillStyle = "#a3b98a"; g.beginPath(); g.moveTo(-9.6, 1.4); g.quadraticCurveTo(-3, -3, 3, -1); g.quadraticCurveTo(7, -2, 9.6, -0.6); g.lineTo(9.6, 1.4); g.fill(); g.fillStyle = "#f8efd2"; for (const [dx, dy] of [[-6, 0], [-1, -0.8], [4, 0.2]]) { g.beginPath(); g.arc(dx, dy, 0.7, 0, 7); g.fill(); } }
+    g.fillStyle = "#f7e8b3"; g.beginPath(); g.arc(5.6, -4, 1.4, 0, 7); g.fill();
+  } else { g.fillStyle = "#efe6cc"; g.fillRect(-9.6, -6.6, 19.2, 8); g.fillStyle = "rgba(160,170,140,.55)"; g.beginPath(); g.arc(0, -2.6, 2, 0, 7); g.fill(); }
+  g.fillStyle = "rgba(120,100,80,.5)"; g.fillRect(-9.4, 3.6, 10, 0.9); g.fillRect(-9.4, 5.4, 7, 0.9);
+  g.fillStyle = "rgba(0,0,0,.08)"; g.fillRect(-11, 8, 22, 1.2);
+  g.fillStyle = "#d9695a"; g.beginPath(); g.arc(0, -8, 1.5, 0, 7); g.fill(); g.restore();
+}
+function propPostcardBoard(g, x, y, s, t) {
+  s = s || 1; g.save(); g.translate(x, y); g.scale(s, s);
+  _eShadow(g, 0, 3, 30, 5, 0.2);
+  g.fillStyle = _eg(g, -22, 0, 22, 0, [[0, "#c8a06e"], [1, "#8c6641"]]); g.fillRect(-19, -30, 3.6, 32); g.fillRect(15.4, -30, 3.6, 32);
+  g.fillStyle = _eg(g, 0, -72, 0, -24, [[0, "#b58a5a"], [1, "#94704a"]]); roundRect(g, -30, -74, 60, 50, 4); g.fill();
+  g.fillStyle = _eg(g, 0, -70, 0, -28, [[0, "#d9bd91"], [1, "#c7a577"]]); roundRect(g, -27, -71, 54, 44, 2.5); g.fill();
+  const cards = Array.isArray(G && G.postcards) ? G.postcards : [];
+  _eMiniCard(g, cards[0], -12, -58, -0.08); _eMiniCard(g, cards[1], 13, -56, 0.07); _eMiniCard(g, cards[2], -11, -38, 0.05); _eMiniCard(g, cards[3], 12, -36, -0.06);
+  g.fillStyle = "#e0a53a"; g.beginPath(); g.arc(0, -47, 2.2, 0, 7); g.fill();
+  _mTuft(g, -24, 3, 8, "#6f9a55"); _mTuft(g, 24, 4, 9, "#7aa55e"); _eFlower(g, -30, 4, "#b7a6e0");
+  g.restore();
+}
+// Photo Easel — a little painting of the cove that follows the time of day, with Midknight in it
+function propPhotoEasel(g, x, y, s, t) {
+  s = s || 1; const ng = _eNight(g); g.save(); g.translate(x, y); g.scale(s, s);
+  _eShadow(g, 0, 3, 26, 5, 0.2);
+  g.fillStyle = _eg(g, -2, 0, 2, 0, [[0, "#c8a06e"], [1, "#8c6641"]]);
+  g.beginPath(); g.moveTo(-24, 2); g.lineTo(-19, -2); g.lineTo(-4, -64); g.lineTo(-1, -64); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(24, 2); g.lineTo(19, -2); g.lineTo(4, -64); g.lineTo(1, -64); g.closePath(); g.fill();
+  g.fillStyle = "#a37b50"; g.beginPath(); g.moveTo(0, -64); g.lineTo(5, -8); g.lineTo(9, -10); g.closePath(); g.fill();
+  g.fillStyle = _eg(g, -24, -20, 24, -16, [[0, "#c29c6e"], [1, "#94704a"]]); roundRect(g, -22, -22, 44, 3.6, 1.5); g.fill();
+  g.fillStyle = _eg(g, 0, -62, 0, -22, [[0, "#d3ad7c"], [1, "#a37b50"]]); roundRect(g, -19, -62, 38, 38, 3); g.fill();
+  g.save(); roundRect(g, -15.5, -58.5, 31, 31, 1.8); g.clip();
+  g.fillStyle = _eg(g, 0, -58, 0, -44, [[0, _eMix("#b8dbe8", "#3a4a78", ng)], [1, _eMix("#dcecd8", "#5a6f9a", ng)]]); g.fillRect(-16, -59, 32, 16);
+  g.fillStyle = _eMix("#7fbfd0", "#2c4a55", ng); g.fillRect(-16, -45, 32, 9);
+  g.fillStyle = _eMix("#a9c579", "#3d5a3a", ng); g.beginPath(); g.moveTo(-16, -36); g.quadraticCurveTo(-4, -42, 16, -37); g.lineTo(16, -27); g.lineTo(-16, -27); g.fill();
+  g.fillStyle = _eMix("#fbe9a6", "#f3f0d0", ng); g.beginPath(); g.arc(8, -52, 3.4, 0, 7); g.fill();
+  g.fillStyle = "#fffaf0"; g.beginPath(); g.moveTo(-9, -41); g.lineTo(-9, -47); g.lineTo(-4, -41); g.fill();
+  g.fillStyle = "#22262b"; g.beginPath(); g.ellipse(-4, -31, 2.6, 2.2, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(-6, -32); g.lineTo(-5.6, -35); g.lineTo(-4, -33); g.fill(); g.beginPath(); g.moveTo(-2.4, -33); g.lineTo(-2, -35); g.lineTo(-0.6, -32.4); g.fill();
+  g.restore();
+  g.fillStyle = "#d9836f"; g.beginPath(); g.moveTo(0, -62); g.quadraticCurveTo(-9, -70, -7, -62); g.quadraticCurveTo(-5, -58, 0, -62); g.fill(); g.beginPath(); g.moveTo(0, -62); g.quadraticCurveTo(9, -70, 7, -62); g.quadraticCurveTo(5, -58, 0, -62); g.fill();
+  g.fillStyle = "#c26d5a"; g.beginPath(); g.arc(0, -62, 1.8, 0, 7); g.fill();
+  _mTuft(g, -24, 3, 8, "#6f9a55"); _mTuft(g, 25, 4, 9, "#7aa55e"); _eFlower(g, -30, 4, "#f5f0d8");
   g.restore();
 }
 function propLanterns(g, t, x, y) {
@@ -19410,6 +19603,7 @@ function resolveAdventure(advId, onDone) {
     results.push({ cat: c, res });
   });
   G.adventures = list.filter(x => x !== a);
+  G.advHome = (G.advHome || 0) + 1;
   dedupeCats();
   save(); syncHud(); rebuildAttractors(); try { neoScheduleAdventureReminders(); } catch (e) {}
   renderAdventureCard();
@@ -19976,6 +20170,10 @@ window.__cove = {
     T('adventure',()=>renderAdventureCard()); T('finds',()=>renderFindsCard()); T('goals',()=>renderGoals()); T('moments',()=>renderMoments());
     const t=document.getElementById('today'); out.nodes=t.querySelectorAll('*').length; out.canvases=t.querySelectorAll('canvas').length; out.htmlKB=Math.round(t.innerHTML.length/1024);
     out.sections={}; for(const id of ['neoJournal','checkinCard','projectCard','advCard','findsCard','goalList','momentsList']){const e=document.getElementById(id);out.sections[id]=e?e.querySelectorAll('*').length:-1;} return out; },
+  earn(){ return DECOR_PROPS.filter(p=>p.earn).map(p=>({id:p.id,owned:!!G.cosmetics.props[p.id],...propEarn(p)})); },
+  claimEarned(){ return claimEarnedDecor(); },
+  matSpot(){ return matSpot(); },
+  matOdds(name,n=400){ const c=cats.find(x=>x.name===name&&!x.visitor); if(!c)return null; const P=G.cosmetics.props; const mats=["cozyrug","picnicblanket"].filter(id=>P[id]&&!propBoxed(id)).map(id=>propPos(id)); let hit=0; for(let i=0;i<n;i++){ decide(c); if(mats.some(p=>Math.abs(c.tx-p.x)<=32*p.s&&c.ty>=p.y-1&&c.ty<=p.y+8*p.s))hit++; } return hit/n; },
   useSwing(name){ const c=cats.find(x=>x.name===name&&!x.visitor); if(!c||!swingUsable())return false; const sp=propPos("moonswing"); c._arriveState="indoors"; c._arriveDur=20; c._cotX=sp.x; c._cotY=sp.y; c._perchKind="swing"; go(c,"seeking",16,{x:sp.x,y:sp.y+12}); return true; },
   swingOdds(name,n=400){ const c=cats.find(x=>x.name===name&&!x.visitor); if(!c)return null; let hit=0; for(let i=0;i<n;i++){ decide(c); if(c._perchKind==="swing")hit++; c._perchKind=null; c._arriveState=null; } return hit/n; },
   async postcardPng(i=0){ const pc=(G.postcards||[])[i]; if(!pc)return null; const b=await neoPostcardBlob(pc); if(!b)return null; const bmp=await createImageBitmap(b); return {w:bmp.width,h:bmp.height,bytes:b.size,type:b.type}; },
@@ -20814,7 +21012,7 @@ function neoHarvestAll(quiet){
 }
 // Badges: Garden tile + Activities button show how many patches are ripe.
 function neoGardenBadges(){
-  claimBlessingDecor();
+  claimBlessingDecor(); claimEarnedDecor();
   const n=G.homestead?neoReadyPlots().length:0;
   const tile=document.querySelector('#neo-go-garden b');
   if(tile){let el=tile.querySelector('.neo-tile-badge');if(!el){el=document.createElement('i');el.className='neo-tile-badge';el.id='neo-garden-badge';tile.append(el);}el.hidden=!n;el.textContent=String(n);}
@@ -20825,7 +21023,7 @@ function neoGardenBadges(){
 // A gentle heads-up when crops ripen (and once when you come back to ripe ones).
 let _gardenNoticeCount=-1;
 function neoGardenWatch(){
-  claimBlessingDecor();
+  claimBlessingDecor(); claimEarnedDecor();
   if(!G||!G.homestead)return;
   const ready=neoReadyPlots(),n=ready.length;neoGardenBadges();
   if(_gardenNoticeCount<0){_gardenNoticeCount=n;if(n)setTimeout(()=>{if(!festMode&&!restMode)toast(n+(n===1?' patch is':' patches are')+' ripe in the Cove Garden.',4.5);},1200);return;}
