@@ -1,3 +1,15 @@
+## Catmint Cove 3.3.0 — September 22, 2026 (based on 3.2.0)
+
+- **Midknight Blessing** subscription (weekly / monthly): moonlit decor v2 (Moonlight Guardian shrine, swing cats can use, moon-wing glow, fairy lighting), clearer offer with Cancel and a pinned close button.
+- **Free earned decor:** Reading Nook (Cozy Rug, Reading Lamp) from Little Matches, Seaside Picnic (Blanket, Lanterns) from adventures, Memory Corner (Postcard Board, Photo Easel) from postcards. Cats nap on the rug and blanket.
+- **Scrapbook and postcards:** adventure postcards are kept in the Journal and can be sent as pictures.
+- **Cafe rush hours** twice a day; status line shows "Rush hour!".
+- **Festival:** back-to-cove and back-to-festival exits in every activity, flat 2D Tug of Paws HUD, Volleyball-style commentary, unified cheer buttons.
+- **Save safety:** the phone keeps a second copy of your cove and restores it if the app's storage is cleared; manual backup code and file export with a gentle reminder; safer restore.
+- **Living sky**, adventure reminders, lighter Journal, updated Help (9 topics) and first-visit tour.
+- **Fixes:** Harvest all now confirms with a toast and sound; stale "ripe" toast; cats heading to the swing, cottage or cat tree no longer give up on long walks.
+- Checks: 37 browser suites and economy/inventory/cafe checks pass; screen sweep at 390 and 320 wide has no console errors or sideways overflow. Real-device testing is still to do.
+
 ## Neo testing — September 19, 2026 (based on 3.1.2)
 
 - Edit Cove now stages movable-item layout/storage changes until Save changes. Cancel restores the previous layout; autosave continues preserving current game progress without saving draft placements. Added Undo, a stored-item picker with product artwork, stable mobile controls and direct dragging in edit mode.
