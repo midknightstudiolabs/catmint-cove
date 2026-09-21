@@ -7528,14 +7528,28 @@ function miniCat(canvasEl, coatKey, star, state, silhouette, scale) {
 }
 // v3: the big live cat on the dress-up stage — real cat's coat/star/markings,
 // wearing whatever's currently tried on (not yet saved)
+const _dressPv = new WeakMap();
 function dressPreview(canvasEl, c, tryWorn) {
+  const worn = normalizeWorn(tryWorn || []);
+  const baseKey = [c.journalId ?? c.name, c.coatKey, c.star, c.markSeed, c.mascot ? 1 : 0, c.bornAt].join("|");
+  const key = baseKey + "|" + worn.join(",") + "|" + canvasEl.width + "x" + canvasEl.height;
+  const now = performance.now();
+  let st = _dressPv.get(canvasEl);
+  if (!st) { st = { key: "", baseKey: "", cat: null, hot: 0, at: 0 }; _dressPv.set(canvasEl, st); }
+  if (st.key !== key) { st.key = key; st.hot = 24; }      // the look changed: repaint for the next ~0.4s (covers art that finishes loading a beat late)
+  else if (st.hot <= 0 && now - st.at < 700) return;       // nothing changed: leave the picture alone (no per-frame repaint)
+  if (st.hot > 0) st.hot--;
+  st.at = now;
   const g = canvasEl.getContext("2d");
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, canvasEl.width, canvasEl.height);
-  const fake = new Cat({ coatKey: c.coatKey, star: c.star, markSeed: c.markSeed,
-    mascot: c.mascot, bornAt: c.bornAt, x: 0, y: 0 });
-  fake.state = "loafing"; fake.blink = 3; fake.bob = 0.6; fake.tail = 0.3; fake.trotting = false;
-  fake.worn = normalizeWorn(tryWorn || []);
+  if (!st.cat || st.baseKey !== baseKey) {
+    st.baseKey = baseKey;
+    st.cat = new Cat({ coatKey: c.coatKey, star: c.star, markSeed: c.markSeed, mascot: c.mascot, bornAt: c.bornAt, traits: [], x: 0, y: 0 });
+    st.cat.state = "loafing"; st.cat.blink = 3; st.cat.bob = 0.6; st.cat.tail = 0.3; st.cat.trotting = false; st.cat.sparkT = 0.5;
+  }
+  const fake = st.cat;
+  fake.worn = worn;
   // glowing rainbow hint streaming off behind the cat if that effect's tried on
   if (fake.worn.includes("rainbow")) {
     g.save();
