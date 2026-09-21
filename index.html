@@ -2930,15 +2930,20 @@ function saveCode() {
   try { save(); if (G) G.lastBackupAt = Date.now(); return "CMC1." + btoa(unescape(encodeURIComponent(localStorage.getItem(SAVE_KEY) || JSON.stringify(G)))); }
   catch (e) { return ""; }
 }
-function applySaveCode(code) {
+function neoDecodeSaveCode(code) {   // the raw save text if the code is a valid backup, else null (writes nothing)
   try {
     const b64 = String(code).trim().replace(/^CMC1\./, "");
     const raw = decodeURIComponent(escape(atob(b64)));
     const obj = JSON.parse(raw);
-    if (!obj || typeof obj !== "object" || !SAVE_VERSIONS.includes(obj.v)) return false;
-    localStorage.setItem(SAVE_KEY, raw);
-    return true;
-  } catch (e) { return false; }
+    return obj && typeof obj === "object" && SAVE_VERSIONS.includes(obj.v) ? raw : null;
+  } catch (e) { return null; }
+}
+function applySaveCode(code) {
+  const raw = neoDecodeSaveCode(code); if (!raw) return false;
+  try { localStorage.setItem(SAVE_KEY, raw); } catch (e) { return false; }
+  // A restore is a deliberate choice: the phone's mirror must not undo it, so replace the mirror with what was restored.
+  try { sessionStorage.setItem("neo.mirrorTried", "1"); window.CoveNative && window.CoveNative.mirrorSave && window.CoveNative.mirrorSave(raw); } catch (e) {}
+  return true;
 }
 
 /* ---------- attractors (things cats walk to and use) + decor (scenery) ---------- */
@@ -7680,8 +7685,9 @@ function openBackup() {
     <textarea class="save-box" id="bk-out" readonly>${code}</textarea>
     <div class="row">
       <button class="btn primary" id="bk-copy">Copy code</button>
-      <button class="btn" id="bk-restore">Restore from a code…</button>
+      <button class="btn" id="bk-file">Save as a file</button>
     </div>
+    <div class="row"><button class="btn" id="bk-restore">Restore from a code…</button></div>
     <button class="linkbtn" id="bk-iap" style="margin-top:.5rem">Restore purchases</button>
     <button class="linkbtn" id="bk-close">Close</button>
   </div>`);
@@ -7692,6 +7698,7 @@ function openBackup() {
     try { await navigator.clipboard.writeText(code); } catch (e) { out.focus(); out.select(); document.execCommand && document.execCommand("copy"); }
     toast("Save code copied.");
   };
+  document.getElementById("bk-file").onclick = () => { neoShareBackup(); };
   document.getElementById("bk-restore").onclick = () => {
     openModal(`<div class="reveal">
       <div class="kicker">Restore</div>
@@ -7707,8 +7714,9 @@ function openBackup() {
     document.getElementById("bk-go").onclick = () => {
       const v = document.getElementById("bk-in").value.trim();
       if (!v) return;
-      if (!applySaveCode(v)) { toast("That code didn't look right — nothing changed."); return; }
+      if (!neoDecodeSaveCode(v)) { toast("That code didn't look right — nothing changed."); return; }
       if (!confirm("Restore this cove? Your current progress on this device will be replaced.")) return;
+      if (!applySaveCode(v)) { toast("Couldn't restore it. Nothing changed."); return; }
       _dead = true;
       try { clearInterval(_saveInterval); } catch (e) {}
       location.reload();
@@ -8157,8 +8165,13 @@ const GUIDE = [
 const HELP_TOPICS=[
  ['Meet your cats','catdex',['Tap a portrait in Catdex to meet your cat and see care options.','The cat counter shows mood and wellbeing.','For Little Hello, close menus and tap empty foreground ground 3–5 times.'],'dex'],
  ['Decorate your Cove','shop',['Shop pictures show what you are buying.','My inventory separates Stored items from In the Cove.','Hold a decoration to drag it. Store item stores it; Place brings it back for free.'],'shop'],
- ['Explore & play','activities',['Choose an adventure destination, cats, and trip length.','Visit the garden or play a festival game in Activities.','Rainy Retreat is a quiet place to rest together.'],'explore'],
- ['Settings & saves','sound',['Use Sound for the master switch and individual volumes.','Use the view controls or pinch to adjust the Cove view.','Journal has Back up / restore. Purchased support packs can be restored through the purchase controls.'],'today']
+ ['Explore & play','activities',['Activities holds the Cove Festival (Cove Race, Cove Volleyball and Tug of Paws), Adventures, Catmint Café, the Cove Garden, Little Matches, Cove Friends and the Rainy Retreat.','Each festival game shows how many cats it needs. Inside a game, the bottom bar takes you back to the Festival or to the Cove.','Rainy Retreat is a quiet place to rest together.'],'explore'],
+ ['Garden & Café','garden',['In the Cove Garden, tap a patch to plant it. Ripe patches wait for you to harvest them, and harvests go to your pantry.','Catmint Café serves guests by itself once you have a drink on the menu and the ingredients for it. Watch it from Outside or Inside.','Twice a day the café has a rush hour, when guests arrive faster. Have ingredients stocked before one starts.'],'explore'],
+ ['Adventures & postcards','adventure',['Choose a place, your cats and a trip length. You can watch a trip in Activities, or call the cats home early (they come back with nothing).','Postcards arrive along the way. Every one is kept in the Journal’s Postcard scrapbook, where you can also send one to a friend as a picture.','In the app you can allow one quiet reminder when a trip is over.'],'explore'],
+ ['Cove Friends','homecoming',['Friends is optional. You share a friend code, accept invites, visit each other’s Cove and send a gift or a heart.','Only friends you accept can visit, and they see a saved picture of your Cove. Your balances, purchases and save file stay private.','You can block or report anyone from their Cove, and unblock later in Account. Save your private recovery key there before reinstalling, so your friend code comes back.'],'explore'],
+ ['Midknight’s Blessing','paw',['An optional subscription that makes tending easier: Harvest all, Feed all, auto-gather and auto-replant, and Tend everything.','Each month brings a moonlit decor piece (the Guardian statue and the Moonlight Swing so far, which cats use) and Moonlight Wings for any cat.','The whole game plays without it. Find it in the Shop or from the Garden. Cancel any time in your store settings.'],'shop'],
+ ['Keep your cove safe','journal',['Your cove saves on this device automatically.','Journal, then Back up / restore, gives you a save code and a backup file. Keep the file in Files, Notes or your email. The game reminds you twice, and you can do it any time.','To bring a cove back on a new phone, choose Restore from a code and paste it. It replaces the cove on that device. Purchases restore separately from the store, and Friends has its own recovery key.'],'today'],
+ ['Sound & view','sound',['Use Sound for the master switch and individual volumes.','Use the view controls or pinch to change the Cove view.'],'today']
 ];
 function openGuide(){
  window.CoveAnalytics?.emit("menu_opened",{entity:"Help"});
@@ -8179,7 +8192,7 @@ function openGuide(){
 function neoStartTour(){
  tutEl.classList.remove("on");closeModal();hidePropCard();hideCatCard();rosterEl.hidden=true;
  document.getElementById('neo-tour')?.remove();closeAllPanels();
- const steps=[['Meet your cats','Tap Catdex to open your cats.','#dexBtn'],['Browse the shop','Tap Shop to see what you can add.','#shopBtn'],['Find your belongings','Tap My inventory in the Shop.','#shopTabs [data-tab="inventory"]'],['Your placed items','Tap In the Cove to see what you can store.','#shop .shop-actions button[aria-pressed]']];
+ const steps=[['Meet your cats','Tap Catdex to open your cats.','#dexBtn'],['Browse the shop','Tap Shop to see what you can add.','#shopBtn'],['Find your belongings','Tap My inventory in the Shop.','#shopTabs [data-tab="inventory"]'],['Your placed items','Tap In the Cove to see what you can store.','#shop .shop-actions button[aria-pressed]'],['Explore & play','Tap Activities for the festival, adventures, café, garden and friends.','#neo-activities-nav'],['Your journal & saves','Tap Journal for your daily welcome, postcards and Back up / restore.','#todayBtn']];
  let i=0;const box=document.createElement('aside');box.id='neo-tour';box.setAttribute('aria-label','Guided tour');document.body.append(box);
  const finish=()=>{document.removeEventListener('click',clicked,true);window.removeEventListener('resize',position);document.removeEventListener('scroll',position,true);box.remove();};
  const tourTarget=()=>i===3?[...document.querySelectorAll(steps[i][2])].find(el=>el.textContent.includes('In the Cove')):document.querySelector(steps[i]?.[2]);
