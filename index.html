@@ -520,6 +520,28 @@
   .pick-tier i{display:block;font-style:normal;font-size:.68rem;color:var(--ink-soft);margin-top:.15rem;}
   .pick-tier.on{border-color:var(--accent);background:#eaf3ec;}
   .adv-map{font-size:.74rem;color:var(--ink-faint);margin-top:.55rem;font-variant-numeric:tabular-nums;}
+  .adv-rail{position:relative;height:40px;margin:.6rem 4px .1rem;}
+  .adv-rail::before{content:"";position:absolute;left:14px;right:14px;top:9px;height:4px;border-radius:2px;background:#e2d6b0;}
+  .adv-rail-fill{position:absolute;left:14px;top:9px;height:4px;border-radius:2px;background:#e0a53a;width:calc((100% - 28px) * var(--pp,0));transition:width .6s ease;}
+  .adv-stop{position:absolute;top:0;transform:translateX(-50%);display:grid;justify-items:center;gap:3px;}
+  .adv-stop b{width:22px;height:22px;border-radius:50%;background:#faf2dc;border:2px solid #67543f;display:grid;place-items:center;}
+  .adv-stop.done b{background:#94aa91;}
+  .adv-stop.next b{background:#fff3cf;animation:advNext 1.8s ease-in-out infinite;}
+  .adv-stop em{font:700 10px/1 system-ui,sans-serif;font-style:normal;letter-spacing:.04em;color:#65795f;white-space:nowrap;}
+  @keyframes advNext{0%,100%{box-shadow:0 0 0 0 rgba(224,165,58,.55)}50%{box-shadow:0 0 0 5px rgba(224,165,58,0)}}
+  .adv-mail{position:absolute;left:14%;bottom:14%;width:28px;height:28px;opacity:0;pointer-events:none;}
+  .adv-mail svg{width:100%;height:100%;display:block;}
+  .adv-window.arrived .adv-mail{animation:advMail 2.2s ease-out both;}
+  .adv-window.arrived .adv-stamp{animation:advStamp .5s ease-in-out 4;}
+  @keyframes advMail{0%{opacity:0;transform:translate(0,10px) scale(.5) rotate(-12deg)}18%{opacity:1;transform:translate(0,-16px) scale(1.15) rotate(6deg)}70%{opacity:1;transform:translate(150px,-26px) scale(1) rotate(-4deg)}100%{opacity:0;transform:translate(210px,-8px) scale(.7)}}
+  .adv-chip{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 132px);z-index:8;display:flex;align-items:center;gap:6px;max-width:calc(100vw - 96px);padding:6px 12px 6px 8px;border-radius:999px;border:2px solid #67543f;background:#faf2dc;color:#4b3f2b;font:700 13px/1 system-ui,sans-serif;box-shadow:0 3px 0 #67543f;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .adv-chip[hidden]{display:none;}
+  .adv-chip .ac-ico{width:20px;height:20px;flex:0 0 auto;}
+  .adv-chip .ac-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .adv-chip.home{background:#fff0c4;animation:advNext 1.8s ease-in-out infinite;}
+  .adv-chip.mail::after{content:"";width:9px;height:9px;border-radius:50%;background:#e0a53a;border:2px solid #67543f;flex:0 0 auto;}
+  .adv-chip:active{transform:translateY(2px);box-shadow:0 1px 0 #67543f;}
+  @media (prefers-reduced-motion:reduce){.adv-stop.next b,.adv-chip.home,.adv-window.arrived .adv-mail,.adv-window.arrived .adv-stamp{animation:none}.adv-rail-fill{transition:none}}
   .adv-window{position:relative;border-radius:14px;overflow:hidden;background:#dfeee0;border:2px solid #67543f;}
   .adv-window canvas.adv-clip{margin:0;border-radius:0;}
   .adv-window.done{aspect-ratio:2/1;display:grid;place-items:center;background:#ece3c3;}
@@ -19197,6 +19219,7 @@ function deliverDuePostcards(opts = {}) {
   if (!latest) return false;
   save();
   renderAdventureCard();
+  document.querySelectorAll(".adv-window").forEach(w => { w.classList.remove("arrived"); void w.offsetWidth; w.classList.add("arrived"); setTimeout(() => w.classList.remove("arrived"), 2600); });
   if (opts.pop && !_vig && !scrim.classList.contains("on")) {
     showPostcard(latest, latestA.cat, latestA.dest, opts.onDone, G.postcards[0]);
     return true;                         // a modal is up — caller must NOT also run earnings
@@ -19274,8 +19297,43 @@ function renderProjectCard() {
     document.getElementById("pj-card-btn").onclick = () => openProjectSheet(def.id);   // modal sits over Today — closing it returns here
   }
 }
+let _advBoardEl = null;
 function renderAdventureCard() {
-  const el = document.getElementById("advCard");
+  _advSig = advSig();
+  renderAdvInto(document.getElementById("advCard"));
+  if (_advBoardEl && _advBoardEl.isConnected) renderAdvInto(_advBoardEl);
+  try { neoAdvChipSync(); } catch (e) {}
+}
+// Set off, the postcards (each arrives at a real point along the trip), and home: progress as a small journey instead of a bare bar
+function advRailHtml(a, back, prg) {
+  const span = Math.max(1, a.endsAt - a.startedAt), cards = Array.isArray(a.cards) ? a.cards : [];
+  const mail = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#67543f" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="m3.5 7.5 8.5 6 8.5-6"/><rect x="3" y="6" width="18" height="13" rx="2"/></svg>';
+  const go = '<svg viewBox="0 0 24 24" width="10" height="10" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="#67543f"/></svg>';
+  const home = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#67543f" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M4 11 12 4l8 7v9H4Z"/></svg>';
+  const mids = cards.map(c => ({ p: Math.round((c.at - a.startedAt) / span * 100), label: "Postcard", ic: mail, done: !!c.shown })).sort((x, y) => x.p - y.p);
+  mids.forEach((m, i) => { m.p = Math.max(i ? mids[i - 1].p + 18 : 18, Math.min(82, m.p)); if (i && m.p - mids[i - 1].p < 18) m.p = Math.min(82, mids[i - 1].p + 18); });   // keep the labels from colliding
+  const stops = [{ p: 0, label: "Set off", ic: go, done: true }].concat(mids).concat([{ p: 100, label: "Home", ic: home, done: back }]);
+  const next = stops.findIndex(x => !x.done);
+  return `<div class="adv-rail" style="--pp:${(Math.max(0, Math.min(100, prg)) / 100).toFixed(3)}" role="list" aria-label="Trip journey">
+    <i class="adv-rail-fill"></i>${stops.map((x, i) => `<span class="adv-stop${x.done ? " done" : ""}${i === next ? " next" : ""}" role="listitem" style="left:calc(14px + (100% - 28px) * ${(x.p / 100).toFixed(3)})"><b>${x.ic}</b><em>${x.label}</em></span>`).join("")}</div>`;
+}
+/* Refresh a running trip in place (time left, progress bar, rail). Only rebuild the window when something real changed, so the animation never blinks. */
+let _advSig = "";
+function advSig() { return activeAdvs().map(a => a.id + ":" + (Array.isArray(a.cards) ? a.cards.filter(c => c.shown).length : 0) + ":" + (Date.now() >= a.endsAt ? 1 : 0)).join("|") + "|" + catsAway(); }
+function advTick() {
+  const sig = advSig();
+  if (sig !== _advSig) { _advSig = sig; renderAdventureCard(); return; }
+  const list = activeAdvs(), els = [document.getElementById("advCard"), (_advBoardEl && _advBoardEl.isConnected) ? _advBoardEl : null].filter(Boolean);
+  for (const el of els) el.querySelectorAll(".adv-trip").forEach((tr, i) => {
+    const a = list[i]; if (!a || tr.classList.contains("back")) return;
+    const prg = Math.max(3, Math.min(99, Math.round((Date.now() - a.startedAt) / Math.max(1, a.endsAt - a.startedAt) * 100)));
+    const eta = tr.querySelector(".adv-eta"); if (eta) eta.textContent = "back " + whenText(a.endsAt);
+    const bar = tr.querySelector(".adv-prog i"); if (bar) bar.style.width = prg + "%";
+    const rail = tr.querySelector(".adv-rail"); if (rail) rail.style.setProperty("--pp", (prg / 100).toFixed(3));
+  });
+  try { neoAdvChipSync(); } catch (e) {}
+}
+function renderAdvInto(el) {
   if (!el) return;
   const list = activeAdvs();
   let html = "", ready = advReady();
@@ -19295,8 +19353,10 @@ function renderAdventureCard() {
         <span class="adv-pill adv-who" title="${esc(d.name)}">${esc(who)}</span>
         <span class="adv-pill adv-eta">${back ? "trip complete" : "back " + whenText(a.endsAt)}</span>
         <button type="button" class="adv-stamp${pc ? " new" : ""}" data-postcard="${a.id}" aria-label="${pc ? "Read the postcard" : "Travel postcard"}"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#67543f" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="6" width="18" height="13" rx="2" fill="#fffaf0"/><path d="m3.5 7.5 8.5 6 8.5-6"/></svg><span>Postcard</span></button>
+        <span class="adv-mail" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#67543f" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="6" width="18" height="13" rx="2" fill="#fffaf0"/><path d="m3.5 7.5 8.5 6 8.5-6"/></svg></span>
         ${back ? "" : `<div class="adv-prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${prg}" aria-label="Trip progress"><i style="width:${prg}%"></i></div>`}
       </div>
+      ${advRailHtml(a, back, prg)}
       <button type="button" class="adv-note" data-postcard="${a.id}">${pc ? "“" + esc(note.length > 96 ? note.slice(0, 96) + "…" : note) + "”" : back ? "See the travel postcard" : "First postcard arrives partway through."}</button>
       ${back ? `<button class="btn primary" data-claim="${a.id}">See how it went</button>`
              : `<button class="btn tiny" data-recall="${a.id}">Call them home</button>${DEV_BUILD ? ` <button class="btn tiny" data-skip="${a.id}">skip · dev</button>` : ""}`}
@@ -19326,6 +19386,31 @@ function renderAdventureCard() {
   });
   const st = document.getElementById("adv-start");
   if (st) st.onclick = openAdventurePicker;
+}
+function openAdventureBoard() {
+  if (!activeAdvs().length) { openAdventurePicker(); return; }
+  closeAllPanels();
+  openModal(`<div class="reveal adv-board"><div class="kicker">ADVENTURES</div><h2>Out exploring</h2><div class="adv-card" id="advBoard"></div><button class="linkbtn" id="advBoardClose" style="margin-top:.4rem">Close</button></div>`);
+  _advBoardEl = document.getElementById("advBoard"); renderAdvInto(_advBoardEl);
+  document.getElementById("advBoardClose").onclick = () => { _advBoardEl = null; closeModal(); };
+  const tick = setInterval(() => { if (!_advBoardEl || !_advBoardEl.isConnected) { clearInterval(tick); return; } if (!document.hidden) advTick(); }, 3000);
+}
+function neoAdvSummary() {
+  const list = activeAdvs(); if (!list.length) return null;
+  const nextA = list.slice().sort((x, y) => x.endsAt - y.endsAt)[0], home = Date.now() >= nextA.endsAt;
+  const d = ADV_DESTS[nextA.dest] || ADV_DESTS.forest;
+  const who = (nextA.cats && nextA.cats.length) ? (nextA.cats.length > 1 ? nextA.cats[0] + " +" + (nextA.cats.length - 1) : nextA.cats[0]) : nextA.cat;
+  const fresh = (Array.isArray(G.postcards) ? G.postcards : []).some(p => p.t >= nextA.startedAt && p.cat === nextA.cat && Date.now() - p.t < 6 * 3600e3);
+  return { who, home, dest: d.name, text: home ? who + " is home!" : who + " · " + whenText(nextA.endsAt).replace(/^in /, ""), fresh, count: list.length };
+}
+function neoAdvChipSync() {
+  const chip = document.getElementById("advChip"); if (!chip) return;
+  const sm = neoAdvSummary();
+  const show = !!sm && !festMode && !restMode;
+  chip.hidden = !show;
+  if (sm) { chip.querySelector(".ac-text").textContent = sm.text; chip.classList.toggle("home", sm.home); chip.classList.toggle("mail", sm.fresh && !sm.home); chip.setAttribute("aria-label", "Adventure: " + sm.text + ". Tap to check on them."); }
+  const tile = document.getElementById("neo-go-adventure"), small = tile && tile.querySelector("small");
+  if (small) small.textContent = sm ? (sm.home ? sm.who + " is home. See how it went." : sm.count + (sm.count === 1 ? " trip out · " : " trips out · ") + sm.text) : "A little trip. Something to bring home.";
 }
 function openAdventurePicker() {
   if (!advSlotOpen()) { toast("Both expeditions are already out.", 3.5); return; }
@@ -19875,7 +19960,7 @@ setInterval(() => {
   tickProjects();                        // a restoration that finished while you watched
   labubuTick();                          // Midknight's sidekick may be due for a visit
   cairnTick();                           // the founder's slow monument by the sign
-  if (panels.today && !panels.today.hidden) { renderCheckinCard(); renderAdventureCard(); renderProjectCard(); renderFindsCard(); }
+  if (panels.today && !panels.today.hidden) { renderCheckinCard(); advTick(); renderProjectCard(); renderFindsCard(); }
   if (panels.shop && !panels.shop.hidden && (boostActive() || _wasBoosted)) renderShop();   // tick the boost countdown
   if (_wasBoosted && !boostActive()) toast("The catnip's worn off — earnings back to normal.", 4);
   _wasBoosted = boostActive();
@@ -20153,7 +20238,8 @@ function neoBuildNavigation(){
   document.getElementById('app').append(sheet);panels.explore=sheet;
   document.getElementById('neo-explore-close').onclick=closeAllPanels;
   document.getElementById('neo-go-festival').onclick=()=>{closeAllPanels();document.getElementById('festBtn').click();};
-  document.getElementById('neo-go-adventure').onclick=()=>{closeAllPanels();openAdventurePicker();};
+  document.getElementById('neo-go-adventure').onclick=()=>{closeAllPanels();if(activeAdvs().length)openAdventureBoard();else openAdventurePicker();};
+  neoAdvChipSync();
   document.getElementById('neo-go-cafe').onclick=()=>neoOpenHomestead('cafe');
   document.getElementById('neo-go-garden').onclick=()=>neoOpenHomestead('garden');
   document.getElementById('neo-go-rest').onclick=()=>{closeAllPanels();document.getElementById('restBtn').click();};
@@ -20814,6 +20900,8 @@ setInterval(neoFriendsPoll,180000);setTimeout(neoFriendsPoll,6000);document.addE
 /* Garden: re-set the ripe reminder whenever the app goes to the background */
 document.addEventListener('visibilitychange',()=>{if(document.hidden)neoScheduleGardenReminder();});
 window.addEventListener('pagehide',()=>{neoScheduleGardenReminder();});
+/* Adventures: a chip on the Cove whenever cats are away — tap it to check on them */
+{const chip=document.createElement('button');chip.id='advChip';chip.type='button';chip.className='adv-chip';chip.hidden=true;chip.innerHTML=neoUIIcon('adventure').replace('neo-ui-icon','neo-ui-icon ac-ico')+'<span class="ac-text"></span>';chip.onclick=()=>openAdventureBoard();document.getElementById('app').append(chip);setInterval(neoAdvChipSync,20000);setTimeout(neoAdvChipSync,1500);document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#neo-activities-nav'))setTimeout(neoAdvChipSync,0);},true);}
 if(new URLSearchParams(location.search).get('clips'))setTimeout(()=>neoOpenAdventureClips(),4500);
 resize();
 _lastViewBottom = _viewBottomY;
