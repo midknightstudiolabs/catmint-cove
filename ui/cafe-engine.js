@@ -6,8 +6,8 @@
   const interval=s=>[240000,210000,180000][s.speed];
   const finishes={sage:{name:'Catmint Sage',cost:0,body:'#9eaf85',shade:'#6f865f',dark:'#395a45',light:'#e6ecd2'},butter:{name:'Buttercup',cost:2500,body:'#dfcb76',shade:'#b5a35b',dark:'#69653b',light:'#fff0b9'},blue:{name:'Coastal Blue',cost:2500,body:'#91b2bd',shade:'#608793',dark:'#365864',light:'#dae9e6'},rose:{name:'Rosewater',cost:5000,body:'#c6a094',shade:'#a07870',dark:'#70554e',light:'#f0ddd0'},cream:{name:'Oatmilk',cost:5000,body:'#d6c8a8',shade:'#ae9f7e',dark:'#655d49',light:'#f7eedb'}};
   function buyFinish(g,key){const s=init(g,Date.now()),f=finishes[key];if(!s.unlocked||!f)return false;s.finishesOwned ||= ['sage'];if(!s.finishesOwned.includes(key)){if(g.shells<f.cost)return false;g.shells-=f.cost;s.finishesOwned.push(key);}s.finish=key;return true;}
-  const shops=[{name:'Little Kiosk',cost:0,description:'A compact timber serving window with two warm lamps.'},{name:'Garden Café',cost:50000,description:'A wider shop with a striped awning, hanging plants and flower boxes.'},{name:'Seaside Café',cost:100000,description:'A full façade with arched glowing windows, a raised sign and canopy lights.'}];
-  // Outdoor décor: bought once, drawn in the outside view. Deliberately not cheap (a shop finish is 2,500+, a full new shop 50,000+).
+  const shops=[{name:'Little Kiosk',cost:0,description:'A compact timber serving window with two warm lamps.'},{name:'Garden Café',cost:20000,description:'A wider shop with a striped awning, hanging plants and flower boxes.'},{name:'Seaside Café',cost:45000,description:'A full façade with arched glowing windows, a raised sign and canopy lights.'}];
+  // Outdoor décor: bought once, drawn in the outside view. Deliberately not cheap (a shop finish is 2,500+, a full new shop 20,000+).
   const decor={
     flowerbox:{name:'Window flower boxes',cost:1200,note:'Spilling blooms beneath the serving window.'},
     chalkboard:{name:'Chalkboard sign',cost:1800,note:'An A-frame board that chalks up today’s special.'},

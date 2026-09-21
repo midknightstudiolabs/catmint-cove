@@ -16,10 +16,10 @@ Model: menu of Coastal Coffee, Catmint Cloud and Midknight Morning; guests every
 | String lights | 23.8 |
 | Midknight statue | 38.5 |
 | Garden fountain | 59.5 |
-| Garden Café | 147.8 |
-| Seaside Café | 325.5 |
+| Garden Café | 94.8 |
+| Seaside Café | 174.8 |
 
-Guests served: 15610. Seed and import spend: 48174 Shells.
+Guests served: 8386. Seed and import spend: 25900 Shells.
 
 ## Regular: 4 visits a day
 
@@ -35,10 +35,10 @@ Guests served: 15610. Seed and import spend: 48174 Shells.
 | String lights | 11.8 |
 | Midknight statue | 19.4 |
 | Garden fountain | 29.7 |
-| Garden Café | 73.8 |
-| Seaside Café | 162.7 |
+| Garden Café | 47.6 |
+| Seaside Café | 87.6 |
 
-Guests served: 15610. Seed and import spend: 48174 Shells.
+Guests served: 8386. Seed and import spend: 25900 Shells.
 
 ## Devoted: 8 visits a day
 
@@ -54,21 +54,20 @@ Guests served: 15610. Seed and import spend: 48174 Shells.
 | String lights | 5.9 |
 | Midknight statue | 9.7 |
 | Garden fountain | 14.8 |
-| Garden Café | 36.9 |
-| Seaside Café | 81.5 |
+| Garden Café | 23.7 |
+| Seaside Café | 43.7 |
 
-Guests served: 15610. Seed and import spend: 48174 Shells.
+Guests served: 8386. Seed and import spend: 25900 Shells.
 
 
 ## What this says
 
 - **The first hour is fast and satisfying.** The table, cookware and first brewer land within about one to three days for a casual player, and decor from 1,200 to 12,000 Shells arrives from day 5 to day 60. That is a healthy ladder.
-- **The two shop upgrades are a cliff.** Garden Café (50,000) arrives around day 148 for a casual player and day 74 for a regular one; Seaside Café (100,000) around day 325 and day 163. Even a devoted player needs about 80 days.
+- **Shop upgrades were a cliff, now softened (applied 2026-09-21).** Garden Café went from 50,000 to **20,000** Shells and Seaside Café from 100,000 to **45,000**. Because this model buys all decor first, a casual player now reaches Garden Café around day 95 and Seaside Café around day 175 (before: about day 148 and 325). A regular player: about day 48 and 88. A devoted player: about day 24 and 44.
 - **Ingredients are not the limit.** Two coffee patches yield 20 beans per 15 minutes, far more than the 15 guests an hour a Little brewer serves. Guest speed is the limit, so the brewer upgrades matter more than the garden for income.
 - **Caveat.** This models the Café as the only income. Shells earned elsewhere in the game also fund these goals, so real players should reach them sooner. It also assumes stock is available and that every visit is spent on the next-cheapest goal.
 
-## Options if the shop upgrades feel too far away (not applied, your call)
+## Levers if it still feels slow
 
-1. Lower them (for example 20,000 and 45,000): shortens the casual path to about day 60 and day 140.
-2. Keep the prices and add a mid-tier: a cheaper "Sunroom" visual stage between the Kiosk and Garden Café.
-3. Keep the prices and add income sources: the daily goal (now in the Report tab) and rush hours.
+1. Keep the new prices and add a cheaper middle stage (a "Sunroom" look) between the Kiosk and Garden Café.
+2. Add income sources: the daily goal (in the Report tab) already pays 100 to 150 Shells a day; rush hours are not built.
