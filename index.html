@@ -1080,6 +1080,21 @@
   #fest #midkHud #midkReels .mc-result{border-radius:13px;font:800 27px/1 Georgia,serif;letter-spacing:.03em;}
   #fest #midkHud #midkReels .mc-result.show{animation:mcResultPop .55s cubic-bezier(.22,1.5,.36,1) both;}
   @keyframes mcResultPop{0%{transform:scale(.62);opacity:0}60%{transform:scale(1.09);opacity:1}100%{transform:scale(1);opacity:1}}
+  /* --- flat 2D pass: one solid disc with a charge arc (no concentric bevels), a flat tag-and-text caption, flat plaque --- */
+  #fest #midkHud #midkRally.midk-spin{background:#6f9a70;border:2.5px solid #4a3a27;box-shadow:none;}
+  #fest #midkHud #midkConsole:not(.ready) #midkRally.midk-spin{background:#93ad91;}
+  #fest #midkHud #midkRally .ms-face{inset:0;background:none;border:0;border-radius:0;animation:none!important;}
+  #fest #midkHud #midkConsole:not(.ready) #midkRally .ms-icon,#fest #midkHud #midkConsole:not(.ready) #midkRally .ms-label{opacity:.9;}
+  #fest #midkHud #midkConsole.ready #midkRally.midk-spin{animation:cheerReady 1.5s ease-in-out infinite;}
+  #fest #midkHud #midkRally .ms-track{stroke:rgba(255,246,220,.32);stroke-width:5;}
+  #fest #midkHud #midkRally .ms-prog{stroke:#f6d36b;stroke-width:5;}
+  #fest #midkHud #midkRally .ms-label{color:#fff6dc;}
+  #fest #midkHud #midkCom{border-width:2px;border-radius:12px;gap:3px;}
+  #fest #midkHud #midkCom::before{align-self:flex-start;background:#6f9a70;color:#fff6dc;padding:2px 6px 2px 7px;border-radius:5px;font:800 8.5px/1 system-ui,sans-serif;letter-spacing:.14em;}
+  #fest #midkHud #midkReels{border-width:2.5px;border-radius:16px;}
+  #fest #midkHud #midkReels .mc-reel{border-radius:9px;}
+  #fest #midkHud #midkReels .mc-result{border-radius:11px;}
+  @media (prefers-reduced-motion:reduce){#fest #midkHud #midkConsole.ready #midkRally.midk-spin{animation:none}}
   @media (max-height:700px){#fest #midkHud #midkReels{--rh:42px}#fest #midkHud #midkReels .mc-result{font-size:23px}}
   @media (max-height:700px){#fest #midkHud{bottom:calc(max(70px, var(--mf-b,0px) + 4px) + env(safe-area-inset-bottom));gap:8px}#fest #midkHud #midkConsole,#fest #midkHud #midkRally.midk-spin{width:72px;height:72px}#fest #midkHud #midkRally .ms-face{inset:9px}#fest #midkHud #midkRally .ms-icon{width:24px;height:24px}#fest #midkHud #midkRally .ms-label{font-size:9px}#fest #midkHud #midkCom{padding:5px 10px 6px;font-size:12px}#fest #midkHud #midkCom::before{display:none}}
   @media (max-width:370px){#fest #midkHud #midkConsole,#fest #midkHud #midkRally.midk-spin{width:80px;height:80px}}
