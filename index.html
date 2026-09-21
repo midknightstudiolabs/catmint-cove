@@ -520,6 +520,21 @@
   .pick-tier i{display:block;font-style:normal;font-size:.68rem;color:var(--ink-soft);margin-top:.15rem;}
   .pick-tier.on{border-color:var(--accent);background:#eaf3ec;}
   .adv-map{font-size:.74rem;color:var(--ink-faint);margin-top:.55rem;font-variant-numeric:tabular-nums;}
+  .adv-window{position:relative;border-radius:14px;overflow:hidden;background:#dfeee0;border:2px solid #67543f;}
+  .adv-window canvas.adv-clip{margin:0;border-radius:0;}
+  .adv-window.done{aspect-ratio:2/1;display:grid;place-items:center;background:#ece3c3;}
+  .adv-done{display:grid;justify-items:center;gap:6px;color:#67543f;font:700 15px Georgia,serif;}
+  .adv-done .neo-ui-icon{width:34px;height:34px;}
+  .adv-pill{position:absolute;top:8px;padding:5px 10px;border-radius:999px;background:rgba(250,246,232,.95);color:#405842;font:700 12px/1 system-ui,sans-serif;box-shadow:0 2px 0 rgba(103,84,63,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .adv-who{left:8px;max-width:58%;}.adv-eta{right:8px;max-width:38%;}
+  .adv-stamp{position:absolute;right:8px;bottom:12px;display:flex;align-items:center;gap:5px;padding:5px 9px 5px 6px;border-radius:8px;background:#faf2dc;border:2px solid #67543f;color:#67543f;font:800 10px/1 system-ui,sans-serif;letter-spacing:.07em;text-transform:uppercase;box-shadow:0 2px 0 #67543f;cursor:pointer;transform:rotate(-3deg);width:auto;min-height:0;}
+  .adv-stamp svg{width:16px;height:16px;}
+  .adv-stamp.new{background:#fff3cf;animation:advStamp 1.8s ease-in-out infinite;}
+  @keyframes advStamp{0%,100%{transform:rotate(-3deg) scale(1)}50%{transform:rotate(-3deg) scale(1.07)}}
+  .adv-prog{position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(36,31,23,.2);}
+  .adv-prog i{display:block;height:100%;background:#e0a53a;}
+  .adv-note{display:block;width:100%;margin:.5rem 0 .45rem;padding:.55rem .75rem;text-align:left;border:0;border-radius:10px;background:#f4eed9;color:var(--ink-soft);font:italic .8rem/1.35 Georgia,serif;cursor:pointer;}
+  @media (prefers-reduced-motion:reduce){.adv-stamp.new{animation:none}}
   .adv-postcard{font-size:.8rem;font-style:italic;color:var(--ink-soft);line-height:1.4;
     margin:.1rem 0 .7rem;padding:.5rem .65rem;background:#f3f0e4;border:1px solid var(--panel-line);border-radius:10px;}
   .ci-dots{display:flex;gap:.3rem;margin:.1rem 0 .7rem;flex-wrap:wrap;}
@@ -983,7 +998,10 @@
   .midk-console.rolling .midk-spin{background:#e7e0cd;color:var(--ink-faint);box-shadow:none;}
   /* --- Tug reels + Spin: real reel strips (no more swapping symbols every frame) and a painted round button --- */
   #fest .midk-console{--rh:36px;}
-  #fest .midk-console .mc-reels{gap:6px;padding:5px;border-radius:14px;background:#d9b47e;border:2.5px solid #67543f;box-shadow:none;}
+  #fest .midk-console .mc-reels{position:relative;gap:6px;padding:5px;border-radius:14px;background:#d9b47e;border:2.5px solid #67543f;box-shadow:none;}
+  #fest .midk-console .mc-reels .mc-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;background:#faf2dc;border-radius:11px;color:#67543f;font:800 19px/1.05 Georgia,serif;letter-spacing:.02em;padding:0 6px;box-sizing:border-box;opacity:0;pointer-events:none;transition:opacity .22s ease;z-index:2;}
+  #fest .midk-console .mc-reels .mc-result.show{opacity:1;}
+  #fest .midk-console .mc-msg,#fest #midkHud #midkConsole .mc-msg{display:none!important;}
   #fest .midk-console .mc-reel{position:relative;display:block;width:var(--rh);height:var(--rh);overflow:hidden;border-radius:9px;background:#faf2dc;border:2px solid #67543f;box-shadow:none;box-sizing:content-box;}
   #fest .midk-console .mc-strip{display:block;transform:translateY(calc(var(--rh) * var(--ty,0) * -1));will-change:transform;}
   #fest .midk-console .mc-strip i{display:grid;place-items:center;width:var(--rh);height:var(--rh);}
@@ -2205,7 +2223,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=18"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=35"><script src="ui/cafe-engine.js?v=20"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=40"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=37"><script src="ui/cafe-engine.js?v=20"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=42"></script>
 <script>
 (() => {
 "use strict";
@@ -6534,6 +6552,22 @@ function shopWelcomeRow(keepsake) {
   return row;
 }
 // Sparkle cosmetics are browsable in Featured and Dress-up.
+function shopBlessingRow() {
+  if (!G.tutorialDone) return null;
+  const active = blessingActive(), days = Math.max(0, Math.ceil((blessingUntil() - Date.now()) / 864e5));
+  const moon = '<svg class="bless-moon" viewBox="0 0 64 64" width="28" height="28" aria-hidden="true" fill="none" stroke="#67543f" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path fill="#f0d78c" d="M38 8a22 22 0 1 0 18 34 17 17 0 0 1-18-34Z"/><path fill="#94aa91" d="m47 14 1.6 3.4 3.6.4-2.7 2.5.8 3.6-3.3-1.9-3.3 1.9.8-3.6-2.7-2.5 3.6-.4Z"/></svg>';
+  const row = document.createElement("div");
+  row.className = "shop-item pack blessing-row";
+  row.innerHTML = active
+    ? `<div class="txt"><div class="name">${moon} Midknight’s Blessing</div>
+         <div class="desc">Active · ${days} more day${days === 1 ? "" : "s"}. Harvest all, Feed all, auto-gather and more.</div></div>
+       <button class="btn">Manage</button>`
+    : `<div class="txt"><div class="name">${moon} Midknight’s Blessing</div>
+         <div class="desc">Tending made easy: Harvest all, Feed all, auto-gather and auto-replant, plus a moonlit decor piece each month. Optional, and the whole game plays fine without it.</div></div>
+       <button class="btn primary">From ${IAP_PRODUCTS.midknight_blessing_weekly.price}</button>`;
+  row.querySelector("button").addEventListener("click", () => showBlessingOffer());
+  return row;
+}
 function shopSparkleRow(keepsake) {
   const owned = iapOwns("sparkle_pack");
   if (!owned && !(G.tutorialDone && residentCount() >= 2)) return null;
@@ -6993,6 +7027,7 @@ function renderShop() {
   if (shopTab === "inventory") { renderInventory(list); return; }
   if (shopTab === "featured") {
     // Paid cosmetic packs live in Featured; ordinary decorations stay in Decor.
+    const blRow = shopBlessingRow(); if (blRow) list.appendChild(blRow);
     const wpRow = !iapOwns("welcome_pack") && shopWelcomeRow();
     if (wpRow) list.appendChild(wpRow);
     const spRow = shopSparkleRow(); if (spRow) list.appendChild(spRow);
@@ -13077,12 +13112,14 @@ function midkBuildReels() {
     for (let rep = 0; rep < 3; rep++) for (const k of MIDK_SYMS) { const i = document.createElement("i"); i.innerHTML = MIDK_SYM_SVG[k]; strip.append(i); }
     strip.style.setProperty("--ty", r); win.append(strip); reels.append(win);
   }
+  const res = document.createElement("div"); res.className = "mc-result"; reels.append(res);
 }
-function midkReelsSync(rolling, resolved, syms) {
+function midkReelsSync(rolling, resolved, syms, resultText) {
   const reels = document.getElementById("midkReels"); if (!reels) return; midkBuildReels();
-  const wins = [...reels.children], reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const wins = [...reels.querySelectorAll(".mc-reel")], res = reels.querySelector(".mc-result"), reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (rolling && _midkReelMode !== "spin") {
     _midkReelMode = "spin";
+    if (res) res.classList.remove("show");
     wins.forEach((w, i) => { w.classList.remove("landing", "landed"); w.classList.add("spinning"); w.firstElementChild.style.animationDuration = (0.3 + i * 0.045) + "s"; });
   } else if (resolved && _midkReelMode !== "hold") {
     _midkReelMode = "hold";
@@ -13093,8 +13130,10 @@ function midkReelsSync(rolling, resolved, syms) {
       void strip.offsetWidth;
       setTimeout(() => { if (_midkReelMode !== "hold") return; w.classList.add("landing"); strip.style.setProperty("--ty", k + 4); setTimeout(() => w.classList.add("landed"), 420); }, i * 110);
     });
+    setTimeout(() => { if (_midkReelMode === "hold" && res) { res.textContent = resultText || ""; res.classList.add("show"); } }, reduced ? 80 : 760);
   } else if (!rolling && !resolved && _midkReelMode !== "idle") {
     _midkReelMode = "idle";
+    if (res) res.classList.remove("show");
     wins.forEach((w, i) => { w.classList.remove("spinning", "landing", "landed"); w.firstElementChild.style.animationDuration = ""; w.firstElementChild.style.setProperty("--ty", i); });
   }
 }
@@ -13497,7 +13536,7 @@ function _midkUpdateBtns() {
   con.classList.toggle("rolling", !!rolling);
   con.classList.toggle("result", !!resolved);
   sb.disabled = !ready;
-  midkReelsSync(!!rolling, !!resolved, midkSlot ? midkSlot.reels : ["grow", "push", "aura"]);
+  midkReelsSync(!!rolling, !!resolved, midkSlot ? midkSlot.reels : ["grow", "push", "aura"], midkSlot ? midkSlot.result : "");
   const bar = document.getElementById("midkBar");
   if (bar && bar.firstElementChild && !rolling && !resolved) bar.firstElementChild.style.width = Math.min(100, midkCharge * 100) + "%";
   sb.style.setProperty("--pn", rolling || resolved ? 0 : Math.min(100, midkCharge * 100));
@@ -19249,13 +19288,16 @@ function renderAdventureCard() {
     const pc = (pc0 && pc0.t >= a.startedAt) ? pc0 : null;
     const who = (a.cats && a.cats.length) ? (a.cats.length > 2 ? `${a.cats[0]} + ${a.cats.length - 1}` : joinNice(a.cats)) : a.cat;
     const prg = back ? 100 : Math.max(3, Math.min(99, Math.round((Date.now() - a.startedAt) / Math.max(1, a.endsAt - a.startedAt) * 100)));
+    const note = pc ? String(pc.text || "").replace(/\s+/g, " ").trim() : "";
     html += `<div class="adv-trip${back ? " back" : ""}">
-      ${back ? "" : `<canvas class="adv-clip" data-trip="${esc(String(a.id))}" data-dest="${esc(a.dest)}" width="360" height="180" role="img" aria-label="${esc(who)} on their ${esc(d.name.toLowerCase())}"></canvas>`}
-      <div class="adv-top"><span class="adv-emoji">${neoUIIcon("adventure")}</span>
-      <div><div class="adv-title">${esc(who)} &middot; ${esc(d.name)}</div>
-      <div class="adv-sub">${back ? "back at the cove — see how it went" : `${T.label.toLowerCase()} · back ${whenText(a.endsAt)}`}</div></div></div>
-      ${back ? "" : `<div class="pj-bar adv-bar"><i style="width:${prg}%"></i></div>`}
-      <button class="adv-postcard neo-postcard-preview" data-postcard="${a.id}">${neoUIIcon("adventure")}<span><b>${pc ? "Read postcard" : "View travel postcard"}</b><small>${esc(who)} · ${esc(d.name)}${pc ? "" : back ? " · Trip complete" : " · First note on its way"}</small></span></button>
+      <div class="adv-window${back ? " done" : ""}">
+        ${back ? `<div class="adv-done" aria-hidden="true">${neoUIIcon("adventure")}<b>Back at the cove</b></div>` : `<canvas class="adv-clip" data-trip="${esc(String(a.id))}" data-dest="${esc(a.dest)}" width="360" height="180" role="img" aria-label="${esc(who)} on their ${esc(d.name.toLowerCase())}"></canvas>`}
+        <span class="adv-pill adv-who" title="${esc(d.name)}">${esc(who)}</span>
+        <span class="adv-pill adv-eta">${back ? "trip complete" : "back " + whenText(a.endsAt)}</span>
+        <button type="button" class="adv-stamp${pc ? " new" : ""}" data-postcard="${a.id}" aria-label="${pc ? "Read the postcard" : "Travel postcard"}"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#67543f" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="6" width="18" height="13" rx="2" fill="#fffaf0"/><path d="m3.5 7.5 8.5 6 8.5-6"/></svg><span>Postcard</span></button>
+        ${back ? "" : `<div class="adv-prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${prg}" aria-label="Trip progress"><i style="width:${prg}%"></i></div>`}
+      </div>
+      <button type="button" class="adv-note" data-postcard="${a.id}">${pc ? "“" + esc(note.length > 96 ? note.slice(0, 96) + "…" : note) + "”" : back ? "See the travel postcard" : "First postcard arrives partway through."}</button>
       ${back ? `<button class="btn primary" data-claim="${a.id}">See how it went</button>`
              : `<button class="btn tiny" data-recall="${a.id}">Call them home</button>${DEV_BUILD ? ` <button class="btn tiny" data-skip="${a.id}">skip · dev</button>` : ""}`}
     </div>`;
