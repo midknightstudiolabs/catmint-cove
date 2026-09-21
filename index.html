@@ -4843,7 +4843,7 @@ function updateCat(c, dt) {
       }
       if (c._station === "garden") spawnParticles(c.x, c.y - 10, "leaf", 5);
     }
-    else if (c.stateT > (c._arriveState === "drinking" ? 32 : 14)) { c._pendStation = null; decide(c); }   // the pond can be a long walk
+    else if (c.stateT > (c._arriveState === "drinking" ? 32 : c._arriveState === "indoors" ? 40 : 14)) { c._pendStation = null; decide(c); }   // the pond can be a long walk
     return;
   }
   if (c.state === "indoors") {
@@ -21005,6 +21005,7 @@ function neoHarvestAll(quiet){
   for(const i of idx){const p=h.plots[i],c=COVE_CROPS[p.key],key=p.key;if(CoveCafeEngine.ingredients[key])CoveCafeEngine.acquire(G,key,c.yield,c.cost);else h.stock[key]=(h.stock[key]||0)+c.yield;got[key]=(got[key]||0)+c.yield;h.plots[i]=null;if(auto&&neoReplantPatch(i,key))replanted++;}
   save();syncHud();if(!quiet)sfx('collect');
   neoHarvestAll.last={count:idx.length,got,replanted};
+  neoGardenBadges();   // any decor that settles in announces itself first, so it can never cover the harvest result
   if(!quiet)toast('Harvested '+idx.length+' patch'+(idx.length===1?'':'es')+': '+Object.entries(got).map(([k,n])=>'+'+n+' '+COVE_CROPS[k].name.toLowerCase()).join(', ')+(replanted?' · replanted '+replanted:''),5);
   neoGardenBadges();
   const hs=document.getElementById('neo-homestead');if(hs&&!hs.hidden&&!hs.classList.contains('cafe-full-room'))neoOpenHomestead('garden');
@@ -21026,7 +21027,7 @@ function neoGardenWatch(){
   claimBlessingDecor(); claimEarnedDecor();
   if(!G||!G.homestead)return;
   const ready=neoReadyPlots(),n=ready.length;neoGardenBadges();
-  if(_gardenNoticeCount<0){_gardenNoticeCount=n;if(n)setTimeout(()=>{if(!festMode&&!restMode)toast(n+(n===1?' patch is':' patches are')+' ripe in the Cove Garden.',4.5);},1200);return;}
+  if(_gardenNoticeCount<0){_gardenNoticeCount=n;if(n)setTimeout(()=>{const now=neoReadyPlots().length;if(now&&!festMode&&!restMode)toast(now+(now===1?' patch is':' patches are')+' ripe in the Cove Garden.',4.5);},1200);return;}
   if(n>_gardenNoticeCount&&!festMode&&!restMode){
     const h=neoHomestead(),names=[...new Set(ready.map(i=>COVE_CROPS[h.plots[i].key].name.toLowerCase()))];
     toast('Ripe in the Garden: '+names.join(', ')+(blessingActive()?'. Harvest all is one tap away.':'.'),4.5);
@@ -21196,7 +21197,7 @@ function neoOpenHomestead(kind){
     if(ripe){
       const banner=document.createElement('section');banner.className='garden-ripe';banner.setAttribute('role','status');
       const msg=document.createElement('strong');msg.textContent=ripe+(ripe===1?' patch is':' patches are')+' ripe · '+Object.entries(neoReadySummary()).map(([k,n])=>'+'+n+' '+COVE_CROPS[k].name.toLowerCase()).join(', ');banner.append(msg);
-      if(blessingActive()){const all=document.createElement('button');all.className='btn primary';all.textContent='Harvest all';all.onclick=neoHarvestAll;banner.append(all);}
+      if(blessingActive()){const all=document.createElement('button');all.className='btn primary';all.textContent='Harvest all';all.onclick=()=>neoHarvestAll();banner.append(all);}
       else if(ripe>1){const hint=document.createElement('button');hint.className='btn';hint.type='button';hint.textContent='Harvest all · with Blessing';hint.onclick=showBlessingOffer;banner.append(hint);}
       sheet.querySelector('h2').after(banner);
     }
