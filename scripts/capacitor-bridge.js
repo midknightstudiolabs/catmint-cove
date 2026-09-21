@@ -78,6 +78,32 @@
     }
   } catch (e) {}
 
+  /* ---- save mirror: a second copy of the save in native storage (UserDefaults / SharedPreferences).
+   *      WebView localStorage can be cleared by the OS under storage pressure; this copy survives it. ---- */
+  var MIRROR_KEY = "catmintCove.neo.save.mirror.v1";
+  window.CoveNative.mirrorSave = function (raw) {
+    try { if (P.Preferences && raw) P.Preferences.set({ key: MIRROR_KEY, value: String(raw) }).catch(function () {}); } catch (e) {}
+  };
+  window.CoveNative.readMirror = function () {
+    try { if (P.Preferences) return P.Preferences.get({ key: MIRROR_KEY }).then(function (r) { return (r && r.value) || null; }).catch(function () { return null; }); } catch (e) {}
+    return Promise.resolve(null);
+  };
+  window.CoveNative.clearMirror = function () {
+    try { if (P.Preferences) P.Preferences.remove({ key: MIRROR_KEY }).catch(function () {}); } catch (e) {}
+  };
+  /* share a text file (the backup) so it can be saved to Files / Notes / email */
+  window.CoveNative.shareFile = function (name, text) {
+    try {
+      if (P.Filesystem && P.Share) {
+        return P.Filesystem.writeFile({ path: name, data: text, directory: "CACHE", encoding: "utf8" }).then(function (res) {
+          return P.Share.share({ title: "Catmint Cove backup", text: "My Catmint Cove backup", url: res.uri });
+        }).then(function () { return true; }).catch(function () { return false; });
+      }
+      if (P.Share) return P.Share.share({ title: "Catmint Cove backup", text: text }).then(function () { return true; }).catch(function () { return false; });
+    } catch (e) {}
+    return Promise.resolve(false);
+  };
+
   /* ---- photo: save to the gallery / open the share sheet instead of an <a download> ---- */
   window.CoveNative.savePhoto = function (dataUrl) {
     var base64 = String(dataUrl).replace(/^data:image\/\w+;base64,/, "");

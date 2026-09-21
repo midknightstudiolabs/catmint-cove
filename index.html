@@ -2880,6 +2880,15 @@ function advanceCoveDay(now=Date.now()) {
   const days=Math.floor(elapsed/86400000);
   if(days>0){G.opens+=days;G.coveDayAt+=days*86400000;}
 }
+// Native only: keep a second copy of the save in Capacitor Preferences, at most once a minute (and whenever the app is backgrounded).
+let _mirrorAt = 0;
+function neoMirrorSave(raw, force) {
+  try {
+    if (!window.CoveNative || !window.CoveNative.mirrorSave) return;
+    const now = Date.now(); if (!force && now - _mirrorAt < 60000) return;
+    _mirrorAt = now; window.CoveNative.mirrorSave(raw);
+  } catch (e) {}
+}
 function save() {
   if (_dead || !G) return;
   try {
@@ -2905,7 +2914,9 @@ function save() {
       localStorage.setItem("catmintCove.neo.previous-save", previous);
       sessionStorage.setItem("neo.backedUp", "1");
     }
-    localStorage.setItem(SAVE_KEY, JSON.stringify(editSafeSave(G)));
+    const _saved = JSON.stringify(editSafeSave(G));
+    localStorage.setItem(SAVE_KEY, _saved);
+    neoMirrorSave(_saved, false);
     return true;
   } catch (e) {return false;}
 }
@@ -2916,7 +2927,7 @@ let lastSaveClock = performance.now();
  * safety net: a string you can stash or move to another device. In the native
  * build this sits alongside Google Play Games / Game Center cloud saves. */
 function saveCode() {
-  try { save(); return "CMC1." + btoa(unescape(encodeURIComponent(localStorage.getItem(SAVE_KEY) || JSON.stringify(G)))); }
+  try { save(); if (G) G.lastBackupAt = Date.now(); return "CMC1." + btoa(unescape(encodeURIComponent(localStorage.getItem(SAVE_KEY) || JSON.stringify(G)))); }
   catch (e) { return ""; }
 }
 function applySaveCode(code) {
@@ -8374,7 +8385,8 @@ function resetGame() {
   if (!confirm("Wipe all progress and start a fresh cove?")) return;
   _dead = true;                                   // stop the autosave re-persisting old state
   try { clearInterval(_saveInterval); } catch (e) {}
-  try { localStorage.removeItem(SAVE_KEY); for (const k of OLD_SAVE_KEYS) localStorage.removeItem(k); } catch (e) {}
+  try { localStorage.removeItem(SAVE_KEY); for (const k of OLD_SAVE_KEYS) localStorage.removeItem(k); localStorage.setItem("neo.wiped", "1"); } catch (e) {}
+  try { window.CoveNative && window.CoveNative.clearMirror && window.CoveNative.clearMirror(); } catch (e) {}
   location.reload();
 }
 if (DEV_BUILD) {
@@ -20332,7 +20344,8 @@ setInterval(() => {
 window.__cove.hardReset = () => {
   _dead = true;
   clearInterval(_saveInterval);
-  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+  try { localStorage.removeItem(SAVE_KEY); localStorage.setItem("neo.wiped", "1"); } catch (e) {}
+  try { window.CoveNative && window.CoveNative.clearMirror && window.CoveNative.clearMirror(); } catch (e) {}
   location.reload();
 };
 window.__cove.focus = (name) => {
@@ -21303,6 +21316,60 @@ window.addEventListener('pagehide',()=>{neoScheduleGardenReminder();neoScheduleA
 /* Adventures: keep the Activities tile status fresh while cats are away (the Cove sign tag shows it in-world) */
 {setInterval(neoAdvChipSync,20000);setTimeout(neoAdvChipSync,1500);document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#neo-activities-nav'))setTimeout(neoAdvChipSync,0);},true);}
 if(new URLSearchParams(location.search).get('clips'))setTimeout(()=>neoOpenAdventureClips(),4500);
+/* ---- Keep the cove safe: (1) native save mirror restore, (2) a gentle, opt-in backup nudge (at most twice) ---- */
+function neoValidSave(raw) { try { const o = JSON.parse(raw); return o && SAVE_VERSIONS.includes(o.v) && Array.isArray(o.cats) ? o : null; } catch (e) { return null; } }
+async function neoRestoreFromMirror() {
+  try {
+    const NC = window.CoveNative; if (!NC || !NC.readMirror) return;
+    if (localStorage.getItem("neo.wiped")) { localStorage.removeItem("neo.wiped"); if (NC.clearMirror) NC.clearMirror(); return; }   // you chose a fresh start: never resurrect
+    if (sessionStorage.getItem("neo.mirrorTried")) return; sessionStorage.setItem("neo.mirrorTried", "1");
+    const raw = await NC.readMirror(); const mir = raw && neoValidSave(raw); if (!mir) return;
+    const cur = neoValidSave(localStorage.getItem(SAVE_KEY) || "");
+    // prefer whichever copy has more play behind it; an empty or nearly empty device copy loses to the mirror
+    if (cur && (cur.allTimeSec || 0) >= (mir.allTimeSec || 0)) return;
+    _dead = true; try { clearInterval(_saveInterval); } catch (e) {}
+    localStorage.setItem(SAVE_KEY, raw); localStorage.setItem("neo.restoredNote", "1");
+    location.reload();
+  } catch (e) {}
+}
+neoRestoreFromMirror();
+if (localStorage.getItem("neo.restoredNote")) { localStorage.removeItem("neo.restoredNote"); setTimeout(() => { try { toast("Welcome back. Your cove was restored from this phone’s backup.", 6); } catch (e) {} }, 2500); }
+document.addEventListener("visibilitychange", () => { if (document.hidden && !_dead && G) { try { neoMirrorSave(localStorage.getItem(SAVE_KEY), true); } catch (e) {} } });
+window.addEventListener("pagehide", () => { if (!_dead && G) { try { neoMirrorSave(localStorage.getItem(SAVE_KEY), true); } catch (e) {} } });
+
+async function neoShareBackup() {
+  const code = saveCode(); if (!code) { toast("Couldn’t prepare the backup. Try again in a moment.", 4); return false; }
+  const name = "catmint-cove-backup.txt";
+  try { if (window.CoveNative && window.CoveNative.shareFile && await window.CoveNative.shareFile(name, code)) return true; } catch (e) {}
+  try {
+    const file = new File([code], name, { type: "text/plain" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Catmint Cove backup" }); return true; }
+  } catch (e) { if (e && e.name === "AbortError") return false; }
+  try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([code], { type: "text/plain" })); a.download = name; document.body.append(a); a.click(); a.remove(); toast("Backup file saved. Keep it somewhere safe.", 4); return true; } catch (e) {}
+  try { await navigator.clipboard.writeText(code); toast("Backup code copied. Paste it into Notes.", 4); return true; } catch (e) {}
+  return false;
+}
+function neoBackupNudgeDue() {
+  if (!G || !G.tutorialDone || _dead) return false;
+  const st = G.backupNudge || { n: 0, at: 0 }, now = Date.now();
+  if (st.n >= 2) return false;
+  if (G.lastBackupAt && now - G.lastBackupAt < 14 * 864e5) return false;
+  if (st.n === 0) return (G.opens || 0) >= 3;
+  return now - st.at > 3 * 864e5 && (!!(G.cafe && G.cafe.unlocked) || residentCount() >= 8);
+}
+function neoShowBackupNudge() {
+  G.backupNudge = { n: ((G.backupNudge && G.backupNudge.n) || 0) + 1, at: Date.now() }; save();
+  openModal('<div class="reveal"><div class="kicker">A SAFE COPY</div><h2>Save a copy of your cove?</h2><p class="sub">Your cove lives on this device. A backup file lets you bring it back on a new phone or after a reinstall. Keep it in Files, Notes or email it to yourself.</p><div class="row"><button class="btn primary" id="bk-nudge-yes" type="button">Save a copy</button><button class="btn" id="bk-nudge-no" type="button">Not now</button></div><p class="sub" style="margin:.6rem 0 0;font-size:.74rem">You can do this any time: Journal, then Back up / restore.</p></div>');
+  document.getElementById("bk-nudge-no").onclick = closeModal;
+  document.getElementById("bk-nudge-yes").onclick = async () => { const ok = await neoShareBackup(); if (ok) { closeModal(); toast("Thank you. Your cove is safer now.", 3.5); } };
+}
+setInterval(() => {
+  try {
+    if (_cold || festMode || restMode || _placing || _arranging || anyPanelOpen() || scrim.classList.contains("on") || document.hidden) return;
+    if (neoBackupNudgeDue()) neoShowBackupNudge();
+  } catch (e) {}
+}, 45000);
+window.__cove.backupNudge = { due: () => neoBackupNudgeDue(), show: () => neoShowBackupNudge(), state: () => G.backupNudge || null, share: () => neoShareBackup() };
 resize();
 _lastViewBottom = _viewBottomY;
 load();
