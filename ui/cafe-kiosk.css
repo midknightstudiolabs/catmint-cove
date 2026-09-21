@@ -199,3 +199,10 @@
  #app #cafe-kiosk.cc-v2.cc-managing canvas{left:0;right:auto;width:100%}
  #app #cafe-kiosk.cc-v2.cc-managing .cc-top{right:460px}
 }
+/* Menu bar: a deep moss dock so it never blends into the cream sheet above it */
+#app #cafe-kiosk.cc-v2 .cc-tabs{background:#3d5b47;border-top:0;box-shadow:0 -4px 14px #1f342a33}
+#app #cafe-kiosk.cc-v2 .cc-tabs button{color:#d9e6d3;background:transparent}
+#app #cafe-kiosk.cc-v2 .cc-tabs button[aria-pressed=true]{background:#faf6e8;color:#2f4a3a;font-weight:700}
+#app #cafe-kiosk.cc-v2 .cc-tabs button:focus-visible{outline:2px solid #faf6e8;outline-offset:2px}
+#app #cafe-kiosk.cc-v2 .cc-dot{border-color:#3d5b47}
+#app #cafe-kiosk.cc-v2 .cc-tabs button[aria-pressed=true] .cc-dot{border-color:#faf6e8}

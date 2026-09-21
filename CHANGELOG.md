@@ -1,6 +1,7 @@
 ## Neo testing — September 22, 2026 (café fixes)
 
 - **Café guests no longer glitch at the scene edge:** on tablets the sky/sea/grass edge fill was painted over guests walking in from off-screen, cutting them off at a line and popping them in. The bands are now painted underneath the scene, and the scene edges sit on whole pixels so no thin seam line shows.
+- **Café menu bar** is now a deep moss dock with cream labels and a cream active tab, so it no longer blends into the cream sheet above it.
 - **The cove goes quiet in the café:** waves, wind, birds and the cats' calls in the cove are silent while the café is open (it keeps its own music or rain) and come back when you leave.
 
 ## Neo testing — September 22, 2026 (after 3.3.0)
