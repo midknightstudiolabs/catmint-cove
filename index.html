@@ -546,6 +546,15 @@
   .adv-window.arrived .adv-stamp{animation:advStamp .5s ease-in-out 4;}
   @keyframes advMail{0%{opacity:0;transform:translate(0,10px) scale(.5) rotate(-12deg)}18%{opacity:1;transform:translate(0,-16px) scale(1.15) rotate(6deg)}70%{opacity:1;transform:translate(150px,-26px) scale(1) rotate(-4deg)}100%{opacity:0;transform:translate(210px,-8px) scale(.7)}}
   @media (prefers-reduced-motion:reduce){.adv-stop.next b,.adv-window.arrived .adv-mail,.adv-window.arrived .adv-stamp{animation:none}.adv-rail-fill{transition:none}}
+  .adv-lite{padding:.1rem 0 .35rem;}
+  .adv-lite .adv-top{display:flex;align-items:center;gap:.6rem;}
+  .adv-lite .adv-top>div{flex:1;min-width:0;}
+  .adv-lite .adv-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .adv-lite .adv-prog{position:relative;left:auto;right:auto;bottom:auto;height:5px;border-radius:3px;background:#e2d6b0;margin:.5rem 0 .55rem;overflow:hidden;}
+  .adv-lite .adv-prog i{display:block;height:100%;background:#e0a53a;border-radius:3px;}
+  .adv-lite-row{display:flex;gap:.45rem;flex-wrap:wrap;}
+  .adv-stamp-lite{flex:0 0 auto;padding:.3rem .6rem;border-radius:8px;border:2px solid #67543f;background:#faf2dc;color:#67543f;font:800 .62rem/1 system-ui,sans-serif;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;min-height:0;width:auto;}
+  .adv-stamp-lite.new{background:#fff3cf;}
   .adv-window{position:relative;border-radius:14px;overflow:hidden;background:#dfeee0;border:2px solid #67543f;}
   .adv-window canvas.adv-clip{margin:0;border-radius:0;}
   .adv-window.done{aspect-ratio:2/1;display:grid;place-items:center;background:#ece3c3;}
@@ -18616,9 +18625,12 @@ function frameBody(now) {
     _profSim += ((performance.now() - _simT0) - _profSim) * 0.1;
     if (steps === 6) simAccum = 0;          // fell behind; drop the backlog rather than spiral
     updateDayNight(frameDt);
-    renderScene(frameDt);
+    // A full-screen sheet hides nearly all of the Cove, so repaint it at ~15 fps (simulation above still runs every tick).
+    if (anyPanelOpen()) { _panelAcc += frameDt; if (_panelAcc < 1 / 15) return; renderScene(_panelAcc); _panelAcc = 0; }
+    else { _panelAcc = 0; renderScene(frameDt); }
   }
 }
+let _panelAcc = 0;
 let _frameEwma = 1 / 60, _perfLite = false, _perfTier = 0, _frameCount = 0;
 
 /* ---------- helpers ---------- */
@@ -18674,10 +18686,13 @@ function renderMoments() {
   if (!el) return;
   const m = G.moments || [];
   if (!m.length) { el.innerHTML = `<div class="moments-empty">Surprises, trips and little discoveries show up here.</div>`; return; }
-  el.innerHTML = m.slice(0, 40).map(x =>
+  const shown = _momentsMore ? 40 : 10;
+  el.innerHTML = m.slice(0, shown).map(x =>
     `<div class="moment-row"><span class="me">${esc(x.emoji || "·")}</span><span class="mt">${esc(x.text)}</span><span class="ma">${agoText(x.t)}</span></div>`
-  ).join("");
+  ).join("") + (m.length > 10 ? `<button type="button" class="linkbtn moments-more">${_momentsMore ? "Show fewer" : "Show older moments"}</button>` : "");
+  const mb = el.querySelector(".moments-more"); if (mb) mb.onclick = () => { _momentsMore = !_momentsMore; renderMoments(); };
 }
+let _momentsMore = false;
 // the little things the cats — and Labubu — have dragged in and left by the sign
 function renderFindsCard() {
   const el = document.getElementById("findsCard");
@@ -19516,7 +19531,7 @@ function renderProjectCard() {
 let _advBoardEl = null;
 function renderAdventureCard() {
   _advSig = advSig();
-  renderAdvInto(document.getElementById("advCard"));
+  renderAdvInto(document.getElementById("advCard"), true);
   if (_advBoardEl && _advBoardEl.isConnected) renderAdvInto(_advBoardEl);
   try { neoAdvChipSync(); } catch (e) {}
 }
@@ -19549,7 +19564,7 @@ function advTick() {
   });
   try { neoAdvChipSync(); } catch (e) {}
 }
-function renderAdvInto(el) {
+function renderAdvInto(el, lite) {
   if (!el) return;
   const list = activeAdvs();
   let html = "", ready = advReady();
@@ -19563,6 +19578,17 @@ function renderAdvInto(el) {
     const who = (a.cats && a.cats.length) ? (a.cats.length > 2 ? `${a.cats[0]} + ${a.cats.length - 1}` : joinNice(a.cats)) : a.cat;
     const prg = back ? 100 : Math.max(3, Math.min(99, Math.round((Date.now() - a.startedAt) / Math.max(1, a.endsAt - a.startedAt) * 100)));
     const note = pc ? String(pc.text || "").replace(/\s+/g, " ").trim() : "";
+    if (lite) {   // Journal: a quiet summary row (no canvas, no journey rail). "Watch them" opens the animated Adventure board.
+      html += `<div class="adv-trip adv-lite${back ? " back" : ""}">
+        <div class="adv-top"><span class="adv-emoji">${neoUIIcon("adventure")}</span>
+          <div><div class="adv-title">${esc(who)} · ${esc(d.name)}</div><div class="adv-sub adv-eta">${back ? "trip complete" : "back " + whenText(a.endsAt)}</div></div>
+          <button type="button" class="adv-stamp-lite${pc ? " new" : ""}" data-postcard="${a.id}" aria-label="${pc ? "Read the postcard" : "Travel postcard"}">Postcard</button></div>
+        ${back ? "" : `<div class="adv-prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${prg}" aria-label="Trip progress"><i style="width:${prg}%"></i></div>`}
+        ${back ? `<button class="btn primary" data-claim="${a.id}">See how it went</button>`
+               : `<div class="adv-lite-row"><button class="btn tiny" data-watch="1">Watch them</button><button class="btn tiny" data-recall="${a.id}">Call them home</button>${DEV_BUILD ? ` <button class="btn tiny" data-skip="${a.id}">skip · dev</button>` : ""}</div>`}
+      </div>`;
+      continue;
+    }
     html += `<div class="adv-trip${back ? " back" : ""}">
       <div class="adv-window${back ? " done" : ""}">
         ${back ? `<div class="adv-done" aria-hidden="true">${neoUIIcon("adventure")}<b>Back at the cove</b></div>` : `<canvas class="adv-clip" data-trip="${esc(String(a.id))}" data-dest="${esc(a.dest)}" width="360" height="180" role="img" aria-label="${esc(who)} on their ${esc(d.name.toLowerCase())}"></canvas>`}
@@ -19595,6 +19621,7 @@ function renderAdvInto(el) {
   neoClipStart();
   el.querySelectorAll("[data-postcard]").forEach(b=>b.onclick=()=>{const a=activeAdvs().find(a=>String(a.id)===b.dataset.postcard);const pc=a&&latestPostcardFor(a.cat);if(!a)return;if(pc&&pc.t>=a.startedAt)showPostcard(pc.text,pc.cat,pc.dest,undefined,pc);else showPostcard(Date.now()>=a.endsAt ? "This adventure is complete. Your cats are ready to share how it went." : "The adventure has begun. A first note will arrive partway through the trip.",a.cat,a.dest);});
   el.querySelectorAll("[data-claim]").forEach(b => b.onclick = () => resolveAdventure(b.dataset.claim));
+  el.querySelectorAll("[data-watch]").forEach(b => b.onclick = () => openAdventureBoard());
   el.querySelectorAll("[data-recall]").forEach(b => b.onclick = () => recallAdventure(b.dataset.recall));
   el.querySelectorAll("[data-skip]").forEach(b => b.onclick = () => {
     const a = activeAdvs().find(x => x.id === b.dataset.skip);
@@ -19806,6 +19833,11 @@ window.__cove = {
   get G(){return G}, get cats(){return cats}, get tokens(){return fieldTokens},
   get attractors(){return attractors}, get obstacles(){return obstacles}, get decor(){return decor},
   get world(){return {W, H, catFloor: catFloor()}},
+  journalProfile(){ const out={}, T=(n,fn)=>{const t=performance.now();try{fn();}catch(e){out[n+'_err']=String(e).slice(0,50);}out[n]=+(performance.now()-t).toFixed(1);};
+    T('neoRenderJournal',()=>neoRenderJournal()); T('neoFriendsJournal',()=>neoFriendsJournal()); T('checkin',()=>renderCheckinCard()); T('project',()=>renderProjectCard());
+    T('adventure',()=>renderAdventureCard()); T('finds',()=>renderFindsCard()); T('goals',()=>renderGoals()); T('moments',()=>renderMoments());
+    const t=document.getElementById('today'); out.nodes=t.querySelectorAll('*').length; out.canvases=t.querySelectorAll('canvas').length; out.htmlKB=Math.round(t.innerHTML.length/1024);
+    out.sections={}; for(const id of ['neoJournal','checkinCard','projectCard','advCard','findsCard','goalList','momentsList']){const e=document.getElementById(id);out.sections[id]=e?e.querySelectorAll('*').length:-1;} return out; },
   get skyLife(){return {df: window._sky && window._sky.df, boat: _skyLife.boat, gulls: _skyLife.gulls, overX: _overX}},
   get rate(){return aggregateRate()},
   get dex(){return G.dex}, get goals(){return G.goals}, get revealQ(){return revealQueue},
