@@ -546,6 +546,21 @@
   .adv-window.arrived .adv-stamp{animation:advStamp .5s ease-in-out 4;}
   @keyframes advMail{0%{opacity:0;transform:translate(0,10px) scale(.5) rotate(-12deg)}18%{opacity:1;transform:translate(0,-16px) scale(1.15) rotate(6deg)}70%{opacity:1;transform:translate(150px,-26px) scale(1) rotate(-4deg)}100%{opacity:0;transform:translate(210px,-8px) scale(.7)}}
   @media (prefers-reduced-motion:reduce){.adv-stop.next b,.adv-window.arrived .adv-mail,.adv-window.arrived .adv-stamp{animation:none}.adv-rail-fill{transition:none}}
+  .neo-scrap-card{display:flex;align-items:center;gap:.7rem;width:100%;margin:.6rem 0;padding:.65rem .8rem;border-radius:16px;border:1.5px solid #d9cdb0;background:#fbf4e0;color:#4e5847;text-align:left;cursor:pointer;font:inherit;}
+  .neo-scrap-card .ns-ico .neo-ui-icon{width:30px;height:30px;}
+  .neo-scrap-card .ns-txt{flex:1;display:grid;gap:2px;}.neo-scrap-card b{font-size:.95rem;}.neo-scrap-card small{color:#7a8470;font-size:.78rem;}
+  .neo-scrap-card .ns-go{font-size:1.4rem;color:#a0703a;}
+  .scrap-chips{display:flex;gap:.35rem;overflow-x:auto;padding:.1rem .05rem .5rem;-webkit-overflow-scrolling:touch;}
+  .scrap-chip{flex:0 0 auto;display:flex;align-items:center;gap:.3rem;padding:.3rem .6rem .3rem .4rem;border-radius:999px;border:1.5px solid #d9cdb0;background:#f4eed9;color:#4e5847;font:600 .72rem system-ui,sans-serif;cursor:pointer;min-height:0;width:auto;}
+  .scrap-chip .neo-ui-icon{width:18px;height:18px;}
+  .scrap-chip:disabled{opacity:.4;cursor:default;}
+  .scrap-chip.on{background:#94aa91;border-color:#67543f;color:#243021;}
+  .scrap-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;}
+  .scrap-card{display:grid;gap:2px;padding:.35rem;border-radius:12px;border:1.5px solid #d9cdb0;background:#fff9e9;text-align:left;cursor:pointer;font:inherit;color:#4e5847;min-height:0;}
+  .scrap-card .scrap-art{display:block;border-radius:8px;overflow:hidden;aspect-ratio:5/2;}
+  .scrap-card .scrap-art svg{display:block;width:100%;height:100%;}
+  .scrap-card b{font-size:.8rem;margin-top:.15rem;}.scrap-card small{font-size:.68rem;color:#7a8470;}
+  .reveal.scrap{max-height:82vh;overflow-y:auto;}
   .adv-lite{padding:.1rem 0 .35rem;}
   .adv-lite .adv-top{display:flex;align-items:center;gap:.6rem;}
   .adv-lite .adv-top>div{flex:1;min-width:0;}
@@ -19473,7 +19488,7 @@ function deliverDuePostcards(opts = {}) {
       const previous=G.postcards.find(p=>p.dest===a.dest);
       const artVariant=((previous&&Number.isInteger(previous.artVariant)?previous.artVariant:Math.floor(Math.random()*4))+1+Math.floor(Math.random()*3))%4;
       G.postcards.unshift({ t: now, cat: a.cat, dest: a.dest, text: full, artVariant, artSeed:Math.floor(Math.random()*2147483647) });
-      if (G.postcards.length > 30) G.postcards.length = 30;
+      if (G.postcards.length > 120) G.postcards.length = 120;
       logMoment("✉️", `Postcard from ${a.cat}: “${bare}”`);
       latest = full; latestA = a;
     }
@@ -19510,7 +19525,54 @@ function postcardArt(dest,seed,variant){
   art+=`<path d="M${55+Math.floor(random()*100)} 55q7-8 14 0 7-8 14 0" stroke="#677f75" stroke-width="2" fill="none"/>`;
   return `<svg viewBox="0 0 600 240" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${art}</svg>`;
 }
-function showPostcard(text, cat, dest, onDone, card) {
+function pcSeedVariant(text, cat, dest, card) {
+  let hash = 2166136261; for (const ch of cat + dest + text) hash = Math.imul(hash ^ ch.charCodeAt(0), 16777619) >>> 0;
+  return { seed: card && Number.isInteger(card.artSeed) ? card.artSeed : hash, variant: card && Number.isInteger(card.artVariant) ? card.artVariant % 4 : hash % 4 };
+}
+function pcParts(pc) {
+  const { seed, variant } = pcSeedVariant(pc.text || "", pc.cat, pc.dest, pc);
+  const signoff = ["With love", "See you soon", "Saving you a sunny spot", "Sending a little purr"][variant];
+  const greeting = ["A LITTLE HELLO FROM", "WISH YOU WERE HERE ·", "A NOTE FROM", "POSTMARKED IN"][variant];
+  const signature = "— " + pc.cat, raw = String(pc.text || "").trim(), message = raw.endsWith(signature) ? raw.slice(0, -signature.length).trim() : raw;
+  return { seed, variant, signoff, greeting, message, place: ADV_DESTS[pc.dest] || ADV_DESTS.forest };
+}
+// Draw a postcard as a shareable picture: the destination scene, the note, the address.
+async function neoPostcardBlob(pc) {
+  const P = pcParts(pc), W = 1200, PAD = 100, IW = W - PAD * 2, IH = 440;
+  const meas = document.createElement("canvas").getContext("2d");
+  meas.font = "italic 40px Georgia, serif";
+  const lines = []; { let line = ""; for (const w of P.message.split(/\s+/)) { const t = line ? line + " " + w : w; if (meas.measureText(t).width > IW - 80 && line) { lines.push(line); line = w; } else line = t; } if (line) lines.push(line); }
+  const bodyH = lines.length * 60, H = Math.max(1050, 80 + IH + 190 + bodyH + 130 + 250);
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const g = cv.getContext("2d");
+  g.fillStyle = "#efe9d6"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#fff9e9"; g.strokeStyle = "#d9cdb0"; g.lineWidth = 3; roundRect(g, 36, 36, W - 72, H - 72, 28); g.fill(); g.stroke();
+  const img = new Image(); await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(postcardArt(pc.dest, P.seed, P.variant)); });
+  g.save(); roundRect(g, PAD, 80, IW, IH, 18); g.clip(); g.drawImage(img, PAD, 80, IW, IH); g.restore();
+  g.textAlign = "center"; g.fillStyle = "#a0703a"; g.font = "700 24px system-ui, sans-serif"; g.fillText(P.greeting, W / 2, 80 + IH + 62);
+  g.fillStyle = "#2e3d2f"; g.font = "700 74px Georgia, serif"; g.fillText(P.place.name, W / 2, 80 + IH + 140);
+  g.textAlign = "left"; g.fillStyle = "#4e5847"; g.font = "italic 40px Georgia, serif";
+  let y = 80 + IH + 240; for (const l of lines) { g.fillText(l, PAD + 20, y); y += 60; }
+  g.font = "italic 44px Georgia, serif"; g.fillStyle = "#67543f"; g.fillText(P.signoff + ", " + pc.cat, PAD + 20, y + 30);
+  const by = H - 250;
+  g.strokeStyle = "#e3d9bc"; g.lineWidth = 3; g.beginPath(); g.moveTo(PAD + 20, by); g.lineTo(W - PAD - 20, by); g.stroke();
+  g.fillStyle = "#8a8f7a"; g.font = "700 22px system-ui, sans-serif"; g.fillText("TO", PAD + 20, by + 50);
+  g.fillStyle = "#4e5847"; g.font = "700 46px Georgia, serif"; g.fillText(coveName(), PAD + 20, by + 104);
+  g.font = "32px Georgia, serif"; g.fillStyle = "#6b7563"; g.fillText("Our little home by the sea", PAD + 20, by + 152);
+  g.textAlign = "right"; g.fillStyle = "#a0aa90"; g.font = "700 22px system-ui, sans-serif"; g.fillText("CATMINT COVE · COVE POST", W - PAD - 20, H - 78);
+  return await new Promise(r => cv.toBlob(r, "image/png"));
+}
+async function neoSendPostcard(pc, say) {
+  try {
+    const blob = await neoPostcardBlob(pc); if (!blob) throw new Error("no image");
+    const dataUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); });
+    if (window.CoveNative && window.CoveNative.savePhoto && window.CoveNative.savePhoto(dataUrl)) { say("Opening your share options…"); return; }
+    const file = new File([blob], "catmint-cove-postcard.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "A postcard from Catmint Cove" }); say("Sent to your share sheet."); return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "catmint-cove-postcard.png"; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    say("Postcard saved. Send it to a friend from your files.");
+  } catch (e) { say(e && e.name === "AbortError" ? "" : "Couldn't make the picture. Try again."); }
+}
+function showPostcard(text, cat, dest, onDone, card, back) {
   const place=ADV_DESTS[dest]||ADV_DESTS.forest;
   let hash=2166136261;for(const ch of cat+dest+text)hash=Math.imul(hash^ch.charCodeAt(0),16777619)>>>0;
   const seed=card&&Number.isInteger(card.artSeed)?card.artSeed:hash;
@@ -19518,13 +19580,33 @@ function showPostcard(text, cat, dest, onDone, card) {
   const greeting=['A LITTLE HELLO FROM','WISH YOU WERE HERE ·','A NOTE FROM','POSTMARKED IN'][variant];
   const signoff=['With love','See you soon','Saving you a sunny spot','Sending a little purr'][variant];
   const signature="— "+cat;const message=text.trim().endsWith(signature)?text.trim().slice(0,-signature.length).trim():text;
-  openModal(`<article class="neo-postcard"><div class="neo-postcard-front">${postcardArt(dest,seed,variant)}<span>${greeting}</span><h2>${esc(place.name)}</h2><div class="neo-postcard-mark"></div><small>CATMINT COVE · A LITTLE WAY FROM HOME</small></div><div class="neo-postcard-back"><div class="neo-postcard-letter"><p>${esc(message)}</p><p class="neo-postcard-sign">${signoff}, ${esc(cat)}</p></div><div class="neo-postcard-address"><div class="neo-postcard-stamp">${neoUIIcon('paw')}<small>COVE POST</small></div><small>TO</small><p>${esc(coveName())}</p><p>Our little home by the sea</p></div></div></article><div class="row"><button class="btn primary" id="pc-ok">Keep this postcard</button></div>`);
+  openModal(`<article class="neo-postcard"><div class="neo-postcard-front">${postcardArt(dest,seed,variant)}<span>${greeting}</span><h2>${esc(place.name)}</h2><div class="neo-postcard-mark"></div><small>CATMINT COVE · A LITTLE WAY FROM HOME</small></div><div class="neo-postcard-back"><div class="neo-postcard-letter"><p>${esc(message)}</p><p class="neo-postcard-sign">${signoff}, ${esc(cat)}</p></div><div class="neo-postcard-address"><div class="neo-postcard-stamp">${neoUIIcon('paw')}<small>COVE POST</small></div><small>TO</small><p>${esc(coveName())}</p><p>Our little home by the sea</p></div></div></article><div class="row"><button class="btn primary" id="pc-ok">${back ? "Back to the scrapbook" : "Keep this postcard"}</button><button class="btn" id="pc-send">Send to a friend</button></div><p class="sub" id="pc-say" style="margin:.4rem 0 0;font-size:.78rem;min-height:1.1em" role="status"></p>`);
   document.getElementById("pc-ok").onclick = () => { closeModal(); if (onDone) setTimeout(onDone, 250); };
+  document.getElementById("pc-send").onclick = () => neoSendPostcard(card || { text, cat, dest }, m => { const e = document.getElementById("pc-say"); if (e) e.textContent = m; });
 }
 function showFounderDescription(){
   openModal(`<div class="reveal"><div class="kicker">A LITTLE THANK-YOU · 2026</div><h2>Founding Covekeeper</h2><p>This plaque marks your support for Catmint Cove during its founding days. You helped give this little home a beginning.</p><p>Your keepsakes include the dated plaque and founder accessories: a ribbon, halo, and hero mask. They celebrate your support and give no gameplay advantage.</p><p class="muted">Thank you for helping the Cove grow.</p><div class="cove-action-pair"><button class="btn" id="founder-close">Keep here</button><button class="btn primary" id="founder-store">Store item</button></div></div>`);
   document.getElementById('founder-store').onclick=()=>{G.cosmetics.founderStored=true;save();closeModal();toast('Plaque stored in My inventory.');};
   document.getElementById('founder-close').onclick=closeModal;
+}
+let _scrapFilter = "", _scrapShown = 12;
+function neoOpenScrapbook() {
+  const all = Array.isArray(G.postcards) ? G.postcards : [];
+  const places = Object.keys(ADV_DESTS), got = new Set(all.map(p => p.dest));
+  const list = all.filter(p => !_scrapFilter || p.dest === _scrapFilter);
+  const shown = list.slice(0, _scrapShown);
+  const chips = places.map(k => `<button type="button" class="scrap-chip${got.has(k) ? " got" : ""}${_scrapFilter === k ? " on" : ""}" data-place="${k}" aria-pressed="${_scrapFilter === k}" ${got.has(k) ? "" : "disabled"} title="${esc(ADV_DESTS[k].name)}">${neoUIIcon("dest-" + k)}<span>${esc(ADV_DESTS[k].name)}</span></button>`).join("");
+  const cards = shown.map((p, i) => { const P = pcParts(p); return `<button type="button" class="scrap-card" data-i="${all.indexOf(p)}"><span class="scrap-art">${postcardArt(p.dest, P.seed, P.variant)}</span><b>${esc(P.place.name)}</b><small>${esc(p.cat)} · ${new Date(p.t).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</small></button>`; }).join("");
+  openModal(`<div class="reveal scrap"><div class="kicker">SCRAPBOOK</div><h2>Postcards from the road</h2>
+    <p class="sub" style="margin:.1rem 0 .6rem">${all.length ? `${all.length} postcard${all.length === 1 ? "" : "s"} · ${got.size} of ${places.length} places visited` : "Send your cats exploring. Their postcards are kept here."}</p>
+    <div class="scrap-chips">${chips}</div>
+    <div class="scrap-grid">${cards || `<p class="muted" style="grid-column:1/-1;text-align:center">Nothing here yet.</p>`}</div>
+    ${list.length > shown.length ? `<button class="btn" id="scrap-more" type="button" style="margin-top:.6rem">Show older postcards</button>` : ""}
+    <button class="linkbtn" id="scrap-close" style="margin-top:.5rem">Close</button></div>`);
+  document.getElementById("scrap-close").onclick = () => { _scrapFilter = ""; _scrapShown = 12; closeModal(); };
+  const more = document.getElementById("scrap-more"); if (more) more.onclick = () => { _scrapShown += 12; neoOpenScrapbook(); };
+  document.querySelectorAll("#modal .scrap-chip.got").forEach(b => b.onclick = () => { _scrapFilter = _scrapFilter === b.dataset.place ? "" : b.dataset.place; _scrapShown = 12; neoOpenScrapbook(); });
+  document.querySelectorAll("#modal .scrap-card").forEach(b => b.onclick = () => { const p = all[+b.dataset.i]; if (p) showPostcard(p.text, p.cat, p.dest, () => neoOpenScrapbook(), p, true); });
 }
 function latestPostcardFor(cat) {
   return (G.postcards || []).find(p => p.cat === cat);
@@ -19871,6 +19953,7 @@ window.__cove = {
     out.sections={}; for(const id of ['neoJournal','checkinCard','projectCard','advCard','findsCard','goalList','momentsList']){const e=document.getElementById(id);out.sections[id]=e?e.querySelectorAll('*').length:-1;} return out; },
   useSwing(name){ const c=cats.find(x=>x.name===name&&!x.visitor); if(!c||!swingUsable())return false; const sp=propPos("moonswing"); c._arriveState="indoors"; c._arriveDur=20; c._cotX=sp.x; c._cotY=sp.y; c._perchKind="swing"; go(c,"seeking",16,{x:sp.x,y:sp.y+12}); return true; },
   swingOdds(name,n=400){ const c=cats.find(x=>x.name===name&&!x.visitor); if(!c)return null; let hit=0; for(let i=0;i<n;i++){ decide(c); if(c._perchKind==="swing")hit++; c._perchKind=null; c._arriveState=null; } return hit/n; },
+  async postcardPng(i=0){ const pc=(G.postcards||[])[i]; if(!pc)return null; const b=await neoPostcardBlob(pc); if(!b)return null; const bmp=await createImageBitmap(b); return {w:bmp.width,h:bmp.height,bytes:b.size,type:b.type}; },
   get skyLife(){return {df: window._sky && window._sky.df, boat: _skyLife.boat, gulls: _skyLife.gulls, overX: _overX}},
   get rate(){return aggregateRate()},
   get dex(){return G.dex}, get goals(){return G.goals}, get revealQ(){return revealQueue},
@@ -20480,9 +20563,9 @@ function neoRenderJournal(){
     archive.append(list);root.append(archive);
   }
   if((G.postcards||[]).length){
-    const mail=document.createElement('details');mail.className='neo-journal-archive';
-    const title=document.createElement('summary');title.textContent=`Postcards · ${G.postcards.length}`;mail.append(title);
-    for(const pc of G.postcards){const button=document.createElement('button');button.className='neo-postcard-preview';button.textContent=`${pc.cat} · ${(ADV_DESTS[pc.dest]||ADV_DESTS.forest).name}`;button.onclick=()=>showPostcard(pc.text,pc.cat,pc.dest,undefined,pc);mail.append(button);}root.append(mail);
+    const places=new Set(G.postcards.map(p=>p.dest)).size,card=document.createElement('button');card.type='button';card.className='neo-scrap-card';
+    card.innerHTML='<span class="ns-ico">'+neoUIIcon('adventure')+'</span><span class="ns-txt"><b>Postcard scrapbook</b><small>'+G.postcards.length+' postcard'+(G.postcards.length===1?'':'s')+' · '+places+' of '+Object.keys(ADV_DESTS).length+' places</small></span><span class="ns-go" aria-hidden="true">›</span>';
+    card.onclick=()=>{_scrapFilter='';_scrapShown=12;neoOpenScrapbook();};root.append(card);
   }
   document.getElementById('neo-journal-photo').onclick=()=>{closeAllPanels();document.getElementById('photoBtn').click();};
   document.getElementById('neo-journal-cats').onclick=()=>togglePanel('dex');
