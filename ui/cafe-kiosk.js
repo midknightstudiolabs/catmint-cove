@@ -6,7 +6,7 @@
   const E=root.CoveCafeEngine,g=a.game(),s=E.init(g,Date.now());a.close();
   let panel=document.getElementById('cafe-kiosk');if(!panel){panel=document.createElement('section');panel.id='cafe-kiosk';panel.className='sheet cc-v2';document.getElementById('app').append(panel);a.register(panel);}
   panel.hidden=false;let previewFinish=null,confirmFinish=null,previewTier=null,confirmShop=false,previewDecor=null,confirmDecor=null;const floats=[];let workshop=false,recipeResult=null,lessonStep=0;let tasting='',previewEquipment=null,displayState=s;let soundNote=0;const SOUND_ICON={music:'<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',rain:'<path d="M7 15a4 4 0 0 1-.5-7.9A5.5 5.5 0 0 1 17 6.5a3.8 3.8 0 0 1 .5 7.5"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',off:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M16 9l5 6M21 9l-5 6"/>'},SOUND_WORD={music:'Café music',rain:'Soft rain',off:'Sound off'};
-let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}catch(e){return false;}})();let lastTab=null,view='outside',tab=null,layout={k:0,cx0:0,offset:0},frame=0,last=0,timer;const actors=a.actors();stopActive=()=>{cancelAnimationFrame(frame);clearInterval(timer);};
+let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}catch(e){return false;}})();let lastTab=null,view='outside',tab=null,layout={k:0,cx0:0,offset:0},frame=0,last=0,timer,cam=null,camT=0,camKey='';const actors=a.actors();stopActive=()=>{cancelAnimationFrame(frame);clearInterval(timer);};
   const money=n=>Math.round(n*10)/10;
   let guideOn=!s.guideDone&&(!s.lessonComplete||s.guideStarted),guideNamed=!!s.recipeNames?.coffee;
   if(guideOn){s.guideStarted=true;a.save();}
@@ -251,15 +251,18 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
   function paint(t){
    if(panel.hidden||!panel.isConnected)return;frame=requestAnimationFrame(paint);if(document.hidden||t-last<33)return;last=t;
    const canvas=panel.querySelector('canvas'),bounds=canvas.getBoundingClientRect();if(!bounds.width||!bounds.height)return;
-   // Portrait phones crop a little off each side so the cats and counter read larger; everything else shows the full 720-unit width.
-   const tier=previewTier??s.shopTier??0,zoom=bounds.width<600&&bounds.height/bounds.width>1.3?(view==='inside'?1.06:[1.5,1.35,1.12][tier]||1.2):1;let view720=720/zoom,cx0=(720-view720)/2,css=bounds.width/view720,vh=bounds.height/css;
+   // The outside view crops only a sliver off each side on phones (it was 12-33%), and opening a tab never rescales it: the camera only pans a little, and eases there.
+   const zoom=bounds.width<600&&bounds.height/bounds.width>1.3?(view==='inside'?1.06:1.15):1;let view720=720/zoom,cx0=(720-view720)/2,css=bounds.width/view720,vh=bounds.height/css;
    const density=Math.min(window.devicePixelRatio||1,2),pw=Math.round(bounds.width*density),ph=Math.round(bounds.height*density);if(canvas.width!==pw||canvas.height!==ph){canvas.width=pw;canvas.height=ph;}
    // Centre the 380-unit scene band in the space between the top stack and whatever sits at the bottom (open sheet, or the view switch and dock).
    const top=panel.querySelector('.cc-top')?.getBoundingClientRect().bottom-bounds.top||0,sheet=panel.querySelector('.cc-content:not([hidden])'),lower=panel.querySelector('.cc-tabs'),intro=panel.querySelector('.cc-intro');
    const sheetBelow=sheet&&sheet.getBoundingClientRect().left-bounds.left<bounds.width*.5;   // on wide screens the sheet docks beside the scene and covers none of it
    const bottomEdge=sheetBelow?sheet.getBoundingClientRect().top-bounds.top:intro?intro.getBoundingClientRect().top-bounds.top:lower&&lower.offsetParent?lower.getBoundingClientRect().top-bounds.top:bounds.height;
+   const sideSheet=!!sheet&&!sheetBelow,availW=sideSheet?Math.max(240,sheet.getBoundingClientRect().left-bounds.left):bounds.width;
    if(view==='inside'){const fit=Math.max(120,bottomEdge-top)/380;if(fit<css){css=fit;view720=bounds.width/css;cx0=(720-view720)/2;vh=bounds.height/css;}}   // short wide screens: shrink the room to fit instead of cropping the counter
-   const bandPx=380*css,isIn=view==='inside',offset=isIn?Math.max(0,top/css):Math.max(0,Math.min(vh-380,((top+Math.max(top+bandPx,bottomEdge))/2-bandPx/2)/css)),band=isIn?Math.max(380,(Math.max(bottomEdge,top+120)-top)/css):undefined;
+   if(sideSheet&&availW<bounds.width){css=Math.min(css,view==='inside'?availW/720:availW/380);view720=bounds.width/css;vh=bounds.height/css;cx0=360-(availW/2)/css;}   // a docked sheet: the outside scene keeps its size and pans into the space the sheet leaves; the room (its counter runs edge to edge) fits the space
+   let bandPx=380*css,isIn=view==='inside',offset=isIn?Math.max(0,top/css):Math.max(0,Math.min(vh-380,((top+Math.max(top+bandPx,bottomEdge))/2-bandPx/2)/css)),band=isIn?Math.max(380,(Math.max(bottomEdge,top+120)-top)/css):undefined;
+   {const key=view+bounds.width+'x'+bounds.height,dtc=camT&&t-camT<400?Math.min(.1,(t-camT)/1000):1,ease=dtc>=1||!cam||camKey!==key||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?1:1-Math.exp(-dtc*11);camT=t;camKey=key;const tg={css,cx0,offset,band:band===undefined?0:band};if(ease>=1)cam=tg;else for(const q in tg)cam[q]+=(tg[q]-cam[q])*ease;css=cam.css;cx0=cam.cx0;offset=cam.offset;if(isIn)band=cam.band;view720=bounds.width/css;vh=bounds.height/css;}   // ease the camera so a tab opening glides instead of jumping
    layout={k:css,cx0,offset};
    const ctx=canvas.getContext('2d'),k=pw/view720;ctx.setTransform(k,0,0,k,-cx0*k,0);
    CoveCafeScene(ctx,{height:vh,offset,band,inside:view==='inside',s:displayState,stock:g.homestead.stock,E,a,actors,t,previewTier,previewFinish});
