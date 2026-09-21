@@ -94,6 +94,12 @@
     color:#f7f3e6;font-variant-numeric:tabular-nums;
     text-shadow:-1px -1px 0 rgba(20,16,10,.5),1px -1px 0 rgba(20,16,10,.5),
       -1px 1px 0 rgba(20,16,10,.5),1px 1px 0 rgba(20,16,10,.5),0 2px 4px rgba(20,16,10,.35);}
+  /* a close X that stays pinned while a long offer sheet scrolls */
+  .reveal.has-x{position:relative;}
+  .reveal .mx-wrap{position:sticky;top:0;height:0;z-index:6;}
+  .reveal .mx{position:absolute;right:-4px;top:-4px;width:36px;height:36px;border-radius:50%;border:2px solid #67543f;background:#efe9d6;color:#67543f;font:700 16px system-ui,sans-serif;line-height:1;display:grid;place-items:center;cursor:pointer;padding:0;}
+  .reveal.has-x .kicker{padding:0 40px;}
+  .reveal .btn.mb-cancel{background:transparent;border:2px solid #67543f;color:#67543f;}
   .hud-stat .sfx{font-weight:600;opacity:.8;}
   @media(max-width:379px){.hud-stat .sfx{display:none;}}
   .hud-stat .ico{font-size:.95rem;filter:drop-shadow(0 1px 2px rgba(20,16,10,.5));}
@@ -2765,6 +2771,13 @@ function load() {
       if(['lanterns','rowboat'].includes(id.split('#')[0])) delete G.cosmetics[field][id];
     }
     if (G.cosmetics.props) delete G.cosmetics.props.flagpole;   // flag pole parked — clear the seeded test grant
+    // The Moonlit Bench was retired for the Moonlight Swing: keep whatever spot/state the player gave it.
+    if (G.cosmetics.props.moonbench) {
+      G.cosmetics.props.moonswing = true;
+      if (G.cosmetics.propPos.moonbench && !G.cosmetics.propPos.moonswing) G.cosmetics.propPos.moonswing = G.cosmetics.propPos.moonbench;
+      if (G.cosmetics.propBoxed.moonbench) G.cosmetics.propBoxed.moonswing = true;
+    }
+    for (const field of ['props','propPos','propBoxed']) delete G.cosmetics[field].moonbench;
     delete G.cosmetics.flagCountry; delete G.cosmetics._flagpoleSeeded;
     if (!DECOR_THEMES[G.cosmetics.theme] || !G.cosmetics.themes[G.cosmetics.theme]) G.cosmetics.theme = "default";
     G.ads = Object.assign(newAdsState(), G.ads || {});
@@ -3019,7 +3032,7 @@ function rebuildAttractors() {
   // Midknight's cairn — a small solid by the sign
   { const cp = cairnPos(W, H); if (G.cairn && !G.cairn.tidied && (G.cairn.size | 0) > 0) obstacles.push({ x: cp.sx, y: cp.gy, rx: 16, ry: 9 }); }
   // physical movable props (stepping stones stay walkable; hanging props aren't in the way)
-  const PROP_SOLID = { lantern: [8, 11], birdbath: [15, 13], rowboat: [34, 14], windmill: [10, 13], moonshrine: [16, 13], moonbench: [30, 10] };
+  const PROP_SOLID = { lantern: [8, 11], birdbath: [15, 13], rowboat: [34, 14], windmill: [10, 13], moonshrine: [16, 13], moonswing: [26, 9] };
   if (G.cosmetics && G.cosmetics.props) for (const id of Object.keys(G.cosmetics.props)) {
     if(!PROP_SOLID[id.split("#")[0]])continue;
     if (!G.cosmetics.props[id] || propBoxed(id)) continue;
@@ -5311,7 +5324,7 @@ function placeFootprint(spec){
   const id=(spec.key||spec.id||" ").split("#")[0];
   if(id==="rowboat"||id==="bunting"||id==="lanterns")return [3,1];
   if(id==="stones"||id==="birdbath"||id==="windmill"||id==="moonshrine")return [2,1];
-  if(id==="moonbench")return [3,1];
+  if(id==="moonswing")return [3,1];
   const type=spec.dtype||spec.type;
   if(type==='station'||type==='cottage')return [3,2];
   if(type==='tree'||type==='cattree')return [2,2];
@@ -5507,7 +5520,7 @@ function dropComfortPos(type, newCount) {
 // still grabs the cottage; the arrange-mode tap uses the full generous radius.
 function propGrabHit(id,x,y,pos){
  const base=id.split('#')[0],scale=pos.s||1;
- const shape={bunting:[70,108],lantern:[24,54],birdbath:[27,32],windmill:[38,106],stones:[42,14],moonshrine:[24,46],moonbench:[40,50]}[base]||[28,30];
+ const shape={bunting:[70,108],lantern:[24,54],birdbath:[27,32],windmill:[38,106],stones:[42,14],moonshrine:[28,54],moonswing:[46,56]}[base]||[28,30];
  return Math.abs(x-pos.x)<=shape[0]*scale && y>=pos.y-shape[1]*scale-8 && y<=pos.y+18;
 }
 function movableAt(x, y, tight) {
@@ -6077,6 +6090,7 @@ const ACCESSORIES = [
   // cove (present and future cats). No currency path — see MONETIZATION.md.
   { key:"glowcollar",  label:"Glow collar",  iap:"sparkle_pack", slot:"neck", group:"Sparkle", premium:true, blurb:"A collar with a soft, steady light. Comes into its own at night and in Rest mode." },
   { key:"wings",       label:"Little wings", iap:"sparkle_pack", slot:"back", group:"Sparkle", premium:true, blurb:"Small feathered wings that flutter on the cat's back — a slow flap at rest, faster on the zoomies." },
+  { key:"moonwings",   label:"Moonlight wings", blessing:true, slot:"back", group:"Blessing", premium:true, blurb:"Crescent-feather wings that glow with the moon. Included with Midknight’s Blessing: they sleep if it ends and wake when you renew." },
   { key:"rainbow",     label:"Rainbow trail",iap:"sparkle_pack", slot:"aura", group:"Sparkle", premium:true, blurb:"A ribbon of colour that streams behind the cat as it moves and fades when it settles." },
 ];
 ACCESSORIES.push(...window.LITTLE_MATCH_REWARDS.map(r=>({...r,memoryLevel:r.level,group:'Little Matches',price:0})));
@@ -6109,6 +6123,7 @@ function accOwned(c, key) {
   const a = ACC_BY_KEY[key];
   if (a && a.memoryLevel) return !!G.littleMatches?.done?.[a.memoryLevel];
   if (a && a.endlessRound) return (G.littleMatches?.endless?.rounds || 0) >= a.endlessRound;
+  if (a && a.blessing) return blessingActive();             // Midknight's Blessing owns it for every cat while it is active
   if (a && a.iap) return iapOwns(a.iap);                    // the Sparkle Pack owns it for every cat, derived — never materialised into c.owned
   return !!(c && c.owned && c.owned.includes(key));
 }
@@ -6131,6 +6146,7 @@ function buyAccessory(c, key) {                   // buy + wear; returns true on
   if (accOwned(c, key)) { equipAccessory(c, key, true); return true; }
   if (a.memoryLevel) { toast('Complete Little Matches Level '+a.memoryLevel+' to earn this accessory.'); return false; }
   if (a.endlessRound) { toast('Reach Endless round '+a.endlessRound+' in Little Matches to earn this accessory.'); return false; }
+  if (a.blessing) { showBlessingOffer(); return false; }
   if (a.iap) { showIapOffer(a.iap); return false; }   // premium cosmetics only come from their pack
   if (a.pearls) {
     if ((G.pearls || 0) < a.pearls) { toast(`${a.label} is ✦${a.pearls} — earn a few more pearls from the Catdex or daily goals.`); return false; }
@@ -6155,7 +6171,7 @@ function renderWardrobe(c) {
   cc.dress.hidden = false;
   const worn = new Set(c.worn || []);
   const bySlot = {};
-  const ownedKeys = [...(c.owned || []), ...ACCESSORIES.filter(a => (a.iap || a.memoryLevel || a.endlessRound) && !a.hidden && accOwned(c, a.key)).map(a => a.key)];
+  const ownedKeys = [...(c.owned || []), ...ACCESSORIES.filter(a => (a.iap || a.blessing || a.memoryLevel || a.endlessRound) && !a.hidden && accOwned(c, a.key)).map(a => a.key)];
   for (const k of ownedKeys) { const a = ACC_BY_KEY[k]; if (a && !(bySlot[a.slot] || []).includes(k)) (bySlot[a.slot] = bySlot[a.slot] || []).push(k); }
   const slots = ACC_SLOTS.filter(s => bySlot[s]);
   let html = `<div class="dl">Dress up</div>`;
@@ -6661,7 +6677,7 @@ function shopBlessingRow() {
          <div class="desc">Active · ${days} more day${days === 1 ? "" : "s"}. Harvest all, Feed all, auto-gather and more.</div></div>
        <button class="btn">Manage</button>`
     : `<div class="txt"><div class="name">${moon} Midknight’s Blessing</div>
-         <div class="desc">Tending made easy: Harvest all, Feed all, auto-gather and auto-replant, plus a moonlit decor piece each month. Optional, and the whole game plays fine without it.</div></div>
+         <div class="desc">Tending made easy: Harvest all, Feed all, auto-gather and auto-replant, plus a moonlit decor piece each month and moonlight wings for your cats. Optional, and the whole game plays fine without it.</div></div>
        <button class="btn primary">From ${IAP_PRODUCTS.midknight_blessing_weekly.price}</button>`;
   row.querySelector("button").addEventListener("click", () => showBlessingOffer());
   return row;
@@ -6911,7 +6927,7 @@ function dressTryChanged(c) {
   return (_dressWorn || []).slice().sort().join() !== cur;
 }
 function dressNewItems(c) {   // items tried on that the cat doesn't own yet (never IAP — those come from the pack)
-  return (_dressWorn || []).filter(k => !accOwned(c, k)).map(k => ACC_BY_KEY[k]).filter(a => a && !a.iap);
+  return (_dressWorn || []).filter(k => !accOwned(c, k)).map(k => ACC_BY_KEY[k]).filter(a => a && !a.iap && !a.blessing);
 }
 function stopDressLoop() { if (_dressRAF) { cancelAnimationFrame(_dressRAF); _dressRAF = 0; } }
 function renderShopDress(list) {
@@ -6938,12 +6954,14 @@ function renderShopDress(list) {
   const rackHTML = groups.map(grp => {
     const items = rackAcc.filter(a => a.group === grp);
     const pk = PACK_GROUP[grp];
-    const head = pk
+    const head = grp === "Blessing"
+      ? `<h4>${neoUIIcon("adventure")} Midknight’s Blessing${blessingActive() ? "" : ` <button class="dp-getpack" data-getblessing="1">From ${IAP_PRODUCTS.midknight_blessing_weekly.price}</button>`}</h4>`
+      : pk
       ? `<h4>${pk.icon} ${grp}${iapOwns(pk.id) ? "" : ` <button class="dp-getpack" data-getpack="${pk.id}">${IAP_PRODUCTS[pk.id].label} · ${IAP_PRODUCTS[pk.id].price}</button>`}</h4>`
       : `<h4>${grp}</h4>`;
     return head + `<div class="dp-grid">` + items.map(a => {
       const owned = accOwned(c, a.key), on = _dressWorn.includes(a.key);
-      const locked = !!(a.iap || a.memoryLevel || a.endlessRound) && !owned;
+      const locked = !!(a.iap || a.blessing || a.memoryLevel || a.endlessRound) && !owned;
       const cost = a.memoryLevel ? `Level ${a.memoryLevel}` : a.endlessRound ? `Round ${a.endlessRound}` : locked ? "Locked" : a.pearls ? `✦ ${a.pearls}` : `◈ ${a.price}`;
       return `<button class="dp-acc${on ? " on" : ""}${a.premium ? " premium" : ""}${owned ? " owned" : ""}${locked ? " locked" : ""}" data-acc="${a.key}" title="${esc(a.blurb)}">
         <span class="dp-nm">${a.label}</span>
@@ -6999,10 +7017,12 @@ function renderShopDress(list) {
   list.querySelector(".dp-rack").addEventListener("click", e => {
     const gp = e.target.closest("[data-getpack]");
     if (gp) { showIapOffer(gp.dataset.getpack); return; }
+    if (e.target.closest("[data-getblessing]")) { showBlessingOffer(); return; }
     const b = e.target.closest(".dp-acc"); if (!b) return;
     const k = b.dataset.acc, slot = accSlot(k), a = ACC_BY_KEY[k];
     if (a && a.memoryLevel && !accOwned(c,k)) { toast('Complete Little Matches Level '+a.memoryLevel+' to earn it.'); return; }
     if (a && a.endlessRound && !accOwned(c,k)) { toast('Reach Endless round '+a.endlessRound+' to earn it.'); return; }
+    if (a && a.blessing && !accOwned(c, k)) { showBlessingOffer(); return; }   // asleep — the Blessing, not a toggle
     if (a && a.iap && !accOwned(c, k)) { showIapOffer(a.iap); return; }   // locked — the pack, not a toggle
     if (_dressWorn.includes(k)) _dressWorn = _dressWorn.filter(x => x !== k);
     else _dressWorn = _dressWorn.filter(x => accSlot(x) !== slot).concat(k);
@@ -8792,7 +8812,8 @@ function showBlessingOffer() {
   const until = blessingUntil();
   const native = nativeIap();
   const days = Math.max(0, Math.ceil((until - Date.now()) / 864e5));
-  openModal(`<div class="reveal">
+  openModal(`<div class="reveal has-x">
+    <div class="mx-wrap"><button class="mx" id="mb-x" type="button" aria-label="Close">✕</button></div>
     <div class="kicker">✦ MIDKNIGHT’S BLESSING</div>
     <h2>${blessingActive() ? "Midknight is watching over you" : "Midknight’s Blessing"}</h2>
     <p class="sub">${blessingActive() ? `Active for ${days} more day${days === 1 ? "" : "s"}.` : "A little help from the cove’s oldest resident, so tending goes a bit easier."}</p>
@@ -8801,16 +8822,17 @@ function showBlessingOffer() {
       <li><b>Feed all</b> — treat every hungry cat at once (you can always feed them one by one, too)</li>
       <li><b>Auto-gather</b> and <b>auto-replant</b> — shells collect themselves, harvested crops are sown again</li>
       <li><b>Tend everything</b> — gather, harvest and feed the whole cove in one tap</li>
-      <li><b>Moonlit decor</b> — a new piece each month, like the Moonstone Shrine. It sleeps if the Blessing ends and wakes when you renew.</li>
+      <li><b>Moonlit decor</b> — a new piece each month, like the Moonstone and the Moonlight Swing. It sleeps if the Blessing ends and wakes when you renew.</li>
+      <li><b>Moonlight wings</b> — glowing crescent wings for any cat, from the dress-up rack.</li>
       <li>Everything is still fully playable without it; the Blessing just makes tending easier.</li>
     </ul>
     <div class="row">
       <button class="btn primary" id="mb-month">Monthly · ${mo.price} · best value</button>
       <button class="btn" id="mb-week">Weekly · ${wk.price}</button>
+      <button class="btn mb-cancel" id="mb-cancel" type="button">Cancel</button>
     </div>
     ${native ? "" : `<button class="btn" id="mb-test" style="margin-top:.5rem">Try it free — Neo test, 3 days</button>`}
     <button class="linkbtn" id="mb-restore" style="margin-top:.6rem">Already subscribed? Restore purchase</button>
-    <button class="linkbtn" id="mb-no" style="margin-top:.2rem">Maybe later</button>
     <p class="sub" style="margin:.6rem 0 0;font-size:.72rem;line-height:1.45">Payment is charged to your Apple ID or Google Play account when you confirm. The subscription renews automatically at the same price unless you cancel at least 24 hours before the period ends. Manage or cancel any time in your store account settings. ${native ? "" : "On the web this is a preview; no payment is taken. "}<a href="https://www.catmintcove.com/p/terms-and-conditions.html">Terms of Use</a> · <a href="https://www.catmintcove.com/p/privacy.html">Privacy Policy</a></p>
   </div>`);
   const buy = id => async () => {
@@ -8826,7 +8848,8 @@ function showBlessingOffer() {
   const t = document.getElementById("mb-test");
   if (t) t.onclick = () => { closeModal(); G.iap.subs.neo_test = { expiresAt: Date.now() + 3 * 864e5, source: "test" }; saveIap(); save(); sfx("buy"); toast("Midknight’s Blessing test is on for 3 days (Neo only).", 5); neoGardenBadges(); neoRefreshGardenIfOpen(); };
   document.getElementById("mb-restore").onclick = async () => { const ok = await restorePurchases(); if (ok) { neoGardenBadges(); neoRefreshGardenIfOpen(); } };
-  document.getElementById("mb-no").onclick = closeModal;
+  document.getElementById("mb-cancel").onclick = closeModal;
+  document.getElementById("mb-x").onclick = closeModal;
 }
 // route a premium accessory's `iap` id to the right offer modal
 function showIapOffer(id) {
@@ -15017,9 +15040,9 @@ const DECOR_PROPS = [
     movable:true, place:{ x:W*0.075, y:H*0.90, s:1.1 }, render(g,t,x,y,s){ propRowboat(g, x, y, s); } },
   { id:"windmill", name:"Pole windmill",   price: 8000, blurb:"A warm timber windmill with terracotta and parchment sails turning gently in the sea breeze.",
     movable:true, place:{ x:W*0.91, y:H*0.60, s:1.25 }, render(g,t,x,y,s){ propWindmill(g, x, y, s, t); } },
-  { id:"moonbench", name:"Midknight’s Moonlit Bench", price: 0, blessing: true, month: "2026-09", blurb:"September’s Blessing decor: a weathered bench with a crescent back and a hanging moon lantern. Included with Midknight’s Blessing; asleep when it ends.",
-    movable:true, place:{ x:W*0.66, y:H*0.93, s:1.5 }, render(g,t,x,y,s){ propMoonBench(g, x, y, s, t); } },
-  { id:"moonshrine", name:"Midknight’s Moonstone Shrine", price: 0, blessing: true, blurb:"A mossy standing stone with a crescent moon. Included with Midknight’s Blessing: it glows while the Blessing is active and sleeps when it isn’t.",
+  { id:"moonswing", name:"Midknight’s Moonlight Swing", price: 0, blessing: true, month: "2026-09", blurb:"September’s Blessing decor: a little swing under a crescent arch, with Midknight already on it and a moon lantern beside it. It sways while the Blessing is active; asleep when it ends.",
+    movable:true, place:{ x:W*0.66, y:H*0.93, s:1.5 }, render(g,t,x,y,s){ propMoonSwing(g, x, y, s, t); } },
+  { id:"moonshrine", name:"Midknight’s Moonstone", price: 0, blessing: true, blurb:"A moon-blue standing stone with cat ears, a carved crescent and Midknight sitting in it, with catmint at its feet. Included with Midknight’s Blessing: it glows while the Blessing is active and sleeps when it isn’t.",
     movable:true, place:{ x:W*0.34, y:H*0.88, s:1.6 }, render(g,t,x,y,s){ propMoonShrine(g, x, y, s, t); } },
 ];
 // Stable slots keep the original id and saved position for the first copy.
@@ -15927,68 +15950,98 @@ function propBirdbath(g, x, y, s, t) {
   g.fillStyle=night>0?'#edcd8b':'#b2a88c';roundRect(g,-2,-8,4,3,1);g.fill();
   g.restore();
 }
-// Midknight's Moonstone Shrine — a Blessing decor. Awake: warm glow (brighter at night), fireflies, a lit crescent. Asleep (Blessing ended): dim, still, no glow.
+// Midknight's Moonstone — a Blessing decor. A moon-blue standing stone with cat ears, a carved crescent with Midknight sitting in it, catmint at its feet.
+// Flat 2D like the rest of the Cove (brown outline, flat fills). Awake: warm glow, a gold ring at night, fireflies. Asleep (Blessing ended): dim, still, no glow.
+const _MS_CAT = new Path2D("M8 44 C2 44 2 30 9 24 L9 10 L15 17 Q20 15 25 17 L31 10 L31 24 C38 30 38 44 32 44 Z");
 function propMoonShrine(g, x, y, s, t) {
   s = s || 1;
   const awake = blessingActive();
   const night = clamp(((g._nightGlow || 0) - 0.2) / 0.5, 0, 1);
+  const OUT = "#67543f";
   g.save(); g.translate(x, y); g.scale(s, s);
-  g.fillStyle = "rgba(36,31,23,0.14)"; g.beginPath(); g.ellipse(0, 4, 18, 5.5, 0, 0, 7); g.fill();
+  g.lineJoin = "round"; g.lineCap = "round";
+  g.fillStyle = "rgba(36,31,23,0.14)"; g.beginPath(); g.ellipse(0, 4, 21, 5.5, 0, 0, 7); g.fill();
   if (awake) {
     const a = 0.16 + night * 0.34 + Math.sin(t * 1.6) * 0.025;
-    const gl = g.createRadialGradient(0, -22, 2, 0, -22, 40);
+    const gl = g.createRadialGradient(0, -28, 2, 0, -28, 46);
     gl.addColorStop(0, "rgba(255,214,140," + a + ")"); gl.addColorStop(1, "rgba(255,214,140,0)");
-    g.fillStyle = gl; g.beginPath(); g.arc(0, -22, 40, 0, 7); g.fill();
+    g.fillStyle = gl; g.beginPath(); g.arc(0, -28, 46, 0, 7); g.fill();
   }
   // plinth
-  g.fillStyle = awake ? "#a7a28d" : "#9c9b94"; roundRect(g, -17, -6, 34, 9, 3); g.fill();
-  g.fillStyle = awake ? "#b7b29c" : "#a9a9a3"; roundRect(g, -17, -6, 34, 3, 2); g.fill();
-  // standing stone
-  g.fillStyle = awake ? "#c2bda7" : "#adada7";
-  g.beginPath(); g.moveTo(-11, -5); g.quadraticCurveTo(-14, -30, 0, -40); g.quadraticCurveTo(14, -30, 11, -5); g.closePath(); g.fill();
-  g.fillStyle = awake ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.10)";
-  g.beginPath(); g.moveTo(-9, -8); g.quadraticCurveTo(-11, -28, -2, -37); g.quadraticCurveTo(-8, -26, -6, -8); g.closePath(); g.fill();
-  // moss
-  g.fillStyle = awake ? "#82a066" : "#8d9a86";
-  g.beginPath(); g.ellipse(-4, -37, 7, 3, -0.3, 0, 7); g.fill();
-  g.beginPath(); g.ellipse(8, -12, 3.6, 5, 0.2, 0, 7); g.fill();
-  g.beginPath(); g.ellipse(-9, -9, 3, 2.6, 0, 0, 7); g.fill();
-  // crescent carving
-  g.save(); g.beginPath(); g.arc(0, -22, 7, 0, 7); g.clip();
-  g.fillStyle = awake ? "rgba(255,226,150," + (0.7 + night * 0.3) + ")" : "#77766c"; g.fillRect(-8, -30, 16, 16);
-  g.fillStyle = awake ? "#c2bda7" : "#adada7"; g.beginPath(); g.arc(3.2, -24, 6.4, 0, 7); g.fill();
+  g.fillStyle = awake ? "#d8cfb6" : "#bdb9ab"; roundRect(g, -19, -7, 38, 10, 4); g.fill(); g.strokeStyle = OUT; g.lineWidth = 1.3; g.stroke();
+  g.fillStyle = awake ? "#e8dfc6" : "#cbc8bb"; roundRect(g, -17, -6.4, 34, 3, 2); g.fill();
+  // the stone, with two cat ears
+  g.fillStyle = awake ? "#cfd8e6" : "#b9bec8"; g.strokeStyle = OUT; g.lineWidth = 1.5;
+  g.beginPath();
+  g.moveTo(-13.5, -6); g.lineTo(-13.5, -32); g.quadraticCurveTo(-13.5, -38, -9, -41); g.lineTo(-7, -54); g.lineTo(-1.5, -45.5);
+  g.quadraticCurveTo(0, -46, 1.5, -45.5); g.lineTo(7, -54); g.lineTo(9, -41); g.quadraticCurveTo(13.5, -38, 13.5, -32); g.lineTo(13.5, -6); g.closePath(); g.fill(); g.stroke();
+  g.strokeStyle = awake ? "#eef3fa" : "#cfd3da"; g.lineWidth = 1.8; g.beginPath(); g.moveTo(-10.5, -8); g.lineTo(-10.5, -30); g.quadraticCurveTo(-10.5, -34, -8.5, -36); g.stroke();
+  g.fillStyle = awake ? "rgba(229,191,195,.85)" : "rgba(190,178,182,.7)";                                   // inner ears
+  g.beginPath(); g.moveTo(-6.6, -48); g.lineTo(-3.2, -44.4); g.lineTo(-7.2, -42.6); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(6.6, -48); g.lineTo(3.2, -44.4); g.lineTo(7.2, -42.6); g.closePath(); g.fill();
+  // carved crescent
+  g.save(); g.beginPath(); g.arc(0, -27, 11, 0, 7); g.clip();
+  g.fillStyle = awake ? "rgba(255,230,168," + (0.85 + night * 0.15) + ")" : "#a5a293"; g.fillRect(-12, -39, 24, 24);
+  g.fillStyle = awake ? "#cfd8e6" : "#b9bec8"; g.strokeStyle = OUT; g.lineWidth = 1.2; g.beginPath(); g.arc(4, -30.5, 8.8, 0, 7); g.fill(); g.stroke();
   g.restore();
-  // catmint at the base
-  const leaf = awake ? "#7fa374" : "#98a494", bloom = awake ? "#b9a9dc" : "#aaa9b5";
-  for (const [lx, r] of [[-15, -0.5], [-11, 0.3], [13, 0.4], [17, -0.3]]) {
-    g.fillStyle = leaf; g.beginPath(); g.ellipse(lx, -2, 2.6, 6.5, r, 0, 7); g.fill();
-    g.fillStyle = bloom; g.beginPath(); g.arc(lx + r * 6, -8, 1.4, 0, 7); g.fill();
+  g.strokeStyle = OUT; g.lineWidth = 1.3; g.beginPath(); g.arc(0, -27, 11, 0, 7); g.stroke();
+  // Midknight, sitting in the crescent
+  g.save(); g.translate(-4.4, -29); g.scale(0.27, 0.27); g.fillStyle = awake ? "#1d2024" : "#3a3d42"; g.fill(_MS_CAT);
+  g.strokeStyle = g.fillStyle; g.lineWidth = 4; g.beginPath(); g.moveTo(33, 42); g.bezierCurveTo(42, 42, 42, 30, 37, 26); g.stroke();
+  if (awake) { g.fillStyle = "#f2c94c"; g.beginPath(); g.arc(15, 23, 2.2, 0, 7); g.arc(25, 23, 2.2, 0, 7); g.fill(); }
+  g.restore();
+  if (awake && night > 0.05) { g.strokeStyle = "rgba(246,211,107," + (0.35 + night * 0.5 + Math.sin(t * 1.6) * 0.06) + ")"; g.lineWidth = 1.6; g.beginPath(); g.arc(0, -27, 14.5, 0, 7); g.stroke(); }
+  // moss on one shoulder
+  g.fillStyle = awake ? "#7fa374" : "#8d9a86"; g.strokeStyle = OUT; g.lineWidth = 1;
+  g.beginPath(); g.ellipse(-11, -9, 3.6, 3, 0.2, 0, 7); g.fill(); g.stroke();
+  // catmint at both feet
+  const leaf = awake ? "#5f8a5c" : "#8d9a86", bloom = awake ? "#b9a9dc" : "#aaa9b5";
+  for (const [lx, lean] of [[-19, -0.35], [-15, 0.15], [15, -0.15], [19, 0.35]]) {
+    g.strokeStyle = leaf; g.lineWidth = 1.5; g.beginPath(); g.moveTo(lx, 1); g.quadraticCurveTo(lx + lean * 8, -6, lx + lean * 13, -13); g.stroke();
+    g.fillStyle = bloom; g.strokeStyle = OUT; g.lineWidth = 0.8; g.beginPath(); g.arc(lx + lean * 13, -13.5, 2, 0, 7); g.fill(); g.stroke();
   }
   // fireflies
   if (awake) for (let i = 0; i < 4; i++) {
-    const ang = t * 0.5 + i * 1.6, px = Math.cos(ang) * (21 + i * 3), py = -26 + Math.sin(ang * 1.3) * 13, tw = 0.45 + 0.55 * Math.sin(t * 3 + i * 2);
+    const ang = t * 0.5 + i * 1.6, px = Math.cos(ang) * (23 + i * 3), py = -28 + Math.sin(ang * 1.3) * 14, tw = 0.45 + 0.55 * Math.sin(t * 3 + i * 2);
     g.fillStyle = "rgba(255,232,150," + (0.25 + 0.6 * tw * (0.5 + night * 0.5)) + ")"; g.beginPath(); g.arc(px, py, 1.5, 0, 7); g.fill();
   }
   g.restore();
 }
-// Midknight's Moonlit Bench — September's Blessing decor. Awake: lit crescent lantern + warm glow; asleep: dim and still.
-function propMoonBench(g, x, y, s, t) {
+// Midknight's Moonlight Swing — September's Blessing decor. A garden swing under a crescent arch; Midknight is already on it, a moon lantern hangs beside it.
+// Awake: the swing sways, the lantern glows (brighter at night). Asleep (Blessing ended): dim and still.
+function propMoonSwing(g, x, y, s, t) {
   s = s || 1;
-  const awake = blessingActive(), night = clamp(((g._nightGlow || 0) - 0.2) / 0.5, 0, 1);
-  g.save(); g.translate(x, y); g.scale(s, s);
-  g.fillStyle = "rgba(36,31,23,0.14)"; g.beginPath(); g.ellipse(0, 4, 34, 6, 0, 0, 7); g.fill();
-  if (awake) { const a = 0.14 + night * 0.32 + Math.sin(t * 1.5) * 0.02, gl = g.createRadialGradient(26, -34, 2, 26, -34, 44); gl.addColorStop(0, "rgba(255,214,140," + a + ")"); gl.addColorStop(1, "rgba(255,214,140,0)"); g.fillStyle = gl; g.beginPath(); g.arc(26, -34, 44, 0, 7); g.fill(); }
-  const wood = awake ? "#a98358" : "#9b8f80", wood2 = awake ? "#c29c6e" : "#b0a597", dark = awake ? "#7b5d3f" : "#7d746a";
-  g.fillStyle = dark; g.fillRect(-28, -14, 5, 18); g.fillRect(23, -14, 5, 18);                       // legs
-  g.fillStyle = wood; roundRect(g, -34, -22, 68, 8, 3); g.fill(); g.fillStyle = wood2; roundRect(g, -34, -22, 68, 3, 2); g.fill();  // seat
-  g.fillStyle = dark; g.fillRect(-30, -44, 4, 24); g.fillRect(24, -44, 4, 24);                       // back posts
-  g.fillStyle = wood; roundRect(g, -32, -42, 64, 6, 3); g.fill(); roundRect(g, -32, -33, 64, 6, 3); g.fill();                    // back slats
-  g.save(); g.beginPath(); g.arc(0, -36, 7, 0, 7); g.clip(); g.fillStyle = awake ? "rgba(255,226,150," + (0.65 + night * 0.3) + ")" : "#77736a"; g.fillRect(-8, -44, 16, 16); g.fillStyle = wood; g.beginPath(); g.arc(3, -38, 6.2, 0, 7); g.fill(); g.restore();   // crescent cut-out
-  // hanging lantern on a little post
-  g.fillStyle = dark; g.fillRect(24, -70, 3, 26); g.fillRect(24, -70, 12, 3);
-  g.strokeStyle = dark; g.lineWidth = 1; g.beginPath(); g.moveTo(34, -67); g.lineTo(34, -60); g.stroke();
-  g.fillStyle = awake ? "#ffe6a8" : "#cbbfa4"; roundRect(g, 29, -60, 10, 13, 3); g.fill(); g.strokeStyle = dark; g.lineWidth = 1; g.strokeRect(29, -60, 10, 13);
-  if (awake) for (let i = 0; i < 3; i++) { const ang = t * 0.6 + i * 2.1, px = 26 + Math.cos(ang) * (16 + i * 3), py = -36 + Math.sin(ang * 1.2) * 14, tw = 0.45 + 0.55 * Math.sin(t * 3 + i * 2); g.fillStyle = "rgba(255,232,150," + (0.25 + 0.6 * tw * (0.5 + night * 0.5)) + ")"; g.beginPath(); g.arc(px, py, 1.4, 0, 7); g.fill(); }
+  const awake = blessingActive(), night = clamp(((g._nightGlow || 0) - 0.2) / 0.5, 0, 1), OUT = "#67543f";
+  g.save(); g.translate(x, y); g.scale(s, s); g.lineJoin = "round"; g.lineCap = "round";
+  g.fillStyle = "rgba(36,31,23,0.14)"; g.beginPath(); g.ellipse(0, 3, 29, 4, 0, 0, 7); g.fill();
+  if (awake) { const a = 0.14 + night * 0.32 + Math.sin(t * 1.5) * 0.02, gl = g.createRadialGradient(-18, -50, 2, -18, -50, 44); gl.addColorStop(0, "rgba(255,214,140," + a + ")"); gl.addColorStop(1, "rgba(255,214,140,0)"); g.fillStyle = gl; g.beginPath(); g.arc(-18, -50, 44, 0, 7); g.fill(); }
+  const wood = awake ? "#c29c6e" : "#a89b8a", wood2 = awake ? "#b58a5a" : "#9a8d7b", seatC = awake ? "#d7b17f" : "#b8ab97";
+  // A-frame posts
+  g.fillStyle = wood; g.strokeStyle = OUT; g.lineWidth = 1.4;
+  g.beginPath(); g.moveTo(-24, 0); g.lineTo(-20, -60); g.lineTo(-15, -60); g.lineTo(-18, 0); g.closePath(); g.fill(); g.stroke();
+  g.beginPath(); g.moveTo(24, 0); g.lineTo(20, -60); g.lineTo(15, -60); g.lineTo(18, 0); g.closePath(); g.fill(); g.stroke();
+  // crescent beam
+  g.fillStyle = wood2; roundRect(g, -27, -66, 54, 8, 3.5); g.fill(); g.stroke();
+  g.save(); g.translate(7, -62); g.fillStyle = awake ? "#ffe6a8" : "#d9cfae"; g.beginPath(); g.arc(0, 0, 3.4, 0, 7); g.fill(); g.fillStyle = wood2; g.beginPath(); g.arc(1.4, -0.9, 2.9, 0, 7); g.fill(); g.restore();
+  // swinging seat + Midknight
+  const sway = awake ? Math.sin(t * 1.1) * 0.055 : 0;
+  g.save(); g.translate(0, -58); g.rotate(sway);
+  g.strokeStyle = "#8b6b4a"; g.lineWidth = 1.3; g.beginPath(); g.moveTo(-8, 0); g.lineTo(-9, 30); g.moveTo(8, 0); g.lineTo(9, 30); g.stroke();
+  g.fillStyle = seatC; g.strokeStyle = OUT; g.lineWidth = 1.3; roundRect(g, -12, 30, 24, 4.4, 2.2); g.fill(); g.stroke();
+  g.save(); g.translate(-6.5, 12); g.scale(0.44, 0.44); g.fillStyle = awake ? "#1d2024" : "#3a3d42"; g.fill(_MS_CAT);
+  g.strokeStyle = g.fillStyle; g.lineWidth = 4; g.beginPath(); g.moveTo(33, 42); g.bezierCurveTo(42, 42, 42, 30, 37, 26); g.stroke();
+  if (awake) { g.fillStyle = "#f2c94c"; g.beginPath(); g.arc(15, 23, 2.2, 0, 7); g.arc(25, 23, 2.2, 0, 7); g.fill(); }
+  g.restore(); g.restore();
+  // moon lantern on the left post
+  g.strokeStyle = OUT; g.lineWidth = 1; g.beginPath(); g.moveTo(-21, -58); g.lineTo(-21, -50); g.stroke();
+  g.fillStyle = awake ? "#ffe6a8" : "#cbbfa4"; roundRect(g, -25, -50, 8, 11, 3); g.fill(); g.stroke();
+  // catmint at the feet
+  const bloom = awake ? "#b9a9dc" : "#aaa9b5";
+  for (const [lx, lean] of [[-30, -0.3], [-26, 0.2], [27, -0.2], [31, 0.3]]) {
+    g.strokeStyle = awake ? "#5f8a5c" : "#8d9a86"; g.lineWidth = 1.4; g.beginPath(); g.moveTo(lx, 1); g.quadraticCurveTo(lx + lean * 8, -6, lx + lean * 12, -12); g.stroke();
+    g.fillStyle = bloom; g.strokeStyle = OUT; g.lineWidth = 0.8; g.beginPath(); g.arc(lx + lean * 12, -12.5, 2, 0, 7); g.fill(); g.stroke();
+  }
+  if (awake) for (let i = 0; i < 3; i++) { const ang = t * 0.6 + i * 2.1, px = -18 + Math.cos(ang) * (14 + i * 3), py = -46 + Math.sin(ang * 1.2) * 12, tw = 0.45 + 0.55 * Math.sin(t * 3 + i * 2); g.fillStyle = "rgba(255,232,150," + (0.25 + 0.6 * tw * (0.5 + night * 0.5)) + ")"; g.beginPath(); g.arc(px, py, 1.4, 0, 7); g.fill(); }
   g.restore();
 }
 function propLanterns(g, t, x, y) {
@@ -17112,6 +17165,28 @@ function drawWings(g, P, rate, kit) {
     g.restore();
   }
 }
+// Moonlight wings — two crescent-shaped feathers a side, cream with a brown outline; a soft gold glow that grows at night.
+function drawMoonWings(g, P, rate, kit) {
+  const t = performance.now() / 1000, flap = Math.sin(t * (rate || 2.4)) * 0.5 + 0.5;
+  const night = clamp(1 - (window._sky ? window._sky.df : 1), 0, 1);
+  const by = P.top + 8, root = P.bw * 0.46, sc = (kit ? 1.05 : 1.45);
+  for (const sd of [-1, 1]) {
+    g.save();
+    g.translate(sd * root, by);
+    g.rotate(sd * (-0.34 - flap * 0.22));
+    g.scale(sd * sc, sc);
+    const gl = g.createRadialGradient(6, -12, 1, 6, -12, 24);
+    gl.addColorStop(0, "rgba(255,226,150," + (0.14 + night * 0.34) + ")"); gl.addColorStop(1, "rgba(255,226,150,0)");
+    g.fillStyle = gl; g.beginPath(); g.arc(6, -12, 24, 0, 7); g.fill();
+    g.lineJoin = "round"; g.strokeStyle = "#67543f"; g.lineWidth = 0.9;
+    g.fillStyle = "#f0e4b6";                                                            // lower feather
+    g.beginPath(); g.moveTo(1, 8); g.bezierCurveTo(6, 2, 12, -4, 15, -12); g.bezierCurveTo(16, -4, 14, 4, 9, 8); g.quadraticCurveTo(5, 10, 1, 8); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = "#fff7d8";                                                            // long upper feather
+    g.beginPath(); g.moveTo(0, 6); g.bezierCurveTo(2, -6, 3, -18, 6, -26); g.bezierCurveTo(10, -18, 12, -8, 10, 0); g.quadraticCurveTo(5, 4, 0, 6); g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = "rgba(200,170,90,.55)"; g.lineWidth = 0.7; g.beginPath(); g.moveTo(3.4, 2); g.quadraticCurveTo(5, -8, 6, -19); g.stroke();
+    g.restore();
+  }
+}
 function drawTail(g, P, coat, mode, wag) {
   const pts = coat.pattern === "points" || coat.pattern === "lynxpoint" || coat.pattern === "van";
   g.fillStyle = pts ? coat.point : coat.base;
@@ -17392,6 +17467,9 @@ function drawCat(g, c, isPhoto) {
   // v3 premium wings — behind the body so a sitting cat shows angelic arcs
   if (c.worn && c.worn.includes("wings"))
     drawWings(g, P, c.state === "zooming" ? 13 : (c.trotting ? 6 : 3), kit);
+  // Moonlight wings (Midknight's Blessing) — only while the Blessing is awake
+  if (c.worn && c.worn.includes("moonwings") && blessingActive())
+    drawMoonWings(g, P, c.state === "zooming" ? 9 : (c.trotting ? 5 : 2.4), kit);
 
   // ears (behind head) — a little flop on the bounce; pinned back mid-zoom
   const zoom = c.state === "zooming" || c.state === "tag";
