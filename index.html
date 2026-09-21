@@ -2365,7 +2365,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=18"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=41"><script src="ui/cafe-engine.js?v=21"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=48"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=41"><script src="ui/cafe-engine.js?v=21"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=51"></script>
 <script>
 (() => {
 "use strict";
@@ -9278,6 +9278,8 @@ function ensureAudio() {
   if (_audioStale || (actx && actx.state !== "running")) resumeAudio(true);
 }
 let catsGain = null, coveGain = null, musicGain = null;
+// While the Catmint Café is open the cove's own soundscape (waves, wind, birds, cats calling across the grass) stays silent: the café has its own music or rain.
+let _cafeDuck = false;
 // push G.sound → the buses. called on unlock and after every slider move.
 function applySound() {
   const S = (G && G.sound) || { on: true, cats: 1, cove: 1, music: 1 };
@@ -9289,7 +9291,7 @@ function applySound() {
   if (musicGain) rampParam(musicGain.gain, lvl("music"), 0.3);
   // the existing beds also gate on `muted` — re-assert their on/off target so
   // flipping All sound back on brings a bed that started silent back up
-  if (ambience) rampParam(ambience.master.gain, S.on && !restMode && !festMode ? AMB_MASTER : 0, 0.3);
+  if (ambience) rampParam(ambience.master.gain, S.on && !restMode && !festMode && !_cafeDuck ? AMB_MASTER : 0, 0.3);
   if (restBus)  rampParam(restBus.gain, S.on && restOpts.rain ? 0.9 : 0.0001, 0.3);
   if (festBus)  rampParam(festBus.gain, S.on ? 0.85 : 0.0001, 0.3);
   if (_festBed) rampParam(_festBed.g.gain, S.on ? festBedTarget() : 0.0001, 0.3);
@@ -9384,8 +9386,8 @@ function tone(freq, dur, type = "sine", vol = 0.16, when = 0) {
 /* a short, soft, cute "mew" — a triangle voice with a quick up-then-down
    pitch, one gentle vowel filter (ee→ow), a hint of vibrato, nothing harsh.
    vol scales the whole thing (pet ≈ 0.85, rewards ≈ 1). */
-function meow(happy, vol = 1) {
-  if (muted || !actx) return;
+function meow(happy, vol = 1, force) {
+  if (muted || !actx || (_cafeDuck && !force)) return;
   const t0 = actx.currentTime;
   const dur = happy ? 0.34 : 0.4;
   const out = actx.createGain();
@@ -9501,6 +9503,7 @@ function playSample(pool, { vol = 1, rate = 1, jitter = 0.06, when = 0 } = {}) {
 }
 let _lastMeowAt = 0;
 function catMeow(kind, c) {
+  if (_cafeDuck && kind !== "cafe") return;
   const now = performance.now();
   if (kind === "pet") {
     // Cuddly / Playful cats can purr — one roll per run of petting, better odds
@@ -9658,7 +9661,7 @@ function startAmbience() {
   const master = actx.createGain();
   master.gain.value = 0;
   master.connect(coveGain || actx.destination);
-  master.gain.linearRampToValueAtTime(muted || restMode || festMode ? 0 : AMB_MASTER, now + 3);   // silent if we (re)start straight into rest / a festival
+  master.gain.linearRampToValueAtTime(muted || restMode || festMode || _cafeDuck ? 0 : AMB_MASTER, now + 3);   // silent if we (re)start straight into rest / a festival
 
   // brook — pink noise, low-passed, a slow babble wobble. Kept gentle.
   const water = loopNoise("pink", 8);
@@ -9712,6 +9715,7 @@ function applyAmbienceDayNight(f, ramp = 4) {
 }
 
 function chirp(when) {
+  if (_cafeDuck) return;
   const t = actx.currentTime + when;
   const o = actx.createOscillator(), g = actx.createGain();
   o.type = "sine";
@@ -11137,6 +11141,8 @@ function neoCafeAmbienceStop() {
 function neoCafeAmbienceTick() {
   const open = !!(panels.coffee && !panels.coffee.hidden) && !festMode && !restMode && !document.hidden;
   const mode = neoCafeSoundMode();
+  const shown = !!(panels.coffee && !panels.coffee.hidden);
+  if (shown !== _cafeDuck) { _cafeDuck = shown; try { applySound(); } catch (e) {} }   // the cove goes quiet with the café open and returns when it closes
   if (_cafeAmb && (!open || _cafeAmb.mode !== mode)) neoCafeAmbienceStop();
   if (open && mode !== "off" && !_cafeAmb) { try { ensureAudio(); neoCafeAmbienceStart(mode); } catch (e) {} }
 }
@@ -20210,6 +20216,7 @@ window.__cove = {
   get G(){return G}, get cats(){return cats}, get tokens(){return fieldTokens},
   get attractors(){return attractors}, get obstacles(){return obstacles}, get decor(){return decor},
   get world(){return {W, H, catFloor: catFloor()}},
+  sound(){ return { duck:_cafeDuck, amb: ambience ? +ambience.master.gain.value.toFixed(3) : null, cafeAmb: !!_cafeAmb }; },
   race(){ return { phase:racePhase, t:raceT, len:_raceLenNow.name, m:_raceLenNow.m, cap:_raceLenNow.cap, cats:raceCats.map(r=>({n:r.cat.name,p:r.progress,done:r.done,at:r.doneAt})) }; },
   journalProfile(){ const out={}, T=(n,fn)=>{const t=performance.now();try{fn();}catch(e){out[n+'_err']=String(e).slice(0,50);}out[n]=+(performance.now()-t).toFixed(1);};
     T('neoRenderJournal',()=>neoRenderJournal()); T('neoFriendsJournal',()=>neoFriendsJournal()); T('checkin',()=>renderCheckinCard()); T('project',()=>renderProjectCard());

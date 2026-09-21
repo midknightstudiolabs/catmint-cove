@@ -1,3 +1,8 @@
+## Neo testing — September 22, 2026 (café fixes)
+
+- **Café guests no longer glitch at the scene edge:** on tablets the sky/sea/grass edge fill was painted over guests walking in from off-screen, cutting them off at a line and popping them in. The bands are now painted underneath the scene, and the scene edges sit on whole pixels so no thin seam line shows.
+- **The cove goes quiet in the café:** waves, wind, birds and the cats' calls in the cove are silent while the café is open (it keeps its own music or rain) and come back when you leave.
+
 ## Neo testing — September 22, 2026 (after 3.3.0)
 
 - **Cove Race lengths:** choose Sprint (50 m), Cove Run (100 m) or Long Haul (200 m) before the race. Longer runs add late kicks, fades and catch-up so the lead changes, a distance readout under the positions, and the course on the result card. Rewards already follow play time, so a longer run pays for its time.
