@@ -1062,13 +1062,13 @@
   #fest #midkHud #midkCom{flex:1 1 auto;min-width:0;max-width:none;flex-direction:column;align-items:flex-start;gap:2px;padding:6px 11px 7px;border-radius:15px;
     background:rgba(250,242,220,.96);border:2.5px solid #67543f;box-shadow:none;color:#5b4a35;text-shadow:none;
     font:700 12.5px/1.25 Georgia,serif;letter-spacing:.005em;}
-  #fest #midkHud.side{left:var(--mf-sl,0px);width:var(--mf-sw,280px);bottom:calc(var(--mf-b,0px) + 56px);flex-direction:column-reverse;align-items:stretch;justify-content:flex-start;gap:14px;padding:0;max-width:calc(100% - var(--mf-sl,0px) - 16px);}
-  #fest #midkHud.side #midkConsole{align-self:center;width:104px;height:104px}
-  #fest #midkHud.side #midkRally.midk-spin{width:104px;height:104px}
-  #fest #midkHud.side #midkRally .ms-face{inset:13px}
-  #fest #midkHud.side #midkRally .ms-icon{width:34px;height:34px}
-  #fest #midkHud.side #midkRally .ms-label{font-size:12px}
-  #fest #midkHud.side #midkCom{flex:0 0 auto;padding:9px 14px 10px;font-size:14px}
+  #fest #midkHud.stack{bottom:calc(max(70px, var(--mf-b,0px) + 4px) + env(safe-area-inset-bottom));flex-direction:column-reverse;align-items:stretch;justify-content:flex-start;gap:8px;padding:0 14px;}
+  #fest #midkHud.stack #midkConsole{align-self:flex-end;width:76px;height:76px}
+  #fest #midkHud.stack #midkRally.midk-spin{width:76px;height:76px}
+  #fest #midkHud.stack #midkRally .ms-face{inset:9px}
+  #fest #midkHud.stack #midkRally .ms-icon{width:26px;height:26px}
+  #fest #midkHud.stack #midkRally .ms-label{font-size:9px}
+  #fest #midkHud.stack #midkCom{flex:0 0 auto;padding:6px 12px 7px;font-size:13px}
   #fest #midkHud #midkCom .vc-mic{display:none;}
   #fest #midkHud #midkCom::before{content:"COVE RADIO";font:800 9px/1 system-ui,sans-serif;letter-spacing:.14em;color:#779b79;}
   #fest #midkHud #midkReels{position:fixed;left:50%;top:var(--mf-top,clamp(150px,24vh,236px));z-index:70;--rh:50px;gap:8px;padding:8px;border-radius:20px;background:#d9b47e;border:3px solid #67543f;
@@ -13287,11 +13287,9 @@ function midkLayoutHud(V) {
   hud.style.setProperty("--mf-w", (MIDK_W * k).toFixed(1) + "px");
   hud.style.setProperty("--mf-b", (V.oy / rd).toFixed(1) + "px");
   hud.style.setProperty("--mf-top", (V.oy / rd + (MIDK_WIN_Y.visit + 4) * k).toFixed(1) + "px");
-  // Wide window: dock the caption + Spin ring in the free space to the right of the field instead of over its end zone
-  // measure the real game container (not just the window) so the dock can never spill outside it
-  const fest = document.getElementById("fest"), vw = Math.min(restViewportPx().vw, (fest && fest.clientWidth) || 1e9), gutter = vw - (V.ox / rd + MIDK_W * k), side = gutter >= 250;
-  hud.classList.toggle("side", side);
-  if (side) { hud.style.setProperty("--mf-sl", (V.ox / rd + MIDK_W * k + 28).toFixed(1) + "px"); hud.style.setProperty("--mf-sw", Math.min(300, gutter - 56).toFixed(1) + "px"); }
+  // Everything stays inside the game field. When the field is big enough (desktop/tablet) the end zone has room to stack the Spin ring
+  // over the commentary; on phones it is one compact row.
+  hud.classList.toggle("stack", k >= 0.95);
 }
 function makeMidkVisitors(playerAvgMood) {
   const name = pick(MIDK_COVE_NAMES);
