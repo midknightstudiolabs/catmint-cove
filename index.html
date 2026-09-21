@@ -1561,6 +1561,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 #fest .fp-cell .nm{font-size:.75rem;}
 #fest .fest-bar{background:#f4efdf;color:#414c3c;border:1px solid #d6d9bf;box-shadow:0 4px 14px #263c3026;}
 #fest .fest-bar .rb-back,#fest .fest-bar .rb-time{color:#47503e;}
+/* inside a picker or game the bar offers both exits: back to the Festival hub, or out to the Cove */
+#fest .fest-bar.two .rb-back{flex:1 1 0;justify-content:center;min-width:0;}
+#fest .fest-bar.two .rb-time{display:none;}
+#fest .fest-bar .rb-sep{width:1px;align-self:stretch;margin:.4rem 0;background:#d6d9bf;flex:0 0 auto;}
+#fest .fest-bar .rb-sep[hidden],#fest .fest-bar .rb-back[hidden]{display:none;}
 @media(max-height:650px){#fest .fest-panel--hub{padding:.55rem;max-height:calc(100dvh - 90px);}#fest .fc-card{padding:.4rem .55rem;height:60px;}}
 @media(prefers-reduced-motion:reduce){.btn,.fc-card,.shop-tabs button{transition:none;}}
 </style>
@@ -2142,7 +2147,9 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
     </button>
     <div class="race-photo" id="racePhoto" hidden role="status">PHOTO FINISH!</div>
     <div class="fest-bar" id="festBar" hidden>
-      <button class="rb-back" id="festBack"><img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22"> Back to the Cove</button>
+      <button class="rb-back" id="festBackHub" hidden><img src="art/icon-keepsake-festival.svg?v=3" class="neo-ui-icon" alt="" width="22" height="22"> <span>Festival</span></button>
+      <i class="rb-sep" id="festBarSep" aria-hidden="true" hidden></i>
+      <button class="rb-back" id="festBack"><img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22"> <span id="festBackLbl">Back to the Cove</span></button>
       <span class="rb-time" id="festTime">the cove festival</span>
     </div>
   </div>
@@ -11495,6 +11502,7 @@ function renderFest(dt) {
   if (particles.length) drawFX(g);
 }
 document.getElementById("festBack").addEventListener("click", closeFest);
+document.getElementById("festBackHub").addEventListener("click", festBackToChooser);
 document.getElementById("festClaim").addEventListener("click", closeFest);
 document.getElementById("festToHub").addEventListener("click", festBackToChooser);
 document.getElementById("festCancel").addEventListener("click", festBackToChooser);   // "Maybe later" while choosing: back to the festival hub, not out to the Cove
@@ -20980,6 +20988,10 @@ setInterval(neoFriendsPoll,180000);setTimeout(neoFriendsPoll,6000);document.addE
 /* Garden: re-set the ripe reminder whenever the app goes to the background */
 document.addEventListener('visibilitychange',()=>{if(document.hidden)neoScheduleGardenReminder();});
 window.addEventListener('pagehide',()=>{neoScheduleGardenReminder();});
+/* Festival bar: in the hub it is one button (Back to the Cove); inside a picker or game it has two — Festival hub and Cove */
+{const bar=document.getElementById('festBar'),hub=document.getElementById('festChoose'),bh=document.getElementById('festBackHub'),sp=document.getElementById('festBarSep'),lb=document.getElementById('festBackLbl');
+ const sync=()=>{if(!bar||bar.hidden||!hub)return;const two=hub.hidden;bar.classList.toggle('two',two);bh.hidden=!two;sp.hidden=!two;if(lb){const t=two?'Cove':'Back to the Cove';if(lb.textContent!==t)lb.textContent=t;}};
+ setInterval(sync,250);}
 /* Adventures: keep the Activities tile status fresh while cats are away (the Cove sign tag shows it in-world) */
 {setInterval(neoAdvChipSync,20000);setTimeout(neoAdvChipSync,1500);document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#neo-activities-nav'))setTimeout(neoAdvChipSync,0);},true);}
 if(new URLSearchParams(location.search).get('clips'))setTimeout(()=>neoOpenAdventureClips(),4500);
