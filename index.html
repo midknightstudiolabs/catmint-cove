@@ -270,6 +270,9 @@
        height ever changes again. */
     #catcard{bottom:auto;}
     #toast{bottom:calc(var(--navh) + 1.6rem) !important;}
+    /* ...and when the next-action hint / intro card is up, the toast sits above it (this !important rule used to beat the
+       has-hint lift below, so toasts landed on top of the card on phones) */
+    #app:has(#hint:not([hidden])) #toast{bottom:calc(var(--navh) + var(--hint-h, 4.9rem) + 1.5rem) !important;}
     #dev{bottom:var(--navh) !important;}
     /* #scrim centers modals in the full viewport by default, so a modal's
        gap to the nav bar below it depended entirely on how tall that
@@ -1308,7 +1311,7 @@
   #app.resting #hint,#app.resting #toast{opacity:0;pointer-events:none;}
   @media(max-width:600px){ #hint{bottom:calc(6.2rem + env(safe-area-inset-bottom));font-size:.8rem;} }
   /* when the next-action hint is up, float the toast clear above it (it shares the bottom strip) */
-  #app.has-hint #toast{bottom:calc(9rem + env(safe-area-inset-bottom));}
+  #app.has-hint #toast{bottom:calc(3.7rem + env(safe-area-inset-bottom) + var(--hint-h, 4.9rem) + 1.5rem);}
   button.btn.primary.full{background:#c9b98f;color:#4a4230;}
   /* ---- cold open: a small speech card — Midknight's line + the cue ---- */
   #hint.cold{flex-direction:column;align-items:stretch;gap:.3rem;text-align:left;
@@ -7480,6 +7483,8 @@ function renderHint() {
   }
   document.getElementById("app").classList.toggle("has-hint", !el.hidden);
 }
+// keep the toast clear of the hint / intro card: publish the card's real height as --hint-h
+try { if (typeof ResizeObserver !== "undefined") { const hh = document.getElementById("hint"), ap = document.getElementById("app"); if (hh && ap) new ResizeObserver(() => ap.style.setProperty("--hint-h", (hh.hidden ? 0 : Math.ceil(hh.getBoundingClientRect().height)) + "px")).observe(hh); } } catch (e) {}
 document.getElementById("hintGo").addEventListener("click", (e) => { e.stopPropagation(); ensureAudio(); const f = e.currentTarget._act; if (f) f(); });
 document.getElementById("hintX").addEventListener("click", (e) => {
   e.stopPropagation(); ensureAudio();
