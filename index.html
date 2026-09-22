@@ -6266,11 +6266,7 @@ const ACCESSORIES = [
   // Shell-bought (no IAP/Blessing gate), a step above every other accessory — a currency sink for
   // players who already have everything else. Shape confirmed good via portrait() render.
   { key:"butterflywings", label:"Butterfly wings", price:6500, slot:"back", group:"Rare", premium:true, blurb:"Warm coral wings with a real wingbeat — a slow open-close at rest, quick on the zoomies." },
-  // Fairy wings: still held back. drawFairyWings's two lobes are symmetric (unlike Butterfly's
-  // deliberately lopsided shape), so no amount of outer rotation makes them fan apart — they cross
-  // and bunch at the center instead. Confirmed via portrait() render on 2026-09-23; needs the lobe
-  // shape itself redrawn (asymmetric, like Butterfly's), not a rotation/offset tweak. Price was
-  // already agreed at 9000 Shells, same group — just add the ACCESSORIES entry once the shape's fixed.
+  { key:"fairywings",     label:"Fairy wings",     price:9000, slot:"back", group:"Rare", premium:true, blurb:"Translucent lavender-and-blue wings with a soft shimmer and a twinkle of sparkles." },
   // Ultra-rare — never sold, never in a pack. Won from the Wishing Well or a very lucky "while you were
   // away" moment. Not price-gated at all: ownership is G.wonAccessories, checked via the 'rare' flag.
   { key:"moonpendant", label:"Moonlit Pendant", rare:true, slot:"neck", group:"Wishing Well", premium:true, blurb:"A sliver of sea glass on a cord, worn smooth. Nobody remembers exactly how it turned up." },
@@ -17714,38 +17710,45 @@ function drawButterflyWings(g, P, rate, kit) {
 // Fairy wings — translucent lavender/blue lobes with fine radiating veins, a bright leading edge
 // and a couple of independently-twinkling sparkles.
 function drawFairyWings(g, P, rate, kit) {
-  const t = performance.now() / 1000, flap = Math.sin(t * (rate || 2.6)) * 0.5 + 0.5;
-  const by = P.top + 8, root = P.bw * 0.44, sc = (kit ? 1.02 : 1.42);
+  // Redesigned 2026-09-23: two rewrites of the original symmetric lobe() shape still bunched at the
+  // center instead of fanning apart, even after widening the outer rotation. Rather than keep
+  // guessing at new bezier points, this reuses drawButterflyWings's exact proven point structure and
+  // transform (translate/rotate/scale order, same reach) — confirmed to fan out correctly — and only
+  // swaps the fill (translucent lavender/blue, no veins/spots) and adds a shimmer + sparkles.
+  const t = performance.now() / 1000;
+  const flap = Math.sin(t * (rate || 3));
+  const open = 0.62 + flap * 0.30;
+  const by = P.top + 7, root = P.bw * 0.42, sc = (kit ? 1.0 : 1.4);
   const shimmer = 0.5 + Math.sin(t * 1.6) * 0.5;
   for (const s of [-1, 1]) {
     g.save();
     g.translate(s * root, by);
-    g.rotate(s * (-0.16 - flap * 0.12));
+    g.rotate(s * (-0.22 - open * 0.55));
     g.scale(s * sc, sc);
     g.lineJoin = "round";
-    const lobe = (len, wid, tilt, hue) => {
-      g.save(); g.rotate(tilt);
-      const gr = g.createLinearGradient(0, 0, 0, -len);
-      gr.addColorStop(0, "rgba(255,255,255,0.05)");
-      gr.addColorStop(0.5, hue + ",0.5)"); gr.addColorStop(1, hue + ",0.22)");
-      g.fillStyle = gr;
-      g.beginPath();
-      g.moveTo(0, 2);
-      g.bezierCurveTo(wid, -len * 0.3, wid * 0.85, -len * 0.78, 0, -len);
-      g.bezierCurveTo(-wid * 0.85, -len * 0.78, -wid, -len * 0.3, 0, 2);
-      g.closePath(); g.fill();
-      g.strokeStyle = "rgba(255,255,255,0.55)"; g.lineWidth = 0.7; g.stroke();
-      g.strokeStyle = "rgba(255,255,255,0.4)";
-      for (let i = -1; i <= 1; i++) { g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(wid * 0.4 * i, -len * 0.5, wid * 0.7 * i, -len * (0.82 - Math.abs(i) * 0.08)); g.stroke(); }
-      g.restore();
-    };
-    lobe(30, 15, -0.28, "rgba(196,176,238");
-    lobe(19, 10, 0.34, "rgba(150,206,222");
-    g.strokeStyle = "rgba(255,255,255," + (0.35 + shimmer * 0.4) + ")"; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(0, 1); g.quadraticCurveTo(9, -16, 2, -30); g.stroke();
+    const ug = g.createLinearGradient(0, -26, 15, -4);
+    ug.addColorStop(0, "rgba(196,176,238,0.88)"); ug.addColorStop(0.55, "rgba(178,156,228,0.72)"); ug.addColorStop(1, "rgba(150,206,222,0.55)");
+    g.fillStyle = ug; g.strokeStyle = "rgba(140,120,190,0.85)"; g.lineWidth = 1.1;
+    g.beginPath();
+    g.moveTo(0, 2);
+    g.bezierCurveTo(2, -9, 3, -20, 11, -26);
+    g.bezierCurveTo(18, -30, 22, -24, 20, -16);
+    g.bezierCurveTo(19, -9, 12, -2, 4, 3);
+    g.closePath(); g.fill(); g.stroke();
+    const lg = g.createLinearGradient(0, 0, 12, 14);
+    lg.addColorStop(0, "rgba(150,206,222,0.75)"); lg.addColorStop(1, "rgba(120,180,205,0.5)");
+    g.fillStyle = lg; g.strokeStyle = "rgba(100,150,180,0.75)"; g.lineWidth = 0.8;
+    g.beginPath();
+    g.moveTo(1, 3);
+    g.bezierCurveTo(4, 7, 9, 10, 10, 16);
+    g.bezierCurveTo(10.5, 20, 6, 21, 2, 17);
+    g.bezierCurveTo(-0.5, 13, -1, 7, 1, 3);
+    g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = "rgba(255,255,255," + (0.35 + shimmer * 0.4) + ")"; g.lineWidth = 0.8;
+    g.beginPath(); g.moveTo(2, -2); g.quadraticCurveTo(8, -12, 15, -22); g.stroke();
     g.fillStyle = "#fff";
     const spark = (x, y, ph) => { const a = Math.max(0, Math.sin(t * 3 + ph)); if (a < 0.05) return; g.globalAlpha = a; g.beginPath(); g.arc(x, y, 1.1, 0, 7); g.fill(); g.globalAlpha = 1; };
-    spark(9, -20, 0); spark(4, -9, 2.1);
+    spark(13, -19, 0); spark(6, -12, 2.1); spark(6, 14, 3.4);
     g.restore();
   }
 }
