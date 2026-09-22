@@ -6190,6 +6190,9 @@ const ACCESSORIES = [
   { key:"wings",       label:"Little wings", iap:"sparkle_pack", slot:"back", group:"Sparkle", premium:true, blurb:"Small feathered wings that flutter on the cat's back — a slow flap at rest, faster on the zoomies." },
   { key:"moonwings",   label:"Moonlight wings", blessing:true, slot:"back", group:"Blessing", premium:true, blurb:"Crescent-feather wings that glow with the moon. Included with Midknight’s Blessing: they sleep if it ends and wake when you renew." },
   { key:"rainbow",     label:"Rainbow trail",iap:"sparkle_pack", slot:"aura", group:"Sparkle", premium:true, blurb:"A ribbon of colour that streams behind the cat as it moves and fades when it settles." },
+  // PREVIEW ONLY — placeholder pricing pending confirmation. Shell-bought (no IAP/Blessing gate), a step above every other accessory.
+  { key:"butterflywings", label:"Butterfly wings", price:6500, slot:"back", group:"Rare", premium:true, blurb:"Warm coral wings with a real wingbeat — a slow open-close at rest, quick on the zoomies." },
+  { key:"fairywings",     label:"Fairy wings",     price:9000, slot:"back", group:"Rare", premium:true, blurb:"Translucent lavender-and-blue wings with a soft shimmer and a twinkle of sparkles." },
 ];
 ACCESSORIES.push(...window.LITTLE_MATCH_REWARDS.map(r=>({...r,memoryLevel:r.level,group:'Little Matches',price:0})));
 // Endless-mode milestone cosmetics — granted every 50 rounds (see
@@ -8381,7 +8384,12 @@ function openCares() {
   if (typeof trackEvent === "function") trackEvent("cares_opened", { supported: done });
 }
 document.getElementById("helpBtn").addEventListener("click", openGuide);
-document.getElementById("focusBar").addEventListener("click", exitFocus);
+document.getElementById("focusBar").addEventListener("click", () => {
+  // "step back" is shared by two different modes (focused on a cat, or the whole-cove zoom-out) — exitFocus() alone
+  // only ever cleared the former, so tapping it while zoomed out did nothing and the view stayed stuck zoomed out.
+  if (_focus) exitFocus();
+  else if (_ovTarget > 0 || _ovActive) ovSetTarget(0);
+});
 document.getElementById("foodStat").addEventListener("click", openFoodRefill);   // v3: refill food from the HUD too
 document.getElementById("catPill").addEventListener("click", () => {             // v3: the cat count opens the cove roster
   if (rosterEl.hidden) openRoster(); else closeRoster();
@@ -17530,6 +17538,85 @@ function drawMoonWings(g, P, rate, kit) {
   }
   g.restore();
 }
+// Butterfly wings — a real wingbeat (not just a tilt): two lobes per side in a warm coral gradient,
+// dark veins and cream spots, opening wider at the top of each beat.
+function drawButterflyWings(g, P, rate, kit) {
+  const t = performance.now() / 1000;
+  const flap = Math.sin(t * (rate || 3));
+  const open = 0.62 + flap * 0.30;
+  const by = P.top + 7, root = P.bw * 0.42, sc = (kit ? 1.0 : 1.4);
+  for (const s of [-1, 1]) {
+    g.save();
+    g.translate(s * root, by);
+    g.rotate(s * (-0.22 - open * 0.55));
+    g.scale(s * sc, sc);
+    g.lineJoin = "round";
+    const ug = g.createLinearGradient(0, -26, 15, -4);
+    ug.addColorStop(0, "#f0894a"); ug.addColorStop(0.55, "#e8663f"); ug.addColorStop(1, "#c8452f");
+    g.fillStyle = ug; g.strokeStyle = "#5a2a1c"; g.lineWidth = 1.1;
+    g.beginPath();
+    g.moveTo(0, 2);
+    g.bezierCurveTo(2, -9, 3, -20, 11, -26);
+    g.bezierCurveTo(18, -30, 22, -24, 20, -16);
+    g.bezierCurveTo(19, -9, 12, -2, 4, 3);
+    g.closePath(); g.fill(); g.stroke();
+    const lg = g.createLinearGradient(0, 0, 12, 14);
+    lg.addColorStop(0, "#e8663f"); lg.addColorStop(1, "#c8452f");
+    g.fillStyle = lg;
+    g.beginPath();
+    g.moveTo(1, 3);
+    g.bezierCurveTo(4, 7, 9, 10, 10, 16);
+    g.bezierCurveTo(10.5, 20, 6, 21, 2, 17);
+    g.bezierCurveTo(-0.5, 13, -1, 7, 1, 3);
+    g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = "rgba(74,34,22,0.6)"; g.lineWidth = 0.8;
+    g.beginPath(); g.moveTo(2, -2); g.quadraticCurveTo(8, -12, 15, -22); g.stroke();
+    g.beginPath(); g.moveTo(3, 0); g.quadraticCurveTo(9, -8, 17, -15); g.stroke();
+    g.fillStyle = "#faf1dc";
+    g.beginPath(); g.ellipse(13, -19, 2.1, 1.5, 0.5, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(6, -12, 1.4, 1, 0.4, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(6, 14, 1.6, 1.1, -0.3, 0, 7); g.fill();
+    g.restore();
+  }
+}
+// Fairy wings — translucent lavender/blue lobes with fine radiating veins, a bright leading edge
+// and a couple of independently-twinkling sparkles.
+function drawFairyWings(g, P, rate, kit) {
+  const t = performance.now() / 1000, flap = Math.sin(t * (rate || 2.6)) * 0.5 + 0.5;
+  const by = P.top + 8, root = P.bw * 0.44, sc = (kit ? 1.02 : 1.42);
+  const shimmer = 0.5 + Math.sin(t * 1.6) * 0.5;
+  for (const s of [-1, 1]) {
+    g.save();
+    g.translate(s * root, by);
+    g.rotate(s * (-0.16 - flap * 0.12));
+    g.scale(s * sc, sc);
+    g.lineJoin = "round";
+    const lobe = (len, wid, tilt, hue) => {
+      g.save(); g.rotate(tilt);
+      const gr = g.createLinearGradient(0, 0, 0, -len);
+      gr.addColorStop(0, "rgba(255,255,255,0.05)");
+      gr.addColorStop(0.5, hue + ",0.5)"); gr.addColorStop(1, hue + ",0.22)");
+      g.fillStyle = gr;
+      g.beginPath();
+      g.moveTo(0, 2);
+      g.bezierCurveTo(wid, -len * 0.3, wid * 0.85, -len * 0.78, 0, -len);
+      g.bezierCurveTo(-wid * 0.85, -len * 0.78, -wid, -len * 0.3, 0, 2);
+      g.closePath(); g.fill();
+      g.strokeStyle = "rgba(255,255,255,0.55)"; g.lineWidth = 0.7; g.stroke();
+      g.strokeStyle = "rgba(255,255,255,0.4)";
+      for (let i = -1; i <= 1; i++) { g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(wid * 0.4 * i, -len * 0.5, wid * 0.7 * i, -len * (0.82 - Math.abs(i) * 0.08)); g.stroke(); }
+      g.restore();
+    };
+    lobe(30, 15, -0.28, "rgba(196,176,238");
+    lobe(19, 10, 0.34, "rgba(150,206,222");
+    g.strokeStyle = "rgba(255,255,255," + (0.35 + shimmer * 0.4) + ")"; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(0, 1); g.quadraticCurveTo(9, -16, 2, -30); g.stroke();
+    g.fillStyle = "#fff";
+    const spark = (x, y, ph) => { const a = Math.max(0, Math.sin(t * 3 + ph)); if (a < 0.05) return; g.globalAlpha = a; g.beginPath(); g.arc(x, y, 1.1, 0, 7); g.fill(); g.globalAlpha = 1; };
+    spark(9, -20, 0); spark(4, -9, 2.1);
+    g.restore();
+  }
+}
 function drawTail(g, P, coat, mode, wag) {
   const pts = coat.pattern === "points" || coat.pattern === "lynxpoint" || coat.pattern === "van";
   g.fillStyle = pts ? coat.point : coat.base;
@@ -17813,6 +17900,10 @@ function drawCat(g, c, isPhoto) {
   // Moonlight wings (Midknight's Blessing) — only while the Blessing is awake
   if (c.worn && c.worn.includes("moonwings") && blessingActive())
     drawMoonWings(g, P, c.state === "zooming" ? 9 : (c.trotting ? 5 : 2.4), kit);
+  if (c.worn && c.worn.includes("butterflywings"))
+    drawButterflyWings(g, P, c.state === "zooming" ? 13 : (c.trotting ? 6 : 3), kit);
+  if (c.worn && c.worn.includes("fairywings"))
+    drawFairyWings(g, P, c.state === "zooming" ? 9 : (c.trotting ? 5 : 2.4), kit);
 
   // ears (behind head) — a little flop on the bounce; pinned back mid-zoom
   const zoom = c.state === "zooming" || c.state === "tag";
@@ -20237,6 +20328,7 @@ window.__cove = {
   get world(){return {W, H, catFloor: catFloor()}},
   sound(){ return { duck:_cafeDuck, amb: ambience ? +ambience.master.gain.value.toFixed(3) : null, cafeAmb: !!_cafeAmb }; },
   tap:(x,y)=>handleTap(x,y,0,0), propPos:(id)=>propPos(id), propCard:()=>{const el=document.getElementById("propCard");return {hidden:el.hidden,title:document.getElementById("pc-title").textContent,desc:document.getElementById("pc-desc").textContent};},
+  ov(){ return { target:_ovTarget, active:_ovActive, t:_ovT, focusing:document.getElementById("app").classList.contains("focusing"), focus:!!_focus, cold:!!_cold, panel:anyPanelOpen() }; }, ovSet:(v)=>ovSetTarget(v), stepBack:()=>document.getElementById("focusBar").click(), forceFocus:(c)=>enterFocus(c||cats.find(x=>!x.visitor)),
   race(){ return { phase:racePhase, t:raceT, len:_raceLenNow.name, m:_raceLenNow.m, cap:_raceLenNow.cap, cats:raceCats.map(r=>({n:r.cat.name,p:r.progress,done:r.done,at:r.doneAt})) }; },
   journalProfile(){ const out={}, T=(n,fn)=>{const t=performance.now();try{fn();}catch(e){out[n+'_err']=String(e).slice(0,50);}out[n]=+(performance.now()-t).toFixed(1);};
     T('neoRenderJournal',()=>neoRenderJournal()); T('neoFriendsJournal',()=>neoFriendsJournal()); T('checkin',()=>renderCheckinCard()); T('project',()=>renderProjectCard());

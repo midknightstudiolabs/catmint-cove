@@ -1,3 +1,20 @@
+## Neo testing — September 22, 2026 (step back fix)
+
+- Fixed: the '‹ step back' bar did nothing while looking at the whole cove (pinch zoom-out) — it only ever closed cat-focus mode, so tapping it during zoom-out left the view stuck zoomed out. It now correctly zooms back in either way.
+
+## Catmint Cove 3.4.0 — September 22, 2026 (based on 3.3.0)
+
+- **New app icon:** Midknight's face on a moonlit night, on both iOS and Android (Android's adaptive icon has its own foreground/background layers redrawn to match).
+- **Cove Race lengths:** choose a Sprint (50 m), Cove Run (100 m) or Long Haul (200 m) before racing, with a distance readout and the course named on the result card. Longer runs add late kicks, fades and catch-up so the lead changes hands.
+- **Cove Race picker:** the length choice and Start stay in view with a big cove — only the cat list scrolls.
+- **Catmint Café:**
+  - A slimmer top bar on phones, full-width on iPad and larger, with a moss-green menu dock (Menu/Pantry/Report/Upgrades) instead of white-on-white.
+  - The outside view is no longer cropped on phones, and on tablets it's pulled back so the whole café and garden read, with no seam at the edges and no guests cut off mid-walk.
+  - Opening Menu, Pantry, Report or Upgrades no longer zooms or rescales the scene.
+  - The cove's own sound (waves, birds, cat calls) goes quiet while the café is open, and returns when you leave.
+  - A bell when a fresh order starts brewing, and a meow or purr from the cat you serve, matched to how they liked it.
+- **Decor:** Midknight's Guardian statue and the Postcard Board are now tappable, showing a small card with their name and description. The Guardian's statue also moved out of a crowded spot between the Reading Lamp and the Photo Easel into open ground.
+
 ## Neo testing — September 22, 2026 (decor spacing)
 
 - Midknight's Guardian statue no longer stands wedged between the Reading Lamp and the Photo Easel — its default spot moved to open ground between the Reading Nook and the Moonlight Swing, with grass between it and its neighbors.
