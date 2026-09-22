@@ -2329,7 +2329,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
   <div class="sheet" id="today" hidden>
     <button class="x" data-close="today">✕</button>
     <h2>Your journal</h2>
-    <button class="btn" id="coveFriendsBtn"><img class="neo-ui-icon" src="art/icon-keepsake-homecoming.svg" alt="" width="24" height="24">Cove Friends</button>
+    <button class="btn" id="coveFriendsBtn"><img class="neo-ui-icon" src="art/icon-keepsake-cove-friends.svg" alt="" width="24" height="24">Cove Friends</button>
     <div id="neoJournal"></div>
     <div id="checkinCard"></div>
     <div id="projectCard"></div>
@@ -7714,7 +7714,7 @@ const panels = {
   today: document.getElementById("today"),
 };
 function anyPanelOpen() { for (const k in panels) if (!panels[k].hidden) return true; return false; }
-function closeAllPanels() { for (const k in panels) panels[k].hidden = true; stopDressLoop(); _dressWorn = null; }
+function closeAllPanels() { globalThis.CoveCafeView?.stop(); for (const k in panels) panels[k].hidden = true; stopDressLoop(); _dressWorn = null; }
 function neoSheetFooter(sheet){
  if(!sheet||sheet.querySelector(':scope > .cove-sheet-footer'))return;
  const exit=sheet.querySelector('.x');if(!exit)return;
@@ -19081,6 +19081,7 @@ function frame(now) {
 }
 function frameBody(now) {
   if (document.hidden) { last = now; simAccum = 0; return; }
+  const cafeVisible = !!(panels.coffee && !panels.coffee.hidden);
   _frameCount++;   // real average fps over the whole session = _frameCount / sessSec — a cross-check
   let frameDt = (now - last) / 1000;
   last = now;
@@ -19093,7 +19094,7 @@ function frameBody(now) {
   //   tier 0: full detail, full resolution
   //   tier 1 (_perfLite): non-focused cats drop coat markings/whiskers/auras
   //   tier 2: tier 1, plus the whole canvas renders at a lower density
-  if (frameDt > 0 && frameDt < 0.25) {
+  if (!cafeVisible && frameDt > 0 && frameDt < 0.25) {
     _frameEwma += (frameDt - _frameEwma) * 0.06;
     if (_perfTier < 1 && _frameEwma > 0.021) _perfTier = 1;         // sustained < ~48 fps
     else if (_perfTier === 1 && _frameEwma < 0.0166) _perfTier = 0; // recovered to ~60 fps
@@ -19132,6 +19133,8 @@ function frameBody(now) {
     _profSim += ((performance.now() - _simT0) - _profSim) * 0.1;
     if (steps === 6) simAccum = 0;          // fell behind; drop the backlog rather than spiral
     updateDayNight(frameDt);
+    // Keep simulation/economy running, but do not paint behind the opaque Café.
+    if (cafeVisible) { _panelAcc = 0; return; }
     // A full-screen sheet hides nearly all of the Cove, so repaint it at ~15 fps (simulation above still runs every tick).
     if (anyPanelOpen()) { _panelAcc += frameDt; if (_panelAcc < 1 / 15) return; renderScene(_panelAcc); _panelAcc = 0; }
     else { _panelAcc = 0; renderScene(frameDt); }
@@ -21109,7 +21112,7 @@ function neoBuildNavigation(){
   <button class="neo-destination" id="neo-go-wishwell"><span>${neoUIIcon("wishwell")}</span><b>Wishing Well<i class="neo-tile-badge" id="neo-wish-badge" hidden></i></b><small>One wish a day. Always something.</small></button>
   <button class="neo-destination" id="neo-go-cafe"><span>${neoUIIcon("cafe")}</span><b>Catmint Café</b><small>Your seaside coffee stop · grow, brew, watch.</small></button>
   <button class="neo-destination" id="neo-go-garden"><span><img class="neo-ui-icon" src="art/icon-keepsake-garden.svg" alt="" width="36" height="36"></span><b>Cove Garden</b><small>Plant, grow and gather something good.</small></button>
-  <button class="neo-destination" id="neo-go-friends"><span><img class="neo-ui-icon" src="art/icon-keepsake-homecoming.svg?v=4" alt="" width="36" height="36"></span><b>Cove Friends<i class="neo-tile-badge" id="neo-friends-badge" hidden></i></b><small>Visit, send love, play a friendly match.</small></button>
+  <button class="neo-destination" id="neo-go-friends"><span><img class="neo-ui-icon" src="art/icon-keepsake-cove-friends.svg" alt="" width="36" height="36"></span><b>Cove Friends<i class="neo-tile-badge" id="neo-friends-badge" hidden></i></b><small>Visit, send love, play a friendly match.</small></button>
   <button class="neo-destination" id="neo-go-rest"><span>${neoUIIcon("rest")}</span><b>Rainy retreat</b><small>No chores. Just rain and company.</small></button>
   </div>
   <div class="neo-feedback"><p>Your feedback can help us make this little home better.</p><button class="btn primary" id="neo-feedback-contact" type="button">Give feedback</button></div>`;

@@ -1,12 +1,12 @@
 (function(root){
  'use strict';
  let stopActive=()=>{};
- root.CoveCafeView={open(a){
+ root.CoveCafeView={stop(){stopActive();},open(a){
   stopActive();
   const E=root.CoveCafeEngine,g=a.game(),s=E.init(g,Date.now());a.close();
   let panel=document.getElementById('cafe-kiosk');if(!panel){panel=document.createElement('section');panel.id='cafe-kiosk';panel.className='sheet cc-v2';document.getElementById('app').append(panel);a.register(panel);}
   panel.hidden=false;let previewFinish=null,confirmFinish=null,previewTier=null,confirmShop=false,previewDecor=null,confirmDecor=null;const floats=[];let workshop=false,recipeResult=null,lessonStep=0;let tasting='',previewEquipment=null,displayState=s;let soundNote=0;const SOUND_ICON={music:'<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',rain:'<path d="M7 15a4 4 0 0 1-.5-7.9A5.5 5.5 0 0 1 17 6.5a3.8 3.8 0 0 1 .5 7.5"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',off:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M16 9l5 6M21 9l-5 6"/>'},SOUND_WORD={music:'Café music',rain:'Soft rain',off:'Sound off'};
-let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}catch(e){return false;}})();let lastTab=null,view='outside',tab=null,layout={k:0,cx0:0,offset:0},frame=0,last=0,timer,cam=null,camT=0,camKey='',edgeCv=[null,null],edgeT=0,edgeSig='';const actors=a.actors();stopActive=()=>{cancelAnimationFrame(frame);clearInterval(timer);};
+let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}catch(e){return false;}})();let lastTab=null,view='outside',tab=null,layout={k:0,cx0:0,offset:0},frame=0,last=0,timer,cam=null,camT=0,camKey='',edgeCv=[null,null],edgeT=0,edgeSig='';const actors=a.actors();stopActive=()=>{cancelAnimationFrame(frame);clearInterval(timer);for(const cv of edgeCv){if(cv){cv.width=1;cv.height=1;}}const cv=panel.querySelector("canvas");if(cv){cv.width=1;cv.height=1;}stopActive=()=>{};};
   const money=n=>Math.round(n*10)/10;
   const tabName={menu:'My menu',pantry:'Ingredients',upgrades:'Improve café',report:'Sales & happy cats',help:'Café help'};
   let guideOn=!s.guideDone&&(!s.lessonComplete||s.guideStarted),guideNamed=!!s.recipeNames?.coffee;
