@@ -7616,6 +7616,8 @@ function nextAction() {
   if (!panels || !panels.shop) return null;
   if (!G.littleHelloSeen && performance.now()>30000 && performance.now()>=neoHelloUntil && !_placing && !_arranging && cats.some(c=>!c.visitor&&!c.sick&&c.state!=="sleeping"))
     return {t:"Tap an empty patch near the bottom a few times. Someone might come say hello."};
+  // Let new players meet their cats before optional projects compete for attention.
+  if (G.coldCompletedAt && Date.now() - G.coldCompletedAt < 300000) return null;
 
   // a cat (or the party) is home from a trip
   const backAdv = activeAdvs().filter(a => Date.now() >= a.endsAt).sort((x, y) => x.endsAt - y.endsAt)[0];
@@ -8249,6 +8251,7 @@ function endColdOpen(skipped) {
   xb._skip = false; xb.title = "Dismiss"; xb.textContent = "✕";
   document.getElementById("hintText").textContent = "";
   G.tutorialDone = true;
+  G.coldCompletedAt = Date.now();
   G.coldStep = COLD.length;
   if(skipped)closeAllPanels();
   sfx("coax");
@@ -8257,7 +8260,7 @@ function endColdOpen(skipped) {
   visitorTimer = rand(45, 90);   // a third cat wanders in soon after the intro — "oh, they just turn up"
   save();
   // an honest reason to come back — the things that really change overnight
-  setTimeout(() => toast("You’re home. Tap ? → Take a guided tour for a hands-on tour of inventory, activities and memories.", 6), 500);
+  setTimeout(() => toast("You’re home. Tap a cat to get to know them. More visitors will find their way here.", 6), 500);
   setTimeout(() => { try { checkOffline(afterReturn); } catch (e) {} }, 700);
   setTimeout(() => { try { maybePanHint(); } catch (e) {} }, 3200);
   syncHud();
@@ -9102,11 +9105,12 @@ function showWelcomeOffer(soft) {
 function maybeOfferWelcome() {
   if (iapOwns("welcome_pack") || (G.welcomeShows || 0) >= 2) return;
   if (!G.tutorialDone) return;
+  if (G.coldCompletedAt && Date.now() - G.coldCompletedAt < 300000) return;
   if (!(G.metrics && G.metrics.photos > 0)) return;
   if (residentCount() < 2) return;
   if ((G.welcomeShows || 0) === 1 && (G.opens || 1) < (G._wpPutOffDay || 0) + 3) return;
   const busy = () => (scrim && scrim.classList.contains("on"))
-    || (tutEl && tutEl.classList.contains("on")) || !!_cold || restMode;
+    || (tutEl && tutEl.classList.contains("on")) || !!_cold || restMode || festMode || anyPanelOpen() || document.hidden;
   if (busy()) return;
   const first = !(G.welcomeShows || 0);
   G.welcomeShows = (G.welcomeShows || 0) + 1; save();
@@ -19051,9 +19055,13 @@ function renderScene(dt) {
   const _pt3 = performance.now();
   // hud bits — the card follows a moving cat every frame; the rest of the HUD is
   // just counters and doesn't need 60fps (its DOM writes, incl. innerHTML, add up)
-  if (cardCat) { updateCatCard(); positionCard(cardCat); }
   const _now = performance.now();
-  if (_now - _lastHudSync > 110) { _lastHudSync = _now; updateDev(); syncHud(); positionPlaceActions(); }
+  if (cardCat) {
+    // Follow the cat smoothly; status values do not need sixty DOM rewrites a second.
+    if (_now - _lastCatCardSync > 250) { _lastCatCardSync = _now; updateCatCard(); }
+    positionCard(cardCat);
+  }
+  if (_now - _lastHudSync > 250) { _lastHudSync = _now; updateDev(); syncHud(); positionPlaceActions(); }
   const _pt4 = performance.now();
   // diagnostic phase timing (EWMA, ms) — read via __cove.perfLite() / the dev
   // overlay. Cheap (a handful of performance.now() calls); left in permanently.
@@ -19063,6 +19071,7 @@ function renderScene(dt) {
   _profHud += ((_pt4 - _pt3) - _profHud) * 0.1;
 }
 let _profBg = 0, _profCats = 0, _profFx = 0, _profHud = 0, _profSim = 0;
+let _lastCatCardSync = 0;
 let _lastHudSync = 0;
 
 let _paused = false;
