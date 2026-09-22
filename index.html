@@ -1550,6 +1550,8 @@
   #wishwell button:focus-visible{outline:3px solid #f2d58e;outline-offset:3px;}
   #wishwell .ww-wish:disabled{opacity:.85;animation:none;}
   #wishwell .ww-note{margin:0;font-size:12.5px;color:#fff3d8;text-shadow:0 1px 6px rgba(0,0,0,.4);}
+  #wishwell .garden-remind{width:min(320px,90%);box-sizing:border-box;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.24);}
+  #wishwell .garden-remind .row{justify-content:center;}
   @keyframes wwPulse{0%,100%{box-shadow:0 6px 18px rgba(0,0,0,.28),0 0 0 0 rgba(63,113,82,.55);}50%{box-shadow:0 6px 18px rgba(0,0,0,.28),0 0 0 10px rgba(63,113,82,0);}}
   #wishwell .ww-card{position:absolute;z-index:3;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,12px);width:min(320px,88vw);box-sizing:border-box;padding:16px 18px;border-radius:18px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:0 14px 34px rgba(0,0,0,.32);text-align:center;opacity:0;transition:opacity .22s ease,transform .22s ease;}
   #wishwell .ww-card.on{opacity:1;transform:translate(-50%,0);}
@@ -19338,6 +19340,7 @@ function ritualPull() {
   const cat = pick(cats.filter(c => !c.visitor)) || null;
   grantReward(reward, cat);
   save(); syncHud();
+  neoScheduleWellReminder();
   return { reward, cat };
 }
 function grantReward(r, atCat) {
@@ -21839,6 +21842,51 @@ function neoWishBadgeSync(){
   const el=document.getElementById("neo-wish-badge");if(!el)return;
   el.hidden=!ritualState().available;
 }
+// Wishing Well: one quiet notification for the exact moment the well refills — opt-in,
+// same rules as the garden/adventure reminders (never more than one pending at a time).
+async function neoScheduleWellReminder(){
+  try{
+    const LN=neoRemindPlugin();if(!LN)return;
+    try{await LN.cancel({notifications:[{id:4401}]});}catch(e){}
+    if(G.wishRemind!=='yes')return;
+    const st=ritualState();if(st.available)return;
+    await LN.schedule({notifications:[{id:4401,title:'The Wishing Well',body:'Today’s wish is ready. Come see what it brings.',schedule:{at:new Date(st.readyAt),allowWhileIdle:true}}]});
+  }catch(e){}
+}
+function neoWellRemindBox(){
+  const LN=neoRemindPlugin();if(!LN)return null;
+  const box=document.createElement('div');box.className='garden-remind';
+  const yes=async()=>{try{const r=await LN.requestPermissions();if(r&&r.display&&r.display!=='granted'){G.wishRemind='no';save();toast('Notifications are off for the app. You can turn them on in your device settings.',4);draw();return;}}catch(e){}G.wishRemind='yes';save();neoScheduleWellReminder();toast('Got it. We will nudge you when your next wish is ready.',3);draw();};
+  const draw=()=>{box.replaceChildren();
+    if(G.wishRemind==='yes'){const s=document.createElement('small');s.textContent='Wish-ready reminders are on. ';const off=document.createElement('button');off.type='button';off.className='fpk-x';off.textContent='Turn off';off.onclick=()=>{G.wishRemind='no';save();neoScheduleWellReminder();draw();};box.append(s,off);}
+    else if(G.wishRemind==='no'){const s=document.createElement('small');s.textContent='Wish-ready reminders are off. ';const on=document.createElement('button');on.type='button';on.className='fpk-x';on.textContent='Turn on';on.onclick=yes;box.append(s,on);}
+    else{const t=document.createElement('strong');t.textContent='Get a nudge when your wish is ready?';const p=document.createElement('span');p.textContent='One quiet notification a day, right when the well refills.';const row=document.createElement('div');row.className='row';
+      const y=document.createElement('button');y.type='button';y.className='btn primary';y.textContent='Yes, remind me';y.onclick=yes;const n=document.createElement('button');n.type='button';n.className='btn';n.textContent='Not now';n.onclick=()=>{G.wishRemind='no';save();draw();};row.append(y,n);box.append(t,p,row);}};
+  draw();return box;
+}
+// Cafe: no single clean "ready" timestamp like the well or a trip, so this leans on the cap the
+// game already tells players about (the report's "offline service runs for up to 12 hours" note)
+// rather than guessing at real consumption. Rescheduled every time you leave the cafe.
+async function neoScheduleCafeReminder(){
+  try{
+    const LN=neoRemindPlugin();if(!LN)return;
+    try{await LN.cancel({notifications:[{id:4301}]});}catch(e){}
+    if(G.cafeRemind!=='yes')return;
+    const s=G.cafe;if(!s||!s.unlocked||!s.open||!s.menu||!s.menu.length)return;
+    await LN.schedule({notifications:[{id:4301,title:'Catmint Café',body:'Your café’s probably ready for a restock — come take a look.',schedule:{at:new Date(Date.now()+12*3600e3),allowWhileIdle:true}}]});
+  }catch(e){}
+}
+function neoCafeRemindBox(){
+  const LN=neoRemindPlugin();if(!LN)return null;
+  const box=document.createElement('div');box.className='garden-remind';
+  const yes=async()=>{try{const r=await LN.requestPermissions();if(r&&r.display&&r.display!=='granted'){G.cafeRemind='no';save();toast('Notifications are off for the app. You can turn them on in your device settings.',4);draw();return;}}catch(e){}G.cafeRemind='yes';save();neoScheduleCafeReminder();toast('Got it. We will check in on your café for you.',3);draw();};
+  const draw=()=>{box.replaceChildren();
+    if(G.cafeRemind==='yes'){const s=document.createElement('small');s.textContent='Café check-in reminders are on. ';const off=document.createElement('button');off.type='button';off.className='fpk-x';off.textContent='Turn off';off.onclick=()=>{G.cafeRemind='no';save();neoScheduleCafeReminder();draw();};box.append(s,off);}
+    else if(G.cafeRemind==='no'){const s=document.createElement('small');s.textContent='Café check-in reminders are off. ';const on=document.createElement('button');on.type='button';on.className='fpk-x';on.textContent='Turn on';on.onclick=yes;box.append(s,on);}
+    else{const t=document.createElement('strong');t.textContent='Get a nudge to check on your café?';const p=document.createElement('span');p.textContent='One quiet notification, roughly a day after you leave it running.';const row=document.createElement('div');row.className='row';
+      const y=document.createElement('button');y.type='button';y.className='btn primary';y.textContent='Yes, remind me';y.onclick=yes;const n=document.createElement('button');n.type='button';n.className='btn';n.textContent='Not now';n.onclick=()=>{G.cafeRemind='no';save();draw();};row.append(y,n);box.append(t,p,row);}};
+  draw();return box;
+}
 // Right after the first coffee is brewed — a strong "I get it" moment — a one-time, complete tour of
 // everything else the cove holds. Queued rather than shown immediately: the café sheet sits ABOVE the
 // modal layer (z-index 75 vs 50), so popping it up mid-café would just render invisibly behind the
@@ -21877,15 +21925,19 @@ function neoOpenWishingWell(){
     ritualState:()=>ritualState(),
     ritualPull:()=>{const r=ritualPull();neoWishBadgeSync();return r;},
     accInfo:(key)=>ACC_BY_KEY[key]||null,
+    remindBox:()=>neoWellRemindBox(),
   });
+  neoScheduleWellReminder();
 }
 function neoOpenCoffeeKiosk(){
   neoHomestead();CoveCafeEngine.init(G,Date.now());
-  CoveCafeView.open({game:()=>G,close:()=>{closeAllPanels();neoMaybeShowBrewOverview();},save, hud:syncHud,register:p=>panels.coffee=p,garden:()=>neoOpenHomestead('garden'),firstBrewOverview:()=>neoFirstBrewOverview(),
+  CoveCafeView.open({game:()=>G,close:()=>{closeAllPanels();neoMaybeShowBrewOverview();neoScheduleCafeReminder();},save, hud:syncHud,register:p=>panels.coffee=p,garden:()=>neoOpenHomestead('garden'),firstBrewOverview:()=>neoFirstBrewOverview(),
     ready:()=>({count:neoReadyPlots().length,yields:neoReadySummary()}),blessing:()=>blessingActive(),harvestAll:()=>neoHarvestAll(),offer:()=>showBlessingOffer(),sfx:k=>{try{sfx(k)}catch(e){}},soundMode:()=>neoCafeSoundMode(),setSound:v=>neoCafeSoundSet(v),
     actors:()=>cats.slice(0,8).map(c=>{const copy=new Cat({coatKey:c.coatKey,mascot:c.mascot,markSeed:c.markSeed,bornAt:c.bornAt,star:c.star,name:c.name,traits:c.traits,x:0,y:0});copy.worn=[...(c.worn||[])];return copy;}),
-    cat:(ctx,c,x,y,scale,t,walking)=>{if(!c)return;ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);c.state=walking?'exploring':'loafing';c.trotting=walking;c.walk=t/130;c.walkAmt=Number(walking)||0;c.face=1;c.stateT=t/1000;c.bob=t/900;c.tail=t/650;c.blink=(t/1000+x*.017)%4.7<.14?0:3;drawCat(ctx,c,true);ctx.restore();}
+    cat:(ctx,c,x,y,scale,t,walking)=>{if(!c)return;ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);c.state=walking?'exploring':'loafing';c.trotting=walking;c.walk=t/130;c.walkAmt=Number(walking)||0;c.face=1;c.stateT=t/1000;c.bob=t/900;c.tail=t/650;c.blink=(t/1000+x*.017)%4.7<.14?0:3;drawCat(ctx,c,true);ctx.restore();},
+    remindBox:()=>neoCafeRemindBox(),
   });
+  neoScheduleCafeReminder();
 }
 syncNavH();
 setInterval(neoGardenWatch,5000);setTimeout(neoGardenWatch,2500);   // ripe-crop heads-up

@@ -161,6 +161,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
      ].map(([title,copy,dest,label])=>'<details class="cc-help-topic" name="cafe-help-topic"><summary>'+title+'</summary><p>'+copy+'</p><button class="btn primary" data-help-go="'+dest+'">'+label+'</button></details>').join('')+'</div><button class="btn" data-help-tour>Guide me step by step</button>';
      content.querySelectorAll('[data-help-go]').forEach(b=>b.onclick=()=>{const dest=b.dataset.helpGo;tab=dest==='first'?'menu':dest;if(dest==='first'){view='inside';workshop=true;recipeResult=null;lessonStep=0;}render();});
      content.querySelector('[data-help-tour]').onclick=()=>{guideOn=true;s.guideStarted=true;s.guideDone=false;guideNamed=!!s.recipeNames?.coffee;tab='menu';view='inside';workshop=!s.lessonComplete;recipeResult=null;lessonStep=0;a.save();render();};
+     if(a.remindBox){const box=a.remindBox();if(box)content.append(box);}
     }else if(tab==='menu'){
 
      const escape=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));

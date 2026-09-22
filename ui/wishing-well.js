@@ -21,8 +21,9 @@
       panel.innerHTML = `<canvas width="720" height="480" aria-label="Your cats gathered around a stone wishing well"></canvas>
         <div class="ww-top"><button class="btn ww-back" data-close aria-label="Return to Cove">&lsaquo; Cove</button><h2>The Wishing Well</h2><span class="ww-top-end"></span></div>
         <div class="ww-card" id="ww-card" role="status" aria-live="polite" hidden></div>
-        <div class="ww-bottom"><button class="btn primary ww-wish" id="ww-wish"></button><p class="ww-note" id="ww-note"></p></div>`;
+        <div class="ww-bottom"><button class="btn primary ww-wish" id="ww-wish"></button><p class="ww-note" id="ww-note"></p><div id="ww-remind"></div></div>`;
       panel.querySelector('[data-close]').onclick = () => { stopActive(); panel.hidden = true; a.hud(); };
+      if (a.remindBox) { const box = a.remindBox(); if (box) panel.querySelector('#ww-remind').append(box); }
       const canvas = panel.querySelector('canvas'), ctx = canvas.getContext('2d');
       const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
       let width = 720, height = 480, density = 1;
