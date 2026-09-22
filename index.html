@@ -6190,9 +6190,9 @@ const ACCESSORIES = [
   { key:"wings",       label:"Little wings", iap:"sparkle_pack", slot:"back", group:"Sparkle", premium:true, blurb:"Small feathered wings that flutter on the cat's back — a slow flap at rest, faster on the zoomies." },
   { key:"moonwings",   label:"Moonlight wings", blessing:true, slot:"back", group:"Blessing", premium:true, blurb:"Crescent-feather wings that glow with the moon. Included with Midknight’s Blessing: they sleep if it ends and wake when you renew." },
   { key:"rainbow",     label:"Rainbow trail",iap:"sparkle_pack", slot:"aura", group:"Sparkle", premium:true, blurb:"A ribbon of colour that streams behind the cat as it moves and fades when it settles." },
-  // PREVIEW ONLY — placeholder pricing pending confirmation. Shell-bought (no IAP/Blessing gate), a step above every other accessory.
-  { key:"butterflywings", label:"Butterfly wings", price:6500, slot:"back", group:"Rare", premium:true, blurb:"Warm coral wings with a real wingbeat — a slow open-close at rest, quick on the zoomies." },
-  { key:"fairywings",     label:"Fairy wings",     price:9000, slot:"back", group:"Rare", premium:true, blurb:"Translucent lavender-and-blue wings with a soft shimmer and a twinkle of sparkles." },
+  // Butterfly/Fairy wings: art and dispatch exist (drawButterflyWings/drawFairyWings below) but are not
+  // yet in the catalog — pricing and the Fairy Wings shape are still pending sign-off. Add the two
+  // ACCESSORIES entries (see git history around 2026-09-22) once approved.
 ];
 ACCESSORIES.push(...window.LITTLE_MATCH_REWARDS.map(r=>({...r,memoryLevel:r.level,group:'Little Matches',price:0})));
 // Endless-mode milestone cosmetics — granted every 50 rounds (see
