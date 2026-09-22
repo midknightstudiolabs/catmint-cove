@@ -1,3 +1,9 @@
+## Neo testing — September 22, 2026 (Catmint Café guide)
+
+- Fixed: the first-visit café guide used to be crammed on top of the pre-setup intro card (a real bug — Skip guide and Set up your café overlapped), because the guide had nowhere else to render before the café existed. It now waits until after setup.
+- New: Help has a complete Catmint Café guide of its own (separate from Cove Garden) covering brewing, naming, the menu, Pantry, Report, Upgrades, rush hours and the daily special.
+- The same guide now appears once, automatically, the moment you step back to the cove after brewing your first coffee.
+
 ## Neo testing — September 22, 2026 (the Wishing Well)
 
 - A new universal daily ritual: The Wishing Well, in Activities. Every cove has one, no cafe or garden setup needed. One wish a day — mostly a handful of shells, sometimes a pearl or driftwood, and rarely something you can't buy at any price (a new Moonlit Pendant or Wishing Star, won only this way).

@@ -8237,7 +8237,8 @@ const HELP_TOPICS=[
  ['Meet your cats','catdex',['Tap a portrait in Catdex to meet your cat and see care options.','The cat counter shows mood and wellbeing.','For Little Hello, close menus and tap empty foreground ground 3–5 times.'],'dex'],
  ['Decorate your Cove','shop',['Shop pictures show what you are buying.','My inventory separates Stored items from In the Cove.','Hold a decoration to drag it. Store item stores it; Place brings it back for free.','Some pieces are free and earned by playing: the Reading Nook from Little Matches, the Seaside Picnic from adventures and the Memory pieces from postcards. The Shop shows how close you are.'],'shop'],
  ['Explore & play','activities',['Activities holds the Cove Festival (Cove Race, Cove Volleyball and Tug of Paws), Adventures, Catmint Café, the Cove Garden, Little Matches, Cove Friends and the Rainy Retreat.','Each festival game shows how many cats it needs. In the Cove Race you can choose a Sprint (50 m), a Cove Run (100 m) or a Long Haul (200 m); longer runs take longer and pay for the time you spend. Inside a game, the bottom bar takes you back to the Festival or to the Cove.','Rainy Retreat is a quiet place to rest together.'],'explore'],
- ['Garden & Café','garden',['In the Cove Garden, tap a patch to plant it. Ripe patches wait for you to harvest them, and harvests go to your pantry.','Catmint Café serves guests by itself once you have a drink on the menu and the ingredients for it. Watch it from Outside or Inside.','Twice a day the café has a rush hour, when guests arrive faster. Have ingredients stocked before one starts.'],'explore'],
+ ['Cove Garden','garden',['Tap a patch to plant it. Ripe patches wait for you to harvest them, and harvests go straight to your pantry — a shared stock the café also draws from.','Growing is slower than importing in the café’s Pantry, but costs Shells instead of buying them outright.'],'explore'],
+ ['Catmint Café: the full guide','cafe',['Set it up once (120 Shells, in Activities). Cats then serve guests entirely on their own — you’re managing it, not running it.','Brewing: in Menu, tap Make a drink, choose ingredients and taste the result, or use the free first lesson. A successful mix becomes a recipe you can name and save.','Menu: each saved recipe has an on/off switch. Cats only serve what’s switched on — keep two or three on the menu so a rush hour never runs dry of variety.','Pantry: buy ingredients with Shells, or grow them for less in Cove Garden. A pip turns amber when something’s running low.','Report: today’s goal and its reward, guest happiness, your regulars and what each one loves, plus served/sales/cost/profit.','Upgrades: faster brewers, more seats, better cookware, a bigger café (shop tier) and a recolor (finish) — plus outdoor decor for the café itself.','Twice a day is a rush hour — guests arrive faster, so stock up beforehand. One menu item is also today’s special and pays more.','Rename the café any time (the pencil by its name), and pause service whenever you like — stock never spoils while you’re away.'],'explore'],
  ['Adventures & postcards','adventure',['Choose a place, your cats and a trip length. You can watch a trip in Activities, or call the cats home early (they come back with nothing).','Postcards arrive along the way. Every one is kept in the Journal’s Postcard scrapbook, where you can also send one to a friend as a picture.','In the app you can allow one quiet reminder when a trip is over.'],'explore'],
  ['Cove Friends','homecoming',['Friends is optional. You share a friend code, accept invites, visit each other’s Cove and send a gift or a heart.','Only friends you accept can visit, and they see a saved picture of your Cove. Your balances, purchases and save file stay private.','You can block or report anyone from their Cove, and unblock later in Account. Save your private recovery key there before reinstalling, so your friend code comes back.'],'explore'],
  ['Midknight’s Blessing','paw',['An optional subscription that makes tending easier: Harvest all, Feed all, auto-gather and auto-replant, and Tend everything.','Each month brings a moonlit decor piece (the Guardian statue and the Moonlight Swing so far, which cats use) and Moonlight Wings for any cat.','The whole game plays without it. Find it in the Shop or from the Garden. Cancel any time in your store settings.'],'shop'],
@@ -20398,6 +20399,7 @@ window.__cove = {
   sound(){ return { duck:_cafeDuck, amb: ambience ? +ambience.master.gain.value.toFixed(3) : null, cafeAmb: !!_cafeAmb }; },
   tap:(x,y)=>handleTap(x,y,0,0), propPos:(id)=>propPos(id), propCard:()=>{const el=document.getElementById("propCard");return {hidden:el.hidden,title:document.getElementById("pc-title").textContent,desc:document.getElementById("pc-desc").textContent};},
   ritualForce:(key)=>{ _ritualForce = { accessory: key, rare: true }; }, ritualReset:()=>{ G.ritual = null; },
+  helpTopicCafe:()=>{ const t=HELP_TOPICS.find(t=>t[0].indexOf("Catmint Café")===0); return t?{title:t[0],n:t[2].length,steps:t[2]}:null; },
   ov(){ return { target:_ovTarget, active:_ovActive, t:_ovT, focusing:document.getElementById("app").classList.contains("focusing"), focus:!!_focus, cold:!!_cold, panel:anyPanelOpen() }; }, ovSet:(v)=>ovSetTarget(v), stepBack:()=>document.getElementById("focusBar").click(), forceFocus:(c)=>enterFocus(c||cats.find(x=>!x.visitor)),
   race(){ return { phase:racePhase, t:raceT, len:_raceLenNow.name, m:_raceLenNow.m, cap:_raceLenNow.cap, cats:raceCats.map(r=>({n:r.cat.name,p:r.progress,done:r.done,at:r.doneAt})) }; },
   journalProfile(){ const out={}, T=(n,fn)=>{const t=performance.now();try{fn();}catch(e){out[n+'_err']=String(e).slice(0,50);}out[n]=+(performance.now()-t).toFixed(1);};
@@ -21746,6 +21748,32 @@ function neoWishBadgeSync(){
   const el=document.getElementById("neo-wish-badge");if(!el)return;
   el.hidden=!ritualState().available;
 }
+// Right after the first coffee is brewed — a strong "I get it" moment — a one-time, complete tour of
+// everything else the cove holds. Queued rather than shown immediately: the café sheet sits ABOVE the
+// modal layer (z-index 75 vs 50), so popping it up mid-café would just render invisibly behind the
+// café screen. It fires instead the moment you actually step back out to the cove.
+function neoFirstBrewOverview(){
+  if(!G.tips)G.tips=[]; if(G.tips.includes("brewOverviewSeen")||G.tips.includes("brewOverviewPending"))return;
+  G.tips.push("brewOverviewPending"); save();
+}
+function neoMaybeShowBrewOverview(){
+  if(!G.tips||!G.tips.includes("brewOverviewPending"))return;
+  G.tips=G.tips.filter(t=>t!=="brewOverviewPending"); if(!G.tips.includes("brewOverviewSeen"))G.tips.push("brewOverviewSeen"); save();
+  setTimeout(()=>{
+    if(_cold||_vig||festMode||restMode||anyPanelOpen())return;
+    const topic=HELP_TOPICS.find(t=>t[0].indexOf("Catmint Café")===0);
+    const steps=(topic?topic[2]:[]).map(x=>'<li>'+x+'</li>').join('');
+    openModal('<div class="reveal">' +
+      '<div class="kicker">YOU’VE GOT THE HANG OF IT</div>' +
+      '<h2>Running Catmint Café</h2>' +
+      '<p class="sub">Your first cup is brewed. Here’s the whole of it, brewing to managing — this is also in Help any time.</p>' +
+      '<ol class="help-steps" style="text-align:left">'+steps+'</ol>' +
+      '<div class="row"><button class="btn primary" id="fbo-tour">Take the guided tour</button><button class="btn" id="fbo-close">I\u2019ve got it, thanks</button></div>' +
+    '</div>');
+    document.getElementById("fbo-close").onclick=closeModal;
+    document.getElementById("fbo-tour").onclick=()=>{closeModal();neoStartTour();};
+  },700);
+}
 function neoOpenWishingWell(){
   window.CoveAnalytics?.emit("menu_opened",{entity:"Wishing Well"});
   closeAllPanels();
@@ -21761,7 +21789,7 @@ function neoOpenWishingWell(){
 }
 function neoOpenCoffeeKiosk(){
   neoHomestead();CoveCafeEngine.init(G,Date.now());
-  CoveCafeView.open({game:()=>G,close:closeAllPanels,save, hud:syncHud,register:p=>panels.coffee=p,garden:()=>neoOpenHomestead('garden'),
+  CoveCafeView.open({game:()=>G,close:()=>{closeAllPanels();neoMaybeShowBrewOverview();},save, hud:syncHud,register:p=>panels.coffee=p,garden:()=>neoOpenHomestead('garden'),firstBrewOverview:()=>neoFirstBrewOverview(),
     ready:()=>({count:neoReadyPlots().length,yields:neoReadySummary()}),blessing:()=>blessingActive(),harvestAll:()=>neoHarvestAll(),offer:()=>showBlessingOffer(),sfx:k=>{try{sfx(k)}catch(e){}},soundMode:()=>neoCafeSoundMode(),setSound:v=>neoCafeSoundSet(v),
     actors:()=>cats.slice(0,8).map(c=>{const copy=new Cat({coatKey:c.coatKey,mascot:c.mascot,markSeed:c.markSeed,bornAt:c.bornAt,star:c.star,name:c.name,traits:c.traits,x:0,y:0});copy.worn=[...(c.worn||[])];return copy;}),
     cat:(ctx,c,x,y,scale,t,walking)=>{if(!c)return;ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);c.state=walking?'exploring':'loafing';c.trotting=walking;c.walk=t/130;c.walkAmt=Number(walking)||0;c.face=1;c.stateT=t/1000;c.bob=t/900;c.tail=t/650;c.blink=(t/1000+x*.017)%4.7<.14?0:3;drawCat(ctx,c,true);ctx.restore();}

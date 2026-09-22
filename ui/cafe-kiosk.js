@@ -16,9 +16,13 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    panel.classList.toggle('cc-guiding',guideOn);
    const replay=document.createElement('button');replay.className='btn cc-guide-replay';replay.textContent='?';replay.setAttribute('aria-label','Help me play: Café guide');replay.onclick=()=>{guideOn=true;s.guideStarted=true;s.guideDone=false;a.save();guideNamed=!!s.lessonComplete;tab='menu';view='inside';workshop=false;recipeResult=null;render();};panel.querySelector('.cc-head-end').append(replay);
    if(!guideOn)return;
+   // Before the cafe is set up there is no content panel to host the card in, so it used to get
+   // prepended straight into .cc-intro — stacked right on top of that panel's own near-identical
+   // "Set up your cafe" message and button. The intro already explains this step on its own; the
+   // guide proper starts once there is something to make.
+   if(!s.unlocked)return;
    let title,text,target,step,stockGuide=false;
-   if(!s.unlocked){step=1;title='Let’s make a café!';text='You need 120 Shells. Tap Set up your café when you have enough.';target='[data-start]';}
-   else if(!s.lessonComplete){step=1;title='Make a cup';text=workshop?['Tap Add one coffee bean. This cup is free!','Tap Brew my first cup.','Tap Taste my coffee.'][lessonStep]:'Tap Make your first coffee. We will help you.';target=workshop?'[data-lesson]':'[data-create]';}
+   if(!s.lessonComplete){step=1;title='Make a cup';text=workshop?['Tap Add one coffee bean. This cup is free!','Tap Brew my first cup.','Tap Taste my coffee.'][lessonStep]:'Tap Make your first coffee. We will help you.';target=workshop?'[data-lesson]':'[data-create]';}
    else if(recipeResult||!guideNamed){step=2;title='Give it a name';text='Type a fun name. Then tap Save recipe. You can keep the name we picked, too.';target='[data-save-name]';}
    else if(!s.menu.length){step=3;title='Put it on the menu';text='Tap the switch beside your drink to put it on the menu. Cats will only serve what is on the menu.';target='[data-recipe]';}
    else if(!s.open&&whyClosed()){const wc=whyClosed();step=4;stockGuide=true;title='Stock up first';text=wc.text.replace(' Restock to open your café.','')+' Cats need ingredients before they can serve. Buy a few in Pantry, or grow them in the Garden.';target='[data-tab="pantry"]';}
@@ -166,7 +170,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
        lab.querySelector('[data-save-name]').onclick=()=>{const name=lab.querySelector('input').value;if(!name.trim()){lab.querySelector('[role="status"]').textContent='Give your creation a name first.';return;}commit(()=>{E.nameRecipe(g,recipe.id,name);guideNamed=true;workshop=false;recipeResult=null;});};
       }else if(!s.lessonComplete){
        lab.innerHTML=`<h3>Your first coffee</h3><span class="cc-cup">${cup('coffee')}</span><p>${['Start with one coffee bean. This practice cup is on us.','The bean is ready. Brew it slowly.','A lovely first cup. Taste it and make it yours.'][lessonStep]}</p><button class="btn primary" data-lesson>${['Add one coffee bean','Brew my first cup','Taste my coffee'][lessonStep]}</button><small>Free guided lesson · no pantry ingredients used.</small>`;
-       lab.querySelector('[data-lesson]').onclick=()=>{if(lessonStep<2){lessonStep++;render();}else commit(()=>{const result=E.lesson(g);recipeResult=result.id||null;tasting=result.message||result.error;});};
+       lab.querySelector('[data-lesson]').onclick=()=>{if(lessonStep<2){lessonStep++;render();}else commit(()=>{const result=E.lesson(g);recipeResult=result.id||null;tasting=result.message||result.error;if(result.id)a.firstBrewOverview?.();});};
       }else{
        lab.innerHTML='<h3>Try a new recipe</h3><p>Choose a recipe card for guidance, or change the amounts to experiment.</p><div class="cc-recipe-guides">'+E.recipes.map(r=>'<button class="btn" data-guide="'+r.id+'">'+escape(r.name)+'</button>').join('')+'</div>'+Object.entries(E.ingredients).map(([k,v])=>'<label>'+v.name+' · '+(g.homestead.stock[k]||0)+' in pantry<select data-mix="'+k+'"><option>0</option><option>1</option><option>2</option><option>3</option></select></label>').join('')+'<small>Each attempt uses the selected ingredients, including unsuccessful batches.</small><button class="btn primary" data-brew>Make & taste</button><p role="status"></p><button class="btn" data-garden>Grow ingredients in Cove Garden</button>';
        lab.querySelector('[role="status"]').textContent=tasting;
