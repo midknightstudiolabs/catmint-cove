@@ -1,3 +1,10 @@
+## Neo testing — September 22, 2026 (the Wishing Well)
+
+- A new universal daily ritual: The Wishing Well, in Activities. Every cove has one, no cafe or garden setup needed. One wish a day — mostly a handful of shells, sometimes a pearl or driftwood, and rarely something you can't buy at any price (a new Moonlit Pendant or Wishing Star, won only this way).
+- A real animated moment for the wish: a shell tossed into the well, ripples, a rising glow, and a reveal card — a bigger flourish for the rare finds.
+- Cats gather at the well each visit. The background is the same painted grounds used for Cove Festival, so it reads as part of the same cove rather than a separate screen.
+- Fixed along the way: a global 'tap outside closes the panel' listener didn't know about the new Well, so the very first tap inside it would have closed it immediately — it's now on the same exception list as every other panel.
+
 ## Neo testing — September 22, 2026 (step back fix)
 
 - Fixed: the '‹ step back' bar did nothing while looking at the whole cove (pinch zoom-out) — it only ever closed cat-focus mode, so tapping it during zoom-out left the view stuck zoomed out. It now correctly zooms back in either way.

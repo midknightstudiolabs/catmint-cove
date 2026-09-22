@@ -1502,6 +1502,28 @@
   /* @media (orientation:landscape) and (max-height:500px){ #rotate{display:flex;} } */
 
   /* focus camera — press & hold a cat to sit with it; the chrome recedes */
+  /* ===== The Wishing Well — a small full-bleed scene sheet, same family as the café/festival grounds ===== */
+  #wishwell{display:none;position:fixed;inset:0;z-index:70;background:#1f3a3f;}
+  #wishwell:not([hidden]){display:block;}
+  #wishwell canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  #wishwell .ww-top{position:absolute;z-index:2;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:max(10px,env(safe-area-inset-top)) 10px 0;}
+  #wishwell .ww-top h2{flex:1;margin:0;text-align:center;font:600 17px "Fraunces",serif;color:#fff8e6;text-shadow:0 2px 8px rgba(0,0,0,.35);}
+  #wishwell .ww-top-end{width:64px;}
+  #wishwell .ww-back{min-height:40px;padding:0 12px;font-size:14px;font-weight:600;border:0;border-radius:12px;background:rgba(250,246,233,.92);color:var(--accent);box-shadow:none;}
+  #wishwell .ww-bottom{position:absolute;z-index:2;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 16px max(16px,env(safe-area-inset-bottom));}
+  #wishwell .ww-wish{width:min(320px,90%);min-height:52px;font-size:16px;font-weight:700;border-radius:16px;background:#6b7a5a;border-color:#6b7a5a;color:#f3f0df;box-shadow:0 6px 18px rgba(0,0,0,.28);}
+  #wishwell .ww-wish.ready{background:var(--accent);border-color:var(--accent);animation:wwPulse 2.2s ease-in-out infinite;}
+  #wishwell .ww-wish:disabled{opacity:.85;animation:none;}
+  #wishwell .ww-note{margin:0;font-size:12.5px;color:#fff3d8;text-shadow:0 1px 6px rgba(0,0,0,.4);}
+  @keyframes wwPulse{0%,100%{box-shadow:0 6px 18px rgba(0,0,0,.28),0 0 0 0 rgba(63,113,82,.55);}50%{box-shadow:0 6px 18px rgba(0,0,0,.28),0 0 0 10px rgba(63,113,82,0);}}
+  #wishwell .ww-card{position:absolute;z-index:3;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,12px);width:min(320px,88vw);box-sizing:border-box;padding:16px 18px;border-radius:18px;background:var(--panel);border:1px solid var(--panel-line);box-shadow:0 14px 34px rgba(0,0,0,.32);text-align:center;opacity:0;transition:opacity .22s ease,transform .22s ease;}
+  #wishwell .ww-card.on{opacity:1;transform:translate(-50%,0);}
+  #wishwell .ww-card b{display:block;font:600 18px "Fraunces",serif;color:var(--ink);margin-bottom:4px;}
+  #wishwell .ww-card p{margin:0 0 12px;font-size:13.5px;color:var(--ink-soft);line-height:1.4;}
+  #wishwell .ww-card.rare{background:linear-gradient(180deg,#fff8e2,var(--panel));box-shadow:0 14px 34px rgba(0,0,0,.32),0 0 0 2px #e8c56a;}
+  #wishwell .ww-card.rare b{color:#8a6a1e;}
+  #wishwell .ww-card .btn{width:100%;min-height:44px;}
+  @media(prefers-reduced-motion:reduce){#wishwell .ww-wish.ready{animation:none;}#wishwell .ww-card{transition:none;}}
   #hud,#actions,#toast,#hint{transition:opacity .35s ease;}
   #app.focusing #hud,#app.focusing #actions,#app.focusing #toast,#app.focusing #hint{opacity:0;pointer-events:none;}
   /* the ⊙ / × whole-cove button: bottom-right, above the tab bar; hidden with
@@ -2366,6 +2388,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=18"></script>
 <link rel="stylesheet" href="ui/cafe-kiosk.css?v=42"><script src="ui/cafe-engine.js?v=21"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=51"></script>
+<script src="ui/wishing-well.js?v=1"></script>
 <script>
 (() => {
 "use strict";
@@ -6193,6 +6216,10 @@ const ACCESSORIES = [
   // Butterfly/Fairy wings: art and dispatch exist (drawButterflyWings/drawFairyWings below) but are not
   // yet in the catalog — pricing and the Fairy Wings shape are still pending sign-off. Add the two
   // ACCESSORIES entries (see git history around 2026-09-22) once approved.
+  // Ultra-rare — never sold, never in a pack. Won from the Wishing Well or a very lucky "while you were
+  // away" moment. Not price-gated at all: ownership is G.wonAccessories, checked via the 'rare' flag.
+  { key:"moonpendant", label:"Moonlit Pendant", rare:true, slot:"neck", group:"Wishing Well", premium:true, blurb:"A sliver of sea glass on a cord, worn smooth. Nobody remembers exactly how it turned up." },
+  { key:"starcharm",   label:"Wishing Star",    rare:true, slot:"head", group:"Wishing Well", premium:true, blurb:"A tiny star that just… stayed. It catches the light a beat longer than it should." },
 ];
 ACCESSORIES.push(...window.LITTLE_MATCH_REWARDS.map(r=>({...r,memoryLevel:r.level,group:'Little Matches',price:0})));
 // Endless-mode milestone cosmetics — granted every 50 rounds (see
@@ -6226,6 +6253,7 @@ function accOwned(c, key) {
   if (a && a.endlessRound) return (G.littleMatches?.endless?.rounds || 0) >= a.endlessRound;
   if (a && a.blessing) return blessingActive();             // Midknight's Blessing owns it for every cat while it is active
   if (a && a.iap) return iapOwns(a.iap);                    // the Sparkle Pack owns it for every cat, derived — never materialised into c.owned
+  if (a && a.rare) return !!(G.wonAccessories && G.wonAccessories.includes(key));  // Wishing Well / rare event drops — every cat, once won
   return !!(c && c.owned && c.owned.includes(key));
 }
 function equipAccessory(c, key, forceOn) {
@@ -7052,7 +7080,7 @@ function renderShopDress(list) {
     Welcome: { id: "welcome_pack", icon: neoUIIcon("paw") },
     Founder: { id: "founding_covekeeper", icon: neoUIIcon("trophy") },
   };
-  const rackAcc = ACCESSORIES.filter(a => !a.hidden);   // `hidden` items are auto-equipped only (e.g. the founder's ribbon)
+  const rackAcc = ACCESSORIES.filter(a => !a.hidden && !(a.rare && !accOwned(c, a.key)));   // `hidden` items are auto-equipped only (e.g. the founder's ribbon); an un-won rare stays out of the rack rather than teasing a lock
   const groups = [...new Set(rackAcc.map(a => a.group))];
   const rackHTML = groups.map(grp => {
     const items = rackAcc.filter(a => a.group === grp);
@@ -7712,7 +7740,7 @@ document.addEventListener("pointerdown", (e) => {
   }
   if (!anyPanelOpen()) return;
   if (_vig || scrim.classList.contains("on")) return;    // a modal/vignette is up over the panel — it owns dismissal; tapping it must NOT collapse the panel underneath (e.g. a Catdex coat note)
-  if (e.target.closest("#shop, #dex, #today, #neo-explore, #neo-homestead, #cafe-kiosk, #scrim")) return;   // interacting with the panel or a modal on top of it
+  if (e.target.closest("#shop, #dex, #today, #neo-explore, #neo-homestead, #cafe-kiosk, #wishwell, #scrim")) return;   // interacting with the panel or a modal on top of it
   closeAllPanels();
   if (!e.target.closest("#actions")) e.stopPropagation(); // a dismiss tap — don't also pet a cat underneath
 }, true);
@@ -19204,6 +19232,39 @@ function wPick(list) {
   for (const o of list) { r -= (o.w || 1); if (r <= 0) return o; }
   return list[list.length - 1];
 }
+// The Wishing Well — a universal, once-a-day ritual. No café, no garden, no purchase: every cove has
+// a well, and every cove gets one wish a day. Mostly a handful of shells; rarely something you cannot
+// buy at any price.
+const RITUAL_COOLDOWN_H = 20;   // slightly under 24h so a slightly-early visit the next day still counts
+function ritualState(now = Date.now()) {
+  const last = (G.ritual && G.ritual.lastAt) || 0;
+  const readyAt = last + RITUAL_COOLDOWN_H * 3600e3;
+  return { available: now >= readyAt, readyAt, last };
+}
+let _ritualForce = null;   // debug/test only — consumed once by the next roll
+function ritualRoll() {
+  if (_ritualForce) { const f = _ritualForce; _ritualForce = null; return f; }
+  const unowned = ["moonpendant", "starcharm"].filter(k => !(G.wonAccessories || []).includes(k));
+  const table = [
+    { w: 45, roll: () => ({ shells: Math.round(rand(70, 170)) }) },
+    { w: 22, roll: () => ({ shells: Math.round(rand(220, 420)) }) },
+    { w: 12, roll: () => ({ driftwood: 2 + ((Math.random() * 3) | 0) }) },
+    { w: 10, roll: () => ({ pearls: 1 }) },
+    { w: 7,  roll: () => ({ shells: 40, mood: 14, wishOnly: true }) },   // a quiet, wholesome wish — small shells, no fanfare
+  ];
+  if (unowned.length) table.push({ w: 4, roll: () => ({ accessory: pick(unowned), rare: true }) });
+  const got = wPick(table).roll();
+  return got;
+}
+function ritualPull() {
+  const st = ritualState(); if (!st.available) return null;
+  G.ritual = { lastAt: Date.now() };
+  const reward = ritualRoll();
+  const cat = pick(cats.filter(c => !c.visitor)) || null;
+  grantReward(reward, cat);
+  save(); syncHud();
+  return { reward, cat };
+}
 function grantReward(r, atCat) {
   if (!r) return;
   const x = atCat ? atCat.x : W / 2, y = atCat ? atCat.y - 24 : H * 0.5;
@@ -19216,6 +19277,14 @@ function grantReward(r, atCat) {
     if (!G.keepsakes) G.keepsakes = [];
     for (const k of keeps) G.keepsakes.unshift({ ...k, t: Date.now() });
     if (G.keepsakes.length > 40) G.keepsakes.length = 40;
+  }
+  if (r.accessory) {
+    if (!G.wonAccessories) G.wonAccessories = [];
+    if (!G.wonAccessories.includes(r.accessory)) {
+      G.wonAccessories.push(r.accessory);
+      const a = ACC_BY_KEY[r.accessory];
+      if (a) logMoment("✦", (atCat ? atCat.name + " brought back " : "Something rare turned up: ") + a.label + ".", "tale");
+    }
   }
   if (r.mapPiece) {
     G.mapPieces = (G.mapPieces || 0) + 1;
@@ -20328,6 +20397,7 @@ window.__cove = {
   get world(){return {W, H, catFloor: catFloor()}},
   sound(){ return { duck:_cafeDuck, amb: ambience ? +ambience.master.gain.value.toFixed(3) : null, cafeAmb: !!_cafeAmb }; },
   tap:(x,y)=>handleTap(x,y,0,0), propPos:(id)=>propPos(id), propCard:()=>{const el=document.getElementById("propCard");return {hidden:el.hidden,title:document.getElementById("pc-title").textContent,desc:document.getElementById("pc-desc").textContent};},
+  ritualForce:(key)=>{ _ritualForce = { accessory: key, rare: true }; }, ritualReset:()=>{ G.ritual = null; },
   ov(){ return { target:_ovTarget, active:_ovActive, t:_ovT, focusing:document.getElementById("app").classList.contains("focusing"), focus:!!_focus, cold:!!_cold, panel:anyPanelOpen() }; }, ovSet:(v)=>ovSetTarget(v), stepBack:()=>document.getElementById("focusBar").click(), forceFocus:(c)=>enterFocus(c||cats.find(x=>!x.visitor)),
   race(){ return { phase:racePhase, t:raceT, len:_raceLenNow.name, m:_raceLenNow.m, cap:_raceLenNow.cap, cats:raceCats.map(r=>({n:r.cat.name,p:r.progress,done:r.done,at:r.doneAt})) }; },
   journalProfile(){ const out={}, T=(n,fn)=>{const t=performance.now();try{fn();}catch(e){out[n+'_err']=String(e).slice(0,50);}out[n]=+(performance.now()-t).toFixed(1);};
@@ -20981,6 +21051,7 @@ function neoBuildNavigation(){
   sheet.innerHTML=`<button class="x" id="neo-explore-close" aria-label="Close Activities">✕</button><div class="kicker">A LITTLE ADVENTURE, AT YOUR PACE</div><h2>Activities</h2><p class="muted">Stay for a game, send a postcard, or settle in somewhere quiet.</p><button class="btn primary neo-tend" id="neo-tend" type="button" hidden>Tend everything <small>gather · harvest · feed, in one tap</small></button><div class="neo-explore-grid">
   <button class="neo-destination" id="neo-go-festival"><span>${neoUIIcon("festival")}</span><b>Cove Festival</b><small>Your familiar cats. A little friendly chaos.</small></button>
   <button class="neo-destination" id="neo-go-adventure"><span>${neoUIIcon("adventure")}</span><b>Adventures</b><small>A little trip. Something to bring home.</small></button>
+  <button class="neo-destination" id="neo-go-wishwell"><span>${neoUIIcon("wishwell")}</span><b>Wishing Well<i class="neo-tile-badge" id="neo-wish-badge" hidden></i></b><small>One wish a day. Always something.</small></button>
   <button class="neo-destination" id="neo-go-cafe"><span>${neoUIIcon("cafe")}</span><b>Catmint Café</b><small>Your seaside coffee stop · grow, brew, watch.</small></button>
   <button class="neo-destination" id="neo-go-garden"><span><img class="neo-ui-icon" src="art/icon-keepsake-garden.svg" alt="" width="36" height="36"></span><b>Cove Garden</b><small>Plant, grow and gather something good.</small></button>
   <button class="neo-destination" id="neo-go-friends"><span><img class="neo-ui-icon" src="art/icon-keepsake-homecoming.svg?v=4" alt="" width="36" height="36"></span><b>Cove Friends<i class="neo-tile-badge" id="neo-friends-badge" hidden></i></b><small>Visit, send love, play a friendly match.</small></button>
@@ -20995,6 +21066,8 @@ function neoBuildNavigation(){
   document.getElementById('neo-go-cafe').onclick=()=>neoOpenHomestead('cafe');
   document.getElementById('neo-go-garden').onclick=()=>neoOpenHomestead('garden');
   document.getElementById('neo-go-rest').onclick=()=>{closeAllPanels();document.getElementById('restBtn').click();};
+  document.getElementById('neo-go-wishwell').onclick=()=>neoOpenWishingWell();
+  neoWishBadgeSync();
   document.getElementById('neo-go-friends').onclick=()=>{closeAllPanels();openFriendsHub();};
   document.getElementById('neo-tend').onclick=()=>{closeAllPanels();neoTendEverything();};
   document.getElementById('neo-feedback-contact').onclick=()=>openExternal('https://www.catmintcove.com/#contact');
@@ -21665,6 +21738,26 @@ function neoFriendResult(kind,won,text){
   if(!_friendMatch||_friendMatch.kind!==kind)return;
   const f=_friendMatch.friend;_friendMatch=null;
   import('./ui/friends-hub.js?v=11').then(m=>m.recordResult({game:kind==="volley"?"Volleyball":"Tug of Paws",text,won,friend:f.name})).catch(()=>{});
+}
+// The Wishing Well reuses the exact Festival-grounds painter (same cove art plate, same day/night
+// lighting) rather than its own backdrop — one cove, one look, wherever you are in it.
+function neoWishBg(ctx,w,h){ neoRaceMeadow(ctx,w,h); }
+function neoWishBadgeSync(){
+  const el=document.getElementById("neo-wish-badge");if(!el)return;
+  el.hidden=!ritualState().available;
+}
+function neoOpenWishingWell(){
+  window.CoveAnalytics?.emit("menu_opened",{entity:"Wishing Well"});
+  closeAllPanels();
+  CoveWishingWell.open({game:()=>G,close:closeAllPanels,save,hud:syncHud,register:p=>panels.wishwell=p,
+    cats:()=>cats.filter(c=>!c.visitor).slice(0,3).map(c=>{const copy=new Cat({coatKey:c.coatKey,mascot:c.mascot,markSeed:c.markSeed,bornAt:c.bornAt,star:c.star,name:c.name,traits:c.traits,x:0,y:0});copy.worn=[...(c.worn||[])];return copy;}),
+    cat:(ctx,c,x,y,scale,t,walking)=>{if(!c)return;ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);c.state=walking?"exploring":(c.state==="zooming"?"zooming":"loafing");c.trotting=walking;c.walk=t/130;c.walkAmt=Number(walking)||0;c.face=1;c.stateT=t/1000;c.bob=t/900;c.tail=t/650;c.blink=(t/1000+x*.017)%4.7<.14?0:3;drawCat(ctx,c,true);ctx.restore();},
+    bg:(ctx,w,h)=>neoWishBg(ctx,w,h),
+    sfx:k=>{try{sfx(k)}catch(e){}},
+    ritualState:()=>ritualState(),
+    ritualPull:()=>{const r=ritualPull();neoWishBadgeSync();return r;},
+    accInfo:(key)=>ACC_BY_KEY[key]||null,
+  });
 }
 function neoOpenCoffeeKiosk(){
   neoHomestead();CoveCafeEngine.init(G,Date.now());
