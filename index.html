@@ -19105,7 +19105,14 @@ function frameBody(now) {
   //   tier 0: full detail, full resolution
   //   tier 1 (_perfLite): non-focused cats drop coat markings/whiskers/auras
   //   tier 2: tier 1, plus the whole canvas renders at a lower density
-  if (!cafeVisible && frameDt > 0 && frameDt < 0.25) {
+  // A panel open (Activities, Catdex, Shop, ...) throttles the real paint below to ~15fps,
+  // so the main thread goes nearly idle and frameDt looks artificially fast — enough to trip
+  // a tier recovery further down, which calls resize() and clears the canvas. At full 60fps
+  // that clear repaints within one invisible frame; behind the panel-open throttle it can sit
+  // blank for a whole ~67ms tick instead — a visible black flash behind the panel. Excluding
+  // panel-open time here (same as Café already is) keeps the sample honest either way: no
+  // scene is being painted for it to measure.
+  if (!cafeVisible && !anyPanelOpen() && frameDt > 0 && frameDt < 0.25) {
     _frameEwma += (frameDt - _frameEwma) * 0.06;
     if (_perfTier < 1 && _frameEwma > 0.021) _perfTier = 1;         // sustained < ~48 fps
     else if (_perfTier === 1 && _frameEwma < 0.0166) _perfTier = 0; // recovered to ~60 fps
