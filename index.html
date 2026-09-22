@@ -15211,7 +15211,7 @@ const DECOR_PROPS = [
   { id:"photoeasel", name:"Photo Easel", price:0, collection:"memory", earn:{ k:"card", n:10 }, blurb:"Memory: an easel with a little painting of the cove, and Midknight in it. It follows the time of day.",
     movable:true, place:{ x:W*0.285, y:H*0.83, s:1.25 }, render(g,t,x,y,s){ propPhotoEasel(g, x, y, s, t); } },
   { id:"moonshrine", name:"Midknight’s Guardian", price: 0, blessing: true, tapInfo:true, blurb:"A weathered stone cat with a crescent moon on its collar, watching over the cove. Included with Midknight’s Blessing: it glows at night while the Blessing is active and sleeps when it isn’t.",
-    movable:true, place:{ x:W*0.34, y:H*0.88, s:1.55 }, render(g,t,x,y,s){ propMoonShrine(g, x, y, s, t); } },
+    movable:true, place:{ x:W*0.565, y:H*0.855, s:1.55 }, render(g,t,x,y,s){ propMoonShrine(g, x, y, s, t); } },   // the open ground between the Reading Nook and the swing — it used to stand wedged between the lamp and the easel
 ];
 // Stable slots keep the original id and saved position for the first copy.
 for(const base of DECOR_PROPS.slice()) if(['bunting','lantern','lanterns'].includes(base.id)){

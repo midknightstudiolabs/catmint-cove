@@ -1,3 +1,7 @@
+## Neo testing — September 22, 2026 (decor spacing)
+
+- Midknight's Guardian statue no longer stands wedged between the Reading Lamp and the Photo Easel — its default spot moved to open ground between the Reading Nook and the Moonlight Swing, with grass between it and its neighbors.
+
 ## Neo testing — September 22, 2026 (decor info taps)
 
 - Tapping Midknight's Guardian statue or the Postcard Board now shows a small floating card with the name and description — for the Guardian, the Blessing it comes with (or, if the Blessing has lapsed, that it is asleep and will wake on renewal).
