@@ -6263,9 +6263,14 @@ const ACCESSORIES = [
   { key:"wings",       label:"Little wings", iap:"sparkle_pack", slot:"back", group:"Sparkle", premium:true, blurb:"Small feathered wings that flutter on the cat's back — a slow flap at rest, faster on the zoomies." },
   { key:"moonwings",   label:"Moonlight wings", blessing:true, slot:"back", group:"Blessing", premium:true, blurb:"Crescent-feather wings that glow with the moon. Included with Midknight’s Blessing: they sleep if it ends and wake when you renew." },
   { key:"rainbow",     label:"Rainbow trail",iap:"sparkle_pack", slot:"aura", group:"Sparkle", premium:true, blurb:"A ribbon of colour that streams behind the cat as it moves and fades when it settles." },
-  // Butterfly/Fairy wings: art and dispatch exist (drawButterflyWings/drawFairyWings below) but are not
-  // yet in the catalog — pricing and the Fairy Wings shape are still pending sign-off. Add the two
-  // ACCESSORIES entries (see git history around 2026-09-22) once approved.
+  // Shell-bought (no IAP/Blessing gate), a step above every other accessory — a currency sink for
+  // players who already have everything else. Shape confirmed good via portrait() render.
+  { key:"butterflywings", label:"Butterfly wings", price:6500, slot:"back", group:"Rare", premium:true, blurb:"Warm coral wings with a real wingbeat — a slow open-close at rest, quick on the zoomies." },
+  // Fairy wings: still held back. drawFairyWings's two lobes are symmetric (unlike Butterfly's
+  // deliberately lopsided shape), so no amount of outer rotation makes them fan apart — they cross
+  // and bunch at the center instead. Confirmed via portrait() render on 2026-09-23; needs the lobe
+  // shape itself redrawn (asymmetric, like Butterfly's), not a rotation/offset tweak. Price was
+  // already agreed at 9000 Shells, same group — just add the ACCESSORIES entry once the shape's fixed.
   // Ultra-rare — never sold, never in a pack. Won from the Wishing Well or a very lucky "while you were
   // away" moment. Not price-gated at all: ownership is G.wonAccessories, checked via the 'rare' flag.
   { key:"moonpendant", label:"Moonlit Pendant", rare:true, slot:"neck", group:"Wishing Well", premium:true, blurb:"A sliver of sea glass on a cord, worn smooth. Nobody remembers exactly how it turned up." },
@@ -17487,6 +17492,45 @@ function drawAccessory(g, kind, P, coat, kit) {
     g.strokeStyle = "rgba(255,255,255,0.14)"; g.lineWidth = kit ? 0.8 : 1;
     for (const s of [-1, 1]) { g.beginPath(); g.ellipse(hx + s * dx, ey, r, r * 0.82, 0, 0, 7); g.stroke(); }
     g.restore();
+  } else if (kind === "moonpendant") {
+    // Wishing Well rare — a sliver of sea glass on a thin cord. A plain arc (no
+    // buckle/bell hardware, unlike collar/bell) with a smooth teardrop gem hanging low.
+    const y = hy + hr * 0.86;
+    g.strokeStyle = "rgba(140,160,158,0.75)"; g.lineWidth = kit ? 1.4 : 1.8;
+    g.beginPath(); g.arc(hx, hy, hr * 0.98, Math.PI * 0.2, Math.PI * 0.8); g.stroke();
+    const gx = hx, gy = y + 2, gs = kit ? 0.82 : 1;
+    const grad = g.createLinearGradient(gx, gy - 3.4 * gs, gx, gy + 4.4 * gs);
+    grad.addColorStop(0, "#eef6f1"); grad.addColorStop(0.55, "#a9d0c7"); grad.addColorStop(1, "#6fa79c");
+    g.fillStyle = grad; g.strokeStyle = "#557f77"; g.lineWidth = 0.7;
+    g.beginPath();
+    g.moveTo(gx, gy - 3.4 * gs);
+    g.bezierCurveTo(gx + 2.6 * gs, gy - 1.4 * gs, gx + 2.2 * gs, gy + 3 * gs, gx, gy + 4.4 * gs);
+    g.bezierCurveTo(gx - 2.2 * gs, gy + 3 * gs, gx - 2.6 * gs, gy - 1.4 * gs, gx, gy - 3.4 * gs);
+    g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = "rgba(255,255,255,0.65)";
+    g.beginPath(); g.ellipse(gx - 0.7 * gs, gy - 0.7 * gs, 0.6 * gs, 1.1 * gs, -0.4, 0, 7); g.fill();
+  } else if (kind === "starcharm") {
+    // Wishing Well rare — a tiny star that stayed, tucked by the ear with a slow
+    // twinkle. Soft additive glow behind it, same "lighter" trick as the halo.
+    const t = performance.now() / 1000, twinkle = 0.55 + Math.sin(t * 1.8) * 0.45;
+    const sx = hx + hr * 0.7, sy = hy - hr * 0.72, s2 = kit ? 0.85 : 1;
+    g.save();
+    g.globalCompositeOperation = "lighter";
+    const glow = g.createRadialGradient(sx, sy, 0, sx, sy, 6 * s2);
+    glow.addColorStop(0, `rgba(255,232,168,${0.32 * twinkle})`);
+    glow.addColorStop(1, "rgba(255,232,168,0)");
+    g.fillStyle = glow; g.beginPath(); g.arc(sx, sy, 6 * s2, 0, 7); g.fill();
+    g.restore();
+    g.fillStyle = "#f3cf5c"; g.strokeStyle = "#c99a2e"; g.lineWidth = 0.6;
+    g.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 - Math.PI / 2, r = (i % 2 === 0) ? 3.3 * s2 : 1.25 * s2;
+      const px = sx + Math.cos(a) * r, py = sy + Math.sin(a) * r;
+      i === 0 ? g.moveTo(px, py) : g.lineTo(px, py);
+    }
+    g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = `rgba(255,255,255,${0.5 + twinkle * 0.4})`;
+    g.beginPath(); g.arc(sx - 0.7 * s2, sy - 0.7 * s2, 0.65 * s2, 0, 7); g.fill();
   }
   // "wings" is drawn behind the body (drawWings, before catSil) and "rainbow"
   // in the scene trail pass — both no-op here
