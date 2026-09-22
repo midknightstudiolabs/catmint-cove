@@ -9620,6 +9620,14 @@ function sfx(kind, c, opt) {
   else if (kind === "grumpy") { catMeow("grumpy"); }
   else if (kind === "wake") { catMeow("wake"); }
   else if (kind === "arrive") { catMeow("arrive", c); }
+  else if (kind === "cafe-ding") { tone(1300, 0.1, "sine", 0.05); tone(1760, 0.12, "sine", 0.035, 0.05); }   // a little counter bell: a fresh order starts brewing
+  else if (kind === "cafe-mood") {
+    // A guest's reaction, heard as well as read — meow() bypasses the duck so it still comes through with the cove hushed.
+    const mood = opt && opt.mood;
+    if (mood === "love") { if (!playSample("purr", { vol: 0.5 })) meow(true, 0.6, true); }
+    else if (mood === "happy") meow(true, 0.45, true);
+    else if (mood === "bitter") meow(false, 0.4, true);
+  }
   // "splash" removed — it read as a clap; the fishing ripples carry it visually
 }
 

@@ -1,3 +1,7 @@
+## Neo testing — September 22, 2026 (café sound)
+
+- A little counter bell when a fresh order starts brewing, and a cat meow or purr when a guest is served (a happier one when they loved it, a soft grumble if it fell flat, none for a middling cup). Both work even with the cove's own sound hushed while the café is open.
+
 ## Neo testing — September 22, 2026 (café fixes)
 
 - **Café guests no longer glitch at the scene edge:** on tablets the sky/sea/grass edge fill was painted over guests walking in from off-screen, cutting them off at a line and popping them in. The bands are now painted underneath the scene, and the scene edges sit on whole pixels so no thin seam line shows.
