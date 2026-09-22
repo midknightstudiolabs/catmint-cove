@@ -206,3 +206,18 @@
 #app #cafe-kiosk.cc-v2 .cc-tabs button:focus-visible{outline:2px solid #faf6e8;outline-offset:2px}
 #app #cafe-kiosk.cc-v2 .cc-dot{border-color:#3d5b47}
 #app #cafe-kiosk.cc-v2 .cc-tabs button[aria-pressed=true] .cc-dot{border-color:#faf6e8}
+#app #cafe-kiosk.cc-v2 .cc-sales-link{background:none;border:0;color:var(--accent,#477354);font:inherit;font-size:12px;text-decoration:underline;text-underline-offset:3px;min-height:36px;padding:4px 8px;cursor:pointer}
+#app #cafe-kiosk.cc-v2 .cc-menu-action{grid-column:2/-1;justify-self:start;width:auto;max-width:100%;min-height:44px;padding:8px 14px;font-size:13px}
+#app #cafe-kiosk.cc-v2 .cc-menu-action[aria-pressed=false]{background:#477354;color:#fffaf0;border-color:#477354}
+#app #cafe-kiosk.cc-v2 .cc-menu-action[aria-pressed=true]{background:#faf6e8;color:#50644b;border:1px solid #ccd4bf}
+#app #cafe-kiosk.cc-v2 .cc-live-row{flex-wrap:wrap;gap:4px 10px}
+#app #cafe-kiosk.cc-v2 .cc-shells{white-space:nowrap}
+#app #cafe-kiosk.cc-v2 .cc-sales-link{margin-left:auto;min-height:44px}
+#app #cafe-kiosk.cc-v2 .cc-recipe-restock{grid-column:2/-1;justify-self:start;min-height:44px}
+#app #cafe-kiosk.cc-v2 .cc-help-intro{font-size:16px;line-height:1.6;color:#43543f}
+#app #cafe-kiosk.cc-v2 .cc-help-topic{border-bottom:1px solid #d6dbc7;padding:4px 0}
+#app #cafe-kiosk.cc-v2 .cc-help-topic summary{padding:14px 0;min-height:44px;box-sizing:border-box;font-weight:600;cursor:pointer;color:#3c6046}
+#app #cafe-kiosk.cc-v2 .cc-help-topic p{font-size:15px;line-height:1.55;margin:0 0 12px}
+#app #cafe-kiosk.cc-v2 .cc-help-topic .btn{margin-bottom:14px}
+#app #cafe-kiosk.cc-v2 [data-help-tour]{margin-top:18px;min-height:44px}
+#app #cafe-kiosk.cc-v2 .cc-pantry-plan>summary{cursor:pointer;min-height:44px;padding:12px 0;box-sizing:border-box;font-weight:600;color:#3f6047}
