@@ -1534,16 +1534,20 @@
 
   /* focus camera — press & hold a cat to sit with it; the chrome recedes */
   /* ===== The Wishing Well — a small full-bleed scene sheet, same family as the café/festival grounds ===== */
-  #wishwell{display:none;position:fixed;inset:0;z-index:70;background:#1f3a3f;}
+  #wishwell{display:none;position:fixed;inset:0;z-index:70;background:#1f3a3f;padding:0;border:0;border-radius:0;overflow:hidden;}
   #wishwell:not([hidden]){display:block;}
-  #wishwell canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  #wishwell canvas{position:absolute;inset:0;width:100%;height:100%;}
   #wishwell .ww-top{position:absolute;z-index:2;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:max(10px,env(safe-area-inset-top)) 10px 0;}
-  #wishwell .ww-top h2{flex:1;margin:0;text-align:center;font:600 17px "Fraunces",serif;color:#fff8e6;text-shadow:0 2px 8px rgba(0,0,0,.35);}
+  #wishwell .ww-top h2{flex:1;margin:0;text-align:center;font:600 clamp(18px,3vw,24px) "Fraunces",serif;color:#fff8e6;text-shadow:0 2px 8px rgba(0,0,0,.35);}
   #wishwell .ww-top-end{width:64px;}
-  #wishwell .ww-back{min-height:40px;padding:0 12px;font-size:14px;font-weight:600;border:0;border-radius:12px;background:rgba(250,246,233,.92);color:var(--accent);box-shadow:none;}
+  #wishwell .ww-back{min-height:44px;padding:0 12px;font-size:14px;font-weight:600;border:1px solid rgba(255,250,231,.4);border-radius:12px;background:rgba(250,246,233,.92);color:var(--accent);box-shadow:none;}
   #wishwell .ww-bottom{position:absolute;z-index:2;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 16px max(16px,env(safe-area-inset-bottom));}
   #wishwell .ww-wish{width:min(320px,90%);min-height:52px;font-size:16px;font-weight:700;border-radius:16px;background:#6b7a5a;border-color:#6b7a5a;color:#f3f0df;box-shadow:0 6px 18px rgba(0,0,0,.28);}
-  #wishwell .ww-wish.ready{background:var(--accent);border-color:var(--accent);animation:wwPulse 2.2s ease-in-out infinite;}
+  #wishwell .ww-wish.ready{background:var(--accent);border-color:var(--accent);}
+  #wishwell .ww-wish{transition:background .15s,transform .15s;}
+  #wishwell .ww-wish:enabled:hover{background:#355f45;}
+  #wishwell .ww-wish:enabled:active{transform:translateY(2px);}
+  #wishwell button:focus-visible{outline:3px solid #f2d58e;outline-offset:3px;}
   #wishwell .ww-wish:disabled{opacity:.85;animation:none;}
   #wishwell .ww-note{margin:0;font-size:12.5px;color:#fff3d8;text-shadow:0 1px 6px rgba(0,0,0,.4);}
   @keyframes wwPulse{0%,100%{box-shadow:0 6px 18px rgba(0,0,0,.28),0 0 0 0 rgba(63,113,82,.55);}50%{box-shadow:0 6px 18px rgba(0,0,0,.28),0 0 0 10px rgba(63,113,82,0);}}
@@ -2087,7 +2091,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
       </div>
     </div>
     <div class="rest-bar" id="restBar" hidden>
-      <button class="rb-back" id="restWake"><img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22"> <span class="rb-label">Back to the Cove</span></button>
+      <button class="rb-back" id="restWake" aria-label="Back to the Cove"><img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22"> <span class="rb-label">Back to the Cove</span></button>
       <span class="rb-time" id="restTime">resting</span>
       <button class="rb-back" id="restDimToggle" aria-pressed="false"><span class="rb-label">Dim room</span></button>
       <button class="rb-back" id="restRetryRain" hidden><span class="rb-label">Retry rain</span></button>
@@ -21235,11 +21239,28 @@ function neoExpandHomestead(kind){
   save();syncHud();return true;
 }
 function neoCropArt(key,ready){
-  if(CoveCafeEngine.ingredients[key]){
-    const art=key==='honey'?'<path fill="#c4a05c" d="M37 48V32q0-23 23-23t23 23v16Z"/><path stroke="#927547" stroke-width="3" d="M38 23h43M37 32h46M37 41h46"/><path fill="#69563b" d="M53 48V37a7 7 0 0 1 14 0v11Z"/>':'<path stroke="#71885d" stroke-width="4" d="M60 50V15"/><path fill="#8ca571" d="M59 34Q24 35 32 14q29 0 27 20M61 26Q92 27 88 8q-27 0-27 18"/>'+(key==='coffee'?'<ellipse cx="49" cy="40" rx="7" ry="9" fill="#8b5741"/><ellipse cx="70" cy="38" rx="7" ry="9" fill="#a16c4a"/>':'<path stroke="#bda0bc" stroke-width="7" stroke-linecap="round" d="M60 14V7M48 22V16"/>');
-    return '<svg viewBox="0 0 120 70" aria-hidden="true"><ellipse cx="60" cy="53" rx="43" ry="10" fill="#bda27b"/><g opacity="'+(ready?'1':'.6')+'">'+art+'</g></svg>';
+  // Shared warm timber/soil palette; growing crops are young plants, never faded ripe icons.
+  const leaf=(x,y,flip=1)=>`<g transform="translate(${x} ${y}) scale(${flip} 1)"><path fill="#718c60" d="M0 0Q-15 2-17-10Q-4-14 0 0Z"/><path d="M-13-8-1-1" stroke="#a7b48a" stroke-width=".8"/></g>`;
+  const bed='<ellipse cx="60" cy="61" rx="47" ry="7" fill="#566b4a" opacity=".13"/><path fill="#ac875f" d="M13 45Q60 34 107 45L103 59Q60 70 17 59Z"/><path fill="#c5a27a" d="M13 45Q60 33 107 45L102 50Q60 61 18 50Z"/><path fill="#755d46" d="M22 45Q60 37 98 45Q60 56 22 45Z"/><path d="M22 56Q60 65 98 56" stroke="#8f704f" fill="none" stroke-width="1"/>';
+  let art='';
+  if(key==='honey'){
+    art='<path d="M38 53V23h44v30" fill="#c2a16e"/><path d="M35 23 60 10 85 23Z" fill="#688365"/><path d="M40 24h40M40 34h40M40 44h40" stroke="#90734d" stroke-width="2"/><path d="M55 54v-9a5 5 0 0 1 10 0v9" fill="#584e3b"/><path d="M35 54h50" stroke="#957951" stroke-width="3"/>';
+    if(ready)art+='<g transform="translate(91 28)"><ellipse cx="-3" cy="-4" rx="4" ry="3" fill="#e5ebd6"/><ellipse cx="3" cy="-4" rx="4" ry="3" fill="#e5ebd6"/><ellipse rx="6" ry="4" fill="#d8b45e"/><path d="M-1-3v6M3-2v4" stroke="#6e6043" stroke-width="1.5"/></g>';
+  }else if(key==='coffee'){
+    art='<path d="M60 51V16M60 36 44 26M60 29 76 19" fill="none" stroke="#806647" stroke-width="2.5"/>'+leaf(59,28)+leaf(61,20,-1)+leaf(59,42)+leaf(61,36,-1);
+    if(ready)art+=['48,30','53,34','70,26','75,30','65,42'].map(p=>`<circle cx="${p.split(',')[0]}" cy="${p.split(',')[1]}" r="3.4" fill="#aa6750"/><circle cx="${+p.split(',')[0]-1}" cy="${+p.split(',')[1]-1}" r=".9" fill="#d29c76"/>`).join('');
+  }else if(key==='catmint'){
+    art=[[-13,27],[0,17],[13,25]].map(([x,y])=>`<path d="M60 52Q${60+x} 40 ${60+x} ${y}" fill="none" stroke="#6f8658" stroke-width="2"/>${leaf(60+x,40)}${leaf(60+x,34,-1)}${ready?`<path d="M${60+x} ${y}v-7" stroke="#a297b3" stroke-width="5"/><circle cx="${60+x-2}" cy="${y-3}" r="2" fill="#c0b3cd"/>`:''}`).join('');
+  }else if(key==='carrot'){
+    art=[35,60,85].map(x=>`${ready?`<path d="M${x-6} 42Q${x} 37 ${x+6} 42L${x} 56Z" fill="#cb905d"/><path d="m${x-3} 45 5 1m-3 4 3 1" stroke="#a97046" stroke-width="1"/>`:''}<path d="M${x} 42q-12-8-10-17M${x} 42v-23M${x} 42q12-9 10-18" stroke="#789361" stroke-width="3" fill="none"/>`).join('');
+  }else if(key==='pumpkin'){
+    art='<path d="M30 48q28-17 56-3" stroke="#77885b" stroke-width="2" fill="none"/>'+leaf(42,42)+leaf(81,44,-1);
+    if(ready)art+=[44,76].map(x=>`<ellipse cx="${x}" cy="45" rx="13" ry="11" fill="#c78d58"/><ellipse cx="${x}" cy="45" rx="7" ry="11" fill="#d5a36b"/><path d="M${x} 34v-5l3-2" stroke="#6f7851" fill="none" stroke-width="3"/>`).join('');
+  }else if(key==='berry'){
+    art='<path d="M60 51V21M60 41 42 30M60 35 77 24" stroke="#768257" stroke-width="2" fill="none"/>'+leaf(59,28)+leaf(61,23,-1)+leaf(52,41)+leaf(65,38,-1);
+    if(ready)art+=[[44,32],[53,37],[72,29],[76,38],[62,44]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="4" fill="#a26a78"/><circle cx="${x-1}" cy="${y-1}" r="1" fill="#ce9ba1"/>`).join('');
   }
-  return `<svg viewBox="0 0 120 70" aria-hidden="true" class="homestead-crop-art"><path fill="#bea17b" d="M8 49 60 39l52 10-52 17Z"/><path fill="#745b42" d="m17 48 43-7 43 7-43 10Z"/>${[32,60,88].map(x=>`<path stroke="#6d885b" stroke-width="3" d="M${x} 48V${ready?20:35}"/><path fill="#8fa770" d="M${x} 39q-20-2-14-15 15 1 14 15m0-5q17-2 15-15-15 2-15 15"/>${ready?key==='carrot'?`<path fill="#ce9060" d="m${x-5} 42 10 0-5 13Z"/>`:key==='pumpkin'?`<ellipse fill="#ca9862" cx="${x}" cy="43" rx="10" ry="8"/>`:`<circle fill="#ad777e" cx="${x-5}" cy="35" r="5"/><circle fill="#ad777e" cx="${x+4}" cy="39" r="5"/>`:''}`).join('')}</svg>`;
+  return `<svg viewBox="0 0 120 70" aria-hidden="true" class="homestead-crop-art" stroke-linecap="round" stroke-linejoin="round">${bed}<g${!ready&&key!=='honey'?' transform="translate(15 13) scale(.75)"':''}>${art}</g></svg>`;
 }
 function neoCafeSettle(now=Date.now()){
   if(G.cafe?.unlocked){CoveCafeEngine.settle(G,now);return;}
@@ -21830,6 +21851,7 @@ function neoOpenWishingWell(){
     cats:()=>cats.filter(c=>!c.visitor).slice(0,3).map(c=>{const copy=new Cat({coatKey:c.coatKey,mascot:c.mascot,markSeed:c.markSeed,bornAt:c.bornAt,star:c.star,name:c.name,traits:c.traits,x:0,y:0});copy.worn=[...(c.worn||[])];return copy;}),
     cat:(ctx,c,x,y,scale,t,walking)=>{if(!c)return;ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);c.state=walking?"exploring":(c.state==="zooming"?"zooming":"loafing");c.trotting=walking;c.walk=t/130;c.walkAmt=Number(walking)||0;c.face=1;c.stateT=t/1000;c.bob=t/900;c.tail=t/650;c.blink=(t/1000+x*.017)%4.7<.14?0:3;drawCat(ctx,c,true);ctx.restore();},
     bg:(ctx,w,h)=>neoWishBg(ctx,w,h),
+    night:()=>neoLight(nowHours()).night,
     sfx:k=>{try{sfx(k)}catch(e){}},
     ritualState:()=>ritualState(),
     ritualPull:()=>{const r=ritualPull();neoWishBadgeSync();return r;},

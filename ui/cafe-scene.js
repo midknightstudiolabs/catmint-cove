@@ -39,6 +39,8 @@
   }
   function machine(x,y){
    const color=['#93a392','#758f80','#536e60'][s.speed||0];round(x,y,132,103,10,color);rect(x+10,y+12,112,22,'#344d42');
+   c.strokeStyle='#b6c2ab';c.lineWidth=2;c.beginPath();c.roundRect(x+3,y+3,126,97,8);c.stroke();
+   oval(x+104,y+23,7,7,'#eadfc0');c.strokeStyle='#6b745b';c.lineWidth=1.3;c.beginPath();c.moveTo(x+104,y+23);c.lineTo(x+107,y+19);c.stroke();
    for(let i=0;i<=s.speed;i++)oval(x+22+i*25,y+23,5,5,'#e1ca89');rect(x+18,y+45,96,43,'#3f5046');rect(x+14,y+87,104,7,'#b9bdac');
    for(let i=0;i<(s.speed?2:1);i++){rect(x+36+i*42,y+43,5,17,'#d1d0b8');round(x+26+i*42,y+66,24,20,3,'#fbf1d9');}
    label(['Little brewer','Twin brewer','Cove brewer'][s.speed||0],x+66,y+121,13,tier===0?'#f3e8cf':'#405842');
@@ -47,8 +49,14 @@
   function bubble(x,y){const r=active?E.recipes.find(r=>r.id===s.pending.id):null;const greetings=['Something warm, please.','One cup. Two paws.','Is the sunny seat taken?','I came for the company.','Make mine extra cozy.','My whiskers smelled coffee.'];round(x-132,y-25,264,35,12,'#faf3df');label(r?E.displayName(s,r)+', please.':greetings[s.sequence%greetings.length],x,y-3,16);}
   const extra=Math.max(0,height-380),offset=Number.isFinite(forcedOffset)?forcedOffset:extra*.45;c.save();
   rect(0,0,720,height,night?'#405a65':'#dce8db');rect(0,offset+220,720,height,inside?'#dbc5a1':night?'#777663':'#dacbad');c.translate(0,offset);
-  rect(0,0,720,380,night?'#405a65':'#dce8db');rect(0,100,720,160,night?'#64878c':'#a8cdcc');rect(0,220,720,160,night?'#777663':'#dacbad');
-  for(let i=0;i<6;i++)rect(i*133,145+(i%2)*19,70,2,'#c1d7cf');if(night)oval(647,49,16,16,'#f3e5be');
+  const sky=c.createLinearGradient(0,-offset,0,125);sky.addColorStop(0,night?'#26384c':'#9bcbd7');sky.addColorStop(1,night?'#4a6570':'#e0e8d2');rect(0,-offset,720,offset+260,sky);
+  const water=c.createLinearGradient(0,100,0,228);water.addColorStop(0,night?'#3a5c69':'#91bfbd');water.addColorStop(1,night?'#496e72':'#b2cebd');rect(0,100,720,128,water);
+  // Distant headlands stay above the sea, with quiet reflections instead of hard stripes.
+  c.fillStyle=night?'#354f5e':'#85aaa6';c.beginPath();c.moveTo(0,103);c.lineTo(0,86);c.quadraticCurveTo(44,65,95,95);c.quadraticCurveTo(123,89,152,103);c.fill();
+  c.beginPath();c.moveTo(720,103);c.lineTo(720,79);c.quadraticCurveTo(675,78,645,97);c.lineTo(612,103);c.fill();
+  for(let i=0;i<10;i++)rect((i*97)%720,116+(i*19)%103,24+(i%3)*13,1,night?'#b7ceca24':'#f5f4df55');
+  if(night){oval(647,49,16,16,'#f3e5be');for(let i=0;i<9;i++)rect(646-i*2,110+i*9,4+i*4,1,'#e7dfaf22');}
+  rect(0,220,720,160,night?'#777663':'#dacbad');
   if(inside){drawInside();
   }else{
    // A quiet seaside garden surrounds the café; props remain flat illustrations.
@@ -57,7 +65,12 @@
    rect(0,226,720,154+extra,night?'#596c54':'#8ea577');
    c.fillStyle=night?'#8b8870':'#d8c6a0';c.beginPath();c.moveTo(310,304);c.lineTo(410,304);c.lineTo(545,380+extra);c.lineTo(100,380+extra);c.closePath();c.fill();
    for(let i=0;i<6;i++){const y=345+i*50;oval(340-i*8,y,29+i*3,6,night?'#a19c82':'#eee0bd');}
-   for(const side of [0,1])for(let i=0;i<9;i++){const x=side?605+(i%3)*32:20+(i%3)*32,y=247+Math.floor(i/3)*45;oval(x,y+8,17,8,night?'#536d50':'#8da577');rect(x+breeze,y-10,2,19,'#506d4c');for(let k=0;k<5;k++)oval(x+breeze+Math.cos(k*1.26)*4,y-11+Math.sin(k*1.26)*4,3,3,i%2?'#d7bb91':'#b3b6c6');oval(x+breeze,y-11,2,2,'#ead09a');}
+   // Small uneven catmint clusters, leaving room around customers and purchased decor.
+   for(const [x,y] of [[34,252],[71,272],[25,325],[651,249],[686,276],[668,329]]){
+    oval(x,y+5,16,5,night?'#4d604c':'#7d996b');
+    for(let i=-1;i<=1;i++){const px=x+i*7,py=y-10-Math.abs(i)*3;rect(px+breeze*.35,py,1.4,y-py,'#66805a');
+     c.save();c.translate(px,py+7);c.rotate(i*.35);oval(-3,0,5,2.5,'#8b9e71');oval(3,-4,5,2.5,'#7d9568');c.restore();oval(px+breeze*.35,py,2,3.5,'#aaa1b7');}
+   }
    for(const x of [132,586]){rect(x-2,280,4,55,'#685e48');round(x-8,271,16,23,4,night?'#ffe0a0':'#e5d3a8');if(night){oval(x,337,29,8,'#f4d69322');const halo=c.createRadialGradient(x,282,0,x,282,40);halo.addColorStop(0,'#ffdc9340');halo.addColorStop(1,'#ffdc9300');oval(x,282,40,40,halo);}}
    // Orthographic elevation: every stage has its own silhouette, never an angled side wall.
    const left=[180,113,40][tier],right=720-left,roof=[99,76,47][tier];
@@ -69,6 +82,7 @@
    round(left,roof,right-left,230+(99-roof)-18,5,palette.body);
    for(let x=left+10;x<right;x+=18)rect(x,232,1,76,palette.shade);
    rect(left,roof,right-left,9,palette.dark);
+   rect(left+5,roof+10,5,297-roof,palette.light);rect(right-10,roof+10,5,297-roof,palette.shade);
    if(tier===2){
     // Full café: broad façade with two lit display windows and a raised central sign.
     for(const x of [left+20,right-106]){
@@ -92,6 +106,9 @@
    round(wx+ww-70,wy+37,58,50,3,palette.dark);label('MENU',wx+ww-41,wy+50,10,'#f7e9c9');
    for(let i=0;i<3;i++)rect(wx+ww-61,wy+58+i*7,39-i*5,2,'#bfcbae');
    rect(wx-13,wy+100,ww+26,10,'#d0ac79');rect(wx-8,wy+110,ww+16,5,'#816444');
+   rect(wx-10,wy+101,ww+20,2,'#e5c594');
+   // A little catmint stamp ties the counter to the Garden and the Cove palette.
+   c.save();c.translate(360,239);c.fillStyle=palette.dark;c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(-14,0,-13,-11);c.quadraticCurveTo(-1,-12,0,0);c.moveTo(1,0);c.quadraticCurveTo(14,-3,12,-14);c.quadraticCurveTo(0,-12,1,0);c.fill();c.restore();
    if(tier>0){
     // Garden's scalloped cloth canopy becomes a long café awning at the final stage.
     const ax=tier===1?left-8:185,aw=tier===1?right-left+16:350;
