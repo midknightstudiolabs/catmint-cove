@@ -18648,7 +18648,8 @@ function anyProjectOpen() { return PROJECTS.some(p => projectStage(p.id) === "op
 let driftTimer = rand(30, 70);
 
 /* ---------- Labubu — Midknight's sidekick, a recurring visitor ----------
-   Turns up ~10 min into the first session, then daily for the first week or
+   First visit is due three minutes after finishing/skipping the tutorial,
+   and waits for an unobstructed Cove. Then daily for the first week or
    so and gently less often after. Pads around near Midknight for a couple of
    minutes, leaves a bit of junk by the sign (occasionally a driftwood, if a
    project needs it), then heads back out. Never a resident: not in the
@@ -18725,9 +18726,10 @@ function labubuLeave(c) {
   toast("Labubu slipped off after a while — back another day.", 4);
 }
 function labubuTick() {
-  if (!G || !G.tutorialDone || restMode || labubuHere()) return;
+  if (!G || !G.tutorialDone || labubuHere()) return;
   if (!G.labubu) G.labubu = { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 };
-  if (!G.labubu.visits && !G.labubu.nextAt) { G.labubu.nextAt = Date.now() + rand(8, 12) * 60e3; return; }
+  if (!G.labubu.visits && !G.labubu.nextAt) { G.labubu.nextAt = Date.now() + 3 * 60e3; return; }
+  if (document.hidden || restMode || festMode || anyPanelOpen() || document.getElementById('app').classList.contains('editing-cove')) return;
   if (G.labubu.nextAt && Date.now() >= G.labubu.nextAt && labubuDayCap()) labubuArrive();
 }
 
