@@ -1,0 +1,40 @@
+/* Phone layouts: compact choices, readable content, comfortable touch targets. */
+@media (max-width:600px) {
+  #neo-explore .kicker { display:none; }
+  #app #cafe-kiosk.cc-v2 .cc-head { gap:4px; }
+  #app #cafe-kiosk.cc-v2 .cc-head .cc-switch { display:flex;gap:0;padding:0; }
+  #app #cafe-kiosk.cc-v2 .cc-head .cc-switch button { padding:0 5px;font-size:12px; }
+  #app #cafe-kiosk.cc-v2 .cc-head .cc-back { padding:0 5px; }
+  #neo-explore .neo-explore-grid { grid-template-columns:minmax(0,1fr);gap:8px;margin:14px 0; }
+  #neo-explore .neo-destination { display:grid;grid-template-columns:36px minmax(0,1fr);column-gap:12px;row-gap:3px;padding:12px 14px;border-radius:14px;min-height:76px;align-items:center; }
+  #neo-explore .neo-destination>span { grid-column:1;grid-row:1/3;display:flex;align-items:center; }
+  #neo-explore .neo-destination>b,#neo-explore .neo-destination>small { grid-column:2;min-width:0;text-align:left; }
+  #neo-explore .neo-destination small { line-height:1.4; }
+  #neo-explore .neo-destination:active { background:#e5ecd9;border-color:#789574; }
+  #neo-explore .neo-destination:focus-visible { outline:3px solid #477354;outline-offset:2px; }
+  #hud .hud-group:last-child .btn { width:44px;height:44px;min-width:44px;min-height:44px;padding:0; }
+  #app #cafe-kiosk.cc-v2 .cc-head .cc-back,
+  #app #cafe-kiosk.cc-v2 .cc-service,
+  #app #cafe-kiosk.cc-v2 .cc-guide-replay,
+  #app #cafe-kiosk.cc-v2 .cc-switch button { min-height:44px; }
+  #app #cafe-kiosk.cc-v2 .cc-guide-replay { min-width:44px; }
+  #app #cafe-kiosk.cc-v2.cc-managing .cc-live { display:none; }
+  #app #cafe-kiosk.cc-v2.cc-managing .cc-content { top:calc(68px + env(safe-area-inset-top));bottom:var(--cc-dock);max-height:none;left:8px;right:8px;scroll-padding-top:64px;border-radius:16px 16px 0 0; }
+  #app #cafe-kiosk.cc-v2 .cc-content input,
+  #app #cafe-kiosk.cc-v2 .cc-content select { font-size:16px;max-width:100%;box-sizing:border-box; }
+  #app #cafe-kiosk.cc-v2 .cc-content .cc-recipe-details summary { min-height:44px;display:flex;align-items:center;box-sizing:border-box; }
+  #app #cafe-kiosk.cc-v2 .cc-tabs button { font-size:13px;padding:6px;line-height:1.2; }
+  #neo-homestead .homestead-patch .btn { font-size:14px;line-height:1.4; }
+  #neo-homestead .field-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:8px; }
+  #neo-homestead .field-plot { min-width:0;min-height:132px;padding:10px 6px; }
+  #neo-homestead .garden-actions .btn,#neo-homestead .garden-quick .btn { line-height:1.4;padding:10px; }
+}
+@media (max-width:380px) {
+  #titlePill { max-width:calc(100vw - 164px);min-width:0;font-size:14px;padding:6px 8px; }
+  #neo-homestead .homestead-grid { grid-template-columns:minmax(0,1fr); }
+  #neo-homestead .homestead-patch { padding:14px; }
+  #neo-homestead .garden-quick,#neo-homestead .garden-actions { grid-template-columns:minmax(0,1fr); }
+}
+@media (hover:hover) {
+  #neo-explore .neo-destination:hover { background:#edf2e1; }
+}
