@@ -1,3 +1,7 @@
+## Neo testing — September 22, 2026 (decor info taps)
+
+- Tapping Midknight's Guardian statue or the Postcard Board now shows a small floating card with the name and description — for the Guardian, the Blessing it comes with (or, if the Blessing has lapsed, that it is asleep and will wake on renewal).
+
 ## Neo testing — September 22, 2026 (café sound)
 
 - A little counter bell when a fresh order starts brewing, and a cat meow or purr when a guest is served (a happier one when they loved it, a soft grumble if it fell flat, none for a middling cup). Both work even with the cove's own sound hushed while the café is open.

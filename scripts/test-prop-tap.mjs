@@ -1,0 +1,30 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch(); const p = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+const w = ms => p.waitForTimeout(ms);
+const out = []; const ok = (n, c, x = '') => out.push(`${c ? 'PASS' : 'FAIL'}  ${n}${x ? '  — ' + x : ''}`);
+await p.goto('http://localhost:8879/'); await p.evaluate(() => { localStorage.clear(); localStorage.setItem('neo.product.analytics.v1', 'no'); }); await p.goto('http://localhost:8879/', { waitUntil: 'load' }); await w(5500);
+if (await p.locator('#ts-go').isVisible().catch(() => false)) await p.locator('#ts-go').click({ force: true }); await w(2200);
+if (await p.locator('#own-skip').isVisible().catch(() => false)) await p.locator('#own-skip').click({ force: true });
+await p.evaluate(() => { const c = window.__cove, g = c.G; g.tutorialDone = true; g.shells = 5000; document.getElementById('app')?.classList.remove('cold-open'); document.getElementById('hint').hidden = true; for (const k of ['ginger', 'tuxedo']) c.giveCat(k, 2);
+  g.cosmetics ||= {}; g.cosmetics.props ||= {}; g.cosmetics.props.moonshrine = true; g.cosmetics.props.postcardboard = true;
+  g.postcards = Array.from({ length: 5 }, (_, i) => ({ t: Date.now() - i * 1e6, cat: 'Midknight', dest: 'forest', text: 'Note ' + i, artSeed: i, artVariant: i % 4 }));
+  g.iap ||= {}; g.iap.subs = { neo_test: { expiresAt: Date.now() + 864e5, source: 'test' } }; });
+await w(1200);
+
+const posM = await p.evaluate(() => window.__cove.propPos('moonshrine'));
+const posB = await p.evaluate(() => window.__cove.propPos('postcardboard'));
+await p.evaluate(([x, y]) => window.__cove.tap(x, y), [posM.x, posM.y - 20]);
+let card = await p.evaluate(() => window.__cove.propCard());
+ok('Tapping the Guardian (Blessing active) opens the info card with the right name', !card.hidden && /Guardian/.test(card.title), JSON.stringify(card));
+ok('...and its actual blurb, not the Asleep message', /Included with Midknight/.test(card.desc) && !/Asleep/.test(card.desc), card.desc);
+await p.evaluate(([x, y]) => window.__cove.tap(x, y), [posB.x, posB.y - 20]);
+card = await p.evaluate(() => window.__cove.propCard());
+ok('Tapping the Postcard Board opens its info card', !card.hidden && /Postcard Board/.test(card.title), JSON.stringify(card));
+ok('...describing the postcards', /postcards/.test(card.desc), card.desc);
+// locked (Blessing lapsed) guardian shows the asleep message instead
+await p.evaluate(() => { window.__cove.G.iap.subs = {}; });
+await p.evaluate(([x, y]) => window.__cove.tap(x, y), [posM.x, posM.y - 20]);
+card = await p.evaluate(() => window.__cove.propCard());
+ok('A lapsed Blessing shows the Asleep explanation instead', /Asleep/.test(card.desc), card.desc);
+console.log(out.join(String.fromCharCode(10))); console.log(errs.join('|') || 'no errors');
+await b.close();

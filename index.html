@@ -5848,6 +5848,17 @@ function handleTap(x, y, screenX, screenY) {
     if (a.type === "food" && dist2(x, y, a.x, a.y - 2) < 30 * 30) { hideCatCard(); hidePropCard(); openFoodRefill(); return; }
   }
 
+  // a decor piece worth explaining (the Guardian statue, the Postcard Board) — a floating "what is this" card, same as the founder plaque
+  if (G.cosmetics && G.cosmetics.props) for (const p of DECOR_PROPS) {
+    if (!p.tapInfo || !G.cosmetics.props[p.id] || propBoxed(p.id)) continue;
+    const pos = propPos(p.id);
+    if (!propGrabHit(p.id, x, y, pos)) continue;
+    hideCatCard();
+    const desc = p.blessing && propLocked(p.id) ? "Asleep. Renew Midknight’s Blessing and it wakes right where it stands." : p.blurb;
+    showPropCard(p.name, desc, pos.x, pos.y - 24);
+    return;
+  }
+
   // Midknight's cairn, if there's one standing (or still being built)
   if (tapCairn(x, y)) return;
 
@@ -15195,11 +15206,11 @@ const DECOR_PROPS = [
     movable:true, place:{ x:W*0.79, y:H*0.79, s:1.3 }, render(g,t,x,y,s){ propPicnicBlanket(g, x, y, s, t); } },
   { id:"paperlanterns", name:"Paper Lanterns", price:0, collection:"picnic", earn:{ k:"adv", n:5 }, blurb:"Seaside Picnic: three paper lanterns on a bent driftwood stake. A whisper of light at night.",
     movable:true, place:{ x:W*0.715, y:H*0.75, s:1.3 }, render(g,t,x,y,s){ propPaperLanterns(g, x, y, s, t); } },
-  { id:"postcardboard", name:"Postcard Board", price:0, collection:"memory", earn:{ k:"card", n:3 }, blurb:"Memory: a pin board that shows the scenes of your latest postcards.",
+  { id:"postcardboard", name:"Postcard Board", price:0, collection:"memory", earn:{ k:"card", n:3 }, blurb:"Memory: a pin board that shows the scenes of your latest postcards.", tapInfo:true,
     movable:true, place:{ x:W*0.22, y:H*0.78, s:1.25 }, render(g,t,x,y,s){ propPostcardBoard(g, x, y, s, t); } },
   { id:"photoeasel", name:"Photo Easel", price:0, collection:"memory", earn:{ k:"card", n:10 }, blurb:"Memory: an easel with a little painting of the cove, and Midknight in it. It follows the time of day.",
     movable:true, place:{ x:W*0.285, y:H*0.83, s:1.25 }, render(g,t,x,y,s){ propPhotoEasel(g, x, y, s, t); } },
-  { id:"moonshrine", name:"Midknight’s Guardian", price: 0, blessing: true, blurb:"A weathered stone cat with a crescent moon on its collar, watching over the cove. Included with Midknight’s Blessing: it glows at night while the Blessing is active and sleeps when it isn’t.",
+  { id:"moonshrine", name:"Midknight’s Guardian", price: 0, blessing: true, tapInfo:true, blurb:"A weathered stone cat with a crescent moon on its collar, watching over the cove. Included with Midknight’s Blessing: it glows at night while the Blessing is active and sleeps when it isn’t.",
     movable:true, place:{ x:W*0.34, y:H*0.88, s:1.55 }, render(g,t,x,y,s){ propMoonShrine(g, x, y, s, t); } },
 ];
 // Stable slots keep the original id and saved position for the first copy.
@@ -20225,6 +20236,7 @@ window.__cove = {
   get attractors(){return attractors}, get obstacles(){return obstacles}, get decor(){return decor},
   get world(){return {W, H, catFloor: catFloor()}},
   sound(){ return { duck:_cafeDuck, amb: ambience ? +ambience.master.gain.value.toFixed(3) : null, cafeAmb: !!_cafeAmb }; },
+  tap:(x,y)=>handleTap(x,y,0,0), propPos:(id)=>propPos(id), propCard:()=>{const el=document.getElementById("propCard");return {hidden:el.hidden,title:document.getElementById("pc-title").textContent,desc:document.getElementById("pc-desc").textContent};},
   race(){ return { phase:racePhase, t:raceT, len:_raceLenNow.name, m:_raceLenNow.m, cap:_raceLenNow.cap, cats:raceCats.map(r=>({n:r.cat.name,p:r.progress,done:r.done,at:r.doneAt})) }; },
   journalProfile(){ const out={}, T=(n,fn)=>{const t=performance.now();try{fn();}catch(e){out[n+'_err']=String(e).slice(0,50);}out[n]=+(performance.now()-t).toFixed(1);};
     T('neoRenderJournal',()=>neoRenderJournal()); T('neoFriendsJournal',()=>neoFriendsJournal()); T('checkin',()=>renderCheckinCard()); T('project',()=>renderProjectCard());
