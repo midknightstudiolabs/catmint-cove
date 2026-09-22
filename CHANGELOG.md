@@ -1,3 +1,12 @@
+## Neo testing — September 22, 2026 (small-device pass)
+
+- Viewing a cat had no close button at all on the popup card — added an on-theme X in the corner, matching the roster.
+- The top HUD (shells/pearls/cats/day) could wrap to a third row on genuinely small phones with realistic content (a 5-digit shell count especially) — tightened sizing so it holds to two rows down to 320px wide.
+- Fixed: the Rainy Retreat bar could overlap its own timer text and Dim room button on narrow phones (neither ever wrapped or shrank) — Back to the Cove now shows its icon only below 380px wide, with tighter spacing throughout.
+- Fixed: Edit Cove’s Cancel bar used to leave the pencil (open Edit Cove) and whole-cove zoom buttons floating on top of it — a class for exactly this was already being toggled but nothing consumed it. Both now hide while editing.
+- Cove Garden was a centred card with real margin wasted on every phone — now full-bleed on mobile, same as the café and other activity screens.
+- Raised the pixel-density ceiling for Tug of Paws (and the rest of the Festival) from 1.4–1.5x to 1.8–2x on capable devices, for sharper cats. Devices already running in the game’s low-power mode are unaffected by design; I could not verify the visual improvement myself since headless testing runs in that same low-power path.
+
 ## Neo testing — September 22, 2026 (Catmint Café guide)
 
 - Fixed: the first-visit café guide used to be crammed on top of the pre-setup intro card (a real bug — Skip guide and Set up your café overlapped), because the guide had nowhere else to render before the café existed. It now waits until after setup.

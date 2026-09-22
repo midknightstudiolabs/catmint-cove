@@ -1,0 +1,18 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch(); const p = await (await b.newContext({ viewport: { width: 390, height: 844 } })).newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+const w = ms => p.waitForTimeout(ms); const out = []; const ok = (n, c, x = '') => out.push(`${c ? 'PASS' : 'FAIL'}  ${n}${x ? '  — ' + x : ''}`);
+await p.goto('http://localhost:8879/'); await p.evaluate(() => { localStorage.clear(); localStorage.setItem('neo.product.analytics.v1', 'no'); }); await p.goto('http://localhost:8879/', { waitUntil: 'load' }); await w(5500);
+if (await p.locator('#ts-go').isVisible().catch(() => false)) await p.locator('#ts-go').click({ force: true }); await w(2200);
+if (await p.locator('#own-skip').isVisible().catch(() => false)) await p.locator('#own-skip').click({ force: true });
+await p.evaluate(() => { const c = window.__cove; c.G.tutorialDone = true; document.getElementById('app')?.classList.remove('cold-open'); document.getElementById('hint').hidden = true; for (const k of ['ginger']) c.giveCat(k, 2); });
+await w(800);
+const before = await p.evaluate(() => ({ pencil: getComputedStyle(document.getElementById('editCoveEntry')).display, ov: getComputedStyle(document.getElementById('ovBtn')).display }));
+ok('Before editing: the pencil and zoom buttons are visible', before.pencil !== 'none' && before.ov !== 'none', JSON.stringify(before));
+await p.locator('#editCoveEntry').click({ force: true }); await w(600);
+const during = await p.evaluate(() => ({ pencil: getComputedStyle(document.getElementById('editCoveEntry')).display, ov: getComputedStyle(document.getElementById('ovBtn')).display, cancelVisible: !document.getElementById('placeBar').hidden }));
+ok('While editing: both are hidden, Cancel is visible with nothing floating above it', during.pencil === 'none' && during.ov === 'none' && during.cancelVisible, JSON.stringify(during));
+await p.screenshot({ path: 'edit-mode-fabs.png' });
+await p.locator('#placeBarCancel').click({ force: true }); await w(600);
+const after = await p.evaluate(() => ({ pencil: getComputedStyle(document.getElementById('editCoveEntry')).display, ov: getComputedStyle(document.getElementById('ovBtn')).display }));
+ok('After cancelling: both come back', after.pencil !== 'none' && after.ov !== 'none', JSON.stringify(after));
+console.log(out.join(String.fromCharCode(10))); console.log(errs.join('|') || 'no errors'); await b.close();

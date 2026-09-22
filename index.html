@@ -670,7 +670,7 @@
   .propcard p{font-size:.8rem;color:var(--ink-soft);line-height:1.42;margin:0;}
   #shop:not([hidden]),#dex:not([hidden]),#today:not([hidden]){animation:sheetIn .16s ease both;}
   @keyframes sheetIn{from{opacity:0;}}
-  #catcard h2{font-size:1.02rem;margin-bottom:.1rem;}
+  #catcard h2{font-size:1.02rem;margin-bottom:.1rem;padding-right:2.2rem;}
   .cc-coat{font-size:.74rem;color:var(--ink-faint);text-transform:capitalize;margin-bottom:.4rem;}
   .traitrow{display:flex;gap:.35rem;flex-wrap:wrap;margin:.15rem 0 .6rem;}
   .trait{background:#eef1e3;border:1px solid var(--panel-line);border-radius:999px;
@@ -839,6 +839,16 @@
   #rest .rb-fs{background:none;border:none;color:rgba(255,255,255,.6);font:inherit;
     padding:.42rem .6rem;border-radius:999px;cursor:pointer;}
   #rest .rb-fs:hover{background:rgba(255,255,255,.12);color:#fff;}
+  @media(max-width:380px){
+    /* Back to the Cove + the centred timer + Dim room + Retry rain, all nowrap, none of them shrinking
+       — on a narrow phone their combined minimum width used to exceed the bar, so the timer text and
+       Dim room visibly overlapped. Claim more of the screen width, tighten padding, and drop "Back to
+       the Cove" to its icon alone (Dim room / Retry rain have no icon of their own, so keep their text). */
+    #rest .rest-bar{width:min(96vw,360px);padding:.3rem .22rem;}
+    #rest .rb-back{padding:.42rem .5rem;gap:.25rem;font-size:.76rem;}
+    #rest .rb-time{font-size:.7rem;}
+    #restWake .rb-label{display:none;}
+  }
 
   /* one shared footer style for every panel that ends in a decision — a
      primary + secondary pair, same width, same weight. button.btn is
@@ -1481,6 +1491,27 @@
     #hud .btn .ico{font-size:1rem;}
     #hud .pill.pearl.empty{display:none;}   /* on phones, the pearl pill shows only once you have some */
   }
+  @media (max-width:345px){
+    /* Genuinely small phones: #hud stacks into two rows (title+buttons, then currency+stats — see
+       the column layout below), so the title pill never actually competes with the currency/stats
+       row for width. What DOES overflow there is realistic content: a 5-digit shell count plus
+       pearls plus cat-count/food/day all in one ~300px-wide row. Shrink that row further here
+       (the title pill also has an unconditional #titlePill{display:flex} that always outranks the
+       older .title-pill{display:none} rule above, so it never actually hides — shrinking it a touch
+       too just keeps its row from crowding the buttons beside it). */
+    #titlePill{max-width:36vw;font-size:.85rem;padding:.4rem .6rem;min-height:38px;}
+    #hud .hud-group:last-child .btn{width:36px;height:36px;min-height:36px;padding:0;}
+    #hud .hud-group:first-child{gap:.2rem;}
+    #hud .hud-row{gap:.2rem;}
+    #hud .hud-stats{gap:.45rem;}
+    #hud .pill{padding:.28rem .4rem .28rem .32rem;font-size:.76rem;gap:.28rem;}
+    #hud .pill .dot{width:.82rem;height:.82rem;font-size:.54rem;}
+    #hud .hud-stat{font-size:.68rem;gap:.2rem;}
+    #hud .hud-stat .ico img{width:20px;height:20px;}
+  }
+  @media (max-width:325px){
+    #hud .hud-stat.opens{display:none!important;}   /* the least essential of the three stats — drop it first so shells/pearls/cats/food still fit on one line (!important: an earlier ≤460px rule at the same specificity otherwise wins by forcing it back on) */
+  }
 
   /* portrait-locked. a phone held sideways gets a gentle nudge; tablets and
      desktop in landscape are fine, so this only triggers on a short viewport. */
@@ -1539,6 +1570,10 @@
   }
   #app.has-hint #ovBtn{bottom:calc(env(safe-area-inset-bottom) + 7.4rem);}
   #app.resting #ovBtn,#app.festing #ovBtn,#app.cold-open #ovBtn{opacity:0!important;pointer-events:none;}
+  /* the .editing-cove class was already toggled on #app when Edit Cove starts, but nothing ever hid
+     these while arranging — the pencil (open Edit Cove) and the whole-cove zoom button both floated
+     on, right above the placeBar's Cancel button, right where you're trying to work. */
+  #app.editing-cove #editCoveEntry,#app.editing-cove #ovBtn{display:none!important;}
   #focusBar{
     position:absolute;left:50%;transform:translateX(-50%);
     bottom:max(1.1rem,calc(env(safe-area-inset-bottom) + .5rem));
@@ -1822,6 +1857,14 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 .homestead-stock{display:flex;flex-wrap:wrap;gap:10px;padding:12px;background:#eee6d0;border-radius:14px;font-size:14px}.homestead-cafe-room{background:#efe2c5;border:2px solid #d3bf98;border-radius:18px;padding:16px;margin:16px 0}.homestead-tables{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}.homestead-tables>span{background:#faf6e9;border:1px solid #c7ac84;padding:10px;border-radius:18px;font-size:12px;text-align:center}.homestead-tables canvas{position:static!important;width:76px;height:64px;display:block;margin:auto}
 .homestead-room-art{position:static!important;display:block;width:100%;height:auto;border-radius:14px}.homestead-crop-art{display:block;width:100%;max-width:150px;height:76px;margin:auto}.homestead-style{padding:14px;border:1px solid #d0d9bf;border-radius:16px}.homestead-style summary{cursor:pointer;min-height:44px;display:list-item}.homestead-style .btn{margin:4px;min-height:44px;text-transform:capitalize}.homestead-style [aria-pressed=true]{background:#477354;color:#fff}.homestead-greeting{min-height:44px;font-size:14px}.homestead-cafe-room>.btn{min-height:44px}
 @media(max-width:380px){#neo-homestead{padding:16px}.homestead-grid{gap:8px}.homestead-patch{padding:10px}.homestead-patch .btn{font-size:12px;padding:8px}.homestead-stock{font-size:12px}}
+@media(max-width:600px){
+  /* Cove Garden used to float as a centred card with real margin wasted on either side on every
+     phone — full-bleed instead, so the whole patch grid is visible without fighting the frame.
+     !important: an earlier same-breakpoint rule re-centres/caps #neo-homestead's top and max-height
+     around the bottom nav bar (right for the old centred card, wrong for a full-bleed sheet), and it
+     already uses !important itself, so matching it is the only way to actually win here. */
+  #neo-homestead:not(.cafe-full-room){left:0!important;top:0!important;transform:none!important;width:100%;height:100dvh;max-height:none!important;border-radius:0;box-sizing:border-box;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(var(--navh) + 16px) max(16px,env(safe-area-inset-left));}
+}
 
 /* Mobile finishing pass: cream surfaces, sage actions, comfortable touch targets. */
 #shopTabs{display:flex;flex-wrap:wrap;gap:6px}
@@ -2044,10 +2087,10 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
       </div>
     </div>
     <div class="rest-bar" id="restBar" hidden>
-      <button class="rb-back" id="restWake"><img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22"> Back to the Cove</button>
+      <button class="rb-back" id="restWake"><img src="art/icon-keepsake-homecoming.svg" class="neo-ui-icon" alt="" width="22" height="22"> <span class="rb-label">Back to the Cove</span></button>
       <span class="rb-time" id="restTime">resting</span>
-      <button class="rb-back" id="restDimToggle" aria-pressed="false">Dim room</button>
-      <button class="rb-back" id="restRetryRain" hidden>Retry rain</button>
+      <button class="rb-back" id="restDimToggle" aria-pressed="false"><span class="rb-label">Dim room</span></button>
+      <button class="rb-back" id="restRetryRain" hidden><span class="rb-label">Retry rain</span></button>
       <button class="rb-fs" id="restFs" title="Fullscreen">⤢</button>
     </div>
   </div>
@@ -2302,6 +2345,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 
   <!-- cat card -->
   <div class="sheet" id="catcard" hidden>
+    <button class="x" id="cc-x" aria-label="Close"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
     <h2 id="cc-name">—</h2>
     <div class="cc-coat" id="cc-coat"></div>
     <div class="cc-stars" id="cc-stars"></div>
@@ -6644,6 +6688,7 @@ function closeRoster() {
   rosterEl.hidden = true;
   _rosterMode = null;
 }
+document.getElementById("cc-x").onclick = () => hideCatCard();
 document.getElementById("roster-x").onclick = () => {
   if (_rosterMode === "report") { const d = _reportDone; _reportDone = null; closeRoster(); _wywaReport = null; d && d(); }
   else closeRoster();
@@ -8433,7 +8478,7 @@ document.getElementById("restRain").addEventListener("change", e => {
 });
 function syncRestDark(){
  document.getElementById('restDark').checked=!!restOpts.dark;
- const b=document.getElementById('restDimToggle');b.textContent=restOpts.dark?'Brighten room':'Dim room';b.setAttribute('aria-pressed',String(!!restOpts.dark));
+ const b=document.getElementById('restDimToggle');b.querySelector('.rb-label').textContent=restOpts.dark?'Brighten room':'Dim room';b.setAttribute('aria-pressed',String(!!restOpts.dark));
 }
 function setRestDark(value){restOpts.dark=value;restIdleT=0;_restBarState=null;syncRestDark();if(G.rest?.on){G.rest.opts={...restOpts};save();}}
 document.getElementById('restDark').addEventListener('change',e=>setRestDark(e.target.checked));
@@ -10522,7 +10567,11 @@ function festIsPan() {
 function fitFestCanvas() {
   const { vw, vh } = restViewportPx();
   const pan = festIsPan();
-  let s = Math.min(DPR, pan ? 1.4 : 1.5);
+  // Tug of Paws (and anything else viewed in portrait) rendered at a real device's full pixel density
+  // used to be capped much lower here (1.4x) than everything else (1.5x) — on today's 2-3x phones that
+  // showed up as visibly softer cats specifically in Tug, since it's the one festival game played close
+  // up and mostly static rather than glanced at mid-motion.
+  let s = Math.min(DPR, pan ? 1.8 : 2);
   if (vw * s > 1600) s *= 1600 / (vw * s);
   _festDPR = s;
   canvas.style.width = vw + "px"; canvas.style.height = vh + "px";

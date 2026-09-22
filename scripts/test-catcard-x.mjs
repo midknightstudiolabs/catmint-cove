@@ -1,0 +1,18 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch(); const p = await (await b.newContext({ viewport: { width: 360, height: 740 }, deviceScaleFactor: 2 })).newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+const w = ms => p.waitForTimeout(ms); const out = []; const ok = (n, c, x = '') => out.push(`${c ? 'PASS' : 'FAIL'}  ${n}${x ? '  — ' + x : ''}`);
+await p.goto('http://localhost:8879/'); await p.evaluate(() => { localStorage.clear(); localStorage.setItem('neo.product.analytics.v1', 'no'); }); await p.goto('http://localhost:8879/', { waitUntil: 'load' }); await w(5500);
+if (await p.locator('#ts-go').isVisible().catch(() => false)) await p.locator('#ts-go').click({ force: true }); await w(2200);
+if (await p.locator('#own-skip').isVisible().catch(() => false)) await p.locator('#own-skip').click({ force: true });
+await p.evaluate(() => { const c = window.__cove; c.G.tutorialDone = true; document.getElementById('app')?.classList.remove('cold-open'); document.getElementById('hint').hidden = true; for (const k of ['ginger']) c.giveCat(k, 2); });
+await w(800);
+await p.evaluate(() => { const c = window.__cove.cats.find(x => !x.visitor); window.__cove.tap(c.x, c.y - 18); });
+await w(600);
+const info = await p.evaluate(() => { const el = document.getElementById('catcard'); const x = document.getElementById('cc-x'); const r = x.getBoundingClientRect(), er = el.getBoundingClientRect(); return { hidden: el.hidden, xVisible: r.width > 0, withinCard: r.right <= er.right + 2 && r.top >= er.top - 2, titleOverlap: (() => { const h2 = document.getElementById('cc-name').getBoundingClientRect(); return h2.right > r.left; })() }; });
+ok('The cat card shows an X button in the corner', !info.hidden && info.xVisible && info.withinCard, JSON.stringify(info));
+ok('The title text does not run under the X button', !info.titleOverlap, JSON.stringify(info));
+await p.screenshot({ path: 'catcard-x.png' });
+await p.locator('#cc-x').click({ force: true }); await w(400);
+const closed = await p.evaluate(() => document.getElementById('catcard').hidden);
+ok('Clicking it closes the card', closed);
+console.log(out.join(String.fromCharCode(10))); console.log(errs.join('|') || 'no errors'); await b.close();

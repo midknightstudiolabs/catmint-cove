@@ -1,0 +1,14 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch(); const p = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+const w = ms => p.waitForTimeout(ms); const out = []; const ok = (n, c, x = '') => out.push(`${c ? 'PASS' : 'FAIL'}  ${n}${x ? '  — ' + x : ''}`);
+await p.goto('http://localhost:8879/'); await p.evaluate(() => { localStorage.clear(); localStorage.setItem('neo.product.analytics.v1', 'no'); }); await p.goto('http://localhost:8879/', { waitUntil: 'load' }); await w(5500);
+if (await p.locator('#ts-go').isVisible().catch(() => false)) await p.locator('#ts-go').click({ force: true }); await w(2200);
+if (await p.locator('#own-skip').isVisible().catch(() => false)) await p.locator('#own-skip').click({ force: true });
+await p.evaluate(() => { const c = window.__cove; c.G.tutorialDone = true; document.getElementById('app')?.classList.remove('cold-open'); document.getElementById('hint').hidden = true; for (const k of ['ginger']) c.giveCat(k, 2); });
+await w(800);
+await p.locator('#neo-activities-nav').click({ force: true }); await w(600);
+await p.locator('#neo-go-garden').click({ force: true }); await w(800);
+const r = await p.evaluate(() => { const el = document.getElementById('neo-homestead'); const rect = el.getBoundingClientRect(); return { width: rect.width, left: rect.left, top: rect.top, borderRadius: getComputedStyle(el).borderRadius }; });
+ok('Cove Garden is full-bleed on mobile', r.width >= 388 && r.left <= 1 && r.top <= 1 && r.borderRadius === '0px', JSON.stringify(r));
+await p.screenshot({ path: 'garden-full.png' });
+console.log(out.join(String.fromCharCode(10))); console.log(errs.join('|') || 'no errors'); await b.close();
