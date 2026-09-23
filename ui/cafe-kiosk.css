@@ -298,3 +298,7 @@
 
 #app #cafe-kiosk.cc-v2 .cc-service-progress{pointer-events:none;min-height:0;padding:5px 10px;width:140px;box-shadow:none}
 #app #cafe-kiosk.cc-v2 .cc-service-progress strong{font-size:11px}
+
+/* Order actions stay in the counter fascia, with no attention-grabbing bounce. */
+#app #cafe-kiosk.cc-v2 .cc-pickup-order:not(.cc-service-progress){padding:5px 9px;min-height:44px;border-radius:8px}
+#app #cafe-kiosk.cc-v2 .cc-pickup-order.boost-pop{animation:none}

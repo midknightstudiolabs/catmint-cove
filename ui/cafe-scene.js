@@ -164,10 +164,10 @@
    const hotspots={};
    const W=720,BH=Math.max(380,Number.isFinite(band)?band:height-offset),warm=night?'rgba(255,205,130,':'rgba(255,214,150,';
    const winH=Math.round(Math.max(150,Math.min(300,BH*.3))),cTop=Math.round(Math.max(300,Math.min(BH*.63,640))),winB=cTop-16,winT=winB-winH,winL=64,winR=656;
-   const topFace=46,cf=Math.round(Math.max(34,Math.min(BH*.1,86))),panelT=cTop+topFace+2,panelB=Math.min(BH,panelT+cf);
+   const topFace=46,cf=140,panelT=cTop+topFace+2,panelB=Math.min(BH,panelT+cf);
    const hz=winT+Math.round(winH*.5),prom=winB-Math.round(winH*.3),leadScale=Math.max(1.1,winH*.0072);
    const mx=28,my=cTop+40-103;
-   L={winT,winB,cTop,leadX:360,faceY:winB-4-64*leadScale,signX:winR-58,signY:winT+40,mx,my};
+   L={winT,winB,cTop,panelT,panelB,leadX:360,faceY:winB-4-64*leadScale,signX:winR-58,signY:winT+40,mx,my};
    const sway=reduced?0:Math.sin(t/1700);
    const wood='#a5825a',woodD='#7f6244',woodL='#d3b58a';
    // wall
@@ -275,8 +275,8 @@
   const food=recipe?.kind==='food',serving=active&&s.pending.at-now<=3000;
   const stationX=inside?(food?470:L.mx+38):(food?439:248);
   const stationY=inside?(food?L.cupY+8:L.my+66):(food?outsideY+82:outsideY+82);
-  const equipmentAnchor=isFood=>({x:isFood?470:L.mx+66,y:L.cTop+80});
-  root.CoveCafeScene.orderAnchor=inside&&active&&!serving?equipmentAnchor(food):{x:344,y:inside?L.cupY+52:229};
+  const equipmentAnchor=isFood=>({x:isFood?470:L.mx+66,y:L.panelT+32});
+  root.CoveCafeScene.orderAnchor=inside&&active&&!serving?equipmentAnchor(food):{x:344,y:inside?L.panelT+32:229};
   root.CoveCafeScene.secondOrderAnchor=inside&&active&&!serving&&(s.pending.items||[]).length>1?equipmentAnchor(!food):null;
   if(active)for(const [itemIndex,itemId] of (s.pending.items||[s.pending.id]).entries()){
    const recipe=E.recipes.find(r=>r.id===itemId),food=recipe?.kind==='food';
