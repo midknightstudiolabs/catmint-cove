@@ -2465,7 +2465,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=18"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=42"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/cafe-engine.js?v=21"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=51"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=43"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/cafe-engine.js?v=21"></script><script src="ui/cafe-scene.js?v=24"></script><script src="ui/cafe-kiosk.js?v=52"></script>
 <script src="ui/wishing-well.js?v=1"></script>
 <script>
 (() => {
@@ -21609,16 +21609,17 @@ function neoGardenNextAction(h){
   if(ripe){
     const text=ripe+(ripe===1?' patch is':' patches are')+' ripe · '+Object.entries(neoReadySummary()).map(([k,n])=>'+'+n+' '+COVE_CROPS[k].name.toLowerCase()).join(', ');
     if(blessingActive())return{text,btnLabel:'Harvest all',onClick:()=>neoHarvestAll()};
-    if(ripe>1)return{text,btnLabel:'Harvest all · with Blessing',onClick:showBlessingOffer};
-    return{text,btnLabel:null,onClick:null};
+    return{text:text+' · goes straight to your café',btnLabel:'Pick a ripe patch',onClick:()=>neoHarvest(neoReadyPlots()[0])};
   }
   const planting=CoveCafeEngine.plantingPlan(G);
   if(planting.jobs.length){
     const counts={};for(const job of planting.jobs)counts[job.key]=(counts[job.key]||0)+1;
     const text=Object.entries(counts).map(([key,count])=>count+' × '+COVE_CROPS[key].name).join(' · ');
-    return{text,btnLabel:'Plant recommended · '+planting.cost+' Shells',onClick:()=>{if(CoveCafeEngine.plantSuggested(G,planting)){save();syncHud();}neoOpenHomestead('garden');},disabled:G.shells<planting.cost};
+    return{text,btnLabel:'Plant for my café · '+planting.cost+' Shells',onClick:()=>{if(CoveCafeEngine.plantSuggested(G,planting)){save();syncHud();}neoOpenHomestead('garden');},disabled:G.shells<planting.cost};
   }
-  return null;
+  const growing=h.plots.filter(p=>p&&p.ready>Date.now());
+  if(growing.length)return{text:'Growing for your café. Each patch shows how long is left.',btnLabel:null};
+  return{text:'Tap an empty patch to plant. Pick it when it says Ready.',btnLabel:null};
 }
 function neoOpenHomestead(kind){
  if(kind==="cafe"||!document.getElementById("neo-homestead")||document.getElementById("neo-homestead").hidden)window.CoveAnalytics?.emit("menu_opened",{entity:kind==="cafe"?"Catmint Cafe":"Garden"});
@@ -21636,6 +21637,8 @@ function neoOpenHomestead(kind){
   sheet.hidden=false;
   sheet.innerHTML=`<div class="gh-top"><button class="btn gh-back" aria-label="Back to the Cove">‹ Cove</button><h2 class="gh-title">Cove Garden</h2><span class="gh-end"></span></div><div class="gh-cta-slot"></div><nav class="gh-tabs" aria-label="Garden sections"><button data-tab="patches" aria-pressed="${neoGardenTab==='patches'}">My patches</button><button data-tab="ingredients" aria-pressed="${neoGardenTab==='ingredients'}">Ingredients</button><button data-tab="improve" aria-pressed="${neoGardenTab==='improve'}">Improve</button></nav><div class="gh-content"></div>`;
   const content=sheet.querySelector('.gh-content');
+  const cafeLink=document.createElement('button');cafeLink.className='btn';cafeLink.type='button';cafeLink.textContent='Visit café';cafeLink.onclick=()=>neoOpenHomestead('cafe');sheet.querySelector('.gh-end').append(cafeLink);
+  const loop=document.createElement('p');loop.className='garden-loop';loop.textContent='Plant → Pick → Serve. Your harvest goes straight to the café.';content.append(loop);
   sheet.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{neoGardenTab=b.dataset.tab;neoOpenHomestead('garden');});
 
   const next=neoGardenNextAction(h);

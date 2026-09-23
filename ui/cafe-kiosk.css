@@ -240,3 +240,34 @@
 #app #cafe-kiosk.cc-v2 .cc-help-topic .btn{margin-bottom:14px}
 #app #cafe-kiosk.cc-v2 [data-help-tour]{margin-top:18px;min-height:44px}
 #app #cafe-kiosk.cc-v2 .cc-pantry-plan>summary{cursor:pointer;min-height:44px;padding:12px 0;box-sizing:border-box;font-weight:600;color:#3f6047}
+
+/* A calm default: one status and next action. Details remain under Show more. */
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-pips,
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-sales-link{display:none}
+#app #cafe-kiosk.cc-v2 .cc-live.compact{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;padding:8px 14px}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-name{display:none}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-live-row{grid-column:1/-1;min-width:0;gap:8px}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-more{margin-left:auto}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-status,
+#app #cafe-kiosk.cc-v2 .cc-live.compact:has(.cc-cta) .cc-status{display:block;white-space:normal;font-size:13px;line-height:1.4;margin:0;align-self:center}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-cta-row{grid-column:2;grid-row:2}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-cta{min-height:44px;max-width:190px;white-space:normal;line-height:1.2}
+#app #cafe-kiosk.cc-v2 .cc-brew-bar{grid-column:1/-1;flex-basis:100%;height:8px;width:100%;border-radius:4px;background:#dce3cd;overflow:hidden}
+#app #cafe-kiosk.cc-v2 .cc-brew-bar[hidden]{display:none}
+#app #cafe-kiosk.cc-v2 .cc-brew-bar i{display:block;height:100%;background:#5a8861;border-radius:inherit;transition:width 1s linear}
+#app #cafe-kiosk.cc-v2 .cc-visit-hint{max-width:calc(100% - 32px);text-align:center}
+@media(max-width:480px){
+ #app #cafe-kiosk.cc-v2 .cc-live.compact{padding:8px 10px;gap:5px 8px}
+ #app #cafe-kiosk.cc-v2 .cc-live.compact .cc-cta{max-width:138px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){#app #cafe-kiosk.cc-v2 .cc-brew-bar i{transition:none}}
+#neo-homestead.neo-garden-screen .gh-end{width:auto;flex:0 0 auto}
+#neo-homestead.neo-garden-screen .gh-end .btn{min-height:44px;padding:8px 12px;font-size:13px;white-space:nowrap}
+#neo-homestead.neo-garden-screen .garden-loop{margin:0 0 12px;color:#52664e;font-size:14px;line-height:1.5}
+@media(max-width:380px){
+ #app #cafe-kiosk.cc-v2 .cc-head{display:grid;grid-template-columns:1fr auto;height:auto;padding:3px 6px;gap:2px 8px}
+ #app #cafe-kiosk.cc-v2 .cc-head .cc-back{justify-self:start;min-height:44px}
+ #app #cafe-kiosk.cc-v2 .cc-head-end{grid-column:2;grid-row:1}
+ #app #cafe-kiosk.cc-v2 .cc-head .cc-switch{grid-column:1/-1;grid-row:2;max-width:none!important;flex-wrap:nowrap}
+ #app #cafe-kiosk.cc-v2 .cc-top .cc-switch button{min-height:44px;font-size:13px}
+}

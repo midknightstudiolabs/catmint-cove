@@ -5,7 +5,7 @@
   stopActive();
   const E=root.CoveCafeEngine,g=a.game(),s=E.init(g,Date.now());a.close();
   let panel=document.getElementById('cafe-kiosk');if(!panel){panel=document.createElement('section');panel.id='cafe-kiosk';panel.className='sheet cc-v2';document.getElementById('app').append(panel);a.register(panel);}
-  panel.hidden=false;let previewFinish=null,confirmFinish=null,previewTier=null,confirmShop=false,previewDecor=null,confirmDecor=null;const floats=[];let workshop=false,recipeResult=null;let previewEquipment=null,displayState=s;let soundNote=0;const SOUND_ICON={music:'<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',rain:'<path d="M7 15a4 4 0 0 1-.5-7.9A5.5 5.5 0 0 1 17 6.5a3.8 3.8 0 0 1 .5 7.5"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',off:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M16 9l5 6M21 9l-5 6"/>'},SOUND_WORD={music:'Café music',rain:'Soft rain',off:'Sound off'};
+  panel.hidden=false;let previewFinish=null,confirmFinish=null,previewTier=null,confirmShop=false,previewDecor=null,confirmDecor=null;const floats=[];let workshop=false,recipeResult=null,renameOnly=false;let previewEquipment=null,displayState=s;let soundNote=0;const SOUND_ICON={music:'<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',rain:'<path d="M7 15a4 4 0 0 1-.5-7.9A5.5 5.5 0 0 1 17 6.5a3.8 3.8 0 0 1 .5 7.5"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',off:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M16 9l5 6M21 9l-5 6"/>'},SOUND_WORD={music:'Café music',rain:'Soft rain',off:'Sound off'};
 let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}catch(e){return false;}})();let lastTab=null,view='outside',tab=null,layout={k:0,cx0:0,offset:0},frame=0,last=0,timer,cam=null,camT=0,camKey='',edgeCv=[null,null],edgeT=0,edgeSig='';const actors=a.actors();stopActive=()=>{cancelAnimationFrame(frame);clearInterval(timer);for(const cv of edgeCv){if(cv){cv.width=1;cv.height=1;}}const cv=panel.querySelector("canvas");if(cv){cv.width=1;cv.height=1;}stopActive=()=>{};};
   const money=n=>Math.round(n*10)/10;
   const tabName={menu:'My menu',pantry:'Ingredients',upgrades:'Improve café',report:'Sales & happy cats',help:'Café help'};
@@ -24,14 +24,14 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    if(!s.unlocked)return;
    let title,text,target,step,stockGuide=false;
    if(!s.lessonComplete){step=1;title='Make a cup';text=workshop?'Tap Make my first coffee. It’s free!':'Tap Make your first coffee. We will help you.';target=workshop?'[data-lesson]':'[data-create]';}
-   else if(recipeResult||!guideNamed){step=2;title='Give it a name';text='Type a fun name. Then tap Save recipe. You can keep the name we picked, too.';target='[data-save-name]';}
+   else if(recipeResult||!guideNamed){step=2;title='Give it a name';text='Type a fun name. Then tap Save & sell. You can keep the name we picked, too.';target='[data-save-name]';}
    else if(!s.menu.length){step=3;title='Put it on the menu';text='Tap Add to menu beside your drink. This tells the cats what they can order.';target='[data-recipe]';}
    else if(!s.open&&whyClosed()){const wc=whyClosed();step=4;stockGuide=true;title='Stock up first';text=wc.text.replace(' Restock to open your café.','')+' Cats need ingredients before they can serve. Tap Ingredients to buy some, or grow them in the Garden.';target='[data-tab="pantry"]';}
    else if(!s.open){step=4;title='Welcome the cats!';text='Tap Closed at the top to open your café. Cats will make and serve the food for you.';target='[data-pause]';}
    else{step=5;title='You’re open!';text='Your cats make and serve orders automatically. Each order uses ingredients and earns Shells. You do not need to tap each customer.';target='[data-garden]';}
    panel.dataset.guideStep=step;
    const card=document.createElement('section');card.className='cc-guide';card.setAttribute('aria-label','Café guide');
-   const count=document.createElement('small');count.textContent='LET’S PLAY · '+step+' OF 5';const heading=document.createElement('h3');heading.textContent=title;const copy=document.createElement('p');copy.textContent=text;
+   const count=document.createElement('small');count.textContent='LET’S PLAY · '+({1:1,2:2,3:2,4:3,5:4}[step])+' OF 4';const heading=document.createElement('h3');heading.textContent=title;const copy=document.createElement('p');copy.textContent=text;
    const skip=document.createElement('button');skip.className='btn';skip.textContent=step===5?'Watch my café':'Skip guide';skip.onclick=finishGuide;
    card.append(count,heading,copy);
    // Step 1's "Skip guide" used to sit up here, a second and separately-placed way out right
@@ -119,9 +119,9 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    if(!s.lessonComplete)return {label:'Make your first coffee',fn:()=>{tab='menu';view='inside';workshop=true;render();}};
    if(!s.menu.length)return {label:'Add a drink to your menu',fn:()=>{tab='menu';render();}};
    const why=!s.open?whyClosed():null,rd=ready();
-   if(why&&why.keys)return rd.count&&why.keys.some(k=>rd.yields[k]>0)?{label:a.blessing&&a.blessing()?'Harvest all · restock':'Harvest ripe crops',fn:harvestRipe}:{label:'Restock to open',fn:()=>explain(why)};
+   if(why&&why.keys)return rd.count&&why.keys.some(k=>rd.yields[k]>0)?{label:a.blessing&&a.blessing()?'Harvest all · restock':'Harvest ripe crops',fn:harvestRipe}:{label:'Get ingredients to open',fn:()=>explain(why)};
    if(!s.open)return {label:'Open your café',fn:()=>panel.querySelector('[data-pause]')?.click()};
-   if(missingKeys().length||[...document.querySelectorAll('#cafe-kiosk .cc-pip.low')].length)return {label:'Restock ingredients',fn:()=>{tab='pantry';render();}};
+   if(missingKeys().length||[...document.querySelectorAll('#cafe-kiosk .cc-pip.low')].length)return {label:'Get ingredients',fn:()=>{tab='pantry';render();}};
    if(rd.count)return {label:a.blessing&&a.blessing()?'Harvest all · '+rd.count+' ripe':rd.count+' ripe · harvest',fn:harvestRipe};
    return null;
   }
@@ -202,10 +202,10 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
     if(tab==='help'){
      content.innerHTML='<p class="cc-help-intro">Make a drink. Add it to your menu. Open your café. Your cats do the serving.</p><div class="cc-help-topics">'+[
       ['Make my first drink','Tap My menu, then Make your first coffee. It’s one tap and it’s free.','first','Make a drink'],
-      ['Start serving','Tap Add to menu on a recipe. Then tap Closed at the top to open. Keep ingredients in stock; cats serve automatically.','menu','Open my menu'],
-      ['I ran out of ingredients','Open Ingredients to buy what you need with Shells. Or grow it in Cove Garden, then harvest it into your shared stock.','pantry','Get ingredients'],
+      ['Start serving','After making a recipe, tap Save & sell. Then tap Closed at the top to open. Watch the Making and Serving bar. Your cats do each order for you.','menu','Open my menu'],
+      ['I ran out of ingredients','Tap Ingredients, then Grow ingredients. Plant the suggested seeds. When a patch says Ready, tap it. Your café gets the harvest right away. You can also buy ingredients if you want them now.','pantry','Get ingredients'],
       ['Make the café nicer','Open Improve café. Choose Storefront for the building and decorations, or Counter for equipment. Preview before buying.','upgrades','See improvements'],
-      ['See how we are doing','Sales & happy cats shows your sales and customer reactions. You can find it beside the Shells total.','report','See my results']
+      ['See how we are doing','Sales & happy cats shows your sales and customer reactions. Tap Show more beside the Shells total to find it.','report','See my results']
      ].map(([title,copy,dest,label])=>'<details class="cc-help-topic" name="cafe-help-topic"><summary>'+title+'</summary><p>'+copy+'</p><button class="btn primary" data-help-go="'+dest+'">'+label+'</button></details>').join('')+'</div><button class="btn" data-help-tour>Guide me step by step</button>';
      content.querySelectorAll('[data-help-go]').forEach(b=>b.onclick=()=>{const dest=b.dataset.helpGo;tab=dest==='first'?'menu':dest;if(dest==='first'){view='inside';workshop=true;recipeResult=null;}render();});
      content.querySelector('[data-help-tour]').onclick=()=>{guideOn=true;s.guideStarted=true;s.guideDone=false;guideNamed=!!s.recipeNames?.coffee;tab='menu';view='inside';workshop=!s.lessonComplete;recipeResult=null;a.save();render();};
@@ -216,11 +216,11 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
      const garden=()=>{if(guideOn&&s.open){s.guideDone=true;a.save();}stopActive();a.garden();};
      if(!workshop){
       const tiles=E.recipes.filter(r=>s.discovered.includes(r.id)).map(r=>{const level=s.recipeLevels?.[r.id]||0,sales=s.sales[r.id]||0,on=s.menu.includes(r.id),short=Object.entries(r.inputs).some(([k,n])=>(g.homestead.stock[k]||0)<n);const state=on?(short?'Needs ingredients':!s.open?'On menu · open café to serve':'Serving automatically'):'Not serving';return `<article class="cc-card cc-recipe${on?' on':''}"><span class="cc-cup">${cup(r.id)}</span><div class="cc-rbody"><h3>${escape(E.displayName(s,r))}</h3><small>${E.price(s,r)} Shells${E.special&&E.special(s)===r.id?' (today’s special)':''} · ${Object.entries(r.inputs).map(([k,n])=>{const nm=E.ingredients[k].name.toLowerCase();return n+' '+(n===1&&nm.endsWith('s')?nm.slice(0,-1):nm);}).join(' + ')}</small><strong class="cc-recipe-state${on&&short?' warn':''}">${state}</strong></div><button class="btn cc-menu-action" aria-pressed="${on}" aria-label="${on?'Remove':'Add'} ${escape(E.displayName(s,r))} ${on?'from':'to'} menu" data-recipe="${r.id}">${on?'Remove from menu':'Add to menu'}</button>${on&&short?'<button class="btn cc-recipe-restock" data-restock>Get ingredients</button>':''}<details class="cc-recipe-details"><summary>${sales} enjoyed · Level ${level+1}/3</summary><button class="btn" data-name="${r.id}">Rename</button><button class="btn" data-improve="${r.id}" ${level>=2?'disabled':sales<(level+1)*10?'data-why="Serve '+((level+1)*10-sales)+' more of this drink to improve it."':g.shells<(level+1)*50?'data-need="'+(level+1)*50+'"':''}>${level>=2?'Mastered':sales<(level+1)*10?'Serve '+((level+1)*10-sales)+' more to improve':'Improve · '+((level+1)*50)+' Shells · +2 per sale'}</button></details></article>`;}).join('');content.innerHTML=`${s.lessonComplete?`<p>Choose what to sell. Open your café at the top; cats serve automatically while ingredients last.</p>${tiles}<button class="btn cc-new" data-create>+ New recipe</button>`:`<p>Cats serve what is on your menu, while ingredients last.</p><button class="btn primary" data-create>Make your first coffee · free lesson</button>`}<button class="btn" data-garden>Grow ingredients in Cove Garden</button>`;
-      content.querySelector('[data-create]').onclick=()=>{workshop=true;recipeResult=null;view='inside';render();};
+      content.querySelector('[data-create]').onclick=()=>{renameOnly=false;workshop=true;recipeResult=null;view='inside';render();};
       content.querySelectorAll('[data-recipe]').forEach(b=>b.onclick=()=>commit(()=>{const id=b.dataset.recipe;s.menu=s.menu.includes(id)?s.menu.filter(k=>k!==id):[...s.menu,id];if(!s.menu.length)s.open=false;}));
       content.querySelectorAll('[data-restock]').forEach(b=>b.onclick=()=>{tab='pantry';render();});
       content.querySelectorAll('[data-improve]').forEach(b=>b.onclick=()=>commit(()=>E.improve(g,b.dataset.improve)));
-      content.querySelectorAll('[data-name]').forEach(b=>b.onclick=()=>{recipeResult=b.dataset.name;workshop=true;render();});
+      content.querySelectorAll('[data-name]').forEach(b=>b.onclick=()=>{recipeResult=b.dataset.name;renameOnly=true;workshop=true;render();});
       content.querySelector('[data-garden]').onclick=garden;
      }else{
       content.innerHTML='<button class="btn" data-back-menu>Back to my menu</button><section class="cc-lab"></section>';
@@ -228,15 +228,15 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
       const lab=content.querySelector('.cc-lab');
       if(recipeResult){
        const recipe=E.recipes.find(r=>r.id===recipeResult);
-       lab.innerHTML=`<span class="cc-cup">${cup(recipe.id)}</span><h3>Make it yours</h3><p>${escape(recipe.name)} · ${E.price(s,recipe)} Shells per sale</p><label>Your drink or treat name<input maxlength="24" data-recipe-name aria-label="Recipe name"></label><small>Keep this name or choose your own. Saving does not add it to the menu.</small><button class="btn primary" data-save-name>${s.menu.includes(recipe.id)?'Save name':'Save recipe'}</button><p role="status"></p>`;
+       lab.innerHTML=`<span class="cc-cup">${cup(recipe.id)}</span><h3>Make it yours</h3><p>${escape(recipe.name)} · ${E.price(s,recipe)} Shells per sale</p><label>Your drink or treat name<input maxlength="24" data-recipe-name aria-label="Recipe name"></label><small>${renameOnly?'Change the name without changing what is on sale.':'Keep this name or choose your own. Save & sell puts it on your menu.'}</small><button class="btn primary" data-save-name>${renameOnly?'Save name':'Save & sell'}</button><p role="status"></p>`;
        lab.querySelector('input').value=E.displayName(s,recipe);
-       lab.querySelector('[data-save-name]').onclick=()=>{const name=lab.querySelector('input').value;if(!name.trim()){lab.querySelector('[role="status"]').textContent='Give your creation a name first.';return;}commit(()=>{E.nameRecipe(g,recipe.id,name);guideNamed=true;workshop=false;recipeResult=null;});};
+       lab.querySelector('[data-save-name]').onclick=()=>{const name=lab.querySelector('input').value;if(!name.trim()){lab.querySelector('[role="status"]').textContent='Give your creation a name first.';return;}commit(()=>{E.nameRecipe(g,recipe.id,name);if(!renameOnly&&!s.menu.includes(recipe.id))s.menu.push(recipe.id);guideNamed=true;workshop=false;recipeResult=null;});};
       }else if(!s.lessonComplete){
        // One tap, free, always succeeds -- the old version was three separate taps
        // (add a bean / brew / taste) for what is really one action a beginner expects
        // to just work the first time.
        lab.innerHTML=`<span class="cc-cup">${cup('coffee')}</span><h3>Your first coffee</h3><p>It’s free — just to see how it’s done.</p><button class="btn primary" data-lesson>Make my first coffee</button>`;
-       lab.querySelector('[data-lesson]').onclick=()=>commit(()=>{const result=E.lesson(g);recipeResult=result.id||null;if(result.id)a.firstBrewOverview?.();});
+       lab.querySelector('[data-lesson]').onclick=()=>commit(()=>{renameOnly=false;const result=E.lesson(g);recipeResult=result.id||null;if(result.id)a.firstBrewOverview?.();});
       }else{
        // Picking ingredient amounts and guessing a match used to be the way to learn a
        // new drink -- real recipes were never actually secret, so the guessing added
@@ -248,13 +248,15 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
         return `<article class="cc-card cc-recipe-pick"><span class="cc-cup">${cup(r.id)}</span><div class="cc-rbody"><h3>${escape(r.name)}</h3><small>${escape(r.note||'')}</small><small>Needs ${need}</small></div><button class="btn primary" data-make="${r.id}" ${short?'disabled':''}>${short?'Need '+E.ingredients[short[0]].name.toLowerCase():'Make it!'}</button></article>`;
        }).join('');
        lab.innerHTML='<h3>Make a new drink</h3><p>Tap one to make it.</p>'+(cards||'<p class="garden-ok">You’ve made every drink! Nothing new to try right now.</p>')+'<button class="btn" data-garden>Grow ingredients in Cove Garden</button>';
-       lab.querySelectorAll('[data-make]').forEach(b=>b.onclick=()=>commit(()=>{const result=E.makeRecipe(g,b.dataset.make);recipeResult=result.id||null;if(result.error)explain({text:result.error});}));
+       lab.querySelectorAll('[data-make]').forEach(b=>b.onclick=()=>commit(()=>{renameOnly=false;const result=E.makeRecipe(g,b.dataset.make);recipeResult=result.id||null;if(result.error)explain({text:result.error});}));
        lab.querySelector('[data-garden]').onclick=garden;
       }
      }
     }else if(tab==='pantry'){
      content.innerHTML=`<p>Buy ingredients now with Shells, or grow them in Cove Garden for less. Harvested crops go straight into this stock.</p>${Object.entries(E.ingredients).map(([k,v])=>`<article class="cc-card"><div><h3>${v.name} <span class="cc-count">${g.homestead.stock[k]||0}</span></h3><small>Buy 5 for ${v.import*5} Shells · Garden harvest: ${v.yield} for ${v.cost} Shells</small></div><button class="btn" data-import="${k}" ${g.shells<v.import*5?'data-need="'+v.import*5+'"':''}>Buy 5 · ${v.import*5}</button></article>`).join('')}<button class="btn primary" data-garden>Visit Cove Garden</button>`;content.querySelectorAll('[data-import]').forEach(b=>b.onclick=()=>commit(()=>{const k=b.dataset.import,cost=E.ingredients[k].import*5;if(g.shells>=cost){g.shells-=cost;E.acquire(g,k,5,cost);}}));content.querySelector('[data-garden]').onclick=()=>{cancelAnimationFrame(frame);clearInterval(timer);a.garden();};
      const plan=E.pantryPlan(g),overview=document.createElement('details');overview.className='cc-pantry-plan';const heading=document.createElement('summary');heading.textContent='Plan what to grow';overview.append(heading);const goal=document.createElement('p');goal.textContent=plan.selected.length?'Stock goal: five more orders of every recipe on sale. Ingredients are shared between recipes.':'Start serving a recipe in My Menu to get planting recommendations.';overview.append(goal);{const plan=E.plantingPlan(g),rd=ready();if(plan.jobs.length){const counts={};for(const j of plan.jobs)counts[j.key]=(counts[j.key]||0)+1;const pb=document.createElement('button');pb.className='btn primary';pb.dataset.plantRec='';pb.textContent='Plant recommended · '+plan.cost+' Shells';pb.onclick=plantRecommended;const why=document.createElement('small');why.textContent='Plants '+Object.entries(counts).map(([k,n])=>n+' × '+E.ingredients[k].name.toLowerCase()).join(', ')+' in your free plots.';overview.append(pb,why);}if(rd.count){const hb=document.createElement('button');hb.className='btn'+(plan.jobs.length?'':' primary');hb.dataset.harvestRipe='';hb.textContent=ripeLabel(rd.count);hb.onclick=harvestRipe;overview.append(hb);}}
+     // Put the garden route before the shopping list, not at the end of it.
+     const grow=content.querySelector('[data-garden]');grow.textContent='Grow ingredients';content.prepend(grow);
      // Keep the Garden button visible; detailed forecasts are optional.
      for(const recipe of plan.selected){const p=document.createElement('p');p.textContent=recipe.name+': '+'up to '+recipe.orders+' order'+(recipe.orders===1?'':'s')+' from current stock.';overview.append(p);}
      for(const row of plan.rows.filter(r=>r.target)){const card=document.createElement('article');card.className='cc-card';const body=document.createElement('div');const name=document.createElement('h3');name.textContent=row.name+' · '+row.have+' in pantry';const detail=document.createElement('p');detail.textContent='Goal '+row.target+' · '+row.growing+' in Garden'+(row.ready?' ('+row.ready+' ready to harvest)':'');const action=document.createElement('small');action.textContent=row.ready&&row.short?'Harvest ready patches first.':row.plant?'Plant '+row.patches+' patch'+(row.patches===1?'':'es')+' · '+row.cost*row.patches+' Shells · '+Math.ceil(row.seconds/60)+' min per harvest.':row.short?'Already growing enough. Harvest when ready.':'Enough stocked for this goal.';const use=document.createElement('small');use.textContent='For '+row.usedBy.join(', ');body.append(name,detail,action,use);card.append(body);overview.append(card);}content.append(overview);
@@ -321,16 +323,24 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    }
    const cv=panel.querySelector('canvas');cv.onclick=e=>{if(equipOpen){closeEquipPopup();return;}if(tab){tab=null;render();return;}const b=cv.getBoundingClientRect(),fit=layout.k||b.width/720,x=(e.clientX-b.left)/fit+layout.cx0,y=(e.clientY-b.top)/fit-layout.offset;if(view==='inside'){const hot=CoveCafeScene.hotspots,hit=h=>h&&x>h.x&&x<h.x+h.w&&y>h.y&&y<h.y+h.h,pr=panel.getBoundingClientRect(),ax=e.clientX-pr.left,ay=e.clientY-pr.top;if(s.unlocked&&hit(hot&&hot.machine)){equipPopup('speed',ax,ay);return;}if(s.unlocked&&hit(hot&&hot.cookware)){equipPopup('cookware',ax,ay);return;}if(s.unlocked&&hit(hot&&hot.beans)){equipPopup('ing:coffee',ax,ay);return;}if(s.unlocked)for(const key of ['coffee','catmint','honey'])if(hit(hot&&hot['jar_'+key])){equipPopup('ing:'+key,ax,ay);return;}const cupY=CoveCafeScene.cupY||280;if(s.unlocked&&x>170&&x<525&&y>cupY-15&&y<cupY+100){tab='menu';workshop=true;recipeResult=null;render();}return;}if(x>190&&x<530&&y>100&&y<235){view='inside';render();}else if(x>25&&x<120&&y>270&&y<350){panel.querySelector('.cc-sale')?.remove();const hello=document.createElement('div');hello.className='cc-sale';hello.setAttribute('role','status');hello.textContent=['This seat has excellent purr acoustics.','Stay a little. The sea isn’t going anywhere.','A quiet bench. Very important cat business.'][Math.floor(Date.now()/1000)%3];panel.append(hello);setTimeout(()=>hello.remove(),4500);}};
    panel.onkeydown=e=>{if(e.key==='Escape'){if(tab){tab=null;render();}else panel.querySelector('[data-close]').click();}};
-   (panel.querySelector('.cc-tabs')||panel.querySelector('.cc-top')).insertAdjacentHTML('afterend','<p class="cc-visit-hint">'+(view==='outside'?'Tap the window to step inside':'Tap the counter to make a drink, or tap the machine, kettle or a jar to upgrade or restock.')+'</p>');
+   (panel.querySelector('.cc-tabs')||panel.querySelector('.cc-top')).insertAdjacentHTML('afterend','<p class="cc-visit-hint">'+(view==='outside'?'Tap the window to step inside':'Your cats do the serving. My menu chooses what they make.')+'</p>');
    drawGuide();
    {const box=panel.querySelector('.cc-content');if(box&&tab&&lastTab===tab)box.scrollTop=prevScroll;lastTab=tab;
     if(fname){const again=[...panel.querySelectorAll('['+fname+']')].find(x=>x.getAttribute(fname)===fv);if(again)try{again.focus({preventScroll:true});}catch(e){}}}
    const renderedServed=s.served,renderedOpen=s.open,renderedPending=s.pending?.at;status();frame=requestAnimationFrame(paint);timer=setInterval(()=>{if(panel.hidden||!panel.isConnected){clearInterval(timer);cancelAnimationFrame(frame);return;}const before=s.served;E.settle(g,Date.now());if(s.served!==renderedServed){tasteReaction();a.save();a.hud();floats.push({t0:performance.now(),text:'+'+(s.lastCompleted?.price||0)});a.sfx?.('collect');a.sfx?.('cafe-mood',null,{mood:s.lastCompleted?.reaction?.mood});render();const notice=document.createElement('div');notice.className='cc-sale';notice.setAttribute('role','status');const sold=E.recipes.find(r=>r.id===s.lastCompleted?.id);notice.textContent=sold?E.displayName(s,sold)+' · +'+(s.lastCompleted.price||E.price(s,sold))+' Shells — '+(s.lastCompleted.reaction?.text||s.lastCompleted.response?.text||'A happy little moment.'):'An order enjoyed · Shells added';panel.append(notice);setTimeout(()=>notice.remove(),4000);}else if(s.pending&&s.pending.at!==renderedPending){a.sfx?.('cafe-ding');a.save();render();}else if(s.open!==renderedOpen){a.save();render();}else status();},1000);
   }
-  function status(){const el=panel.querySelector('.cc-status');if(!el)return;const rs=E.rush(Date.now()),n=Math.max(0,Math.ceil((s.cursor+E.interval(s,s.cursor)-Date.now())/1000)),rt=rs.next?new Date(rs.next).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';el.classList.toggle('cc-rush',!!(s.unlocked&&s.open&&rs.active));el.textContent=!s.unlocked?'A tiny place for your next big idea.':s.pending?'Brewing '+E.displayName(s,E.recipes.find(r=>r.id===s.pending.id))+' · ready in '+Math.max(0,Math.ceil((s.pending.at-Date.now())/1000))+'s':!s.menu.length?'Create a drink and add it to your menu before opening.':!s.open?(s.closedReason==='ingredients'?'Closed · out of ingredients. Get ingredients below, or harvest them in the Garden.':'Ready when you are · tap Closed above to open.'):!E.available(s,g.homestead.stock).length?'Taking a nap · stock an ingredient or add a drink to the menu.':(rs.active?'Rush hour! · ':'Open · ')+`next guest in ${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`+(!rs.active&&rt?` · rush at ${rt}`:'');
-   // A plain countdown number is easy to miss mid-glance; a filling bar (like the one on the
-   // Sales tab's daily goal) reads at a glance as "still cooking" without having to read text.
-   const bar=panel.querySelector('.cc-brew-bar');if(bar){if(s.pending){const pct=Math.round(Math.min(1,Math.max(0,1-(s.pending.at-Date.now())/30000))*100);bar.hidden=false;bar.setAttribute('aria-valuenow',String(pct));bar.querySelector('i').style.width=pct+'%';}else bar.hidden=true;}}
+  function status(){
+   const el=panel.querySelector('.cc-status');if(!el)return;
+   const now=Date.now(),pending=s.pending,seconds=pending?Math.max(0,Math.ceil((pending.at-now)/1000)):0;
+   const completed=s.lastCompleted&&now-s.lastCompleted.at<7000;
+   const n=Math.max(0,Math.ceil((s.cursor+E.interval(s,s.cursor)-now)/1000));
+   el.textContent=pending?(seconds>6?'Making ':'Serving ')+E.displayName(s,E.recipes.find(r=>r.id===pending.id))+' · '+seconds+'s':completed?'Order served · Shells earned!':!s.menu.length?'Make a recipe, then Save & sell.':!s.open?(s.closedReason==='ingredients'?'Out of ingredients · closed for now.':'Ready? Tap Closed above to open.'):'Cats serve automatically · next order in '+Math.floor(n/60)+':'+String(n%60).padStart(2,'0');
+   const bar=panel.querySelector('.cc-brew-bar');if(!bar)return;
+   bar.hidden=!pending&&!completed;
+   const pct=pending?Math.round(Math.min(1,Math.max(0,1-(pending.at-now)/30000))*100):100;
+   bar.setAttribute('aria-valuenow',String(pct));bar.setAttribute('aria-valuetext',pending?(seconds>6?'Making':'Serving')+', '+seconds+' seconds left':'Order served');
+   bar.querySelector('i').style.width=pct+'%';
+  }
   function cup(id){if(id==='bites')return '<svg viewBox="0 0 60 64" aria-label="Garden bites"><ellipse cx="30" cy="47" rx="28" ry="10" fill="#ddd0ad"/><circle cx="20" cy="35" r="12" fill="#c78e55"/><circle cx="39" cy="38" r="12" fill="#d6a366"/><path d="m14 31 10 7m10-5 8 9" stroke="#a77149" stroke-width="3"/></svg>';return `<svg viewBox="0 0 60 64" aria-hidden="true"><path d="M42 24h8q12 15-8 19" fill="none" stroke="#ae8761" stroke-width="5"/><path d="M10 20h34v26q-17 15-34 0Z" fill="${id==='tea'?'#8fa783':id==='midknight'?'#d0ad6b':'#e5cfa8'}"/><ellipse cx="27" cy="21" rx="17" ry="5" fill="#74523d"/><path d="M22 13q-7-6 0-11m12 11q-7-6 0-11" fill="none" stroke="#adbaa0" stroke-width="2"/></svg>`;}
   function paint(t){
    if(panel.hidden||!panel.isConnected)return;frame=requestAnimationFrame(paint);if(document.hidden||t-last<33)return;last=t;
@@ -349,7 +359,14 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    // scene (it's absolutely positioned), so the room can just stay put at its normal size; the
    // drawer covers the lower counter while it's open, same as it always visually sat on top.
    if(sideSheet&&availW<bounds.width){css=Math.min(css,view==='inside'?availW/720:availW/380);view720=bounds.width/css;vh=bounds.height/css;cx0=360-(availW/2)/css;}   // a docked sheet: the outside scene keeps its size and pans into the space the sheet leaves; the room (its counter runs edge to edge) fits the space
-   let bandPx=380*css,isIn=view==='inside',offset=isIn?Math.max(0,top/css):Math.max(0,Math.min(vh-380,((top+Math.max(top+bandPx,bottomEdge))/2-bandPx/2)/css)),band=isIn?Math.max(380,(Math.max(bottomEdge,top+120)-top)/css):undefined;
+   // Fit a complete counter composition, not a width-scaled crop. Mobile drawers overlay
+   // the stable room; opening a sheet must not squeeze the window and furniture.
+   if(view==='inside'){
+    const floor=lower&&lower.offsetParent?lower.getBoundingClientRect().top-bounds.top:bounds.height;
+    css=Math.min(availW/720,Math.max(180,floor-top)/560,1.5);
+    view720=bounds.width/css;vh=bounds.height/css;cx0=360-(availW/2)/css;
+   }
+   let bandPx=380*css,isIn=view==='inside',offset=isIn?Math.max(0,top/css):Math.max(0,Math.min(vh-380,((top+Math.max(top+bandPx,bottomEdge))/2-bandPx/2)/css)),band=isIn?Math.max(560,((lower&&lower.offsetParent?lower.getBoundingClientRect().top-bounds.top:bounds.height)-top)/css):undefined;
    {const key=view+bounds.width+'x'+bounds.height,dtc=camT&&t-camT<400?Math.min(.1,(t-camT)/1000):1,ease=dtc>=1||!cam||camKey!==key||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?1:1-Math.exp(-dtc*11);camT=t;camKey=key;const tg={css,cx0,offset,band:band===undefined?0:band};if(ease>=1)cam=tg;else for(const q in tg)cam[q]+=(tg[q]-cam[q])*ease;css=cam.css;cx0=cam.cx0;offset=cam.offset;if(isIn)band=cam.band;view720=bounds.width/css;vh=bounds.height/css;}   // ease the camera so a tab opening glides instead of jumping
    layout={k:css,cx0,offset};
    const ctx=canvas.getContext('2d'),k=Math.round(720*(pw/view720))/720,tx=Math.round(-cx0*k);ctx.setTransform(k,0,0,k,tx,0);   // whole-pixel scene edges: a fractional edge blends the haze layer twice and draws a thin line
