@@ -7645,6 +7645,12 @@ function nextAction() {
   if (!G.tutorialDone) return null;                       // the opening flow speaks for itself
   if (restMode || _vig || scrim.classList.contains("on")) return null;
   if (!panels || !panels.shop) return null;
+  const settlingIn=G.coldCompletedAt?Date.now()-G.coldCompletedAt:Infinity;
+  if(settlingIn<300000){
+    if(settlingIn<45000)return {t:"Pet your cats. Gather glowing Shells. New friends will wander in."};
+    if(checkinAvailable())return {t:"A free daily welcome is waiting in your Journal.",go:"See my gift",act:()=>togglePanel("today")};
+    return {t:"Stay with your cats, or try a little game whenever you like.",go:"Activities",act:()=>neoOpenExplore()};
+  }
   if (!G.littleHelloSeen && performance.now()>30000 && performance.now()>=neoHelloUntil && !_placing && !_arranging && cats.some(c=>!c.visitor&&!c.sick&&c.state!=="sleeping"))
     return {t:"Tap an empty patch near the bottom a few times. Someone might come say hello."};
   // Let new players meet their cats before optional projects compete for attention.
@@ -8153,7 +8159,7 @@ function openSound() {
 }
 
 /* ---------- the cold open — Midknight shows you the cove ----------
-   Two short beats, ~90s, played not read. The band (#hint) carries one line
+   Four short beats, played not read. The band (#hint) carries one line
    of Midknight's voice + the cue for the control you actually tap. The five
    things this used to explain in panels (spend / Today / explore / rainy days
    / catnip) now surface as contextual hints the moment they matter. The "?"
@@ -8202,26 +8208,10 @@ const COLD = [
   },
   { // 4 — discover the personal collection through the real button
     say: "Every cat has a little story. Let's find your new friend.",
-    cue: "Open Catdex below. Tap a portrait whenever you want to know more.",
+    cue: "Open Catdex, take a look, then close it to return to your cats.",
     label:"Open Catdex",go:()=>togglePanel("dex"),
     arm() { _coldTarget=null; },
-    test() { return !panels.dex.hidden; },
-  },
-  { // 5 — show where rewards and memories live, without forcing a claim
-    say: "Journal keeps your little moments and daily welcome together.",
-    cue: "Open Journal.",
-    label:"Open Journal",go:()=>togglePanel("today"),
-    arm() { _coldTarget=null; },
-    test() { return !panels.today.hidden; },
-  },
-  { // 6 — the two nav buttons the tutorial never otherwise reaches. Shop only gets
-    // a mention in the closing toast (not its own guided tap) — a fresh player has
-    // nowhere near enough Shells yet for anything in it to feel like a real payoff.
-    say: "There's more to the cove than the yard — a café, a garden, games, even a wishing well.",
-    cue: "Open Activities below. Some of what's waiting is rarer than it looks.",
-    label:"Open Activities",go:()=>neoOpenExplore(),
-    arm() { _coldTarget=null; },
-    test() { return !panels.explore.hidden; },
+    test(s) { if(!panels.dex.hidden)s.sawDex=true;return !!s.sawDex&&panels.dex.hidden; },
   },
 ];
 
@@ -8243,7 +8233,7 @@ function coldTick() {
   const go = document.getElementById("hintGo");
   const x = document.getElementById("hintX");
   const modalUp = document.getElementById("scrim").classList.contains("on");
-  if (modalUp) { band.hidden = true; return true; }   // a reveal is showing — wait for it
+  if (modalUp) { band.hidden = true; _cold.shownKey=null; return true; }   // repaint guidance after a reveal closes
 
   let step = COLD[_cold.i];
   if (!step) { endColdOpen(false); return false; }
@@ -8293,14 +8283,14 @@ function endColdOpen(skipped) {
   G.tutorialDone = true;
   G.coldCompletedAt = Date.now();
   G.coldStep = COLD.length;
-  if(skipped)closeAllPanels();
+  closeAllPanels();
   sfx("coax");
   if (!(G.moments || []).some(m => m.kind === "tale"))
     logMoment("🐾", "Midknight decided you could stay. He went back to his spot by the sign — the cove's yours to look after now.", "tale");   // Phase C picks this thread up
   visitorTimer = rand(45, 90);   // a third cat wanders in soon after the intro — "oh, they just turn up"
   save();
   // an honest reason to come back — the things that really change overnight
-  setTimeout(() => toast("You’re home. Tap a cat to get to know them, and visit Shop whenever you’re ready to spend your Shells.", 6), 500);
+  setTimeout(() => toast("You’re home. Pet your cats and gather Shells. Activities is there whenever you feel like a little adventure.", 6), 500);
   setTimeout(() => { try { checkOffline(afterReturn); } catch (e) {} }, 700);
   setTimeout(() => { try { maybePanHint(); } catch (e) {} }, 3200);
   syncHud();
@@ -21824,7 +21814,8 @@ function showAnalyticsAsk() {
 function analyticsAskTick() {
   if (!analyticsAskDue()) return;
   if (_cold || festMode || restMode || _placing || _arranging || anyPanelOpen() || scrim.classList.contains("on") || document.hidden) return;
-  if (!G.tutorialDone || (Date.now() - (window._sessionStart || 0)) < 40000) return;   // never over the first minutes, the tutorial or a game
+  if (!G.tutorialDone || (Date.now() - (window._sessionStart || 0)) < 300000 ||
+      (G.coldCompletedAt && Date.now() - G.coldCompletedAt < 300000)) return; // protect the first five minutes from optional prompts
   showAnalyticsAsk();
 }
 window._sessionStart = Date.now();
@@ -22204,7 +22195,7 @@ if (G.rest && G.rest.on) {
     if (titleLeaving || title.hidden || document.hidden ||
         (event && event.target instanceof Element && event.target.closest("#ts-go"))) return;
     const sound = G.sound || { on: true, cats: 1 };
-    titlePurr.volume = sound.on === false ? 0 : .32 * Math.max(0, Math.min(1, sound.cats ?? 1));
+    titlePurr.volume = sound.on === false ? 0 : .8 * Math.max(0, Math.min(1, sound.cats ?? 1));
     if (titlePurr.volume > 0) titlePurr.play().catch(() => {});
   }
   function titleVisibility() {
