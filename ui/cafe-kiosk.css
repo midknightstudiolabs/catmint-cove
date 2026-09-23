@@ -240,3 +240,72 @@
 #app #cafe-kiosk.cc-v2 .cc-help-topic .btn{margin-bottom:14px}
 #app #cafe-kiosk.cc-v2 [data-help-tour]{margin-top:18px;min-height:44px}
 #app #cafe-kiosk.cc-v2 .cc-pantry-plan>summary{cursor:pointer;min-height:44px;padding:12px 0;box-sizing:border-box;font-weight:600;color:#3f6047}
+
+/* A calm default: one status and next action. Details remain under Show more. */
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-pips,
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-sales-link{display:none}
+#app #cafe-kiosk.cc-v2 .cc-live.compact{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;padding:8px 14px}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-name{display:none}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-live-row{grid-column:1/-1;min-width:0;gap:8px}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-more{margin-left:auto}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-status,
+#app #cafe-kiosk.cc-v2 .cc-live.compact:has(.cc-cta) .cc-status{display:block;white-space:normal;font-size:13px;line-height:1.4;margin:0;align-self:center}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-cta-row{grid-column:2;grid-row:2}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-cta{min-height:44px;max-width:190px;white-space:normal;line-height:1.2}
+#app #cafe-kiosk.cc-v2 .cc-brew-bar{grid-column:1/-1;flex-basis:100%;height:8px;width:100%;border-radius:4px;background:#dce3cd;overflow:hidden}
+#app #cafe-kiosk.cc-v2 .cc-brew-bar[hidden]{display:none}
+#app #cafe-kiosk.cc-v2 .cc-brew-bar i{display:block;height:100%;background:#5a8861;border-radius:inherit;transition:width 1s linear}
+#app #cafe-kiosk.cc-v2 .cc-visit-hint{max-width:calc(100% - 32px);text-align:center}
+@media(max-width:480px){
+ #app #cafe-kiosk.cc-v2 .cc-live.compact{padding:8px 10px;gap:5px 8px}
+ #app #cafe-kiosk.cc-v2 .cc-live.compact .cc-cta{max-width:138px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){#app #cafe-kiosk.cc-v2 .cc-brew-bar i{transition:none}}
+#neo-homestead.neo-garden-screen .gh-end{width:auto;flex:0 0 auto}
+#neo-homestead.neo-garden-screen .gh-end .btn{min-height:44px;padding:8px 12px;font-size:13px;white-space:nowrap}
+#neo-homestead.neo-garden-screen .garden-loop{margin:0 0 12px;color:#52664e;font-size:14px;line-height:1.5}
+#neo-homestead.neo-garden-screen .gh-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+#neo-homestead.neo-garden-screen .garden-add-patch{display:block;margin:16px auto 8px;min-height:48px;padding:12px 22px;border-radius:14px;max-width:100%;white-space:normal}
+#neo-homestead.neo-garden-screen .gh-content>details>summary{cursor:pointer;padding:16px 0;min-height:44px;font-weight:600;color:#476b50}
+@media(max-width:380px){
+ #app #cafe-kiosk.cc-v2 .cc-head{display:grid;grid-template-columns:1fr auto;height:auto;padding:3px 6px;gap:2px 8px}
+ #app #cafe-kiosk.cc-v2 .cc-head .cc-back{justify-self:start;min-height:44px}
+ #app #cafe-kiosk.cc-v2 .cc-head-end{grid-column:2;grid-row:1}
+ #app #cafe-kiosk.cc-v2 .cc-head .cc-switch{grid-column:1/-1;grid-row:2;max-width:none!important;flex-wrap:nowrap}
+ #app #cafe-kiosk.cc-v2 .cc-top .cc-switch button{min-height:44px;font-size:13px}
+}
+
+#app #cafe-kiosk.cc-v2 .cc-pickup-order{position:absolute;z-index:4;width:210px;max-width:calc(100% - 16px);padding:9px 12px;border:1px solid #c5d1b4;border-radius:12px;background:#faf6e8;color:#3e5943;box-shadow:0 3px 9px #263e3026;text-align:center;min-height:64px}
+#app #cafe-kiosk.cc-v2 .cc-pickup-order[hidden]{display:none}
+#app #cafe-kiosk.cc-v2 .cc-pickup-order strong{display:block;font-size:13px;line-height:1.2}
+#app #cafe-kiosk.cc-v2 .cc-pickup-order small{font-size:11px;margin-top:4px}
+#app #cafe-kiosk.cc-v2 .cc-pickup-track{display:block;height:6px;margin-top:7px;background:#dce3cd;border-radius:4px;overflow:hidden}
+#app #cafe-kiosk.cc-v2 .cc-pickup-track i{display:block;height:100%;background:#5b8861;transition:width .5s linear}
+@media(prefers-reduced-motion:reduce){#app #cafe-kiosk.cc-v2 .cc-pickup-track i{transition:none}}
+
+#app #cafe-kiosk.cc-v2 .cc-pickup-track[hidden]{display:none}
+
+#app #cafe-kiosk.cc-v2 .cc-visit-hint:empty,#app #cafe-kiosk.cc-v2 .cc-pickup-order small:empty{display:none}
+#app #cafe-kiosk.cc-v2 .cc-pickup-order{width:150px;min-height:44px;padding:8px 12px;box-shadow:0 2px 6px #263e301a}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-status{display:none}
+#app #cafe-kiosk.cc-v2 .cc-live.compact:has(.cc-cta) .cc-status{display:none}
+
+#app #cafe-kiosk.cc-v2 .cc-pickup-order.boosted{border-color:#bc974f;background:#fff6de}
+#app #cafe-kiosk.cc-v2 .cc-pickup-order.boosted .cc-pickup-track i{background:#be9141}
+#app #cafe-kiosk.cc-v2 .cc-pickup-order.boost-pop{animation:cafe-boost-pop .4s ease-out}
+@keyframes cafe-boost-pop{0%{transform:scale(1)}45%{transform:scale(1.08)}100%{transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){#app #cafe-kiosk.cc-v2 .cc-pickup-order.boost-pop{animation:none}}
+
+#app #cafe-kiosk.cc-v2 .cc-service-progress{pointer-events:none;min-height:0;padding:5px 10px;width:140px;box-shadow:none}
+#app #cafe-kiosk.cc-v2 .cc-service-progress strong{font-size:11px}
+
+/* Order actions stay in the counter fascia, with no attention-grabbing bounce. */
+#app #cafe-kiosk.cc-v2 .cc-pickup-order:not(.cc-service-progress){padding:5px 9px;min-height:44px;border-radius:8px}
+#app #cafe-kiosk.cc-v2 .cc-pickup-order.boost-pop{animation:none}
+
+#app #cafe-kiosk.cc-v2 .cc-cat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+#app #cafe-kiosk.cc-v2 .cc-cat-choice{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;width:100%;min-width:0;min-height:160px;padding:12px 8px;margin:0;border:1px solid #ccd4bd;border-radius:14px;background:#fffaf0;color:#405c45;box-shadow:none;text-align:center}
+#app #cafe-kiosk.cc-v2 .cc-cat-choice[aria-pressed=true]{border:2px solid #487255;background:#e7eedc;color:#30523b}
+#app #cafe-kiosk.cc-v2 .cc-cat-choice img{position:static;display:block;width:100px;height:90px;max-width:100%;object-fit:contain;transform:none;margin:0;opacity:1}
+#app #cafe-kiosk.cc-v2 .cc-cat-choice strong{display:block;width:100%;font-size:15px;line-height:1.3;white-space:normal;overflow-wrap:anywhere}
+#app #cafe-kiosk.cc-v2 .cc-cat-choice small{font-size:12px;line-height:1.4;color:inherit}

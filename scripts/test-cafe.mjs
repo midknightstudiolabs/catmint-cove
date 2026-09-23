@@ -6,14 +6,14 @@ const actual=globalThis.CoveCafeEngine;
 // Service regression fixtures represent established cafes with a menu.
 const E={...actual,unlock(g,now){const ok=actual.unlock(g,now);if(ok){g.cafe.menu=actual.recipes.map(r=>r.id);g.cafe.discovered=[...g.cafe.menu];g.cafe.open=true;}return ok;}};
 const beginner={shells:1000,homestead:{stock:{}}};actual.unlock(beginner,0);assert.equal(beginner.cafe.open,false);assert.equal(beginner.cafe.menu.length,0);actual.settle(beginner,999999);assert.equal(beginner.cafe.served,0);
-const firstStock=beginner.homestead.stock.coffee;assert(actual.experiment(beginner,{coffee:1}).id);assert.equal(beginner.homestead.stock.coffee,firstStock-1);assert(beginner.cafe.discovered.includes('coffee'));assert.equal(beginner.cafe.menu.length,0);
-const honeyBefore=beginner.homestead.stock.honey;assert(!actual.experiment(beginner,{honey:2}).id);assert.equal(beginner.homestead.stock.honey,honeyBefore-2);
-const unchanged=JSON.stringify(beginner.homestead.stock);assert(actual.experiment(beginner,{honey:1}).error);assert.equal(JSON.stringify(beginner.homestead.stock),unchanged);assert(actual.experiment(beginner,{coffee:-1}).error);
+const firstStock=beginner.homestead.stock.coffee;assert(actual.makeRecipe(beginner,'coffee').id);assert.equal(beginner.homestead.stock.coffee,firstStock-1);assert(beginner.cafe.discovered.includes('coffee'));assert.equal(beginner.cafe.menu.length,0);
+const honeyBefore=beginner.homestead.stock.honey;assert(actual.makeRecipe(beginner,'unknown').error);assert.equal(beginner.homestead.stock.honey,honeyBefore);
+const unchanged=JSON.stringify(beginner.homestead.stock);assert(actual.makeRecipe(beginner,'coffee').error);assert.equal(JSON.stringify(beginner.homestead.stock),unchanged);assert(actual.makeRecipe(beginner,'bites').error);
 console.log('PASS: closed empty-menu start, recipe discovery, tasting consumption, failure and insufficient-stock protection.');
 const lessonStock=JSON.stringify(beginner.homestead.stock);assert.equal(actual.lesson(beginner).id,'coffee');assert.equal(JSON.stringify(beginner.homestead.stock),lessonStock);assert(actual.lesson(beginner).error);
 assert(actual.nameRecipe(beginner,'coffee','  My   Cozy Cup  '));assert.equal(actual.displayName(beginner.cafe,actual.recipes[0]),'My Cozy Cup');assert(!actual.nameRecipe(beginner,'coffee','   '));
 assert(!actual.improve(beginner,'coffee'));beginner.cafe.sales.coffee=10;const beforeUpgrade=beginner.shells;assert(actual.improve(beginner,'coffee'));assert.equal(beginner.shells,beforeUpgrade-50);assert.equal(actual.price(beginner.cafe,actual.recipes[0]),14);assert(!actual.improve(beginner,'coffee'));
-actual.acquire(beginner,'carrot',3,2);actual.acquire(beginner,'honey',1,8);assert.equal(actual.experiment(beginner,{carrot:2,honey:1}).id,'bites');assert.equal(beginner.homestead.stock.carrot,1);assert(actual.nameRecipe(beginner,'bites','Garden Nibbles'));const restored=JSON.parse(JSON.stringify(beginner));assert.equal(restored.cafe.recipeNames.bites,'Garden Nibbles');assert.equal(restored.cafe.recipeLevels.coffee,1);
+actual.acquire(beginner,'carrot',3,2);actual.acquire(beginner,'honey',1,8);assert.equal(actual.makeRecipe(beginner,'bites').id,'bites');assert.equal(beginner.homestead.stock.carrot,1);assert(actual.nameRecipe(beginner,'bites','Garden Nibbles'));const restored=JSON.parse(JSON.stringify(beginner));assert.equal(restored.cafe.recipeNames.bites,'Garden Nibbles');assert.equal(restored.cafe.recipeLevels.coffee,1);
 console.log('PASS: one free lesson, naming, food shared stock, recipe improvement gates/prices and save persistence.');
 const finishGame={shells:10000,homestead:{stock:{}}};E.init(finishGame,0);E.unlock(finishGame,0);finishGame.shells=10000;
 assert(E.buyFinish(finishGame,'butter'));assert.equal(finishGame.shells,7500);
@@ -52,3 +52,34 @@ const credited=service.shells;actual.settle(service,1030000);assert.equal(servic
 actual.acquire(service,'coffee',2,0);assert.equal(service.cafe.open,false);assert(actual.setOpen(service,true,1040000));assert.equal(service.cafe.pending,null);actual.setOpen(service,false,1040001);actual.setOpen(service,true,1040002);assert.equal(service.cafe.pending,null);
 service.cafe.menu.push('tea');service.homestead.stock={coffee:0,catmint:2};actual.settle(service,1320000);assert(service.cafe.open);assert.equal(service.cafe.lastCompleted.id,'tea');
 console.log('PASS: prompt first order, automatic completion, stock closure, no double payment, restock/manual reopen, no toggle acceleration, alternate available recipe.');
+
+const assist={shells:1000,homestead:{stock:{}}};actual.unlock(assist,1000000);assist.cafe.menu=['coffee'];actual.setOpen(assist,true,1000000);
+const originalDue=assist.cafe.pending.at;assert(actual.helpOrder(assist,1000001));assert.equal(assist.cafe.pending.at,1000001+Math.ceil((originalDue-1000001)/2));assert(!actual.helpOrder(assist,1000002));
+const resumed=JSON.parse(JSON.stringify(assist));assert(!actual.helpOrder(resumed,1000003));actual.settle(resumed,resumed.cafe.pending.at);assert.equal(resumed.cafe.served,1);const paidOnce=resumed.shells;actual.settle(resumed,originalDue);assert.equal(resumed.shells,paidOnce);
+console.log('PASS: one help per order, half-time boost, reload protection and automatic single payment.');
+
+const direct={shells:1000,homestead:{stock:{}}};actual.unlock(direct,1000000);direct.cafe.menu=['coffee'];actual.setOpen(direct,true,1000000);actual.settle(direct,1030000);
+const beansBefore=direct.homestead.stock.coffee;assert(!actual.takeOrder(direct,1030001));assert(!actual.takeOrder(direct,1034199));assert.equal(direct.homestead.stock.coffee,beansBefore);assert(!direct.cafe.pending);assert(actual.customerReady(direct.cafe,1034200));assert(actual.takeOrder(direct,1034200));assert.equal(direct.homestead.stock.coffee,beansBefore-1);assert(!actual.takeOrder(direct,1030002));assert.equal(direct.homestead.stock.coffee,beansBefore-1);actual.settle(direct,1064200);assert.equal(direct.cafe.served,2);direct.cafe.open=false;assert(!actual.takeOrder(direct,1060002));direct.cafe.open=true;direct.homestead.stock.coffee=0;assert(!actual.takeOrder(direct,1060003));
+console.log('PASS: take order skips idle wait, consumes once, completes automatically, and respects closed/empty stock.');
+
+const combo={shells:1000,homestead:{stock:{}}};actual.unlock(combo,1000000);
+Object.assign(combo.cafe,{menu:['coffee','carrot_crunch'],sequence:2,open:true,pending:null,cursor:1000000});
+combo.homestead.stock={coffee:10,carrot:10};
+assert(actual.takeOrder(combo,1000000));assert.deepEqual(Array.from(combo.cafe.pending.items),['coffee','carrot_crunch']);
+const comboPaid=combo.cafe.pending.price,comboStock=JSON.stringify(combo.homestead.stock),comboShells=combo.shells;
+const comboReload=JSON.parse(JSON.stringify(combo));actual.settle(comboReload,1030000);
+assert.equal(comboReload.shells,comboShells+comboPaid);assert.equal(comboReload.cafe.served,1);
+assert.equal(comboReload.cafe.sales.coffee,1);assert.equal(comboReload.cafe.sales.carrot_crunch,1);
+assert.equal(JSON.stringify(comboReload.homestead.stock),comboStock);actual.settle(comboReload,1030000);assert.equal(comboReload.shells,comboShells+comboPaid);
+combo.cafe.pending=null;combo.cafe.sequence=2;combo.homestead.stock={coffee:10,carrot:0};
+assert(actual.takeOrder(combo,1000000));assert.equal(combo.cafe.pending.items.length,1);
+console.log('PASS: paired order, one customer, both sales, save/reload, no duplicate payment and missing-food fallback.');
+for(const menu of [['tea','carrot_crunch'],['carrot_crunch','tea']]){
+ const teaCombo={shells:1000,homestead:{stock:{}}};actual.unlock(teaCombo,1000000);
+ Object.assign(teaCombo.cafe,{menu,sequence:menu[0]==='tea'?2:5,open:true,pending:null,cursor:1000000});
+ teaCombo.homestead.stock={catmint:2,carrot:2};
+ assert(actual.takeOrder(teaCombo,1000000));
+ assert.deepEqual(Array.from(teaCombo.cafe.pending.items),menu);
+ assert.equal(teaCombo.homestead.stock.catmint,1);assert.equal(teaCombo.homestead.stock.carrot,1);
+}
+console.log('PASS: tea and food mixed orders in either selection order consume both ingredients once.');
