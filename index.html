@@ -1629,7 +1629,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?edit-cove=3&v=27">
+</style><link rel="stylesheet" href="ui/device-fixes.css?edit-cove=3&v=28">
 <style id="neo-theme">
 #atmosphere-preview{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;touch-action:none}
 #atmosphere-preview section{width:min(440px,100%);box-sizing:border-box;padding:18px;background:#faf7ea;color:#395447;border:1px solid #d8ddc7;border-radius:24px;box-shadow:0 8px 32px #243c3426;text-align:center}
@@ -7739,6 +7739,11 @@ function renderHint() {
   }
   document.getElementById("app").classList.toggle("has-hint", !el.hidden);
 }
+// Track the real HUD bottom; phones can wrap it to two rows.
+function neoPositionIntro(){const hud=document.getElementById('hud');if(hud)document.documentElement.style.setProperty('--intro-hud-bottom',Math.ceil(hud.getBoundingClientRect().bottom)+'px');}
+window.addEventListener('resize',neoPositionIntro);
+if(typeof ResizeObserver!=='undefined'){const hud=document.getElementById('hud');if(hud)new ResizeObserver(neoPositionIntro).observe(hud);}
+neoPositionIntro();
 // keep the toast clear of the hint / intro card: publish the card's real height as --hint-h
 try { if (typeof ResizeObserver !== "undefined") { const hh = document.getElementById("hint"), ap = document.getElementById("app"); if (hh && ap) new ResizeObserver(() => ap.style.setProperty("--hint-h", (hh.hidden ? 0 : Math.ceil(hh.getBoundingClientRect().height)) + "px")).observe(hh); } } catch (e) {}
 document.getElementById("hintGo").addEventListener("click", (e) => { e.stopPropagation(); ensureAudio(); const f = e.currentTarget._act; if (f) f(); });
@@ -8363,7 +8368,7 @@ function neoStartTour(welcome=false){
  const shield=document.createElement('div');shield.id='neo-tour-shield';shield.style.cssText='position:fixed;inset:0;z-index:149;touch-action:none';shield.setAttribute('aria-hidden','true');document.body.append(shield);
  let i=0,target=null;const box=document.createElement('aside');box.id='neo-tour';box.setAttribute('role','dialog');box.setAttribute('aria-label','Quick Cove guide');document.body.append(box);
  const finish=()=>{target?.classList.remove('neo-tour-target');window.removeEventListener('resize',position);document.removeEventListener('scroll',position,true);box.remove();shield.remove();neoTourCleanup=null;if(welcome){G.welcomeTourSeen=true;G.welcomeTourEndedAt=Date.now();save();toast('Make yourself at home. A curious friend may drop by soon.',4);}document.querySelector('#helpBtn')?.focus({preventScroll:true});};
- const position=()=>{if(!target||!box.isConnected)return;const r=target.getBoundingClientRect();box.style.width=Math.min(340,innerWidth-24)+'px';box.style.maxHeight=Math.max(120,r.top-24)+'px';box.style.left=Math.max(12,Math.min(innerWidth-box.offsetWidth-12,r.left+r.width/2-box.offsetWidth/2))+'px';box.style.top=Math.max(12,r.top-box.offsetHeight-12)+'px';box.style.bottom='auto';};
+ const position=()=>{if(!target||!box.isConnected)return;const r=target.getBoundingClientRect();if(innerWidth<=600||innerHeight<=500){const top=Math.ceil(document.getElementById('hud').getBoundingClientRect().bottom)+8;box.style.width=Math.min(340,innerWidth-24)+'px';box.style.maxHeight=Math.max(100,Math.min(innerHeight*.36,r.top-top-16))+'px';box.style.left=Math.max(12,(innerWidth-box.offsetWidth)/2)+'px';box.style.top=top+'px';box.style.bottom='auto';return;}box.style.width=Math.min(340,innerWidth-24)+'px';box.style.maxHeight=Math.max(120,r.top-24)+'px';box.style.left=Math.max(12,Math.min(innerWidth-box.offsetWidth-12,r.left+r.width/2-box.offsetWidth/2))+'px';box.style.top=Math.max(12,r.top-box.offsetHeight-12)+'px';box.style.bottom='auto';};
  const show=()=>{target?.classList.remove('neo-tour-target');target=document.querySelector(steps[i][2]);target?.classList.add('neo-tour-target');box.innerHTML='<small>Your Cove · '+(i+1)+' of '+steps.length+'</small><b>'+steps[i][0]+'</b><p>'+steps[i][1]+'</p><div><button class="btn" id="tourSkip">Skip tour</button><button class="btn primary" id="tourNext">'+(i===steps.length-1?'Let’s play':'Next')+'</button></div>';box.querySelector('#tourSkip').onclick=finish;box.querySelector('#tourNext').onclick=()=>{if(++i===steps.length)finish();else show();};requestAnimationFrame(position);box.querySelector('#tourNext').focus({preventScroll:true});};
  box.onkeydown=e=>{if(e.key==='Escape')finish();};
  neoTourCleanup=finish;window.addEventListener('resize',position);document.addEventListener('scroll',position,true);show();
