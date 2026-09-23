@@ -57,3 +57,7 @@ const assist={shells:1000,homestead:{stock:{}}};actual.unlock(assist,1000000);as
 const originalDue=assist.cafe.pending.at;assert(actual.helpOrder(assist,1000001));assert.equal(assist.cafe.pending.at,originalDue-10000);assert(!actual.helpOrder(assist,1000002));
 const resumed=JSON.parse(JSON.stringify(assist));assert(!actual.helpOrder(resumed,1000003));actual.settle(resumed,originalDue-10000);assert.equal(resumed.cafe.served,1);const paidOnce=resumed.shells;actual.settle(resumed,originalDue);assert.equal(resumed.shells,paidOnce);
 console.log('PASS: one help per order, ten-second bonus, reload protection and automatic single payment.');
+
+const direct={shells:1000,homestead:{stock:{}}};actual.unlock(direct,1000000);direct.cafe.menu=['coffee'];actual.setOpen(direct,true,1000000);actual.settle(direct,1030000);
+const beansBefore=direct.homestead.stock.coffee;assert(actual.takeOrder(direct,1030001));assert.equal(direct.homestead.stock.coffee,beansBefore-1);assert(!actual.takeOrder(direct,1030002));assert.equal(direct.homestead.stock.coffee,beansBefore-1);actual.settle(direct,1060001);assert.equal(direct.cafe.served,2);direct.cafe.open=false;assert(!actual.takeOrder(direct,1060002));direct.cafe.open=true;direct.homestead.stock.coffee=0;assert(!actual.takeOrder(direct,1060003));
+console.log('PASS: take order skips idle wait, consumes once, completes automatically, and respects closed/empty stock.');

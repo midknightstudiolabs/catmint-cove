@@ -282,3 +282,5 @@
 #app #cafe-kiosk.cc-v2 .cc-pickup-track{display:block;height:6px;margin-top:7px;background:#dce3cd;border-radius:4px;overflow:hidden}
 #app #cafe-kiosk.cc-v2 .cc-pickup-track i{display:block;height:100%;background:#5b8861;transition:width .5s linear}
 @media(prefers-reduced-motion:reduce){#app #cafe-kiosk.cc-v2 .cc-pickup-track i{transition:none}}
+
+#app #cafe-kiosk.cc-v2 .cc-pickup-track[hidden]{display:none}

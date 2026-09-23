@@ -326,7 +326,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    (panel.querySelector('.cc-tabs')||panel.querySelector('.cc-top')).insertAdjacentHTML('afterend','<p class="cc-visit-hint">'+(view==='outside'?'Tap the window to step inside':'Your cats do the serving. My menu chooses what they make.')+'</p>');
    const pickup=document.createElement('button');pickup.type='button';pickup.className='cc-pickup-order';pickup.hidden=true;
    pickup.innerHTML='<strong></strong><span class="cc-pickup-track" role="progressbar" aria-label="Order progress" aria-valuemin="0" aria-valuemax="100"><i></i></span><small></small>';
-   pickup.onclick=()=>{if(E.helpOrder(g,Date.now())){a.save();render();}};panel.append(pickup);
+   pickup.onclick=()=>{if(s.pending?E.helpOrder(g,Date.now()):E.takeOrder(g,Date.now())){a.save();render();}};panel.append(pickup);
    drawGuide();
    {const box=panel.querySelector('.cc-content');if(box&&tab&&lastTab===tab)box.scrollTop=prevScroll;lastTab=tab;
     if(fname){const again=[...panel.querySelectorAll('['+fname+']')].find(x=>x.getAttribute(fname)===fv);if(again)try{again.focus({preventScroll:true});}catch(e){}}}
@@ -338,8 +338,10 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    el.textContent=!s.menu.length?'Make a recipe, then Save & sell.':!s.open?(s.closedReason==='ingredients'?'Out of ingredients · closed for now.':'Ready? Tap Closed above to open.'):'Your cats cook and serve automatically.';
    const bar=panel.querySelector('.cc-brew-bar');if(bar)bar.hidden=true;
    const pickup=panel.querySelector('.cc-pickup-order');if(!pickup)return;
-   pickup.hidden=!pending||!!tab||!!equipOpen;
-   if(!pending)return;
+   const canTake=s.open&&E.available(s,g.homestead.stock).length>0;
+   pickup.hidden=(!pending&&!canTake)||!!tab||!!equipOpen;
+   pickup.querySelector('.cc-pickup-track').hidden=!pending;
+   if(!pending){pickup.setAttribute('aria-disabled','false');pickup.querySelector('strong').textContent='Take order';const wait=Math.max(0,Math.ceil((s.cursor+E.interval(s,s.cursor)-now)/1000));pickup.querySelector('small').textContent='Tap now · auto-start in '+Math.floor(wait/60)+':'+String(wait%60).padStart(2,'0');return;}
    const recipe=E.recipes.find(r=>r.id===pending.id),pct=Math.round(Math.min(1,Math.max(0,1-(pending.at-now)/30000))*100);
    pickup.querySelector('strong').textContent=(pending.id==='bites'?'Cooking ':'Brewing ')+E.displayName(s,recipe);
    pickup.querySelector('small').textContent=pending.helped?'Thanks! Serving soon.':'Tap to help · 10s faster';
