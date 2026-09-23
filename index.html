@@ -8328,7 +8328,7 @@ const HELP_TOPICS=[
  ['Explore & play','activities',['Activities holds the Cove Festival (Cove Race, Cove Volleyball and Tug of Paws), Adventures, Catmint Café, the Cove Garden, Little Matches, Cove Friends and the Rainy Retreat.','Each festival game shows how many cats it needs. In the Cove Race you can choose a Sprint (50 m), a Cove Run (100 m) or a Long Haul (200 m); longer runs take longer and pay for the time you spend. Inside a game, the bottom bar takes you back to the Festival or to the Cove.','Rainy Retreat is a quiet place to rest together.'],'explore'],
  ['Cove Garden','garden',['Tap an empty patch and choose seeds. The price is shown before planting.','Tap a growing crop to water it once and shorten its wait. Tap a ripe crop to harvest. Crops wait safely for you.','Harvests go straight into the shared café pantry. Stock and What my café needs are in the garden view.','Add a patch in the field when you want more space. Sell spare harvests only when you want to spare the ingredients.'],'explore'],
  ['Catmint Café: the full guide','cafe',['Start in Activities. Follow the café’s own ? guide for your first recipe.','My menu holds recipes you can unlock, name and put on sale. Stocked menu items are served automatically while the café is open.','At the counter, drinks brew in the brewer and food cooks in the cookware. The progress bar shows what is happening; tap its boost to help once.','Buy missing stock in Ingredients, or grow it in Cove Garden. If there is nothing stocked to serve, refill before reopening.','Use the Open / Closed switch to control service. Tap equipment to see its upgrades; Improve café is on the storefront.'],'explore'],
- ['Journal: gifts & memories','journal',['Collect your free daily welcome here. Missing a day does not reset your lovely days.','Keep your cats’ stories, visitor keepsakes and adventure postcards together.','Capture a moment, find Cove Friends, or save a backup through Back up / restore.'],'today'],
+ ['Journal: gifts & memories','journal',['Collect your free daily welcome here. Complete daily tasks, then tap Claim beside each completed task for its reward. Missing a day does not reset your lovely days.','Keep your cats’ stories, visitor keepsakes and adventure postcards together.','Capture a moment, find Cove Friends, or save a backup through Back up / restore.'],'today'],
  ['Adventures & postcards','adventure',['Choose a place, your cats and a trip length. You can watch a trip in Activities, or call the cats home early (they come back with nothing).','Postcards arrive along the way. Every one is kept in the Journal’s Postcard scrapbook, where you can also send one to a friend as a picture.','In the app you can allow one quiet reminder when a trip is over.'],'explore'],
  ['Cove Friends','homecoming',['Friends is optional. You share a friend code, accept invites, visit each other’s Cove and send a gift or a heart.','Only friends you accept can visit, and they see a saved picture of your Cove. Your balances, purchases and save file stay private.','You can block or report anyone from their Cove, and unblock later in Account. Save your private recovery key there before reinstalling, so your friend code comes back.'],'explore'],
  ['Midknight’s Blessing','paw',['An optional subscription that makes tending easier: Harvest all, Feed all, auto-gather and auto-replant, and Tend everything.','Each month brings a moonlit decor piece (the Guardian statue and the Moonlight Swing so far, which cats use) and Moonlight Wings for any cat.','The whole game plays without it. Find it in the Shop or from the Garden. Cancel any time in your store settings.'],'shop'],
@@ -8359,9 +8359,10 @@ function neoStartTour(welcome=false){
  ['Catdex','Meet your cats, discover their personalities, and collect the coats you have seen.','#dexBtn'],
  ['Activities','Play a little game, run your café, grow your garden, or visit a friend. Choose what feels fun.','#neo-activities-nav'],
  ['Shop','Make this place yours with decorations and outfits. Every item shows its price before you buy.','#shopBtn'],
- ['Journal','Your daily gift, keepsakes and stories live here. You can also keep a backup of your Cove.','#todayBtn']];
+ ['Journal','Claim your free daily gift. Complete daily tasks, then tap Claim for their rewards. Your keepsakes, stories and save backup live here too.','#todayBtn']];
+ const shield=document.createElement('div');shield.id='neo-tour-shield';shield.style.cssText='position:fixed;inset:0;z-index:149;touch-action:none';shield.setAttribute('aria-hidden','true');document.body.append(shield);
  let i=0,target=null;const box=document.createElement('aside');box.id='neo-tour';box.setAttribute('role','dialog');box.setAttribute('aria-label','Quick Cove guide');document.body.append(box);
- const finish=()=>{target?.classList.remove('neo-tour-target');window.removeEventListener('resize',position);document.removeEventListener('scroll',position,true);box.remove();neoTourCleanup=null;if(welcome){G.welcomeTourSeen=true;G.welcomeTourEndedAt=Date.now();save();toast('Make yourself at home. A curious friend may drop by soon.',4);}document.querySelector('#helpBtn')?.focus({preventScroll:true});};
+ const finish=()=>{target?.classList.remove('neo-tour-target');window.removeEventListener('resize',position);document.removeEventListener('scroll',position,true);box.remove();shield.remove();neoTourCleanup=null;if(welcome){G.welcomeTourSeen=true;G.welcomeTourEndedAt=Date.now();save();toast('Make yourself at home. A curious friend may drop by soon.',4);}document.querySelector('#helpBtn')?.focus({preventScroll:true});};
  const position=()=>{if(!target||!box.isConnected)return;const r=target.getBoundingClientRect();box.style.width=Math.min(340,innerWidth-24)+'px';box.style.maxHeight=Math.max(120,r.top-24)+'px';box.style.left=Math.max(12,Math.min(innerWidth-box.offsetWidth-12,r.left+r.width/2-box.offsetWidth/2))+'px';box.style.top=Math.max(12,r.top-box.offsetHeight-12)+'px';box.style.bottom='auto';};
  const show=()=>{target?.classList.remove('neo-tour-target');target=document.querySelector(steps[i][2]);target?.classList.add('neo-tour-target');box.innerHTML='<small>Your Cove · '+(i+1)+' of '+steps.length+'</small><b>'+steps[i][0]+'</b><p>'+steps[i][1]+'</p><div><button class="btn" id="tourSkip">Skip tour</button><button class="btn primary" id="tourNext">'+(i===steps.length-1?'Let’s play':'Next')+'</button></div>';box.querySelector('#tourSkip').onclick=finish;box.querySelector('#tourNext').onclick=()=>{if(++i===steps.length)finish();else show();};requestAnimationFrame(position);box.querySelector('#tourNext').focus({preventScroll:true});};
  box.onkeydown=e=>{if(e.key==='Escape')finish();};
@@ -10189,7 +10190,7 @@ function restSeatCats() {
 // anything transient before the cabin comes up — toasts, the cat card, a modal,
 // leftover particles/floaters
 function restClearUI() {
-  closeAllPanels();hidePropCard();tutEl.classList.remove('on');document.getElementById('neo-tour')?.remove();
+  closeAllPanels();hidePropCard();tutEl.classList.remove('on');if(neoTourCleanup)neoTourCleanup();
   document.querySelectorAll('dialog[open]').forEach(d=>{d.dispatchEvent(new Event('cancel',{cancelable:true}));if(d.open)d.close()});
   const hint=document.getElementById('hint');if(hint)hint.hidden=true;
   document.getElementById('app').classList.remove('has-hint');
@@ -21281,6 +21282,7 @@ function neoHelloDialogue(c){
 }
 function neoHelloTap(x,y,sx,sy){
   const now=performance.now();
+  if(_cold||!G.tutorialDone||document.getElementById('neo-tour')||tutEl.classList.contains('on')||scrim.classList.contains('on')){neoHelloCount=0;return;}
   if(!Number.isFinite(sx)||sy<innerHeight*.68||_focus||_placing||_arranging||restMode||festMode||anyPanelOpen()||now<neoHelloUntil||movableAt(x,y))return;
   if(now-neoHelloLast>2500)neoHelloCount=0;
   neoHelloLast=now;
@@ -21293,6 +21295,7 @@ function neoHelloTap(x,y,sx,sy){
   const choices=available.filter(c=>c!==neoHelloPrevious),pool=choices.length?choices:available;
   const c=pool[Math.floor(Math.random()*pool.length)];neoHelloPrevious=c;neoHelloUntil=now+30000;
   const dialogue=neoHelloDialogue(c);G.littleHelloSeen=true;save();hideToast();
+  document.getElementById('hint').hidden=true;_hintCur=null;document.getElementById('app').classList.remove('has-hint');
   const shell=document.createElement('div');shell.className='neo-little-hello';shell.style.animationDuration='6.5s';shell.setAttribute('role','status');shell.setAttribute('aria-live','polite');
   const size=Math.min(300,innerWidth*.68),center=clamp(sx,size/2+12,innerWidth-size/2-12);
   shell.style.width=size+'px';shell.style.left=center+'px';
