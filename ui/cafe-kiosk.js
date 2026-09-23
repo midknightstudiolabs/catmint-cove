@@ -5,7 +5,7 @@
   stopActive();
   const E=root.CoveCafeEngine,g=a.game(),s=E.init(g,Date.now());a.close();
   let panel=document.getElementById('cafe-kiosk');if(!panel){panel=document.createElement('section');panel.id='cafe-kiosk';panel.className='sheet cc-v2';document.getElementById('app').append(panel);a.register(panel);}
-  panel.hidden=false;let previewFinish=null,confirmFinish=null,previewTier=null,confirmShop=false,previewDecor=null,confirmDecor=null;const floats=[];let workshop=false,recipeResult=null,lessonStep=0;let tasting='',previewEquipment=null,displayState=s;let soundNote=0;const SOUND_ICON={music:'<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',rain:'<path d="M7 15a4 4 0 0 1-.5-7.9A5.5 5.5 0 0 1 17 6.5a3.8 3.8 0 0 1 .5 7.5"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',off:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M16 9l5 6M21 9l-5 6"/>'},SOUND_WORD={music:'Café music',rain:'Soft rain',off:'Sound off'};
+  panel.hidden=false;let previewFinish=null,confirmFinish=null,previewTier=null,confirmShop=false,previewDecor=null,confirmDecor=null;const floats=[];let workshop=false,recipeResult=null;let previewEquipment=null,displayState=s;let soundNote=0;const SOUND_ICON={music:'<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',rain:'<path d="M7 15a4 4 0 0 1-.5-7.9A5.5 5.5 0 0 1 17 6.5a3.8 3.8 0 0 1 .5 7.5"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',off:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M16 9l5 6M21 9l-5 6"/>'},SOUND_WORD={music:'Café music',rain:'Soft rain',off:'Sound off'};
 let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}catch(e){return false;}})();let lastTab=null,view='outside',tab=null,layout={k:0,cx0:0,offset:0},frame=0,last=0,timer,cam=null,camT=0,camKey='',edgeCv=[null,null],edgeT=0,edgeSig='';const actors=a.actors();stopActive=()=>{cancelAnimationFrame(frame);clearInterval(timer);for(const cv of edgeCv){if(cv){cv.width=1;cv.height=1;}}const cv=panel.querySelector("canvas");if(cv){cv.width=1;cv.height=1;}stopActive=()=>{};};
   const money=n=>Math.round(n*10)/10;
   const tabName={menu:'My menu',pantry:'Ingredients',upgrades:'Improve café',report:'Sales & happy cats',help:'Café help'};
@@ -23,7 +23,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    // guide proper starts once there is something to make.
    if(!s.unlocked)return;
    let title,text,target,step,stockGuide=false;
-   if(!s.lessonComplete){step=1;title='Make a cup';text=workshop?['Tap Add one coffee bean. This cup is free!','Tap Brew my first cup.','Tap Taste my coffee.'][lessonStep]:'Tap Make your first coffee. We will help you.';target=workshop?'[data-lesson]':'[data-create]';}
+   if(!s.lessonComplete){step=1;title='Make a cup';text=workshop?'Tap Make my first coffee. It’s free!':'Tap Make your first coffee. We will help you.';target=workshop?'[data-lesson]':'[data-create]';}
    else if(recipeResult||!guideNamed){step=2;title='Give it a name';text='Type a fun name. Then tap Save recipe. You can keep the name we picked, too.';target='[data-save-name]';}
    else if(!s.menu.length){step=3;title='Put it on the menu';text='Tap Add to menu beside your drink. This tells the cats what they can order.';target='[data-recipe]';}
    else if(!s.open&&whyClosed()){const wc=whyClosed();step=4;stockGuide=true;title='Stock up first';text=wc.text.replace(' Restock to open your café.','')+' Cats need ingredients before they can serve. Tap Ingredients to buy some, or grow them in the Garden.';target='[data-tab="pantry"]';}
@@ -77,7 +77,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
   // The single best next thing to do, offered as one big button (the way good cozy games avoid a wall of choices).
   function nextAction(){
    if(!s.unlocked)return null;
-   if(!s.lessonComplete)return {label:'Make your first coffee',fn:()=>{tab='menu';view='inside';workshop=true;lessonStep=0;render();}};
+   if(!s.lessonComplete)return {label:'Make your first coffee',fn:()=>{tab='menu';view='inside';workshop=true;render();}};
    if(!s.menu.length)return {label:'Add a drink to your menu',fn:()=>{tab='menu';render();}};
    const why=!s.open?whyClosed():null,rd=ready();
    if(why&&why.keys)return rd.count&&why.keys.some(k=>rd.yields[k]>0)?{label:a.blessing&&a.blessing()?'Harvest all · restock':'Harvest ripe crops',fn:harvestRipe}:{label:'Restock to open',fn:()=>explain(why)};
@@ -162,14 +162,14 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
     panel.querySelector('[data-goal]')?.addEventListener('click',()=>{const id=panel.querySelector('[data-goal]').dataset.goal;view=(id==='speed'||id==='cookware')?'inside':'outside';tab='upgrades';render();});
     if(tab==='help'){
      content.innerHTML='<p class="cc-help-intro">Make a drink. Add it to your menu. Open your café. Your cats do the serving.</p><div class="cc-help-topics">'+[
-      ['Make my first drink','Tap My menu, then Make your first coffee. Add a bean, brew, and taste. The practice cup is free.','first','Make a drink'],
+      ['Make my first drink','Tap My menu, then Make your first coffee. It’s one tap and it’s free.','first','Make a drink'],
       ['Start serving','Tap Add to menu on a recipe. Then tap Closed at the top to open. Keep ingredients in stock; cats serve automatically.','menu','Open my menu'],
       ['I ran out of ingredients','Open Ingredients to buy what you need with Shells. Or grow it in Cove Garden, then harvest it into your shared stock.','pantry','Get ingredients'],
       ['Make the café nicer','Open Improve café. Choose Outside for the building and decorations, or Inside for equipment. Preview before buying.','upgrades','See improvements'],
       ['See how we are doing','Sales & happy cats shows your sales and customer reactions. You can find it beside the Shells total.','report','See my results']
      ].map(([title,copy,dest,label])=>'<details class="cc-help-topic" name="cafe-help-topic"><summary>'+title+'</summary><p>'+copy+'</p><button class="btn primary" data-help-go="'+dest+'">'+label+'</button></details>').join('')+'</div><button class="btn" data-help-tour>Guide me step by step</button>';
-     content.querySelectorAll('[data-help-go]').forEach(b=>b.onclick=()=>{const dest=b.dataset.helpGo;tab=dest==='first'?'menu':dest;if(dest==='first'){view='inside';workshop=true;recipeResult=null;lessonStep=0;}render();});
-     content.querySelector('[data-help-tour]').onclick=()=>{guideOn=true;s.guideStarted=true;s.guideDone=false;guideNamed=!!s.recipeNames?.coffee;tab='menu';view='inside';workshop=!s.lessonComplete;recipeResult=null;lessonStep=0;a.save();render();};
+     content.querySelectorAll('[data-help-go]').forEach(b=>b.onclick=()=>{const dest=b.dataset.helpGo;tab=dest==='first'?'menu':dest;if(dest==='first'){view='inside';workshop=true;recipeResult=null;}render();});
+     content.querySelector('[data-help-tour]').onclick=()=>{guideOn=true;s.guideStarted=true;s.guideDone=false;guideNamed=!!s.recipeNames?.coffee;tab='menu';view='inside';workshop=!s.lessonComplete;recipeResult=null;a.save();render();};
      if(a.remindBox){const box=a.remindBox();if(box)content.append(box);}
     }else if(tab==='menu'){
 
@@ -177,7 +177,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
      const garden=()=>{if(guideOn&&s.open){s.guideDone=true;a.save();}stopActive();a.garden();};
      if(!workshop){
       const tiles=E.recipes.filter(r=>s.discovered.includes(r.id)).map(r=>{const level=s.recipeLevels?.[r.id]||0,sales=s.sales[r.id]||0,on=s.menu.includes(r.id),short=Object.entries(r.inputs).some(([k,n])=>(g.homestead.stock[k]||0)<n);const state=on?(short?'Needs ingredients':!s.open?'On menu · open café to serve':'Serving automatically'):'Not serving';return `<article class="cc-card cc-recipe${on?' on':''}"><span class="cc-cup">${cup(r.id)}</span><div class="cc-rbody"><h3>${escape(E.displayName(s,r))}</h3><small>${E.price(s,r)} Shells${E.special&&E.special(s)===r.id?' (today’s special)':''} · ${Object.entries(r.inputs).map(([k,n])=>{const nm=E.ingredients[k].name.toLowerCase();return n+' '+(n===1&&nm.endsWith('s')?nm.slice(0,-1):nm);}).join(' + ')}</small><strong class="cc-recipe-state${on&&short?' warn':''}">${state}</strong></div><button class="btn cc-menu-action" aria-pressed="${on}" aria-label="${on?'Remove':'Add'} ${escape(E.displayName(s,r))} ${on?'from':'to'} menu" data-recipe="${r.id}">${on?'Remove from menu':'Add to menu'}</button>${on&&short?'<button class="btn cc-recipe-restock" data-restock>Get ingredients</button>':''}<details class="cc-recipe-details"><summary>${sales} enjoyed · Level ${level+1}/3</summary><button class="btn" data-name="${r.id}">Rename</button><button class="btn" data-improve="${r.id}" ${level>=2?'disabled':sales<(level+1)*10?'data-why="Serve '+((level+1)*10-sales)+' more of this drink to improve it."':g.shells<(level+1)*50?'data-need="'+(level+1)*50+'"':''}>${level>=2?'Mastered':sales<(level+1)*10?'Serve '+((level+1)*10-sales)+' more to improve':'Improve · '+((level+1)*50)+' Shells · +2 per sale'}</button></details></article>`;}).join('');content.innerHTML=`${s.lessonComplete?`<p>Choose what to sell. Open your café at the top; cats serve automatically while ingredients last.</p>${tiles}<button class="btn cc-new" data-create>+ New recipe</button>`:`<p>Cats serve what is on your menu, while ingredients last.</p><button class="btn primary" data-create>Make your first coffee · free lesson</button>`}<button class="btn" data-garden>Grow ingredients in Cove Garden</button>`;
-      content.querySelector('[data-create]').onclick=()=>{workshop=true;recipeResult=null;lessonStep=0;view='inside';render();};
+      content.querySelector('[data-create]').onclick=()=>{workshop=true;recipeResult=null;view='inside';render();};
       content.querySelectorAll('[data-recipe]').forEach(b=>b.onclick=()=>commit(()=>{const id=b.dataset.recipe;s.menu=s.menu.includes(id)?s.menu.filter(k=>k!==id):[...s.menu,id];if(!s.menu.length)s.open=false;}));
       content.querySelectorAll('[data-restock]').forEach(b=>b.onclick=()=>{tab='pantry';render();});
       content.querySelectorAll('[data-improve]').forEach(b=>b.onclick=()=>commit(()=>E.improve(g,b.dataset.improve)));
@@ -193,15 +193,23 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
        lab.querySelector('input').value=E.displayName(s,recipe);
        lab.querySelector('[data-save-name]').onclick=()=>{const name=lab.querySelector('input').value;if(!name.trim()){lab.querySelector('[role="status"]').textContent='Give your creation a name first.';return;}commit(()=>{E.nameRecipe(g,recipe.id,name);guideNamed=true;workshop=false;recipeResult=null;});};
       }else if(!s.lessonComplete){
-       lab.innerHTML=`<h3>Your first coffee</h3><span class="cc-cup">${cup('coffee')}</span><p>${['Start with one coffee bean. This practice cup is on us.','The bean is ready. Brew it slowly.','A lovely first cup. Taste it and make it yours.'][lessonStep]}</p><button class="btn primary" data-lesson>${['Add one coffee bean','Brew my first cup','Taste my coffee'][lessonStep]}</button><small>Free guided lesson · no pantry ingredients used.</small>`;
-       lab.querySelector('[data-lesson]').onclick=()=>{if(lessonStep<2){lessonStep++;render();}else commit(()=>{const result=E.lesson(g);recipeResult=result.id||null;tasting=result.message||result.error;if(result.id)a.firstBrewOverview?.();});};
+       // One tap, free, always succeeds -- the old version was three separate taps
+       // (add a bean / brew / taste) for what is really one action a beginner expects
+       // to just work the first time.
+       lab.innerHTML=`<span class="cc-cup">${cup('coffee')}</span><h3>Your first coffee</h3><p>It’s free — just to see how it’s done.</p><button class="btn primary" data-lesson>Make my first coffee</button>`;
+       lab.querySelector('[data-lesson]').onclick=()=>commit(()=>{const result=E.lesson(g);recipeResult=result.id||null;if(result.id)a.firstBrewOverview?.();});
       }else{
-       lab.innerHTML='<h3>Try a new recipe</h3><p>Choose a recipe card for guidance, or change the amounts to experiment.</p><div class="cc-recipe-guides">'+E.recipes.map(r=>'<button class="btn" data-guide="'+r.id+'">'+escape(r.name)+'</button>').join('')+'</div>'+Object.entries(E.ingredients).map(([k,v])=>'<label>'+v.name+' · '+(g.homestead.stock[k]||0)+' in pantry<select data-mix="'+k+'"><option>0</option><option>1</option><option>2</option><option>3</option></select></label>').join('')+'<small>Each attempt uses the selected ingredients, including unsuccessful batches.</small><button class="btn primary" data-brew>Make & taste</button><p role="status"></p><button class="btn" data-garden>Grow ingredients in Cove Garden</button>';
-       lab.querySelector('[role="status"]').textContent=tasting;
-       const availability=()=>{const missing=[];let total=0;lab.querySelectorAll('[data-mix]').forEach(el=>{const amount=Number(el.value),have=g.homestead.stock[el.dataset.mix]||0;total+=amount;if(amount>have)missing.push(E.ingredients[el.dataset.mix].name+': need '+amount+', have '+have);});lab.querySelector('[data-brew]').disabled=!total||missing.length>0;lab.querySelector('[role="status"]').textContent=missing.length?'Not enough ingredients — '+missing.join('; ')+'. Harvest in the Garden or buy more in Ingredients.':!total?(tasting||'Choose a recipe or ingredients first.'):'Ingredients ready. You can make this batch.';};
-       lab.querySelectorAll('[data-mix]').forEach(el=>el.onchange=availability);
-       lab.querySelectorAll('[data-guide]').forEach(b=>b.onclick=()=>{const r=E.recipes.find(r=>r.id===b.dataset.guide);lab.querySelectorAll('[data-mix]').forEach(el=>el.value=String(r.inputs[el.dataset.mix]||0));availability();});availability();
-       lab.querySelector('[data-brew]').onclick=()=>{const mix={};lab.querySelectorAll('[data-mix]').forEach(el=>mix[el.dataset.mix]=Number(el.value));commit(()=>{const result=E.experiment(g,mix);tasting=result.error||result.message;recipeResult=result.id||null;});};
+       // Picking ingredient amounts and guessing a match used to be the way to learn a
+       // new drink -- real recipes were never actually secret, so the guessing added
+       // confusion without adding a real choice. Tap the drink you want instead.
+       const undiscovered=E.recipes.filter(r=>!s.discovered.includes(r.id));
+       const cards=undiscovered.map(r=>{
+        const short=Object.entries(r.inputs).find(([k,n])=>(g.homestead.stock[k]||0)<n);
+        const need=Object.entries(r.inputs).map(([k,n])=>n+' '+E.ingredients[k].name.toLowerCase()).join(' + ');
+        return `<article class="cc-card cc-recipe-pick"><span class="cc-cup">${cup(r.id)}</span><div class="cc-rbody"><h3>${escape(r.name)}</h3><small>${escape(r.note||'')}</small><small>Needs ${need}</small></div><button class="btn primary" data-make="${r.id}" ${short?'disabled':''}>${short?'Need '+E.ingredients[short[0]].name.toLowerCase():'Make it!'}</button></article>`;
+       }).join('');
+       lab.innerHTML='<h3>Make a new drink</h3><p>Tap one to make it.</p>'+(cards||'<p class="garden-ok">You’ve made every drink! Nothing new to try right now.</p>')+'<button class="btn" data-garden>Grow ingredients in Cove Garden</button>';
+       lab.querySelectorAll('[data-make]').forEach(b=>b.onclick=()=>commit(()=>{const result=E.makeRecipe(g,b.dataset.make);recipeResult=result.id||null;if(result.error)explain({text:result.error});}));
        lab.querySelector('[data-garden]').onclick=garden;
       }
      }
@@ -272,7 +280,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
     drawer.insertAdjacentHTML('afterbegin','<div class="cc-drawer-head"><h3>'+(tabName[tab]||tab)+'</h3>'+(showClose?'<button class="btn" data-dismiss>Close</button>':'')+'</div>');
     drawer.querySelector('[data-dismiss]')?.addEventListener('click',()=>{tab=null;render();});
    }
-   const cv=panel.querySelector('canvas');cv.onclick=e=>{if(tab){tab=null;render();return;}const b=cv.getBoundingClientRect(),fit=layout.k||b.width/720,x=(e.clientX-b.left)/fit+layout.cx0,y=(e.clientY-b.top)/fit-layout.offset;if(view==='inside'){const cupY=CoveCafeScene.cupY||280;if(s.unlocked&&x>170&&x<525&&y>cupY-15&&y<cupY+100){tab='menu';workshop=true;recipeResult=null;lessonStep=0;render();}return;}if(x>190&&x<530&&y>100&&y<235){view='inside';render();}else if(x>25&&x<120&&y>270&&y<350){panel.querySelector('.cc-sale')?.remove();const hello=document.createElement('div');hello.className='cc-sale';hello.setAttribute('role','status');hello.textContent=['This seat has excellent purr acoustics.','Stay a little. The sea isn’t going anywhere.','A quiet bench. Very important cat business.'][Math.floor(Date.now()/1000)%3];panel.append(hello);setTimeout(()=>hello.remove(),4500);}};
+   const cv=panel.querySelector('canvas');cv.onclick=e=>{if(tab){tab=null;render();return;}const b=cv.getBoundingClientRect(),fit=layout.k||b.width/720,x=(e.clientX-b.left)/fit+layout.cx0,y=(e.clientY-b.top)/fit-layout.offset;if(view==='inside'){const cupY=CoveCafeScene.cupY||280;if(s.unlocked&&x>170&&x<525&&y>cupY-15&&y<cupY+100){tab='menu';workshop=true;recipeResult=null;render();}return;}if(x>190&&x<530&&y>100&&y<235){view='inside';render();}else if(x>25&&x<120&&y>270&&y<350){panel.querySelector('.cc-sale')?.remove();const hello=document.createElement('div');hello.className='cc-sale';hello.setAttribute('role','status');hello.textContent=['This seat has excellent purr acoustics.','Stay a little. The sea isn’t going anywhere.','A quiet bench. Very important cat business.'][Math.floor(Date.now()/1000)%3];panel.append(hello);setTimeout(()=>hello.remove(),4500);}};
    panel.onkeydown=e=>{if(e.key==='Escape'){if(tab){tab=null;render();}else panel.querySelector('[data-close]').click();}};
    (panel.querySelector('.cc-tabs')||panel.querySelector('.cc-top')).insertAdjacentHTML('afterend','<p class="cc-visit-hint">'+(view==='outside'?'Tap the window to step inside':'Tap the counter to make a drink.')+'</p>');
    drawGuide();

@@ -107,13 +107,17 @@
     g.shells+=s.legacyCarryover.earned+(s.legacyCarryover.servings+s.legacyCarryover.prepared)*2;
     s.speed=Math.min(2,Math.max(0,(h.stoves?.length||2)-2));s.seats=h.tables>3?1:0;
     acquire(g,'coffee',6,0);acquire(g,'catmint',6,0);acquire(g,'honey',2,0);return true;}
-  function experiment(g,mix){const s=init(g,Date.now()),stock=g.homestead.stock;
-    if(!s.unlocked||Object.keys(mix).some(k=>!Object.hasOwn(ingredients,k))||Object.values(mix).some(n=>!Number.isInteger(n)||n<0||n>3)||!Object.values(mix).some(n=>n>0))return {error:'Choose ingredients for your tasting cup.'};
-    if(Object.entries(mix).some(([k,n])=>(stock[k]||0)<n))return {error:'Not enough ingredients. Visit the Garden or Pantry.'};
-    for(const [k,n]of Object.entries(mix)){stock[k]=(stock[k]||0)-n;s.experimentCost=(s.experimentCost||0)+(s.basis[k]||0)*n;}
-    const found=recipes.find(r=>Object.keys(ingredients).every(k=>(r.inputs[k]||0)===(mix[k]||0)));
-    if(found){if(!s.discovered.includes(found.id))s.discovered.push(found.id);return {id:found.id,message:'Success! '+found.name+'. Add it to your menu when you are ready.'};}
-    return {message:mix.honey>1?'Too sweet! Try less honey.':mix.coffee&&mix.catmint?'Those flavors compete. Try a simpler base.':mix.coffee>1&&!mix.honey?'Too strong. Try less coffee, or a little honey.':'Not quite a drink yet. Start with one coffee bean or one catmint.'};
+  // Recipes were never actually secret -- guessing ingredient amounts to "discover" a known,
+  // fixed list just added friction. Tap the drink you want; it's made if you have the
+  // ingredients, same cost/consumption as the old guessing game.
+  function makeRecipe(g,id){const s=init(g,Date.now()),stock=g.homestead.stock,r=recipes.find(x=>x.id===id);
+    if(!s.unlocked||!r)return {error:'Pick a drink to make.'};
+    if(s.discovered.includes(id))return {error:'You already know how to make this.'};
+    const short=Object.entries(r.inputs).find(([k,n])=>(stock[k]||0)<n);
+    if(short)return {error:'You need more '+ingredients[short[0]].name.toLowerCase()+'.'};
+    for(const [k,n]of Object.entries(r.inputs)){stock[k]-=n;s.experimentCost=(s.experimentCost||0)+(s.basis[k]||0)*n;}
+    s.discovered.push(id);
+    return {id,message:'You made '+r.name+'! Give it a name.'};
   }
   function feedback(s,p){const level=s.recipeLevels?.[p.id]||0,rating=Math.min(5,3+(s.served%5?1:0)+level),food=p.id==='bites';
     const lines=rating===5?(food?['Every crumb was worth it.','Saving my last bite. Maybe.','Five purrs for the chef!']:['That deserves a very long purr.','My new favorite cozy cup.','I would queue again for this.']):rating===4?(food?['A lovely little garden snack.','Crumbs on my whiskers. No regrets.','Just right after a seaside stroll.']:['Warm paws. Happy heart.','A lovely cup by the sea.','I came for coffee. I stayed for company.']):(food?['A nice start. A little more refinement?']:['Cozy, but the flavor could be a little smoother.']);
@@ -133,5 +137,5 @@
   }
   function plantingPlan(g){const free=(g.homestead?.plots||[]).flatMap((p,i)=>p?[]:[i]),rows=pantryPlan(g).rows.filter(r=>r.patches>0).map(r=>({...r})),jobs=[];let cost=0;while(free.length&&rows.some(r=>r.patches>0)){for(const r of rows){if(!free.length)break;if(r.patches>0){jobs.push({slot:free.shift(),key:r.key});cost+=r.cost;r.patches--;}}}return {jobs,cost};}
   function plantSuggested(g,quote,now=Date.now()){const current=plantingPlan(g);if(!current.jobs.length||JSON.stringify(current)!==JSON.stringify(quote)||g.shells<current.cost)return false;for(const job of current.jobs){const crop=ingredients[job.key];g.homestead.plots[job.slot]={key:job.key,ready:now+crop.seconds*1000};}g.shells-=current.cost;return true;}
-  root.CoveCafeEngine={rush,daily,claimDaily,special,taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,experiment,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
+  root.CoveCafeEngine={rush,daily,claimDaily,special,taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,makeRecipe,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
 })(globalThis);
