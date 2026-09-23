@@ -59,6 +59,7 @@
   rect(0,220,720,160,night?'#777663':'#dacbad');
   if(inside){drawInside();
   }else{
+   root.CoveCafeScene.hotspots=null;
    // A quiet seaside garden surrounds the café; props remain flat illustrations.
    const breeze=reduced?0:Math.sin(t/2400)*2;
    for(const [x,y,r] of [[50,70,36],[660,85,42]]){oval(x,y,r,11,night?'#607782':'#f0f1df');oval(x+19,y-7,r*.6,12,night?'#607782':'#f0f1df');}
@@ -154,6 +155,11 @@
   // ================= INSIDE: behind the counter, looking out through the serving window =================
   // One full-bleed room that fills whatever space the screen gives it (band = height between the top stack and the bottom controls).
   function drawInside(){
+   // Where the tappable counter props are, in the same untranslated coordinate space the
+   // canvas click handler already uses for the cup zone -- so tapping the brewer, kettle or
+   // beans jumps straight to that thing's own upgrade/restock screen instead of always
+   // opening "make a drink".
+   const hotspots={};
    const W=720,BH=Math.max(380,Number.isFinite(band)?band:height-offset),warm=night?'rgba(255,205,130,':'rgba(255,214,150,';
    const winH=Math.round(Math.max(150,Math.min(300,BH*.3))),cTop=Math.round(Math.max(300,Math.min(BH*.63,640))),winB=cTop-16,winT=winB-winH,winL=64,winR=656;
    const topFace=46,cf=Math.round(Math.max(34,Math.min(BH*.1,86))),panelT=cTop+topFace+2,panelB=Math.min(BH,panelT+cf);
@@ -235,12 +241,15 @@
     const fy=Math.min(BH-16,panelB+(BH-panelB)*.62);
     if(BH-panelB>70){oval(360,fy,210,Math.min(30,(BH-panelB)*.24),palette.light);oval(360,fy,180,Math.min(22,(BH-panelB)*.17),palette.shade);
      round(38,fy-44,58,50,14,'#c7a97b');rect(50,fy-52,34,10,'#a98a5e');label('BEANS',67,fy-15,10,'#6a5238');
+     hotspots.beans={x:24,y:fy-64,w:88,h:80};
      if(actors.length>1){oval(618,fy+4,46,10,'rgba(0,0,0,.14)');round(578,fy-14,80,22,11,palette.body);a.cat(c,actors[1],618,fy-2,1.05,reduced?0:t,false);}}}
    // things on the counter
    machine(mx,my);
+   hotspots.machine={x:mx-4,y:my-6,w:140,h:145};
    {const px=344,py=cTop+30;oval(px,py,46,11,'#b99c70');round(px-15,py-38,30,34,4,'#faf2df');oval(px,py-37,15,4,'#856547');label('Pickup',px,panelT+22,15,tier===0?'#f3e8cf':'#405842');L.cupY=py-38;root.CoveCafeScene.cupY=L.cupY;}
    if(s.cookware){const cx=430,cy=cTop-2;round(cx,cy,80,40,7,'#b98d60');rect(cx-8,cy,95,7,'#806849');oval(cx+40,cy-6,10,5,'#806849');label('Copper cookware',cx+48,panelT+22,13,tier===0?'#f3e8cf':'#405842');}
    kettle(590,cTop+18);
+   hotspots.cookware={x:544,y:cTop-14,w:102,h:70};
    {const hx=630,hy=cTop-8;round(hx,hy,40,50,6,'#9aaa87');for(let i=0;i<3;i++){c.strokeStyle='#816b4e';c.lineWidth=5;c.beginPath();c.moveTo(hx+10+i*10,hy+14);c.lineTo(hx+5+i*12,hy-24);c.stroke();oval(hx+5+i*12,hy-28,4,8,'#816b4e');}}
    if(tier>0){const px=246,py=cTop+34;round(px-14,py-18,28,20,3,'#b07f58');for(let i=-1;i<=1;i++){c.save();c.translate(px+i*7,py-18);c.rotate(i*.4+sway*.05);oval(0,-13,5,14,'#6f8f5a');c.restore();}}
    // warm light
@@ -248,6 +257,7 @@
    for(const lx of [104,616]){const lg=c.createRadialGradient(lx,cTop,0,lx,cTop,220);lg.addColorStop(0,warm+(night?'.24)':'.14)'));lg.addColorStop(1,warm+'0)');c.fillStyle=lg;c.fillRect(lx-220,cTop-220,440,440);}
    const vg=c.createRadialGradient(360,BH*.48,BH*.28,360,BH*.48,BH*.95);vg.addColorStop(0,'rgba(58,38,20,0)');vg.addColorStop(1,'rgba(58,38,20,.2)');c.fillStyle=vg;c.fillRect(-900,-offset,W+1800,height);
    if(stocked||active)bubble(360,winT+34);
+   root.CoveCafeScene.hotspots=hotspots;
   }
   // a small enamel-and-cord sign, like the one in a real shop door: it sways a hair and says nothing loudly
   {const word=s.open?'OPEN':s.pending?'FINISHING':'CLOSED',sx=inside?L.signX:498,sy=inside?L.signY:214,sw=58,sh=20,ang=reduced?0:Math.sin(now/1100)*.035;
@@ -257,6 +267,10 @@
    c.fillStyle=s.open?'#3d6b4b':'#8b7660';c.font=(word.length>6?'bold 8px':'bold 10px')+' Georgia';c.textAlign='center';c.fillText(word.split('').join(word.length>6?'':'\u200a'),0,5);
    c.restore();}
   if(active&&!reduced){c.strokeStyle='#f8f0d7';c.lineWidth=2;for(let i=0;i<3;i++){const x=inside?L.mx+58:198,y=(inside?L.my-6:145)-(t/80+i*8)%24;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+7,y-7,x,y-14);c.stroke();}}
+  // A single slow, faint wisp off the machine while open and waiting for the next guest --
+  // the busier "brewing" steam above only shows once an order is actually in progress, so
+  // without this the café looked idle/stalled during the between-guests countdown.
+  else if(inside&&stocked&&!reduced){const cyc=(t/2200)%1;c.save();c.globalAlpha=(1-cyc)*.5;c.strokeStyle='#f8f0d7';c.lineWidth=1.6;const x=L.mx+58,y=L.my-6-cyc*16;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+5,y-6,x,y-11);c.stroke();c.restore();}
   if(depart>=0&&depart<.5&&s.lastCompleted&&s.lastCompleted.reaction)emote(inside?L.leadX+depart*330:382+depart*390,inside?L.faceY:284+depart*14,s.lastCompleted.reaction.mood,depart/.5);
   if(depart>=0&&depart<1&&s.lastCompleted.response){const response=s.lastCompleted.response,bx=inside?360:Math.max(150,Math.min(570,382+depart*390)),by=inside?L.winT+8:262+depart*14;round(bx-130,by,260,24,10,'#fff1d8');label(response.text,bx,by+17,12,'#496247');}
   c.restore();

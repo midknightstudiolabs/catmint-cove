@@ -139,6 +139,12 @@
 #app #cafe-kiosk.cc-v2 .cc-rename input{box-sizing:border-box;width:100%;min-height:44px;border:1px solid #bcc8ac;border-radius:10px;padding:0 12px;background:#fffaf0;color:#405c45;font:inherit;font-size:16px}
 #app #cafe-kiosk.cc-v2 .cc-rename small{color:#68715d;font-size:12px}
 #app #cafe-kiosk.cc-v2 .cc-rename-row{display:flex;gap:8px}#app #cafe-kiosk.cc-v2 .cc-rename-row .btn{flex:1}
+#app #cafe-kiosk.cc-v2 .cc-equip-pop{position:absolute;z-index:9;display:flex;flex-direction:column;gap:6px;width:min(210px,calc(100% - 16px));box-sizing:border-box;padding:10px 12px;border-radius:12px;background:#faf6e8;box-shadow:0 6px 20px #21372d33}
+#app #cafe-kiosk.cc-v2 .cc-equip-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#app #cafe-kiosk.cc-v2 .cc-equip-pop h4{margin:0;font:700 14px Georgia,serif;color:#33503b}
+#app #cafe-kiosk.cc-v2 .cc-equip-x{flex:0 0 auto;width:24px;height:24px;min-height:24px;border:0;border-radius:50%;background:#eef2df;color:#496247;font-size:15px;line-height:1;padding:0;display:grid;place-items:center;cursor:pointer}
+#app #cafe-kiosk.cc-v2 .cc-equip-pop p{margin:0;font-size:12px;color:#496247}
+#app #cafe-kiosk.cc-v2 .cc-equip-go{width:100%;min-height:38px;font-size:13px;padding:6px 10px}
 #app #cafe-kiosk.cc-v2 .cc-cta-row:empty{display:none}
 #app #cafe-kiosk.cc-v2 .cc-cta{width:100%;min-height:44px;font-weight:600}
 #app #cafe-kiosk.cc-v2 .cc-goal{position:relative;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;width:100%;box-sizing:border-box;padding:8px 10px 12px;border:1px solid #d9dcc6;border-radius:12px;background:#f1f0df;text-align:left;font-size:12px;color:#405c45;min-height:44px}
