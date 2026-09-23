@@ -146,13 +146,14 @@
   }
   function plantingPlan(g){const free=(g.homestead?.plots||[]).flatMap((p,i)=>p?[]:[i]),rows=pantryPlan(g).rows.filter(r=>r.patches>0).map(r=>({...r})),jobs=[];let cost=0;while(free.length&&rows.some(r=>r.patches>0)){for(const r of rows){if(!free.length)break;if(r.patches>0){jobs.push({slot:free.shift(),key:r.key});cost+=r.cost;r.patches--;}}}return {jobs,cost};}
   function plantSuggested(g,quote,now=Date.now()){const current=plantingPlan(g);if(!current.jobs.length||JSON.stringify(current)!==JSON.stringify(quote)||g.shells<current.cost)return false;for(const job of current.jobs){const crop=ingredients[job.key];g.homestead.plots[job.slot]={key:job.key,ready:now+crop.seconds*1000};}g.shells-=current.cost;return true;}
+  function customerReady(s,now=Date.now()){return !s.lastCompleted||now-s.lastCompleted.at>=4200;}
   function takeOrder(g,now=Date.now()){
-    const s=init(g,now);if(!s.unlocked||!s.open||s.pending||now<s.cursor)return false;
+    const s=init(g,now);if(!s.unlocked||!s.open||s.pending||now<s.cursor||!customerReady(s,now))return false;
     const options=available(s,g.homestead.stock);if(!options.length)return false;
     const r=options[s.sequence++%options.length];let cost=0;
     for(const[k,n]of Object.entries(r.inputs)){g.homestead.stock[k]-=n;cost+=(s.basis[k]||0)*n;}
     s.cursor=now;s.pending={id:r.id,price:price(s,r,now),cost,at:now+30000};return true;
   }
   function helpOrder(g,now=Date.now()){const s=init(g,now),p=s.pending;if(!p||p.helped||p.at<=now)return false;p.helped=true;p.boostedAt=now;p.at=now+Math.ceil((p.at-now)/2);return true;}
-  root.CoveCafeEngine={recipeOffer,buyRecipe,menuLimit,addToMenu,takeOrder,helpOrder,rush,daily,claimDaily,special,taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,makeRecipe,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
+  root.CoveCafeEngine={customerReady,recipeOffer,buyRecipe,menuLimit,addToMenu,takeOrder,helpOrder,rush,daily,claimDaily,special,taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,makeRecipe,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
 })(globalThis);

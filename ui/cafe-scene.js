@@ -215,7 +215,7 @@
    c.strokeStyle=night?'rgba(0,0,0,.14)':'rgba(120,90,50,.16)';c.lineWidth=1;for(let x=winL;x<winR;x+=48){c.beginPath();c.moveTo(x,prom+3);c.lineTo(x-14,winB);c.stroke();}
    rect(winL,prom-15,winR-winL,3,'#7f6a4c');for(let x=winL+10;x<winR;x+=52)rect(x,prom-15,3,15,'#7f6a4c');
    if(stocked||active){
-    const showLead=!(depart>=0&&depart<.35),fy=prom+(winB-prom)*.4;
+    const showLead=!!active||E.customerReady(s,now),fy=prom+(winB-prom)*.4;
     customer(548,fy,leadScale*.5,lead+1);customer(628,fy-2,leadScale*.44,lead+2);if(tier>0)customer(150,fy-1,leadScale*.46,lead+3);
     if(showLead)customer(360,winB-4,leadScale,lead);
     if(depart>=0&&depart<1)customer(360+depart*330,winB-4-depart*8,leadScale*(1-.3*depart),s.sequence-1,true);

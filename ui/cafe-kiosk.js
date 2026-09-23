@@ -338,7 +338,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    el.textContent=!s.menu.length?'Make a recipe, then Save & sell.':!s.open?(s.closedReason==='ingredients'?'Out of ingredients · closed for now.':'Ready? Tap Closed above to open.'):'Your cats cook and serve automatically.';
    const bar=panel.querySelector('.cc-brew-bar');if(bar)bar.hidden=true;
    const pickup=panel.querySelector('.cc-pickup-order');if(!pickup)return;
-   const canTake=s.open&&E.available(s,g.homestead.stock).length>0;
+   const canTake=s.open&&E.customerReady(s,now)&&E.available(s,g.homestead.stock).length>0;
    pickup.hidden=(!pending&&(!canTake||view==='outside'))||!!tab||!!equipOpen;
    pickup.querySelector('.cc-pickup-track').hidden=!pending;
    if(!pending){pickup.setAttribute('aria-disabled','false');pickup.querySelector('strong').textContent='Take order';const wait=Math.max(0,Math.ceil((s.cursor+E.interval(s,s.cursor)-now)/1000));pickup.querySelector('small').textContent='';pickup.setAttribute('aria-label','Take order now. Starts automatically in '+wait+' seconds.');return;}
