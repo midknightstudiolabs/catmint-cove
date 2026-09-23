@@ -2465,7 +2465,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=18"></script>
-<link rel="stylesheet" href="ui/garden-play.css?v=2"><link rel="stylesheet" href="ui/cafe-kiosk.css?v=51"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/garden-scene.js?v=1"></script><script src="ui/cafe-engine.js?v=27"></script><script src="ui/cafe-scene.js?v=36"></script><script src="ui/cafe-kiosk.js?v=68"></script>
+<link rel="stylesheet" href="ui/garden-play.css?v=3"><link rel="stylesheet" href="ui/cafe-kiosk.css?v=51"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/garden-scene.js?v=1"></script><script src="ui/cafe-engine.js?v=27"></script><script src="ui/cafe-scene.js?v=36"></script><script src="ui/cafe-kiosk.js?v=68"></script>
 <script src="ui/wishing-well.js?v=1"></script>
 <script>
 (() => {
@@ -21346,10 +21346,11 @@ function neoExpandHomestead(kind){
   G.shells-=cost;if(garden)h.plots.push(null);else h.tables++;
   save();syncHud();return true;
 }
-function neoCropArt(key,ready){
+function neoCropArt(key,ready,field=false){
   // Shared warm timber/soil palette; growing crops are young plants, never faded ripe icons.
   const leaf=(x,y,flip=1)=>`<g transform="translate(${x} ${y}) scale(${flip} 1)"><path fill="#718c60" d="M0 0Q-15 2-17-10Q-4-14 0 0Z"/><path d="M-13-8-1-1" stroke="#a7b48a" stroke-width=".8"/></g>`;
-  const bed='<ellipse cx="60" cy="61" rx="47" ry="7" fill="#566b4a" opacity=".13"/><path fill="#ac875f" d="M13 45Q60 34 107 45L103 59Q60 70 17 59Z"/><path fill="#c5a27a" d="M13 45Q60 33 107 45L102 50Q60 61 18 50Z"/><path fill="#755d46" d="M22 45Q60 37 98 45Q60 56 22 45Z"/><path d="M22 56Q60 65 98 56" stroke="#8f704f" fill="none" stroke-width="1"/>';
+  let bed='<ellipse cx="60" cy="61" rx="47" ry="7" fill="#566b4a" opacity=".13"/><path fill="#ac875f" d="M13 45Q60 34 107 45L103 59Q60 70 17 59Z"/><path fill="#c5a27a" d="M13 45Q60 33 107 45L102 50Q60 61 18 50Z"/><path fill="#755d46" d="M22 45Q60 37 98 45Q60 56 22 45Z"/><path d="M22 56Q60 65 98 56" stroke="#8f704f" fill="none" stroke-width="1"/>';
+  if(field)bed='<path d="M8 44 93 30 114 52 29 68Z" fill="#5f6e4630"/><path d="M6 39 91 25 113 48 28 64Z" fill="#73513a"/><path d="M6 39 91 25 113 45 28 60Z" fill="#946c47"/><path d="m17 39 73-12m-63 19 73-12m-64 20 73-13" stroke="#684c36" stroke-width="3"/><path d="m17 37 72-12m-63 19 73-12m-64 20 73-13" stroke="#b38b5c" stroke-width="1.5"/>';
   let art='';
   if(key==='honey'){
     art='<path d="M38 53V23h44v30" fill="#c2a16e"/><path d="M35 23 60 10 85 23Z" fill="#688365"/><path d="M40 24h40M40 34h40M40 44h40" stroke="#90734d" stroke-width="2"/><path d="M55 54v-9a5 5 0 0 1 10 0v9" fill="#584e3b"/><path d="M35 54h50" stroke="#957951" stroke-width="3"/>';
@@ -21560,8 +21561,8 @@ function neoRenderField(sheet,h){
       if(t.dataset.sig!==sig){
         t.dataset.sig=sig;t.classList.toggle('empty',!p);t.classList.toggle('ripe',ripe);
         const soilEl=t.querySelector('.fp-soil');
-        soilEl.innerHTML=p?neoCropArt(p.key,ripe):soil+'<span class="fp-plus" aria-hidden="true">+</span>';t.dataset.stage=String(stage);t.classList.toggle('watered',!!p?.watered);
-        t.querySelector('b').textContent=p?COVE_CROPS[p.key].name:'Empty patch';
+        soilEl.innerHTML=p?neoCropArt(p.key,ripe,true):neoCropArt('',false,true)+'<span class="fp-plus" aria-hidden="true">+</span>';t.dataset.stage=String(stage);t.classList.toggle('watered',!!p?.watered);
+        t.querySelector('b').textContent=p?COVE_CROPS[p.key].name:'Plant here';
       }
       const c=p?COVE_CROPS[p.key]:null;
       t.querySelector('small').textContent=!p?'Tap to plant':ripe?'Harvest +'+c.yield:(!p.watered?'Tap to water · ':'Watered · ')+neoCropWord(left);
