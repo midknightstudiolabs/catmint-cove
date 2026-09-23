@@ -2465,7 +2465,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=18"></script>
-<link rel="stylesheet" href="ui/garden-play.css?v=1"><link rel="stylesheet" href="ui/cafe-kiosk.css?v=51"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/cafe-engine.js?v=27"></script><script src="ui/cafe-scene.js?v=36"></script><script src="ui/cafe-kiosk.js?v=68"></script>
+<link rel="stylesheet" href="ui/garden-play.css?v=2"><link rel="stylesheet" href="ui/cafe-kiosk.css?v=51"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/garden-scene.js?v=1"></script><script src="ui/cafe-engine.js?v=27"></script><script src="ui/cafe-scene.js?v=36"></script><script src="ui/cafe-kiosk.js?v=68"></script>
 <script src="ui/wishing-well.js?v=1"></script>
 <script>
 (() => {
@@ -21517,7 +21517,7 @@ function neoRenderField(sheet,h){
       if(!p){openPicker(i);return;}
       const c=COVE_CROPS[p.key],left=Math.ceil((p.ready-now)/1000);
       if(left>0){
-        if(!p.watered){const boost=Math.min(60,Math.ceil(c.seconds*.1),left);p.watered=true;p.ready=Math.max(now,p.ready-boost*1000);save();neoScheduleGardenReminder();paint();try{sfx('collect');}catch(e){}toast('Watered! '+boost+' seconds closer to harvest.',2.5);}
+        if(!p.watered){const boost=Math.min(60,Math.ceil(c.seconds*.1),left);p.watered=true;p.ready=Math.max(now,p.ready-boost*1000);save();neoScheduleGardenReminder();paint();gardenEffect(t,'water');try{sfx('collect');}catch(e){}toast('Watered! '+boost+' seconds closer to harvest.',2.5);}
         else toast(c.name+' is happily growing. Ripe in '+neoCropWord(left)+'.',2.5);
         return;
       }
@@ -21528,6 +21528,10 @@ function neoRenderField(sheet,h){
       setTimeout(()=>neoHarvest(i),reducedMotionNow()?60:430);
     };
   });
+  function gardenEffect(tile,kind){
+    tile.querySelector('.garden-fx')?.remove();const fx=document.createElement('span');fx.className='garden-fx '+kind;fx.setAttribute('aria-hidden','true');
+    fx.innerHTML=kind==='water'?'<svg class="garden-can" viewBox="0 0 60 50"><path d="M14 19h24v22H14zM38 24l15-9 3 5-18 14" fill="#759da0"/><path d="M14 23C-2 11 0 42 14 35" fill="none" stroke="#567f83" stroke-width="5"/></svg>'+Array.from({length:7},(_,i)=>'<i style="--i:'+i+'"></i>').join(''):'';tile.append(fx);tile.classList.add('just-watered');setTimeout(()=>{fx.remove();tile.classList.remove('just-watered');},1200);
+  }
   function reducedMotionNow(){try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}}
   function openPicker(i){
     if(openIdx===i){closePicker();return;}
@@ -21546,7 +21550,7 @@ function neoRenderField(sheet,h){
     picker.append(row);
     const x=document.createElement('button');x.type='button';x.className='fpk-x';x.textContent='Cancel';x.onclick=closePicker;picker.append(x);
     tiles.forEach((t,k)=>t.setAttribute('aria-expanded',String(k===i)));
-    picker.scrollIntoView?.({block:'nearest',behavior:'smooth'});
+    const columns=innerWidth<=700?2:4,after=tiles[Math.min(tiles.length-1,Math.floor(i/columns)*columns+columns-1)];after.after(picker);picker.scrollIntoView?.({block:'nearest',behavior:reducedMotionNow()?'auto':'smooth'});
   }
   function closePicker(){openIdx=-1;picker.hidden=true;tiles.forEach(t=>t.removeAttribute('aria-expanded'));}
   function paint(){
@@ -21566,6 +21570,9 @@ function neoRenderField(sheet,h){
     });
   }
   paint();sec.append(grid,picker);
+  const farmCats=cats.filter(c=>!c.visitor).slice(0,3).map(c=>{const copy=new Cat({coatKey:c.coatKey,mascot:c.mascot,markSeed:c.markSeed,name:c.name,x:0,y:0});copy.worn=[...(c.worn||[])];return copy;});
+  (sheet.querySelector('.gh-content')||sheet).append(sec);
+  window.CoveGardenScene?.mount(sec,farmCats,(ctx,cat,x,y,scale,t,walking,face)=>{ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);cat.state=walking?'exploring':'loafing';cat.trotting=walking;cat.walk=t/130;cat.walkAmt=walking?1:0;cat.face=face;cat.stateT=t/1000;cat.bob=t/900;cat.tail=t/650;cat.blink=(t/1000+x*.017)%4.7<.14?0:3;drawCat(ctx,cat,true);ctx.restore();});
   {const LN=neoRemindPlugin();
    if(LN&&h.plots.some(Boolean)){
     const box=document.createElement('div');box.className='garden-remind';
@@ -21698,7 +21705,7 @@ function neoOpenHomestead(kind){
 
   }
 
-  sheet.querySelector('.gh-back').onclick=()=>{sheet.hidden=true;clearInterval(neoHomesteadTimer);clearInterval(neoFieldTimer);cancelAnimationFrame(neoCafeFrame);};
+  sheet.querySelector('.gh-back').onclick=()=>{sheet.hidden=true;window.CoveGardenScene?.stop();clearInterval(neoHomesteadTimer);clearInterval(neoFieldTimer);cancelAnimationFrame(neoCafeFrame);};
   content.scrollTop=keepTop;sheet.dataset.kind='garden';
   neoHomesteadTimer=setInterval(()=>{if(sheet.hidden){clearInterval(neoHomesteadTimer);return;}if(document.hidden)return;neoCafeSettle();},1000);
 }
