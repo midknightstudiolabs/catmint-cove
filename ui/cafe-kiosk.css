@@ -16,6 +16,13 @@
 #neo-homestead .garden-market-list{display:flex;flex-wrap:wrap;gap:8px}
 #neo-homestead .garden-market-list .btn{flex:1 1 auto;white-space:normal}
 #app #cafe-kiosk .cc-guide{position:relative;background:#eef2df;border:1px solid #c8d5b8;border-radius:14px;padding:14px;margin:12px 0 18px;color:#354d3b;grid-column:1/-1}
+/* Step 1 only: Skip guide sits beside the actual action button instead of up in the floating
+   guide card -- margin-top matches .cc-content>.btn's own spacing, lost once the button is no
+   longer a direct child of .cc-content. */
+#app #cafe-kiosk .cc-guide-row{display:flex;gap:8px;align-items:stretch;margin-top:16px}
+#app #cafe-kiosk .cc-guide-row>[data-create]{flex:1;margin-top:0}
+#app #cafe-kiosk .cc-guide-row>.btn:not([data-create]){flex:0 0 auto}
+@media(max-width:360px){#app #cafe-kiosk .cc-guide-row{flex-wrap:wrap}#app #cafe-kiosk .cc-guide-row>[data-create]{flex-basis:100%}}
 #app #cafe-kiosk .cc-guide p{font-size:16px;line-height:1.5;margin:8px 0}
 #app #cafe-kiosk .cc-guide small{font-size:11px;letter-spacing:1px}
 #app #cafe-kiosk .cc-guide .btn{min-height:44px;padding:8px 14px;border-radius:10px;box-shadow:none}

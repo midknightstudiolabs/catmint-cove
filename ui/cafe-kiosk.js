@@ -32,11 +32,20 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    panel.dataset.guideStep=step;
    const card=document.createElement('section');card.className='cc-guide';card.setAttribute('aria-label','Café guide');
    const count=document.createElement('small');count.textContent='LET’S PLAY · '+step+' OF 5';const heading=document.createElement('h3');heading.textContent=title;const copy=document.createElement('p');copy.textContent=text;
-   const skip=document.createElement('button');skip.className='btn';skip.textContent=step===5?'Watch my café':'Skip guide';skip.onclick=finishGuide;card.append(count,heading,copy,skip);
+   const skip=document.createElement('button');skip.className='btn';skip.textContent=step===5?'Watch my café':'Skip guide';skip.onclick=finishGuide;
+   card.append(count,heading,copy);
+   // Step 1's "Skip guide" used to sit up here, a second and separately-placed way out right
+   // next to the drawer's own Close button -- confusing on the very first screen a new player
+   // sees. Put it beside the actual action (Make your first coffee) instead, once that button
+   // is on screen to place it next to.
+   const skipInline=target==='[data-create]';
+   if(!skipInline)card.append(skip);
    if(stockGuide){const garden=document.createElement('button');garden.type='button';garden.className='btn primary';garden.textContent='Visit Cove Garden';garden.onclick=()=>{stopActive();a.garden();};card.append(garden);if(tab!=='pantry'){const pan=document.createElement('button');pan.type='button';pan.className='btn';pan.textContent='Get ingredients';pan.onclick=()=>{tab='pantry';render();};card.append(pan);}}
    const host=panel.querySelector('.cc-content:not([hidden])')||panel.querySelector('.cc-intro');if(host)host.prepend(card);
-   const action=panel.querySelector(target);if(action){action.classList.add('cc-guide-target');action.setAttribute('aria-describedby','cc-guide-copy');copy.id='cc-guide-copy';requestAnimationFrame(()=>{const box=action.closest('.cc-content');if(!box)return;const r=action.getBoundingClientRect(),b=box.getBoundingClientRect();if(r.bottom>b.bottom)box.scrollTop+=r.bottom-b.bottom+12;});}
-   else if(s.unlocked){const go=document.createElement('button');go.className='btn primary';go.textContent='Show me';go.onclick=()=>{tab='menu';workshop=step===2;recipeResult=step===2?'coffee':null;render();};card.append(go);if(!host)panel.querySelector('.cc-tabs').after(card);}
+   const action=panel.querySelector(target);if(action){action.classList.add('cc-guide-target');action.setAttribute('aria-describedby','cc-guide-copy');copy.id='cc-guide-copy';
+    if(skipInline){const row=document.createElement('div');row.className='cc-guide-row';action.replaceWith(row);row.append(action,skip);}
+    requestAnimationFrame(()=>{const box=action.closest('.cc-content');if(!box)return;const r=action.getBoundingClientRect(),b=box.getBoundingClientRect();if(r.bottom>b.bottom)box.scrollTop+=r.bottom-b.bottom+12;});}
+   else if(s.unlocked){card.append(skip);const go=document.createElement('button');go.className='btn primary';go.textContent='Show me';go.onclick=()=>{tab='menu';workshop=step===2;recipeResult=step===2?'coffee':null;render();};card.append(go);if(!host)panel.querySelector('.cc-tabs').after(card);}
   }
 
   const ready=()=>a.ready?a.ready():{count:0,yields:{}};
@@ -256,7 +265,13 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    }
    if(previewEquipment){const note=document.createElement('button');note.className='btn';note.textContent='Previewing upgrade · Back';note.onclick=()=>{previewEquipment=null;tab='upgrades';render();};panel.querySelector('.cc-top').append(note);}
    const drawer=panel.querySelector('.cc-content');
-   if(drawer&&tab){drawer.insertAdjacentHTML('afterbegin','<div class="cc-drawer-head"><h3>'+(tabName[tab]||tab)+'</h3><button class="btn" data-dismiss>Close</button></div>');drawer.querySelector('[data-dismiss]').onclick=()=>{tab=null;render();};}
+   if(drawer&&tab){
+    // A second "get me out" control alongside Skip guide/‹ Cove was confusing mid-tutorial --
+    // same condition cc-guiding already uses, so Close reappears the moment the guide ends.
+    const showClose=!(guideOn&&tab!=='help');
+    drawer.insertAdjacentHTML('afterbegin','<div class="cc-drawer-head"><h3>'+(tabName[tab]||tab)+'</h3>'+(showClose?'<button class="btn" data-dismiss>Close</button>':'')+'</div>');
+    drawer.querySelector('[data-dismiss]')?.addEventListener('click',()=>{tab=null;render();});
+   }
    const cv=panel.querySelector('canvas');cv.onclick=e=>{if(tab){tab=null;render();return;}const b=cv.getBoundingClientRect(),fit=layout.k||b.width/720,x=(e.clientX-b.left)/fit+layout.cx0,y=(e.clientY-b.top)/fit-layout.offset;if(view==='inside'){const cupY=CoveCafeScene.cupY||280;if(s.unlocked&&x>170&&x<525&&y>cupY-15&&y<cupY+100){tab='menu';workshop=true;recipeResult=null;lessonStep=0;render();}return;}if(x>190&&x<530&&y>100&&y<235){view='inside';render();}else if(x>25&&x<120&&y>270&&y<350){panel.querySelector('.cc-sale')?.remove();const hello=document.createElement('div');hello.className='cc-sale';hello.setAttribute('role','status');hello.textContent=['This seat has excellent purr acoustics.','Stay a little. The sea isn’t going anywhere.','A quiet bench. Very important cat business.'][Math.floor(Date.now()/1000)%3];panel.append(hello);setTimeout(()=>hello.remove(),4500);}};
    panel.onkeydown=e=>{if(e.key==='Escape'){if(tab){tab=null;render();}else panel.querySelector('[data-close]').click();}};
    (panel.querySelector('.cc-tabs')||panel.querySelector('.cc-top')).insertAdjacentHTML('afterend','<p class="cc-visit-hint">'+(view==='outside'?'Tap the window to step inside':'Tap the counter to make a drink.')+'</p>');
