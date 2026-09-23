@@ -64,14 +64,18 @@
 #app #cafe-kiosk.cc-v2 .cc-head-end{display:flex;align-items:center;gap:6px;flex:0 0 auto}
 #app #cafe-kiosk.cc-v2 .cc-service{min-height:40px;padding:4px 10px;font-size:13px;border-radius:12px}
 #app #cafe-kiosk.cc-v2 .cc-guide-replay{min-height:40px;min-width:40px;padding:0;font-size:16px;font-weight:700;border-radius:50%;border:1px solid #c9d1b9;background:#f1f0df;box-shadow:none}
-#app #cafe-kiosk.cc-v2 .cc-live{background:#faf6e8ee;border-radius:14px;padding:8px 10px 6px;box-shadow:0 2px 10px #21372d1f;display:flex;flex-direction:column;gap:6px}
+/* The stats card used to be a flat cream rectangle with a generic web-card shadow, sitting on
+   top of the illustrated scene like a pasted-on dashboard. A warm paper gradient, a wood-toned
+   hairline and a softer amber-tinted shadow tie it back to the counter/awning palette instead --
+   and tighter spacing keeps it from out-weighing the scene it floats over. */
+#app #cafe-kiosk.cc-v2 .cc-live{background:linear-gradient(180deg,#fffcf3,#faf3e0);border:1px solid #e4d6b4;border-radius:16px;padding:8px 10px 7px;box-shadow:0 3px 14px #3c281212,0 1px 0 #ffffffb0 inset;display:flex;flex-direction:column;gap:5px}
 #app #cafe-kiosk.cc-v2 .cc-live-lite{align-self:flex-start;padding:6px 12px}
 #app #cafe-kiosk.cc-v2 .cc-live-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:#5a6c58}
 #app #cafe-kiosk.cc-v2 .cc-shells{font-size:16px;color:#33503b;font-variant-numeric:tabular-nums}
 #app #cafe-kiosk.cc-v2 .cc-pips{display:flex;gap:6px;flex-wrap:wrap}
-#app #cafe-kiosk.cc-v2 .cc-pip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:2px 10px;border:1px solid #cdd6bd;border-radius:999px;background:#eef1e0;font-size:12px;color:#405c45}
-#app #cafe-kiosk.cc-v2 .cc-pip b{font-weight:700;font-variant-numeric:tabular-nums}
-#app #cafe-kiosk.cc-v2 .cc-pip.low{background:#f8e6d0;border-color:#dfb98c;color:#8a4c22}
+#app #cafe-kiosk.cc-v2 .cc-pip{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:2px 10px;border:1px solid #e4dcc4;border-radius:999px;background:#f5f0e0;font-size:11.5px;color:#6b6248}
+#app #cafe-kiosk.cc-v2 .cc-pip b{font-weight:700;font-variant-numeric:tabular-nums;color:#405c45}
+#app #cafe-kiosk.cc-v2 .cc-pip.low{background:#fbe9d4;border-color:#e3ba85;color:#8a5a26}
 #app #cafe-kiosk.cc-v2 .cc-status{min-height:0;margin:0;font-size:12px;line-height:1.35;text-align:left;color:#526b53}
 #app #cafe-kiosk.cc-v2 .cc-top>.cc-note,#app #cafe-kiosk.cc-v2 .cc-top>.btn{margin:0;background:#faf6e8ee;border-radius:12px;padding:8px 12px;font-size:12px;color:#405c45;text-align:center}
 #app #cafe-kiosk.cc-v2 .cc-switch{position:absolute;z-index:5;left:50%;bottom:calc(var(--cc-dock) + 12px);top:auto;transform:translateX(-50%);width:212px;margin:0;background:#faf6e8f2;box-shadow:0 2px 10px #21372d24}
@@ -146,11 +150,19 @@
 #app #cafe-kiosk.cc-v2 .cc-equip-pop p{margin:0;font-size:12px;color:#496247}
 #app #cafe-kiosk.cc-v2 .cc-equip-go{width:100%;min-height:38px;font-size:13px;padding:6px 10px}
 #app #cafe-kiosk.cc-v2 .cc-cta-row:empty{display:none}
-#app #cafe-kiosk.cc-v2 .cc-cta{width:100%;min-height:44px;font-weight:600}
-#app #cafe-kiosk.cc-v2 .cc-goal{position:relative;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;width:100%;box-sizing:border-box;padding:8px 10px 12px;border:1px solid #d9dcc6;border-radius:12px;background:#f1f0df;text-align:left;font-size:12px;color:#405c45;min-height:44px}
-#app #cafe-kiosk.cc-v2 .cc-goal span{font-weight:600}#app #cafe-kiosk.cc-v2 .cc-goal b{font-weight:600;font-variant-numeric:tabular-nums;color:#5f7060}
-#app #cafe-kiosk.cc-v2 .cc-goal i{position:absolute;left:10px;right:10px;bottom:6px;height:4px;border-radius:2px;background:#dfe4d0;overflow:hidden}
-#app #cafe-kiosk.cc-v2 .cc-goal i::after{content:"";display:block;height:100%;width:var(--p,0%);background:#5f9a6c;border-radius:2px;transition:width .4s ease}
+/* The one recommended action stays the loudest thing in the card -- a gentle bevel/gradient
+   instead of a flat fill so it reads as a pressable plaque, not a generic web button. */
+#app #cafe-kiosk.cc-v2 .cc-cta{width:100%;min-height:42px;font-weight:600;background:linear-gradient(180deg,#5c8f68,#436c4e);border:1px solid #375a40;box-shadow:0 2px 0 #2c4733,0 3px 8px #21372d33;border-radius:12px}
+#app #cafe-kiosk.cc-v2 .cc-cta:active{box-shadow:0 1px 0 #2c4733,0 1px 4px #21372d33;transform:translateY(1px)}
+/* This used to be a bordered card the same size as the CTA button above it -- two "press me"
+   shapes stacked read as two competing actions. It's just progress trivia, so it now sits as a
+   quiet inline row with no border/fill of its own, clearly secondary to the one real button. */
+#app #cafe-kiosk.cc-v2 .cc-goal{position:relative;display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;width:100%;box-sizing:border-box;padding:2px 2px 9px;border:0;background:none;text-align:left;font-size:11px;color:#7a7256;min-height:0}
+#app #cafe-kiosk.cc-v2 .cc-goal span{font-weight:600;color:#6b6248}#app #cafe-kiosk.cc-v2 .cc-goal b{font-weight:600;font-variant-numeric:tabular-nums;color:#7a7256}
+#app #cafe-kiosk.cc-v2 .cc-goal.ready{color:#3d6846}#app #cafe-kiosk.cc-v2 .cc-goal.ready span,#app #cafe-kiosk.cc-v2 .cc-goal.ready b{color:#3d6846}
+#app #cafe-kiosk.cc-v2 .cc-goal i{position:absolute;left:2px;right:2px;bottom:2px;height:2.5px;border-radius:2px;background:#e6e0c8;overflow:hidden}
+#app #cafe-kiosk.cc-v2 .cc-goal i::after{content:"";display:block;height:100%;width:var(--p,0%);background:#b99a5c;border-radius:2px;transition:width .4s ease}
+#app #cafe-kiosk.cc-v2 .cc-goal.ready i::after{background:#5f9a6c}
 #app #cafe-kiosk.cc-v2 .cc-daily{margin:0 0 14px;padding:14px;border-radius:16px;background:#f3f0da;border:1px solid #e0dcb8}
 #app #cafe-kiosk.cc-v2 .cc-daily h3{margin:0 0 2px;font-size:16px}#app #cafe-kiosk.cc-v2 .cc-daily p{margin:0 0 8px;font-size:14px}
 #app #cafe-kiosk.cc-v2 .cc-daily-bar{height:8px;border-radius:99px;background:rgba(90,110,80,.16);overflow:hidden}#app #cafe-kiosk.cc-v2 .cc-daily-bar i{display:block;height:100%;border-radius:99px;background:#7fa66d;transition:width .5s ease}
