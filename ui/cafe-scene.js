@@ -275,7 +275,7 @@
   const food=recipe?.kind==='food',serving=active&&s.pending.at-now<=3000;
   const stationX=inside?(food?470:L.mx+38):(food?439:248);
   const stationY=inside?(food?L.cupY+8:L.my+66):(food?outsideY+82:outsideY+82);
-  const equipmentAnchor=isFood=>({x:isFood?470:L.mx+66,y:isFood?L.cupY+25:L.my+52,center:true});
+  const equipmentAnchor=isFood=>({x:isFood?470:L.mx+66,y:L.cTop+80});
   root.CoveCafeScene.orderAnchor=inside&&active&&!serving?equipmentAnchor(food):{x:344,y:inside?L.cupY+52:229};
   root.CoveCafeScene.secondOrderAnchor=inside&&active&&!serving&&(s.pending.items||[]).length>1?equipmentAnchor(!food):null;
   if(active)for(const [itemIndex,itemId] of (s.pending.items||[s.pending.id]).entries()){
