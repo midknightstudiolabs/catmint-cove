@@ -2465,7 +2465,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=18"></script>
-<link rel="stylesheet" href="ui/garden-play.css?v=6"><link rel="stylesheet" href="ui/cafe-kiosk.css?v=51"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/garden-world.js?v=2"></script><script src="ui/cafe-engine.js?v=27"></script><script src="ui/cafe-scene.js?v=36"></script><script src="ui/cafe-kiosk.js?v=68"></script>
+<link rel="stylesheet" href="ui/garden-play.css?v=6"><link rel="stylesheet" href="ui/cafe-kiosk.css?v=51"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/garden-world.js?v=3"></script><script src="ui/cafe-engine.js?v=27"></script><script src="ui/cafe-scene.js?v=36"></script><script src="ui/cafe-kiosk.js?v=68"></script>
 <script src="ui/wishing-well.js?v=1"></script>
 <script>
 (() => {
@@ -21585,7 +21585,7 @@ function neoRenderField(sheet,h){
   paint();sec.append(grid,picker);
   const farmCats=cats.filter(c=>!c.visitor).slice(0,3).map(c=>{const copy=new Cat({coatKey:c.coatKey,mascot:c.mascot,markSeed:c.markSeed,name:c.name,x:0,y:0});copy.worn=[...(c.worn||[])];return copy;});
   (sheet.querySelector('.gh-content')||sheet).append(sec);
-  window.CoveGardenScene?.mount(sec,farmCats,(ctx,cat,x,y,scale,t,walking,face)=>{ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);cat.state=walking?'exploring':'loafing';cat.trotting=walking;cat.walk=t/130;cat.walkAmt=walking?1:0;cat.face=face;cat.stateT=t/1000;cat.bob=t/900;cat.tail=t/650;cat.blink=(t/1000+x*.017)%4.7<.14?0:3;drawCat(ctx,cat,true);ctx.restore();});
+  window.CoveGardenScene?.mount(sec,farmCats,(ctx,cat,x,y,scale,t,walking,face)=>{ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);cat.state=cat.walkAmt>.02?'exploring':'loafing';cat.trotting=false;cat.face=face;cat.stateT=t/1000;cat.bob=t/900;cat.tail=t/650;cat.blink=(t/1000+x*.017)%4.7<.14?0:3;drawCat(ctx,cat,true);ctx.restore();});
   {const LN=neoRemindPlugin();
    if(LN&&h.plots.some(Boolean)){
     const box=document.createElement('div');box.className='garden-remind';
