@@ -52,3 +52,32 @@
 #app #neo-homestead .field-plot .fp-bar{width:65%;margin-top:4px;height:4px}
 #app #neo-homestead .garden-add-patch{min-height:164px;background:#cbd9ad70;border-radius:12px}
 #app #neo-homestead .field-plot:focus-visible{outline:3px solid #456f50;outline-offset:3px}
+
+/* One continuous coastal field; the interface sits around it. */
+#app #neo-homestead .gh-content{padding:0 0 24px;overflow-x:hidden}
+#app #neo-homestead .gh-content>.garden-loop,#app #neo-homestead .garden-field-sign{display:none}
+#app #neo-homestead .garden-field{position:relative;isolation:isolate;border:0;border-radius:0;box-shadow:none;overflow:hidden;padding:150px 18px 65px;background:#c5d5a4;min-height:500px}
+#app #neo-homestead .garden-coast{position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none;margin:0;z-index:-1;pointer-events:none;border-radius:0}
+#app #neo-homestead .field-grid{position:relative;grid-template-columns:repeat(4,minmax(0,1fr));gap:60px 34px;padding:0;max-width:1100px;margin:auto}
+#app #neo-homestead .field-plot{min-height:145px;gap:0;justify-content:flex-start}
+#app #neo-homestead .field-plot .fp-soil{max-width:220px;height:112px}
+#app #neo-homestead .field-plot .fp-soil svg{height:112px}
+#app #neo-homestead .field-plot small{display:none}
+#app #neo-homestead .field-plot:focus small,#app #neo-homestead .field-plot.ripe small{display:block}
+#app #neo-homestead .field-plot b{font-size:13px;font-weight:600;background:#eef0d5e8}
+#app #neo-homestead .field-plot .fp-bar{width:54%;margin-top:5px}
+#app #neo-homestead .field-picker{position:fixed;z-index:60;bottom:0;left:50%;transform:translateX(-50%);width:min(620px,100%);max-height:60dvh;overflow-y:auto;margin:0;padding:16px 16px max(16px,env(safe-area-inset-bottom));background:#faf6e8;border:1px solid #b8c49f;border-radius:22px 22px 0 0;box-shadow:0 -8px 35px #263d3938}
+#app #neo-homestead .field-picker[hidden]{display:none}
+#app #neo-homestead .field-picker h4{margin:0 0 12px;font:600 21px Georgia,serif;color:#36553d}
+#app #neo-homestead .fpk-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#app #neo-homestead .fpk{display:flex;flex-direction:column;justify-content:center;text-align:center;gap:4px;padding:9px;min-width:0;min-height:114px;background:#fffaf0;border:1px solid #d2d9c1;border-radius:12px}
+#app #neo-homestead .fpk strong{font-size:14px}#app #neo-homestead .fpk small{font-size:11px;line-height:1.4}
+#app #neo-homestead .fpk em{font-size:10px}
+#app #neo-homestead .field-picker>.fpk-x{min-height:44px;width:100%;margin-top:10px;border:1px solid #cbd4bd;border-radius:10px}
+#app #neo-homestead .gh-cta-row{padding:8px 12px;gap:6px}
+#app #neo-homestead .gh-cta-text{font-size:13px;margin:0}
+#app #neo-homestead .gh-tabs{margin:4px 12px 8px}
+@media(max-width:700px){#app #neo-homestead .field-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:58px 40px}#app #neo-homestead .garden-field{padding:150px 12px 65px}#app #neo-homestead .field-plot{min-height:139px}#app #neo-homestead .field-plot .fp-soil,#app #neo-homestead .field-plot .fp-soil svg{height:100px}#app #neo-homestead .garden-add-patch{min-height:139px}}
+#app #neo-homestead .field-picker>.fpk-x{position:sticky;top:0;float:right;z-index:2;width:64px;min-height:44px;margin:-4px 0 6px 8px;background:#f4f1e1}
+#app #neo-homestead .field-picker h4{min-height:44px;display:flex;align-items:center;font-size:19px}
+#app #neo-homestead .field-picker .fpk-row{clear:both}
