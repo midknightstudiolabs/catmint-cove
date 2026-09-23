@@ -3,6 +3,13 @@
   const ingredients={carrot:{name:'Carrots',import:2,cost:2,seconds:60,yield:3},coffee:{name:'Coffee beans',import:5,cost:10,seconds:900,yield:10},catmint:{name:'Catmint',import:3,cost:6,seconds:300,yield:8},honey:{name:'Honey',import:8,cost:12,seconds:1500,yield:8}};
   const recipes=[{id:'coffee',name:'Coastal Coffee',note:'A warm welcome in a little cup.',price:12,inputs:{coffee:1}},{id:'tea',name:'Catmint Cloud',note:'Soft, fragrant and wonderfully unhurried.',price:8,inputs:{catmint:1}},{id:'midknight',name:'Midknight Morning',note:'Coffee, honey, and a very serious purr.',price:30,inputs:{coffee:2,honey:1}}];
   recipes.push({id:'bites',name:'Honey Garden Bites',note:'Little carrot treats with a touch of honey.',price:18,inputs:{carrot:2,honey:1}});
+  recipes.push(...[{"id":"carrot_crunch","name":"Carrot Crunch","price":6,"inputs":{"carrot":1},"served":0,"cost":0,"kind":"food"},{"id":"honey_tea","name":"Honey Cloud Tea","price":18,"inputs":{"catmint":1,"honey":1},"served":5,"cost":100,"kind":"tea"},{"id":"mint_coffee","name":"Mint Morning","price":20,"inputs":{"coffee":1,"catmint":1},"served":15,"cost":180,"kind":"coffee"},{"id":"double_coffee","name":"Double Purr","price":24,"inputs":{"coffee":2},"served":25,"cost":250,"kind":"coffee"},{"id":"mint_bites","name":"Catmint Nibbles","price":16,"inputs":{"carrot":2,"catmint":1},"served":40,"cost":350,"kind":"food"},{"id":"honey_coffee","name":"Golden Cup","price":24,"inputs":{"coffee":1,"honey":1},"served":55,"cost":450,"kind":"coffee"},{"id":"garden_tea","name":"Garden Tea","price":16,"inputs":{"catmint":2,"carrot":1},"served":70,"cost":550,"kind":"tea"},{"id":"honey_carrots","name":"Golden Carrot Bowl","price":22,"inputs":{"carrot":3,"honey":1},"served":90,"cost":700,"kind":"food"},{"id":"mint_honey","name":"Sweet Mint Pot","price":28,"inputs":{"catmint":2,"honey":1},"served":115,"cost":900,"kind":"tea"},{"id":"garden_plate","name":"Garden Picnic Plate","price":28,"inputs":{"carrot":3,"catmint":2},"served":140,"cost":1100,"kind":"food"},{"id":"cove_roast","name":"Cove Roast","price":36,"inputs":{"coffee":3},"served":170,"cost":1400,"kind":"coffee"},{"id":"honey_crunch","name":"Honey Crunch Bowl","price":34,"inputs":{"carrot":4,"honey":2},"served":200,"cost":1700,"kind":"food"},{"id":"moon_tea","name":"Moonlight Tea","price":38,"inputs":{"catmint":3,"honey":2},"served":240,"cost":2100,"kind":"tea"},{"id":"seaside_cup","name":"Seaside Signature","price":42,"inputs":{"coffee":2,"catmint":1,"honey":1},"served":285,"cost":2600,"kind":"coffee"},{"id":"picnic_bites","name":"Picnic Bites","price":40,"inputs":{"carrot":4,"catmint":2,"honey":1},"served":340,"cost":3200,"kind":"food"},{"id":"midknight_feast","name":"Midknight’s Garden Feast","price":52,"inputs":{"carrot":5,"catmint":2,"honey":2},"served":420,"cost":4500,"kind":"food"}]);
+  for(const r of recipes){r.kind ||= r.id==='bites'?'food':r.id==='tea'?'tea':'coffee';r.cost ??= r.id==='midknight'?200:r.id==='bites'?150:0;r.served ??= r.id==='midknight'?20:r.id==='bites'?10:0;r.note ||= r.kind==='food'?'A garden treat for hungry paws.':r.kind==='tea'?'A gentle cup from the garden.':'A cozy coffee for a seaside break.';}
+  const starters=['coffee','tea','carrot_crunch'];
+  function recipeOffer(g,id){const s=init(g,Date.now()),r=recipes.find(r=>r.id===id);if(!r)return null;const owned=s.discovered.includes(id),requirements=[];if(s.served<r.served)requirements.push('Serve '+r.served+' customers ('+s.served+'/'+r.served+')');if(r.served>=90&&r.kind==='food'&&!s.cookware)requirements.push('Get Copper cookware');if(r.served>=170&&r.kind==='coffee'&&s.speed<1)requirements.push('Get the Twin brewer');return {owned,cost:r.cost,requirements,eligible:!requirements.length};}
+  function buyRecipe(g,id){const r=recipes.find(r=>r.id===id),offer=recipeOffer(g,id),s=g.cafe;if(!s.unlocked||!offer||offer.owned||!offer.eligible||g.shells<offer.cost)return false;g.shells-=offer.cost;s.discovered.push(id);return true;}
+  function menuLimit(s){return Math.max(s.menuCapacity||3,3+(s.shopTier||0));}
+  function addToMenu(g,id){const s=init(g,Date.now());if(s.menu.includes(id))return true;if(!s.discovered.includes(id)||s.menu.length>=menuLimit(s))return false;s.menu.push(id);return true;}
   // Rush hour: two 45-minute windows a day (one in the morning, one in the afternoon) at times that change daily. Guests arrive 40% faster; each still pays the usual price.
   const RUSH_FACTOR=0.6,RUSH_LEN=45*60000;
   function rushWindows(now){const d=new Date(now);d.setHours(0,0,0,0);const day0=d.getTime(),key=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
@@ -43,7 +50,7 @@
   const LIKES={glutton:{food:2,sweet:1},cuddly:{mild:2,sweet:1},bold:{strong:2},shy:{mild:2,strong:-.8},playful:{sweet:2},lazy:{mild:1,sweet:1},curious:{},grumpy:{strong:1,sweet:-.6},chatty:{sweet:1},climber:{strong:1}};
   function hash01(str){let h=2166136261;for(const ch of String(str)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0)/4294967296;}
   function taste(s,r,cat){
-    const prof=PROFILE[r.id]||{},traits=(cat&&cat.traits)||[],level=(s.recipeLevels&&s.recipeLevels[r.id])||0;let score=1.8;
+    const prof=PROFILE[r.id]||(r.kind==='food'?{food:2}:r.kind==='tea'?{mild:2}:{strong:1}),traits=(cat&&cat.traits)||[],level=(s.recipeLevels&&s.recipeLevels[r.id])||0;let score=1.8;
     for(const t of traits){const l=LIKES[t]||{};for(const k in prof)score+=prof[k]*(l[k]||0);if(t==='curious'&&level>0)score+=1;}
     score+=level*.9+(hash01(((cat&&cat.name)||'')+':'+(s.served||0))-.5)*2;
     const name=(cat&&cat.name)||'A guest';
@@ -68,6 +75,8 @@
     const h=g.homestead;
     if(!g.cafe){g.cafe={version:2,unlocked:false,open:false,cursor:now,sequence:0,speed:0,seats:0,menu:[],discovered:[],served:0,revenue:0,cost:0,sales:{},basis:{},pending:null};}
     if(!g.cafe.discovered)g.cafe.discovered=[...g.cafe.menu];
+    if(g.cafe.recipeBookVersion!==1){g.cafe.menuCapacity=Math.max(3,g.cafe.menu.length);g.cafe.recipeBookVersion=1;}
+    if(g.cafe.unlocked&&g.cafe.lessonComplete)for(const id of starters)if(!g.cafe.discovered.includes(id))g.cafe.discovered.push(id);
     if(!g.cafe.menu.length)g.cafe.open=false;
     return g.cafe;
   }
@@ -119,7 +128,7 @@
     s.discovered.push(id);
     return {id,message:'You made '+r.name+'! Give it a name.'};
   }
-  function feedback(s,p){const level=s.recipeLevels?.[p.id]||0,rating=Math.min(5,3+(s.served%5?1:0)+level),food=p.id==='bites';
+  function feedback(s,p){const level=s.recipeLevels?.[p.id]||0,rating=Math.min(5,3+(s.served%5?1:0)+level),food=recipes.find(r=>r.id===p.id)?.kind==='food';
     const lines=rating===5?(food?['Every crumb was worth it.','Saving my last bite. Maybe.','Five purrs for the chef!']:['That deserves a very long purr.','My new favorite cozy cup.','I would queue again for this.']):rating===4?(food?['A lovely little garden snack.','Crumbs on my whiskers. No regrets.','Just right after a seaside stroll.']:['Warm paws. Happy heart.','A lovely cup by the sea.','I came for coffee. I stayed for company.']):(food?['A nice start. A little more refinement?']:['Cozy, but the flavor could be a little smoother.']);
     return {rating,text:lines[s.served%lines.length]};
   }
@@ -145,5 +154,5 @@
     s.cursor=now;s.pending={id:r.id,price:price(s,r,now),cost,at:now+30000};return true;
   }
   function helpOrder(g,now=Date.now()){const s=init(g,now),p=s.pending;if(!p||p.helped||p.at<=now)return false;p.helped=true;p.boostedAt=now;p.at=now+Math.ceil((p.at-now)/2);return true;}
-  root.CoveCafeEngine={takeOrder,helpOrder,rush,daily,claimDaily,special,taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,makeRecipe,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
+  root.CoveCafeEngine={recipeOffer,buyRecipe,menuLimit,addToMenu,takeOrder,helpOrder,rush,daily,claimDaily,special,taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,makeRecipe,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
 })(globalThis);

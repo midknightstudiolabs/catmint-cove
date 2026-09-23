@@ -269,7 +269,7 @@
    c.restore();}
   // Preparation follows the real order clock; no extra animation loop or particles.
   if(active){
-   const p=Math.max(0,Math.min(1,1-(s.pending.at-now)/30000)),food=s.pending.id==='bites';
+   const p=Math.max(0,Math.min(1,1-(s.pending.at-now)/30000)),food=E.recipes.find(r=>r.id===s.pending.id)?.kind==='food';
    const px=inside?344:360,py=inside?L.cupY:201;
    c.save();c.translate(px,py);if(!inside)c.scale(.68,.68);
    if(food){
