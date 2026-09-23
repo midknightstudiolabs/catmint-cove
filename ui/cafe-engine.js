@@ -148,9 +148,9 @@
     const first=options[s.sequence++%options.length],items=[first.id];let cost=0,total=0;
     const consume=r=>{for(const[k,n]of Object.entries(r.inputs)){g.homestead.stock[k]-=n;cost+=(s.basis[k]||0)*n;}total+=price(s,r,now);};
     consume(first);
-    // Every third guest may pair a coffee with food, using only remaining stocked menu items.
-    if(s.sequence%3===0&&(first.kind==='coffee'||first.kind==='food')){
-      const other=available(s,g.homestead.stock).find(r=>r.kind===(first.kind==='food'?'coffee':'food'));
+    // Every third guest pairs a drink (coffee or tea) with food when both are stocked.
+    if(s.sequence%3===0){
+      const other=available(s,g.homestead.stock).find(r=>first.kind==='food'?r.kind!=='food':r.kind==='food');
       if(other){consume(other);items.push(other.id);}
     }
     return {id:first.id,items,price:total,cost,at:now+30000};

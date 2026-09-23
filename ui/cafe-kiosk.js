@@ -28,7 +28,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    else if(!s.menu.length){step=3;title='Put it on the menu';text='Tap Add to menu beside your drink. This tells the cats what they can order.';target='[data-recipe]';}
    else if(!s.open&&whyClosed()){const wc=whyClosed();step=4;stockGuide=true;title='Stock up first';text=wc.text.replace(' Restock to open your café.','')+' Cats need ingredients before they can serve. Tap Ingredients to buy some, or grow them in the Garden.';target='[data-tab="pantry"]';}
    else if(!s.open){step=4;title='Welcome the cats!';text='Tap Closed at the top to open your café. Cats will make and serve the food for you.';target='[data-pause]';}
-   else{step=5;title='You’re open!';text='Your cats make and serve orders automatically. Each order uses ingredients and earns Shells. You do not need to tap each customer.';target='[data-garden]';}
+   else{step=5;title='You’re open!';text='Watch Taking order, then brewing or cooking, then serving. It all happens automatically. Each sale earns Shells. Grow more ingredients in the Garden to keep serving.';target='[data-garden]';}
    panel.dataset.guideStep=step;
    const card=document.createElement('section');card.className='cc-guide';card.setAttribute('aria-label','Café guide');
    const count=document.createElement('small');count.textContent='LET’S PLAY · '+({1:1,2:2,3:2,4:3,5:4}[step])+' OF 4';const heading=document.createElement('h3');heading.textContent=title;const copy=document.createElement('p');copy.textContent=text;
@@ -213,10 +213,14 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
     }
     else if(tab==='help'){
 
-     content.innerHTML='<p class="cc-help-intro">Make a drink. Add it to your menu. Open your café. Your cats do the serving.</p><div class="cc-help-topics">'+[
+     content.innerHTML='<p class="cc-help-intro">Build a little café for your cats. Grow ingredients, serve tasty treats, and earn Shells for new recipes and upgrades. Play at your own pace.</p><div class="cc-help-topics">'+[
       ['Make my first drink','Tap My menu, then Make your first coffee. It’s one tap and it’s free.','first','Make a drink'],
-      ['Start serving','After making a recipe, tap Save & sell. Then tap Closed at the top to open. Watch the bar at Pickup. Tap the order once to help it finish faster, or let your cats do it all.','menu','Open my menu'],
-      ['I ran out of ingredients','Tap Ingredients, then Grow ingredients. Plant the suggested seeds. When a patch says Ready, tap it. Your café gets the harvest right away. You can also buy ingredients if you want them now.','pantry','Get ingredients'],
+      ['Start serving','Save your first drink with Save & sell. Tap Closed at the top to open. Your cats take orders, make them, and serve them automatically. A progress bar starts at Taking order, then follows preparation and serving. You never have to tap to keep service going. Each sale earns Shells.','menu','Open my menu'],
+      ['Help an order go faster','At the Counter, tap Taking order to skip the short wait. While a drink brews or food cooks, tap its bar once to halve the time left. Pickup shows serving. The Storefront shows progress too, without buttons. Helping is always optional.','menu','Back to my menu'],
+      ['Choose what to sell','Open My menu. Unlock a recipe when you have what it needs. Give it your own name, then add it to the menu. On menu means cats can order it when you have the ingredients.','menu','Choose recipes'],
+      ['A drink and a snack','Some cats order a drink and food together. Keep both on your menu and stock their ingredients. Drinks use the brewer, food uses the cookware, and both are served automatically.','menu','Choose my menu'],
+      ['Grow food for my café','The Garden fills your café’s ingredient supply. Follow What my café needs, tap an empty patch, and choose seeds. Tap a growing crop to water it once. Tap it when Ready to harvest. The ingredients go straight to your café.','pantry','Find ingredients'],
+      ['I ran out of ingredients','Buy more in Ingredients, or grow more in the Garden. If nothing on your menu can be made, your café closes. Refill, then tap Closed to open again. Crops wait safely until you pick them.','pantry','Get ingredients'],
       ['Make the café nicer','In Storefront, use Improve café for the building and decorations. At the Counter, tap the brewer or cookware to upgrade it.','upgrades','See improvements'],
       ['See how we are doing','Sales & happy cats shows your sales and customer reactions. Tap Show more beside the Shells total to find it.','report','See my results']
      ].map(([title,copy,dest,label])=>'<details class="cc-help-topic" name="cafe-help-topic"><summary>'+title+'</summary><p>'+copy+'</p><button class="btn primary" data-help-go="'+dest+'">'+label+'</button></details>').join('')+'</div><button class="btn" data-help-tour>Guide me step by step</button>';
@@ -343,7 +347,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    drawGuide();
    {const box=panel.querySelector('.cc-content');if(box&&tab&&lastTab===tab)box.scrollTop=prevScroll;lastTab=tab;
     if(fname){const again=[...panel.querySelectorAll('['+fname+']')].find(x=>x.getAttribute(fname)===fv);if(again)try{again.focus({preventScroll:true});}catch(e){}}}
-   const renderedServed=s.served,renderedOpen=s.open,renderedPending=s.pending?.at;status();last=-Infinity;paint(performance.now());timer=setInterval(()=>{if(panel.hidden||!panel.isConnected){clearInterval(timer);cancelAnimationFrame(frame);return;}const before=s.served;E.settle(g,Date.now());if(s.served!==renderedServed){tasteReaction();a.save();a.hud();floats.push({t0:performance.now(),text:'+'+(s.lastCompleted?.price||0)});a.sfx?.('collect');a.sfx?.('cafe-mood',null,{mood:s.lastCompleted?.reaction?.mood});render();const notice=document.createElement('div');notice.className='cc-sale';notice.setAttribute('role','status');const sold=E.recipes.find(r=>r.id===s.lastCompleted?.id);notice.textContent=sold?E.displayName(s,sold)+' · +'+(s.lastCompleted.price||E.price(s,sold))+' Shells — '+(s.lastCompleted.reaction?.text||s.lastCompleted.response?.text||'A happy little moment.'):'An order enjoyed · Shells added';panel.append(notice);setTimeout(()=>notice.remove(),4000);}else if(s.pending&&s.pending.at!==renderedPending){a.sfx?.('cafe-ding');a.save();render();}else if(s.open!==renderedOpen){a.save();render();}else status();},1000);
+   const renderedServed=s.served,renderedOpen=s.open,renderedPending=s.pending?.at;status();last=-Infinity;paint(performance.now());timer=setInterval(()=>{if(panel.hidden||!panel.isConnected){clearInterval(timer);cancelAnimationFrame(frame);return;}const before=s.served;E.settle(g,Date.now());if(!document.hidden&&!s.pending&&s.open&&Date.now()>=(s.lastCompleted?s.lastCompleted.at+7200:s.cursor+3000))E.takeOrder(g,Date.now());if(s.served!==renderedServed){tasteReaction();a.save();a.hud();floats.push({t0:performance.now(),text:'+'+(s.lastCompleted?.price||0)});a.sfx?.('collect');a.sfx?.('cafe-mood',null,{mood:s.lastCompleted?.reaction?.mood});render();const notice=document.createElement('div');notice.className='cc-sale';notice.setAttribute('role','status');const sold=E.recipes.find(r=>r.id===s.lastCompleted?.id);notice.textContent=sold?E.displayName(s,sold)+' · +'+(s.lastCompleted.price||E.price(s,sold))+' Shells — '+(s.lastCompleted.reaction?.text||s.lastCompleted.response?.text||'A happy little moment.'):'An order enjoyed · Shells added';panel.append(notice);setTimeout(()=>notice.remove(),4000);}else if(s.pending&&s.pending.at!==renderedPending){a.sfx?.('cafe-ding');a.save();render();}else if(s.open!==renderedOpen){a.save();render();}else status();},1000);
   }
   function status(){
    const el=panel.querySelector('.cc-status');if(!el)return;
@@ -353,9 +357,16 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    const pickup=panel.querySelector('.cc-pickup-order');if(!pickup)return;
    panel.querySelector('.cc-order-secondary')?.remove();
    const canTake=s.open&&E.customerReady(s,now)&&E.available(s,g.homestead.stock).length>0;
-   pickup.hidden=(!pending&&(!canTake||view==='outside'))||!!tab||!!equipOpen;
-   pickup.querySelector('.cc-pickup-track').hidden=!pending;
-   if(!pending){pickup.setAttribute('aria-disabled','false');pickup.querySelector('strong').textContent='Take order';const wait=Math.max(0,Math.ceil((s.cursor+E.interval(s,s.cursor)-now)/1000));pickup.querySelector('small').textContent='';pickup.setAttribute('aria-label','Take order now. Starts automatically in '+wait+' seconds.');return;}
+   pickup.hidden=(!pending&&!canTake)||!!tab||!!equipOpen;
+   pickup.querySelector('.cc-pickup-track').hidden=false;
+   if(!pending){
+    const start=s.lastCompleted?s.lastCompleted.at+4200:s.cursor,due=start+3000;
+    const wait=Math.max(0,Math.ceil((due-now)/1000)),pct=Math.round(Math.max(0,Math.min(1,(now-start)/Math.max(1,due-start)))*100);
+    pickup.setAttribute('aria-disabled',String(view==='outside'));pickup.classList.remove('boosted','boost-pop');
+    pickup.querySelector('strong').textContent='Taking order…';pickup.querySelector('small').textContent=view==='outside'?'':'Tap to start now';
+    pickup.setAttribute('aria-label','Taking order automatically. '+wait+' seconds left.'+(view==='outside'?'':' Tap to start now.'));
+    const progress=pickup.querySelector('[role="progressbar"]');progress.setAttribute('aria-valuenow',String(pct));progress.setAttribute('aria-valuetext','Order starts automatically in '+wait+' seconds');progress.querySelector('i').style.width=pct+'%';return;
+   }
    const recipe=E.recipes.find(r=>r.id===pending.id),pct=Math.round(Math.min(1,Math.max(0,1-(pending.at-now)/30000))*100);
    pickup.querySelector('strong').textContent=view==='outside'?'Serving…':seconds<=3?'Serving…':recipe.kind==='food'?'Cooking…':'Brewing…';pickup.setAttribute('aria-label',(pending.items||[recipe.id]).map(id=>E.displayName(s,E.recipes.find(r=>r.id===id))).join(' and ')+', '+seconds+' seconds left'+(view==='outside'||pending.helped?'':'. Tap to halve the remaining time.'));
    pickup.querySelector('small').textContent=view==='outside'?'':pending.helped?'2× boosted':'Tap to boost';

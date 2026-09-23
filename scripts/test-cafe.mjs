@@ -74,3 +74,12 @@ assert.equal(JSON.stringify(comboReload.homestead.stock),comboStock);actual.sett
 combo.cafe.pending=null;combo.cafe.sequence=2;combo.homestead.stock={coffee:10,carrot:0};
 assert(actual.takeOrder(combo,1000000));assert.equal(combo.cafe.pending.items.length,1);
 console.log('PASS: paired order, one customer, both sales, save/reload, no duplicate payment and missing-food fallback.');
+for(const menu of [['tea','carrot_crunch'],['carrot_crunch','tea']]){
+ const teaCombo={shells:1000,homestead:{stock:{}}};actual.unlock(teaCombo,1000000);
+ Object.assign(teaCombo.cafe,{menu,sequence:menu[0]==='tea'?2:5,open:true,pending:null,cursor:1000000});
+ teaCombo.homestead.stock={catmint:2,carrot:2};
+ assert(actual.takeOrder(teaCombo,1000000));
+ assert.deepEqual(Array.from(teaCombo.cafe.pending.items),menu);
+ assert.equal(teaCombo.homestead.stock.catmint,1);assert.equal(teaCombo.homestead.stock.carrot,1);
+}
+console.log('PASS: tea and food mixed orders in either selection order consume both ingredients once.');
