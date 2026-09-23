@@ -264,6 +264,9 @@
 #neo-homestead.neo-garden-screen .gh-end{width:auto;flex:0 0 auto}
 #neo-homestead.neo-garden-screen .gh-end .btn{min-height:44px;padding:8px 12px;font-size:13px;white-space:nowrap}
 #neo-homestead.neo-garden-screen .garden-loop{margin:0 0 12px;color:#52664e;font-size:14px;line-height:1.5}
+#neo-homestead.neo-garden-screen .gh-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+#neo-homestead.neo-garden-screen .garden-add-patch{display:block;margin:16px auto 8px;min-height:48px;padding:12px 22px;border-radius:14px;max-width:100%;white-space:normal}
+#neo-homestead.neo-garden-screen .gh-content>details>summary{cursor:pointer;padding:16px 0;min-height:44px;font-weight:600;color:#476b50}
 @media(max-width:380px){
  #app #cafe-kiosk.cc-v2 .cc-head{display:grid;grid-template-columns:1fr auto;height:auto;padding:3px 6px;gap:2px 8px}
  #app #cafe-kiosk.cc-v2 .cc-head .cc-back{justify-self:start;min-height:44px}
