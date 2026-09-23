@@ -97,7 +97,26 @@
 #hud #titlePill .cove-title-text{color:var(--ink,#343d31);-webkit-text-fill-color:var(--ink,#343d31)}
 #hud #titlePill b{color:var(--accent-bright,#508363);-webkit-text-fill-color:var(--accent-bright,#508363)}
 
-#rest .rest-bar{flex-wrap:wrap;justify-content:center}#restDimToggle{min-height:40px;padding:6px 10px;border:1px solid #ffffff30;border-radius:999px;white-space:nowrap}#restDimToggle[aria-pressed="true"]{background:#e6dfc6;color:#344331}#rest .rest-bar .rb-time{min-width:50px}
+/* flex-wrap:wrap here used to let the bar spill to a second row once "Back to the
+   Cove" keeps its full text (>=380px, so above the narrow-phone rule that hides it)
+   plus the timer, toggle and fullscreen icon exceeded the bar's 360px cap — every
+   phone above ~410px wide hit this, not just large screens (measured: the full row
+   needs up to ~454px at worst case, a long "resting · 2h 47m" plus "Brighten room").
+   nowrap (the base rule's own default) plus a wider cap and a real (not zero) shrink
+   floor on the timer — the least critical text here — is the real fix. */
+#rest .rest-bar{flex-wrap:nowrap;width:min(88vw,420px)}
+#restDimToggle{min-height:40px;padding:6px 10px;border:1px solid #ffffff30;border-radius:999px;white-space:nowrap}
+/* The cream+dark-green pressed state read fine at full opacity but nearly vanished
+   once the bar's own ambient dimming (.rest-bar.ambient{opacity:.5}) blended it
+   toward the dark scene behind it — confirmed live, "Brighten room" was essentially
+   invisible. A translucent white highlight (same family as the plain :hover state
+   below) survives that dimming the same way the default white text already does. */
+#restDimToggle[aria-pressed="true"]{background:rgba(255,255,255,.22)}
+/* min-width:0 here first pass crushed this to ~3px on a mid-width phone — confirmed
+   live. 44px keeps at least "· 47m" legible under ellipsis before anything else
+   gives way, since knowing the exact elapsed time matters less than the toggle
+   label staying fully readable. */
+#rest .rest-bar .rb-time{min-width:44px;flex-shrink:1;overflow:hidden;text-overflow:ellipsis}
 
 /* Consistent action pairs and tactile feedback without shifting layout. */
 /* .btn's own padding (.5rem .95rem) already gives every other dialog

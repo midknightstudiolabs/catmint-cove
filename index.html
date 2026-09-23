@@ -8181,10 +8181,19 @@ const COLD = [
   },
   { // 5 — show where rewards and memories live, without forcing a claim
     say: "Journal keeps your little moments and daily welcome together.",
-    cue: "Open Journal. After that, explore at your own pace.",
+    cue: "Open Journal.",
     label:"Open Journal",go:()=>togglePanel("today"),
     arm() { _coldTarget=null; },
     test() { return !panels.today.hidden; },
+  },
+  { // 6 — the two nav buttons the tutorial never otherwise reaches. Shop only gets
+    // a mention in the closing toast (not its own guided tap) — a fresh player has
+    // nowhere near enough Shells yet for anything in it to feel like a real payoff.
+    say: "There's more to the cove than the yard — a café, a garden, games, even a wishing well.",
+    cue: "Open Activities below. Some of what's waiting is rarer than it looks.",
+    label:"Open Activities",go:()=>neoOpenExplore(),
+    arm() { _coldTarget=null; },
+    test() { return !panels.explore.hidden; },
   },
 ];
 
@@ -8263,7 +8272,7 @@ function endColdOpen(skipped) {
   visitorTimer = rand(45, 90);   // a third cat wanders in soon after the intro — "oh, they just turn up"
   save();
   // an honest reason to come back — the things that really change overnight
-  setTimeout(() => toast("You’re home. Tap a cat to get to know them. More visitors will find their way here.", 6), 500);
+  setTimeout(() => toast("You’re home. Tap a cat to get to know them, and visit Shop whenever you’re ready to spend your Shells.", 6), 500);
   setTimeout(() => { try { checkOffline(afterReturn); } catch (e) {} }, 700);
   setTimeout(() => { try { maybePanHint(); } catch (e) {} }, 3200);
   syncHud();
