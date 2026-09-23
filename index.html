@@ -1629,7 +1629,7 @@
  .midk-console .mc-reels{gap:3px;}
  .midk-console .mc-reels span{width:25px;height:28px;font-size:.9rem;}
 }
-</style><link rel="stylesheet" href="ui/device-fixes.css?edit-cove=3&v=26">
+</style><link rel="stylesheet" href="ui/device-fixes.css?edit-cove=3&v=27">
 <style id="neo-theme">
 #atmosphere-preview{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(18px + env(safe-area-inset-bottom));box-sizing:border-box;touch-action:none}
 #atmosphere-preview section{width:min(440px,100%);box-sizing:border-box;padding:18px;background:#faf7ea;color:#395447;border:1px solid #d8ddc7;border-radius:24px;box-shadow:0 8px 32px #243c3426;text-align:center}
@@ -7714,6 +7714,7 @@ function nextAction() {
 let _hintT = 0, _hintShownAt = 0;
 const _hintSeenThisVisit = new Set();
 function renderHint() {
+  if(document.getElementById('neo-tour')){document.getElementById('hint').hidden=true;document.getElementById('app').classList.remove('has-hint');return;}
   const now = performance.now();
   if (now - _hintT < 400) return;      // syncHud runs every frame — this doesn't need to
   _hintT = now;
@@ -8296,7 +8297,8 @@ function endColdOpen(skipped) {
   save();
   // an honest reason to come back — the things that really change overnight
   setTimeout(() => toast("You’re home. Pet your cats and gather Shells. Activities is there whenever you feel like a little adventure.", 6), 500);
-  setTimeout(() => { try { checkOffline(afterReturn); } catch (e) {} }, 700);
+  if(skipped){G.welcomeTourSeen=true;G.welcomeTourEndedAt=Date.now();save();}
+  else setTimeout(() => { if(!G.welcomeTourSeen)neoStartTour(true); }, 700);
   setTimeout(() => { try { maybePanHint(); } catch (e) {} }, 3200);
   syncHud();
 }
@@ -8321,11 +8323,12 @@ const GUIDE = [
 
 ];
 const HELP_TOPICS=[
- ['Meet your cats','catdex',['Tap a portrait in Catdex to meet your cat and see care options.','The cat counter shows mood and wellbeing.','For Little Hello, close menus and tap empty foreground ground 3–5 times.'],'dex'],
+ ['Catdex: meet your cats','catdex',['Tap a portrait to read your cat’s story and see care options.','Coats you meet stay in your collection. Visitors includes Midknight and Labubu; meeting a visitor does not use a resident slot.','Labubu visits after your introduction, when you return to the Cove with menus closed. His keepsakes go to Journal.'],'dex'],
  ['Decorate your Cove','shop',['Shop pictures show what you are buying.','My inventory separates Stored items from In the Cove.','Hold a decoration to drag it. Store item stores it; Place brings it back for free.','Some pieces are free and earned by playing: the Reading Nook from Little Matches, the Seaside Picnic from adventures and the Memory pieces from postcards. The Shop shows how close you are.'],'shop'],
  ['Explore & play','activities',['Activities holds the Cove Festival (Cove Race, Cove Volleyball and Tug of Paws), Adventures, Catmint Café, the Cove Garden, Little Matches, Cove Friends and the Rainy Retreat.','Each festival game shows how many cats it needs. In the Cove Race you can choose a Sprint (50 m), a Cove Run (100 m) or a Long Haul (200 m); longer runs take longer and pay for the time you spend. Inside a game, the bottom bar takes you back to the Festival or to the Cove.','Rainy Retreat is a quiet place to rest together.'],'explore'],
- ['Cove Garden','garden',['Tap a patch to plant it. Ripe patches wait for you to harvest them, and harvests go straight to your pantry — a shared stock the café also draws from.','Growing is slower than importing in the café’s Pantry, but costs Shells instead of buying them outright.'],'explore'],
- ['Catmint Café: the full guide','cafe',['Set it up once for 120 Shells (in Activities). After that, your cats do all the serving by themselves.','My menu: tap a drink card to make it, or try the free first lesson. Then give your drink a name.','Tap Add to menu to start serving a drink. Keep two or three on the menu at once.','Ingredients: buy them with Shells, or grow them for less in Cove Garden.','Sales & happy cats: shows today’s goal, how happy your guests are, and your numbers.','Improve café: faster brewing, more seats, a bigger café, new colors, and outdoor decorations.','Twice a day is Rush Hour — guests come faster, so keep ingredients stocked. One drink is also today’s special and earns extra.','Rename your café anytime, and pause it whenever you like. Nothing goes bad while you’re away.'],'explore'],
+ ['Cove Garden','garden',['Tap an empty patch and choose seeds. The price is shown before planting.','Tap a growing crop to water it once and shorten its wait. Tap a ripe crop to harvest. Crops wait safely for you.','Harvests go straight into the shared café pantry. Stock and What my café needs are in the garden view.','Add a patch in the field when you want more space. Sell spare harvests only when you want to spare the ingredients.'],'explore'],
+ ['Catmint Café: the full guide','cafe',['Start in Activities. Follow the café’s own ? guide for your first recipe.','My menu holds recipes you can unlock, name and put on sale. Stocked menu items are served automatically while the café is open.','At the counter, drinks brew in the brewer and food cooks in the cookware. The progress bar shows what is happening; tap its boost to help once.','Buy missing stock in Ingredients, or grow it in Cove Garden. If there is nothing stocked to serve, refill before reopening.','Use the Open / Closed switch to control service. Tap equipment to see its upgrades; Improve café is on the storefront.'],'explore'],
+ ['Journal: gifts & memories','journal',['Collect your free daily welcome here. Missing a day does not reset your lovely days.','Keep your cats’ stories, visitor keepsakes and adventure postcards together.','Capture a moment, find Cove Friends, or save a backup through Back up / restore.'],'today'],
  ['Adventures & postcards','adventure',['Choose a place, your cats and a trip length. You can watch a trip in Activities, or call the cats home early (they come back with nothing).','Postcards arrive along the way. Every one is kept in the Journal’s Postcard scrapbook, where you can also send one to a friend as a picture.','In the app you can allow one quiet reminder when a trip is over.'],'explore'],
  ['Cove Friends','homecoming',['Friends is optional. You share a friend code, accept invites, visit each other’s Cove and send a gift or a heart.','Only friends you accept can visit, and they see a saved picture of your Cove. Your balances, purchases and save file stay private.','You can block or report anyone from their Cove, and unblock later in Account. Save your private recovery key there before reinstalling, so your friend code comes back.'],'explore'],
  ['Midknight’s Blessing','paw',['An optional subscription that makes tending easier: Harvest all, Feed all, auto-gather and auto-replant, and Tend everything.','Each month brings a moonlit decor piece (the Guardian statue and the Moonlight Swing so far, which cats use) and Moonlight Wings for any cat.','The whole game plays without it. Find it in the Shop or from the Garden. Cancel any time in your store settings.'],'shop'],
@@ -8335,12 +8338,12 @@ const HELP_TOPICS=[
 function openGuide(){
  window.CoveAnalytics?.emit("menu_opened",{entity:"Help"});
  closeAllPanels();closeModal();hidePropCard();hideCatCard();rosterEl.hidden=true;
- ensureAudio();document.getElementById('neo-tour')?.remove();
+ ensureAudio();if(neoTourCleanup)neoTourCleanup();
  const card=tutEl.querySelector('.card');card.classList.add('help-home');tutEl.classList.add('on');
  const close=()=>{tutEl.classList.remove('on');card.classList.remove('help-home');};
  const helpFooter=()=>{const footer=document.createElement('div');footer.className='cove-dialog-footer';const show=card.querySelector('#helpShow');if(show)footer.append(show);const exit=document.createElement('button');exit.id='helpClose';exit.className='btn';exit.textContent='Close';exit.onclick=close;footer.append(exit);const body=document.createElement('div');body.className='cove-dialog-body';while(card.firstChild)body.append(card.firstChild);card.classList.add('cove-bottom-help');card.append(body,footer);};
  const home=()=>{
- card.innerHTML='<div class="help-head"><h2>How can we help?</h2></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="btn" id="guideTour" style="width:100%;justify-content:center;margin:.9rem 0 .2rem">Take a guided tour</button><footer class="help-footer"><button class="linkbtn" id="guideAbout">About Catmint Cove</button><button class="linkbtn" id="guideCares">Catmint Cove Cares</button><button class="linkbtn" id="guideCredits">Credits</button></footer>';
+ card.innerHTML='<div class="help-head"><h2>How can we help?</h2></div><div class="help-choices">'+HELP_TOPICS.map((t,i)=>'<button class="help-choice" data-topic="'+i+'">'+neoUIIcon(t[1])+'<span>'+t[0]+'</span><span aria-hidden="true">›</span></button>').join('')+'</div><button class="btn" id="guideTour" style="width:100%;justify-content:center;margin:.9rem 0 .2rem">Replay the quick Cove guide</button><footer class="help-footer"><button class="linkbtn" id="guideAbout">About Catmint Cove</button><button class="linkbtn" id="guideCares">Catmint Cove Cares</button><button class="linkbtn" id="guideCredits">Credits</button></footer>';
  helpFooter();
  card.querySelectorAll('[data-topic]').forEach(el=>el.onclick=()=>topic(+el.dataset.topic));
  card.querySelector('#guideTour').onclick=()=>{close();neoStartTour();};
@@ -8348,29 +8351,21 @@ function openGuide(){
  };
  const topic=i=>{const t=HELP_TOPICS[i];card.innerHTML='<div class="help-head"><button class="linkbtn" id="helpBack">‹ All topics</button></div><div class="help-visual">'+neoUIIcon(t[1])+'</div><h2>'+t[0]+'</h2><ol class="help-steps">'+t[2].map(x=>'<li>'+x+'</li>').join('')+'</ol><button class="btn primary" id="helpShow">Show me</button>';card.querySelector('#helpBack').onclick=home;helpFooter();card.querySelector('#helpShow').onclick=()=>{close();closeAllPanels();if(t[3]==='explore')neoOpenExplore();else togglePanel(t[3]);};};home();
 }
-function neoStartTour(){
- tutEl.classList.remove("on");closeModal();hidePropCard();hideCatCard();rosterEl.hidden=true;
- document.getElementById('neo-tour')?.remove();closeAllPanels();
- const steps=[['Meet your cats','Tap Catdex to open your cats.','#dexBtn'],['Browse the shop','Tap Shop to see what you can add.','#shopBtn'],['Find your belongings','Tap My inventory in the Shop.','#shopTabs [data-tab="inventory"]'],['Your placed items','Tap In the Cove to see what you can store.','#shop .shop-actions button[aria-pressed]'],['Explore & play','Tap Activities for the festival, adventures, café, garden and friends.','#neo-activities-nav'],['Your journal & saves','Tap Journal for your daily welcome, postcards and Back up / restore.','#todayBtn']];
- let i=0;const box=document.createElement('aside');box.id='neo-tour';box.setAttribute('aria-label','Guided tour');document.body.append(box);
- const finish=()=>{document.removeEventListener('click',clicked,true);window.removeEventListener('resize',position);document.removeEventListener('scroll',position,true);box.remove();};
- const tourTarget=()=>i===3?[...document.querySelectorAll(steps[i][2])].find(el=>el.textContent.includes('In the Cove')):document.querySelector(steps[i]?.[2]);
- const position=()=>{
-  const target=tourTarget();if(!target||!box.isConnected)return;
-  const r=target.getBoundingClientRect(),gap=10,edge=12;
-  const above=Math.max(0,r.top-gap-edge),below=Math.max(0,innerHeight-r.bottom-gap-edge);
-  box.style.maxHeight=Math.max(above,below)+'px';
-  const h=box.offsetHeight,w=box.offsetWidth;
-  const useAbove=above>=h || above>=below;
-  box.style.maxHeight=(useAbove?above:below)+'px';
-  box.style.left=Math.max(edge,Math.min(innerWidth-w-edge,r.left))+'px';
-  box.style.top=(useAbove?r.top-gap-box.offsetHeight:r.bottom+gap)+'px';box.style.bottom='auto';
- };
-
- const show=()=>{box.innerHTML='<small>Getting comfortable · '+(i+1)+' / '+steps.length+'</small><b>'+steps[i][0]+'</b><p>'+steps[i][1]+'</p><div><button class="btn" id="tourSkip">Skip</button><button class="btn" id="tourExit">Exit tour</button></div>';box.querySelector('#tourSkip').onclick=next;box.querySelector('#tourExit').onclick=finish;requestAnimationFrame(position);};
- const next=()=>{if(++i>=steps.length){finish();toast('You know your way around. Make yourself at home.',3);return;}if(i===2 && panels.shop.hidden)togglePanel('shop');if(i===3){shopTab='inventory';renderShop();}show();};
- const clicked=e=>{if(!box.isConnected){finish();return;}if(e.target.closest('#neo-tour'))return;const el=e.target.closest(steps[i][2]);if(!el)return;if(i===3&&!el.textContent.includes('In the Cove'))return;setTimeout(next,0);};
- document.addEventListener('click',clicked,true);window.addEventListener('resize',position);document.addEventListener('scroll',position,true);show();
+let neoTourCleanup=null;
+function neoStartTour(welcome=false){
+ if(neoTourCleanup)neoTourCleanup();
+ tutEl.classList.remove('on');closeModal();hidePropCard();hideCatCard();rosterEl.hidden=true;closeAllPanels();
+ const steps=[
+ ['Catdex','Meet your cats, discover their personalities, and collect the coats you have seen.','#dexBtn'],
+ ['Activities','Play a little game, run your café, grow your garden, or visit a friend. Choose what feels fun.','#neo-activities-nav'],
+ ['Shop','Make this place yours with decorations and outfits. Every item shows its price before you buy.','#shopBtn'],
+ ['Journal','Your daily gift, keepsakes and stories live here. You can also keep a backup of your Cove.','#todayBtn']];
+ let i=0,target=null;const box=document.createElement('aside');box.id='neo-tour';box.setAttribute('role','dialog');box.setAttribute('aria-label','Quick Cove guide');document.body.append(box);
+ const finish=()=>{target?.classList.remove('neo-tour-target');window.removeEventListener('resize',position);document.removeEventListener('scroll',position,true);box.remove();neoTourCleanup=null;if(welcome){G.welcomeTourSeen=true;G.welcomeTourEndedAt=Date.now();save();toast('Make yourself at home. A curious friend may drop by soon.',4);}document.querySelector('#helpBtn')?.focus({preventScroll:true});};
+ const position=()=>{if(!target||!box.isConnected)return;const r=target.getBoundingClientRect();box.style.width=Math.min(340,innerWidth-24)+'px';box.style.maxHeight=Math.max(120,r.top-24)+'px';box.style.left=Math.max(12,Math.min(innerWidth-box.offsetWidth-12,r.left+r.width/2-box.offsetWidth/2))+'px';box.style.top=Math.max(12,r.top-box.offsetHeight-12)+'px';box.style.bottom='auto';};
+ const show=()=>{target?.classList.remove('neo-tour-target');target=document.querySelector(steps[i][2]);target?.classList.add('neo-tour-target');box.innerHTML='<small>Your Cove · '+(i+1)+' of '+steps.length+'</small><b>'+steps[i][0]+'</b><p>'+steps[i][1]+'</p><div><button class="btn" id="tourSkip">Skip tour</button><button class="btn primary" id="tourNext">'+(i===steps.length-1?'Let’s play':'Next')+'</button></div>';box.querySelector('#tourSkip').onclick=finish;box.querySelector('#tourNext').onclick=()=>{if(++i===steps.length)finish();else show();};requestAnimationFrame(position);box.querySelector('#tourNext').focus({preventScroll:true});};
+ box.onkeydown=e=>{if(e.key==='Escape')finish();};
+ neoTourCleanup=finish;window.addEventListener('resize',position);document.addEventListener('scroll',position,true);show();
 }
 
 // open a URL in the OS browser, never inside the game's WebView. Capacitor
@@ -18821,7 +18816,7 @@ function labubuTick() {
   if (!G || !G.tutorialDone || labubuHere()) return;
   if (!G.labubu) G.labubu = { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 };
   if (!G.labubu.visits && !G.labubu.nextAt) { G.labubu.nextAt = (G.firstHelloAt||G.coldCompletedAt||Date.now()) + 3 * 60e3;save(); }
-  if (document.hidden || restMode || festMode || anyPanelOpen() || scrim.classList.contains('on') || document.getElementById('app').classList.contains('editing-cove')) return;
+  if (document.hidden || restMode || festMode || anyPanelOpen() || scrim.classList.contains('on') || document.getElementById('neo-tour') || (G.welcomeTourEndedAt && Date.now()-G.welcomeTourEndedAt<12000) || document.getElementById('app').classList.contains('editing-cove')) return;
   if (G.labubu.nextAt && Date.now() >= G.labubu.nextAt && labubuDayCap()) labubuArrive();
 }
 

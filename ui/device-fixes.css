@@ -260,3 +260,7 @@ dialog.friends-sheet .friends-body>button{margin-top:10px}
 .friends-sheet .friends-body>.primary{width:100%;margin:12px 0}
 .friends-sheet .friends-status:empty{display:none}
 .friends-sheet .friends-settings{border-top:1px solid #d9ddc7;margin-top:16px}
+.neo-tour-target{outline:3px solid #d3ac60!important;outline-offset:4px;box-shadow:0 0 0 7px #fff3cc80!important}
+#neo-tour small{display:block;color:#6b795b;margin-bottom:5px}
+#neo-tour b{font-size:20px}
+#neo-tour .btn{min-height:44px}

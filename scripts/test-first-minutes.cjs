@@ -28,7 +28,7 @@ vm.runInContext(section('function dexTierCoats(tier)','function currentSeason()'
 assert.deepEqual(Array.from(special.dexTierCoats('special'),c=>c.key),['midknight','labubu']);
 assert.equal(special.dexRecord('labubu'),undefined);special.G.labubu.visits=3;assert.equal(special.dexRecord('labubu').count,3);
 let now=1000000,arrivals=0,busy=false;
-Object.assign(special,{Date:{now:()=>now},labubuHere:()=>false,save(){},document:{hidden:false,getElementById:()=>node()},restMode:false,festMode:false,anyPanelOpen:()=>busy,scrim:node(),labubuDayCap:()=>true,labubuArrive:()=>arrivals++});
+Object.assign(special,{Date:{now:()=>now},labubuHere:()=>false,save(){},document:{hidden:false,getElementById:id=>id==='neo-tour'?null:node()},restMode:false,festMode:false,anyPanelOpen:()=>busy,scrim:node(),labubuDayCap:()=>true,labubuArrive:()=>arrivals++});
 special.G={tutorialDone:true,firstHelloAt:now,labubu:{visits:0,nextAt:0}};
 vm.runInContext(section('function labubuTick()','/* ---------- Midknight\'s cairn'),special);
 special.labubuTick();assert.equal(special.G.labubu.nextAt,now+180000);assert.equal(arrivals,0);
@@ -36,3 +36,5 @@ now+=179999;special.labubuTick();assert.equal(arrivals,0);
 now++;busy=true;special.labubuTick();assert.equal(arrivals,0,'never interrupt a menu');
 busy=false;special.labubuTick();assert.equal(arrivals,1);
 console.log('PASS: obtainable visitor roster, existing-visit recognition, three-minute first encounter and menu protection.');
+
+special.G.welcomeTourEndedAt=now;special.labubuTick();assert.equal(arrivals,1);now+=12000;special.labubuTick();assert.equal(arrivals,2);console.log("PASS: visitor waits for the welcome tour to settle.");
