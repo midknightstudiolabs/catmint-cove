@@ -10,7 +10,7 @@
   const fitLabel=(str,x,y,maxW,size,col,min=11)=>{let z=size;c.font=`${z}px Georgia`;while(z>min&&c.measureText(str).width>maxW){z--;c.font=`${z}px Georgia`;}c.fillStyle=col;c.textAlign='center';c.fillText(str,x,y);};
   const cafeTitle=E.cafeName?E.cafeName(s).toUpperCase():'CATMINT CAFÉ';
   const has=id=>!!(s.decor&&s.decor[id]);
-  let L=null;   // the inside layout, so the sign, steam and emotes can find their places
+  let outsideY=124; let L=null;   // the inside layout, so the sign, steam and emotes can find their places
   const heart=(x,y,z,col)=>{c.fillStyle=col;c.beginPath();c.moveTo(x,y+z*.9);c.bezierCurveTo(x-z*1.6,y-z*.2,x-z*.7,y-z*1.3,x,y-z*.4);c.bezierCurveTo(x+z*.7,y-z*1.3,x+z*1.6,y-z*.2,x,y+z*.9);c.fill();};
   const sparkle=(x,y,z,col)=>{c.fillStyle=col;c.beginPath();for(let i=0;i<8;i++){const a=i*Math.PI/4,r=i%2?z*.38:z;c.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);}c.closePath();c.fill();};
   // The guest's first sip: hearts for a favourite, sparkles for a good cup, a quiet "…" for fine, a green squint for too bitter.
@@ -99,6 +99,7 @@
     fitLabel(cafeTitle,360,roof-16,right-left-70,tier?26:23,'#fff0d5');
    }
    const wx=tier===0?left+25:205,ww=tier===0?310:310,wy=tier===0?124:116;
+   outsideY=wy;
    rect(wx-7,wy-7,ww+14,113,'#b68b5d');rect(wx,wy,ww,99,night?'#5d6047':'#45624e');
    rect(wx+9,wy+22,ww-18,5,'#bfa278');
    for(let i=0;i<4;i++){rect(wx+15+i*15,wy+6,9,15,palette.light);rect(wx+16+i*15,wy+11,7,3,palette.shade);}
@@ -248,9 +249,10 @@
    machine(mx,my);
    hotspots.machine={x:mx-4,y:my-6,w:140,h:145};
    {const px=344,py=cTop+30;oval(px,py,46,11,'#b99c70');if(!active){round(px-15,py-38,30,34,4,'#faf2df');oval(px,py-37,15,4,'#856547');}label('Pickup',px,panelT+22,15,tier===0?'#f3e8cf':'#405842');L.cupY=py-38;root.CoveCafeScene.cupY=L.cupY;}
+   if(!s.cookware){round(430,cTop+22,80,15,4,'#617665');oval(470,cTop+21,29,5,'#403e32');round(437,cTop+8,66,14,5,'#927252');rect(501,cTop+10,27,5,'#705a42');label('Cookware',478,panelT+22,13,tier===0?'#f3e8cf':'#405842');}
    if(s.cookware){const cx=430,cy=cTop-2;round(cx,cy,80,40,7,'#b98d60');rect(cx-8,cy,95,7,'#806849');oval(cx+40,cy-6,10,5,'#806849');label('Copper cookware',cx+48,panelT+22,13,tier===0?'#f3e8cf':'#405842');}
    kettle(590,cTop+18);
-   hotspots.cookware={x:544,y:cTop-14,w:102,h:70};
+   hotspots.cookware={x:422,y:cTop-14,w:110,h:70};
    {const hx=630,hy=cTop-8;round(hx,hy,40,50,6,'#9aaa87');for(let i=0;i<3;i++){c.strokeStyle='#816b4e';c.lineWidth=5;c.beginPath();c.moveTo(hx+10+i*10,hy+14);c.lineTo(hx+5+i*12,hy-24);c.stroke();oval(hx+5+i*12,hy-28,4,8,'#816b4e');}}
    if(tier>0){const px=246,py=cTop+34;round(px-14,py-18,28,20,3,'#b07f58');for(let i=-1;i<=1;i++){c.save();c.translate(px+i*7,py-18);c.rotate(i*.4+sway*.05);oval(0,-13,5,14,'#6f8f5a');c.restore();}}
    // warm light
@@ -267,30 +269,29 @@
    c.fillStyle='#f7efd9';c.strokeStyle=s.open?'#6f9a78':'#b9a884';c.lineWidth=1.4;c.beginPath();c.roundRect(-sw/2,-9,sw,sh,5);c.fill();c.stroke();
    c.fillStyle=s.open?'#3d6b4b':'#8b7660';c.font=(word.length>6?'bold 8px':'bold 10px')+' Georgia';c.textAlign='center';c.fillText(word.split('').join(word.length>6?'':'\u200a'),0,5);
    c.restore();}
-  // Preparation follows the real order clock; no extra animation loop or particles.
+  // Preparation stays at its equipment; the last three seconds are pickup/serving.
+  const recipe=active?E.recipes.find(r=>r.id===s.pending.id):null;
+  const food=recipe?.kind==='food',serving=active&&s.pending.at-now<=3000;
+  const stationX=inside?(food?470:L.mx+38):(food?439:248);
+  const stationY=inside?(food?L.cupY+8:L.my+66):(food?outsideY+82:outsideY+82);
+  root.CoveCafeScene.orderAnchor={x:active&&!serving?stationX:344,y:inside?L.cupY+52:229};
   if(active){
-   const p=Math.max(0,Math.min(1,1-(s.pending.at-now)/30000)),food=E.recipes.find(r=>r.id===s.pending.id)?.kind==='food';
-   const px=inside?344:360,py=inside?L.cupY:201;
-   c.save();c.translate(px,py);if(!inside)c.scale(.68,.68);
+   const p=Math.max(0,Math.min(1,1-(s.pending.at-now)/30000));
+   const px=serving?(inside?344:360):stationX,py=serving?(inside?L.cupY:outsideY+75):stationY;
+   c.save();c.translate(px,py);if(!inside)c.scale(.45,.45);else if(!food&&!serving)c.scale(.72,.60);
    if(food){
-    round(-24,22,48,8,4,'#ece2c8');
-    for(let i=0;i<3;i++){const x=(i-1)*14,y=16+(i%2)*4;oval(x,y,9,7,p>.6?'#c48b4c':'#dec49a');rect(x-4,y-3,2,2,'#a57646');}
-    if(inside&&s.cookware){const lidY=6+(reduced?0:Math.sin(t/100)*1.4);round(86,lidY,95,6,3,'#806849');}
+    if(serving){round(-24,22,48,8,4,'#ece2c8');for(let i=0;i<3;i++){const x=(i-1)*14,y=16+(i%2)*4;oval(x,y,9,7,'#c48b4c');rect(x-4,y-3,2,2,'#a57646');}}
+    else if(inside&&s.cookware){const dy=reduced?0:Math.sin(t/110)*1.3;round(-48,-4+dy,95,6,3,'#806849');oval(0,-9+dy,10,5,'#806849');}
+    else{round(-32,8,64,15,5,'#927252');rect(30,10,26,5,'#705a42');for(let i=-1;i<=1;i++)oval(i*15,8+(reduced?0:Math.sin(t/220+i)*1.2),8,5,p>.6?'#c48b4c':'#dec49a');}
    }else{
-    round(-15,0,30,34,4,'#faf2df');
-    const level=4+p*23;round(-11,30-level,22,level,2,s.pending.id==='tea'?'#97ae76':'#9b704d');
-    oval(0,30-level,11,3,s.pending.id==='tea'?'#c0d19a':'#d4ac79');
+    round(-15,0,30,34,4,'#faf2df');const level=serving?27:4+p*23,tea=recipe?.kind==='tea';
+    round(-11,30-level,22,level,2,tea?'#97ae76':'#9b704d');oval(0,30-level,11,3,tea?'#c0d19a':'#d4ac79');
     c.strokeStyle='#faf2df';c.lineWidth=4;c.beginPath();c.arc(17,16,7,-1.5,1.5);c.stroke();
-    if(!reduced&&p<.94){c.strokeStyle=s.pending.id==='tea'?'#b7c68d':'#b18859';c.lineWidth=2.5;c.beginPath();c.moveTo(0,-18);c.quadraticCurveTo(Math.sin(t/170)*2,3,0,29-level);c.stroke();}
+    if(!serving&&!reduced){c.strokeStyle=tea?'#b7c68d':'#b18859';c.lineWidth=2.5;c.beginPath();c.moveTo(0,-10);c.lineTo(0,29-level);c.stroke();}
    }
-   if(!reduced){for(let i=0;i<3;i++){const phase=(t/1600+i/3)%1,x=(i-1)*10,y=4-phase*30;c.globalAlpha=(1-phase)*.65;c.strokeStyle='#fff2d2';c.lineWidth=2;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+7,y-7,x+2,y-14);c.stroke();}}
+   if(!reduced){for(let i=0;i<3;i++){const phase=(t/1600+i/3)%1,x=(i-1)*10,y=-phase*30;c.globalAlpha=(1-phase)*.65;c.strokeStyle='#fff2d2';c.lineWidth=2;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+7,y-7,x+2,y-14);c.stroke();}}
    c.restore();
   }
-  if(active&&!reduced){c.strokeStyle='#f8f0d7';c.lineWidth=2;for(let i=0;i<3;i++){const x=inside?L.mx+58:198,y=(inside?L.my-6:145)-(t/80+i*8)%24;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+7,y-7,x,y-14);c.stroke();}}
-  // A single slow, faint wisp off the machine while open and waiting for the next guest --
-  // the busier "brewing" steam above only shows once an order is actually in progress, so
-  // without this the café looked idle/stalled during the between-guests countdown.
-  else if(inside&&stocked&&!reduced){const cyc=(t/2200)%1;c.save();c.globalAlpha=(1-cyc)*.5;c.strokeStyle='#f8f0d7';c.lineWidth=1.6;const x=L.mx+58,y=L.my-6-cyc*16;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+5,y-6,x,y-11);c.stroke();c.restore();}
   if(depart>=0&&depart<.5&&s.lastCompleted&&s.lastCompleted.reaction)emote(inside?L.leadX+depart*330:382+depart*390,inside?L.faceY:344,s.lastCompleted.reaction.mood,depart/.5);
   if(!active&&depart>=0&&depart<1&&s.lastCompleted?.response){const response=s.lastCompleted.response,bx=inside?360:Math.max(150,Math.min(570,382+depart*390)),by=inside?L.winT+8:262+depart*14;round(bx-130,by,260,24,10,'#fff1d8');fitLabel(response.text,bx,by+17,236,12,'#496247');}
   c.restore();

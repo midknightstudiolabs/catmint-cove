@@ -343,7 +343,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    pickup.querySelector('.cc-pickup-track').hidden=!pending;
    if(!pending){pickup.setAttribute('aria-disabled','false');pickup.querySelector('strong').textContent='Take order';const wait=Math.max(0,Math.ceil((s.cursor+E.interval(s,s.cursor)-now)/1000));pickup.querySelector('small').textContent='';pickup.setAttribute('aria-label','Take order now. Starts automatically in '+wait+' seconds.');return;}
    const recipe=E.recipes.find(r=>r.id===pending.id),pct=Math.round(Math.min(1,Math.max(0,1-(pending.at-now)/30000))*100);
-   pickup.querySelector('strong').textContent=recipe.kind==='food'?'Cooking…':'Brewing…';pickup.setAttribute('aria-label',E.displayName(s,recipe)+', '+seconds+' seconds left'+(pending.helped?'':'. Tap to halve the remaining time.'));
+   pickup.querySelector('strong').textContent=seconds<=3?'Serving…':recipe.kind==='food'?'Cooking…':'Brewing…';pickup.setAttribute('aria-label',E.displayName(s,recipe)+', '+seconds+' seconds left'+(pending.helped?'':'. Tap to halve the remaining time.'));
    pickup.querySelector('small').textContent=pending.helped?'2× boosted':'Tap to boost';
    pickup.setAttribute('aria-disabled',String(!!pending.helped));pickup.classList.toggle('boosted',!!pending.helped);pickup.classList.toggle('boost-pop',!!pending.boostedAt&&now-pending.boostedAt<900);
    const progress=pickup.querySelector('[role="progressbar"]');progress.setAttribute('aria-valuenow',String(pct));progress.setAttribute('aria-valuetext',seconds+' seconds left');progress.querySelector('i').style.width=pct+'%';
@@ -383,7 +383,8 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    if(edgeWant){if(edgeSig!==sw+'x'+ph+view||!edgeCv[0])buildEdges();ctx.save();ctx.setTransform(1,0,0,1,0,0);if(Lm>2)ctx.drawImage(edgeCv[0],sw-2,0,2,ph,0,0,Lm+3,ph);if(pw-Rm>2)ctx.drawImage(edgeCv[1],0,0,2,ph,Rm-3,0,pw-Rm+3,ph);ctx.restore();}
    CoveCafeScene(ctx,sceneArgs);
    const pickup=panel.querySelector('.cc-pickup-order');if(pickup&&!pickup.hidden){
-    const px=(344-cx0)*css,py=((view==='inside'?(CoveCafeScene.cupY||280)+52:229)+offset)*css;
+    const anchor=CoveCafeScene.orderAnchor||{x:344,y:229};
+    const px=(anchor.x-cx0)*css,py=(anchor.y+offset)*css;
     pickup.style.left=Math.max(8,Math.min(bounds.width-pickup.offsetWidth-8,px-pickup.offsetWidth/2))+'px';
     pickup.style.top=Math.max(top+8,Math.min(bounds.height-pickup.offsetHeight-70,py))+'px';
    }
