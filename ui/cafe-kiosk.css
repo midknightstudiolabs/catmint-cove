@@ -154,6 +154,7 @@
 #app #cafe-kiosk.cc-v2 .cc-daily{margin:0 0 14px;padding:14px;border-radius:16px;background:#f3f0da;border:1px solid #e0dcb8}
 #app #cafe-kiosk.cc-v2 .cc-daily h3{margin:0 0 2px;font-size:16px}#app #cafe-kiosk.cc-v2 .cc-daily p{margin:0 0 8px;font-size:14px}
 #app #cafe-kiosk.cc-v2 .cc-daily-bar{height:8px;border-radius:99px;background:rgba(90,110,80,.16);overflow:hidden}#app #cafe-kiosk.cc-v2 .cc-daily-bar i{display:block;height:100%;border-radius:99px;background:#7fa66d;transition:width .5s ease}
+#app #cafe-kiosk.cc-v2 .cc-brew-bar{height:6px;border-radius:99px;background:rgba(90,110,80,.16);overflow:hidden;margin:-2px 0 6px}#app #cafe-kiosk.cc-v2 .cc-brew-bar[hidden]{display:none}#app #cafe-kiosk.cc-v2 .cc-brew-bar i{display:block;height:100%;border-radius:99px;background:#c9935a;transition:width 1s linear}
 #app #cafe-kiosk.cc-v2 .cc-daily-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;flex-wrap:wrap}#app #cafe-kiosk.cc-v2 .cc-daily-foot small{color:#66705a;font-size:12px}
 #app #cafe-kiosk.cc-v2 .cc-daily.ready{background:#fff4d2;border-color:#e6c46f}#app #cafe-kiosk.cc-v2 .cc-daily.claimed{opacity:.75}
 /* Outside | Inside sits in the middle of the top bar: always visible, one thumb-tap away */

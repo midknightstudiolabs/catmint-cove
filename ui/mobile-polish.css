@@ -18,8 +18,10 @@
   #app #cafe-kiosk.cc-v2 .cc-guide-replay,
   #app #cafe-kiosk.cc-v2 .cc-switch button { min-height:44px; }
   #app #cafe-kiosk.cc-v2 .cc-guide-replay { min-width:44px; }
-  #app #cafe-kiosk.cc-v2.cc-managing .cc-live { display:none; }
-  #app #cafe-kiosk.cc-v2.cc-managing .cc-content { top:calc(68px + env(safe-area-inset-top));bottom:var(--cc-dock);max-height:none;left:8px;right:8px;scroll-padding-top:64px;border-radius:16px 16px 0 0; }
+  /* My menu/Ingredients/Improve café used to expand to nearly full height on phones (hiding
+     the shells/status strip too), which read as the whole screen jumping on every tab tap.
+     The drawer already scrolls its own contents, so it can stay the same capped bottom-sheet
+     size phones and tablets both use -- opening a tab no longer reflows anything above it. */
   #app #cafe-kiosk.cc-v2 .cc-content input,
   #app #cafe-kiosk.cc-v2 .cc-content select { font-size:16px;max-width:100%;box-sizing:border-box; }
   #app #cafe-kiosk.cc-v2 .cc-content .cc-recipe-details summary { min-height:44px;display:flex;align-items:center;box-sizing:border-box; }
