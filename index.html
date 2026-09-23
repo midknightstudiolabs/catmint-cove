@@ -2671,10 +2671,14 @@ const MIDKNIGHT_COAT = { key:"midknight", name:"Midknight", base:"#26232b", bell
 // Labubu — Midknight's sidekick. A snowshoe: seal points, white boots + blaze,
 // blue eyes. A visitor, never a resident — see the labubu* helpers below.
 const LABUBU_COAT = { key:"labubu", name:"Labubu", base:"#e7dcc6", belly:"#f4efe3", pattern:"points",
+  tier:"special", note:"Midknight’s curious friend. Visits with a little keepsake, stays for a while, then heads off on his rounds. His gifts live in your Journal.",
   point:"#5f4b3d", white:["bib","belly","muzzle","paws"], eye:"#7fb6d6", nose:"#d98f97", inner:"#caa0a0",
   snowMask:true,                          // custom face: an off-centre dark muzzle splotch, not a clean blaze
   collarCol:"#a24bb0", bellCol:"#b76fc7", visitor:true };   // his purple bell — canon, from the real cat
 const COAT_BY_KEY = Object.fromEntries([...COATS, MIDKNIGHT_COAT, LABUBU_COAT].map(c => [c.key, c]));
+// Only characters with working encounters belong in the discoverable guide.
+function dexTierCoats(tier){return tier==='special'?[COATS.find(c=>c.key==='midknight'),LABUBU_COAT]:COATS.filter(c=>c.tier===tier);}
+function dexRecord(key){return key==='labubu'&&G.labubu?.visits?{star:0,count:G.labubu.visits}:G.dex[key];}
 function currentSeason() {
   const m = new Date().getMonth();                              // 0 = Jan
   return (m <= 1 || m === 11) ? "winter" : m <= 4 ? "spring" : m <= 7 ? "summer" : "autumn";
@@ -4051,10 +4055,10 @@ const DEX_MILESTONES = [   // v3: ~halved — pearls are scarcer now
   { at: 16, pearls: 6 }, { at: ROLLABLE.length, pearls: 13 },
 ];
 function dexCount() { return dexInPool(); }                     // coats met that count toward completion
-function dexSpecialCount() { return Object.keys(G.dex).filter(k => (COAT_BY_KEY[k] || {}).tier === "special").length; }
+function dexSpecialCount() { return dexTierCoats('special').filter(c=>dexRecord(c.key)).length; }
 function tierProgress(tier) {
-  const list = COATS.filter(c => c.tier === tier);
-  return { found: list.filter(c => G.dex[c.key]).length, total: list.length };
+  const list = dexTierCoats(tier);
+  return { found: list.filter(c => dexRecord(c.key)).length, total: list.length };
 }
 function charterEarned() { return G.coveCharter || !!G.dexGrandfathered || dexCount() >= CHARTER_DEX; }
 function registerInDex(c, celebrate) {
@@ -7969,7 +7973,7 @@ function renderDex() {
   const host = document.getElementById("dexTiers");
   host.innerHTML = "";
   for (const tier of COAT_TIERS) {
-    const list = COATS.filter(c => c.tier === tier);
+    const list = dexTierCoats(tier);
     if (!list.length) continue;
     const p = tierProgress(tier);
     const sec = document.createElement("div");
@@ -7980,7 +7984,7 @@ function renderDex() {
       `<div class="dex-grid"></div>`;
     const grid = sec.querySelector(".dex-grid");
     for (const coat of list) {
-      const rec = G.dex[coat.key];
+      const rec = dexRecord(coat.key);
       const cell = document.createElement("div");
       cell.className = "dexcell" + (rec ? " found" : "");
       const cv = document.createElement("canvas"); cv.width = 96; cv.height = 80;
@@ -8007,7 +8011,7 @@ function showCoatNote(coat, rec) {
     <div class="kicker">${met ? esc(TIER_LABEL[coat.tier]) : "Not met yet"}</div>
     <canvas id="cn-cv" width="200" height="150"></canvas>
     <h2 style="margin:.15rem 0 .1rem">${met ? esc(coat.name) : "? ? ?"}</h2>
-    <p class="vig-body">${met ? esc(coat.note || "") : "You haven't crossed paths with this one yet. It's out there."}</p>
+    <p class="vig-body">${met ? esc(coat.note || "") : coat.key==='labubu'?"A friend visits a few minutes into your first welcome. Finish the intro, then spend a little time in the Cove with menus closed. No purchase needed.":"You haven't crossed paths with this one yet. It's out there."}</p>
     ${met && rec.count > 1 ? `<p class="sub" style="margin:.2rem 0 0">met ${rec.count} times</p>` : ""}
     ${met && rec.left ? `<p class="sub" style="margin:.35rem 0 0;color:var(--heart)">${esc(rec.left.name)} was one of these — left the cove on day ${rec.left.day}. Another may wander in.</p>` : ""}
     <div class="row"><button class="btn primary" id="cn-ok">Close</button></div>
@@ -8217,6 +8221,7 @@ const COLD = [
 
 function startColdOpen() {
   if (G.tutorialDone) return;
+  if(!G.firstHelloAt){G.firstHelloAt=Date.now();save();}
   const i = Math.min(Math.max(G.coldStep | 0, 0), COLD.length - 1);
   _cold = { i, armed: false, shownKey: null };
   if (i >= 2) _cold.newCat = cats.find(c => !c.mascot) || scriptArrival();
@@ -18728,8 +18733,8 @@ function anyProjectOpen() { return PROJECTS.some(p => projectStage(p.id) === "op
 let driftTimer = rand(30, 70);
 
 /* ---------- Labubu — Midknight's sidekick, a recurring visitor ----------
-   First visit is due three minutes after finishing/skipping the tutorial,
-   and waits for an unobstructed Cove. Then daily for the first week or
+   First visit is due three minutes from starting the introduction,
+   and waits for completion and an unobstructed Cove. Then daily for the first week or
    so and gently less often after. Pads around near Midknight for a couple of
    minutes, leaves a bit of junk by the sign (occasionally a driftwood, if a
    project needs it), then heads back out. Never a resident: not in the
@@ -18771,7 +18776,8 @@ function grantLabubuFind(find) {
 }
 function labubuArrive() {
   if (labubuHere() || residentCount() < 1) return;
-  const gift = pickLabubuGift();
+  const firstVisit=!(G.labubu&&G.labubu.visits);
+  const gift = firstVisit?{find:LABUBU_FINDS.find(f=>f.id==='lb_shell')}:pickLabubuGift();
   const c = spawnCat({ coatKey: "labubu", name: "Labubu", visitor: true, star: 3,
     traits: ["cuddly", "curious"], worn: ["bell"], mood: 84,
     x: Math.random() < 0.5 ? -40 : W + 40, y: rand(H * 0.6, H * 0.8) });
@@ -18782,12 +18788,18 @@ function labubuArrive() {
   if (G.labubu.dayKey !== k) { G.labubu.dayKey = k; G.labubu.dayCount = 0; }
   G.labubu.dayCount = (G.labubu.dayCount || 0) + 1;
   scheduleNextLabubu();
+  // Persist the first keepsake before its animation, so closing the app
+  // during the entrance cannot lose the player's first visitor reward.
+  if(firstVisit)grantLabubuFind(gift.find);
+  save();
   // he drops whatever he's carrying by the sign a beat after he's on screen
   setTimeout(() => {
     if (!cats.includes(c)) return;
     const dx = clamp(c.x, 46, W * 0.55);
     if (gift.driftwood) { dropToken(dx + rand(-12, 12), catFloor() - rand(24, 40), 0, "driftwood"); }
-    else { grantLabubuFind(gift.find); floatText(dx, c.y - 26, gift.find.emoji, "#c88fd0"); if (panels.today && !panels.today.hidden) renderFindsCard(); }
+    else { if(!firstVisit)grantLabubuFind(gift.find); floatText(dx, c.y - 26, gift.find.emoji, "#c88fd0"); if (panels.today && !panels.today.hidden) renderFindsCard(); }
+    if(firstVisit){spawnParticles(c.x,c.y-18,"heart",8);spawnParticles(c.x,c.y-20,"twinkle",10);toast("Your first visitor! Labubu brought you a keepsake. Find it in Journal, and meet him in Catdex.",6);}
+    save();
   }, 2400);
   logMoment(gift.driftwood ? "🪵" : gift.find.emoji,
     gift.driftwood ? "Labubu left a piece of driftwood by the sign." : `Labubu left ${gift.find.label} by the sign.`, "visit");
@@ -18808,8 +18820,8 @@ function labubuLeave(c) {
 function labubuTick() {
   if (!G || !G.tutorialDone || labubuHere()) return;
   if (!G.labubu) G.labubu = { nextAt: 0, dayKey: "", dayCount: 0, visits: 0 };
-  if (!G.labubu.visits && !G.labubu.nextAt) { G.labubu.nextAt = Date.now() + 3 * 60e3; return; }
-  if (document.hidden || restMode || festMode || anyPanelOpen() || document.getElementById('app').classList.contains('editing-cove')) return;
+  if (!G.labubu.visits && !G.labubu.nextAt) { G.labubu.nextAt = (G.firstHelloAt||G.coldCompletedAt||Date.now()) + 3 * 60e3;save(); }
+  if (document.hidden || restMode || festMode || anyPanelOpen() || scrim.classList.contains('on') || document.getElementById('app').classList.contains('editing-cove')) return;
   if (G.labubu.nextAt && Date.now() >= G.labubu.nextAt && labubuDayCap()) labubuArrive();
 }
 
