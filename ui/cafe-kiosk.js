@@ -358,7 +358,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    const sheetBelow=sheet&&sheet.getBoundingClientRect().left-bounds.left<bounds.width*.5;   // on wide screens the sheet docks beside the scene and covers none of it
    const bottomEdge=sheetBelow?sheet.getBoundingClientRect().top-bounds.top:intro?intro.getBoundingClientRect().top-bounds.top:lower&&lower.offsetParent?lower.getBoundingClientRect().top-bounds.top:bounds.height;
    const sideSheet=!!sheet&&!sheetBelow,availW=sideSheet?Math.max(240,sheet.getBoundingClientRect().left-bounds.left):bounds.width;
-   if(view!=='inside'&&!(bounds.width<600&&bounds.height/bounds.width>1.3)){const floor=lower&&lower.offsetParent?lower.getBoundingClientRect().top-bounds.top:bounds.height,cap=Math.max(css*.72,.8*Math.max(160,floor-top)/380);if(cap<css){css=cap;view720=bounds.width/css;vh=bounds.height/css;cx0=(720-view720)/2;}}   // tablets and desktops: pull the outside view back so the whole café and its garden read, never more than ~28%
+   if(view!=='inside'&&!(bounds.width<600&&bounds.height/bounds.width>1.3)){const floor=lower&&lower.offsetParent?lower.getBoundingClientRect().top-bounds.top:bounds.height,cap=Math.max(css*.72,.8*Math.max(160,floor-top)/420);if(cap<css){css=cap;view720=bounds.width/css;vh=bounds.height/css;cx0=(720-view720)/2;}}   // tablets and desktops: pull the outside view back so the whole café and its garden read, never more than ~28%
    // Opening My menu/Ingredients/Improve café used to shrink the whole room to make space for
    // the drawer -- every tab tap read as a jarring camera zoom. The drawer already overlays the
    // scene (it's absolutely positioned), so the room can just stay put at its normal size; the
@@ -371,7 +371,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
     css=Math.min(availW/720,Math.max(180,floor-top)/560,1.5);
     view720=bounds.width/css;vh=bounds.height/css;cx0=360-(availW/2)/css;
    }
-   let bandPx=380*css,isIn=view==='inside',offset=isIn?Math.max(0,top/css):Math.max(0,Math.min(vh-380,((top+Math.max(top+bandPx,bottomEdge))/2-bandPx/2)/css)),band=isIn?Math.max(560,((lower&&lower.offsetParent?lower.getBoundingClientRect().top-bounds.top:bounds.height)-top)/css):undefined;
+   let bandPx=420*css,isIn=view==='inside',offset=isIn?Math.max(0,top/css):Math.max(0,Math.min(vh-420,((top+Math.max(top+bandPx,bottomEdge))/2-bandPx/2)/css)),band=isIn?Math.max(560,((lower&&lower.offsetParent?lower.getBoundingClientRect().top-bounds.top:bounds.height)-top)/css):undefined;
    {const key=view+bounds.width+'x'+bounds.height,dtc=camT&&t-camT<400?Math.min(.1,(t-camT)/1000):1,ease=dtc>=1||!cam||camKey!==key||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?1:1-Math.exp(-dtc*11);camT=t;camKey=key;const tg={css,cx0,offset,band:band===undefined?0:band};if(ease>=1)cam=tg;else for(const q in tg)cam[q]+=(tg[q]-cam[q])*ease;css=cam.css;cx0=cam.cx0;offset=cam.offset;if(isIn)band=cam.band;view720=bounds.width/css;vh=bounds.height/css;}   // ease the camera so a tab opening glides instead of jumping
    layout={k:css,cx0,offset};
    const ctx=canvas.getContext('2d'),k=Math.round(720*(pw/view720))/720,tx=Math.round(-cx0*k);ctx.setTransform(k,0,0,k,tx,0);   // whole-pixel scene edges: a fractional edge blends the haze layer twice and draws a thin line

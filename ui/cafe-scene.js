@@ -25,7 +25,7 @@
   const lead=active?s.sequence-1:s.sequence;
   let queue=queues.get(s);if(!queue){queue=new Map();queues.set(s,queue);}
   function queued(x,y,scale,id){
-   let p=queue.get(id);if(!p){p={x:-55-(id-lead)*97,y,last:t,walk:0};queue.set(id,p);}
+   let p=queue.get(id);if(!p){p={x:-55-(id-lead)*80,y:390,last:t,walk:0};queue.set(id,p);}
    const dt=Math.min(.05,Math.max(0,(t-p.last)/1000));p.last=t;
    const distance=Math.hypot(x-p.x,y-p.y),step=Math.min(distance,dt*55);
    if(reduced){p.x=x;p.y=y;p.walk=0;}else{if(distance>0){p.x+=(x-p.x)/distance*step;p.y+=(y-p.y)/distance*step;}p.walk+=(Number(distance>1)-p.walk)*Math.min(1,dt*9);}
@@ -147,8 +147,8 @@
    // A public resting bench is distinct from the purchasable café table.
    rect(28,318,86,8,'#ba9971');rect(33,300,76,7,'#ba9971');rect(33,309,76,5,'#ba9971');rect(38,325,5,20,'#786046');rect(99,325,5,20,'#786046');
    if(!stocked&&!active&&actors.length>1){a.cat(c,actors[1],73,320,.85,reduced?0:t,false);}
-   if(stocked||active){queued(382,358,.58,lead);queued(285,365,.6,lead+1);queued(188,372,.62,lead+2);}
-   if(depart>=0&&depart<1)customer(382+depart*390,358+depart*14,.58,s.sequence-1,true);
+   if(stocked||active){queued(382,390,.42,lead);queued(302,390,.42,lead+1);queued(222,390,.42,lead+2);}
+   if(depart>=0&&depart<1)customer(382+depart*390,390,.42,s.sequence-1,true);
    if(s.seats){rect(659,299,8,42,'#927550');oval(663,294,32,12,'#c5aa7d');round(651,276,12,16,3,'#f6edd7');oval(657,276,6,2,'#7b5a42');if(actors.length>2)a.cat(c,actors[2],615,350,.9,reduced?0:t,false);}
   }
 
@@ -272,7 +272,7 @@
   // the busier "brewing" steam above only shows once an order is actually in progress, so
   // without this the café looked idle/stalled during the between-guests countdown.
   else if(inside&&stocked&&!reduced){const cyc=(t/2200)%1;c.save();c.globalAlpha=(1-cyc)*.5;c.strokeStyle='#f8f0d7';c.lineWidth=1.6;const x=L.mx+58,y=L.my-6-cyc*16;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+5,y-6,x,y-11);c.stroke();c.restore();}
-  if(depart>=0&&depart<.5&&s.lastCompleted&&s.lastCompleted.reaction)emote(inside?L.leadX+depart*330:382+depart*390,inside?L.faceY:284+depart*14,s.lastCompleted.reaction.mood,depart/.5);
+  if(depart>=0&&depart<.5&&s.lastCompleted&&s.lastCompleted.reaction)emote(inside?L.leadX+depart*330:382+depart*390,inside?L.faceY:344,s.lastCompleted.reaction.mood,depart/.5);
   if(!active&&depart>=0&&depart<1&&s.lastCompleted?.response){const response=s.lastCompleted.response,bx=inside?360:Math.max(150,Math.min(570,382+depart*390)),by=inside?L.winT+8:262+depart*14;round(bx-130,by,260,24,10,'#fff1d8');fitLabel(response.text,bx,by+17,236,12,'#496247');}
   c.restore();
  };
