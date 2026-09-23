@@ -54,9 +54,9 @@ service.cafe.menu.push('tea');service.homestead.stock={coffee:0,catmint:2};actua
 console.log('PASS: prompt first order, automatic completion, stock closure, no double payment, restock/manual reopen, no toggle acceleration, alternate available recipe.');
 
 const assist={shells:1000,homestead:{stock:{}}};actual.unlock(assist,1000000);assist.cafe.menu=['coffee'];actual.setOpen(assist,true,1000000);
-const originalDue=assist.cafe.pending.at;assert(actual.helpOrder(assist,1000001));assert.equal(assist.cafe.pending.at,originalDue-10000);assert(!actual.helpOrder(assist,1000002));
-const resumed=JSON.parse(JSON.stringify(assist));assert(!actual.helpOrder(resumed,1000003));actual.settle(resumed,originalDue-10000);assert.equal(resumed.cafe.served,1);const paidOnce=resumed.shells;actual.settle(resumed,originalDue);assert.equal(resumed.shells,paidOnce);
-console.log('PASS: one help per order, ten-second bonus, reload protection and automatic single payment.');
+const originalDue=assist.cafe.pending.at;assert(actual.helpOrder(assist,1000001));assert.equal(assist.cafe.pending.at,1000001+Math.ceil((originalDue-1000001)/2));assert(!actual.helpOrder(assist,1000002));
+const resumed=JSON.parse(JSON.stringify(assist));assert(!actual.helpOrder(resumed,1000003));actual.settle(resumed,resumed.cafe.pending.at);assert.equal(resumed.cafe.served,1);const paidOnce=resumed.shells;actual.settle(resumed,originalDue);assert.equal(resumed.shells,paidOnce);
+console.log('PASS: one help per order, half-time boost, reload protection and automatic single payment.');
 
 const direct={shells:1000,homestead:{stock:{}}};actual.unlock(direct,1000000);direct.cafe.menu=['coffee'];actual.setOpen(direct,true,1000000);actual.settle(direct,1030000);
 const beansBefore=direct.homestead.stock.coffee;assert(actual.takeOrder(direct,1030001));assert.equal(direct.homestead.stock.coffee,beansBefore-1);assert(!actual.takeOrder(direct,1030002));assert.equal(direct.homestead.stock.coffee,beansBefore-1);actual.settle(direct,1060001);assert.equal(direct.cafe.served,2);direct.cafe.open=false;assert(!actual.takeOrder(direct,1060002));direct.cafe.open=true;direct.homestead.stock.coffee=0;assert(!actual.takeOrder(direct,1060003));

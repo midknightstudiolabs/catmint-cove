@@ -343,9 +343,9 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    pickup.querySelector('.cc-pickup-track').hidden=!pending;
    if(!pending){pickup.setAttribute('aria-disabled','false');pickup.querySelector('strong').textContent='Take order';const wait=Math.max(0,Math.ceil((s.cursor+E.interval(s,s.cursor)-now)/1000));pickup.querySelector('small').textContent='';pickup.setAttribute('aria-label','Take order now. Starts automatically in '+wait+' seconds.');return;}
    const recipe=E.recipes.find(r=>r.id===pending.id),pct=Math.round(Math.min(1,Math.max(0,1-(pending.at-now)/30000))*100);
-   pickup.querySelector('strong').textContent=pending.id==='bites'?'Cooking…':'Brewing…';pickup.setAttribute('aria-label',E.displayName(s,recipe)+', '+seconds+' seconds left'+(pending.helped?'':'. Tap to help.'));
-   pickup.querySelector('small').textContent=pending.helped?'':'Tap to help';
-   pickup.setAttribute('aria-disabled',String(!!pending.helped));
+   pickup.querySelector('strong').textContent=pending.id==='bites'?'Cooking…':'Brewing…';pickup.setAttribute('aria-label',E.displayName(s,recipe)+', '+seconds+' seconds left'+(pending.helped?'':'. Tap to halve the remaining time.'));
+   pickup.querySelector('small').textContent=pending.helped?'2× boosted':'Tap to boost';
+   pickup.setAttribute('aria-disabled',String(!!pending.helped));pickup.classList.toggle('boosted',!!pending.helped);pickup.classList.toggle('boost-pop',!!pending.boostedAt&&now-pending.boostedAt<900);
    const progress=pickup.querySelector('[role="progressbar"]');progress.setAttribute('aria-valuenow',String(pct));progress.setAttribute('aria-valuetext',seconds+' seconds left');progress.querySelector('i').style.width=pct+'%';
   }
   function cup(id){if(id==='bites')return '<svg viewBox="0 0 60 64" aria-label="Garden bites"><ellipse cx="30" cy="47" rx="28" ry="10" fill="#ddd0ad"/><circle cx="20" cy="35" r="12" fill="#c78e55"/><circle cx="39" cy="38" r="12" fill="#d6a366"/><path d="m14 31 10 7m10-5 8 9" stroke="#a77149" stroke-width="3"/></svg>';return `<svg viewBox="0 0 60 64" aria-hidden="true"><path d="M42 24h8q12 15-8 19" fill="none" stroke="#ae8761" stroke-width="5"/><path d="M10 20h34v26q-17 15-34 0Z" fill="${id==='tea'?'#8fa783':id==='midknight'?'#d0ad6b':'#e5cfa8'}"/><ellipse cx="27" cy="21" rx="17" ry="5" fill="#74523d"/><path d="M22 13q-7-6 0-11m12 11q-7-6 0-11" fill="none" stroke="#adbaa0" stroke-width="2"/></svg>`;}

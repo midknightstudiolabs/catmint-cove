@@ -144,6 +144,6 @@
     for(const[k,n]of Object.entries(r.inputs)){g.homestead.stock[k]-=n;cost+=(s.basis[k]||0)*n;}
     s.cursor=now;s.pending={id:r.id,price:price(s,r,now),cost,at:now+30000};return true;
   }
-  function helpOrder(g,now=Date.now()){const s=init(g,now),p=s.pending;if(!p||p.helped||p.at<=now)return false;p.helped=true;p.at=Math.max(now+1000,p.at-10000);return true;}
+  function helpOrder(g,now=Date.now()){const s=init(g,now),p=s.pending;if(!p||p.helped||p.at<=now)return false;p.helped=true;p.boostedAt=now;p.at=now+Math.ceil((p.at-now)/2);return true;}
   root.CoveCafeEngine={takeOrder,helpOrder,rush,daily,claimDaily,special,taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,makeRecipe,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};
 })(globalThis);
