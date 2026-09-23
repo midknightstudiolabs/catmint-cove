@@ -88,13 +88,11 @@
     const start=Math.max(s.cursor,now-43200000);let t=start,earned=0;
     if(s.cursor<start)s.cursor=start;
     for(let steps=0;steps<600;steps++){
-      if(s.pending){if(s.pending.at>now)break;const p=s.pending;s.pending=null;g.shells+=p.price;earned+=p.price;s.served++;s.revenue+=p.price;s.cost+=p.cost;s.sales[p.id]=(s.sales[p.id]||0)+1;const response=feedback(s,p);s.lastCompleted={id:p.id,at:p.at,price:p.price,response};s.customerReport||={total:0,happy:0,delighted:0};s.customerReport.total++;if(response.rating>=4)s.customerReport.happy++;if(response.rating===5)s.customerReport.delighted++;s.feedbackLog||=[];s.feedbackLog.unshift({id:p.id,at:p.at,price:p.price,...response});s.feedbackLog.length=Math.min(10,s.feedbackLog.length);t=Math.max(t,p.at);}
+      if(s.pending){if(s.pending.at>now)break;const p=s.pending;s.pending=null;g.shells+=p.price;earned+=p.price;s.served++;s.revenue+=p.price;s.cost+=p.cost;for(const id of (p.items||[p.id]))s.sales[id]=(s.sales[id]||0)+1;const response=feedback(s,p);s.lastCompleted={id:p.id,items:p.items||[p.id],at:p.at,price:p.price,response};s.customerReport||={total:0,happy:0,delighted:0};s.customerReport.total++;if(response.rating>=4)s.customerReport.happy++;if(response.rating===5)s.customerReport.delighted++;s.feedbackLog||=[];s.feedbackLog.unshift({id:p.id,at:p.at,price:p.price,...response});s.feedbackLog.length=Math.min(10,s.feedbackLog.length);t=Math.max(t,p.at);}
       if(!s.open){s.cursor=now;break;}
       const options=available(s,g.homestead.stock);if(!options.length){s.open=false;s.closedReason='ingredients';s.cursor=now;break;}
       const due=s.cursor+interval(s,s.cursor);if(due>now)break;
-      const r=options[s.sequence++%options.length];let cost=0;
-      for(const[k,n]of Object.entries(r.inputs)){g.homestead.stock[k]-=n;cost+=(s.basis[k]||0)*n;}
-      s.cursor=due;s.pending={id:r.id,price:price(s,r,due),cost,at:due+30000};
+      s.cursor=due;s.pending=prepareOrder(g,s,options,due);
     }
     return earned;
   }
@@ -146,13 +144,22 @@
   }
   function plantingPlan(g){const free=(g.homestead?.plots||[]).flatMap((p,i)=>p?[]:[i]),rows=pantryPlan(g).rows.filter(r=>r.patches>0).map(r=>({...r})),jobs=[];let cost=0;while(free.length&&rows.some(r=>r.patches>0)){for(const r of rows){if(!free.length)break;if(r.patches>0){jobs.push({slot:free.shift(),key:r.key});cost+=r.cost;r.patches--;}}}return {jobs,cost};}
   function plantSuggested(g,quote,now=Date.now()){const current=plantingPlan(g);if(!current.jobs.length||JSON.stringify(current)!==JSON.stringify(quote)||g.shells<current.cost)return false;for(const job of current.jobs){const crop=ingredients[job.key];g.homestead.plots[job.slot]={key:job.key,ready:now+crop.seconds*1000};}g.shells-=current.cost;return true;}
+  function prepareOrder(g,s,options,now){
+    const first=options[s.sequence++%options.length],items=[first.id];let cost=0,total=0;
+    const consume=r=>{for(const[k,n]of Object.entries(r.inputs)){g.homestead.stock[k]-=n;cost+=(s.basis[k]||0)*n;}total+=price(s,r,now);};
+    consume(first);
+    // Every third guest may pair a coffee with food, using only remaining stocked menu items.
+    if(s.sequence%3===0&&(first.kind==='coffee'||first.kind==='food')){
+      const other=available(s,g.homestead.stock).find(r=>r.kind===(first.kind==='food'?'coffee':'food'));
+      if(other){consume(other);items.push(other.id);}
+    }
+    return {id:first.id,items,price:total,cost,at:now+30000};
+  }
   function customerReady(s,now=Date.now()){return !s.lastCompleted||now-s.lastCompleted.at>=4200;}
   function takeOrder(g,now=Date.now()){
     const s=init(g,now);if(!s.unlocked||!s.open||s.pending||now<s.cursor||!customerReady(s,now))return false;
     const options=available(s,g.homestead.stock);if(!options.length)return false;
-    const r=options[s.sequence++%options.length];let cost=0;
-    for(const[k,n]of Object.entries(r.inputs)){g.homestead.stock[k]-=n;cost+=(s.basis[k]||0)*n;}
-    s.cursor=now;s.pending={id:r.id,price:price(s,r,now),cost,at:now+30000};return true;
+    s.cursor=now;s.pending=prepareOrder(g,s,options,now);return true;
   }
   function helpOrder(g,now=Date.now()){const s=init(g,now),p=s.pending;if(!p||p.helped||p.at<=now)return false;p.helped=true;p.boostedAt=now;p.at=now+Math.ceil((p.at-now)/2);return true;}
   root.CoveCafeEngine={customerReady,recipeOffer,buyRecipe,menuLimit,addToMenu,takeOrder,helpOrder,rush,daily,claimDaily,special,taste,ingredients,recipes,shops,finishes,decor,buyDecor,cafeName,renameCafe,rating,nextGoal,buyFinish,upgradeShop,interval,init,setOpen,available,acquire,settle,unlock,makeRecipe,displayName,price,nameRecipe,lesson,improve,pantryPlan,plantingPlan,plantSuggested};

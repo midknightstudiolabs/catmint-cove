@@ -46,7 +46,7 @@
    label(['Little brewer','Twin brewer','Cove brewer'][s.speed||0],x+66,y+121,13,tier===0?'#f3e8cf':'#405842');
   }
   function kettle(x,y){oval(x,y,28,22,s.cookware?'#b48657':'#9aab9c');rect(x-9,y-28,18,7,'#596e59');c.strokeStyle='#596e59';c.lineWidth=6;c.beginPath();c.arc(x+26,y-2,15,-1.4,1.4);c.stroke();c.fillStyle=s.cookware?'#b48657':'#9aab9c';c.beginPath();c.moveTo(x-24,y-5);c.lineTo(x-44,y-20);c.lineTo(x-31,y+9);c.fill();}
-  function bubble(x,y){if(!active&&depart>=0&&depart<1&&s.lastCompleted?.response)return;const r=active?E.recipes.find(r=>r.id===s.pending.id):null;const greetings=['Something warm, please.','One cup. Two paws.','Is the sunny seat taken?','I came for the company.','Make mine extra cozy.','My whiskers smelled coffee.'];round(x-132,y-25,264,35,12,'#faf3df');fitLabel(r?E.displayName(s,r)+', please.':greetings[s.sequence%greetings.length],x,y-3,240,16,'#405842');}
+  function bubble(x,y){if(!active&&depart>=0&&depart<1&&s.lastCompleted?.response)return;const r=active?E.recipes.find(r=>r.id===s.pending.id):null;const greetings=['Something warm, please.','One cup. Two paws.','Is the sunny seat taken?','I came for the company.','Make mine extra cozy.','My whiskers smelled coffee.'];round(x-132,y-25,264,35,12,'#faf3df');fitLabel(r?(s.pending.items||[r.id]).map(id=>E.displayName(s,E.recipes.find(x=>x.id===id))).join(' + ')+', please.':greetings[s.sequence%greetings.length],x,y-3,240,16,'#405842');}
   const extra=Math.max(0,height-380),offset=Number.isFinite(forcedOffset)?forcedOffset:extra*.45;c.save();
   rect(0,0,720,height,night?'#405a65':'#dce8db');rect(0,offset+220,720,height,inside?'#dbc5a1':night?'#777663':'#dacbad');c.translate(0,offset);
   const sky=c.createLinearGradient(0,-offset,0,125);sky.addColorStop(0,night?'#26384c':'#9bcbd7');sky.addColorStop(1,night?'#4a6570':'#e0e8d2');rect(0,-offset,720,offset+260,sky);
@@ -274,10 +274,12 @@
   const food=recipe?.kind==='food',serving=active&&s.pending.at-now<=3000;
   const stationX=inside?(food?470:L.mx+38):(food?439:248);
   const stationY=inside?(food?L.cupY+8:L.my+66):(food?outsideY+82:outsideY+82);
-  root.CoveCafeScene.orderAnchor={x:active&&!serving?stationX:344,y:inside?L.cupY+52:229};
-  if(active){
+  root.CoveCafeScene.orderAnchor={x:active&&!serving?((s.pending.items||[]).length>1?344:food?470:L?L.mx+66:248):344,y:inside?L.cupY+52:229};
+  if(active)for(const [itemIndex,itemId] of (s.pending.items||[s.pending.id]).entries()){
+   const recipe=E.recipes.find(r=>r.id===itemId),food=recipe?.kind==='food';
+   const stationX=inside?(food?470:L.mx+38):(food?439:248),stationY=inside?(food?L.cupY+8:L.my+66):outsideY+82;
    const p=Math.max(0,Math.min(1,1-(s.pending.at-now)/30000));
-   const px=serving?(inside?344:360):stationX,py=serving?(inside?L.cupY:outsideY+75):stationY;
+   const px=serving?((inside?344:360)+((s.pending.items||[]).length>1?(itemIndex?25:-25):0)):stationX,py=serving?(inside?L.cupY:outsideY+75):stationY;
    c.save();c.translate(px,py);if(!inside)c.scale(.45,.45);else if(!food&&!serving)c.scale(.72,.60);
    if(food){
     if(serving){round(-24,22,48,8,4,'#ece2c8');for(let i=0;i<3;i++){const x=(i-1)*14,y=16+(i%2)*4;oval(x,y,9,7,'#c48b4c');rect(x-4,y-3,2,2,'#a57646');}}

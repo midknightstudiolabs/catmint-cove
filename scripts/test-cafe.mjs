@@ -61,3 +61,16 @@ console.log('PASS: one help per order, half-time boost, reload protection and au
 const direct={shells:1000,homestead:{stock:{}}};actual.unlock(direct,1000000);direct.cafe.menu=['coffee'];actual.setOpen(direct,true,1000000);actual.settle(direct,1030000);
 const beansBefore=direct.homestead.stock.coffee;assert(!actual.takeOrder(direct,1030001));assert(!actual.takeOrder(direct,1034199));assert.equal(direct.homestead.stock.coffee,beansBefore);assert(!direct.cafe.pending);assert(actual.customerReady(direct.cafe,1034200));assert(actual.takeOrder(direct,1034200));assert.equal(direct.homestead.stock.coffee,beansBefore-1);assert(!actual.takeOrder(direct,1030002));assert.equal(direct.homestead.stock.coffee,beansBefore-1);actual.settle(direct,1064200);assert.equal(direct.cafe.served,2);direct.cafe.open=false;assert(!actual.takeOrder(direct,1060002));direct.cafe.open=true;direct.homestead.stock.coffee=0;assert(!actual.takeOrder(direct,1060003));
 console.log('PASS: take order skips idle wait, consumes once, completes automatically, and respects closed/empty stock.');
+
+const combo={shells:1000,homestead:{stock:{}}};actual.unlock(combo,1000000);
+Object.assign(combo.cafe,{menu:['coffee','carrot_crunch'],sequence:2,open:true,pending:null,cursor:1000000});
+combo.homestead.stock={coffee:10,carrot:10};
+assert(actual.takeOrder(combo,1000000));assert.deepEqual(Array.from(combo.cafe.pending.items),['coffee','carrot_crunch']);
+const comboPaid=combo.cafe.pending.price,comboStock=JSON.stringify(combo.homestead.stock),comboShells=combo.shells;
+const comboReload=JSON.parse(JSON.stringify(combo));actual.settle(comboReload,1030000);
+assert.equal(comboReload.shells,comboShells+comboPaid);assert.equal(comboReload.cafe.served,1);
+assert.equal(comboReload.cafe.sales.coffee,1);assert.equal(comboReload.cafe.sales.carrot_crunch,1);
+assert.equal(JSON.stringify(comboReload.homestead.stock),comboStock);actual.settle(comboReload,1030000);assert.equal(comboReload.shells,comboShells+comboPaid);
+combo.cafe.pending=null;combo.cafe.sequence=2;combo.homestead.stock={coffee:10,carrot:0};
+assert(actual.takeOrder(combo,1000000));assert.equal(combo.cafe.pending.items.length,1);
+console.log('PASS: paired order, one customer, both sales, save/reload, no duplicate payment and missing-food fallback.');
