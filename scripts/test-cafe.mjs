@@ -52,3 +52,8 @@ const credited=service.shells;actual.settle(service,1030000);assert.equal(servic
 actual.acquire(service,'coffee',2,0);assert.equal(service.cafe.open,false);assert(actual.setOpen(service,true,1040000));assert.equal(service.cafe.pending,null);actual.setOpen(service,false,1040001);actual.setOpen(service,true,1040002);assert.equal(service.cafe.pending,null);
 service.cafe.menu.push('tea');service.homestead.stock={coffee:0,catmint:2};actual.settle(service,1320000);assert(service.cafe.open);assert.equal(service.cafe.lastCompleted.id,'tea');
 console.log('PASS: prompt first order, automatic completion, stock closure, no double payment, restock/manual reopen, no toggle acceleration, alternate available recipe.');
+
+const assist={shells:1000,homestead:{stock:{}}};actual.unlock(assist,1000000);assist.cafe.menu=['coffee'];actual.setOpen(assist,true,1000000);
+const originalDue=assist.cafe.pending.at;assert(actual.helpOrder(assist,1000001));assert.equal(assist.cafe.pending.at,originalDue-10000);assert(!actual.helpOrder(assist,1000002));
+const resumed=JSON.parse(JSON.stringify(assist));assert(!actual.helpOrder(resumed,1000003));actual.settle(resumed,originalDue-10000);assert.equal(resumed.cafe.served,1);const paidOnce=resumed.shells;actual.settle(resumed,originalDue);assert.equal(resumed.shells,paidOnce);
+console.log('PASS: one help per order, ten-second bonus, reload protection and automatic single payment.');

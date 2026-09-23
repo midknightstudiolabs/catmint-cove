@@ -202,7 +202,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
     if(tab==='help'){
      content.innerHTML='<p class="cc-help-intro">Make a drink. Add it to your menu. Open your café. Your cats do the serving.</p><div class="cc-help-topics">'+[
       ['Make my first drink','Tap My menu, then Make your first coffee. It’s one tap and it’s free.','first','Make a drink'],
-      ['Start serving','After making a recipe, tap Save & sell. Then tap Closed at the top to open. Watch the Making and Serving bar. Your cats do each order for you.','menu','Open my menu'],
+      ['Start serving','After making a recipe, tap Save & sell. Then tap Closed at the top to open. Watch the bar at Pickup. Tap the order once to help it finish faster, or let your cats do it all.','menu','Open my menu'],
       ['I ran out of ingredients','Tap Ingredients, then Grow ingredients. Plant the suggested seeds. When a patch says Ready, tap it. Your café gets the harvest right away. You can also buy ingredients if you want them now.','pantry','Get ingredients'],
       ['Make the café nicer','Open Improve café. Choose Storefront for the building and decorations, or Counter for equipment. Preview before buying.','upgrades','See improvements'],
       ['See how we are doing','Sales & happy cats shows your sales and customer reactions. Tap Show more beside the Shells total to find it.','report','See my results']
@@ -324,6 +324,9 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    const cv=panel.querySelector('canvas');cv.onclick=e=>{if(equipOpen){closeEquipPopup();return;}if(tab){tab=null;render();return;}const b=cv.getBoundingClientRect(),fit=layout.k||b.width/720,x=(e.clientX-b.left)/fit+layout.cx0,y=(e.clientY-b.top)/fit-layout.offset;if(view==='inside'){const hot=CoveCafeScene.hotspots,hit=h=>h&&x>h.x&&x<h.x+h.w&&y>h.y&&y<h.y+h.h,pr=panel.getBoundingClientRect(),ax=e.clientX-pr.left,ay=e.clientY-pr.top;if(s.unlocked&&hit(hot&&hot.machine)){equipPopup('speed',ax,ay);return;}if(s.unlocked&&hit(hot&&hot.cookware)){equipPopup('cookware',ax,ay);return;}if(s.unlocked&&hit(hot&&hot.beans)){equipPopup('ing:coffee',ax,ay);return;}if(s.unlocked)for(const key of ['coffee','catmint','honey'])if(hit(hot&&hot['jar_'+key])){equipPopup('ing:'+key,ax,ay);return;}const cupY=CoveCafeScene.cupY||280;if(s.unlocked&&x>170&&x<525&&y>cupY-15&&y<cupY+100){tab='menu';workshop=true;recipeResult=null;render();}return;}if(x>190&&x<530&&y>100&&y<235){view='inside';render();}else if(x>25&&x<120&&y>270&&y<350){panel.querySelector('.cc-sale')?.remove();const hello=document.createElement('div');hello.className='cc-sale';hello.setAttribute('role','status');hello.textContent=['This seat has excellent purr acoustics.','Stay a little. The sea isn’t going anywhere.','A quiet bench. Very important cat business.'][Math.floor(Date.now()/1000)%3];panel.append(hello);setTimeout(()=>hello.remove(),4500);}};
    panel.onkeydown=e=>{if(e.key==='Escape'){if(tab){tab=null;render();}else panel.querySelector('[data-close]').click();}};
    (panel.querySelector('.cc-tabs')||panel.querySelector('.cc-top')).insertAdjacentHTML('afterend','<p class="cc-visit-hint">'+(view==='outside'?'Tap the window to step inside':'Your cats do the serving. My menu chooses what they make.')+'</p>');
+   const pickup=document.createElement('button');pickup.type='button';pickup.className='cc-pickup-order';pickup.hidden=true;
+   pickup.innerHTML='<strong></strong><span class="cc-pickup-track" role="progressbar" aria-label="Order progress" aria-valuemin="0" aria-valuemax="100"><i></i></span><small></small>';
+   pickup.onclick=()=>{if(E.helpOrder(g,Date.now())){a.save();render();}};panel.append(pickup);
    drawGuide();
    {const box=panel.querySelector('.cc-content');if(box&&tab&&lastTab===tab)box.scrollTop=prevScroll;lastTab=tab;
     if(fname){const again=[...panel.querySelectorAll('['+fname+']')].find(x=>x.getAttribute(fname)===fv);if(again)try{again.focus({preventScroll:true});}catch(e){}}}
@@ -332,14 +335,16 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
   function status(){
    const el=panel.querySelector('.cc-status');if(!el)return;
    const now=Date.now(),pending=s.pending,seconds=pending?Math.max(0,Math.ceil((pending.at-now)/1000)):0;
-   const completed=s.lastCompleted&&now-s.lastCompleted.at<7000;
-   const n=Math.max(0,Math.ceil((s.cursor+E.interval(s,s.cursor)-now)/1000));
-   el.textContent=pending?(seconds>6?'Making ':'Serving ')+E.displayName(s,E.recipes.find(r=>r.id===pending.id))+' · '+seconds+'s':completed?'Order served · Shells earned!':!s.menu.length?'Make a recipe, then Save & sell.':!s.open?(s.closedReason==='ingredients'?'Out of ingredients · closed for now.':'Ready? Tap Closed above to open.'):'Cats serve automatically · next order in '+Math.floor(n/60)+':'+String(n%60).padStart(2,'0');
-   const bar=panel.querySelector('.cc-brew-bar');if(!bar)return;
-   bar.hidden=!pending&&!completed;
-   const pct=pending?Math.round(Math.min(1,Math.max(0,1-(pending.at-now)/30000))*100):100;
-   bar.setAttribute('aria-valuenow',String(pct));bar.setAttribute('aria-valuetext',pending?(seconds>6?'Making':'Serving')+', '+seconds+' seconds left':'Order served');
-   bar.querySelector('i').style.width=pct+'%';
+   el.textContent=!s.menu.length?'Make a recipe, then Save & sell.':!s.open?(s.closedReason==='ingredients'?'Out of ingredients · closed for now.':'Ready? Tap Closed above to open.'):'Your cats cook and serve automatically.';
+   const bar=panel.querySelector('.cc-brew-bar');if(bar)bar.hidden=true;
+   const pickup=panel.querySelector('.cc-pickup-order');if(!pickup)return;
+   pickup.hidden=!pending||!!tab||!!equipOpen;
+   if(!pending)return;
+   const recipe=E.recipes.find(r=>r.id===pending.id),pct=Math.round(Math.min(1,Math.max(0,1-(pending.at-now)/30000))*100);
+   pickup.querySelector('strong').textContent=(pending.id==='bites'?'Cooking ':'Brewing ')+E.displayName(s,recipe);
+   pickup.querySelector('small').textContent=pending.helped?'Thanks! Serving soon.':'Tap to help · 10s faster';
+   pickup.setAttribute('aria-disabled',String(!!pending.helped));
+   const progress=pickup.querySelector('[role="progressbar"]');progress.setAttribute('aria-valuenow',String(pct));progress.setAttribute('aria-valuetext',seconds+' seconds left');progress.querySelector('i').style.width=pct+'%';
   }
   function cup(id){if(id==='bites')return '<svg viewBox="0 0 60 64" aria-label="Garden bites"><ellipse cx="30" cy="47" rx="28" ry="10" fill="#ddd0ad"/><circle cx="20" cy="35" r="12" fill="#c78e55"/><circle cx="39" cy="38" r="12" fill="#d6a366"/><path d="m14 31 10 7m10-5 8 9" stroke="#a77149" stroke-width="3"/></svg>';return `<svg viewBox="0 0 60 64" aria-hidden="true"><path d="M42 24h8q12 15-8 19" fill="none" stroke="#ae8761" stroke-width="5"/><path d="M10 20h34v26q-17 15-34 0Z" fill="${id==='tea'?'#8fa783':id==='midknight'?'#d0ad6b':'#e5cfa8'}"/><ellipse cx="27" cy="21" rx="17" ry="5" fill="#74523d"/><path d="M22 13q-7-6 0-11m12 11q-7-6 0-11" fill="none" stroke="#adbaa0" stroke-width="2"/></svg>`;}
   function paint(t){
@@ -375,6 +380,11 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    const Lm=tx,Rm=tx+Math.round(720*k),edgeWant=view!=='inside'&&(Lm>2||pw-Rm>2),sw=Math.max(4,Math.round(8*k)),buildEdges=()=>{for(let sd=0;sd<2;sd++){const cv=edgeCv[sd]||(edgeCv[sd]=document.createElement('canvas'));if(cv.width!==sw||cv.height!==ph){cv.width=sw;cv.height=ph;}const c2=cv.getContext('2d');c2.setTransform(1,0,0,1,0,0);c2.clearRect(0,0,sw,ph);c2.setTransform(k,0,0,k,-(sd?712:0)*k,0);CoveCafeScene(c2,Object.assign({},sceneArgs,{actors:[]}));}edgeT=t;edgeSig=sw+'x'+ph+view;};
    if(edgeWant){if(edgeSig!==sw+'x'+ph+view||!edgeCv[0])buildEdges();ctx.save();ctx.setTransform(1,0,0,1,0,0);if(Lm>2)ctx.drawImage(edgeCv[0],sw-2,0,2,ph,0,0,Lm+3,ph);if(pw-Rm>2)ctx.drawImage(edgeCv[1],0,0,2,ph,Rm-3,0,pw-Rm+3,ph);ctx.restore();}
    CoveCafeScene(ctx,sceneArgs);
+   const pickup=panel.querySelector('.cc-pickup-order');if(pickup&&!pickup.hidden){
+    const px=(344-cx0)*css,py=((view==='inside'?(CoveCafeScene.cupY||280)+52:229)+offset)*css;
+    pickup.style.left=Math.max(8,Math.min(bounds.width-pickup.offsetWidth-8,px-pickup.offsetWidth/2))+'px';
+    pickup.style.top=Math.max(top+8,Math.min(bounds.height-pickup.offsetHeight-70,py))+'px';
+   }
    if(edgeWant&&t-edgeT>250)buildEdges();   // after the main draw, so the guests' walking clock is never advanced twice
    if(floats.length){const now=performance.now();ctx.save();ctx.translate(0,offset);ctx.textAlign='center';for(let i=floats.length-1;i>=0;i--){const f=floats[i],age=(now-f.t0)/1700;if(age>=1){floats.splice(i,1);continue;}const y=(view==='inside'?(CoveCafeScene.cupY||280)+6:238)-age*54,al=age<.15?age/.15:1-Math.max(0,(age-.55)/.45);ctx.globalAlpha=Math.max(0,al);ctx.font='bold 26px Georgia';ctx.lineWidth=5;ctx.strokeStyle='rgba(255,250,235,.95)';ctx.strokeText(f.text,view==='inside'?344:360,y);ctx.fillStyle='#3f7a52';ctx.fillText(f.text,view==='inside'?344:360,y);}ctx.restore();}
   }
