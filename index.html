@@ -48,6 +48,11 @@
     overflow:hidden;-webkit-font-smoothing:antialiased;
     -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
   }
+  /* Rest mode's dark rainy-night scene doesn't always paint edge-to-edge on mobile (dynamic
+     viewport height, safe-area insets) -- wherever it falls short, the body's own bright
+     daytime-sky background used to show through as a jarring cream strip. Same dark tone
+     #stage already falls back to elsewhere, so any gap reads as "cove at night", not a glitch. */
+  body:has(#app.resting){background:#171310;}
   #app{position:fixed;inset:0;display:flex;flex-direction:column;}
   /* immersive (black-translucent status bar / PWA): a whisper of shade in the
      status-bar strip so the clock stays legible over a bright sky and the phone
