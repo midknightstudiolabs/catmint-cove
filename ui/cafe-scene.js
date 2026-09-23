@@ -247,7 +247,7 @@
    // things on the counter
    machine(mx,my);
    hotspots.machine={x:mx-4,y:my-6,w:140,h:145};
-   {const px=344,py=cTop+30;oval(px,py,46,11,'#b99c70');round(px-15,py-38,30,34,4,'#faf2df');oval(px,py-37,15,4,'#856547');label('Pickup',px,panelT+22,15,tier===0?'#f3e8cf':'#405842');L.cupY=py-38;root.CoveCafeScene.cupY=L.cupY;}
+   {const px=344,py=cTop+30;oval(px,py,46,11,'#b99c70');if(!active){round(px-15,py-38,30,34,4,'#faf2df');oval(px,py-37,15,4,'#856547');}label('Pickup',px,panelT+22,15,tier===0?'#f3e8cf':'#405842');L.cupY=py-38;root.CoveCafeScene.cupY=L.cupY;}
    if(s.cookware){const cx=430,cy=cTop-2;round(cx,cy,80,40,7,'#b98d60');rect(cx-8,cy,95,7,'#806849');oval(cx+40,cy-6,10,5,'#806849');label('Copper cookware',cx+48,panelT+22,13,tier===0?'#f3e8cf':'#405842');}
    kettle(590,cTop+18);
    hotspots.cookware={x:544,y:cTop-14,w:102,h:70};
@@ -267,6 +267,25 @@
    c.fillStyle='#f7efd9';c.strokeStyle=s.open?'#6f9a78':'#b9a884';c.lineWidth=1.4;c.beginPath();c.roundRect(-sw/2,-9,sw,sh,5);c.fill();c.stroke();
    c.fillStyle=s.open?'#3d6b4b':'#8b7660';c.font=(word.length>6?'bold 8px':'bold 10px')+' Georgia';c.textAlign='center';c.fillText(word.split('').join(word.length>6?'':'\u200a'),0,5);
    c.restore();}
+  // Preparation follows the real order clock; no extra animation loop or particles.
+  if(active){
+   const p=Math.max(0,Math.min(1,1-(s.pending.at-now)/30000)),food=s.pending.id==='bites';
+   const px=inside?344:360,py=inside?L.cupY:201;
+   c.save();c.translate(px,py);if(!inside)c.scale(.68,.68);
+   if(food){
+    round(-24,22,48,8,4,'#ece2c8');
+    for(let i=0;i<3;i++){const x=(i-1)*14,y=16+(i%2)*4;oval(x,y,9,7,p>.6?'#c48b4c':'#dec49a');rect(x-4,y-3,2,2,'#a57646');}
+    if(inside&&s.cookware){const lidY=6+(reduced?0:Math.sin(t/100)*1.4);round(86,lidY,95,6,3,'#806849');}
+   }else{
+    round(-15,0,30,34,4,'#faf2df');
+    const level=4+p*23;round(-11,30-level,22,level,2,s.pending.id==='tea'?'#97ae76':'#9b704d');
+    oval(0,30-level,11,3,s.pending.id==='tea'?'#c0d19a':'#d4ac79');
+    c.strokeStyle='#faf2df';c.lineWidth=4;c.beginPath();c.arc(17,16,7,-1.5,1.5);c.stroke();
+    if(!reduced&&p<.94){c.strokeStyle=s.pending.id==='tea'?'#b7c68d':'#b18859';c.lineWidth=2.5;c.beginPath();c.moveTo(0,-18);c.quadraticCurveTo(Math.sin(t/170)*2,3,0,29-level);c.stroke();}
+   }
+   if(!reduced){for(let i=0;i<3;i++){const phase=(t/1600+i/3)%1,x=(i-1)*10,y=4-phase*30;c.globalAlpha=(1-phase)*.65;c.strokeStyle='#fff2d2';c.lineWidth=2;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+7,y-7,x+2,y-14);c.stroke();}}
+   c.restore();
+  }
   if(active&&!reduced){c.strokeStyle='#f8f0d7';c.lineWidth=2;for(let i=0;i<3;i++){const x=inside?L.mx+58:198,y=(inside?L.my-6:145)-(t/80+i*8)%24;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+7,y-7,x,y-14);c.stroke();}}
   // A single slow, faint wisp off the machine while open and waiting for the next guest --
   // the busier "brewing" steam above only shows once an order is actually in progress, so

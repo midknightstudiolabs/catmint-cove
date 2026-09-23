@@ -284,3 +284,8 @@
 @media(prefers-reduced-motion:reduce){#app #cafe-kiosk.cc-v2 .cc-pickup-track i{transition:none}}
 
 #app #cafe-kiosk.cc-v2 .cc-pickup-track[hidden]{display:none}
+
+#app #cafe-kiosk.cc-v2 .cc-visit-hint:empty,#app #cafe-kiosk.cc-v2 .cc-pickup-order small:empty{display:none}
+#app #cafe-kiosk.cc-v2 .cc-pickup-order{width:150px;min-height:44px;padding:8px 12px;box-shadow:0 2px 6px #263e301a}
+#app #cafe-kiosk.cc-v2 .cc-live.compact .cc-status{display:none}
+#app #cafe-kiosk.cc-v2 .cc-live.compact:has(.cc-cta) .cc-status{display:none}

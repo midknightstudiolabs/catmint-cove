@@ -323,7 +323,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    }
    const cv=panel.querySelector('canvas');cv.onclick=e=>{if(equipOpen){closeEquipPopup();return;}if(tab){tab=null;render();return;}const b=cv.getBoundingClientRect(),fit=layout.k||b.width/720,x=(e.clientX-b.left)/fit+layout.cx0,y=(e.clientY-b.top)/fit-layout.offset;if(view==='inside'){const hot=CoveCafeScene.hotspots,hit=h=>h&&x>h.x&&x<h.x+h.w&&y>h.y&&y<h.y+h.h,pr=panel.getBoundingClientRect(),ax=e.clientX-pr.left,ay=e.clientY-pr.top;if(s.unlocked&&hit(hot&&hot.machine)){equipPopup('speed',ax,ay);return;}if(s.unlocked&&hit(hot&&hot.cookware)){equipPopup('cookware',ax,ay);return;}if(s.unlocked&&hit(hot&&hot.beans)){equipPopup('ing:coffee',ax,ay);return;}if(s.unlocked)for(const key of ['coffee','catmint','honey'])if(hit(hot&&hot['jar_'+key])){equipPopup('ing:'+key,ax,ay);return;}const cupY=CoveCafeScene.cupY||280;if(s.unlocked&&x>170&&x<525&&y>cupY-15&&y<cupY+100){tab='menu';workshop=true;recipeResult=null;render();}return;}if(x>190&&x<530&&y>100&&y<235){view='inside';render();}else if(x>25&&x<120&&y>270&&y<350){panel.querySelector('.cc-sale')?.remove();const hello=document.createElement('div');hello.className='cc-sale';hello.setAttribute('role','status');hello.textContent=['This seat has excellent purr acoustics.','Stay a little. The sea isn’t going anywhere.','A quiet bench. Very important cat business.'][Math.floor(Date.now()/1000)%3];panel.append(hello);setTimeout(()=>hello.remove(),4500);}};
    panel.onkeydown=e=>{if(e.key==='Escape'){if(tab){tab=null;render();}else panel.querySelector('[data-close]').click();}};
-   (panel.querySelector('.cc-tabs')||panel.querySelector('.cc-top')).insertAdjacentHTML('afterend','<p class="cc-visit-hint">'+(view==='outside'?'Tap the window to step inside':'Your cats do the serving. My menu chooses what they make.')+'</p>');
+   (panel.querySelector('.cc-tabs')||panel.querySelector('.cc-top')).insertAdjacentHTML('afterend','<p class="cc-visit-hint">'+(view==='outside'?'Tap the window to step inside':'')+'</p>');
    const pickup=document.createElement('button');pickup.type='button';pickup.className='cc-pickup-order';pickup.hidden=true;
    pickup.innerHTML='<strong></strong><span class="cc-pickup-track" role="progressbar" aria-label="Order progress" aria-valuemin="0" aria-valuemax="100"><i></i></span><small></small>';
    pickup.onclick=()=>{if(s.pending?E.helpOrder(g,Date.now()):E.takeOrder(g,Date.now())){a.save();render();}};panel.append(pickup);
@@ -341,10 +341,10 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    const canTake=s.open&&E.available(s,g.homestead.stock).length>0;
    pickup.hidden=(!pending&&!canTake)||!!tab||!!equipOpen;
    pickup.querySelector('.cc-pickup-track').hidden=!pending;
-   if(!pending){pickup.setAttribute('aria-disabled','false');pickup.querySelector('strong').textContent='Take order';const wait=Math.max(0,Math.ceil((s.cursor+E.interval(s,s.cursor)-now)/1000));pickup.querySelector('small').textContent='Tap now · auto-start in '+Math.floor(wait/60)+':'+String(wait%60).padStart(2,'0');return;}
+   if(!pending){pickup.setAttribute('aria-disabled','false');pickup.querySelector('strong').textContent='Take order';const wait=Math.max(0,Math.ceil((s.cursor+E.interval(s,s.cursor)-now)/1000));pickup.querySelector('small').textContent='';pickup.setAttribute('aria-label','Take order now. Starts automatically in '+wait+' seconds.');return;}
    const recipe=E.recipes.find(r=>r.id===pending.id),pct=Math.round(Math.min(1,Math.max(0,1-(pending.at-now)/30000))*100);
-   pickup.querySelector('strong').textContent=(pending.id==='bites'?'Cooking ':'Brewing ')+E.displayName(s,recipe);
-   pickup.querySelector('small').textContent=pending.helped?'Thanks! Serving soon.':'Tap to help · 10s faster';
+   pickup.querySelector('strong').textContent=pending.id==='bites'?'Cooking…':'Brewing…';pickup.setAttribute('aria-label',E.displayName(s,recipe)+', '+seconds+' seconds left'+(pending.helped?'':'. Tap to help.'));
+   pickup.querySelector('small').textContent=pending.helped?'':'Tap to help';
    pickup.setAttribute('aria-disabled',String(!!pending.helped));
    const progress=pickup.querySelector('[role="progressbar"]');progress.setAttribute('aria-valuenow',String(pct));progress.setAttribute('aria-valuetext',seconds+' seconds left');progress.querySelector('i').style.width=pct+'%';
   }
