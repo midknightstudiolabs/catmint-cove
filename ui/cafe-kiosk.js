@@ -200,13 +200,15 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
     {const act=nextAction(),row=panel.querySelector('.cc-cta-row');if(act&&row&&!guideOn){const b=document.createElement('button');b.type='button';b.className='btn primary cc-cta';b.textContent=act.label;b.onclick=act.fn;row.append(b);}}
     panel.querySelector('[data-goal]')?.addEventListener('click',()=>{const id=panel.querySelector('[data-goal]').dataset.goal;view=(id==='speed'||id==='cookware')?'inside':'outside';tab='upgrades';render();});
     if(tab==='resident'){
-     const title=document.createElement('h3');title.textContent='Choose your café cat';content.append(title);
-     const hint=document.createElement('p');hint.textContent='Your companion inside and at the storefront.';content.append(hint);
+     const hint=document.createElement('p');hint.textContent='Tap a cat to keep you company inside and at the window.';content.append(hint);
      const selected=actors.find(c=>c.cafeKey===s.residentCat)||actors[1]||actors[0];
-     for(const cat of actors){const button=document.createElement('button');button.type='button';button.className='btn cc-card';button.style.cssText='width:100%;display:flex;align-items:center;text-align:left;gap:16px;color:#405c45;background:#fffaf0';button.setAttribute('aria-pressed',String(cat===selected));
-      const portrait=document.createElement('canvas');portrait.width=160;portrait.height=120;portrait.style.cssText='width:80px;height:60px;margin:0;flex:none';a.cat(portrait.getContext('2d'),cat,80,108,1.3,0,false);const image=document.createElement('img');image.src=portrait.toDataURL();image.alt='';image.style.cssText='width:80px;height:60px;flex:0 0 80px;object-fit:contain';button.append(image);
-      const name=document.createElement('span');name.style.cssText='flex:1;min-width:0;white-space:normal';name.textContent=(cat.name||cat.coatKey||'Cat')+(cat===selected?' · Selected':'');button.append(name);
-      button.onclick=()=>{s.residentCat=cat.cafeKey;a.save();tab=null;render();};content.append(button);
+     const grid=document.createElement('div');grid.className='cc-cat-grid';grid.setAttribute('aria-label','Available café cats');content.append(grid);
+     for(const cat of actors){const chosen=cat===selected,button=document.createElement('button');button.type='button';button.className='cc-cat-choice';button.setAttribute('aria-pressed',String(chosen));
+      const portrait=document.createElement('canvas');portrait.width=200;portrait.height=180;a.cat(portrait.getContext('2d'),cat,100,160,1.6,0,false);
+      const image=document.createElement('img');image.src=portrait.toDataURL();image.alt='';image.width=100;image.height=90;button.append(image);
+      const name=document.createElement('strong');name.textContent=cat.name||cat.coatKey||'Cat';button.append(name);
+      const status=document.createElement('small');status.textContent=chosen?'✓ Your café cat':'Choose';button.append(status);
+      button.onclick=()=>{s.residentCat=cat.cafeKey;a.save();tab=null;render();};grid.append(button);
      }
     }
     else if(tab==='help'){
