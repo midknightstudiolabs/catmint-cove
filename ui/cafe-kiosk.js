@@ -338,15 +338,17 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    el.textContent=!s.menu.length?'Make a recipe, then Save & sell.':!s.open?(s.closedReason==='ingredients'?'Out of ingredients · closed for now.':'Ready? Tap Closed above to open.'):'Your cats cook and serve automatically.';
    const bar=panel.querySelector('.cc-brew-bar');if(bar)bar.hidden=true;
    const pickup=panel.querySelector('.cc-pickup-order');if(!pickup)return;
+   panel.querySelector('.cc-order-secondary')?.remove();
    const canTake=s.open&&E.customerReady(s,now)&&E.available(s,g.homestead.stock).length>0;
    pickup.hidden=(!pending&&(!canTake||view==='outside'))||!!tab||!!equipOpen;
    pickup.querySelector('.cc-pickup-track').hidden=!pending;
    if(!pending){pickup.setAttribute('aria-disabled','false');pickup.querySelector('strong').textContent='Take order';const wait=Math.max(0,Math.ceil((s.cursor+E.interval(s,s.cursor)-now)/1000));pickup.querySelector('small').textContent='';pickup.setAttribute('aria-label','Take order now. Starts automatically in '+wait+' seconds.');return;}
    const recipe=E.recipes.find(r=>r.id===pending.id),pct=Math.round(Math.min(1,Math.max(0,1-(pending.at-now)/30000))*100);
-   pickup.querySelector('strong').textContent=view==='outside'?'Serving…':seconds<=3?'Serving…':(pending.items||[]).length>1?'Brewing & cooking…':recipe.kind==='food'?'Cooking…':'Brewing…';pickup.setAttribute('aria-label',(pending.items||[recipe.id]).map(id=>E.displayName(s,E.recipes.find(r=>r.id===id))).join(' and ')+', '+seconds+' seconds left'+(view==='outside'||pending.helped?'':'. Tap to halve the remaining time.'));
+   pickup.querySelector('strong').textContent=view==='outside'?'Serving…':seconds<=3?'Serving…':recipe.kind==='food'?'Cooking…':'Brewing…';pickup.setAttribute('aria-label',(pending.items||[recipe.id]).map(id=>E.displayName(s,E.recipes.find(r=>r.id===id))).join(' and ')+', '+seconds+' seconds left'+(view==='outside'||pending.helped?'':'. Tap to halve the remaining time.'));
    pickup.querySelector('small').textContent=view==='outside'?'':pending.helped?'2× boosted':'Tap to boost';
    pickup.setAttribute('aria-disabled',String(view==='outside'||!!pending.helped));pickup.classList.toggle('boosted',view==='inside'&&!!pending.helped);pickup.classList.toggle('boost-pop',view==='inside'&&!!pending.boostedAt&&now-pending.boostedAt<900);
    const progress=pickup.querySelector('[role="progressbar"]');progress.setAttribute('aria-valuenow',String(pct));progress.setAttribute('aria-valuetext',seconds+' seconds left');progress.querySelector('i').style.width=pct+'%';
+   if(view==='inside'&&seconds>3&&(pending.items||[]).length>1&&!pickup.hidden){const second=pickup.cloneNode(true);second.classList.add('cc-order-secondary');second.querySelector('strong').textContent=recipe.kind==='food'?'Brewing…':'Cooking…';second.onclick=pickup.onclick;panel.append(second);}
   }
   function cup(id){if(E.recipes.find(r=>r.id===id)?.kind==='food')return '<svg viewBox="0 0 60 64" aria-label="Garden treats"><ellipse cx="30" cy="47" rx="28" ry="10" fill="#ddd0ad"/><circle cx="20" cy="35" r="12" fill="#c78e55"/><circle cx="39" cy="38" r="12" fill="#d6a366"/><path d="m14 31 10 7m10-5 8 9" stroke="#a77149" stroke-width="3"/></svg>';return `<svg viewBox="0 0 60 64" aria-hidden="true"><path d="M42 24h8q12 15-8 19" fill="none" stroke="#ae8761" stroke-width="5"/><path d="M10 20h34v26q-17 15-34 0Z" fill="${id==='tea'?'#8fa783':id==='midknight'?'#d0ad6b':'#e5cfa8'}"/><ellipse cx="27" cy="21" rx="17" ry="5" fill="#74523d"/><path d="M22 13q-7-6 0-11m12 11q-7-6 0-11" fill="none" stroke="#adbaa0" stroke-width="2"/></svg>`;}
   function paint(t){
@@ -382,11 +384,11 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    const Lm=tx,Rm=tx+Math.round(720*k),edgeWant=view!=='inside'&&(Lm>2||pw-Rm>2),sw=Math.max(4,Math.round(8*k)),buildEdges=()=>{for(let sd=0;sd<2;sd++){const cv=edgeCv[sd]||(edgeCv[sd]=document.createElement('canvas'));if(cv.width!==sw||cv.height!==ph){cv.width=sw;cv.height=ph;}const c2=cv.getContext('2d');c2.setTransform(1,0,0,1,0,0);c2.clearRect(0,0,sw,ph);c2.setTransform(k,0,0,k,-(sd?712:0)*k,0);CoveCafeScene(c2,Object.assign({},sceneArgs,{actors:[]}));}edgeT=t;edgeSig=sw+'x'+ph+view;};
    if(edgeWant){if(edgeSig!==sw+'x'+ph+view||!edgeCv[0])buildEdges();ctx.save();ctx.setTransform(1,0,0,1,0,0);if(Lm>2)ctx.drawImage(edgeCv[0],sw-2,0,2,ph,0,0,Lm+3,ph);if(pw-Rm>2)ctx.drawImage(edgeCv[1],0,0,2,ph,Rm-3,0,pw-Rm+3,ph);ctx.restore();}
    CoveCafeScene(ctx,sceneArgs);
-   const pickup=panel.querySelector('.cc-pickup-order');if(pickup&&!pickup.hidden){
-    const anchor=view==='outside'?{x:360,y:278}:CoveCafeScene.orderAnchor||{x:344,y:229};
+   for(const pickup of panel.querySelectorAll('.cc-pickup-order')){if(pickup.hidden)continue;
+    const anchor=view==='outside'?{x:360,y:278}:pickup.classList.contains('cc-order-secondary')?CoveCafeScene.secondOrderAnchor:CoveCafeScene.orderAnchor;if(!anchor){pickup.hidden=true;continue;}
     const px=(anchor.x-cx0)*css,py=(anchor.y+offset)*css;
     pickup.style.left=Math.max(8,Math.min(bounds.width-pickup.offsetWidth-8,px-pickup.offsetWidth/2))+'px';
-    pickup.style.top=Math.max(top+8,Math.min(bounds.height-pickup.offsetHeight-70,py))+'px';
+    pickup.style.top=Math.max(top+8,Math.min(bounds.height-pickup.offsetHeight-70,py-(anchor.center?pickup.offsetHeight/2:0)))+'px';
    }
    if(edgeWant&&t-edgeT>250)buildEdges();   // after the main draw, so the guests' walking clock is never advanced twice
    if(floats.length){const now=performance.now();ctx.save();ctx.translate(0,offset);ctx.textAlign='center';for(let i=floats.length-1;i>=0;i--){const f=floats[i],age=(now-f.t0)/1700;if(age>=1){floats.splice(i,1);continue;}const y=(view==='inside'?(CoveCafeScene.cupY||280)+6:238)-age*54,al=age<.15?age/.15:1-Math.max(0,(age-.55)/.45);ctx.globalAlpha=Math.max(0,al);ctx.font='bold 26px Georgia';ctx.lineWidth=5;ctx.strokeStyle='rgba(255,250,235,.95)';ctx.strokeText(f.text,view==='inside'?344:360,y);ctx.fillStyle='#3f7a52';ctx.fillText(f.text,view==='inside'?344:360,y);}ctx.restore();}
