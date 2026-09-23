@@ -22192,10 +22192,46 @@ if (G.rest && G.rest.on) {
   document.getElementById("titleScreen").hidden = true;   // resuming a running rest session — no title beat, straight back in
 } else {
   const tsGo = document.getElementById("ts-go");
+  const title = document.getElementById("titleScreen");
+  // Reuse the bundled cat recording. Autoplay is best-effort: touch/keyboard
+  // unlock it on browsers that require a gesture, without blocking loading.
+  const titlePurr = new Audio(SFX_DATA["sfx/purr.wav"]);
+  titlePurr.loop = true;
+  titlePurr.preload = "auto";
+  let titleLeaving = false;
+  function startTitlePurr(event) {
+    if (titleLeaving || title.hidden || document.hidden ||
+        (event && event.target instanceof Element && event.target.closest("#ts-go"))) return;
+    const sound = G.sound || { on: true, cats: 1 };
+    titlePurr.volume = sound.on === false ? 0 : .32 * Math.max(0, Math.min(1, sound.cats ?? 1));
+    if (titlePurr.volume > 0) titlePurr.play().catch(() => {});
+  }
+  function titleVisibility() {
+    if (document.hidden) titlePurr.pause();
+    else startTitlePurr();
+  }
+  function stopTitlePurr() {
+    titleLeaving = true;
+    titlePurr.pause();
+    titlePurr.removeAttribute("src");
+    titlePurr.load();
+    title.removeEventListener("pointerdown", startTitlePurr);
+    title.removeEventListener("keydown", startTitlePurr);
+    document.removeEventListener("visibilitychange", titleVisibility);
+    window.removeEventListener("pagehide", stopTitlePurr);
+  }
+  title.addEventListener("pointerdown", startTitlePurr);
+  title.addEventListener("keydown", startTitlePurr);
+  document.addEventListener("visibilitychange", titleVisibility);
+  window.addEventListener("pagehide", stopTitlePurr);
+  startTitlePurr();
   tsGo.textContent = G.tutorialDone ? "Continue" : "Begin";
   tsGo.onclick = () => {
+    if (titleLeaving) return;
+    stopTitlePurr();
     const el = document.getElementById("titleScreen");
     ensureAudio();
+    if (!playSample("meow", { vol: .65, jitter: 0 })) meow(true, .75, true);
     el.classList.add("out");
     setTimeout(() => { el.hidden = true; }, 940);
     setTimeout(runBootFlow, 700);   // curtains are most of the way open — reveal what's next now, not mid-slide
