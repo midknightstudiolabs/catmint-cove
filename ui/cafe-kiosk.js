@@ -324,9 +324,9 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    const cv=panel.querySelector('canvas');cv.onclick=e=>{if(equipOpen){closeEquipPopup();return;}if(tab){tab=null;render();return;}const b=cv.getBoundingClientRect(),fit=layout.k||b.width/720,x=(e.clientX-b.left)/fit+layout.cx0,y=(e.clientY-b.top)/fit-layout.offset;if(view==='inside'){const hot=CoveCafeScene.hotspots,hit=h=>h&&x>h.x&&x<h.x+h.w&&y>h.y&&y<h.y+h.h,pr=panel.getBoundingClientRect(),ax=e.clientX-pr.left,ay=e.clientY-pr.top;if(s.unlocked&&hit(hot&&hot.machine)){equipPopup('speed',ax,ay);return;}if(s.unlocked&&hit(hot&&hot.cookware)){equipPopup('cookware',ax,ay);return;}if(s.unlocked&&hit(hot&&hot.beans)){equipPopup('ing:coffee',ax,ay);return;}if(s.unlocked)for(const key of ['coffee','catmint','honey'])if(hit(hot&&hot['jar_'+key])){equipPopup('ing:'+key,ax,ay);return;}const cupY=CoveCafeScene.cupY||280;if(s.unlocked&&x>170&&x<525&&y>cupY-15&&y<cupY+100){tab='menu';workshop=true;recipeResult=null;render();}return;}if(x>190&&x<530&&y>100&&y<235){view='inside';render();}else if(x>25&&x<120&&y>270&&y<350){panel.querySelector('.cc-sale')?.remove();const hello=document.createElement('div');hello.className='cc-sale';hello.setAttribute('role','status');hello.textContent=['This seat has excellent purr acoustics.','Stay a little. The sea isn’t going anywhere.','A quiet bench. Very important cat business.'][Math.floor(Date.now()/1000)%3];panel.append(hello);setTimeout(()=>hello.remove(),4500);}};
    panel.onkeydown=e=>{if(e.key==='Escape'){if(tab){tab=null;render();}else panel.querySelector('[data-close]').click();}};
    (panel.querySelector('.cc-tabs')||panel.querySelector('.cc-top')).insertAdjacentHTML('afterend','<p class="cc-visit-hint">'+(view==='outside'?'Tap the window to step inside':'')+'</p>');
-   const pickup=document.createElement('button');pickup.type='button';pickup.className='cc-pickup-order';pickup.hidden=true;
+   const pickup=document.createElement(view==='inside'?'button':'div');if(view==='inside')pickup.type='button';pickup.className='cc-pickup-order'+(view==='outside'?' cc-service-progress':'');pickup.hidden=true;
    pickup.innerHTML='<strong></strong><span class="cc-pickup-track" role="progressbar" aria-label="Order progress" aria-valuemin="0" aria-valuemax="100"><i></i></span><small></small>';
-   pickup.onclick=()=>{if(s.pending?E.helpOrder(g,Date.now()):E.takeOrder(g,Date.now())){a.save();render();}};panel.append(pickup);
+   pickup.onclick=()=>{if(view!=='inside')return;if(s.pending?E.helpOrder(g,Date.now()):E.takeOrder(g,Date.now())){a.save();render();}};panel.append(pickup);
    drawGuide();
    {const box=panel.querySelector('.cc-content');if(box&&tab&&lastTab===tab)box.scrollTop=prevScroll;lastTab=tab;
     if(fname){const again=[...panel.querySelectorAll('['+fname+']')].find(x=>x.getAttribute(fname)===fv);if(again)try{again.focus({preventScroll:true});}catch(e){}}}
@@ -339,13 +339,13 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    const bar=panel.querySelector('.cc-brew-bar');if(bar)bar.hidden=true;
    const pickup=panel.querySelector('.cc-pickup-order');if(!pickup)return;
    const canTake=s.open&&E.available(s,g.homestead.stock).length>0;
-   pickup.hidden=(!pending&&!canTake)||!!tab||!!equipOpen;
+   pickup.hidden=(!pending&&(!canTake||view==='outside'))||!!tab||!!equipOpen;
    pickup.querySelector('.cc-pickup-track').hidden=!pending;
    if(!pending){pickup.setAttribute('aria-disabled','false');pickup.querySelector('strong').textContent='Take order';const wait=Math.max(0,Math.ceil((s.cursor+E.interval(s,s.cursor)-now)/1000));pickup.querySelector('small').textContent='';pickup.setAttribute('aria-label','Take order now. Starts automatically in '+wait+' seconds.');return;}
    const recipe=E.recipes.find(r=>r.id===pending.id),pct=Math.round(Math.min(1,Math.max(0,1-(pending.at-now)/30000))*100);
-   pickup.querySelector('strong').textContent=seconds<=3?'Serving…':recipe.kind==='food'?'Cooking…':'Brewing…';pickup.setAttribute('aria-label',E.displayName(s,recipe)+', '+seconds+' seconds left'+(pending.helped?'':'. Tap to halve the remaining time.'));
-   pickup.querySelector('small').textContent=pending.helped?'2× boosted':'Tap to boost';
-   pickup.setAttribute('aria-disabled',String(!!pending.helped));pickup.classList.toggle('boosted',!!pending.helped);pickup.classList.toggle('boost-pop',!!pending.boostedAt&&now-pending.boostedAt<900);
+   pickup.querySelector('strong').textContent=view==='outside'?'Serving…':seconds<=3?'Serving…':recipe.kind==='food'?'Cooking…':'Brewing…';pickup.setAttribute('aria-label',E.displayName(s,recipe)+', '+seconds+' seconds left'+(view==='outside'||pending.helped?'':'. Tap to halve the remaining time.'));
+   pickup.querySelector('small').textContent=view==='outside'?'':pending.helped?'2× boosted':'Tap to boost';
+   pickup.setAttribute('aria-disabled',String(view==='outside'||!!pending.helped));pickup.classList.toggle('boosted',view==='inside'&&!!pending.helped);pickup.classList.toggle('boost-pop',view==='inside'&&!!pending.boostedAt&&now-pending.boostedAt<900);
    const progress=pickup.querySelector('[role="progressbar"]');progress.setAttribute('aria-valuenow',String(pct));progress.setAttribute('aria-valuetext',seconds+' seconds left');progress.querySelector('i').style.width=pct+'%';
   }
   function cup(id){if(E.recipes.find(r=>r.id===id)?.kind==='food')return '<svg viewBox="0 0 60 64" aria-label="Garden treats"><ellipse cx="30" cy="47" rx="28" ry="10" fill="#ddd0ad"/><circle cx="20" cy="35" r="12" fill="#c78e55"/><circle cx="39" cy="38" r="12" fill="#d6a366"/><path d="m14 31 10 7m10-5 8 9" stroke="#a77149" stroke-width="3"/></svg>';return `<svg viewBox="0 0 60 64" aria-hidden="true"><path d="M42 24h8q12 15-8 19" fill="none" stroke="#ae8761" stroke-width="5"/><path d="M10 20h34v26q-17 15-34 0Z" fill="${id==='tea'?'#8fa783':id==='midknight'?'#d0ad6b':'#e5cfa8'}"/><ellipse cx="27" cy="21" rx="17" ry="5" fill="#74523d"/><path d="M22 13q-7-6 0-11m12 11q-7-6 0-11" fill="none" stroke="#adbaa0" stroke-width="2"/></svg>`;}
@@ -383,7 +383,7 @@ let stripOpen=(()=>{try{return localStorage.getItem('neo.cafe.strip')==='1';}cat
    if(edgeWant){if(edgeSig!==sw+'x'+ph+view||!edgeCv[0])buildEdges();ctx.save();ctx.setTransform(1,0,0,1,0,0);if(Lm>2)ctx.drawImage(edgeCv[0],sw-2,0,2,ph,0,0,Lm+3,ph);if(pw-Rm>2)ctx.drawImage(edgeCv[1],0,0,2,ph,Rm-3,0,pw-Rm+3,ph);ctx.restore();}
    CoveCafeScene(ctx,sceneArgs);
    const pickup=panel.querySelector('.cc-pickup-order');if(pickup&&!pickup.hidden){
-    const anchor=CoveCafeScene.orderAnchor||{x:344,y:229};
+    const anchor=view==='outside'?{x:360,y:278}:CoveCafeScene.orderAnchor||{x:344,y:229};
     const px=(anchor.x-cx0)*css,py=(anchor.y+offset)*css;
     pickup.style.left=Math.max(8,Math.min(bounds.width-pickup.offsetWidth-8,px-pickup.offsetWidth/2))+'px';
     pickup.style.top=Math.max(top+8,Math.min(bounds.height-pickup.offsetHeight-70,py))+'px';

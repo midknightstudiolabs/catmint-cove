@@ -295,3 +295,6 @@
 #app #cafe-kiosk.cc-v2 .cc-pickup-order.boost-pop{animation:cafe-boost-pop .4s ease-out}
 @keyframes cafe-boost-pop{0%{transform:scale(1)}45%{transform:scale(1.08)}100%{transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){#app #cafe-kiosk.cc-v2 .cc-pickup-order.boost-pop{animation:none}}
+
+#app #cafe-kiosk.cc-v2 .cc-service-progress{pointer-events:none;min-height:0;padding:5px 10px;width:140px;box-shadow:none}
+#app #cafe-kiosk.cc-v2 .cc-service-progress strong{font-size:11px}

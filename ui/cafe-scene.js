@@ -148,8 +148,8 @@
    // A public resting bench is distinct from the purchasable café table.
    rect(28,318,86,8,'#ba9971');rect(33,300,76,7,'#ba9971');rect(33,309,76,5,'#ba9971');rect(38,325,5,20,'#786046');rect(99,325,5,20,'#786046');
    if(!stocked&&!active&&actors.length>1){a.cat(c,actors[1],73,320,.85,reduced?0:t,false);}
-   if(stocked||active){queued(382,390,.42,lead);queued(302,390,.42,lead+1);queued(222,390,.42,lead+2);}
-   if(depart>=0&&depart<1)customer(382+depart*390,390,.42,s.sequence-1,true);
+   if(stocked||active){queued(382,390,.70,lead);queued(302,390,.70,lead+1);queued(222,390,.70,lead+2);}
+   if(depart>=0&&depart<1)customer(382+depart*390,390,.70,s.sequence-1,true);
    if(s.seats){rect(659,299,8,42,'#927550');oval(663,294,32,12,'#c5aa7d');round(651,276,12,16,3,'#f6edd7');oval(657,276,6,2,'#7b5a42');if(actors.length>2)a.cat(c,actors[2],615,350,.9,reduced?0:t,false);}
   }
 
