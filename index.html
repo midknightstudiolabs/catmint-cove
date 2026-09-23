@@ -2465,7 +2465,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=18"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=49"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/cafe-engine.js?v=27"></script><script src="ui/cafe-scene.js?v=33"></script><script src="ui/cafe-kiosk.js?v=65"></script>
+<link rel="stylesheet" href="ui/cafe-kiosk.css?v=49"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/cafe-engine.js?v=27"></script><script src="ui/cafe-scene.js?v=34"></script><script src="ui/cafe-kiosk.js?v=66"></script>
 <script src="ui/wishing-well.js?v=1"></script>
 <script>
 (() => {
@@ -22031,7 +22031,7 @@ function neoOpenCoffeeKiosk(){
   neoHomestead();CoveCafeEngine.init(G,Date.now());
   CoveCafeView.open({game:()=>G,close:()=>{closeAllPanels();neoMaybeShowBrewOverview();neoScheduleCafeReminder();},save, hud:syncHud,register:p=>panels.coffee=p,garden:()=>neoOpenHomestead('garden'),firstBrewOverview:()=>neoFirstBrewOverview(),
     ready:()=>({count:neoReadyPlots().length,yields:neoReadySummary()}),blessing:()=>blessingActive(),harvestAll:()=>neoHarvestAll(),offer:()=>showBlessingOffer(),sfx:k=>{try{sfx(k)}catch(e){}},soundMode:()=>neoCafeSoundMode(),setSound:v=>neoCafeSoundSet(v),
-    actors:()=>cats.slice(0,8).map(c=>{const copy=new Cat({coatKey:c.coatKey,mascot:c.mascot,markSeed:c.markSeed,bornAt:c.bornAt,star:c.star,name:c.name,traits:c.traits,x:0,y:0});copy.worn=[...(c.worn||[])];return copy;}),
+    actors:()=>cats.filter(c=>!c.visitor).map(c=>{const copy=new Cat({coatKey:c.coatKey,mascot:c.mascot,markSeed:c.markSeed,bornAt:c.bornAt,star:c.star,name:c.name,traits:c.traits,x:0,y:0});copy.worn=[...(c.worn||[])];copy.cafeKey=JSON.stringify([c.bornAt,c.markSeed,c.coatKey,c.mascot]);return copy;}),
     cat:(ctx,c,x,y,scale,t,walking)=>{if(!c)return;ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);c.state=walking?'exploring':'loafing';c.trotting=walking;c.walk=t/130;c.walkAmt=Number(walking)||0;c.face=1;c.stateT=t/1000;c.bob=t/900;c.tail=t/650;c.blink=(t/1000+x*.017)%4.7<.14?0:3;drawCat(ctx,c,true);ctx.restore();},
     remindBox:()=>neoCafeRemindBox(),
   });

@@ -8,6 +8,7 @@
   const round=(x,y,w,h,r,col)=>{c.fillStyle=col;c.beginPath();c.roundRect(x,y,w,h,r);c.fill();};
   const label=(str,x,y,size=16,col='#405842')=>{c.fillStyle=col;c.font=`${size}px Georgia`;c.textAlign='center';c.fillText(str,x,y);};
   const fitLabel=(str,x,y,maxW,size,col,min=11)=>{let z=size;c.font=`${z}px Georgia`;while(z>min&&c.measureText(str).width>maxW){z--;c.font=`${z}px Georgia`;}c.fillStyle=col;c.textAlign='center';c.fillText(str,x,y);};
+  const resident=actors.find(cat=>cat.cafeKey===s.residentCat)||actors[1]||actors[0];
   const cafeTitle=E.cafeName?E.cafeName(s).toUpperCase():'CATMINT CAFÉ';
   const has=id=>!!(s.decor&&s.decor[id]);
   let outsideY=124; let L=null;   // the inside layout, so the sign, steam and emotes can find their places
@@ -104,7 +105,7 @@
    rect(wx+9,wy+22,ww-18,5,'#bfa278');
    for(let i=0;i<4;i++){rect(wx+15+i*15,wy+6,9,15,palette.light);rect(wx+16+i*15,wy+11,7,3,palette.shade);}
    rect(wx+16,wy+53,57,39,'#99ad94');rect(wx+24,wy+62,41,18,'#334b3e');rect(wx+37,wy+82,13,10,'#f6ead1');
-   a.cat(c,actors[0],360,wy+103,1.05,reduced?0:t,false);
+   a.cat(c,resident,360,wy+103,1.05,reduced?0:t,false);
    round(wx+ww-70,wy+37,58,50,3,palette.dark);label('MENU',wx+ww-41,wy+50,10,'#f7e9c9');
    for(let i=0;i<3;i++)rect(wx+ww-61,wy+58+i*7,39-i*5,2,'#bfcbae');
    rect(wx-13,wy+100,ww+26,10,'#d0ac79');rect(wx-8,wy+110,ww+16,5,'#816444');
@@ -244,7 +245,7 @@
     if(BH-panelB>70){oval(360,fy,210,Math.min(30,(BH-panelB)*.24),palette.light);oval(360,fy,180,Math.min(22,(BH-panelB)*.17),palette.shade);
      round(38,fy-44,58,50,14,'#c7a97b');rect(50,fy-52,34,10,'#a98a5e');label('BEANS',67,fy-15,10,'#6a5238');
      hotspots.beans={x:24,y:fy-64,w:88,h:80};
-     if(actors.length>1){oval(618,fy+4,46,10,'rgba(0,0,0,.14)');round(578,fy-14,80,22,11,palette.body);a.cat(c,actors[1],618,fy-2,1.05,reduced?0:t,false);}}}
+     if(resident){hotspots.resident={x:574,y:fy-88,w:88,h:105};oval(618,fy+4,46,10,'rgba(0,0,0,.14)');round(578,fy-14,80,22,11,palette.body);a.cat(c,resident,618,fy-2,1.05,reduced?0:t,false);}}}
    // things on the counter
    machine(mx,my);
    hotspots.machine={x:mx-4,y:my-6,w:140,h:145};
