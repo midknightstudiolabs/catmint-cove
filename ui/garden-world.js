@@ -9,7 +9,11 @@
   function paint(t){if(ended)return;if(!host.isConnected||host.closest('[hidden]')){stop();return;}frame=requestAnimationFrame(paint);if(document.hidden||!visible){last=t;return;}if(t-last<50)return;const dt=Math.min(.08,(t-last)/1000);last=t;if(!reduced.matches)clock+=dt;
    ctx.clearRect(0,0,w,h);ctx.fillStyle='#c5d5a4';ctx.fillRect(0,0,w,h);const sky=ctx.createLinearGradient(0,0,0,105);sky.addColorStop(0,'#9fc6ce');sky.addColorStop(1,'#e7e6c9');ctx.fillStyle=sky;ctx.fillRect(0,0,w,80);
    ctx.fillStyle='#fff0bb';ctx.beginPath();ctx.arc(w*.82,25,15,0,Math.PI*2);ctx.fill();ctx.fillStyle='#789c8b';ctx.beginPath();ctx.moveTo(0,61);ctx.quadraticCurveTo(w*.16,30,w*.3,61);ctx.lineTo(0,65);ctx.fill();ctx.fillStyle='#82b6b9';ctx.fillRect(0,64,w,39);ctx.strokeStyle='#d7e9de';ctx.lineWidth=1.5;for(let i=0;i<6;i++){const x=((i*103+clock*4)%(w+65))-65;ctx.beginPath();ctx.moveTo(x,72+i%3*9);ctx.lineTo(x+36,72+i%3*9);ctx.stroke();}
-   ctx.fillStyle='#e0d0a9';ctx.fillRect(w/2-18,103,36,h-103);for(const y of lanes)ctx.fillRect(0,y-17,w,28);
+   ctx.lineCap='round';ctx.lineJoin='round';
+   const path=()=>{ctx.beginPath();ctx.moveTo(w/2,112);ctx.bezierCurveTo(w/2-10,h*.35,w/2+9,h*.7,w/2,h);ctx.stroke();for(const y of lanes){ctx.beginPath();ctx.moveTo(-12,y-3);ctx.bezierCurveTo(w*.28,y-8,w*.7,y+3,w+12,y-3);ctx.stroke();}};
+   ctx.strokeStyle='#b8c58f';ctx.lineWidth=42;path();ctx.strokeStyle='#d9cba6';ctx.lineWidth=34;path();ctx.strokeStyle='#e2d5b3';ctx.lineWidth=25;path();
+   for(let i=0;i<lanes.length;i++){const y=lanes[i];ctx.fillStyle='#c7b894';for(let j=0;j<5;j++){const x=(j*91+i*47)%w;ctx.beginPath();ctx.ellipse(x,y+5,2.5,1,0,0,Math.PI*2);ctx.fill();}}
+   ctx.lineCap='butt';
    ctx.strokeStyle='#ad9167';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,109);ctx.lineTo(w,109);ctx.stroke();for(let x=12;x<w;x+=48){ctx.fillStyle='#bea47b';ctx.fillRect(x,98,4,22);}
    for(let i=0;i<12;i++){const x=i%2?8:w-9,y=160+i*49;if(y>h-10)break;ctx.strokeStyle='#94af77';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-4,y-8);ctx.moveTo(x,y);ctx.lineTo(x+4,y-10);ctx.stroke();}
    cats.forEach((cat,i)=>{const y=lanes[Math.min(i+1,lanes.length-1)],span=Math.max(100,w-70),period=24+i*5,u=(clock+i*8)%period,walk=u<period*.76,phase=Math.min(1,u/(period*.76)),forward=Math.floor((clock+i*8)/period)%2===0,x=35+span*(forward?phase:1-phase);drawCat(ctx,cat,x,y+9,.66,clock*1000,walk&&!reduced.matches,forward?1:-1);});

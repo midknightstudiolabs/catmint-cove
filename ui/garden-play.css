@@ -81,3 +81,6 @@
 #app #neo-homestead .field-picker>.fpk-x{position:sticky;top:0;float:right;z-index:2;width:64px;min-height:44px;margin:-4px 0 6px 8px;background:#f4f1e1}
 #app #neo-homestead .field-picker h4{min-height:44px;display:flex;align-items:center;font-size:19px}
 #app #neo-homestead .field-picker .fpk-row{clear:both}
+#app #neo-homestead .field-plot b{border-radius:3px;background:#eee5cbe8;color:#485538;padding:3px 10px;box-shadow:0 1px 1px #61734620;font-weight:500}
+#app #neo-homestead .field-plot.ripe .fp-soil{filter:drop-shadow(0 2px 2px #d5c88b80)}
+#app #neo-homestead .garden-field .field-plot[data-stage] .fp-soil svg{transform:none}
