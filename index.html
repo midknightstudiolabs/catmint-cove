@@ -2465,7 +2465,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=18"></script>
-<link rel="stylesheet" href="ui/garden-play.css?v=5"><link rel="stylesheet" href="ui/cafe-kiosk.css?v=51"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/garden-world.js?v=2"></script><script src="ui/cafe-engine.js?v=27"></script><script src="ui/cafe-scene.js?v=36"></script><script src="ui/cafe-kiosk.js?v=68"></script>
+<link rel="stylesheet" href="ui/garden-play.css?v=6"><link rel="stylesheet" href="ui/cafe-kiosk.css?v=51"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/garden-world.js?v=2"></script><script src="ui/cafe-engine.js?v=27"></script><script src="ui/cafe-scene.js?v=36"></script><script src="ui/cafe-kiosk.js?v=68"></script>
 <script src="ui/wishing-well.js?v=1"></script>
 <script>
 (() => {
@@ -21350,7 +21350,7 @@ function neoCropArt(key,ready,field=false){
   // Shared warm timber/soil palette; growing crops are young plants, never faded ripe icons.
   const leaf=(x,y,flip=1)=>`<g transform="translate(${x} ${y}) scale(${flip} 1)"><path fill="#718c60" d="M0 0Q-15 2-17-10Q-4-14 0 0Z"/><path d="M-13-8-1-1" stroke="#a7b48a" stroke-width=".8"/></g>`;
   let bed='<ellipse cx="60" cy="61" rx="47" ry="7" fill="#566b4a" opacity=".13"/><path fill="#ac875f" d="M13 45Q60 34 107 45L103 59Q60 70 17 59Z"/><path fill="#c5a27a" d="M13 45Q60 33 107 45L102 50Q60 61 18 50Z"/><path fill="#755d46" d="M22 45Q60 37 98 45Q60 56 22 45Z"/><path d="M22 56Q60 65 98 56" stroke="#8f704f" fill="none" stroke-width="1"/>';
-  if(field)bed='<ellipse cx="60" cy="56" rx="51" ry="11" fill="#617346" opacity=".13"/><path d="M12 40Q18 36 28 37L91 32Q99 33 104 39L110 49Q109 54 100 56L32 63Q22 63 18 58L9 46Q7 42 12 40Z" fill="#806044"/><path d="M13 39Q21 36 29 37L90 32Q97 32 101 38L108 47Q107 51 99 52L31 59Q24 59 21 55L11 45Q8 41 13 39Z" fill="#a17e55"/><path d="M20 42Q50 42 94 36M25 48Q58 47 99 42M31 54Q61 52 102 48" fill="none" stroke="#775b3f" stroke-width="2" opacity=".7"/><path d="M21 40Q53 39 93 35M27 46Q62 44 98 40" fill="none" stroke="#b69769" stroke-width="1.3" opacity=".8"/><g fill="#6d553e" opacity=".4"><ellipse cx="25" cy="40" rx="1.3" ry=".7"/><ellipse cx="93" cy="48" rx="1.4" ry=".8"/><ellipse cx="52" cy="54" rx="1.1" ry=".7"/></g>';
+  if(field)bed='<path d="M9 37 87 28 113 51 34 64Z" fill="#7a5c40"/><path d="M9 34 87 25 113 48 34 61Z" fill="#a27e53"/><path d="m15 35 71-8 20 19-71 11Z" fill="#937047"/><g fill="none" stroke-linecap="round"><path d="m25 35 20 19m-2-22 20 19m-1-22 20 19m-1-21 19 18" stroke="#745638" stroke-width="3"/><path d="m28 34 20 19m-2-22 20 19m-1-22 20 19m-1-21 19 18" stroke="#b29060" stroke-width="1.5"/></g><path d="m10 35 24 25 78-12" fill="none" stroke="#b59669" stroke-width="1.5"/>';
   let art='';
   if(key==='honey'){
     art='<path d="M38 53V23h44v30" fill="#c2a16e"/><path d="M35 23 60 10 85 23Z" fill="#688365"/><path d="M40 24h40M40 34h40M40 44h40" stroke="#90734d" stroke-width="2"/><path d="M55 54v-9a5 5 0 0 1 10 0v9" fill="#584e3b"/><path d="M35 54h50" stroke="#957951" stroke-width="3"/>';
@@ -21653,14 +21653,14 @@ function neoOpenHomestead(kind){
   // closeAllPanels() hides the sheet, so tapping Harvest keeps your place
   const prevSheet=document.getElementById('neo-homestead'),prevOpen=!!(prevSheet&&!prevSheet.hidden&&prevSheet.dataset.kind==='garden');
   const prevBox=prevSheet&&prevSheet.querySelector('.gh-content'),keepTop=prevOpen&&prevBox?prevBox.scrollTop:0;
-  if(!prevOpen||!['patches','ingredients'].includes(neoGardenTab))neoGardenTab='patches';
+  neoGardenTab='patches';
   closeAllPanels();neoCafeSettle();save();clearInterval(neoHomesteadTimer);cancelAnimationFrame(neoCafeFrame);
   const h=neoHomestead();
   let sheet=document.getElementById('neo-homestead');
   if(!sheet){sheet=document.createElement('div');sheet.id='neo-homestead';sheet.className='sheet neo-garden-screen';document.getElementById('app').append(sheet);panels.homestead=sheet;}
   else sheet.className='sheet neo-garden-screen';
   sheet.hidden=false;
-  sheet.innerHTML=`<div class="gh-top"><button class="btn gh-back" aria-label="Back to the Cove">‹ Cove</button><h2 class="gh-title">Cove Garden</h2><span class="gh-end"></span></div><div class="gh-cta-slot"></div><nav class="gh-tabs" aria-label="Garden sections"><button data-tab="patches" aria-pressed="${neoGardenTab==='patches'}">My patches</button><button data-tab="ingredients" aria-pressed="${neoGardenTab==='ingredients'}">Ingredients</button></nav><div class="gh-content"></div>`;
+  sheet.innerHTML=`<div class="gh-top"><button class="btn gh-back" aria-label="Back to the Cove">‹ Cove</button><h2 class="gh-title">Cove Garden</h2><span class="gh-end"></span></div><div class="gh-cta-slot"></div><div class="gh-content"></div>`;
   const content=sheet.querySelector('.gh-content');
   const cafeLink=document.createElement('button');cafeLink.className='btn';cafeLink.type='button';cafeLink.textContent='Visit café';cafeLink.onclick=()=>neoOpenHomestead('cafe');sheet.querySelector('.gh-end').append(cafeLink);
   const loop=document.createElement('p');loop.className='garden-loop';loop.textContent='Your harvest fills the café pantry. Crops stay safe while you’re away.';content.append(loop);
@@ -21689,12 +21689,13 @@ function neoOpenHomestead(kind){
       (content.querySelector('.field-grid')||content).append(add);
       if(add.disabled){const hint=document.createElement('p');hint.className='garden-loop';hint.textContent='Save '+Math.ceil(cost-G.shells)+' more Shells to add a patch.';content.append(hint);}
     }else{const note=document.createElement('p');note.className='garden-loop';note.textContent='All 8 patches are ready for your garden.';content.append(note);}
-  }else if(neoGardenTab==='ingredients'){
+  }
+  { // Shared pantry stays with the field.
     const stock=document.createElement('section');stock.className='homestead-stock';
     stock.innerHTML=Object.entries(COVE_CROPS).map(([k,c])=>`<span>${c.name}: <b>${h.stock[k]||0}</b></span>`).join('');
-    content.append(stock);
-    const market=document.createElement('section');market.className='garden-market';
-    const marketTitle=document.createElement('h3');marketTitle.textContent='Sell spare harvests';market.append(marketTitle);
+    stock.classList.add('garden-pantry-strip');stock.setAttribute('aria-label','Shared café pantry');content.prepend(stock);
+    const market=document.createElement('details');market.className='garden-market';
+    const marketTitle=document.createElement('summary');marketTitle.textContent='Sell spare harvests';market.append(marketTitle);
     const marketList=document.createElement('div');marketList.className='garden-market-list';marketList.setAttribute('aria-label','Sell from your pantry');
     for(const [key,crop] of Object.entries(COVE_CROPS)){const sell=document.createElement('button');sell.className='btn';sell.textContent='Sell 1 '+crop.name.toLowerCase()+' · 1 shell';sell.disabled=!(h.stock[key]>0);sell.onclick=()=>neoSellHarvest(key);marketList.append(sell);}
     market.append(marketList);content.append(market);
@@ -21713,7 +21714,7 @@ function neoOpenHomestead(kind){
       else{b.textContent='Plant '+n+' patch'+(n===1?'':'es')+' · '+cost+' Shells';if(G.shells<cost)b.setAttribute('data-why','You need '+Math.ceil(cost-G.shells)+' more Shells for seeds.');}
       b.onclick=()=>{if(b.dataset.why){toast(b.dataset.why,3.5);return;}const done=neoPlantMany(row.key,n);if(done){toast('Planted '+done+' patch'+(done===1?'':'es')+' of '+row.name.toLowerCase()+'. Ripe in about '+Math.ceil(crop.seconds/60)+' min.',4);neoOpenHomestead('garden');}};
       card.append(info,b);sec.append(card);}
-    const advice=document.createElement('details');const label=document.createElement('summary');label.textContent='What my café needs';advice.append(label,sec);content.append(advice);
+    const advice=document.createElement('details');const label=document.createElement('summary');label.textContent='What my café needs';advice.append(label,sec);advice.className='garden-supply-advice';content.insertBefore(advice,stock.nextSibling);
 
 
   }
