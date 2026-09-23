@@ -2465,7 +2465,7 @@ details.garden-list{margin:12px 0}details.garden-list>summary{cursor:pointer;fon
 
 <script src="ui/product-analytics.js?v=1"></script>
 <script src="ui/memory-rewards.js?v=1"></script><script src="ui/endless-rewards.js?v=1"></script><link rel="stylesheet" href="ui/little-matches.css?v=14"><script src="ui/little-matches.js?v=18"></script>
-<link rel="stylesheet" href="ui/cafe-kiosk.css?v=51"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/cafe-engine.js?v=27"></script><script src="ui/cafe-scene.js?v=36"></script><script src="ui/cafe-kiosk.js?v=68"></script>
+<link rel="stylesheet" href="ui/garden-play.css?v=1"><link rel="stylesheet" href="ui/cafe-kiosk.css?v=51"><link rel="stylesheet" href="ui/mobile-polish.css?v=1"><script src="ui/cafe-engine.js?v=27"></script><script src="ui/cafe-scene.js?v=36"></script><script src="ui/cafe-kiosk.js?v=68"></script>
 <script src="ui/wishing-well.js?v=1"></script>
 <script>
 (() => {
@@ -21503,6 +21503,7 @@ function neoCropWord(sec){return sec>=3600?Math.round(sec/360)/10+' h':sec>=60?M
 function neoRenderField(sheet,h){
   const sec=document.createElement('section');sec.className='garden-field';sec.setAttribute('aria-label','Your garden patches');
   const plan=CoveCafeEngine.pantryPlan(G),needs=plan.rows.filter(r=>r.plant>0);
+  const banner=document.createElement('div');banner.className='garden-field-sign';banner.innerHTML='<strong>A little garden, a busy café</strong><span>Plant a patch · water once · pick something lovely</span>';sec.append(banner);
   const grid=document.createElement('div');grid.className='field-grid';
   const picker=document.createElement('div');picker.className='field-picker';picker.hidden=true;
   let openIdx=-1;const tiles=[];
@@ -21515,7 +21516,11 @@ function neoRenderField(sheet,h){
       const p=h.plots[i],now=Date.now();
       if(!p){openPicker(i);return;}
       const c=COVE_CROPS[p.key],left=Math.ceil((p.ready-now)/1000);
-      if(left>0){t.classList.remove('nudge');void t.offsetWidth;t.classList.add('nudge');toast(c.name+' will be ripe in about '+(left>=60?Math.ceil(left/60)+' min':left+' s')+'.',2.6);return;}
+      if(left>0){
+        if(!p.watered){const boost=Math.min(60,Math.ceil(c.seconds*.1),left);p.watered=true;p.ready=Math.max(now,p.ready-boost*1000);save();neoScheduleGardenReminder();paint();try{sfx('collect');}catch(e){}toast('Watered! '+boost+' seconds closer to harvest.',2.5);}
+        else toast(c.name+' is happily growing. Ripe in '+neoCropWord(left)+'.',2.5);
+        return;
+      }
       if(t.classList.contains('popping'))return;
       t.classList.add('popping');
       const f=document.createElement('span');f.className='fp-float';f.textContent='+'+c.yield+' '+c.name.toLowerCase();t.append(f);
@@ -21533,7 +21538,7 @@ function neoRenderField(sheet,h){
     for(const [key,c] of order){
       const b=document.createElement('button');b.type='button';b.className='fpk';const rec=needs[0]&&needs[0].key===key;if(rec)b.classList.add('rec');
       const short=G.shells<c.cost;if(short)b.classList.add('short');
-      const info=document.createElement('span');const n=document.createElement('strong');n.textContent=c.name;const d=document.createElement('small');d.textContent=c.cost+' Shells · ripe in about '+neoCropWord(c.seconds)+' · +'+c.yield;info.append(n,d);b.append(info);
+      const art=document.createElement('span');art.className='garden-seed-art';art.innerHTML=neoCropArt(key,true);b.append(art);const info=document.createElement('span');const n=document.createElement('strong');n.textContent=c.name;const d=document.createElement('small');d.textContent=c.cost+' Shells · ripe in about '+neoCropWord(c.seconds)+' · +'+c.yield;info.append(n,d);b.append(info);
       if(rec){const tag=document.createElement('em');tag.textContent='FOR YOUR MENU';b.append(tag);}
       b.onclick=()=>{if(short){toast('You need '+Math.ceil(c.cost-G.shells)+' more Shells for seeds.',3);return;}neoPlant(i,key);};
       row.append(b);
@@ -21547,17 +21552,17 @@ function neoRenderField(sheet,h){
   function paint(){
     const now=Date.now();
     tiles.forEach((t,i)=>{
-      const p=h.plots[i],left=p?Math.max(0,Math.ceil((p.ready-now)/1000)):0,ripe=!!p&&left===0,sig=p?p.key+(ripe?'r':'g'):'e';
+      const p=h.plots[i],left=p?Math.max(0,Math.ceil((p.ready-now)/1000)):0,ripe=!!p&&left===0,growth=p?Math.max(0,Math.min(1,1-left/COVE_CROPS[p.key].seconds)):0,stage=ripe?3:Math.floor(growth*3),sig=p?p.key+stage+(p.watered?'w':''):'e';
       if(t.dataset.sig!==sig){
         t.dataset.sig=sig;t.classList.toggle('empty',!p);t.classList.toggle('ripe',ripe);
         const soilEl=t.querySelector('.fp-soil');
-        soilEl.innerHTML=p?neoCropArt(p.key,ripe):'<span class="fp-plus" aria-hidden="true">+</span>';
+        soilEl.innerHTML=p?neoCropArt(p.key,ripe):soil+'<span class="fp-plus" aria-hidden="true">+</span>';t.dataset.stage=String(stage);t.classList.toggle('watered',!!p?.watered);
         t.querySelector('b').textContent=p?COVE_CROPS[p.key].name:'Empty patch';
       }
       const c=p?COVE_CROPS[p.key]:null;
-      t.querySelector('small').textContent=!p?'Tap to plant':ripe?'Tap to harvest':neoCropWord(left)+' left';
+      t.querySelector('small').textContent=!p?'Tap to plant':ripe?'Harvest +'+c.yield:(!p.watered?'Tap to water · ':'Watered · ')+neoCropWord(left);
       t.querySelector('.fp-bar i').style.setProperty('--p',(p&&!ripe?Math.max(4,Math.min(100,(1-left/c.seconds)*100)):0)+'%');
-      t.setAttribute('aria-label','Patch '+(i+1)+': '+(!p?'empty, tap to plant':ripe?c.name+' ripe, tap to harvest':c.name+', '+neoCropWord(left)+' left'));
+      t.setAttribute('aria-label','Patch '+(i+1)+': '+(!p?'empty, tap to plant':ripe?c.name+' ripe, tap to harvest':c.name+', '+neoCropWord(left)+' left'+(!p.watered?', tap to water once':'')));
     });
   }
   paint();sec.append(grid,picker);
@@ -21582,7 +21587,7 @@ function neoHarvest(i){
   const h=neoHomestead(),p=h.plots[i];if(!p||Date.now()<p.ready)return;
   if(CoveCafeEngine.ingredients[p.key])CoveCafeEngine.acquire(G,p.key,COVE_CROPS[p.key].yield,COVE_CROPS[p.key].cost);
   else h.stock[p.key]=(h.stock[p.key]||0)+COVE_CROPS[p.key].yield;
-  const keyH=p.key;h.plots[i]=null;if(neoAutoReplantOn()&&neoReplantPatch(i,keyH))syncHud();save();neoOpenHomestead('garden');
+  const keyH=p.key;toast('Picked '+COVE_CROPS[keyH].yield+' '+COVE_CROPS[keyH].name.toLowerCase()+' · added to your café pantry.',3);h.plots[i]=null;if(neoAutoReplantOn()&&neoReplantPatch(i,keyH))syncHud();save();neoOpenHomestead('garden');
 }
 function neoCook(key){
   const h=neoHomestead(),r=COVE_RECIPES[key],slot=h.stoves.indexOf(null);if(!r||slot<0||(h.stock[r.ingredient]||0)<r.amount)return;
@@ -21638,7 +21643,7 @@ function neoOpenHomestead(kind){
   sheet.innerHTML=`<div class="gh-top"><button class="btn gh-back" aria-label="Back to the Cove">‹ Cove</button><h2 class="gh-title">Cove Garden</h2><span class="gh-end"></span></div><div class="gh-cta-slot"></div><nav class="gh-tabs" aria-label="Garden sections"><button data-tab="patches" aria-pressed="${neoGardenTab==='patches'}">My patches</button><button data-tab="ingredients" aria-pressed="${neoGardenTab==='ingredients'}">Ingredients</button></nav><div class="gh-content"></div>`;
   const content=sheet.querySelector('.gh-content');
   const cafeLink=document.createElement('button');cafeLink.className='btn';cafeLink.type='button';cafeLink.textContent='Visit café';cafeLink.onclick=()=>neoOpenHomestead('cafe');sheet.querySelector('.gh-end').append(cafeLink);
-  const loop=document.createElement('p');loop.className='garden-loop';loop.textContent='Plant → Pick → Serve. Your harvest goes straight to the café.';content.append(loop);
+  const loop=document.createElement('p');loop.className='garden-loop';loop.textContent='Your harvest fills the café pantry. Crops stay safe while you’re away.';content.append(loop);
   sheet.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{neoGardenTab=b.dataset.tab;neoOpenHomestead('garden');});
 
   const next=neoGardenNextAction(h);
@@ -21661,7 +21666,7 @@ function neoOpenHomestead(kind){
       const add=document.createElement('button');add.type='button';add.className='btn garden-add-patch';
       add.textContent='Add a patch · '+cost+' Shells';add.disabled=G.shells<cost;
       add.onclick=()=>{if(neoExpandHomestead('garden'))neoOpenHomestead('garden');};
-      content.append(add);
+      (content.querySelector('.field-grid')||content).append(add);
       if(add.disabled){const hint=document.createElement('p');hint.className='garden-loop';hint.textContent='Save '+Math.ceil(cost-G.shells)+' more Shells to add a patch.';content.append(hint);}
     }else{const note=document.createElement('p');note.className='garden-loop';note.textContent='All 8 patches are ready for your garden.';content.append(note);}
   }else if(neoGardenTab==='ingredients'){
